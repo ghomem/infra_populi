@@ -1,5 +1,6 @@
-### Purpose ########
-# This class provides a caching nameserver server using bind
+### Purpose/Dependencies ########
+# Configures a BIND-based caching nameserver.
+# Dependencies: system packages/service only (bind or bind9); no external Puppet module dependencies.
 
 # allowed_networks is an array of networks with bitmask. Example ['192.168.1.0/24', '192.168.5.0/24']
 class puppet_infrastructure::caching_nameserver ( Array $allowed_networks = [] ){
