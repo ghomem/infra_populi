@@ -1,18 +1,23 @@
+#
+# Configures the base rsyslog service and copies this node's Puppet TLS
+# materials so rsyslog can use them for encrypted forwarding.
+# Dependencies: Puppet agent SSL state, rsyslog, rsyslog-gnutls.
+#
 class puppet_infrastructure::rsyslog_base {
 
-  # 1. Packages
+  # Install the base rsyslog packages.
   package { ['rsyslog', 'rsyslog-gnutls']:
     ensure => installed,
   }
 
-  # 2. Legacy “syslog” account for EL
+  # Preserve the legacy syslog account expected by the EL rsyslog package.
   if $facts['os']['family'] == 'RedHat' {
     group { 'syslog': ensure => present, gid => 0, allowdupe => true }
     user  { 'syslog': ensure => present, uid => 0, allowdupe => true }
   }
 
-  # 3. Copy Puppet certificates so rsyslog can read them
-  $ssldir   = '/var/lib/puppet/ssl'
+  # Copy Puppet certificates so rsyslog can read them.
+  $ssldir   = $settings::ssldir
   $certname = $trusted['certname']
 
   file { '/etc/rsyslog.d/tls':
@@ -24,24 +29,24 @@ class puppet_infrastructure::rsyslog_base {
   }
 
   file { '/etc/rsyslog.d/tls/ca.pem':
-    source => "${ssldir}/certs/ca.pem",
+    source => "file://${ssldir}/certs/ca.pem",
     owner  => 'syslog', group => 'syslog', mode => '0644',
     require => File['/etc/rsyslog.d/tls']
   }
 
   file { "/etc/rsyslog.d/tls/${certname}.pem":
-    source => "${ssldir}/certs/${certname}.pem",
+    source => "file://${ssldir}/certs/${certname}.pem",
     owner  => 'syslog', group => 'syslog', mode => '0644',
     require => File['/etc/rsyslog.d/tls']
   }
 
   file { "/etc/rsyslog.d/tls/${certname}.key":
-    source => "${ssldir}/private_keys/${certname}.pem",
+    source => "file://${ssldir}/private_keys/${certname}.pem",
     owner  => 'syslog', group => 'syslog', mode => '0600',
     require => File['/etc/rsyslog.d/tls']
   }
 
-  # 4. Service
+  # Ensure the service is enabled and reacts to TLS directory changes.
   service { 'rsyslog':
     ensure     => running,
     enable     => true,
