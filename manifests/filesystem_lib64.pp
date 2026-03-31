@@ -1,5 +1,11 @@
-### Purpose ########
-# This class provides a ubuntu only filesystem compatibility measure related to nagios plugins invocation
+# Class: puppet_infrastructure::filesystem_lib64
+#
+# Purpose:
+#   Creates a `/usr/lib64/nagios` compatibility symlink for hosts where Nagios
+#   plugins are installed under `/usr/lib/nagios`.
+#
+# Dependencies:
+#   None.
 class puppet_infrastructure::filesystem_lib64 {
 
   file { '/usr/lib64/':
