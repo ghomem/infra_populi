@@ -1,5 +1,13 @@
-### Purpose ########
-# This class implements prerequisites for the backup_base_rsync defined type
+# Class: puppet_infrastructure::backup_rsnapshot_pre
+#
+# Purpose:
+#   Prepare the shared rsnapshot prerequisites used by rsnapshot-based
+#   backup definitions.
+#
+# Dependencies:
+#   - Hiera data for `filesystem::bindir`
+#   - `backups/rdiff.sh` file served from this module's files directory
+#
 class puppet_infrastructure::backup_rsnapshot_pre {
 
   $bindir  = lookup('filesystem::bindir')
