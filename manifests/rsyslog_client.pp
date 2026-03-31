@@ -1,8 +1,19 @@
+#
+# Class: puppet_infrastructure::rsyslog_client
+#
+# Purpose:
+#   Configure rsyslog client forwarding to a primary remote endpoint, with
+#   optional failover endpoint support.
+#
+# Dependencies:
+#   - puppet_infrastructure::rsyslog_base
+#   - puppet_infrastructure/rsyslog/forward_simple.conf.epp
+#
 class puppet_infrastructure::rsyslog_client (
   String  $target,
   String  $target_ip,
   Integer $port         = 6514,
-  Boolean $check_names  = false,   # true → require hostname == cert CN
+  Boolean $check_names  = false,
   Optional[String] $failover      = undef,
   Optional[String]  $failover_ip = undef,
 ) {
@@ -11,7 +22,7 @@ class puppet_infrastructure::rsyslog_client (
 
   $certname = $trusted['certname']
 
-  # guarantee the name is always resolvable
+  # Ensure the primary log target resolves even without external DNS.
   if $target_ip {
     host { $target:
       ip     => $target_ip,
@@ -20,6 +31,7 @@ class puppet_infrastructure::rsyslog_client (
   }
 
   if $failover {
+    # Pin the optional failover hostname when an address is provided.
     if $failover_ip {
       host { $failover:
         ip     => $failover_ip,
@@ -40,4 +52,3 @@ class puppet_infrastructure::rsyslog_client (
     notify => Service['rsyslog'],
   }
 }
-
