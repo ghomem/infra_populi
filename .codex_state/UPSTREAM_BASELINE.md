@@ -58,6 +58,21 @@ When a class is migrated, its migrated_classes.txt line MUST be annotated:
 Do NOT retroactively annotate existing entries (true per-class anchors are
 unknown — that is the accepted patchwork).
 
+### Ruling B (HQ, forward-only annotation) -- authoritative
+The 15 historical migrations (git log: 15x "P8: migrate", all pre-dating the
+release-0.9.8 tag of 2026-05-21, migrated from live dev HEAD) STAY as plain
+`Done`. They are NOT stamped [from: release-0.9.8], because that provenance
+would be factually false. Meaning of the two marker forms going forward:
+  - plain `Done`                    = migrated, NOT yet reconciled to 0.9.8
+                                      (this is the reconciliation backlog)
+  - `Done [from: release-0.9.8]`    = migrated AND confirmed at 0.9.8 content
+A historical class EARNS the [from: release-0.9.8] annotation only after it is
+reconciled to 0.9.8 during the end-of-Phase-1 reconciliation pass. New forward
+migrations get the annotation immediately (they are done from 0.9.8 by rule).
+Note: migrated_classes.txt uses two interchangeable marker positions --
+`X Done` (later Codex entries) and `Done X` (early hand entries); both mean
+migrated. Do NOT normalize the format (cosmetic-only; risks editing errors).
+
 ## Future upstream catch-up policy
 Do NOT chase new old-repo releases (0.9.10+) mid-phase. Note them, and fold
 into a deliberate catch-up at a PHASE BOUNDARY, always diffing
