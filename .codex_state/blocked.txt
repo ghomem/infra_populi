@@ -3,3 +3,6 @@
 # The first whitespace-delimited token on each non-comment, non-empty line is the class short-name.
 
 network_dhcp — blocked: network_config custom type fails on Puppet 8 (puppet-network/puppet-filemapper won't load); reimplementation candidate preserved at .codex_state/candidates/network_dhcp.reimplemented.pp; pending HQ resolution of dependency fork (a/b/c/d). See DESIGN_DECISIONS.md.
+network_static — blocked: same network_config root cause (also uses network_route); puppet-network/filemapper Puppet-8 incompat; deferred with networking cluster pending module-level resolution (a: P8-compatible module, or b: fix filemapper). See DESIGN_DECISIONS.md.
+openvpn_server — blocked: heavy network_config use (lo/lo:0/br0 bridge, bridge_ports, loopback aliasing, subscribe refs); puppet-network/filemapper Puppet-8 incompat; do NOT reimplement per-class; deferred with networking cluster pending module-level resolution. See DESIGN_DECISIONS.md.
+network_vpn — blocked: transitively (chains openvpn_server); deferred with networking cluster pending module-level resolution. See DESIGN_DECISIONS.md.
