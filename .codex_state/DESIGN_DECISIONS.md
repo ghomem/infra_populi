@@ -182,3 +182,103 @@ Rationale: ordering-irrelevant — the topology routes around it via shared
 filesystem_base, so the missing edge does not change migration sequence. Recorded
 here as a CONSIDERED omission, not an oversight. Revisit only if composition ever
 depends on this edge directly.
+
+## 2026-07-01 — Blocked Forge dependency is an escalation trigger, not a loop-internal decision
+Decision: when a class depends on a Forge module/custom type that will not load on
+Puppet 8, Codex must STOP and escalate — it does NOT silently reimplement the class's
+behavior. The resolution is a genuine fork with distinct options: (a) find a
+Puppet-8-compatible replacement module; (b) fix the dependency's incompatibility;
+(c) reimplement without the dependency; (d) defer/mark the class blocked. Codex may
+not unilaterally pick (c) — it is the most invasive (changes behavior, diverges from
+upstream), and the choice has project-level implications only higher-level judgment can weigh.
+Rationale: Phase 1 is SYNTAX migration with behavior preserved. "Make it functionally
+different so it compiles" crosses into redesign (Phase 3 territory). GREEN in Phase 1
+means "syntax compiles/applies," NOT "behavior preserved" — optimizing for GREEN via
+reimplementation optimizes the wrong signal. Recurs across the module (multiple classes
+use custom types from possibly-incompatible modules), so it is policy, not per-case.
+Triggered by: network_dhcp — Codex reimplemented network_config as raw ifupdown file-writing
+because it produced GREEN fastest, without flagging the behavior change.
+
+## 2026-07-01 — network_dhcp: BLOCKED, reimplementation preserved as candidate (not Done)
+Decision: network_dhcp is marked BLOCKED, not Done, and carries NO [from: release-0.9.8]
+annotation. Codex's reimplementation (commit 48fc434) was backed out of production via a
+corrective commit (03cb002, message deliberately NOT "P8: migrate"), the production manifest
+restored to its pre-migration original, and the reimplementation preserved as a candidate at
+.codex_state/candidates/network_dhcp.reimplemented.pp (with a header noting: diverges from
+0.9.8, drops puppet-network/filemapper, behavioral-equivalence unverified).
+Rationale: the reimplementation is not a faithful migration (same false-provenance problem
+Option B prevents), and it was discovered as a fait accompli, not evaluated as a decision.
+It is preserved (not discarded) as a candidate approach pending cluster resolution, but not
+blessed as done.
+
+## 2026-07-01 — New marker state: reimplemented/diverged
+Decision: R2's two marker states (plain Done = migrated-not-reconciled; Done [from:
+release-0.9.8] = migrated-and-faithful) gain a third for classes that work but deliberately
+diverge in approach from upstream: Done [reimplemented: diverges from release-0.9.8 — see
+DESIGN_DECISIONS.md]. It is honest about non-faithfulness — "this works, but it is NOT the
+upstream approach."
+Caveat: this marker is for CONSIDERED, ACCEPTED divergences only. A class does not earn it
+while it has an unexamined behavioral-risk (network_dhcp does not get it — it stays blocked
+until the divergence is a decided question).
+
+## 2026-07-01 — Encode annotation discipline into the migration invocation
+Decision: the marker rules (plain Done vs [from: release-0.9.8] vs [reimplemented: ...]) must
+be encoded INTO the migration invocation (wrapper or per-class instruction), so the correct
+marker is applied at migration time in the same commit — not hand-corrected after.
+Rationale: Codex omitted the [from: release-0.9.8] annotation on BOTH forward migrations so far
+(filesystem_yum, network_dhcp) because the generic wrapper prompt does not mention the marker
+rules. Two misses is enough evidence to fix the cause, not keep hand-correcting.
+
+## 2026-07-01 — Model-3 bug fix: derivation must be revert-aware (currently-migrated, not ever-migrated)
+Decision: the git-derived done-set must reflect CURRENTLY-migrated, not "ever had a P8: migrate
+commit." gen_migration_order.py was made revert-aware + blocked-aware:
+done = (git P8:migrate classes) MINUS (blocked-list), with a supersession GUARD.
+- Supersession guard: for each migrated class, if a commit LATER than its MOST-RECENT P8:migrate
+  commit touched that class's manifest, the script FLAGS it "possibly superseded — verify" —
+  it does NOT silently trust either reading. Catches the general revert case; its edge case
+  (unrelated later edit) degrades to a flag, never a wrong answer. No commit-message parsing.
+- Blocked-list (.codex_state/blocked.txt, tracked, one reason per entry): the AUTHORITATIVE
+  exclusion. A blocked class is never counted done even with a P8:migrate commit.
+Rationale: "count P8:migrate commits" silently assumed migrations are never reverted;
+network_dhcp (migrated then backed out) proved otherwise. Rejected: message-convention detection
+(fragile — human must maintain a naming pattern); pure tree-state (no reliable machine signature
+for "migrated"). The two mechanisms are belt-and-suspenders with correct sourcing: blocked-list
+gives the authoritative answer, the guard catches the human-error case (revert without updating
+the list). Worst case the derivation flags "verify" — never a silent false Done.
+
+## 2026-07-01 — "Done" and "blocked" are different facts with different sources (P2 clarification)
+Principle clarification: "migrated" is a GIT fact (derivable). "Blocked" is a HUMAN-DECISION
+fact git cannot express — git cannot distinguish "deliberately held" from "not yet reached"
+from "migrated-then-reverted." So blocked REQUIRES a recorded source (blocked.txt), and this
+does NOT violate P2: P2 forbids duplicating a DERIVABLE fact, not recording a NON-DERIVABLE one.
+A blocked-list is the primary (only possible) home of a fact with no other source — same P2
+exemption as append-only history, not a driftable copy of the done-set.
+
+## 2026-07-01 — network_config is a module-wide blocker; block the networking cluster; resolve at module level
+Decision: the entire networking/OpenVPN cluster is BLOCKED on the shared root cause that the
+network_config / network_route custom types (from puppet-network, needing puppet-filemapper)
+fail to load on Puppet 8. Blocked: network_dhcp, network_static, openvpn_server, network_vpn —
+each verified by manifest inspection to use these types (network_dhcp: 1 resource; network_static:
+network_config + network_route; openvpn_server: 4 network_config incl. br0 bridge with bridge_ports/
+loopback-aliasing/subscribe refs; network_vpn: transitively, chains openvpn_server).
+Resolution strategy: resolve network_config ONCE at module level — (a) a Puppet-8-compatible
+network-interface module, or (b) fix filemapper's incompatibility — NOT per-class reimplementation (c).
+Rationale: the network_dhcp reimplementation worked only because it was one trivial resource — a
+LOCAL success masking a SYSTEMIC problem. Extrapolating (c) to openvpn_server's bridge stack would
+produce four independent hand-rolled reimplementations, each diverging from upstream, high-risk on
+the bridge config — multiplying the divergence problem. Fix the root, not each leaf.
+Correction of an earlier inference: openvpn_server does NOT depend on network_dhcp (it declares its
+own network_config for lo/lo:0/br0); the escalated "reimplementing network_dhcp breaks the OpenVPN
+stack" concern was moot — they are independent. The real problem is module-wide, not a network_dhcp
+quirk. (P1 discipline: the code overturned the inferred coupling.)
+Open question (deferred): a-vs-b is a dedicated future investigation — (a) is there a maintained
+Puppet-8-compatible network module covering dhcp/static/bridge/alias? (b) is filemapper's incompat
+small/patchable or a deep rewrite? Not decided now; opened deliberately when the non-blocked queue
+is exhausted or networking is prioritized.
+
+## 2026-07-01 — Known limitation: the plan cannot predict external-type blockers
+Note: migration_plan.md's internal_deps column tracks internal-CLASS dependencies, not external
+custom-TYPE availability. So the plan cannot predict which classes will hit a network_config-style
+"module won't load on Puppet 8" wall — those are discovered reactively by reading each manifest
+before migrating it. Practice: before migrating a queued class, check its manifest for custom types
+from external modules whose Puppet-8 compatibility is unverified, not just its internal_deps.
