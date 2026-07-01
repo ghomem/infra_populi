@@ -15,6 +15,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
 PLAN_PATH = SCRIPT_DIR / "migration_plan.md"
 ORDER_PATH = SCRIPT_DIR / "migration_order.md"
+BLOCKED_PATH = SCRIPT_DIR / "blocked.txt"
 PREFIX = "puppet_infrastructure::"
 REQUIRED_COLUMNS = {
     "class",
@@ -44,6 +45,12 @@ class ClassRow:
     @property
     def sort_key(self) -> tuple[int, int, int, str]:
         return (self.complexity, self.dep_score, self.p8_surface, self.name)
+
+
+@dataclass(frozen=True)
+class MigrationCommit:
+    commit: str
+    date: str
 
 
 def fail(message: str) -> None:
@@ -143,10 +150,10 @@ def parse_plan() -> dict[str, ClassRow]:
     return rows
 
 
-def git_done() -> set[str]:
+def run_git(args: list[str]) -> str:
     try:
         result = subprocess.run(
-            ["git", "-C", str(REPO_ROOT), "log", "--oneline"],
+            ["git", "-C", str(REPO_ROOT), *args],
             check=True,
             text=True,
             stdout=subprocess.PIPE,
@@ -154,21 +161,61 @@ def git_done() -> set[str]:
         )
     except subprocess.CalledProcessError as error:
         detail = error.stderr.strip() or error.stdout.strip()
-        fail(f"git log failed: {detail}")
+        fail(f"git {' '.join(args)} failed: {detail}")
+    return result.stdout
 
-    done: set[str] = set()
+
+def git_migrations() -> dict[str, MigrationCommit]:
+    output = run_git(["log", "--format=%H%x09%cI%x09%s"])
     pattern = re.compile(rf"\bP8: migrate\s+{re.escape(PREFIX)}([A-Za-z0-9_]+)\b")
-    for line in result.stdout.splitlines():
+    migrations: dict[str, MigrationCommit] = {}
+
+    for line in output.splitlines():
         if "P8: migrate" not in line:
             continue
-        match = pattern.search(line)
+        parts = line.split("\t", 2)
+        if len(parts) != 3:
+            continue
+        commit, commit_date, subject = parts
+        match = pattern.search(subject)
         if match:
-            done.add(match.group(1))
-    return done
+            name = match.group(1)
+            if name not in migrations:
+                migrations[name] = MigrationCommit(commit=commit, date=commit_date)
+    return migrations
 
 
-def topological_pending(rows: dict[str, ClassRow], done: set[str]) -> list[ClassRow]:
-    pending = set(rows) - done
+def find_flagged_migrations(migrations: dict[str, MigrationCommit]) -> set[str]:
+    flagged: set[str] = set()
+    for name, migration in migrations.items():
+        manifest = f"manifests/{name}.pp"
+        output = run_git(["log", "--format=%H", f"{migration.commit}..HEAD", "--", manifest])
+        if output.strip():
+            flagged.add(name)
+    return flagged
+
+
+def read_blocked() -> dict[str, str]:
+    if not BLOCKED_PATH.exists():
+        return {}
+
+    blocked: dict[str, str] = {}
+    for line_number, line in enumerate(BLOCKED_PATH.read_text(encoding="utf-8").splitlines(), start=1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        parts = stripped.split(None, 1)
+        name = parts[0]
+        if not re.fullmatch(r"[A-Za-z0-9_]+", name):
+            fail(f"invalid blocked class short-name at {BLOCKED_PATH}:{line_number}: {name!r}")
+        if name in blocked:
+            fail(f"duplicate blocked class at {BLOCKED_PATH}:{line_number}: {name}")
+        blocked[name] = parts[1].strip() if len(parts) > 1 else ""
+    return blocked
+
+
+def topological_pending(rows: dict[str, ClassRow], done: set[str], blocked: set[str]) -> list[ClassRow]:
+    pending = set(rows) - done - blocked
     placed: set[str] = set()
     ordered: list[ClassRow] = []
 
@@ -205,11 +252,22 @@ def table_row(index: int | str, row: ClassRow) -> str:
     )
 
 
-def render(rows: dict[str, ClassRow], done: set[str], pending_order: list[ClassRow]) -> str:
+def render(
+    rows: dict[str, ClassRow],
+    done: set[str],
+    blocked: dict[str, str],
+    flagged: set[str],
+    pending_order: list[ClassRow],
+) -> str:
     found_done = sorted(done & set(rows), key=lambda name: rows[name].sort_key)
     unknown_done = sorted(done - set(rows))
+    found_blocked = sorted(blocked.keys() & set(rows), key=lambda name: rows[name].sort_key)
+    unknown_blocked = sorted(blocked.keys() - set(rows))
+    needs_verification = sorted((flagged - set(blocked)) & set(rows), key=lambda name: rows[name].sort_key)
+    unknown_flagged = sorted((flagged - set(blocked)) - set(rows))
     total = len(rows)
     done_count = len(done & set(rows))
+    blocked_count = len(blocked.keys() & set(rows))
     pending_count = len(pending_order)
     next_class = f"{PREFIX}{pending_order[0].name}" if pending_order else "all migrated"
     generated = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -219,13 +277,13 @@ def render(rows: dict[str, ClassRow], done: set[str], pending_order: list[ClassR
         "",
         f"Generated: {generated}",
         "",
-        "DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git. "
+        "DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. "
         "MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.",
         "",
         "Precedence: git > migrated_classes.txt (canonical) > migration_order.md (advisory). "
         "The `[from: release-0.9.8]` annotation lives in migrated_classes.txt, not here.",
         "",
-        f"Status summary: {done_count} done / {pending_count} pending / {total} total.",
+        f"Status summary: {done_count} done / {blocked_count} blocked / {len(needs_verification)} needs verification / {pending_count} pending / {total} total.",
         "",
         f"Next class: `{next_class}`" if next_class != "all migrated" else "Next class: all migrated",
         "",
@@ -239,6 +297,22 @@ def render(rows: dict[str, ClassRow], done: set[str], pending_order: list[ClassR
         lines.extend(table_row(index, rows[name]) for index, name in enumerate(found_done, start=1))
     else:
         lines.append("| - | - | - | - | - | - | - |")
+
+    lines.extend(["", "## BLOCKED", "", "| # | class | reason |", "|---:|---|---|"])
+    if found_blocked:
+        for index, name in enumerate(found_blocked, start=1):
+            lines.append(f"| {index} | `{PREFIX}{name}` | {blocked[name]} |")
+    else:
+        lines.append("| - | - | - |")
+
+    if needs_verification:
+        lines.extend(["", "## NEEDS VERIFICATION", ""])
+        for name in needs_verification:
+            migration = f"`{PREFIX}{name}`"
+            lines.append(
+                f"- NEEDS VERIFICATION: {migration} — manifest touched after its P8: migrate commit; "
+                "confirm whether still migrated or should be blocked."
+            )
 
     lines.extend(
         [
@@ -267,27 +341,64 @@ def render(rows: dict[str, ClassRow], done: set[str], pending_order: list[ClassR
             ]
         )
 
+    if unknown_blocked:
+        lines.extend(
+            [
+                "<!--",
+                "Blocked classes not found in migration_plan.md:",
+                *[f"- {PREFIX}{name}" for name in unknown_blocked],
+                "-->",
+                "",
+            ]
+        )
+
+    if unknown_flagged:
+        lines.extend(
+            [
+                "<!--",
+                "Possibly superseded migrated classes not found in migration_plan.md:",
+                *[f"- {PREFIX}{name}" for name in unknown_flagged],
+                "-->",
+                "",
+            ]
+        )
+
     return "\n".join(lines)
 
 
 def main() -> None:
     rows = parse_plan()
-    done = git_done()
-    pending_order = topological_pending(rows, done)
-    output = render(rows, done, pending_order)
+    migrations = git_migrations()
+    blocked = read_blocked()
+    flagged = find_flagged_migrations(migrations)
+    done = set(migrations) - set(blocked)
+    pending_order = topological_pending(rows, done, set(blocked))
+    output = render(rows, done, blocked, flagged, pending_order)
     ORDER_PATH.write_text(output, encoding="utf-8")
 
     unknown_done = sorted(done - set(rows))
+    unknown_blocked = sorted(set(blocked) - set(rows))
+    needs_verification = sorted((flagged - set(blocked)) & set(rows), key=lambda name: rows[name].sort_key)
     done_count = len(done & set(rows))
+    blocked_count = len(set(blocked) & set(rows))
     next_class = f"{PREFIX}{pending_order[0].name}" if pending_order else "all migrated"
-    print(f"{done_count} done / {len(pending_order)} pending / {len(rows)} total")
-    print(f"next class: {next_class}")
+    print(
+        f"{done_count} done / {blocked_count} blocked / {len(needs_verification)} flagged / "
+        f"{len(pending_order)} pending / {len(rows)} total"
+    )
+    print(f"next pending class: {next_class}")
     if unknown_done:
         print("git-DONE classes not found in plan table:")
         for name in unknown_done:
             print(f"- {PREFIX}{name}")
     else:
         print("git-DONE classes not found in plan table: none")
+    if unknown_blocked:
+        print("blocked classes not found in plan table:")
+        for name in unknown_blocked:
+            print(f"- {PREFIX}{name}")
+    else:
+        print("blocked classes not found in plan table: none")
 
 
 if __name__ == "__main__":

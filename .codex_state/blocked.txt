@@ -1,0 +1,5 @@
+# Deliberately held Puppet classes.
+# Format: <class_short_name> — <reason>
+# The first whitespace-delimited token on each non-comment, non-empty line is the class short-name.
+
+network_dhcp — blocked: network_config custom type fails on Puppet 8 (puppet-network/puppet-filemapper won't load); reimplementation candidate preserved at .codex_state/candidates/network_dhcp.reimplemented.pp; pending HQ resolution of dependency fork (a/b/c/d). See DESIGN_DECISIONS.md.
