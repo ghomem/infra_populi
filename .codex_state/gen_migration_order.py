@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
 import re
 import subprocess
 import sys
@@ -24,6 +25,7 @@ REQUIRED_COLUMNS = {
     "p8_surface",
     "self_contained",
     "internal_deps",
+    "resource_type",
 }
 KNOWN_GAP = (
     "node_base internal_deps omits puppet_boot_run; this edge is ordering-irrelevant "
@@ -41,6 +43,9 @@ class ClassRow:
     p8_surface: int
     self_contained: str
     internal_deps: tuple[str, ...]
+    resource_type: str
+    title: str
+    required_base: tuple[str, ...]
 
     @property
     def sort_key(self) -> tuple[int, int, int, str]:
@@ -108,6 +113,8 @@ def parse_plan() -> dict[str, ClassRow]:
         fail("migration_plan.md class table header is not followed by a separator row")
 
     indexes = {name: headers.index(name) for name in REQUIRED_COLUMNS}
+    title_index = headers.index("title") if "title" in headers else None
+    required_base_index = headers.index("required_base") if "required_base" in headers else None
     rows: dict[str, ClassRow] = {}
 
     for line_number, line in enumerate(lines[header_index + 2 :], start=header_index + 3):
@@ -136,6 +143,16 @@ def parse_plan() -> dict[str, ClassRow]:
         deps_cell = cells[indexes["internal_deps"]]
         deps = tuple(dep.strip() for dep in deps_cell.split(",") if dep.strip())
 
+        resource_type = cells[indexes["resource_type"]].lower()
+        if resource_type not in {"class", "define"}:
+            fail(f"invalid resource_type for {name}: {resource_type!r}")
+
+        title = cells[title_index] if title_index is not None else ""
+        required_base_cell = cells[required_base_index] if required_base_index is not None else ""
+        required_base = tuple(
+            base.strip() for base in required_base_cell.split(",") if base.strip()
+        )
+
         rows[name] = ClassRow(
             name=name,
             complexity=parse_int(cells[indexes["complexity"]], "complexity", name),
@@ -143,6 +160,9 @@ def parse_plan() -> dict[str, ClassRow]:
             p8_surface=parse_int(cells[indexes["p8_surface"]], "p8_surface", name),
             self_contained=self_contained,
             internal_deps=deps,
+            resource_type=resource_type,
+            title=title,
+            required_base=required_base,
         )
 
     if not rows:
@@ -436,7 +456,33 @@ def render(
     return "\n".join(lines)
 
 
+def classify(class_name: str) -> None:
+    rows = parse_plan()
+    name = class_name.removeprefix(PREFIX)
+    row = rows.get(name)
+    if row is None:
+        fail(f"class not found in migration_plan.md: {class_name}")
+
+    print(
+        json.dumps(
+            {
+                "name": row.name,
+                "resource_type": row.resource_type,
+                "title": row.title,
+                "required_base": row.required_base,
+            }
+        )
+    )
+
+
 def main() -> None:
+    args = sys.argv[1:]
+    if args:
+        if len(args) == 2 and args[0] == "--classify":
+            classify(args[1])
+            return
+        fail(f"usage: {Path(sys.argv[0]).name} [--classify <class_short_name>]")
+
     rows = parse_plan()
     migrations = git_migrations()
     blocked = read_blocked()
