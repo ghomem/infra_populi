@@ -214,7 +214,9 @@ def read_blocked() -> dict[str, str]:
     return blocked
 
 
-def topological_pending(rows: dict[str, ClassRow], done: set[str], blocked: set[str]) -> list[ClassRow]:
+def topological_pending(
+    rows: dict[str, ClassRow], done: set[str], blocked: set[str]
+) -> tuple[list[ClassRow], set[str]]:
     pending = set(rows) - done - blocked
     placed: set[str] = set()
     ordered: list[ClassRow] = []
@@ -226,13 +228,32 @@ def topological_pending(rows: dict[str, ClassRow], done: set[str], blocked: set[
             if all(dep in done or dep in placed for dep in rows[name].internal_deps)
         ]
         if not schedulable:
-            stuck_lines = []
-            for name in sorted(pending):
-                waiting = [
+            unmet = {
+                name: tuple(
                     dep
                     for dep in rows[name].internal_deps
                     if dep not in done and dep not in placed
-                ]
+                )
+                for name in pending
+            }
+            gated: set[str] = set()
+            while True:
+                newly_gated = {
+                    name
+                    for name in pending - gated
+                    if all(dep in blocked or dep in gated for dep in unmet[name])
+                }
+                if not newly_gated:
+                    break
+                gated.update(newly_gated)
+
+            genuinely_stuck = pending - gated
+            if not genuinely_stuck:
+                return ordered, gated
+
+            stuck_lines = []
+            for name in sorted(genuinely_stuck):
+                waiting = unmet[name]
                 stuck_lines.append(f"{name}: {', '.join(waiting) if waiting else '(none)'}")
             fail("dependency cycle or missing dependency; stuck classes waiting on:\n" + "\n".join(stuck_lines))
 
@@ -241,7 +262,43 @@ def topological_pending(rows: dict[str, ClassRow], done: set[str], blocked: set[
         pending.remove(chosen.name)
         placed.add(chosen.name)
 
-    return ordered
+    return ordered, set()
+
+
+def gated_wait_chains(
+    name: str,
+    rows: dict[str, ClassRow],
+    gated: set[str],
+    blocked: set[str],
+    memo: dict[str, tuple[tuple[str, ...], ...]],
+) -> tuple[tuple[str, ...], ...]:
+    if name in memo:
+        return memo[name]
+
+    chains: list[tuple[str, ...]] = []
+    for dep in rows[name].internal_deps:
+        if dep in blocked:
+            chains.append((dep,))
+        elif dep in gated:
+            chains.extend((dep, *chain) for chain in gated_wait_chains(dep, rows, gated, blocked, memo))
+
+    memo[name] = tuple(chains)
+    return memo[name]
+
+
+def format_gated_reason(
+    name: str,
+    rows: dict[str, ClassRow],
+    gated: set[str],
+    blocked: set[str],
+    memo: dict[str, tuple[tuple[str, ...], ...]],
+) -> str:
+    formatted: list[str] = []
+    for chain in gated_wait_chains(name, rows, gated, blocked, memo):
+        steps = [f"`{PREFIX}{dep}`" for dep in chain[:-1]]
+        steps.append(f"blocked `{PREFIX}{chain[-1]}`")
+        formatted.append(" → ".join(steps))
+    return "; ".join(formatted)
 
 
 def table_row(index: int | str, row: ClassRow) -> str:
@@ -258,16 +315,19 @@ def render(
     blocked: dict[str, str],
     flagged: set[str],
     pending_order: list[ClassRow],
+    gated: set[str],
 ) -> str:
     found_done = sorted(done & set(rows), key=lambda name: rows[name].sort_key)
     unknown_done = sorted(done - set(rows))
     found_blocked = sorted(blocked.keys() & set(rows), key=lambda name: rows[name].sort_key)
     unknown_blocked = sorted(blocked.keys() - set(rows))
+    found_gated = sorted(gated & set(rows), key=lambda name: rows[name].sort_key)
     needs_verification = sorted((flagged - set(blocked)) & set(rows), key=lambda name: rows[name].sort_key)
     unknown_flagged = sorted((flagged - set(blocked)) - set(rows))
     total = len(rows)
     done_count = len(done & set(rows))
     blocked_count = len(blocked.keys() & set(rows))
+    gated_count = len(found_gated)
     pending_count = len(pending_order)
     next_class = f"{PREFIX}{pending_order[0].name}" if pending_order else "all migrated"
     generated = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -283,7 +343,8 @@ def render(
         "Precedence: git > migrated_classes.txt (canonical) > migration_order.md (advisory). "
         "The `[from: release-0.9.8]` annotation lives in migrated_classes.txt, not here.",
         "",
-        f"Status summary: {done_count} done / {blocked_count} blocked / {len(needs_verification)} needs verification / {pending_count} pending / {total} total.",
+        f"Status summary: {done_count} done / {blocked_count} blocked / {gated_count} gated / "
+        f"{len(needs_verification)} needs verification / {pending_count} pending / {total} total.",
         "",
         f"Next class: `{next_class}`" if next_class != "all migrated" else "Next class: all migrated",
         "",
@@ -304,6 +365,15 @@ def render(
             lines.append(f"| {index} | `{PREFIX}{name}` | {blocked[name]} |")
     else:
         lines.append("| - | - | - |")
+
+    lines.extend(["", "## TRANSITIVELY GATED", ""])
+    if found_gated:
+        memo: dict[str, tuple[tuple[str, ...], ...]] = {}
+        for name in found_gated:
+            reason = format_gated_reason(name, rows, gated, set(blocked), memo)
+            lines.append(f"- `{PREFIX}{name}` — gated by {reason}")
+    else:
+        lines.append("- None")
 
     if needs_verification:
         lines.extend(["", "## NEEDS VERIFICATION", ""])
@@ -372,8 +442,8 @@ def main() -> None:
     blocked = read_blocked()
     flagged = find_flagged_migrations(migrations)
     done = set(migrations) - set(blocked)
-    pending_order = topological_pending(rows, done, set(blocked))
-    output = render(rows, done, blocked, flagged, pending_order)
+    pending_order, gated = topological_pending(rows, done, set(blocked))
+    output = render(rows, done, blocked, flagged, pending_order, gated)
     ORDER_PATH.write_text(output, encoding="utf-8")
 
     unknown_done = sorted(done - set(rows))
@@ -381,10 +451,12 @@ def main() -> None:
     needs_verification = sorted((flagged - set(blocked)) & set(rows), key=lambda name: rows[name].sort_key)
     done_count = len(done & set(rows))
     blocked_count = len(set(blocked) & set(rows))
+    gated_count = len(gated & set(rows))
     next_class = f"{PREFIX}{pending_order[0].name}" if pending_order else "all migrated"
     print(
-        f"{done_count} done / {blocked_count} blocked / {len(needs_verification)} flagged / "
-        f"{len(pending_order)} pending / {len(rows)} total"
+        f"{done_count} done / {blocked_count} blocked / {gated_count} gated / "
+        f"{len(needs_verification)} needs verification / {len(pending_order)} pending / "
+        f"{len(rows)} total"
     )
     print(f"next pending class: {next_class}")
     if unknown_done:
