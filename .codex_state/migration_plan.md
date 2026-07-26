@@ -19,7 +19,7 @@ resource_type / title / required_base are STRUCTURAL classification facts consum
 | class | complexity | dep_score | p8_surface | self_contained | depends_on | risks | rationale|internal_deps|resource_type|title|required_base|
 |---|---:|---:|---:|---|---|---|---|---|---|---|---|
 | `puppet_infrastructure::backup` | 3 | 3 | 4 | no | `File[$bindir]` from filesystem base | uses 1 ERB template, cron, external bindir | Small backup define, but consumes caller-provided filesystem path/resource and shell template.|filesystem_base|define|backup||
-| `puppet_infrastructure::backup_rsnapshot` | 3 | 1 | 4 | yes | none | uses 1 ERB template, cron invokes rsnapshot | Leaf define with one config template and cron.||define|backup_rsnapshot||
+| `puppet_infrastructure::backup_rsnapshot` | 3 | 1 | 4 | yes | none | uses 1 ERB template, cron invokes rsnapshot | Leaf define with one config template and cron.||define|backup_rsnapshot|backup_rsnapshot_pre, filesystem_base|
 | `puppet_infrastructure::backup_rsnapshot_pre` | 2 | 3 | 3 | no | `File[filesystem::bindir]` from `filesystem_base` | sources `files/backups/rdiff.sh` | Simple script deployment, but requires shared bindir.|filesystem_base|class|||
 | `puppet_infrastructure::caching_nameserver` | 3 | 2 | 4 | yes | `bind` module | installs/configures bind, uses 1 ERB template | Leaf service wrapper around bind with moderate module API risk.||class|||
 | `puppet_infrastructure::dns_client` | 1 | 1 | 2 | yes | none | resolver config only | Tiny leaf class with low migration surface.||class|||
