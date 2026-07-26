@@ -282,3 +282,72 @@ custom-TYPE availability. So the plan cannot predict which classes will hit a ne
 "module won't load on Puppet 8" wall — those are discovered reactively by reading each manifest
 before migrating it. Practice: before migrating a queued class, check its manifest for custom types
 from external modules whose Puppet-8 compatibility is unverified, not just its internal_deps.
+
+## 2026-07-26 — Harness invariant evolves: one target class + its DECLARED required base
+Decision: the strict one-class-at-a-time classification invariant is relaxed, narrowly.
+Default remains STRICT ISOLATION (one class, nothing else) — this is the norm and must
+stay, it has caught real dependency bugs (filesystem_yum). EXCEPTION: a class that
+DOCUMENTS a required base may be validated with that SPECIFIC declared base classified
+alongside it. Not arbitrary extra classes — only the base the class itself declares.
+Rationale: the original invariant silently assumed every class is independently
+validatable. firewall_addon_hosting disproved that for a whole category — incremental
+layer classes that presuppose a base. Crucially, strict isolation produced a FALSE
+NEGATIVE here: it tested a state that NEVER EXISTS IN PRODUCTION (the addon is never
+applied without a base firewall), so base-context testing is MORE faithful to real
+behaviour, not a weakening of rigour. Rejected: repairing node state out-of-repo to
+force a green (non-reproducible hack; validates nothing).
+Implementation: the required base is an EXPLICIT input to the harness — Codex does not
+guess which base to add; the class's own documented requirement is the source of truth.
+Per the generation model: Claude specs, Codex implements, Claude verifies. Capability
+WILL be built (firewall_addon_hosting is not indefinitely blocked); first validated on
+that class.
+Practice (parallel to the 2026-07-01 external-type-blocker note): before migrating a
+queued class, also check whether it alters node->master connectivity — OUTPUT chain
+policy/purge, default-drop rules, or anything that would sever the agent's NEW outbound
+connection to master:8140. The plan cannot predict this either.
+
+## 2026-07-26 — Block-category taxonomy: three distinct causes, three resolution paths
+Decision: "blocked" alone is uninformative; blocked.txt entries must state the CATEGORY,
+because each has a different owner and resolution path. Three categories are now proven
+by real cases:
+  1. DEPENDENCY-INCOMPATIBILITY — an external module/custom type will not load on
+     Puppet 8. Class cannot compile. Resolution: fix at MODULE level (compatible
+     replacement, or patch the dependency), never per-class reimplementation.
+     Case: networking cluster (network_config via puppet-network/puppet-filemapper).
+  2. REIMPLEMENTATION-DIVERGENCE — the class compiles/applies, but the migration is not
+     faithful to upstream (behaviour was redesigned, not translated). Resolution: an
+     explicit fork ruling on whether to accept divergence, with the candidate preserved
+     but not blessed. Case: network_dhcp.
+  3. HARNESS-CAPABILITY-GAP — the migration is CORRECT and faithful, but the harness
+     cannot validate it. Nothing wrong with the code. Resolution: build the missing
+     harness capability. Case: firewall_addon_hosting.
+Rationale: conflating these would misroute the fix — e.g. treating a capability-gap as a
+code problem would wrongly discard correct work, and treating a module-wide dependency
+failure as a per-class problem would produce N divergent hand-rolled reimplementations.
+Convention: candidates are preserved as TRACKED files under .codex_state/candidates/
+(force-added past the .codex_state/ exclude). Local-only preservation is not durable
+enough — a candidate must survive clone and compaction, consistent with every other
+durable record in this project.
+
+## 2026-07-26 — Toolchain change: Codex 0.145.0, gpt-5.6-sol, reasoning effort xhigh
+Decision: upgraded Codex 0.130.0 -> 0.145.0; model gpt-5.5 -> "gpt-5.6-sol";
+added model_reasoning_effort = "xhigh" in ~/.codex/config.toml. Previous config backed
+up to ~/.codex/config.toml.bak.<ts>.
+Rationale for xhigh over ultra: GPT-5.6 exposes six effort levels (low, medium, high,
+xhigh, max, ultra). Published comparisons put Sol at max ~59/100 vs xhigh ~58 — about
+one point for roughly 3x the tokens; ultra sits above max and decomposes work by
+spawning parallel internal sub-agents. Our per-class migration tasks are small,
+procedural and well-scoped — the wrong shape for ultra's decomposition, and ultra
+multiplies cost because spawned subagents INHERIT the parent's model and effort. xhigh
+sits at the knee of the quality/cost curve. Ultra remains available as an explicit
+per-run override (-c model_reasoning_effort="ultra") for genuinely hard work: the
+network_config a-vs-b module investigation, and the base-context harness build.
+Verification performed (15-version jump warranted proof, not assumption): trivial run
+confirmed model=gpt-5.6-sol and reasoning effort=xhigh in the session header, auth OK;
+wrapper-style invocation confirmed the -c overrides STILL PARSE on 0.145.0
+(sandbox: danger-full-access shown in header) and left the repo worktree unchanged.
+Noted change: sandbox writable roots are now [workdir, /tmp, $TMPDIR] — the
+~/.codex/memories path is no longer a writable root (was in 0.130.0). Also noted: from
+Codex 0.134.0, --profile no longer reads [profiles.name] tables from config.toml
+(profiles live in separate files). Does not affect us — the wrapper uses -c overrides,
+not profiles.
