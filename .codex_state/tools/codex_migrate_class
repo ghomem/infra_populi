@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# ---------------------------------------------------------------------------
+# TRACKED TOOLING. This script is version-controlled because it consumes
+# tracked structured data: codex_migrate_class calls
+# 'gen_migration_order.py --classify', which parses migration_plan.md.
+# Tracking the generator and the plan but not their consumer would leave the
+# interface unversioned on one side. See DESIGN_DECISIONS.md.
+#
+# NOT host-portable as-is. Host-specific assumptions:
+#   repo path    /home/salatiel/work/infra_populi
+#   SSH aliases  puppet8master, puppet8master-rsync, puppet8node
+#   master paths /etc/puppetlabs/code/environments/production/...
+#   params dir   ~/.config/infra_populi/params  (UNTRACKED: environment-specific
+#                values, deliberately not versioned - see the tooling-tracking
+#                decision in DESIGN_DECISIONS.md)
+# Parameterizing these via environment variables is a known future improvement.
+# ---------------------------------------------------------------------------
+
+set -euo pipefail
+
+[[ $# -ge 1 ]] || { echo "Usage: codex_migrate_class <puppet_class_name>"; exit 2; }
+CLASS="$1"
+
+RUNBOOK="$HOME/.config/infra_populi/CODEX_RUNBOOK.md"
+[[ -f "$RUNBOOK" ]] || { echo "Missing runbook: $RUNBOOK"; exit 2; }
+
+cd /home/salatiel/work/infra_populi
+
+codex exec \
+  -c 'sandbox_mode="danger-full-access"' \
+  -c 'approval_policy="never"' \
+  "$(cat "$RUNBOOK")
+
+TARGET CLASS: $CLASS
+
+First action: run the harness:
+~/.local/bin/infra_populi_tools/test_class.sh $CLASS
+
+SCOPE: This is a SYNTAX migration (Puppet 5 -> Puppet 8 / Vox Pupuli). Preserve behaviour exactly. Do NOT redesign, reimplement, or change what the class does. GREEN means 'syntax compiles and applies idempotently', NOT 'behaviour preserved' - preserving behaviour is your responsibility, not something the harness proves.
+
+STOP AND REPORT (do not work around) if any of these occur:
+- A Forge dependency or custom type will NOT load on Puppet 8. Do NOT reimplement the class's behaviour to avoid the dependency. Report the incompatibility and stop.
+- The class alters node-to-master connectivity (OUTPUT chain policy/purge, default-drop rules, or anything that could sever the agent's NEW outbound to master:8140). Applying such a class in isolation can lock the node out and hang the harness. Report and stop rather than attempting repairs outside the repo.
+- Reaching GREEN would require changing behaviour, adding classes beyond the target, or repairing node state by hand.
+
+Then:
+- inspect only the failure needed to make progress
+- make the smallest safe Puppet 8 / Vox Pupuli migration change
+- rerun the harness after every edit
+- if a dependency is missing, update Puppetfile on the master and run r10k as described in the runbook, and record it in .codex_state/necessary_modules.txt
+- if params are missing, create/update params JSON under ~/.config/infra_populi/params and never commit it
+- loop until GREEN with 2 successful runs (exit codes 0 and 2 both count; the second run must be clean/idempotent)
+
+TRACKER / ANNOTATION RULES (apply at commit time, in the same commit):
+- In .codex_state/migrated_classes.txt, find the line for this class (the tracker uses SHORT names, e.g. 'backup_rsnapshot', with no puppet_infrastructure:: prefix) and mark it exactly: '<short_name> Done [from: release-0.9.8]'. Plain 'Done' is reserved for the 15 historical pre-baseline migrations - do NOT use it for new work.
+- If the migration is NOT faithful to release-0.9.8 (deliberate divergence), stop and report instead of choosing a marker yourself.
+- Do not force-add ignored trackers.
+
+- commit only migrated Puppet code and intentional repo changes
+- push with message: P8: migrate $CLASS
+- AFTER the commit lands, regenerate the order file: python3 .codex_state/gen_migration_order.py
+- commit the regenerated .codex_state/migration_order.md (it is tracked; use 'git add -f' if git reports it ignored)
+"
