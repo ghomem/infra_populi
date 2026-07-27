@@ -1,12 +1,12 @@
 # Puppet Class Migration Order
 
-Generated: 2026-07-26 21:40:53 UTC
+Generated: 2026-07-27 19:23:00 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
 Precedence: git > migrated_classes.txt (canonical) > migration_order.md (advisory). The `[from: release-0.9.8]` annotation lives in migrated_classes.txt, not here.
 
-Status summary: 18 done / 7 blocked / 5 gated / 0 needs verification / 57 pending / 87 total.
+Status summary: 18 done / 7 blocked / 0 gated / 0 needs verification / 62 pending / 87 total.
 
 Next class: `puppet_infrastructure::filesystem_sec`
 
@@ -47,11 +47,7 @@ Next class: `puppet_infrastructure::filesystem_sec`
 
 ## TRANSITIVELY GATED
 
-- `puppet_infrastructure::node_base_domain_desktop` — gated by `puppet_infrastructure::packages_base` → blocked `puppet_infrastructure::extra_packages_el`
-- `puppet_infrastructure::packages_base` — gated by blocked `puppet_infrastructure::extra_packages_el`
-- `puppet_infrastructure::sysmon_base` — gated by `puppet_infrastructure::packages_base` → blocked `puppet_infrastructure::extra_packages_el`
-- `puppet_infrastructure::node_base_desktop` — gated by `puppet_infrastructure::packages_base` → blocked `puppet_infrastructure::extra_packages_el`
-- `puppet_infrastructure::node_base` — gated by `puppet_infrastructure::packages_base` → blocked `puppet_infrastructure::extra_packages_el`; `puppet_infrastructure::sysmon_base` → `puppet_infrastructure::packages_base` → blocked `puppet_infrastructure::extra_packages_el`
+- None
 
 ## PENDING QUEUE
 
@@ -93,27 +89,32 @@ Next class: `puppet_infrastructure::filesystem_sec`
 | 34 | `puppet_infrastructure::postfix_smtp_node` | 6 | 4 | 6 | yes |  |
 | 35 | `puppet_infrastructure::letsencrypt_base` | 6 | 7 | 5 | no | filesystem_base |
 | 36 | `puppet_infrastructure::letsencrypt_certificate` | 3 | 6 | 4 | no | letsencrypt_base |
-| 37 | `puppet_infrastructure::openvpn_domain` | 7 | 4 | 6 | yes |  |
-| 38 | `puppet_infrastructure::filesystem_apt` | 7 | 5 | 5 | no | filesystem_base |
-| 39 | `puppet_infrastructure::user_base` | 7 | 8 | 6 | yes |  |
-| 40 | `puppet_infrastructure::user` | 1 | 4 | 2 | yes | user_base |
-| 41 | `puppet_infrastructure::user_desktop` | 2 | 5 | 3 | yes | user_base,user_kde_lock_screen |
-| 42 | `puppet_infrastructure::user_desktop_sudoer` | 2 | 5 | 3 | yes | user_base,user_kde_lock_screen |
-| 43 | `puppet_infrastructure::user_sudoer` | 2 | 5 | 3 | yes | user_base |
-| 44 | `puppet_infrastructure::users_sudoers` | 3 | 5 | 6 | yes | user_sudoer |
-| 45 | `puppet_infrastructure::firewall_secure` | 7 | 8 | 7 | no | filesystem_base |
-| 46 | `puppet_infrastructure::nginx_base` | 7 | 10 | 6 | no |  |
-| 47 | `puppet_infrastructure::mysql_server` | 8 | 5 | 6 | no | filesystem_base |
-| 48 | `puppet_infrastructure::postfix_smtp_base` | 8 | 6 | 6 | yes | ssl_postfix,postfix_smtp_base_config_file |
-| 49 | `puppet_infrastructure::hashman_base` | 8 | 8 | 7 | no | filesystem_base |
-| 50 | `puppet_infrastructure::user_lock` | 2 | 5 | 3 | no | hashman_base |
-| 51 | `puppet_infrastructure::nginx_static_domain` | 9 | 7 | 6 | no | nginx_base,nginx_default_removal |
-| 52 | `puppet_infrastructure::nginx_static` | 5 | 7 | 5 | no | nginx_base,nginx_default_removal,nginx_static_domain |
-| 53 | `puppet_infrastructure::firewall_secure_extra` | 9 | 8 | 8 | no | filesystem_base |
-| 54 | `puppet_infrastructure::nginx_frontend_domain` | 10 | 7 | 7 | no | nginx_base,nginx_default_removal |
-| 55 | `puppet_infrastructure::nginx_frontend_mail` | 8 | 7 | 6 | no | ssl_nginx_domain,nginx_frontend_domain |
-| 56 | `puppet_infrastructure::nginx_frontend` | 8 | 8 | 6 | no | nginx_base,nginx_default_removal,ssl_nginx_domain,nginx_frontend_domain |
-| 57 | `puppet_infrastructure::hashman_web` | 8 | 7 | 7 | no | hashman_base,nginx_frontend |
+| 37 | `puppet_infrastructure::packages_base` | 6 | 10 | 5 | yes |  |
+| 38 | `puppet_infrastructure::openvpn_domain` | 7 | 4 | 6 | yes |  |
+| 39 | `puppet_infrastructure::filesystem_apt` | 7 | 5 | 5 | no | filesystem_base |
+| 40 | `puppet_infrastructure::user_base` | 7 | 8 | 6 | yes |  |
+| 41 | `puppet_infrastructure::user` | 1 | 4 | 2 | yes | user_base |
+| 42 | `puppet_infrastructure::user_desktop` | 2 | 5 | 3 | yes | user_base,user_kde_lock_screen |
+| 43 | `puppet_infrastructure::user_desktop_sudoer` | 2 | 5 | 3 | yes | user_base,user_kde_lock_screen |
+| 44 | `puppet_infrastructure::user_sudoer` | 2 | 5 | 3 | yes | user_base |
+| 45 | `puppet_infrastructure::users_sudoers` | 3 | 5 | 6 | yes | user_sudoer |
+| 46 | `puppet_infrastructure::firewall_secure` | 7 | 8 | 7 | no | filesystem_base |
+| 47 | `puppet_infrastructure::node_base_domain_desktop` | 6 | 9 | 5 | no | packages_base,ssh_secure,firewall_secure,firewall_ipv6_drop,filesystem_base_desktop,filesystem_apt |
+| 48 | `puppet_infrastructure::nginx_base` | 7 | 10 | 6 | no |  |
+| 49 | `puppet_infrastructure::mysql_server` | 8 | 5 | 6 | no | filesystem_base |
+| 50 | `puppet_infrastructure::postfix_smtp_base` | 8 | 6 | 6 | yes | ssl_postfix,postfix_smtp_base_config_file |
+| 51 | `puppet_infrastructure::sysmon_base` | 8 | 8 | 6 | no | filesystem_base,packages_base |
+| 52 | `puppet_infrastructure::hashman_base` | 8 | 8 | 7 | no | filesystem_base |
+| 53 | `puppet_infrastructure::user_lock` | 2 | 5 | 3 | no | hashman_base |
+| 54 | `puppet_infrastructure::node_base_desktop` | 8 | 10 | 5 | no | packages_base,ssh_secure,firewall_secure,firewall_ipv6_drop_policy,filesystem_base_desktop,filesystem_apt,rsyslog_client,user_kde_lock_screen |
+| 55 | `puppet_infrastructure::nginx_static_domain` | 9 | 7 | 6 | no | nginx_base,nginx_default_removal |
+| 56 | `puppet_infrastructure::nginx_static` | 5 | 7 | 5 | no | nginx_base,nginx_default_removal,nginx_static_domain |
+| 57 | `puppet_infrastructure::firewall_secure_extra` | 9 | 8 | 8 | no | filesystem_base |
+| 58 | `puppet_infrastructure::node_base` | 9 | 10 | 6 | no | packages_base,sysmon_base,ssh_secure,firewall_secure,firewall_ipv6_drop,filesystem_base,filesystem_apt,filesystem_lib64,filesystem_sec,dns_client |
+| 59 | `puppet_infrastructure::nginx_frontend_domain` | 10 | 7 | 7 | no | nginx_base,nginx_default_removal |
+| 60 | `puppet_infrastructure::nginx_frontend_mail` | 8 | 7 | 6 | no | ssl_nginx_domain,nginx_frontend_domain |
+| 61 | `puppet_infrastructure::nginx_frontend` | 8 | 8 | 6 | no | nginx_base,nginx_default_removal,ssl_nginx_domain,nginx_frontend_domain |
+| 62 | `puppet_infrastructure::hashman_web` | 8 | 7 | 7 | no | hashman_base,nginx_frontend |
 
 ## KNOWN GAPS
 
