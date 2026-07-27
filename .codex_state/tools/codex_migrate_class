@@ -36,28 +36,14 @@ TARGET CLASS: $CLASS
 First action: run the harness:
 ~/.local/bin/infra_populi_tools/test_class.sh $CLASS
 
-SCOPE: This is a SYNTAX migration (Puppet 5 -> Puppet 8 / Vox Pupuli). Preserve behaviour exactly. Do NOT redesign, reimplement, or change what the class does. GREEN means 'syntax compiles and applies idempotently', NOT 'behaviour preserved' - preserving behaviour is your responsibility, not something the harness proves.
-
-STOP AND REPORT (do not work around) if any of these occur:
-- A Forge dependency or custom type will NOT load on Puppet 8. Do NOT reimplement the class's behaviour to avoid the dependency. Report the incompatibility and stop.
-- The class alters node-to-master connectivity (OUTPUT chain policy/purge, default-drop rules, or anything that could sever the agent's NEW outbound to master:8140). Applying such a class in isolation can lock the node out and hang the harness. Report and stop rather than attempting repairs outside the repo.
-- Reaching GREEN would require changing behaviour, adding classes beyond the target, or repairing node state by hand.
-
-Then:
-- inspect only the failure needed to make progress
-- make the smallest safe Puppet 8 / Vox Pupuli migration change
-- rerun the harness after every edit
-- if a dependency is missing, update Puppetfile on the master and run r10k as described in the runbook, and record it in .codex_state/necessary_modules.txt
-- if params are missing, create/update params JSON under ~/.config/infra_populi/params and never commit it
-- loop until GREEN with 2 successful runs (exit codes 0 and 2 both count; the second run must be clean/idempotent)
+The injected runbook is authoritative: section 1 defines your authority, section 3 defines what stops you, and section 4 defines how to record a block.
 
 TRACKER / ANNOTATION RULES (apply at commit time, in the same commit):
 - In .codex_state/migrated_classes.txt, find the line for this class (the tracker uses SHORT names, e.g. 'backup_rsnapshot', with no puppet_infrastructure:: prefix) and mark it exactly: '<short_name> Done [from: release-0.9.8]'. Plain 'Done' is reserved for the 15 historical pre-baseline migrations - do NOT use it for new work.
 - If the migration is NOT faithful to release-0.9.8 (deliberate divergence), stop and report instead of choosing a marker yourself.
 - Do not force-add ignored trackers.
 
-- commit only migrated Puppet code and intentional repo changes
-- push with message: P8: migrate $CLASS
-- AFTER the commit lands, regenerate the order file: python3 .codex_state/gen_migration_order.py
+ORDER FILE REGENERATION:
+- AFTER the migration commit lands, regenerate the order file: python3 .codex_state/gen_migration_order.py
 - commit the regenerated .codex_state/migration_order.md (it is tracked; use 'git add -f' if git reports it ignored)
 "
