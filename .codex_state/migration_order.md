@@ -1,14 +1,14 @@
 # Puppet Class Migration Order
 
-Generated: 2026-07-27 21:39:33 UTC
+Generated: 2026-07-29 16:14:19 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
 Precedence: git > migrated_classes.txt (canonical) > migration_order.md (advisory). The `[from: release-0.9.8]` annotation lives in migrated_classes.txt, not here.
 
-Status summary: 19 done / 8 blocked / 1 gated / 0 needs verification / 59 pending / 87 total.
+Status summary: 19 done / 9 blocked / 1 gated / 0 needs verification / 58 pending / 87 total.
 
-Next class: `puppet_infrastructure::user_sysmon`
+Next class: `puppet_infrastructure::sftp_only`
 
 ## DONE (git-derived)
 
@@ -44,8 +44,9 @@ Next class: `puppet_infrastructure::user_sysmon`
 | 4 | `puppet_infrastructure::firewall_addon_openvpn_server` | — blocked: uses the sysctl custom type (sysctl { 'net.ipv4.ip_forward': value => '1' }); no sysctl module installed on the master and none declared upstream in metadata.json/Puppetfile. Forge search found no module stating Puppet 8 support (duritong/sysctl lists 5/6/7, last released 2018). Category 1 (dependency-incompatibility): resolve at module level, batched with the network_config investigation (same shape: which Forge module, is it Puppet-8-viable). Lead: the PRODUCTION Puppet 5 master running puppet_infrastructure must have both sysctl and network modules installed - inspect its module list for the authoritative answer rather than inferring from call syntax. NOT a code problem. When unblocked: needs params JSON (wan_iface mandatory, no default; lan_bridge_iface defaults to br0), and upstream is half-migrated (3x legacy action =>, 1x jump => 'MASQUERADE'). The sysctl resource must NOT be dropped - ip_forward=1 is what makes MASQUERADE effective; the author's "not directly related to firewall" comment is about placement, not function. See DESIGN_DECISIONS.md. |
 | 5 | `puppet_infrastructure::extra_packages_el` | — blocked: CATEGORY 5 (environment-mismatch — class targets an OS the test node isn't). Two UNGUARDED exec resources with no OS-family conditional: 'install-epel-release' (dnf install of epel-release rpm) and 'enable-codeready-builder-repo' (subscription-manager). The Ubuntu test node has neither dnf nor subscription-manager, so both execs fail on run 1. NOT a code problem and NOT a harness-capability gap - the harness classifies it correctly; the code is correct for RHEL. Resolution requires a RHEL test node (a RHEL9 VM exists in VirtualBox - state unverified; batch the check with the production-inspection trip). Note a second gap sits behind this one: the harness hardcodes NODE_HOST="puppet8node", so multi-OS validation also needs node-selection capability (category 3). Contrast with filesystem_yum, which is RHEL-oriented but only DEPLOYS scripts Puppet never executes, and validated fine - the distinguishing question is whether the class EXECUTES OS-specific commands and whether that execution is guarded. See DESIGN_DECISIONS.md. |
 | 6 | `puppet_infrastructure::postfix_smtp_base_config_file` | — blocked: CATEGORY 3 (harness capability gap — incorrect define title and absent Postfix context). Actual harness error: "Could not find template 'puppet_infrastructure/postfix_smtp_base/postfix_smtp_base_config_file.erb' (file: /etc/puppetlabs/code/environments/production/modules/puppet_infrastructure/manifests/postfix_smtp_base_config_file.pp, line: 16, column: 18)". Traced chain: `.codex_state/migration_plan.md` classifies the define with title `postfix_smtp_base_config_file`; `test_class.sh --render-only` consequently emits `puppet_infrastructure::postfix_smtp_base_config_file { 'postfix_smtp_base_config_file': }`; manifests/postfix_smtp_base_config_file.pp assigns `basename($name)` to `$hash_template_name` and requests `templates/postfix_smtp_base/${hash_template_name}.erb`, yielding the missing path above. The actual owning declarations in manifests/postfix_smtp_base.pp use `/etc/postfix/client_access`, `/etc/postfix/sender_access`, and `/etc/postfix/controlled_envelope_senders`, matching the three available `.erb` templates. The define also subscribes to `Package['postfix']`, notifies `Service['postfix']`, writes beneath `/etc/postfix`, and runs `/usr/sbin/postmap`; the test node has no `postmap`, Postfix package, or `/etc/postfix`, and the managed node context contains only `passwd_common`. Altering the target to declare or bypass these prerequisites would change its helper/owner-context behaviour. Unblock by giving the harness a real template-backed absolute title (for example `/etc/postfix/client_access`) plus an established non-duplicating Postfix fixture/base context that declares the package, service, and directory; then rerun the target unchanged before any syntax fix. |
-| 7 | `puppet_infrastructure::network_vpn` | — blocked: transitively (chains openvpn_server); deferred with networking cluster pending module-level resolution. See DESIGN_DECISIONS.md. |
-| 8 | `puppet_infrastructure::openvpn_server` | — blocked: heavy network_config use (lo/lo:0/br0 bridge, bridge_ports, loopback aliasing, subscribe refs); puppet-network/filemapper Puppet-8 incompat; do NOT reimplement per-class; deferred with networking cluster pending module-level resolution. See DESIGN_DECISIONS.md. |
+| 7 | `puppet_infrastructure::user_sysmon` | — blocked: CATEGORY 1 (dependency incompatibility — the required leinaddm/htpasswd custom type module will not load on Puppet 8). Actual harness error after installing `leinaddm-htpasswd` 0.0.3 through Puppetfile+r10k: "Unknown resource type: 'htpasswd' (file: /etc/puppetlabs/code/environments/production/modules/puppet_infrastructure/manifests/user_sysmon.pp, line: 12, column: 3)". Direct loader evidence on the Puppet 8.24.2 master with the production modulepath: "Error: Could not autoload puppet/type/htgroup: undefined method `newtype' for Puppet:Module" followed by "Error: Could not run: Could not autoload puppet/type/htgroup: undefined method `newtype' for Puppet:Module". Traced chain: `manifests/user_sysmon.pp:12` declares `htpasswd { $myusername: cryptpasswd => $myhash, target => '/etc/thruk/htpasswd' }`; the release-0.9.8 comment and resource identify external module `leinaddm-htpasswd`; its installed path `/etc/puppetlabs/code/environments/production/modules/htpasswd/lib/puppet/type/htgroup.rb` still calls the removed `Puppet.newtype` API, so Puppet's type autoloader aborts before the sibling `htpasswd` type becomes available. Agent plugin-sync logs prove the module files were served and copied, ruling out a missing deployment/cache hypothesis. Forge release 0.0.3 declares Puppet `3.x` compatibility only. Replacing the resource or dropping it would change Phase-1 behaviour. Unblock with deliberate module-level work: identify a Puppet-8-compatible module preserving leinaddm's managed-entry/target semantics, or patch/fork and validate both custom types/providers on Puppet 8; then rerun this unchanged target. The clean node also lacks `/etc/thruk`, `/etc/naemon/conf.d/contacts`, and the `naemon` account, but that later context has not yet been classified because catalog compilation stops at the incompatible type. |
+| 8 | `puppet_infrastructure::network_vpn` | — blocked: transitively (chains openvpn_server); deferred with networking cluster pending module-level resolution. See DESIGN_DECISIONS.md. |
+| 9 | `puppet_infrastructure::openvpn_server` | — blocked: heavy network_config use (lo/lo:0/br0 bridge, bridge_ports, loopback aliasing, subscribe refs); puppet-network/filemapper Puppet-8 incompat; do NOT reimplement per-class; deferred with networking cluster pending module-level resolution. See DESIGN_DECISIONS.md. |
 
 ## TRANSITIVELY GATED
 
@@ -55,65 +56,64 @@ Next class: `puppet_infrastructure::user_sysmon`
 
 | # | class | cx | dep | p8 | sc | internal_deps |
 |---:|---|---:|---:|---:|---|---|
-| 1 | `puppet_infrastructure::user_sysmon` | 3 | 4 | 4 | yes |  |
-| 2 | `puppet_infrastructure::sftp_only` | 4 | 1 | 4 | yes |  |
-| 3 | `puppet_infrastructure::mount_shares_desktop` | 4 | 1 | 5 | yes |  |
-| 4 | `puppet_infrastructure::openvpn_nm_connection` | 4 | 2 | 5 | no |  |
-| 5 | `puppet_infrastructure::user_samba` | 4 | 2 | 6 | no |  |
-| 6 | `puppet_infrastructure::docker_container` | 4 | 3 | 4 | no |  |
-| 7 | `puppet_infrastructure::rsyslog_server` | 4 | 6 | 3 | no | rsyslog_base |
-| 8 | `puppet_infrastructure::filesystem_base_desktop` | 4 | 7 | 4 | yes |  |
-| 9 | `puppet_infrastructure::ssh_secure` | 5 | 7 | 5 | yes |  |
-| 10 | `puppet_infrastructure::ssl_base` | 5 | 8 | 5 | no |  |
-| 11 | `puppet_infrastructure::ssl_postfix` | 2 | 6 | 4 | no | ssl_base |
-| 12 | `puppet_infrastructure::ssl_nginx` | 2 | 7 | 4 | no | ssl_base |
-| 13 | `puppet_infrastructure::ssl_nginx_domain` | 2 | 7 | 4 | no | ssl_base |
-| 14 | `puppet_infrastructure::filesystem_base` | 5 | 9 | 4 | yes |  |
-| 15 | `puppet_infrastructure::puppet_commush` | 2 | 4 | 3 | no | filesystem_base |
-| 16 | `puppet_infrastructure::hello_world_flask_common` | 2 | 5 | 3 | no | filesystem_base |
-| 17 | `puppet_infrastructure::user_kde_lock_screen_common` | 2 | 6 | 3 | no | filesystem_base |
-| 18 | `puppet_infrastructure::user_kde_lock_screen` | 2 | 5 | 3 | no | user_kde_lock_screen_common,filesystem_base |
-| 19 | `puppet_infrastructure::backup` | 3 | 3 | 4 | no | filesystem_base |
-| 20 | `puppet_infrastructure::puppet_backup` | 3 | 4 | 4 | no | backup,filesystem_base |
-| 21 | `puppet_infrastructure::puppet_boot_run` | 3 | 4 | 4 | no | filesystem_base |
-| 22 | `puppet_infrastructure::sysmon_backup` | 3 | 4 | 4 | no | backup,filesystem_base |
-| 23 | `puppet_infrastructure::sysmon_fs_health` | 3 | 4 | 5 | no | filesystem_base |
-| 24 | `puppet_infrastructure::sysmon_integrity_master` | 3 | 4 | 5 | no | filesystem_base |
-| 25 | `puppet_infrastructure::sysmon_integrity_node` | 3 | 4 | 5 | no | filesystem_base |
-| 26 | `puppet_infrastructure::sysmon_mysqldump_health` | 3 | 4 | 5 | no | filesystem_base |
-| 27 | `puppet_infrastructure::sync` | 4 | 3 | 4 | no | filesystem_base |
-| 28 | `puppet_infrastructure::nginx_proxy_smtp_auth_ppa` | 4 | 4 | 5 | no | filesystem_base |
-| 29 | `puppet_infrastructure::linux_policies_common` | 4 | 5 | 5 | no | filesystem_base |
-| 30 | `puppet_infrastructure::linux_policies_user` | 4 | 4 | 5 | no | linux_policies_common |
-| 31 | `puppet_infrastructure::hello_world_flask` | 5 | 4 | 5 | no | hello_world_flask_common,filesystem_base |
-| 32 | `puppet_infrastructure::postfix_smtp_node` | 6 | 4 | 6 | yes |  |
-| 33 | `puppet_infrastructure::letsencrypt_base` | 6 | 7 | 5 | no | filesystem_base |
-| 34 | `puppet_infrastructure::letsencrypt_certificate` | 3 | 6 | 4 | no | letsencrypt_base |
-| 35 | `puppet_infrastructure::packages_base` | 6 | 10 | 5 | yes |  |
-| 36 | `puppet_infrastructure::openvpn_domain` | 7 | 4 | 6 | yes |  |
-| 37 | `puppet_infrastructure::filesystem_apt` | 7 | 5 | 5 | no | filesystem_base |
-| 38 | `puppet_infrastructure::user_base` | 7 | 8 | 6 | yes |  |
-| 39 | `puppet_infrastructure::user` | 1 | 4 | 2 | yes | user_base |
-| 40 | `puppet_infrastructure::user_desktop` | 2 | 5 | 3 | yes | user_base,user_kde_lock_screen |
-| 41 | `puppet_infrastructure::user_desktop_sudoer` | 2 | 5 | 3 | yes | user_base,user_kde_lock_screen |
-| 42 | `puppet_infrastructure::user_sudoer` | 2 | 5 | 3 | yes | user_base |
-| 43 | `puppet_infrastructure::users_sudoers` | 3 | 5 | 6 | yes | user_sudoer |
-| 44 | `puppet_infrastructure::firewall_secure` | 7 | 8 | 7 | no | filesystem_base |
-| 45 | `puppet_infrastructure::node_base_domain_desktop` | 6 | 9 | 5 | no | packages_base,ssh_secure,firewall_secure,firewall_ipv6_drop,filesystem_base_desktop,filesystem_apt |
-| 46 | `puppet_infrastructure::nginx_base` | 7 | 10 | 6 | no |  |
-| 47 | `puppet_infrastructure::mysql_server` | 8 | 5 | 6 | no | filesystem_base |
-| 48 | `puppet_infrastructure::sysmon_base` | 8 | 8 | 6 | no | filesystem_base,packages_base |
-| 49 | `puppet_infrastructure::hashman_base` | 8 | 8 | 7 | no | filesystem_base |
-| 50 | `puppet_infrastructure::user_lock` | 2 | 5 | 3 | no | hashman_base |
-| 51 | `puppet_infrastructure::node_base_desktop` | 8 | 10 | 5 | no | packages_base,ssh_secure,firewall_secure,firewall_ipv6_drop_policy,filesystem_base_desktop,filesystem_apt,rsyslog_client,user_kde_lock_screen |
-| 52 | `puppet_infrastructure::nginx_static_domain` | 9 | 7 | 6 | no | nginx_base,nginx_default_removal |
-| 53 | `puppet_infrastructure::nginx_static` | 5 | 7 | 5 | no | nginx_base,nginx_default_removal,nginx_static_domain |
-| 54 | `puppet_infrastructure::firewall_secure_extra` | 9 | 8 | 8 | no | filesystem_base |
-| 55 | `puppet_infrastructure::node_base` | 9 | 10 | 6 | no | packages_base,sysmon_base,ssh_secure,firewall_secure,firewall_ipv6_drop,filesystem_base,filesystem_apt,filesystem_lib64,filesystem_sec,dns_client |
-| 56 | `puppet_infrastructure::nginx_frontend_domain` | 10 | 7 | 7 | no | nginx_base,nginx_default_removal |
-| 57 | `puppet_infrastructure::nginx_frontend_mail` | 8 | 7 | 6 | no | ssl_nginx_domain,nginx_frontend_domain |
-| 58 | `puppet_infrastructure::nginx_frontend` | 8 | 8 | 6 | no | nginx_base,nginx_default_removal,ssl_nginx_domain,nginx_frontend_domain |
-| 59 | `puppet_infrastructure::hashman_web` | 8 | 7 | 7 | no | hashman_base,nginx_frontend |
+| 1 | `puppet_infrastructure::sftp_only` | 4 | 1 | 4 | yes |  |
+| 2 | `puppet_infrastructure::mount_shares_desktop` | 4 | 1 | 5 | yes |  |
+| 3 | `puppet_infrastructure::openvpn_nm_connection` | 4 | 2 | 5 | no |  |
+| 4 | `puppet_infrastructure::user_samba` | 4 | 2 | 6 | no |  |
+| 5 | `puppet_infrastructure::docker_container` | 4 | 3 | 4 | no |  |
+| 6 | `puppet_infrastructure::rsyslog_server` | 4 | 6 | 3 | no | rsyslog_base |
+| 7 | `puppet_infrastructure::filesystem_base_desktop` | 4 | 7 | 4 | yes |  |
+| 8 | `puppet_infrastructure::ssh_secure` | 5 | 7 | 5 | yes |  |
+| 9 | `puppet_infrastructure::ssl_base` | 5 | 8 | 5 | no |  |
+| 10 | `puppet_infrastructure::ssl_postfix` | 2 | 6 | 4 | no | ssl_base |
+| 11 | `puppet_infrastructure::ssl_nginx` | 2 | 7 | 4 | no | ssl_base |
+| 12 | `puppet_infrastructure::ssl_nginx_domain` | 2 | 7 | 4 | no | ssl_base |
+| 13 | `puppet_infrastructure::filesystem_base` | 5 | 9 | 4 | yes |  |
+| 14 | `puppet_infrastructure::puppet_commush` | 2 | 4 | 3 | no | filesystem_base |
+| 15 | `puppet_infrastructure::hello_world_flask_common` | 2 | 5 | 3 | no | filesystem_base |
+| 16 | `puppet_infrastructure::user_kde_lock_screen_common` | 2 | 6 | 3 | no | filesystem_base |
+| 17 | `puppet_infrastructure::user_kde_lock_screen` | 2 | 5 | 3 | no | user_kde_lock_screen_common,filesystem_base |
+| 18 | `puppet_infrastructure::backup` | 3 | 3 | 4 | no | filesystem_base |
+| 19 | `puppet_infrastructure::puppet_backup` | 3 | 4 | 4 | no | backup,filesystem_base |
+| 20 | `puppet_infrastructure::puppet_boot_run` | 3 | 4 | 4 | no | filesystem_base |
+| 21 | `puppet_infrastructure::sysmon_backup` | 3 | 4 | 4 | no | backup,filesystem_base |
+| 22 | `puppet_infrastructure::sysmon_fs_health` | 3 | 4 | 5 | no | filesystem_base |
+| 23 | `puppet_infrastructure::sysmon_integrity_master` | 3 | 4 | 5 | no | filesystem_base |
+| 24 | `puppet_infrastructure::sysmon_integrity_node` | 3 | 4 | 5 | no | filesystem_base |
+| 25 | `puppet_infrastructure::sysmon_mysqldump_health` | 3 | 4 | 5 | no | filesystem_base |
+| 26 | `puppet_infrastructure::sync` | 4 | 3 | 4 | no | filesystem_base |
+| 27 | `puppet_infrastructure::nginx_proxy_smtp_auth_ppa` | 4 | 4 | 5 | no | filesystem_base |
+| 28 | `puppet_infrastructure::linux_policies_common` | 4 | 5 | 5 | no | filesystem_base |
+| 29 | `puppet_infrastructure::linux_policies_user` | 4 | 4 | 5 | no | linux_policies_common |
+| 30 | `puppet_infrastructure::hello_world_flask` | 5 | 4 | 5 | no | hello_world_flask_common,filesystem_base |
+| 31 | `puppet_infrastructure::postfix_smtp_node` | 6 | 4 | 6 | yes |  |
+| 32 | `puppet_infrastructure::letsencrypt_base` | 6 | 7 | 5 | no | filesystem_base |
+| 33 | `puppet_infrastructure::letsencrypt_certificate` | 3 | 6 | 4 | no | letsencrypt_base |
+| 34 | `puppet_infrastructure::packages_base` | 6 | 10 | 5 | yes |  |
+| 35 | `puppet_infrastructure::openvpn_domain` | 7 | 4 | 6 | yes |  |
+| 36 | `puppet_infrastructure::filesystem_apt` | 7 | 5 | 5 | no | filesystem_base |
+| 37 | `puppet_infrastructure::user_base` | 7 | 8 | 6 | yes |  |
+| 38 | `puppet_infrastructure::user` | 1 | 4 | 2 | yes | user_base |
+| 39 | `puppet_infrastructure::user_desktop` | 2 | 5 | 3 | yes | user_base,user_kde_lock_screen |
+| 40 | `puppet_infrastructure::user_desktop_sudoer` | 2 | 5 | 3 | yes | user_base,user_kde_lock_screen |
+| 41 | `puppet_infrastructure::user_sudoer` | 2 | 5 | 3 | yes | user_base |
+| 42 | `puppet_infrastructure::users_sudoers` | 3 | 5 | 6 | yes | user_sudoer |
+| 43 | `puppet_infrastructure::firewall_secure` | 7 | 8 | 7 | no | filesystem_base |
+| 44 | `puppet_infrastructure::node_base_domain_desktop` | 6 | 9 | 5 | no | packages_base,ssh_secure,firewall_secure,firewall_ipv6_drop,filesystem_base_desktop,filesystem_apt |
+| 45 | `puppet_infrastructure::nginx_base` | 7 | 10 | 6 | no |  |
+| 46 | `puppet_infrastructure::mysql_server` | 8 | 5 | 6 | no | filesystem_base |
+| 47 | `puppet_infrastructure::sysmon_base` | 8 | 8 | 6 | no | filesystem_base,packages_base |
+| 48 | `puppet_infrastructure::hashman_base` | 8 | 8 | 7 | no | filesystem_base |
+| 49 | `puppet_infrastructure::user_lock` | 2 | 5 | 3 | no | hashman_base |
+| 50 | `puppet_infrastructure::node_base_desktop` | 8 | 10 | 5 | no | packages_base,ssh_secure,firewall_secure,firewall_ipv6_drop_policy,filesystem_base_desktop,filesystem_apt,rsyslog_client,user_kde_lock_screen |
+| 51 | `puppet_infrastructure::nginx_static_domain` | 9 | 7 | 6 | no | nginx_base,nginx_default_removal |
+| 52 | `puppet_infrastructure::nginx_static` | 5 | 7 | 5 | no | nginx_base,nginx_default_removal,nginx_static_domain |
+| 53 | `puppet_infrastructure::firewall_secure_extra` | 9 | 8 | 8 | no | filesystem_base |
+| 54 | `puppet_infrastructure::node_base` | 9 | 10 | 6 | no | packages_base,sysmon_base,ssh_secure,firewall_secure,firewall_ipv6_drop,filesystem_base,filesystem_apt,filesystem_lib64,filesystem_sec,dns_client |
+| 55 | `puppet_infrastructure::nginx_frontend_domain` | 10 | 7 | 7 | no | nginx_base,nginx_default_removal |
+| 56 | `puppet_infrastructure::nginx_frontend_mail` | 8 | 7 | 6 | no | ssl_nginx_domain,nginx_frontend_domain |
+| 57 | `puppet_infrastructure::nginx_frontend` | 8 | 8 | 6 | no | nginx_base,nginx_default_removal,ssl_nginx_domain,nginx_frontend_domain |
+| 58 | `puppet_infrastructure::hashman_web` | 8 | 7 | 7 | no | hashman_base,nginx_frontend |
 
 ## KNOWN GAPS
 
