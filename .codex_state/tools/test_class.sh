@@ -63,6 +63,7 @@ classify_target() {
   set +e
   parsed="$(python3 - "$requested" "$short" "$raw" 2>&1 <<'PY'
 import json
+import re
 import sys
 
 requested, short, raw = sys.argv[1:]
@@ -104,10 +105,21 @@ for base in required_base:
     if "\n" in base or "\r" in base:
         fail(f"required_base contains a newline: {base!r}")
 
+required_external = data.get("required_external")
+if not isinstance(required_external, list):
+    fail(f"required_external is missing or is not a list: {required_external!r}")
+for external in required_external:
+    if not isinstance(external, str) or not external:
+        fail(f"required_external contains an invalid class name: {external!r}")
+    if not re.fullmatch(r"[a-z][a-z0-9_]*(?:::[a-z][a-z0-9_]*)*", external):
+        fail(f"required_external contains an invalid class name: {external!r}")
+
 print(f"RESOURCE_TYPE={resource_type}")
 print(f"TITLE={title}")
 for base in required_base:
     print(f"BASE={base}")
+for external in required_external:
+    print(f"EXTERNAL={external}")
 print("END")
 PY
 )"
@@ -121,12 +133,14 @@ PY
   CLASSIFY_RESOURCE_TYPE=""
   CLASSIFY_TITLE=""
   CLASSIFY_REQUIRED_BASES=()
+  CLASSIFY_REQUIRED_EXTERNALS=()
   mapfile -t records <<< "$parsed"
   for line in "${records[@]}"; do
     case "$line" in
       RESOURCE_TYPE=*) CLASSIFY_RESOURCE_TYPE="${line#RESOURCE_TYPE=}" ;;
       TITLE=*) CLASSIFY_TITLE="${line#TITLE=}" ;;
       BASE=*) CLASSIFY_REQUIRED_BASES+=("${line#BASE=}") ;;
+      EXTERNAL=*) CLASSIFY_REQUIRED_EXTERNALS+=("${line#EXTERNAL=}") ;;
       END) ;;
       *) die "Invalid classification for class '${requested}': unexpected parsed field" ;;
     esac
@@ -134,44 +148,67 @@ PY
 }
 
 declare -a EXPANDED_CLASSES=()
+declare -a EXPANDED_CLASS_KINDS=()
 declare -A EXPANSION_STATE=()
 
 expand_one_class() {
   local requested="$1"
-  local short="${requested#puppet_infrastructure::}"
-  local cls="puppet_infrastructure::${short}"
-  local state="${EXPANSION_STATE[$cls]-}"
-  local base
+  local kind="${2:-internal}"
+  local short cls state_key state base external
   local -a required_bases=()
+  local -a required_externals=()
+
+  if [[ "$kind" == "external" ]]; then
+    cls="$requested"
+  else
+    short="${requested#puppet_infrastructure::}"
+    cls="puppet_infrastructure::${short}"
+  fi
+  state_key="${kind}:${cls}"
+  state="${EXPANSION_STATE[$state_key]-}"
 
   [[ "$state" == "2" ]] && return
   [[ "$state" != "1" ]] || die "Circular required_base dependency while expanding class '${cls}'"
 
-  classify_target "$cls"
-  required_bases=("${CLASSIFY_REQUIRED_BASES[@]}")
-  EXPANSION_STATE["$cls"]="1"
+  if [[ "$kind" != "external" ]]; then
+    classify_target "$cls"
+    required_bases=("${CLASSIFY_REQUIRED_BASES[@]}")
+    required_externals=("${CLASSIFY_REQUIRED_EXTERNALS[@]}")
+  fi
+  EXPANSION_STATE["$state_key"]="1"
 
   for base in "${required_bases[@]}"; do
-    expand_one_class "$base"
+    expand_one_class "$base" internal
+  done
+  for external in "${required_externals[@]}"; do
+    expand_one_class "$external" external
   done
 
-  EXPANSION_STATE["$cls"]="2"
+  EXPANSION_STATE["$state_key"]="2"
   EXPANDED_CLASSES+=("$cls")
+  EXPANDED_CLASS_KINDS+=("$kind")
 }
 
 expand_target_classes() {
   local target
   EXPANDED_CLASSES=()
+  EXPANDED_CLASS_KINDS=()
   EXPANSION_STATE=()
   for target in "$@"; do
-    expand_one_class "$target"
+    expand_one_class "$target" internal
   done
 }
 
 render_manifest_lines_for_classes() {
   local classes=("$@")
-  local cls pfile resource_type title
-  for cls in "${classes[@]}"; do
+  local index cls kind pfile resource_type title
+  for index in "${!classes[@]}"; do
+    cls="${classes[$index]}"
+    kind="${EXPANDED_CLASS_KINDS[$index]}"
+    if [[ "$kind" == "external" ]]; then
+      echo "include ${cls}"
+      continue
+    fi
     classify_target "$cls"
     resource_type="$CLASSIFY_RESOURCE_TYPE"
     title="$CLASSIFY_TITLE"

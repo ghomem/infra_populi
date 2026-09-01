@@ -46,6 +46,7 @@ class ClassRow:
     resource_type: str
     title: str
     required_base: tuple[str, ...]
+    required_external: tuple[str, ...]
 
     @property
     def sort_key(self) -> tuple[int, int, int, str]:
@@ -115,6 +116,9 @@ def parse_plan() -> dict[str, ClassRow]:
     indexes = {name: headers.index(name) for name in REQUIRED_COLUMNS}
     title_index = headers.index("title") if "title" in headers else None
     required_base_index = headers.index("required_base") if "required_base" in headers else None
+    required_external_index = (
+        headers.index("required_external") if "required_external" in headers else None
+    )
     rows: dict[str, ClassRow] = {}
 
     for line_number, line in enumerate(lines[header_index + 2 :], start=header_index + 3):
@@ -152,6 +156,14 @@ def parse_plan() -> dict[str, ClassRow]:
         required_base = tuple(
             base.strip() for base in required_base_cell.split(",") if base.strip()
         )
+        required_external_cell = (
+            cells[required_external_index] if required_external_index is not None else ""
+        )
+        required_external = tuple(
+            external.strip()
+            for external in required_external_cell.split(",")
+            if external.strip()
+        )
 
         rows[name] = ClassRow(
             name=name,
@@ -163,6 +175,7 @@ def parse_plan() -> dict[str, ClassRow]:
             resource_type=resource_type,
             title=title,
             required_base=required_base,
+            required_external=required_external,
         )
 
     if not rows:
@@ -470,6 +483,7 @@ def classify(class_name: str) -> None:
                 "resource_type": row.resource_type,
                 "title": row.title,
                 "required_base": row.required_base,
+                "required_external": row.required_external,
             }
         )
     )
