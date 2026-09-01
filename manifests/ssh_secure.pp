@@ -12,7 +12,7 @@ class puppet_infrastructure::ssh_secure (
   String $macs                     = 'hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256',
 ) {
 
-  case $::osfamily {
+  case $facts['os']['family'] {
       'RedHat': {
         $ssh_service = 'sshd'
         $admin_group = 'wheel'
