@@ -114,12 +114,19 @@ for external in required_external:
     if not re.fullmatch(r"[a-z][a-z0-9_]*(?:::[a-z][a-z0-9_]*)*", external):
         fail(f"required_external contains an invalid class name: {external!r}")
 
+owner_validated = data.get("owner_validated")
+if not isinstance(owner_validated, str):
+    fail(f"owner_validated is missing or is not a string: {owner_validated!r}")
+if owner_validated and not re.fullmatch(r"[A-Za-z0-9_]+", owner_validated):
+    fail(f"owner_validated contains an invalid class short-name: {owner_validated!r}")
+
 print(f"RESOURCE_TYPE={resource_type}")
 print(f"TITLE={title}")
 for base in required_base:
     print(f"BASE={base}")
 for external in required_external:
     print(f"EXTERNAL={external}")
+print(f"OWNER_VALIDATED={owner_validated}")
 print("END")
 PY
 )"
@@ -134,6 +141,7 @@ PY
   CLASSIFY_TITLE=""
   CLASSIFY_REQUIRED_BASES=()
   CLASSIFY_REQUIRED_EXTERNALS=()
+  CLASSIFY_OWNER_VALIDATED=""
   mapfile -t records <<< "$parsed"
   for line in "${records[@]}"; do
     case "$line" in
@@ -141,9 +149,21 @@ PY
       TITLE=*) CLASSIFY_TITLE="${line#TITLE=}" ;;
       BASE=*) CLASSIFY_REQUIRED_BASES+=("${line#BASE=}") ;;
       EXTERNAL=*) CLASSIFY_REQUIRED_EXTERNALS+=("${line#EXTERNAL=}") ;;
+      OWNER_VALIDATED=*) CLASSIFY_OWNER_VALIDATED="${line#OWNER_VALIDATED=}" ;;
       END) ;;
       *) die "Invalid classification for class '${requested}': unexpected parsed field" ;;
     esac
+  done
+}
+
+guard_owner_validated_targets() {
+  local requested owner
+  for requested in "$@"; do
+    classify_target "$requested"
+    owner="$CLASSIFY_OWNER_VALIDATED"
+    if [[ -n "$owner" ]]; then
+      die "Target 'puppet_infrastructure::${CLASSIFY_SHORT}' is owner_validated by 'puppet_infrastructure::${owner}'; it must be validated via that owner's migration."
+    fi
   done
 }
 
@@ -353,6 +373,7 @@ main() {
   if [[ "$1" == "--render-only" ]]; then
     shift
     [[ $# -ge 1 ]] || die "Usage: $0 --render-only <class1> [class2 ...]"
+    guard_owner_validated_targets "$@"
     render_managed_block "$@"
     exit 0
   fi
@@ -362,6 +383,7 @@ main() {
   need_cmd scp
 
   local classes=("$@")
+  guard_owner_validated_targets "${classes[@]}"
 
   mkdir -p "$PARAMS_DIR"
 

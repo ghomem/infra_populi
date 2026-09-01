@@ -47,6 +47,7 @@ class ClassRow:
     title: str
     required_base: tuple[str, ...]
     required_external: tuple[str, ...]
+    owner_validated: str
 
     @property
     def sort_key(self) -> tuple[int, int, int, str]:
@@ -119,6 +120,9 @@ def parse_plan() -> dict[str, ClassRow]:
     required_external_index = (
         headers.index("required_external") if "required_external" in headers else None
     )
+    owner_validated_index = (
+        headers.index("owner_validated") if "owner_validated" in headers else None
+    )
     rows: dict[str, ClassRow] = {}
 
     for line_number, line in enumerate(lines[header_index + 2 :], start=header_index + 3):
@@ -164,6 +168,9 @@ def parse_plan() -> dict[str, ClassRow]:
             for external in required_external_cell.split(",")
             if external.strip()
         )
+        owner_validated = cells[owner_validated_index] if owner_validated_index is not None else ""
+        if owner_validated and not re.fullmatch(r"[A-Za-z0-9_]+", owner_validated):
+            fail(f"invalid owner_validated class short-name for {name}: {owner_validated!r}")
 
         rows[name] = ClassRow(
             name=name,
@@ -176,10 +183,21 @@ def parse_plan() -> dict[str, ClassRow]:
             title=title,
             required_base=required_base,
             required_external=required_external,
+            owner_validated=owner_validated,
         )
 
     if not rows:
         fail("migration_plan.md class table contains no class rows")
+    for name, row in rows.items():
+        if not row.owner_validated:
+            continue
+        if row.resource_type != "define":
+            fail(f"owner_validated is only valid for defines: {name}")
+        owner = rows.get(row.owner_validated)
+        if owner is None:
+            fail(f"owner_validated owner for {name} is not in migration_plan.md: {row.owner_validated}")
+        if owner.resource_type != "class":
+            fail(f"owner_validated owner for {name} is not a class: {row.owner_validated}")
     return rows
 
 
@@ -248,9 +266,12 @@ def read_blocked() -> dict[str, str]:
 
 
 def topological_pending(
-    rows: dict[str, ClassRow], done: set[str], blocked: set[str]
+    rows: dict[str, ClassRow],
+    done: set[str],
+    blocked: set[str],
+    owner_validated: set[str],
 ) -> tuple[list[ClassRow], set[str]]:
-    pending = set(rows) - done - blocked
+    pending = set(rows) - done - blocked - owner_validated
     placed: set[str] = set()
     ordered: list[ClassRow] = []
 
@@ -258,14 +279,17 @@ def topological_pending(
         schedulable = [
             rows[name]
             for name in pending
-            if all(dep in done or dep in placed for dep in rows[name].internal_deps)
+            if all(
+                dep in done or dep in placed or dep in owner_validated
+                for dep in rows[name].internal_deps
+            )
         ]
         if not schedulable:
             unmet = {
                 name: tuple(
                     dep
                     for dep in rows[name].internal_deps
-                    if dep not in done and dep not in placed
+                    if dep not in done and dep not in placed and dep not in owner_validated
                 )
                 for name in pending
             }
@@ -349,18 +373,27 @@ def render(
     flagged: set[str],
     pending_order: list[ClassRow],
     gated: set[str],
+    owner_validated: set[str],
 ) -> str:
-    found_done = sorted(done & set(rows), key=lambda name: rows[name].sort_key)
+    found_done = sorted((done & set(rows)) - owner_validated, key=lambda name: rows[name].sort_key)
     unknown_done = sorted(done - set(rows))
-    found_blocked = sorted(blocked.keys() & set(rows), key=lambda name: rows[name].sort_key)
+    found_blocked = sorted(
+        (blocked.keys() & set(rows)) - owner_validated,
+        key=lambda name: rows[name].sort_key,
+    )
     unknown_blocked = sorted(blocked.keys() - set(rows))
-    found_gated = sorted(gated & set(rows), key=lambda name: rows[name].sort_key)
-    needs_verification = sorted((flagged - set(blocked)) & set(rows), key=lambda name: rows[name].sort_key)
-    unknown_flagged = sorted((flagged - set(blocked)) - set(rows))
+    found_gated = sorted((gated & set(rows)) - owner_validated, key=lambda name: rows[name].sort_key)
+    found_owner_validated = sorted(owner_validated & set(rows), key=lambda name: rows[name].sort_key)
+    needs_verification = sorted(
+        ((flagged - set(blocked)) & set(rows)) - owner_validated,
+        key=lambda name: rows[name].sort_key,
+    )
+    unknown_flagged = sorted(((flagged - set(blocked)) - set(rows)) - owner_validated)
     total = len(rows)
-    done_count = len(done & set(rows))
-    blocked_count = len(blocked.keys() & set(rows))
+    done_count = len((done & set(rows)) - owner_validated)
+    blocked_count = len((blocked.keys() & set(rows)) - owner_validated)
     gated_count = len(found_gated)
+    owner_validated_count = len(found_owner_validated)
     pending_count = len(pending_order)
     next_class = f"{PREFIX}{pending_order[0].name}" if pending_order else "all migrated"
     generated = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -376,7 +409,8 @@ def render(
         "Precedence: git > migrated_classes.txt (canonical) > migration_order.md (advisory). "
         "The `[from: release-0.9.8]` annotation lives in migrated_classes.txt, not here.",
         "",
-        f"Status summary: {done_count} done / {blocked_count} blocked / {gated_count} gated / "
+        f"Status summary: {done_count} done / {owner_validated_count} owner_validated / "
+        f"{blocked_count} blocked / {gated_count} gated / "
         f"{len(needs_verification)} needs verification / {pending_count} pending / {total} total.",
         "",
         f"Next class: `{next_class}`" if next_class != "all migrated" else "Next class: all migrated",
@@ -391,6 +425,14 @@ def render(
         lines.extend(table_row(index, rows[name]) for index, name in enumerate(found_done, start=1))
     else:
         lines.append("| - | - | - | - | - | - | - |")
+
+    lines.extend(["", "## OWNER-VALIDATED", "", "| # | class | owner |", "|---:|---|---|"])
+    if found_owner_validated:
+        for index, name in enumerate(found_owner_validated, start=1):
+            owner = rows[name].owner_validated
+            lines.append(f"| {index} | `{PREFIX}{name}` | `{PREFIX}{owner}` |")
+    else:
+        lines.append("| - | - | - |")
 
     lines.extend(["", "## BLOCKED", "", "| # | class | reason |", "|---:|---|---|"])
     if found_blocked:
@@ -484,6 +526,7 @@ def classify(class_name: str) -> None:
                 "title": row.title,
                 "required_base": row.required_base,
                 "required_external": row.required_external,
+                "owner_validated": row.owner_validated,
             }
         )
     )
@@ -501,20 +544,29 @@ def main() -> None:
     migrations = git_migrations()
     blocked = read_blocked()
     flagged = find_flagged_migrations(migrations)
-    done = set(migrations) - set(blocked)
-    pending_order, gated = topological_pending(rows, done, set(blocked))
-    output = render(rows, done, blocked, flagged, pending_order, gated)
+    owner_validated = {name for name, row in rows.items() if row.owner_validated}
+    conflicting = sorted(owner_validated & set(blocked))
+    if conflicting:
+        fail("owner_validated classes must not also be blocked: " + ", ".join(conflicting))
+    done = set(migrations) - set(blocked) - owner_validated
+    pending_order, gated = topological_pending(rows, done, set(blocked), owner_validated)
+    output = render(rows, done, blocked, flagged, pending_order, gated, owner_validated)
     ORDER_PATH.write_text(output, encoding="utf-8")
 
     unknown_done = sorted(done - set(rows))
     unknown_blocked = sorted(set(blocked) - set(rows))
-    needs_verification = sorted((flagged - set(blocked)) & set(rows), key=lambda name: rows[name].sort_key)
-    done_count = len(done & set(rows))
-    blocked_count = len(set(blocked) & set(rows))
-    gated_count = len(gated & set(rows))
+    needs_verification = sorted(
+        ((flagged - set(blocked)) & set(rows)) - owner_validated,
+        key=lambda name: rows[name].sort_key,
+    )
+    done_count = len((done & set(rows)) - owner_validated)
+    blocked_count = len((set(blocked) & set(rows)) - owner_validated)
+    gated_count = len((gated & set(rows)) - owner_validated)
+    owner_validated_count = len(owner_validated & set(rows))
     next_class = f"{PREFIX}{pending_order[0].name}" if pending_order else "all migrated"
     print(
-        f"{done_count} done / {blocked_count} blocked / {gated_count} gated / "
+        f"{done_count} done / {owner_validated_count} owner_validated / "
+        f"{blocked_count} blocked / {gated_count} gated / "
         f"{len(needs_verification)} needs verification / {len(pending_order)} pending / "
         f"{len(rows)} total"
     )
