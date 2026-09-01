@@ -1,6 +1,6 @@
 # Puppet Class Migration Order
 
-Generated: 2026-07-29 16:14:19 UTC
+Generated: 2026-09-01 01:58:41 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
@@ -8,7 +8,7 @@ Precedence: git > migrated_classes.txt (canonical) > migration_order.md (advisor
 
 Status summary: 19 done / 9 blocked / 1 gated / 0 needs verification / 58 pending / 87 total.
 
-Next class: `puppet_infrastructure::sftp_only`
+Next class: `puppet_infrastructure::mount_shares_desktop`
 
 ## DONE (git-derived)
 
@@ -56,14 +56,14 @@ Next class: `puppet_infrastructure::sftp_only`
 
 | # | class | cx | dep | p8 | sc | internal_deps |
 |---:|---|---:|---:|---:|---|---|
-| 1 | `puppet_infrastructure::sftp_only` | 4 | 1 | 4 | yes |  |
-| 2 | `puppet_infrastructure::mount_shares_desktop` | 4 | 1 | 5 | yes |  |
-| 3 | `puppet_infrastructure::openvpn_nm_connection` | 4 | 2 | 5 | no |  |
-| 4 | `puppet_infrastructure::user_samba` | 4 | 2 | 6 | no |  |
-| 5 | `puppet_infrastructure::docker_container` | 4 | 3 | 4 | no |  |
-| 6 | `puppet_infrastructure::rsyslog_server` | 4 | 6 | 3 | no | rsyslog_base |
-| 7 | `puppet_infrastructure::filesystem_base_desktop` | 4 | 7 | 4 | yes |  |
-| 8 | `puppet_infrastructure::ssh_secure` | 5 | 7 | 5 | yes |  |
+| 1 | `puppet_infrastructure::mount_shares_desktop` | 4 | 1 | 5 | yes |  |
+| 2 | `puppet_infrastructure::openvpn_nm_connection` | 4 | 2 | 5 | no |  |
+| 3 | `puppet_infrastructure::user_samba` | 4 | 2 | 6 | no |  |
+| 4 | `puppet_infrastructure::docker_container` | 4 | 3 | 4 | no |  |
+| 5 | `puppet_infrastructure::rsyslog_server` | 4 | 6 | 3 | no | rsyslog_base |
+| 6 | `puppet_infrastructure::filesystem_base_desktop` | 4 | 7 | 4 | yes |  |
+| 7 | `puppet_infrastructure::ssh_secure` | 5 | 7 | 5 | yes |  |
+| 8 | `puppet_infrastructure::sftp_only` | 4 | 1 | 4 | yes | ssh_secure |
 | 9 | `puppet_infrastructure::ssl_base` | 5 | 8 | 5 | no |  |
 | 10 | `puppet_infrastructure::ssl_postfix` | 2 | 6 | 4 | no | ssl_base |
 | 11 | `puppet_infrastructure::ssl_nginx` | 2 | 7 | 4 | no | ssl_base |
