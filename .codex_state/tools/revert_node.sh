@@ -2,13 +2,14 @@
 # ---------------------------------------------------------------------------
 # TRACKED TOOLING. This script is version-controlled because it encodes the
 # clean-baseline recovery contract for the Puppet 8 test node:
-# revert_node.sh restores, starts, and verifies only that node.
-# Tracking this safety-critical lifecycle tool keeps the node-only boundary
-# and its host assumptions reviewable. See DESIGN_DECISIONS.md.
+# revert_node.sh restores, starts, and verifies that node. It may also start
+# and verify the master, but never performs a destructive master VM action.
+# Tracking this safety-critical lifecycle tool keeps that boundary and its
+# host assumptions reviewable. See DESIGN_DECISIONS.md.
 #
 # NOT host-portable as-is. Host-specific assumptions:
 #   node VM       ubuntu24-puppet8-Node
-#   master VM     Ubuntu24-puppet8-Master  (read-only guard; never modified)
+#   master VM     Ubuntu24-puppet8-Master  (may start; never restore/power off/reset)
 #   node snapshot P8NODE_BASELINE_GREEN
 #   SSH aliases   puppet8node, puppet8master
 #   Wi-Fi bridge  host interface wlo1 (typically takes about 45s to settle)
@@ -56,20 +57,50 @@ vm_state() {
 
 require_master_running() {
   local state
+  local master_deadline
+  local service_output
+  local service_status="not reported"
 
   if ! state="$(vm_state "$MASTER_VM")"; then
-    printf 'ERROR: Unable to determine the state of master VM %q.\n' "$MASTER_VM" >&2
-    printf 'The master is operator-controlled; inspect and start it manually if needed:\n' >&2
-    printf '  VBoxManage startvm %s --type headless\n' "$MASTER_VM" >&2
-    exit 1
+    fail "Unable to determine the state of master VM '$MASTER_VM'; no master VM action was attempted."
   fi
 
   if [[ "$state" != "running" ]]; then
-    printf 'ERROR: Master VM %q is not running (state: %s).\n' "$MASTER_VM" "$state" >&2
-    printf 'The master is operator-controlled. Start it manually:\n' >&2
-    printf '  VBoxManage startvm %s --type headless\n' "$MASTER_VM" >&2
-    exit 1
+    printf 'Starting master VM %q headless (current state: %s)...\n' "$MASTER_VM" "$state"
+    VBoxManage startvm "$MASTER_VM" --type headless ||
+      fail "Could not start master VM '$MASTER_VM' from state '$state'; no destructive master VM action was attempted."
   fi
+
+  printf 'Waiting up to %ss for master SSH and puppetserver readiness...\n' "$SSH_TIMEOUT_SECONDS"
+  master_deadline=$((SECONDS + SSH_TIMEOUT_SECONDS))
+  until ssh "${SSH_OPTIONS[@]}" "$MASTER_SSH_ALIAS" true >/dev/null 2>&1; do
+    if ((SECONDS >= master_deadline)); then
+      fail "Master '$MASTER_SSH_ALIAS' did not become reachable by SSH within ${SSH_TIMEOUT_SECONDS}s (initial VM state: '$state')."
+    fi
+
+    sleep "$POLL_INTERVAL_SECONDS"
+  done
+
+  while true; do
+    service_output=""
+    if service_output="$(ssh "${SSH_OPTIONS[@]}" "$MASTER_SSH_ALIAS" systemctl is-active puppetserver 2>/dev/null)"; then
+      service_output="${service_output//$'\r'/}"
+      service_output="${service_output//$'\n'/}"
+      if [[ "$service_output" == "active" ]]; then
+        return 0
+      fi
+    fi
+
+    service_output="${service_output//$'\r'/}"
+    service_output="${service_output//$'\n'/}"
+    [[ -n "$service_output" ]] && service_status="$service_output"
+
+    if ((SECONDS >= master_deadline)); then
+      fail "Master '$MASTER_SSH_ALIAS' is reachable, but puppetserver did not report active within ${SSH_TIMEOUT_SECONDS}s (last reported state: '$service_status')."
+    fi
+
+    sleep "$POLL_INTERVAL_SECONDS"
+  done
 }
 
 require_master_running
