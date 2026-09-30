@@ -351,3 +351,55 @@ Noted change: sandbox writable roots are now [workdir, /tmp, $TMPDIR] — the
 Codex 0.134.0, --profile no longer reads [profiles.name] tables from config.toml
 (profiles live in separate files). Does not affect us — the wrapper uses -c overrides,
 not profiles.
+
+## 2026-09-30 — Production master inspected: module identities, upstream bug, dependency roadmap
+Evidence (puppet.mdops.es, Puppet 5.5.22, read-only inspection):
+- network_config/network_route come from puppet-network 0.10.1 + puppet-filemapper 3.1.0 +
+  puppet-boolean 2.0.2 (boolean is now deprecated/archived upstream).
+- sysctl comes from thias-sysctl 1.0.7 — a DEFINE (sysctl/manifests/init.pp), not a native type.
+  Earlier inference "rules out thias" was wrong: comments-as-leads, now applied to our own inference.
+  thias-sysctl has an open unresolved Puppet 8 legacy-facts issue (#80, Nov 2023). Candidate
+  replacement (same call shape): puppet/augeasproviders_sysctl — VERIFY its requirement before adopting.
+- htpasswd comes from leinaddm-htpasswd 0.0.3 (on disk since Aug 2014, pre-Puppet-4). Dead; needs a
+  replacement, to be found in the batch audit.
+- fqdn_rand_uuid: UPSTREAM BUG CONFIRMED. The only occurrence on the production master is the caller
+  (openvpn_nm_connection.pp); it is defined nowhere (not stdlib 4.25.1, not any module). That class
+  cannot compile in production. Almost certainly a typo for stdlib's fqdn_uuid. Fix belongs upstream
+  (maintained by Salatiel/Gustavo), not worked around in the migration.
+- Production has NO Puppetfile and NO r10k: modules are hand-deployed (root-owned dirs 2014–2021;
+  puppet_infrastructure/meaningful_puppet/docker owned by `deployment`). This is why upstream
+  metadata.json declares only stdlib. Our Puppetfile discipline is a real improvement, not tidiness.
+- Production runs puppet_infrastructure 0.9.10 (deployed 2026-09-09) — past the declared 0.9.8
+  baseline. Reconciliation-pass material.
+- stdlib is 4.25.1 in production vs 9.7.0 in the lab; stdlib 9 removed validate_*/is_*. ADDED TO THE
+  PRE-MIGRATION CHECKLIST: grep the class for stdlib-4-era functions.
+- The full production module list (nginx 0.15, letsencrypt 9.2, openvpn 8.3, mysql 10.5, postgresql,
+  rabbitmq, gitlab, camptocamp-systemd 3.0, saz-ssh, apt 7.7, docker 3.14, ...) is the dependency
+  roadmap for the remaining Phase 1 classes. Decision: run ONE batch Forge compatibility audit against
+  this list, converting future Category-1 blocks into predictions.
+
+## 2026-09-30 — Networking cluster UNBLOCKED: root cause was version pinning, not Puppet 8
+Supersedes the 2026-07-01 "network_config is a module-wide blocker" entry (that entry stays as history).
+Decision: network_dhcp, network_static, openvpn_server, network_vpn come off blocked.txt. The
+network_dhcp reimplementation candidate is retired.
+Evidence: puppet-network 2.2.1 declares openvox >= 8.19 (a Puppet-8-API module) and depends on
+filemapper < 5.0.0 and kmod < 5.0.0. Unpinned `mod` lines made r10k install filemapper 5.0.0 and
+kmod 5.0.0, which `puppet module list` flagged `invalid`. That is the mechanism behind the July
+"puppetx/filemapper won't load" error — a major-version bump outside the consumer's declared range,
+not an incompatibility. Pinned to filemapper 4.0.0 + kmod 4.1.0, ran `puppet generate types` and
+restarted puppetserver, and network_dhcp went GREEN with the ORIGINAL manifest (fixture iface).
+Standing rules (all three):
+  1. Always pin a module to a version INSIDE its consumer's declared range. Never leave `mod` unpinned.
+  2. After every r10k install, run `puppet module list` and treat any `invalid` as a FAILURE.
+  3. After adding a module that ships custom types, run `puppet generate types --environment
+     production` AND restart puppetserver before testing.
+Fixture rule extended: interface names are fixtures too — `p8test0` for network_* classes (the node is
+netplan-only; pointing ifupdown at the real NIC is a connectivity hazard).
+Lesson: "unverified diagnosis stood for two months" — a Category-1 block must record the exact module
+versions installed and whether puppetserver was restarted, or it is not a diagnosis.
+
+## 2026-09-30 — Lab runs OpenVox, not Perforce Puppet
+Fact: openvox-agent 8.24.2 / openvox-server 8.11.0 on the lab master. Vox Pupuli modules now declare
+`openvox` (not `puppet`) in metadata.json requirements; the lab satisfies them natively.
+Implication: no Phase 1 impact (same API). For Phase 6, "Puppet 8 vs OpenVox 8" is a production
+runtime decision that belongs with Gustavo — flagged now so it is not a surprise later.
