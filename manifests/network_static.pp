@@ -1,3 +1,4 @@
+# Puppet 8 migration: release-0.9.8 manifest validated unchanged.
 ### Purpose ########
 # This class configures a network interface with static parameters.
 #
