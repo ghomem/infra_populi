@@ -403,3 +403,16 @@ Fact: openvox-agent 8.24.2 / openvox-server 8.11.0 on the lab master. Vox Pupuli
 `openvox` (not `puppet`) in metadata.json requirements; the lab satisfies them natively.
 Implication: no Phase 1 impact (same API). For Phase 6, "Puppet 8 vs OpenVox 8" is a production
 runtime decision that belongs with Gustavo — flagged now so it is not a surprise later.
+
+## 2026-10-01 — Ad-hoc `codex exec` calls must close stdin and carry a timeout
+Evidence: the network_static header-fix bookkeeping call (`codex exec ... '<prompt>'`, run from the
+advisor's shell with stdin an open socket) sat idle in ep_poll for ~47 minutes with no file change.
+`codex exec` reads extra prompt input from stdin when stdin is not a TTY; the socket never reached
+EOF. Re-run with `</dev/null` completed in under a minute (commit 1e846b7).
+Rule: every advisor-issued `codex exec` runs as `timeout <N> codex exec ... </dev/null > <log> 2>&1`.
+Never pipe it through `tail` (buffers all output until exit, hiding a hang). The wrapper
+`codex_migrate_class` is unaffected in practice but should gain `</dev/null` too — tooling change for
+Salatiel to approve.
+Also recorded: headers for "validated unchanged" classes MUST name module deps + versions in the
+manifest (network_static failed review on this; network_dhcp's header has the same gap — historical,
+not retro-annotated here, flagged for the reconciliation pass).
