@@ -240,8 +240,8 @@ def find_flagged_migrations(migrations: dict[str, MigrationCommit]) -> set[str]:
     flagged: set[str] = set()
     for name, migration in migrations.items():
         manifest = f"manifests/{name}.pp"
-        output = run_git(["log", "--format=%H", f"{migration.commit}..HEAD", "--", manifest])
-        if output.strip():
+        output = run_git(["log", "--format=%s", f"{migration.commit}..HEAD", "--", manifest])
+        if any(not subject.startswith("P8: record") for subject in output.splitlines()):
             flagged.add(name)
     return flagged
 

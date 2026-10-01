@@ -39,6 +39,7 @@ First action: run the harness:
 The injected runbook is authoritative: section 1 defines your authority, section 3 defines what stops you, and section 4 defines how to record a block.
 
 TRACKER / ANNOTATION RULES (apply at commit time, in the same commit):
+- Before committing, ensure the class file has a header comment stating its purpose (or 'release-0.9.8 manifest validated unchanged') and every module dependency with its installed version.
 - In .codex_state/migrated_classes.txt, find the line for this class (the tracker uses SHORT names, e.g. 'backup_rsnapshot', with no puppet_infrastructure:: prefix) and mark it exactly: '<short_name> Done [from: release-0.9.8]'. Plain 'Done' is reserved for the 15 historical pre-baseline migrations - do NOT use it for new work.
 - If the migration is NOT faithful to release-0.9.8 (deliberate divergence), stop and report instead of choosing a marker yourself.
 - Do not force-add ignored trackers.

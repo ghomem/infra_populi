@@ -32,7 +32,8 @@ FOR EACH CLASS:
    - PASS: count it.
    - FAIL: read the evidence. If it is a records/annotation/header gap, fix with ONE targeted
      `codex exec -c 'sandbox_mode="danger-full-access"' -c 'approval_policy="never"' '<precise fix>'`,
-     then re-run the reviewer once. If it is faithfulness (reimplementation) or non-idempotency: back
+     requiring its fix commit message to start with `P8: record <class>: `, then re-run the reviewer
+     once. If it is faithfulness (reimplementation) or non-idempotency: back
      the migration out with a corrective commit (never force-push), preserve the manifest as
      `candidates/<class>.partial.pp` or `.reimplemented.pp` with a header, block with evidence, escalate.
 6. BLOCKED by Codex: read its blocked.txt entry. It must carry category + evidence; if not, fix the entry.

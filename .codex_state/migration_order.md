@@ -1,12 +1,12 @@
 # Puppet Class Migration Order
 
-Generated: 2026-09-30 23:52:18 UTC
+Generated: 2026-09-30 23:59:48 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
 Precedence: git > migrated_classes.txt (canonical) > migration_order.md (advisory). The `[from: release-0.9.8]` annotation lives in migrated_classes.txt, not here.
 
-Status summary: 24 done / 1 owner_validated / 7 blocked / 1 gated / 1 needs verification / 54 pending / 87 total.
+Status summary: 24 done / 1 owner_validated / 7 blocked / 1 gated / 0 needs verification / 54 pending / 87 total.
 
 Next class: `puppet_infrastructure::rsyslog_server`
 
@@ -60,10 +60,6 @@ Next class: `puppet_infrastructure::rsyslog_server`
 ## TRANSITIVELY GATED
 
 - `puppet_infrastructure::network_vpn` — gated by blocked `puppet_infrastructure::firewall_addon_openvpn_server`
-
-## NEEDS VERIFICATION
-
-- NEEDS VERIFICATION: `puppet_infrastructure::network_static` — manifest touched after its P8: migrate commit; confirm whether still migrated or should be blocked.
 
 ## PENDING QUEUE
 
