@@ -443,3 +443,21 @@ hello_world_flask) — check each at hazard item 4 rather than bulk-editing the 
 Convention observed: Codex now titles its order commit `P8: record migration order after <class>`;
 reviewers have accepted it as the regenerate commit. The reviewer's check 1 still names
 `P8: regenerate migration order` literally — align the wording (Salatiel's tooling).
+
+## 2026-10-01 — Ruling: baseline drift resolved by baseline-sync (option A)
+Decision (Salatiel): a pending class whose local manifest differs from release-0.9.8 is brought to
+0.9.8 content BEFORE migration, in its own commit `P8: baseline-sync <class> to release-0.9.8`,
+then migrated through the normal wrapper/reviewer loop. Supersedes "block and escalate" from the
+baseline-drift entry above (that entry stays as history).
+Procedure (advisor tier; it is a verbatim copy, so no Codex call):
+  - `git -C ~/work/puppet_infrastructure show release-0.9.8:<path> > <path>` for the manifest and
+    every template/file the 0.9.8 manifest references; verify each with diff -q afterwards.
+  - Sync a template/file automatically only if no OTHER class (per release-0.9.8 `git grep`) uses it.
+    A shared template whose 0.9.8 content differs from local, consumed by an already-Done class, is
+    still Salatiel-tier: escalate (it changes a migrated class's behaviour).
+  - Check that the 0.9.8 manifest does not rely on 0.9.8-only content of an internal dependency
+    (params, resources) that our local copy lacks; if it does, escalate.
+Applied: rsyslog_server (manifest + listener_simple.conf.epp + new rsyslog-hosts.logrotate.epp;
+0.9.8 server needs only include rsyslog_base + Service['rsyslog'] from base) and ssl_base (manifest
+only). Both unblocked. Remaining drifted pending classes are synced as the loop reaches them.
+CLAUDE.md hazard checklist gains item 8 to carry this into every class.

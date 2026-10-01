@@ -39,3 +39,6 @@ C. Migrate the local (pre-0.9.8) content with a distinct marker (e.g. `Done [fro
 Recommendation: A. 0.9.8 is already the declared target (2026-07-01); syncing to it is applying that
 decision, not redesigning. It just needs your sign-off because it changes repo behaviour and touches a
 template shared with an already-Done class.
+
+## Resolution (2026-10-01)
+Salatiel ruled option A. Baseline-synced verbatim from release-0.9.8 in `P8: baseline-sync rsyslog_server to release-0.9.8`; removed from blocked.txt; migrates through the normal loop.

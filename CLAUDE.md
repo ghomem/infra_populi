@@ -50,6 +50,9 @@ Salatiel decides infrastructure and strategy. Rationale for every rule below is 
 6. stdlib-4-era functions removed in stdlib 9 (`validate_*`, `is_*`, ...).
 7. Variables read from another class's scope with no local assignment/param/lookup (legacy dynamic
    scoping — compile failure on Puppet 8).
+8. Baseline drift: local manifest (or a template/file it uses) differs from release-0.9.8. Baseline-sync
+   it verbatim in its own `P8: baseline-sync <class> to release-0.9.8` commit before Codex; escalate
+   only if a synced template is shared with an already-Done class or 0.9.8 needs newer dep content.
 
 ## Block taxonomy (classify by RESOLUTION PATH; entries in blocked.txt MUST carry evidence)
 1. Dependency-incompatibility — module won't load. Resolve at MODULE level; never reimplement per class.

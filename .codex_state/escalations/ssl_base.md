@@ -16,3 +16,6 @@ one ruling resolves both. Raised pre-Codex (Codex not invoked).
 ## Note for the ruling
 Unlike rsyslog_server, syncing ssl_base to 0.9.8 is behaviour-neutral at default params apart from
 the notify message/title fix. If option A is adopted it is the lowest-risk first sync.
+
+## Resolution (2026-10-01)
+Salatiel ruled option A. Baseline-synced verbatim from release-0.9.8 in `P8: baseline-sync ssl_base to release-0.9.8`; removed from blocked.txt; migrates through the normal loop.
