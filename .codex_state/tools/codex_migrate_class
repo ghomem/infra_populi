@@ -17,6 +17,7 @@
 # ---------------------------------------------------------------------------
 
 set -euo pipefail
+exec </dev/null
 
 [[ $# -ge 1 ]] || { echo "Usage: codex_migrate_class <puppet_class_name>"; exit 2; }
 CLASS="$1"
