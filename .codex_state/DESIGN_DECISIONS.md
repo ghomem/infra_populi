@@ -416,3 +416,30 @@ Salatiel to approve.
 Also recorded: headers for "validated unchanged" classes MUST name module deps + versions in the
 manifest (network_static failed review on this; network_dhcp's header has the same gap — historical,
 not retro-annotated here, flagged for the reconciliation pass).
+
+## 2026-10-01 — Baseline drift: 9 pending manifests are NOT release-0.9.8 content
+Finding: `d93f147 Baseline import` carried older upstream revisions for 9 pending classes. Verified
+byte-identical matches: rsyslog_server == upstream 3fa2cc1 (2025-06-25); ssl_base == 2388bd7
+(2025-02-20). Also differing from release-0.9.8: user_kde_lock_screen, puppet_boot_run,
+letsencrypt_base, filesystem_apt, user_desktop, user_desktop_sudoer, node_base_desktop. The other
+pending manifests are identical to 0.9.8.
+Why it matters: the wrapper runbook never tells Codex to bring a class to 0.9.8 content, and the
+reviewer diffs against 0.9.8. A "validated unchanged" run on drifted content either fails review or
+stamps false `[from: release-0.9.8]` provenance (violates Ruling B).
+Decision (advisor tier): ADDED TO THE PRE-MIGRATION CHECKLIST — diff the local manifest (and its
+templates/files) against release-0.9.8 before invoking Codex. Drifted classes are blocked pre-Codex
+with evidence and escalated. Whether to baseline-sync (option A), defer to reconciliation (B) or use
+a distinct marker (C) is Salatiel's ruling: .codex_state/escalations/rsyslog_server.md.
+Blocked so far: rsyslog_server, ssl_base (ssl_base gates 7 dependents).
+
+## 2026-10-01 — required_base must cover parent dirs/resources a class needs from another class
+puppet_commush (`require => File["${localdir}/bin"]`) and hello_world_flask_common (dir under
+/opt/puppet-infrastructure, absent on the baseline node) both list filesystem_base in internal_deps
+but had empty required_base, which is the ONLY column the harness expands. internal_deps is ordering
+metadata; it does not put the base in the test catalog. Set required_base=filesystem_base for both
+pre-Codex; both went GREEN and passed review. Expect the same for the other filesystem_base consumers
+(backup_rsnapshot_pre, filesystem_apt, filesystem_yum, firewall_secure*, hashman_base,
+hello_world_flask) — check each at hazard item 4 rather than bulk-editing the plan.
+Convention observed: Codex now titles its order commit `P8: record migration order after <class>`;
+reviewers have accepted it as the regenerate commit. The reviewer's check 1 still names
+`P8: regenerate migration order` literally — align the wording (Salatiel's tooling).
