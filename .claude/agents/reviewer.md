@@ -10,7 +10,7 @@ notes — your evidence is git, the files, upstream, and your own harness run.
 
 Checks, all required:
 1. git: `git status --short` is empty; `git log --oneline -6` shows `P8: migrate puppet_infrastructure::<class>`
-   at HEAD or immediately below a `P8: regenerate migration order` commit; `git rev-parse HEAD origin/main` match.
+   at HEAD or immediately below a `P8: regenerate migration order` or `P8: record migration order after <class>` commit; `git rev-parse HEAD origin/main` match.
 2. Scope: `git show --stat <migrate-commit>` touches only manifests/<class>.pp (plus templates/ or files/ of
    that class if genuinely needed), .codex_state/{migrated_classes.txt,migration_order.md,blocked.txt,
    migration_plan.md}, .codex_state/DESIGN_DECISIONS.md. Anything else = FAIL (scope creep).
