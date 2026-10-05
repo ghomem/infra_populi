@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.8 manifest validated unchanged.
+# Module dependencies: none (uses Puppet built-in file resources and lookup()).
 ### Purpose ########
 # This class provides the screen locker settings script
 
