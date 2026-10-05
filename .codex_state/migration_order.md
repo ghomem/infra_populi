@@ -1,6 +1,6 @@
 # Puppet Class Migration Order
 
-Generated: 2026-10-05 13:58:12 UTC
+Generated: 2026-10-05 13:59:57 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
@@ -8,7 +8,7 @@ Precedence: git > migrated_classes.txt (canonical) > migration_order.md (advisor
 
 Status summary: 29 done / 1 owner_validated / 7 blocked / 1 gated / 0 needs verification / 49 pending / 87 total.
 
-Next class: `puppet_infrastructure::user_kde_lock_screen`
+Next class: `puppet_infrastructure::backup`
 
 ## DONE (git-derived)
 
@@ -70,33 +70,33 @@ Next class: `puppet_infrastructure::user_kde_lock_screen`
 
 | # | class | cx | dep | p8 | sc | internal_deps |
 |---:|---|---:|---:|---:|---|---|
-| 1 | `puppet_infrastructure::user_kde_lock_screen` | 2 | 5 | 3 | no | user_kde_lock_screen_common,filesystem_base |
-| 2 | `puppet_infrastructure::backup` | 3 | 3 | 4 | no | filesystem_base |
-| 3 | `puppet_infrastructure::puppet_backup` | 3 | 4 | 4 | no | backup,filesystem_base |
-| 4 | `puppet_infrastructure::puppet_boot_run` | 3 | 4 | 4 | no | filesystem_base |
-| 5 | `puppet_infrastructure::sysmon_backup` | 3 | 4 | 4 | no | backup,filesystem_base |
-| 6 | `puppet_infrastructure::sysmon_fs_health` | 3 | 4 | 5 | no | filesystem_base |
-| 7 | `puppet_infrastructure::sysmon_integrity_master` | 3 | 4 | 5 | no | filesystem_base |
-| 8 | `puppet_infrastructure::sysmon_integrity_node` | 3 | 4 | 5 | no | filesystem_base |
-| 9 | `puppet_infrastructure::sysmon_mysqldump_health` | 3 | 4 | 5 | no | filesystem_base |
-| 10 | `puppet_infrastructure::sync` | 4 | 3 | 4 | no | filesystem_base |
-| 11 | `puppet_infrastructure::nginx_proxy_smtp_auth_ppa` | 4 | 4 | 5 | no | filesystem_base |
-| 12 | `puppet_infrastructure::linux_policies_common` | 4 | 5 | 5 | no | filesystem_base |
-| 13 | `puppet_infrastructure::linux_policies_user` | 4 | 4 | 5 | no | linux_policies_common |
-| 14 | `puppet_infrastructure::rsyslog_server` | 4 | 6 | 3 | no | rsyslog_base |
-| 15 | `puppet_infrastructure::hello_world_flask` | 5 | 4 | 5 | no | hello_world_flask_common,filesystem_base |
-| 16 | `puppet_infrastructure::ssl_base` | 5 | 8 | 5 | no |  |
-| 17 | `puppet_infrastructure::ssl_postfix` | 2 | 6 | 4 | no | ssl_base |
-| 18 | `puppet_infrastructure::ssl_nginx` | 2 | 7 | 4 | no | ssl_base |
-| 19 | `puppet_infrastructure::ssl_nginx_domain` | 2 | 7 | 4 | no | ssl_base |
-| 20 | `puppet_infrastructure::postfix_smtp_node` | 6 | 4 | 6 | yes |  |
-| 21 | `puppet_infrastructure::letsencrypt_base` | 6 | 7 | 5 | no | filesystem_base |
-| 22 | `puppet_infrastructure::letsencrypt_certificate` | 3 | 6 | 4 | no | letsencrypt_base |
-| 23 | `puppet_infrastructure::packages_base` | 6 | 10 | 5 | yes |  |
-| 24 | `puppet_infrastructure::openvpn_domain` | 7 | 4 | 6 | yes |  |
-| 25 | `puppet_infrastructure::filesystem_apt` | 7 | 5 | 5 | no | filesystem_base |
-| 26 | `puppet_infrastructure::user_base` | 7 | 8 | 6 | yes |  |
-| 27 | `puppet_infrastructure::user` | 1 | 4 | 2 | yes | user_base |
+| 1 | `puppet_infrastructure::backup` | 3 | 3 | 4 | no | filesystem_base |
+| 2 | `puppet_infrastructure::puppet_backup` | 3 | 4 | 4 | no | backup,filesystem_base |
+| 3 | `puppet_infrastructure::puppet_boot_run` | 3 | 4 | 4 | no | filesystem_base |
+| 4 | `puppet_infrastructure::sysmon_backup` | 3 | 4 | 4 | no | backup,filesystem_base |
+| 5 | `puppet_infrastructure::sysmon_fs_health` | 3 | 4 | 5 | no | filesystem_base |
+| 6 | `puppet_infrastructure::sysmon_integrity_master` | 3 | 4 | 5 | no | filesystem_base |
+| 7 | `puppet_infrastructure::sysmon_integrity_node` | 3 | 4 | 5 | no | filesystem_base |
+| 8 | `puppet_infrastructure::sysmon_mysqldump_health` | 3 | 4 | 5 | no | filesystem_base |
+| 9 | `puppet_infrastructure::sync` | 4 | 3 | 4 | no | filesystem_base |
+| 10 | `puppet_infrastructure::nginx_proxy_smtp_auth_ppa` | 4 | 4 | 5 | no | filesystem_base |
+| 11 | `puppet_infrastructure::linux_policies_common` | 4 | 5 | 5 | no | filesystem_base |
+| 12 | `puppet_infrastructure::linux_policies_user` | 4 | 4 | 5 | no | linux_policies_common |
+| 13 | `puppet_infrastructure::rsyslog_server` | 4 | 6 | 3 | no | rsyslog_base |
+| 14 | `puppet_infrastructure::hello_world_flask` | 5 | 4 | 5 | no | hello_world_flask_common,filesystem_base |
+| 15 | `puppet_infrastructure::ssl_base` | 5 | 8 | 5 | no |  |
+| 16 | `puppet_infrastructure::ssl_postfix` | 2 | 6 | 4 | no | ssl_base |
+| 17 | `puppet_infrastructure::ssl_nginx` | 2 | 7 | 4 | no | ssl_base |
+| 18 | `puppet_infrastructure::ssl_nginx_domain` | 2 | 7 | 4 | no | ssl_base |
+| 19 | `puppet_infrastructure::postfix_smtp_node` | 6 | 4 | 6 | yes |  |
+| 20 | `puppet_infrastructure::letsencrypt_base` | 6 | 7 | 5 | no | filesystem_base |
+| 21 | `puppet_infrastructure::letsencrypt_certificate` | 3 | 6 | 4 | no | letsencrypt_base |
+| 22 | `puppet_infrastructure::packages_base` | 6 | 10 | 5 | yes |  |
+| 23 | `puppet_infrastructure::openvpn_domain` | 7 | 4 | 6 | yes |  |
+| 24 | `puppet_infrastructure::filesystem_apt` | 7 | 5 | 5 | no | filesystem_base |
+| 25 | `puppet_infrastructure::user_base` | 7 | 8 | 6 | yes |  |
+| 26 | `puppet_infrastructure::user` | 1 | 4 | 2 | yes | user_base |
+| 27 | `puppet_infrastructure::user_kde_lock_screen` | 2 | 5 | 3 | no | user_kde_lock_screen_common,filesystem_base,user_base |
 | 28 | `puppet_infrastructure::user_desktop` | 2 | 5 | 3 | yes | user_base,user_kde_lock_screen |
 | 29 | `puppet_infrastructure::user_desktop_sudoer` | 2 | 5 | 3 | yes | user_base,user_kde_lock_screen |
 | 30 | `puppet_infrastructure::user_sudoer` | 2 | 5 | 3 | yes | user_base |
