@@ -461,3 +461,20 @@ Applied: rsyslog_server (manifest + listener_simple.conf.epp + new rsyslog-hosts
 0.9.8 server needs only include rsyslog_base + Service['rsyslog'] from base) and ssl_base (manifest
 only). Both unblocked. Remaining drifted pending classes are synced as the loop reaches them.
 CLAUDE.md hazard checklist gains item 8 to carry this into every class.
+
+## 2026-10-05 — Identity preconditions order a define after user_base (internal_deps), not a block
+Finding: user_kde_lock_screen's exec runs `user => $title` (fixture p8testuser). The fixture account
+is deliberately absent on the baseline node, so the exec/unless cannot execute until something
+creates the user. In code the define does not depend on user_base (production callers user_desktop*,
+node_base_desktop supply the account); on the test node it does.
+Decision (advisor tier, plan fix): add user_base to internal_deps (test-node ordering edge, consistent
+with internal_deps being an environment-specific projection) and set required_base=filesystem_base,user_base.
+Rationale: a required_base must itself be validated first; user_base is pending (complexity 7), so
+borrowing it earlier would test an unproven base. required_base does not affect ordering in
+gen_migration_order.py — only internal_deps does. Prose depends_on unchanged.
+Apply the same check to any define with `user =>`/home-path consumption of its title (hazard item 4).
+Also: baseline-sync of files/user_kde_lock_screen/configure_lock_screen.sh (dd3e1dc) was done with
+user_kde_lock_screen_common; its other consumer is user_kde_lock_screen (pending). When that define is
+synced, 0.9.8 renames mytimeout/mylockgrace -> screenlock_timeout_minutes/screenlock_grace_seconds;
+its local callers user_desktop, user_desktop_sudoer, node_base_desktop are pending AND drifted, and their
+0.9.8 versions already use the new names — sync each at its turn; none is Done, so no escalation.
