@@ -31,8 +31,9 @@ FOR EACH CLASS:
 4. CODEX: `~/.local/bin/codex_migrate_class puppet_infrastructure::<class> 2>&1 | tee .codex_state/logs/<class>.$(date +%s).log`.
    Run it in the foreground with a long timeout. Do not interrupt it. Read only the LAST 60 lines to
    classify the outcome: GREEN+committed / BLOCKED (it wrote blocked.txt) / FAILED (neither).
-5. VERIFY: spawn the `reviewer` subagent with the message "<class>" and nothing else. Do not paste it
-   any Codex output.
+5. VERIFY: spawn the `reviewer` subagent with the message "<class> --fresh" and nothing else (reviewer
+   v2: it must not learn who authored the change — never mention Codex or paste any output). It persists
+   `.codex_state/reviews/<class>/<UTC>.json`; commit that file as `P8: record review <class>`.
    - PASS: count it.
    - FAIL: read the evidence. If it is a records/annotation/header gap, fix with ONE targeted
      `timeout -k 30 900 codex exec -c 'sandbox_mode="danger-full-access"' -c 'approval_policy="never"' '<precise fix>' </dev/null`
