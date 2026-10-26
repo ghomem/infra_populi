@@ -17,6 +17,7 @@ REPO_ROOT = SCRIPT_DIR.parent
 PLAN_PATH = SCRIPT_DIR / "migration_plan.md"
 ORDER_PATH = SCRIPT_DIR / "migration_order.md"
 BLOCKED_PATH = SCRIPT_DIR / "blocked.txt"
+BASELINE_ENV = SCRIPT_DIR / "baseline.env"
 PREFIX = "puppet_infrastructure::"
 REQUIRED_COLUMNS = {
     "class",
@@ -33,6 +34,14 @@ KNOWN_GAP = (
     "a considered omission, not an oversight. Revisit only if composition ever depends "
     "on it directly."
 )
+
+
+def baseline_name() -> str:
+    """Declared baseline name from .codex_state/baseline.env (single source)."""
+    for line in BASELINE_ENV.read_text(encoding="utf-8").splitlines():
+        if line.startswith("BASELINE_NAME="):
+            return line.split("=", 1)[1].strip()
+    fail(f"{BASELINE_ENV} has no BASELINE_NAME")
 
 
 @dataclass(frozen=True)
@@ -407,7 +416,7 @@ def render(
         "MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.",
         "",
         "Precedence: git > migrated_classes.txt (canonical) > migration_order.md (advisory). "
-        "The `[from: release-0.9.8]` annotation lives in migrated_classes.txt, not here.",
+        f"The `[from: {baseline_name()}]` annotation lives in migrated_classes.txt, not here.",
         "",
         f"Status summary: {done_count} done / {owner_validated_count} owner_validated / "
         f"{blocked_count} blocked / {gated_count} gated / "

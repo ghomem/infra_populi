@@ -7,7 +7,10 @@ Salatiel decides infrastructure and strategy. Rationale for every rule below is 
 
 ## Facts
 - Repo `~/work/infra_populi` (main). Upstream reference `~/work/puppet_infrastructure`, declared
-  baseline `release-0.9.8` (== 0.9.9 for manifests). Namespace stays `puppet_infrastructure::`.
+  baseline `release-0.9.10`, pinned to upstream commit `cf477c6` in `.codex_state/baseline.env`
+  (single source; read it with `.codex_state/tools/baseline.py`). The upstream `release-0.9.10`
+  branch has moved past the pin: never use the branch name or upstream HEAD as the baseline.
+  Namespace stays `puppet_infrastructure::`.
 - Phase 1 = SYNTAX migration only, behaviour preserved. Not functional testing (Phase 3).
 - Lab: OpenVox. Master `puppet8master` (192.168.77.166), node `puppet8node` (192.168.77.185),
   rsync aliases `puppet8master-rsync`/`puppet8node-rsync`. Node is Ubuntu 24.04, netplan-only.
@@ -50,9 +53,10 @@ Salatiel decides infrastructure and strategy. Rationale for every rule below is 
 6. stdlib-4-era functions removed in stdlib 9 (`validate_*`, `is_*`, ...).
 7. Variables read from another class's scope with no local assignment/param/lookup (legacy dynamic
    scoping — compile failure on Puppet 8).
-8. Baseline drift: local manifest (or a template/file it uses) differs from release-0.9.8. Baseline-sync
-   it verbatim in its own `P8: baseline-sync <class> to release-0.9.8` commit before Codex; escalate
-   only if a synced template is shared with an already-Done class or 0.9.8 needs newer dep content.
+8. Baseline drift: local manifest (or a template/file it uses) differs from release-0.9.10
+   (`.codex_state/tools/baseline.py drift <class>`). Baseline-sync it verbatim in its own
+   `P8: baseline-sync <class> to release-0.9.10` commit before Codex; escalate only if a synced template
+   is shared with an already-Done class or the baseline needs newer dep content.
 
 ## Block taxonomy (classify by RESOLUTION PATH; entries in blocked.txt MUST carry evidence)
 1. Dependency-incompatibility — module won't load. Resolve at MODULE level; never reimplement per class.
@@ -83,9 +87,10 @@ validated end-to-end) / `.reimplemented.pp`. Both filename and header must say w
 - Verification is a GATE: the next class does not start until the reviewer has passed the previous one.
 - One class per Codex invocation, via the wrapper only.
 - After GREEN: header comment on the manifest (purpose + module dependencies with versions, or
-  "release-0.9.8 manifest validated unchanged" + deps), `<class> Done [from: release-0.9.8]` in
+  "release-0.9.10 manifest validated unchanged" + deps), `<class> Done [from: release-0.9.10]` in
   migrated_classes.txt, modules added to necessary_modules.txt, order file regenerated, commit+push.
-- Historical plain `Done` entries stay plain (pre-baseline); never retro-annotate.
+- Historical plain `Done` entries stay plain (pre-baseline); never retro-annotate. `[from: release-0.9.8]`
+  survives only where the class's content changed in 0.9.10 (docker_container) until it is re-migrated.
 - New design decisions → APPEND a dated entry to DESIGN_DECISIONS.md; never edit prior entries.
 
 ## Phase scoping

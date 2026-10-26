@@ -1,84 +1,48 @@
 # Upstream Baseline & Sync Discipline
 
+Current-state document. History of how the baseline was chosen lives in DESIGN_DECISIONS.md
+(2026-07-01 baseline entry; 2026-10-26 rulings batch, ruling 1).
+
 ## Declared baseline
-infra_populi is migrated from **puppet_infrastructure `release-0.9.8`**
-(identical to `release-0.9.9` for `manifests/` — 0.9.9 added no manifest
-changes over 0.9.8). This is the *reconciliation target* for Phase 1.
+infra_populi is migrated from **puppet_infrastructure `release-0.9.10`**, pinned to upstream commit
+**`cf477c638486c169a07ce1110c94424c301471b4`** (2026-09-09, "update release number on metadata",
+metadata.json 0.9.10, 90 manifests). This is the content production runs (deployed 2026-09-09).
+
+Single source: `.codex_state/baseline.env`. Read baseline content only through
+`.codex_state/tools/baseline.py` (`show <path>`, `paths <class>`, `drift <class>`).
+
+**Never use the upstream branch name or HEAD.** `origin/release-0.9.10` is a branch, not a tag; on
+2026-10-06 it moved to 874f854 by merging the Issue #122 MySQL rewrite (mariadb_server.pp, mysql_db.pp,
+rewritten mysql_server.pp), which ruling 1 keeps out until the CTO says it is released. The local
+upstream clone also sits on an unmerged branch. A `git fetch` must never change what "baseline" means.
 
 Old repo: git@github.com:ghomem/puppet_infrastructure.git
-- release-0.9.6  2024-11-12
-- release-0.9.7  2025-04-10
-- release-0.9.8  2026-05-21  <-- DECLARED BASELINE
-- release-0.9.9  2026-06-30  (== 0.9.8 for manifests/)
+- release-0.9.8   2026-05-21  previous baseline (tag 0.9.8 == origin/release-0.9.8 for manifests/templates/files)
+- release-0.9.9   2026-06-30  (== 0.9.8 for manifests/)
+- release-0.9.10  2026-09-09  cf477c6  <-- DECLARED BASELINE (pinned commit)
 
-## Why 0.9.8 (and why the history was confusing)
-Migration commits in infra_populi span 2026-02-17 .. 2026-04-29.
-During that window the latest *tagged* release was 0.9.7 (0.9.8 was cut
-~3 weeks after the last migration commit). BUT classes were migrated from
-the old repo's *live development HEAD* on each day, not from a tag — so the
-new repo is a TEMPORAL PATCHWORK spanning the 0.9.7 -> 0.9.8 dev period.
+## What changed 0.9.8 -> 0.9.10 (manifests/templates/files)
+Only `docker_container.pp` (+2 lines, `$command`) and `rsyslog_server.pp` (+64 lines) with four rsyslog
+templates (listener_simple.conf.epp, logrotate.timer.override.epp, rsyslog-hosts-retention.sh.epp,
+rsyslog-hosts.logrotate.epp). Consequences (ruling 1):
+- Tracker re-annotation `[from: release-0.9.8]` -> `[from: release-0.9.10]` was applied mechanically by
+  `.codex_state/tools/reannotate_baseline.py` to the 15 classes whose manifest+templates+files are
+  byte-identical between the two refs.
+- docker_container keeps `[from: release-0.9.8]` and is re-migrated under the new gate.
+- rsyslog_server migrates from 0.9.10 directly.
 
-Evidence: the logging subsystem was rewritten during that window.
-- 0.9.7 had: logfiles.pp, timezone_syslog.pp
-- 0.9.8 has: rsyslog_base/client/server/apparmor_exception (+ templates)
-- infra_populi already contains the NEW rsyslog_* names -> proves later
-  migrations pulled 0.9.8-era (unreleased-at-the-time) content.
+## Marker semantics
+- plain `Done` = historical migration, NOT reconciled to the baseline (reconciliation backlog).
+- `Done [from: release-0.9.10]` = migrated and confirmed at baseline content.
+- `Done [from: release-0.9.8]` = migrated at the previous baseline; content changed since (docker_container).
+- `Done [reimplemented: ...]` = considered, accepted divergence (2026-07-01).
+Marker position (`X Done` / `Done X`) is not normalized. Until the 1.5 re-review sweep is done, all
+31 done classes are "done under gate v1" (ruling 2).
 
-0.9.8 is therefore the first stable tag that the newest work aligns with,
-and is chosen as the single honest baseline going forward.
-
-## One-time reconciliation (scheduled: END of Phase 1, single pass)
-Bring every already-migrated class up to its 0.9.8 CONTENT (syntax already
-handled by migration). Do it once, at Phase 1 completion, so diffs show only
-content (Axis B), not syntax (Axis A). Re-GREEN each reconciled class via the
-harness.
-
-Rough triage (crude line-diff vs 0.9.8, mixes syntax+content — INDICATIVE ONLY,
-verify properly during the pass):
-- Content-identical (done):        dns_client, caching_nameserver,
-                                   nginx_default_removal, backup_rsnapshot_pre,
-                                   filesystem_lib64
-- Likely syntax-only (quick check): firewall_addon_web, firewall_ipv6_drop,
-                                   puppet_reports_cleanup, firewall_ipv6_drop_policy,
-                                   firewall_addon_caching_nameserver, firewall_addon_xrdp
-- Likely CONTENT drift (review):    firewall, sysmon_puppet_cert_status,
-                                   rsyslog_client, rsyslog_base   <-- rsyslog highest
-- All migrated classes still exist in 0.9.8 (no upstream deletions among them).
-
-## KNOWN INCONSISTENCY to resolve during reconciliation
-`.codex_state/migrated_classes.txt` "Done" markers do NOT fully match the
-actual `P8: migrate` git commits. Cross-check `git log --oneline | grep
-"P8: migrate"` against the Done markers and correct the tracker as part of
-(or just before) the reconciliation pass.
-
-## Ongoing anchor discipline (STARTS NOW, all future migrations)
-Every future class migration is done from the DECLARED BASELINE (0.9.8).
-When a class is migrated, its migrated_classes.txt line MUST be annotated:
-    <class> Done [from: release-0.9.8]
-Do NOT retroactively annotate existing entries (true per-class anchors are
-unknown — that is the accepted patchwork).
-
-### Ruling B (HQ, forward-only annotation) -- authoritative
-The 15 historical migrations (git log: 15x "P8: migrate", all pre-dating the
-release-0.9.8 tag of 2026-05-21, migrated from live dev HEAD) STAY as plain
-`Done`. They are NOT stamped [from: release-0.9.8], because that provenance
-would be factually false. Meaning of the two marker forms going forward:
-  - plain `Done`                    = migrated, NOT yet reconciled to 0.9.8
-                                      (this is the reconciliation backlog)
-  - `Done [from: release-0.9.8]`    = migrated AND confirmed at 0.9.8 content
-A historical class EARNS the [from: release-0.9.8] annotation only after it is
-reconciled to 0.9.8 during the end-of-Phase-1 reconciliation pass. New forward
-migrations get the annotation immediately (they are done from 0.9.8 by rule).
-Note: migrated_classes.txt uses two interchangeable marker positions --
-`X Done` (later Codex entries) and `Done X` (early hand entries); both mean
-migrated. Do NOT normalize the format (cosmetic-only; risks editing errors).
+## Drift discipline
+Before any class is worked: `baseline.py drift <class>`. Drift is resolved by a verbatim baseline-sync
+commit `P8: baseline-sync <class> to release-0.9.10` (2026-10-01 ruling, baseline name updated by ruling 1).
 
 ## Future upstream catch-up policy
-Do NOT chase new old-repo releases (0.9.10+) mid-phase. Note them, and fold
-into a deliberate catch-up at a PHASE BOUNDARY, always diffing
-`<current_baseline>..<new_release>` so only content changes appear.
-
-## Note on stale reports
-`.codex_state/upstream_sync/*.diff` were generated against 0.9.8 but reflect
-the pre-analysis (patchwork) confusion. Treat as SUPERSEDED by this document;
-regenerate against the declared baseline when reconciliation begins.
+A new upstream release is adopted only by an HQ ruling that names the new pinned commit, diffing
+`<current pin>..<new pin>` so only content changes appear, and re-annotating mechanically as above.

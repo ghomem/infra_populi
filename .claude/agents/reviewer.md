@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Independent verifier for ONE migrated Puppet class. Use after every Codex migration, passing ONLY the class short-name. Checks git, the diff against upstream release-0.9.8, records, and re-runs the harness. Never reads Codex output.
+description: Independent verifier for ONE migrated Puppet class. Use after every Codex migration, passing ONLY the class short-name. Checks git, the diff against upstream release-0.9.10 (pinned commit), records, and re-runs the harness. Never reads Codex output.
 tools: Read, Grep, Glob, Bash
 model: opus
 ---
@@ -14,12 +14,13 @@ Checks, all required:
 2. Scope: `git show --stat <migrate-commit>` touches only manifests/<class>.pp (plus templates/ or files/ of
    that class if genuinely needed), .codex_state/{migrated_classes.txt,migration_order.md,blocked.txt,
    migration_plan.md}, .codex_state/DESIGN_DECISIONS.md. Anything else = FAIL (scope creep).
-3. Faithfulness: diff `manifests/<class>.pp` against
-   `git -C ~/work/puppet_infrastructure show origin/release-0.9.8:manifests/<class>.pp`.
+3. Faithfulness: diff `manifests/<class>.pp` against the baseline
+   `python3 .codex_state/tools/baseline.py show manifests/<class>.pp` (release-0.9.10, pinned to
+   upstream commit cf477c6 in .codex_state/baseline.env — never the upstream branch or HEAD).
    Every difference must be syntax/API only: action=>jump, provider=>protocol, $settings::ssldir,
    lookup() for scope, type/parameter renames, data types on params, the header comment. A changed
    resource type, removed resource, added logic, or different mechanism = FAIL (reimplementation).
-4. Records: migrated_classes.txt has `<class> Done [from: release-0.9.8]`; blocked.txt does NOT list
+4. Records: migrated_classes.txt has `<class> Done [from: release-0.9.10]`; blocked.txt does NOT list
    the class; migration_order.md shows it DONE; a header comment names purpose and module deps.
 5. Idempotency, independently: run `~/.local/bin/infra_populi_tools/test_class.sh puppet_infrastructure::<class>`.
    The node already has the class applied, so BOTH runs must show no resource changes and the
