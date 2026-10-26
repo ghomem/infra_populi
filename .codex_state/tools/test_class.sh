@@ -375,6 +375,36 @@ die_agent_rc() {
   die "Agent run ${run} failed (exit ${rc})."
 }
 
+coverage_check() {
+  # Step 1.3: the target's resources must be in the applied catalog. Filtering runs ON THE NODE and
+  # prints only Type[title] of resources tagged with a target, so nothing else in the catalog (e.g.
+  # the lab-local passwd_common, ruling 6a) ever leaves the node. Fails if a target has 0 concrete
+  # resources (defined-type instances are listed but not counted).
+  local -a targets=()
+  local cls report rc
+  for cls in "$@"; do targets+=("puppet_infrastructure::${cls#puppet_infrastructure::}"); done
+  report="$(timeout 60 ssh "$NODE_HOST" "sudo -n python3 - ${targets[*]}" <<'PY'
+import json, sys
+catalog = "/opt/puppetlabs/puppet/cache/client_data/catalog/puppet8node.json"
+resources = json.load(open(catalog))["resources"]
+empty = 0
+for target in sys.argv[1:]:
+    tag = target.lower()
+    mine = [r for r in resources if tag in r.get("tags", []) and r["type"] not in ("Class", "Stage", "Node")]
+    concrete = [r for r in mine if "::" not in r["type"]]
+    print("COVERAGE %s: %d concrete resources (+%d defined-type instances)"
+          % (target, len(concrete), len(mine) - len(concrete)))
+    for r in mine:
+        print("  %s[%s]" % (r["type"], r["title"]))
+    empty += not concrete
+sys.exit(3 if empty else 0)
+PY
+)" && rc=0 || rc=$?
+  echo "$report"
+  [[ $rc -ne 3 ]] || die "Coverage: a target has no concrete resources in the applied catalog (body skipped by a conditional? wrong fixture?)."
+  [[ $rc -eq 0 ]] || die "Coverage check could not read the node's cached catalog (exit ${rc})."
+}
+
 render_fixture_block() {
   local name="$1" path
   [[ "$name" =~ ^[a-z0-9_]+$ ]] || die "Invalid fixture name: '${name}'"
@@ -455,6 +485,12 @@ main() {
     die "Run 2 still applied changes (not idempotent). Fix and re-run."
   fi
   [[ $rc2 -eq 0 ]] || die "Run 2 exited ${rc2}; GREEN requires exit 0 (no changes, no failures)."
+
+  if [[ -n "${FIXTURE_NAME:-}" ]]; then
+    echo "COVERAGE: skipped for engine fixture '${FIXTURE_NAME}'"
+  else
+    coverage_check "${classes[@]}"
+  fi
 
   echo "GREEN: run 2 exited 0 with no change events (gate v2)."
 }

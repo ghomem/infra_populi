@@ -107,3 +107,36 @@ def test_pluginsync_is_not_counted_as_class_events(lab):
     proc = lab.run([SCRIPT, "--revert-first", "--fixture", "guarded_exec"])
     assert "RUN1_EVENTS: 0 catalog, 3 pluginsync" in proc.stdout
     assert "applied nothing" in proc.stderr
+
+
+COVERAGE_CALL = r"sudo -n python3 - puppet_infrastructure::puppet_backup$"
+CLEAN = [{"rc": 2, "stdout": APPLIED}, {"rc": 0, "stdout": APPLIED}]
+
+
+def test_coverage_lists_target_resources_and_is_green(lab):
+    agent_runs(lab, *CLEAN)
+    lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "stdout":
+        "COVERAGE puppet_infrastructure::puppet_backup: 2 concrete resources (+1 defined-type instances)\n"
+        "  Cron[cron_puppet_backup]\n"})
+    proc = lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"])
+    assert proc.returncode == 0, proc.stderr
+    assert "COVERAGE puppet_infrastructure::puppet_backup: 2 concrete" in proc.stdout
+    coverage_calls = [c for c in lab.calls("ssh") if "python3 -" in " ".join(c)]
+    assert len(coverage_calls) == 1
+    assert "filesystem_base" not in " ".join(coverage_calls[0])  # required base is not a target
+
+
+def test_zero_coverage_is_red(lab):
+    agent_runs(lab, *CLEAN)
+    lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "rc": 3, "stdout":
+        "COVERAGE puppet_infrastructure::puppet_backup: 0 concrete resources (+0 defined-type instances)\n"})
+    proc = lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"])
+    assert proc.returncode == 1
+    assert "no concrete resources" in proc.stderr and "GREEN" not in proc.stdout
+
+
+def test_unreadable_catalog_is_red(lab):
+    agent_runs(lab, *CLEAN)
+    lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "rc": 1})
+    proc = lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"])
+    assert proc.returncode == 1 and "could not read" in proc.stderr
