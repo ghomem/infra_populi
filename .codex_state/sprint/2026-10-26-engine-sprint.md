@@ -19,14 +19,23 @@ because rule 7 requires every later tool to name release-0.9.10 and rule 2 relie
 Second NIC (ruling 10) rides with 3.1 so one new node snapshot carries both. extra_files/PKI script
 (ruling 6) is in 4.1. Fixture rename (ruling 8) is in 1.4.
 
+HQ amendment (31b8282): laptop is a production Puppet 5 node — no ruby/Puppet 8/gems there; parser
+validate + puppet-lint run on puppet8master; puppet-lint installed by the master-fixtures script
+(created in 2.1 for puppet-lint, extended in 4.1 for extra_files/PKI/Hiera); pregate prints versions.
+Baseline cf477c6 confirmed.
+
+Process slip (recorded, not repaired): commit 31b8282 was made while the uncommitted 3.1 files were in
+the worktree (it staged only its own two files). Rule 2 forbids that; no force-push to undo it. Out-of-
+band commits from now on stash unrelated work first.
+
 | step | status | commit | measure | open issues |
 |---|---|---|---|---|
 | 0a decisions entry for all rulings | done | c875425 | entry appended, supersessions marked | — |
 | 0b pin 5 Puppetfile lines + export | done | 7e7a338 | 5 lines pinned (resolv_conf 8.0.1, stdlib 9.7.0, resource_api 1.1.0, puppetserver_gem 1.1.1, sudo 9.0.2); r10k re-run; `puppet module list` diff before/after = none, 0 invalid (r10k purged puppet_infrastructure as documented, redeployed at once by the harness rsync+mv); export at `.codex_state/lab/Puppetfile`, `export_puppetfile.py --verify` OK; 5 pytest pass | master backup `Puppetfile.bak.<ts>` left on master |
 | 0c puppet_boot_run escalation | done | b95f8a9 | `escalations/puppet_boot_run.md` with unit template, script, 4ae2e35 message; intent check: no conflict (message = make boot run work on 22.04; ordering+provider serve it, `ensure` does not) → proceed, no HQ stop | marker for the one-line divergence → checkpoint 1 question |
 | 0d baseline bump → release-0.9.10 + re-annotation | done | 76f347f | pin `baseline.env` (cf477c6) read by `tools/baseline.py`; `reannotate_baseline.py --apply`: 15 reannotated, docker_container kept (manifest differs); re-run = 0 changes; self-check: only marker text changed; CLAUDE.md, reviewer.md, wrapper, generator header, UPSTREAM_BASELINE.md and the (off-repo) runbook now name release-0.9.10; `~/.local/bin/codex_migrate_class` is now a symlink to the tracked wrapper; 15 pytest pass | branch moved → `escalations/baseline-0.9.10-branch-moved.md`; filesystem_yum re-annotated mechanically although its provenance is known-false (D.3) — the 1.5 sweep owns that |
-| 0e .gitignore replaces info/exclude; diagnosis committed | done | this commit | `.gitignore` ignores logs/, necessary_modules.txt, `__pycache__`, `*.bak`; `.codex_state/` line removed from `.git/info/exclude` (local, per-clone); `git status` shows only intended files; passwd list reduced to a count (fleet_class_usage.md:10, diagnosis E.1 user_sysmon row), production passwd_* names grep = 0; wrapper/SKILL no longer say `git add -f` | — |
-| 3.1 tier-0 revert + 2nd NIC + v2 snapshot | pending | | revert_s | |
+| 0e .gitignore replaces info/exclude; diagnosis committed | done | fe986ad | `.gitignore` ignores logs/, necessary_modules.txt, `__pycache__`, `*.bak`; `.codex_state/` line removed from `.git/info/exclude` (local, per-clone); `git status` shows only intended files; passwd list reduced to a count (fleet_class_usage.md:10, diagnosis E.1 user_sysmon row), production passwd_* names grep = 0; wrapper/SKILL no longer say `git add -f` | — |
+| 3.1 tier-0 revert + 2nd NIC + v2 snapshot | done | this commit | GRUB cause confirmed by console screenshots of the OLD baseline: GRUB 2.12 menu 'executed automatically in 26s' at +8 s, '4s' at +30 s, kernel at ~+34 s, SSH at 46.2 s. Node changes: GRUB_RECORDFAIL_TIMEOUT=2 + update-grub (grub.cfg recordfail branch `timeout=2`), apt-daily.timer/apt-daily-upgrade.timer/unattended-upgrades.service disabled, clean shutdown, host `vboxnet0` created (192.168.56.1/24, DHCP off), NIC2 hostonly vboxnet0 (guest `enp0s8`, DOWN, unconfigured), offline snapshot `P8NODE_BASELINE_GREEN_v2` (child of the old one; old kept). revert_node.sh: node hard poweroff, v2 snapshot, post-restore snapshot-name check, `REVERT_METRICS` line. revert_s: 31.3 cold / 29.4 / 22.4 warm (was ~120 nominal). 6 pytest stub tests pass (master only ever started; never powered off/restored); shellcheck 0.11.0 clean (SC2029 annotated: intended client-side expansion) | old snapshot P8NODE_BASELINE_GREEN kept until checkpoint 1; host interface vboxnet0 now exists on the laptop (a production Puppet 5 node — its agent could in principle manage it) |
 | 1.1 run-2 rc 0, exec/removed fail, timeouts | pending | | known-bad fixture → RED | |
 | 1.2 revert-first (wrapper + reviewer) | pending | | reviewer run 1 shows creations | |
 | 1.3 coverage signal | pending | | | |
