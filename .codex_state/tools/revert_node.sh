@@ -11,7 +11,8 @@
 #   node VM       ubuntu24-puppet8-Node
 #   master VM     Ubuntu24-puppet8-Master  (may start; never restore/power off/reset)
 #   node snapshot P8NODE_BASELINE_GREEN_v2 (offline; GRUB_RECORDFAIL_TIMEOUT=2,
-#                 apt timers off, NIC2 host-only vboxnet0 — sprint step 3.1)
+#                 apt timers off, NIC2 host-only vboxnet0 — sprint step 3.1);
+#                 its apt lists are refreshed after every restore (apt-get update)
 #   SSH aliases   puppet8node, puppet8master
 #   Wi-Fi bridge  host interface wlo1 (typically takes about 45s to settle)
 #   master check  puppet8master.example.com:8140, opened from the node
@@ -35,6 +36,7 @@ readonly MASTER_SERVICE_PORT="8140"
 readonly POWEROFF_TIMEOUT_SECONDS=30
 readonly SSH_TIMEOUT_SECONDS=120
 readonly POLL_INTERVAL_SECONDS=2
+readonly APT_UPDATE_TIMEOUT_SECONDS=180
 
 readonly -a SSH_OPTIONS=(
   -o BatchMode=yes
@@ -190,6 +192,14 @@ node_hostname="${node_hostname//$'\n'/}"
 [[ "$node_hostname" == "puppet8node" ]] ||
   fail "Node hostname verification failed: expected 'puppet8node', got '$node_hostname'."
 
+# The snapshot's apt lists are frozen at snapshot time and the apt timers are off (ruling 5), so
+# superseded package versions 404 on the mirrors. Refresh synchronously, before any harness run.
+printf 'Refreshing apt package lists on the node...\n'
+# shellcheck disable=SC2029  # the timeout is a local constant
+ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" "sudo -n timeout ${APT_UPDATE_TIMEOUT_SECONDS} apt-get -q update" >/dev/null ||
+  fail "apt-get update failed on node '$NODE_SSH_ALIAS' (mirror unreachable?)."
+t_apt="$(now_ms)"
+
 require_master_running
 
 # Client-side expansion is intended: host and port are local constants.
@@ -203,7 +213,8 @@ t_end="$(now_ms)"
 
 printf 'SUCCESS: node %q restored to %q; SSH, hostname, and %s:%s connectivity verified.\n' \
   "$NODE_VM" "$NODE_SNAPSHOT" "$MASTER_SERVICE_HOST" "$MASTER_SERVICE_PORT"
-printf 'REVERT_METRICS {"snapshot":"%s","total_s":%s,"master_check_s":%s,"poweroff_s":%s,"restore_s":%s,"boot_to_ssh_s":%s,"verify_s":%s}\n' \
+printf 'REVERT_METRICS {"snapshot":"%s","total_s":%s,"master_check_s":%s,"poweroff_s":%s,"restore_s":%s,"boot_to_ssh_s":%s,"apt_update_s":%s,"verify_s":%s}\n' \
   "$NODE_SNAPSHOT" \
   "$(ms_to_s $((t_end - t_start)))" "$(ms_to_s $((t_master - t_start)))" "$(ms_to_s $((t_off - t_master)))" \
-  "$(ms_to_s $((t_restore - t_off)))" "$(ms_to_s $((t_ssh - t_restore)))" "$(ms_to_s $((t_end - t_ssh)))"
+  "$(ms_to_s $((t_restore - t_off)))" "$(ms_to_s $((t_ssh - t_restore)))" \
+  "$(ms_to_s $((t_apt - t_ssh)))" "$(ms_to_s $((t_end - t_apt)))"

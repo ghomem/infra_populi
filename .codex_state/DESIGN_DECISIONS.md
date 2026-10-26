@@ -585,3 +585,14 @@ the harness user's SSH access (it manages nothing on the node today).
 Incident (recorded for honesty): while prototyping, a ruby JSON parse error echoed one full puppet8node
 catalog into the advisor's terminal. With Passwd_common empty, no passwd content was exposed. The shipped
 filter withholds the input on every error path (lab-tested with a marker string).
+
+## 2026-10-26 — Node revert refreshes apt lists (correction to sprint step 3.1)
+Finding (1.5 sweep, caching_nameserver): on P8NODE_BASELINE_GREEN_v2 `Package[bind]` failed with mirror
+404s (`bind9_9.18.39-0ubuntu0.24.04.2` no longer in the pool). The snapshot's /var/lib/apt/lists date
+from 2026-02-17; under the old baseline the apt-daily timer refreshed them shortly after each boot (the
+diagnosis saw lists dated 10-15/10-18 on restored nodes). Disabling the timers (ruling 5) froze them.
+Decision (advisor tier; keeps the ruled snapshot unchanged): revert_node.sh runs a synchronous
+`apt-get -q update` (timeout 180 s) after boot and before any harness run, and fails the revert if it
+fails. This keeps the ruling's intent — no apt activity concurrent with a harness run — and restores
+current lists. Cost: ~12 s per revert (measured 12.2 s; revert 39 s total). REVERT_METRICS gains apt_update_s.
+Any verdict recorded on the frozen lists before this fix (caching_nameserver) is superseded by a re-review.

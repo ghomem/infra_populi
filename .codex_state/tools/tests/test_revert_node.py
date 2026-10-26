@@ -24,7 +24,10 @@ def test_running_node_is_hard_powered_off_and_restored_to_v2(lab):
     assert last.startswith("REVERT_METRICS ")
     metrics = json.loads(last.split(" ", 1)[1])
     assert metrics["snapshot"] == "P8NODE_BASELINE_GREEN_v2"
-    assert {"total_s", "poweroff_s", "restore_s", "boot_to_ssh_s"} <= metrics.keys()
+    assert {"total_s", "poweroff_s", "restore_s", "boot_to_ssh_s", "apt_update_s"} <= metrics.keys()
+    ssh = [" ".join(c) for c in lab.calls("ssh")]
+    apt = next(i for i, c in enumerate(ssh) if "apt-get -q update" in c)
+    assert apt > next(i for i, c in enumerate(ssh) if c.endswith("puppet8node hostname"))
     assert master_actions(lab) == []
 
 
@@ -64,3 +67,10 @@ def test_wrong_hostname_fails(lab):
     proc = lab.run([SCRIPT])
     assert proc.returncode == 1
     assert "hostname verification failed" in proc.stderr
+
+
+def test_failed_apt_update_fails_the_revert(lab):
+    lab.world["ssh"].insert(0, {"match": r"apt-get -q update", "rc": 100})
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 1
+    assert "apt-get update failed" in proc.stderr
