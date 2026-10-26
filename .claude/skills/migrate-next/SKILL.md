@@ -8,12 +8,15 @@ counts PASS + blocked-with-evidence. Stop exactly at budget, or when no PENDING 
 PREFLIGHT (once): read CLAUDE.md and the three most recent DESIGN_DECISIONS.md entries. `git status`
 clean and HEAD == origin/main (fix by push if only ahead; STOP if diverged). `ssh puppet8master` reachable
 and 8140 listening. Regenerate the order file. Create `.codex_state/logs/` if missing.
+`.git/hooks/pre-commit` must be a symlink to `../../.codex_state/tools/pre-commit` (install it if missing).
 
 FOR EACH CLASS:
 1. PICK: next PENDING row in migration_order.md that is not in blocked.txt. Read its plan row
    (resource_type, internal_deps, required_base, required_external, self_contained) and
    `manifests/<class>.pp`. If deps are not DONE, the order file is wrong — investigate, do not skip silently.
-2. HAZARDS: run the 7-item checklist from CLAUDE.md against the manifest (grep, read templates it uses,
+2. HAZARDS: first run `.codex_state/tools/pregate.sh <class>` (drift, parse, lint, templates, static
+   hazards 1/2/5/6/9 — it prints its tool versions); every FINDING is a hazard to tier below. Then run
+   the checklist from CLAUDE.md against the manifest (grep, read templates it uses,
    check external types against the master's `puppet module list` and the production module list in
    the 2026-09-30 design entry). For each hazard found decide the tier:
    - You can resolve (pin+install a module via Puppetfile+r10k on the master following the module rules;

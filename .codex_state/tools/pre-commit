@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Engine pre-commit hook (ruling 4: mandatory). Installed as .git/hooks/pre-commit -> this file.
+# Staged manifests/templates that differ from the baseline must parse (puppet8master) and add no
+# NEW allowlisted puppet-lint findings. Verbatim baseline content passes untouched. Non-interactive:
+# Codex commits through it. The repo-root `pre-commit` is upstream module content and is NOT used
+# (it runs the laptop's production Puppet 5 and reads /dev/tty).
+set -euo pipefail
+repo="$(git rev-parse --show-toplevel)"
+if git diff --cached --name-only --diff-filter=ACM | grep -qE '^(manifests/.+\.pp|templates/.+)$'; then
+  "$repo/.codex_state/tools/pregate.sh" --staged
+fi

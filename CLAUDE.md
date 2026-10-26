@@ -25,6 +25,14 @@ Salatiel decides infrastructure and strategy. Rationale for every rule below is 
   migration), `.codex_state/tools/revert_node.sh`, harness
   `~/.local/bin/infra_populi_tools/test_class.sh <class>`, `python3 .codex_state/gen_migration_order.py`
   (no args = regenerate the order file; `--classify <class>` = look one class up; there is no --help). Master Puppetfile: `/home/deployment/infra_populi_env/Puppetfile`.
+  Harness flags: `--revert-first` (restore the node first; reviewer always uses it), `--fixture <name>`
+  (engine self-test manifests in `.codex_state/tools/tests/fixtures/`). GREEN = run 2 exits 0, no change
+  events, target resources present in the catalog (gate v2). Pre-VM gate:
+  `.codex_state/tools/pregate.sh <class>` (laptop + puppet8master; exit 0 CLEAN / 1 FINDINGS / 2 ERROR).
+  Engine pre-commit hook: `.git/hooks/pre-commit -> ../../.codex_state/tools/pre-commit` (mandatory;
+  per-clone, install with `ln -s ../../.codex_state/tools/pre-commit .git/hooks/pre-commit`). Lab-master
+  fixture state: `.codex_state/tools/master_fixtures.sh` (idempotent). Tool tests:
+  `pytest .codex_state/tools/tests/` + `shellcheck` on every shell tool.
 
 ## Standing principles
 - P1 — independent verification: the reviewer never sees Codex's transcript; it checks the diff, git,
