@@ -12,6 +12,9 @@ Salatiel decides infrastructure and strategy. Rationale for every rule below is 
   branch has moved past the pin: never use the branch name or upstream HEAD as the baseline.
   Namespace stays `puppet_infrastructure::`.
 - Phase 1 = SYNTAX migration only, behaviour preserved. Not functional testing (Phase 3).
+- The laptop is a PRODUCTION Puppet 5 node (puppet-agent 5.5.22, agent active). Never install system
+  ruby, Puppet 8 packages or gems on it, and never run `puppet` there. Puppet-side checks (parser
+  validate, puppet-lint, compiles) run on puppet8master over ssh.
 - Lab: OpenVox. Master `puppet8master` (192.168.77.166), node `puppet8node` (192.168.77.185),
   rsync aliases `puppet8master-rsync`/`puppet8node-rsync`. Node is Ubuntu 24.04, netplan-only.
 - State (tracked): `.codex_state/migration_plan.md` (scores, internal_deps, resource_type,

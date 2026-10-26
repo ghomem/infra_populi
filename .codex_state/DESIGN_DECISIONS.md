@@ -560,3 +560,14 @@ codex-cli 0.159.2, model gpt-6.1-sol (changed 2026-09-30 per ~/.codex/config.tom
 no entry at the time), reasoning effort xhigh, Codex plugin skill "superpowers" 6.4.2
 (openai-curated-remote) observed loaded in runs; advisor claude-opus-5-5; reviewer subagent
 `model: opus` (unpinned alias in .claude/agents/reviewer.md).
+
+## 2026-10-26 — HQ amendment: the laptop is a production Puppet 5 node; ruling 4 amended; baseline confirmed
+Fact: the advisor laptop is a PRODUCTION Puppet 5 node (puppet-agent 5.5.22 at /opt/puppetlabs, agent
+service active). Rule: no system ruby, no Puppet 8 packages, no gems are installed on it; nothing in the
+engine runs `puppet` on the laptop. (The advisor's earlier request to `apt install puppet puppet-lint`
+there is withdrawn; shellcheck 0.11.0 and bats 1.13.0 were installed instead.)
+Ruling 4 AMENDED (supersedes "pregate.sh on the laptop ... parser validate, allowlisted puppet-lint" as
+to WHERE): `puppet parser validate` and puppet-lint run on puppet8master over ssh. puppet-lint is
+installed with /opt/puppetlabs/puppet/bin/gem at a pinned version by the master-fixtures script
+(ruling 6). pregate prints the tool versions it used. Everything else in pregate stays laptop-side.
+Ruling 1 baseline pin CONFIRMED: release-0.9.10 == upstream commit cf477c6 (not the moving branch).
