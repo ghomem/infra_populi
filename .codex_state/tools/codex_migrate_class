@@ -31,6 +31,9 @@ BASELINE_LABEL="$(python3 .codex_state/tools/baseline.py label)"
 # Outer timeout (ruling 2 / step 1.1). Longest observed run: 985 s; a hang was 47 min.
 CODEX_TIMEOUT_SECONDS="${CODEX_TIMEOUT_SECONDS:-1800}"
 
+# Revert first (step 1.2): Codex's first harness run must start from the clean baseline.
+.codex_state/tools/revert_node.sh || { echo "REVERT_FAILED: node not restored; Codex not started" >&2; exit 3; }
+
 rc=0
 timeout --kill-after=30 "$CODEX_TIMEOUT_SECONDS" codex exec \
   -c 'sandbox_mode="danger-full-access"' \
@@ -39,8 +42,9 @@ timeout --kill-after=30 "$CODEX_TIMEOUT_SECONDS" codex exec \
 
 TARGET CLASS: $CLASS
 
-First action: run the harness:
+The wrapper has just reverted the node to its baseline. First action: run the harness:
 ~/.local/bin/infra_populi_tools/test_class.sh $CLASS
+To start again from a clean node later, run it as: test_class.sh --revert-first $CLASS
 
 The injected runbook is authoritative: section 1 defines your authority, section 3 defines what stops you, and section 4 defines how to record a block.
 

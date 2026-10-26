@@ -22,9 +22,12 @@ Checks, all required:
    resource type, removed resource, added logic, or different mechanism = FAIL (reimplementation).
 4. Records: migrated_classes.txt has `<class> Done [from: release-0.9.10]`; blocked.txt does NOT list
    the class; migration_order.md shows it DONE; a header comment names purpose and module deps.
-5. Idempotency, independently: run `~/.local/bin/infra_populi_tools/test_class.sh puppet_infrastructure::<class>`.
-   The node already has the class applied, so BOTH runs must show no resource changes and the
-   output must end with the GREEN line. Changes on run 1 = FAIL (non-idempotent) — report which resource.
+5. Idempotency, independently, from a clean node: run
+   `~/.local/bin/infra_populi_tools/test_class.sh --revert-first puppet_infrastructure::<class>`.
+   It restores the node baseline first, so run 1 is a FIRST APPLY: it must show the class's resources
+   being created/changed (`RUN1_EVENTS:` > 0). Run 2 must exit 0 with no change events and the output
+   must end with the GREEN line. Anything else = FAIL — report the resource. `RUN1_EVENTS: 0` after a
+   revert = FAIL unless the class demonstrably manages only state the baseline already has (say which).
 6. Fixtures: any define title or identity in params/plan must be `p8testuser`/`p8test0`, never a real
    account or `enp0s3`.
 

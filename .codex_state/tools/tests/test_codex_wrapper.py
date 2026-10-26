@@ -30,3 +30,21 @@ def test_prompt_names_the_pinned_baseline(lab):
     assert lab.run([WRAPPER, "puppet_infrastructure::dns_client"]).returncode == 0
     prompt = out.read_text()
     assert "release-0.9.10 (cf477c6)" in prompt and "release-0.9.8" not in prompt
+
+
+def test_wrapper_reverts_before_codex(lab):
+    marker = lab.root / "codex_ran"
+    stub_codex(lab, f"touch {marker}")
+    proc = lab.run([WRAPPER, "puppet_infrastructure::dns_client"])
+    assert proc.returncode == 0, proc.stderr
+    assert ["VBoxManage", "snapshot", "ubuntu24-puppet8-Node", "restore", "P8NODE_BASELINE_GREEN_v2"] in lab.calls()
+    assert marker.exists()
+
+
+def test_wrapper_does_not_start_codex_when_revert_fails(lab):
+    marker = lab.root / "codex_ran"
+    stub_codex(lab, f"touch {marker}")
+    lab.world["vms"]["ubuntu24-puppet8-Node"]["state"] = "restoring"
+    proc = lab.run([WRAPPER, "puppet_infrastructure::dns_client"])
+    assert proc.returncode == 3 and "REVERT_FAILED" in proc.stderr
+    assert not marker.exists()

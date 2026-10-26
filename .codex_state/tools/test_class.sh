@@ -33,6 +33,7 @@ MASTER_NODE_FILE="/etc/puppetlabs/code/environments/production/manifests/nodes/p
 
 PARAMS_DIR="${HOME}/.config/infra_populi/params"
 FIXTURE_DIR="${LOCAL_REPO}/.codex_state/tools/tests/fixtures"
+REVERT_TOOL="${LOCAL_REPO}/.codex_state/tools/revert_node.sh"
 
 # GREEN v2 (ruling 2 / step 1.1): every agent run has an outer timeout; run 2 must exit 0.
 AGENT_TIMEOUT_SECONDS="${AGENT_TIMEOUT_SECONDS:-600}"
@@ -388,7 +389,14 @@ render_fixture_block() {
 main() {
   need_cmd python3
 
-  [[ $# -ge 1 ]] || die "Usage: $0 [--render-only] <class1> [class2 ...] | --fixture <name>"
+  local revert_first=0
+  if [[ "${1:-}" == "--revert-first" ]]; then
+    # Step 1.2: restore the node baseline before deploying, so run 1 is a first apply.
+    revert_first=1
+    shift
+  fi
+
+  [[ $# -ge 1 ]] || die "Usage: $0 [--revert-first] <class1> [class2 ...] | [--revert-first] --fixture <name> | --render-only <class1> [...]"
 
   if [[ "$1" == "--fixture" ]]; then
     # Engine self-test: apply a manifest from .codex_state/tools/tests/fixtures/ instead of a class.
@@ -398,6 +406,7 @@ main() {
   fi
 
   if [[ "$1" == "--render-only" ]]; then
+    [[ $revert_first -eq 0 ]] || die "--revert-first cannot be combined with --render-only"
     shift
     [[ $# -ge 1 ]] || die "Usage: $0 --render-only <class1> [class2 ...]"
     guard_owner_validated_targets "$@"
@@ -414,15 +423,27 @@ main() {
 
   mkdir -p "$PARAMS_DIR"
 
+  if [[ $revert_first -eq 1 ]]; then
+    echo "==> Reverting the node to its baseline first"
+    "$REVERT_TOOL" || die "Node revert failed; not running the class on an unknown node state."
+  fi
+
   deploy_repo_to_master
   update_node_codemgr_block "${classes[@]}"
 
   echo "==> Running puppet agent (run 1 may change; run 2 must exit 0 with no events; timeout ${AGENT_TIMEOUT_SECONDS}s each)"
-  local out1 out2 rc1 rc2 offending
+  local out1 out2 rc1 rc2 offending run1_events
 
   out1="$(run_agent)" && rc1=0 || rc1=$?
   echo "$out1"
   [[ $rc1 -eq 0 || $rc1 -eq 2 ]] || die_agent_rc 1 "$rc1"
+  # Catalog events only: pluginsync writes /File[/opt/puppetlabs/puppet/cache/...] outside Stage[main].
+  run1_events="$(grep -E 'Notice: /Stage\[main\]/' <<<"$out1" | grep -cE "$RUN2_FORBIDDEN_RE" || true)"
+  run1_plugins="$(grep -cE 'Notice: /File\[/opt/puppetlabs/puppet/cache/' <<<"$out1" || true)"
+  echo "RUN1_EVENTS: ${run1_events} catalog, ${run1_plugins} pluginsync (rc ${rc1}; node $([[ $revert_first -eq 1 ]] && echo "reverted first" || echo "NOT reverted first"))"
+  if [[ $revert_first -eq 1 && $run1_events -eq 0 ]]; then
+    echo "WARNING: run 1 on a freshly reverted node applied nothing; the class may be a no-op here." >&2
+  fi
 
   out2="$(run_agent)" && rc2=0 || rc2=$?
   echo "$out2"
