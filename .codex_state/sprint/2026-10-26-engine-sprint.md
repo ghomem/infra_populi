@@ -21,8 +21,8 @@ Second NIC (ruling 10) rides with 3.1 so one new node snapshot carries both. ext
 
 | step | status | commit | measure | open issues |
 |---|---|---|---|---|
-| 0a decisions entry for all rulings | done | this commit | entry appended, supersessions marked | — |
-| 0b pin 5 Puppetfile lines + export | pending | | | |
+| 0a decisions entry for all rulings | done | c875425 | entry appended, supersessions marked | — |
+| 0b pin 5 Puppetfile lines + export | done | this commit | 5 lines pinned (resolv_conf 8.0.1, stdlib 9.7.0, resource_api 1.1.0, puppetserver_gem 1.1.1, sudo 9.0.2); r10k re-run; `puppet module list` diff before/after = none, 0 invalid (r10k purged puppet_infrastructure as documented, redeployed at once by the harness rsync+mv); export at `.codex_state/lab/Puppetfile`, `export_puppetfile.py --verify` OK; 5 pytest pass | master backup `Puppetfile.bak.<ts>` left on master |
 | 0c puppet_boot_run escalation | pending | | | |
 | 0d baseline bump → release-0.9.10 + re-annotation | pending | | | |
 | 0e .gitignore replaces info/exclude; diagnosis committed | pending | | | |
