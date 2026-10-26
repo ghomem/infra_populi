@@ -1,0 +1,115 @@
+class_name,event,era,actor,commit,commit_time,gap_from_prev_commit_s,codex_log,codex_start,codex_end,codex_wall_s,codex_tokens,codex_exec_cmds,codex_harness_runs,codex_revert_runs,codex_green_lines,codex_error_lines,advisor_hazard_note_time,advisor_prep_to_codex_start_s,codex_end_to_commit_s,agent_runs_in_codex_window,agent_failed_in_window,agent_runs_after_codex_until_next_event,reviewer,notes
+,OTHER,historical,human,d62f3f3,2026-01-14T09:18:45+01:00,,,,,,,,,,,,,,,,,,,
+,OTHER,historical,human,d93f147,2026-02-17T00:12:49+00:00,2908444,,,,,,,,,,,,,,,,,,
+dns_client,GREEN,historical,human,0fbf5ba,2026-02-17T19:09:41+00:00,68212,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+caching_nameserver,GREEN,historical,human,e11cb27,2026-02-17T20:02:33+00:00,3172,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+firewall,GREEN,historical,human,ad68e29,2026-02-17T20:28:43+00:00,1570,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+nginx_default_removal,GREEN,historical,human,a1f1399,2026-02-17T20:41:46+00:00,783,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+puppet_reports_cleanup,GREEN,historical,human,1369d70,2026-03-31T14:24:10+01:00,3602544,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+rsyslog_base,GREEN,historical,human,989e6cd,2026-03-31T14:29:30+01:00,320,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+sysmon_puppet_cert_status,GREEN,historical,human,8f11086,2026-03-31T21:19:42+01:00,24612,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+backup_rsnapshot_pre,GREEN,historical,human,a138db1,2026-03-31T21:31:49+01:00,727,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+filesystem_lib64,GREEN,historical,human,6565ce8,2026-03-31T21:39:07+01:00,438,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+rsyslog_client,GREEN,historical,human,5cdcde1,2026-03-31T21:46:56+01:00,469,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+firewall_addon_caching_nameserver,GREEN,historical,human,c844283,2026-04-29T11:35:58+01:00,2468942,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+firewall_addon_web,GREEN,historical,human,0593ce2,2026-04-29T11:47:14+01:00,676,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+firewall_addon_xrdp,GREEN,historical,human,ed4394f,2026-04-29T11:52:50+01:00,336,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+firewall_ipv6_drop_policy,GREEN,historical,human,d678248,2026-04-29T12:02:54+01:00,604,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+,BOOKKEEPING,historical,human,201c094,2026-04-29T12:05:59+01:00,185,,,,,,,,,,,,,,,,,,
+firewall_ipv6_drop,GREEN,historical,human,a8aa30c,2026-04-29T12:09:27+01:00,208,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+,BOOKKEEPING,forward,advisor,cc22e82,2026-07-01T01:36:55+01:00,5405248,,,,,,,,,,,,,,,,,,
+,BOOKKEEPING,forward,advisor,d1c9ea2,2026-07-01T13:05:06+01:00,41291,,,,,,,,,,,,,,,,,,
+filesystem_yum,GREEN,forward,codex,a6b1549,2026-07-01T13:49:32+01:00,2666,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+,OTHER,forward,advisor,0394854,2026-07-01T14:07:43+01:00,1091,,,,,,,,,,,,,,,,,,
+,BOOKKEEPING,forward,advisor,8e899ca,2026-07-01T14:59:18+01:00,3095,,,,,,,,,,,,,,,,,,
+,BOOKKEEPING,forward,advisor,dd69aa3,2026-07-01T16:00:06+01:00,3648,,,,,,,,,,,,,,,,,,
+,BOOKKEEPING,forward,advisor,4267003,2026-07-01T16:27:24+01:00,1638,,,,,,,,,,,,,,,,,,
+,BOOKKEEPING,forward,advisor,c0e1dd3,2026-07-01T16:53:32+01:00,1568,,,,,,,,,,,,,,,,,,
+network_dhcp,GREEN,forward,codex,48fc434,2026-07-01T17:15:11+01:00,1299,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+network_dhcp,REVERTED,forward,advisor,03cb002,2026-07-01T17:51:10+01:00,2159,,,,,,,,,,,,,,,,,,
+,OTHER,forward,advisor,c4142a6,2026-07-01T17:55:40+01:00,270,,,,,,,,,,,,,,,,,,
+,BOOKKEEPING,forward,advisor,e23d9b1,2026-07-01T18:51:34+01:00,3354,,,,,,,,,,,,,,,,,,
+,BOOKKEEPING,forward,advisor,6ca47a0,2026-07-01T19:04:40+01:00,786,,,,,,,,,,,,,,,,,,
+firewall_addon_hosting,BLOCKED,forward,advisor,9668993,2026-07-26T17:31:44+01:00,2154424,,,,,,,,,,,,,,,,,,Codex/advisor block; no log retained
+,BOOKKEEPING,forward,advisor,77de351,2026-07-26T17:45:20+01:00,816,,,,,,,,,,,,,,,,,,
+,BOOKKEEPING,forward,advisor,c7fd306,2026-07-26T17:56:35+01:00,675,,,,,,,,,,,,,,,,,,
+,OTHER,forward,advisor,101eb2e,2026-07-26T18:15:31+01:00,1136,,,,,,,,,,,,,,,,,,
+,TOOLING,forward,advisor,0b0476e,2026-07-26T18:39:05+01:00,1414,,,,,,,,,,,,,,,,,,
+defines,UNBLOCK,forward,advisor,41bf1f2,2026-07-26T19:14:06+01:00,2101,,,,,,,,,,,,,,,,,,
+,TOOLING,forward,advisor,53eb54c,2026-07-26T19:15:26+01:00,80,,,,,,,,,,,,,,,,,,
+firewall_addon_openvpn_server,BLOCKED,forward,advisor,97423c6,2026-07-26T19:54:50+01:00,2364,,,,,,,,,,,,,,,,,,Codex/advisor block; no log retained
+firewall_addon_hosting,REBLOCKED,forward,advisor,ce8b236,2026-07-26T20:21:38+01:00,1608,,,,,,,,,,,,,,,,,,Codex/advisor block; no log retained
+backup_rsnapshot,PLAN_FIX,forward,advisor,c7761ce,2026-07-26T21:08:47+01:00,2829,,,,,,,,,,,,,,,,,,
+backup_rsnapshot,GREEN,forward,codex,f3059b6,2026-07-26T21:15:43+01:00,416,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+,BOOKKEEPING,forward,advisor,b1c94dd,2026-07-26T21:16:27+01:00,44,,,,,,,,,,,,,,,,,,
+openvpn_set_vpn_passwd_file,GREEN,forward,codex,b52da1f,2026-07-26T21:23:47+01:00,440,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+,BOOKKEEPING,forward,advisor,743ea88,2026-07-26T21:24:20+01:00,33,,,,,,,,,,,,,,,,,,
+extra_packages_el,BLOCKED,forward,advisor,be1e8ca,2026-07-26T22:41:27+01:00,4627,,,,,,,,,,,,,,,,,,Codex/advisor block; no log retained
+internal_deps,PLAN_FIX,forward,advisor,0386a55,2026-07-27T20:23:12+01:00,78105,,,,,,,,,,,,,,,,,,
+filesystem_sec,GREEN,forward,codex,bd4e474,2026-07-27T20:32:27+01:00,555,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+,BOOKKEEPING,forward,advisor,a92e41b,2026-07-27T20:33:07+01:00,40,,,,,,,,,,,,,,,,,,
+,TOOLING,forward,advisor,e15e37f,2026-07-27T21:34:24+01:00,3677,,,,,,,,,,,,,,,,,,
+titles,PLAN_FIX,forward,advisor,6581df2,2026-07-27T22:13:25+01:00,2341,,,,,,,,,,,,,,,,,,
+postfix_smtp_base_config_file,BLOCKED,forward,advisor,0fee7cd,2026-07-27T22:37:53+01:00,1468,,,,,,,,,,,,,,,,,,Codex/advisor block; no log retained
+titles,PLAN_FIX,forward,advisor,5c8d7ef,2026-07-27T22:39:52+01:00,119,,,,,,,,,,,,,,,,,,
+user_sysmon,BLOCKED,forward,advisor,f11bd98,2026-07-29T17:14:19+01:00,153267,,,,,,,,,,,,,,,,,,Codex/advisor block; no log retained
+,BOOKKEEPING,forward,advisor,d6c043c,2026-07-29T17:14:19+01:00,0,,,,,,,,,,,,,,,,,,
+,TOOLING,forward,advisor,9fefa6b,2026-09-01T02:45:30+01:00,2885471,,,,,,,,,,,,,,,,,,
+sftp_only,PLAN_FIX,forward,advisor,5429da7,2026-09-01T02:59:07+01:00,817,,,,,,,,,,,,,,,,,,
+mount_shares_desktop,BLOCKED,forward,advisor,8420f69,2026-09-01T03:09:31+01:00,624,,,,,,,,,,,,,,,,,,Codex/advisor block; no log retained
+ssh_secure,GREEN,forward,codex,f4cca21,2026-09-01T03:15:59+01:00,388,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+,BOOKKEEPING,forward,advisor,86b867b,2026-09-01T03:16:17+01:00,18,,,,,,,,,,,,,,,,,,
+sftp_only,GREEN,forward,codex,76286a4,2026-09-01T03:19:21+01:00,184,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+,BOOKKEEPING,forward,advisor,282b164,2026-09-01T03:19:31+01:00,10,,,,,,,,,,,,,,,,,,
+openvpn_nm_connection,BLOCKED,forward,advisor,0e4a928,2026-09-01T03:30:45+01:00,674,,,,,,,,,,,,,,,,,,Codex/advisor block; no log retained
+,BOOKKEEPING,forward,advisor,44bc044,2026-09-01T03:44:12+01:00,807,,,,,,,,,,,,,,,,,,
+user_samba,BLOCKED,forward,advisor,14c4eac,2026-09-01T03:52:05+01:00,473,,,,,,,,,,,,,,,,,,Codex/advisor block; no log retained
+,BOOKKEEPING,forward,advisor,b76180d,2026-09-01T03:52:05+01:00,0,,,,,,,,,,,,,,,,,,
+docker_container,BLOCKED,forward,advisor,84f65ba,2026-09-01T04:05:13+01:00,788,,,,,,,,,,,,,,,,,,Codex/advisor block; no log retained
+,BOOKKEEPING,forward,advisor,5b83c6d,2026-09-01T04:05:13+01:00,0,,,,,,,,,,,,,,,,,,
+,TOOLING,forward,advisor,043a71f,2026-09-01T04:11:26+01:00,373,,,,,,,,,,,,,,,,,,
+docker_container,GREEN,forward,codex,ca30e2a,2026-09-01T04:17:59+01:00,393,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+,RECORD,forward,codex,2365b29,2026-09-01T04:18:13+01:00,14,,,,,,,,,,,,,,,,,,
+,TOOLING,forward,advisor,7d073dc,2026-09-01T04:50:09+01:00,1916,,,,,,,,,,,,,,,,,,
+,BOOKKEEPING,forward,advisor,13d87c0,2026-09-30T23:26:28+01:00,2572579,,,,,,,,,,,,,,,,,,
+network_dhcp,GREEN,forward,codex,0ecf985,2026-09-30T23:28:56+01:00,148,,,,,,,,,,,,,,,,,,no Codex log (logs dir started 2026-09-30); timing = inter-commit gap only
+,RECORD,forward,codex,1e6b2f8,2026-09-30T23:29:07+01:00,11,,,,,,,,,,,,,,,,,,
+,TOOLING,forward,advisor,60f796b,2026-09-30T23:49:42+01:00,1235,,,,,,,,,,,,,,,,,,
+network_static,CODEX_EXEC_HEADERFIX,forward,advisor->codex,,,,network_static.headerfix.1790812220.log,2026-09-30T23:50:20+00:00,2026-09-30T23:51:21.126666+00:00,61,6702,8,0,0,0,0,,,,,,,,bookkeeping/tooling codex exec
+network_static,GREEN,forward,codex,d8c16ee,2026-10-01T00:01:33+01:00,711,network_static.1790809115.log,2026-09-30T23:58:35+01:00,2026-10-01T00:02:19.862748+01:00,224,71129,56,1,1,1,0,2026-09-30T23:57:37+01:00,58,-46,1,0,1,FAIL->fix 1e846b7,
+network_static,CODEX_EXEC_HANG,forward,advisor->codex,,,,(not captured: piped through tail),2026-10-01T00:02+01:00,2026-10-01T00:49+01:00,2820,,,,,,,,,,,,,,codex exec idle on open stdin ~47 min (DESIGN_DECISIONS 2026-10-01); fixed by </dev/null
+,RECORD,forward,codex,13a3972,2026-10-01T00:02:00+01:00,27,,,,,,,,,,,,,,,,,,
+network_static,RECORD_FIX_AFTER_REVIEWER_FAIL,forward,advisor,1e846b7,2026-10-01T00:50:58+01:00,2938,,,,,,,,,,,,,,,,,,
+,BOOKKEEPING,forward,advisor,e66ec05,2026-10-01T00:52:22+01:00,84,,,,,,,,,,,,,,,,,,
+,TOOLING,forward,advisor,c647311,2026-10-01T01:00:59+01:00,517,,,,,,,,,,,,,,,,,,
+,TOOLING,forward,advisor,4cb52b3,2026-10-01T01:03:43+01:00,164,,,,,,,,,,,,,,,,,,
+rsyslog_server,BLOCKED,forward,advisor,9e31fbf,2026-10-01T01:05:45+01:00,122,,,,,,,,,,,,,,,,,,advisor pre-Codex block (hazard checklist)
+filesystem_base_desktop,GREEN,forward,codex,1857674,2026-10-01T01:11:03+01:00,318,filesystem_base_desktop.1790813237.log,2026-10-01T01:07:17+01:00,2026-10-01T01:11:46.924345+01:00,269,65487,31,2,3,2,0,2026-10-01T01:06:19+01:00,58,-43,2,0,1,PASS (inferred: no corrective commit; reviewer output not persisted),
+filesystem_base_desktop,RECORD,forward,codex,f660ca7,2026-10-01T01:11:33+01:00,30,,,,,,,,,,,,,,,,,,
+ssl_base,BLOCKED,forward,advisor,d0b925c,2026-10-01T01:12:59+01:00,86,,,,,,,,,,,,,,,,,,advisor pre-Codex block (hazard checklist)
+filesystem_base,GREEN,forward,codex,69e3ea4,2026-10-01T01:30:04+01:00,1025,filesystem_base.1790813652.log,2026-10-01T01:14:12+01:00,2026-10-01T01:30:37.431476+01:00,985,91051,30,2,2,2,1,2026-10-01T01:13:16+01:00,56,-33,2,0,1,PASS (inferred: no corrective commit; reviewer output not persisted),
+filesystem_base,RECORD,forward,codex,f68192d,2026-10-01T01:30:18+01:00,14,,,,,,,,,,,,,,,,,,
+puppet_commush,PLAN_FIX,forward,advisor,041fdb0,2026-10-01T01:32:00+01:00,102,,,,,,,,,,,,,,,,,,
+puppet_commush,GREEN,forward,codex,3137fd3,2026-10-01T01:37:08+01:00,308,puppet_commush.1790814782.log,2026-10-01T01:33:02+01:00,2026-10-01T01:37:43.338552+01:00,281,52423,24,2,2,2,0,2026-10-01T01:32:00+01:00,62,-35,2,0,1,PASS (inferred: no corrective commit; reviewer output not persisted),
+puppet_commush,RECORD,forward,codex,1c0d7a5,2026-10-01T01:37:24+01:00,16,,,,,,,,,,,,,,,,,,
+hello_world_flask_common,PLAN_FIX,forward,advisor,15701fb,2026-10-01T01:39:43+01:00,139,,,,,,,,,,,,,,,,,,
+hello_world_flask_common,GREEN,forward,codex,cb88e78,2026-10-01T01:43:26+01:00,223,hello_world_flask_common.1790815188.log,2026-10-01T01:39:48+01:00,2026-10-01T01:44:09.000161+01:00,261,77145,27,1,4,2,0,2026-10-01T01:39:42+01:00,6,-43,3,0,1,PASS (inferred: no corrective commit; reviewer output not persisted),
+hello_world_flask_common,RECORD,forward,codex,10fc742,2026-10-01T01:43:54+01:00,28,,,,,,,,,,,,,,,,,,
+,BOOKKEEPING,forward,advisor,05352a6,2026-10-01T01:46:02+01:00,128,,,,,,,,,,,,,,,,,,
+rsyslog_server,BASELINE_SYNC,forward,advisor,eb024e1,2026-10-01T02:24:49+01:00,2327,,,,,,,,,,,,,,,,,,
+ssl_base,BASELINE_SYNC,forward,advisor,5e00660,2026-10-01T02:24:49+01:00,0,,,,,,,,,,,,,,,,,,
+"rsyslog_server,ssl_base",UNBLOCK,forward,advisor,1341285,2026-10-01T02:25:08+01:00,19,,,,,,,,,,,,,,,,,,
+,RECORD,forward,codex,aaf0807,2026-10-01T02:54:55+01:00,1787,,,,,,,,,,,,,,,,,,
+,TOOLING,forward,advisor,9811c5d,2026-10-04T22:29:26+01:00,329671,,,,,,,,,,,,,,,,,,
+user_kde_lock_screen_common,BASELINE_SYNC,forward,advisor,dd3e1dc,2026-10-05T14:52:46+01:00,59000,,,,,,,,,,,,,,,,,,
+user_kde_lock_screen_common,PLAN_FIX,forward,advisor,3505b17,2026-10-05T14:52:52+01:00,6,,,,,,,,,,,,,,,,,,
+user_kde_lock_screen_common,GREEN,forward,codex,7726d25,2026-10-05T14:58:02+01:00,310,user_kde_lock_screen_common.1791208431.log,2026-10-05T14:53:51+01:00,2026-10-05T14:58:38.926397+01:00,287,61400,18,1,1,2,0,,,-36,2,0,1,PASS (inferred: no corrective commit; reviewer output not persisted),
+user_kde_lock_screen_common,RECORD,forward,codex,8a69458,2026-10-05T14:58:24+01:00,22,,,,,,,,,,,,,,,,,,
+user_kde_lock_screen,PLAN_FIX,forward,advisor,af171e1,2026-10-05T15:00:02+01:00,98,,,,,,,,,,,,,,,,,,
+backup,PLAN_FIX,forward,advisor,f30c357,2026-10-05T15:00:29+01:00,27,,,,,,,,,,,,,,,,,,
+backup,GREEN,forward,codex,9d01a9f,2026-10-05T15:05:47+01:00,318,backup.1791208882.log,2026-10-05T15:01:22+01:00,2026-10-05T15:06:48.097704+01:00,326,84658,49,3,3,1,2,2026-10-05T14:00:32.585314+00:00,49,-61,1,0,1,PASS (inferred: no corrective commit; reviewer output not persisted),
+backup,RECORD,forward,codex,32b96ac,2026-10-05T15:06:20+01:00,33,,,,,,,,,,,,,,,,,,
+puppet_backup,PLAN_FIX,forward,advisor,04f5b4d,2026-10-05T15:07:38+01:00,78,,,,,,,,,,,,,,,,,,
+puppet_backup,GREEN,forward,codex,f7717c8,2026-10-05T15:11:16+01:00,218,puppet_backup.1791209312.log,2026-10-05T15:08:32+01:00,2026-10-05T15:11:51.214104+01:00,199,48868,21,1,1,1,1,2026-10-05T14:07:41.423599+00:00,50,-35,2,0,1,PASS (inferred: no corrective commit; reviewer output not persisted),
+puppet_backup,RECORD,forward,codex,123e297,2026-10-05T15:11:33+01:00,17,,,,,,,,,,,,,,,,,,
+,BOOKKEEPING,forward,advisor,215fb67,2026-10-05T15:12:56+01:00,83,,,,,,,,,,,,,,,,,,

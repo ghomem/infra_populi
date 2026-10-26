@@ -1,0 +1,7 @@
+# Explicit ignores (ruling 12, 2026-10-26). Everything else under .codex_state/ is tracked normally;
+# never `git add -f`. Params (~/.config/infra_populi/params) live outside the repo and are never committed.
+.codex_state/logs/
+.codex_state/necessary_modules.txt
+__pycache__/
+*.pyc
+*.bak

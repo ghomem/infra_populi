@@ -21,7 +21,7 @@ FOR EACH CLASS:
      record it (plan edit + one-line note in the class's log), continue.
    - Salatiel-tier (new node/OS, production access, behaviour change, hand-repair of node state): write
      `.codex_state/escalations/<class>.md` (evidence, options, your recommendation), add a blocked.txt
-     entry with category + evidence, `git add -f` both, commit `block(<class>): ...`, regenerate, and
+     entry with category + evidence, `git add` both (plain tracking, no `-f`), commit `block(<class>): ...`, regenerate, and
      move to the next class. Counts as resolved.
 3. REVERT: `.codex_state/tools/revert_node.sh`. Must end in SUCCESS; otherwise stop the run and report.
 4. CODEX: `~/.local/bin/codex_migrate_class puppet_infrastructure::<class> 2>&1 | tee .codex_state/logs/<class>.$(date +%s).log`.
