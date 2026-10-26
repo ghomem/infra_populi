@@ -1,0 +1,43 @@
+# Engine sprint 2026-10-26 — progress (resume from this file alone)
+
+Brief: execute `.codex_state/escalations/2026-10-26-engine-rulings.md` §13 in order, items as specified
+in `.codex_state/diagnosis/2026-10-26-engine-diagnosis.md` §I. Engine work only: no `/migrate-next`, no
+class migration (1.5 re-reviews, migrates nothing). Commits `P8: engine: <step> — <what>`, one per step.
+Update this file BEFORE each commit (the commit carries its own line as `this commit`; the next step
+backfills the hash).
+
+Stops (wait for HQ): after 1.5 (`escalations/sprint-checkpoint-1.md`), after 4.3 (`-2.md`); any master
+change beyond ruling 6; any snapshot deletion; a puppet_boot_run intent conflict.
+
+Baseline pin (advisor, step 0d): `release-0.9.10` == upstream commit
+`cf477c6` (2026-09-09, metadata 0.9.10, 90 manifests, what production runs). The upstream
+`release-0.9.10` is a BRANCH and moved to 874f854 on 2026-10-06 (Issue #122 mysql merge) — tools pin
+the commit, not the branch. Escalated: `escalations/baseline-0.9.10-branch-moved.md`.
+
+Step placement not fixed by §13 (advisor): 0d baseline bump and 0e .gitignore go right after step 0
+because rule 7 requires every later tool to name release-0.9.10 and rule 2 relies on plain tracking.
+Second NIC (ruling 10) rides with 3.1 so one new node snapshot carries both. extra_files/PKI script
+(ruling 6) is in 4.1. Fixture rename (ruling 8) is in 1.4.
+
+| step | status | commit | measure | open issues |
+|---|---|---|---|---|
+| 0a decisions entry for all rulings | done | this commit | entry appended, supersessions marked | — |
+| 0b pin 5 Puppetfile lines + export | pending | | | |
+| 0c puppet_boot_run escalation | pending | | | |
+| 0d baseline bump → release-0.9.10 + re-annotation | pending | | | |
+| 0e .gitignore replaces info/exclude; diagnosis committed | pending | | | |
+| 3.1 tier-0 revert + 2nd NIC + v2 snapshot | pending | | revert_s | |
+| 1.1 run-2 rc 0, exec/removed fail, timeouts | pending | | known-bad fixture → RED | |
+| 1.2 revert-first (wrapper + reviewer) | pending | | reviewer run 1 shows creations | |
+| 1.3 coverage signal | pending | | | |
+| 2.1 pregate.sh | pending | | | |
+| 2.2 compile-only + composites | pending | | | |
+| 1.4 reviewer v2 | pending | | | |
+| 1.5 re-review sweep (31) → checkpoint 1 | pending | | | |
+| 3.2 orientation packet + record_green.sh | pending | | | |
+| 3.3 advisor-direct path | pending | | | |
+| 3.4 metrics JSONL | pending | | | |
+| 3.5 single sources | pending | | | |
+| 4.1 plan fixes, pins, syncs/imports, extra_files | pending | | | |
+| 4.2 escalation files | pending | | | |
+| 4.3 prod_nodes sort key → checkpoint 2 | pending | | | |

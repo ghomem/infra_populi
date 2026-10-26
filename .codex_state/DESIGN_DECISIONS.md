@@ -478,3 +478,85 @@ user_kde_lock_screen_common; its other consumer is user_kde_lock_screen (pending
 synced, 0.9.8 renames mytimeout/mylockgrace -> screenlock_timeout_minutes/screenlock_grace_seconds;
 its local callers user_desktop, user_desktop_sudoer, node_base_desktop are pending AND drifted, and their
 0.9.8 versions already use the new names — sync each at its turn; none is Done, so no escalation.
+
+## 2026-10-26 — HQ rulings on the engine diagnosis (batch entry)
+Source: `.codex_state/escalations/2026-10-26-engine-rulings.md` (authoritative text; section refs
+are to `.codex_state/diagnosis/2026-10-26-engine-diagnosis.md`). One entry per ruling batch, as HQ asked.
+1. Baseline → release-0.9.10. SUPERSEDES 2026-07-01 "Declared upstream baseline: release-0.9.8" and
+   the UPSTREAM_BASELINE.md "do not chase 0.9.10+ mid-phase" policy. Condition confirmed:
+   release-0.9.8..release-0.9.10 touches only docker_container.pp, rsyslog_server.pp and four rsyslog
+   templates. Tools and instructions name release-0.9.10, never upstream HEAD. `[from: release-0.9.8]`
+   → `[from: release-0.9.10]` only where manifest+templates+files are byte-identical between the refs
+   (script-verified, one commit). docker_container is re-migrated under the new gate; rsyslog_server
+   migrates from 0.9.10 directly (SUPERSEDES its 2026-10-01 sync-to-0.9.8 and withdraws the CTO
+   question). The Issue #122 mysql rewrite stays out until released (CTO decision 5).
+2. GREEN v2 (Epic 1, 1.1–1.5) approved in full: run 2 must exit 0; `executed successfully` and
+   `removed` on run 2 fail; outer `timeout` on every agent run and every `codex exec`; revert-first in
+   wrapper and reviewer; coverage signal; reviewer v2 (templates/files diffed, two-diff method, JSON
+   verdicts, header module claims vs `puppet module list`, scope check on blocked.txt/candidates);
+   re-review sweep of the 31 done classes. SUPERSEDES the "practical idempotency" GREEN (run-2 regex,
+   rc 2 accepted). Until the sweep ends the 31 are "done under gate v1", not quoted externally as verified.
+3. Generation model: three paths by class category. Unchanged-validated (manifest+templates+files ==
+   baseline, pregate + compile-only pass) → advisor reverts, runs harness, writes header + tracker,
+   `record_green.sh` commits, no Codex. Syntax-work → Codex with the orientation packet; one run per
+   class is the target, a second needs a reason in the run record. Records → `record_green.sh` only.
+   The reviewer never learns who authored a change. SUPERSEDES 2026-07-01 "Generation model: Codex
+   generates in-repo" (artifacts "born via Codex"), which practice had already departed from.
+4. Pre-VM gates (Epic 2) approved: `pregate.sh` on the laptop; `test_class.sh --compile-only` on the
+   master plus standing composite compiles after every green. puppet-lint and the pre-commit hook are
+   mandatory.
+5. Overhead (Epic 3) approved: Tier-0 revert (confirm GRUB cause by console screenshot first;
+   GRUB_RECORDFAIL_TIMEOUT=2, not 0; apt-daily/unattended-upgrades timers off in the baseline; hard
+   poweroff for the NODE ONLY; new snapshot P8NODE_BASELINE_GREEN_v2). The master keeps ACPI and its
+   never-restore rule. Orientation packet + record_green.sh; per-attempt metrics JSONL (tracked, own
+   commit `P8: record metrics after <class>`, reviewer-exempt); single sources (one hazard checklist
+   file, runbook in the repo, Puppetfile exported on every change, generated rules digest).
+   Host-only/static-IP network is the first project AFTER the sprint.
+6. Lab master: extra_files mount + throwaway p8test PKI + Hiera fixture keys built by an idempotent
+   script in `.codex_state/tools/`, nothing production-derived, then a new master snapshot. Pin the 5
+   unpinned Puppetfile lines to today's installed versions first. 6a: `passwd_common` on puppet8master
+   is LAB-LOCAL (every master carries its own; not a copy of production's) and stays in puppet8node.pp
+   as part of the lab baseline. Its resource types/titles are listed via compile-only (never file
+   contents) so coverage and the reviewer can separate them from the target's. The engine never reads
+   or edits it; harness runs depend on nothing it manages except the harness user's SSH access.
+7. Modules: sysctl = thias-sysctl 1.0.8 (fallback augeasproviders_sysctl with the /etc/sysctl.conf
+   delta recorded as a behaviour difference) — SUPERSEDES the 2026-09-30 "candidate replacement
+   augeasproviders_sysctl" lead and blocked.txt's "no Puppet 8 module" text. htpasswd = citrin-htpasswd
+   1.0.3 after the advisor diffs its providers against leinaddm 0.0.3 (identical-semantics swap =
+   advisor tier). user_samba stand-in script accepted, status "mock-apply only / behaviour unverified".
+   Pins inside the consumer's range; `invalid` = failure; generate types + restart after custom types;
+   Windows-only dependency warnings (puppetlabs-powershell, puppetlabs-reboot via docker) are EXPECTED.
+8. Classes: puppet_boot_run provisional = drop `ensure => running`, keep `enable => true`, recorded as
+   "upstream defect fixed locally" unless upstream 4ae2e35 shows a conflicting intent (then ask HQ).
+   Import gnome_lock_screen, firewall_ipv6_drop_policy_desktop, rsyslog_apparmor_exception as
+   baseline-sync. Defective done classes reconcile to the baseline shape via the normal loop after the
+   sweep: sysmon_puppet_cert_status re-migrated faithfully (its apt_update replacement is a Phase-1
+   violation); filesystem_yum loses its duplicated directories and gets correct provenance — this
+   SUPERSEDES 2026-07-01 "Pattern A: leaf classes self-declare prerequisite dirs inline" (now superseded
+   by required_base); network_dhcp 0ecf985's extra edits are recorded, not reverted; deleted body
+   comments/warnings restored where the baseline has them. Fixture rule enforced retroactively
+   (firewall_addon_caching_nameserver.json → p8test0). `nginx_frontend_domain.pp:247` `Integer()` is a
+   syntax fix (Puppet 8 strict mode).
+9. Queue (Epic 4): plan fixes; Forge pins (non-openvox-only now, the 8 openvox-only pins prepared but
+   unapplied until the CTO runtime answer); baseline-syncs; escalation files; `prod_nodes` secondary
+   sort key. Order: node_base closure leaves first, then nginx/ssl, composites last within their cluster;
+   zero-declaration classes sink to the bottom until the CTO rules.
+10. Infrastructure: second (host-only) NIC on the node VM inside the sprint. EL9 + Ubuntu Incus
+    containers after the sprint. RHEL9 VM after the CTO's RHEL count. Desktop VM in Phase 3. Samba DC deferred.
+11. Phase 3: YAML check format with mandatory `derived_from` upstream lines and negative controls that
+    must fail on the clean baseline. Pilots after the sprint: backup_rsnapshot, ssh_secure,
+    nginx_static_domain; then the node_base closure. CLAUDE.md gains a Phase-3 scoping section.
+12. Process: hazard items 9–13 approved. `.git/info/exclude` wholesale `.codex_state/` exclusion is
+    replaced by an explicit `.gitignore` (logs and necessary_modules.txt stay ignored, everything else
+    under .codex_state/ tracked, no more `git add -f`) — SUPERSEDES the 2026-07-26 convention
+    "candidates force-added past the .codex_state/ exclude". Toolchain recorded retroactively (below);
+    a 1-class canary re-run is mandatory after any toolchain change. Diagnosis files are committed only
+    after the passwd-layer class-name list is reduced to a count. A generated "current rules" digest is approved.
+13. Sprint order: 0 → 3.1 → 1.1–1.3 → 2.1–2.2 → 1.4 → 1.5 + HQ checkpoint → 3.2–3.5 → 4.1–4.3 + HQ
+    checkpoint → resume /migrate-next with metrics. One commit per step (`P8: engine:`), never with
+    unrelated worktree changes. "6–9 h for 50 classes" is a target to be tested, not quoted outside.
+Toolchain (retroactive record; SUPERSEDES 2026-07-26 "Codex 0.145.0, gpt-5.6-sol" as current state):
+codex-cli 0.159.2, model gpt-6.1-sol (changed 2026-09-30 per ~/.codex/config.toml.bak.20260930_234019,
+no entry at the time), reasoning effort xhigh, Codex plugin skill "superpowers" 6.4.2
+(openai-curated-remote) observed loaded in runs; advisor claude-opus-5-5; reviewer subagent
+`model: opus` (unpinned alias in .claude/agents/reviewer.md).
