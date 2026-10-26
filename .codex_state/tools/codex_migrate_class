@@ -28,8 +28,11 @@ RUNBOOK="$HOME/.config/infra_populi/CODEX_RUNBOOK.md"
 cd /home/salatiel/work/infra_populi
 BASELINE="$(python3 .codex_state/tools/baseline.py name)"
 BASELINE_LABEL="$(python3 .codex_state/tools/baseline.py label)"
+# Outer timeout (ruling 2 / step 1.1). Longest observed run: 985 s; a hang was 47 min.
+CODEX_TIMEOUT_SECONDS="${CODEX_TIMEOUT_SECONDS:-1800}"
 
-codex exec \
+rc=0
+timeout --kill-after=30 "$CODEX_TIMEOUT_SECONDS" codex exec \
   -c 'sandbox_mode="danger-full-access"' \
   -c 'approval_policy="never"' \
   "$(cat "$RUNBOOK")
@@ -51,4 +54,8 @@ TRACKER / ANNOTATION RULES (apply at commit time, in the same commit):
 ORDER FILE REGENERATION:
 - AFTER the migration commit lands, regenerate the order file: python3 .codex_state/gen_migration_order.py
 - commit the regenerated .codex_state/migration_order.md
-"
+" || rc=$?
+if [[ $rc -eq 124 || $rc -eq 137 ]]; then
+  echo "CODEX_TIMEOUT: codex exec killed after ${CODEX_TIMEOUT_SECONDS}s" >&2
+fi
+exit "$rc"

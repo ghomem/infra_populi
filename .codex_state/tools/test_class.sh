@@ -32,6 +32,11 @@ MASTER_MODULE_DIR="/etc/puppetlabs/code/environments/production/modules/puppet_i
 MASTER_NODE_FILE="/etc/puppetlabs/code/environments/production/manifests/nodes/puppet8node.pp"
 
 PARAMS_DIR="${HOME}/.config/infra_populi/params"
+FIXTURE_DIR="${LOCAL_REPO}/.codex_state/tools/tests/fixtures"
+
+# GREEN v2 (ruling 2 / step 1.1): every agent run has an outer timeout; run 2 must exit 0.
+AGENT_TIMEOUT_SECONDS="${AGENT_TIMEOUT_SECONDS:-600}"
+RUN2_FORBIDDEN_RE='Notice: .*changed|Notice: .*created|Notice: .*defined content as|Notice: .*executed successfully|Notice: .*removed|Info: .*Scheduling refresh of'
 
 # ----------------------------
 # Helpers
@@ -276,6 +281,10 @@ PY
 }
 
 render_managed_block() {
+  if [[ -n "${FIXTURE_NAME:-}" ]]; then
+    render_fixture_block "$FIXTURE_NAME"
+    return
+  fi
   expand_target_classes "$@"
   echo "# BEGIN CODEX MANAGED (do not edit by hand)"
   render_manifest_lines_for_classes "${EXPANDED_CLASSES[@]}"
@@ -350,25 +359,43 @@ rm -f "$BLOCK_FILE"
 REMOTE
 }
 
-run_agent_once() {
-  # Puppet exit codes: 0 = no changes, 2 = changes applied, others = failure
-  local out rc
-  set +e
-  out="$(ssh "$NODE_HOST" "sudo /opt/puppetlabs/bin/puppet agent -t" 2>&1)"
-  rc=$?
-  set -e
-  echo "$out"
-  if [[ $rc -eq 0 || $rc -eq 2 ]]; then
-    return 0
+run_agent() {
+  # Puppet detailed exit codes (-t implies them): 0 = no changes, 2 = changes applied,
+  # 4/6 = failures. 124/137 = killed by the outer timeout.
+  timeout --kill-after=15 "$AGENT_TIMEOUT_SECONDS" \
+    ssh "$NODE_HOST" "sudo /opt/puppetlabs/bin/puppet agent -t" 2>&1
+}
+
+die_agent_rc() {
+  local run="$1" rc="$2"
+  if [[ $rc -eq 124 || $rc -eq 137 ]]; then
+    die "Agent run ${run} timed out after ${AGENT_TIMEOUT_SECONDS}s (node severed or hung?)."
   fi
-  return $rc
+  die "Agent run ${run} failed (exit ${rc})."
+}
+
+render_fixture_block() {
+  local name="$1" path
+  [[ "$name" =~ ^[a-z0-9_]+$ ]] || die "Invalid fixture name: '${name}'"
+  path="${FIXTURE_DIR}/${name}.pp"
+  [[ -f "$path" ]] || die "Fixture not found: ${path}"
+  echo "# BEGIN CODEX MANAGED (do not edit by hand)"
+  cat "$path"
+  echo "# END CODEX MANAGED"
 }
 
 
 main() {
   need_cmd python3
 
-  [[ $# -ge 1 ]] || die "Usage: $0 [--render-only] <class1> [class2 ...]"
+  [[ $# -ge 1 ]] || die "Usage: $0 [--render-only] <class1> [class2 ...] | --fixture <name>"
+
+  if [[ "$1" == "--fixture" ]]; then
+    # Engine self-test: apply a manifest from .codex_state/tools/tests/fixtures/ instead of a class.
+    [[ $# -eq 2 ]] || die "Usage: $0 --fixture <name>"
+    FIXTURE_NAME="$2"
+    set -- "fixture:${FIXTURE_NAME}"
+  fi
 
   if [[ "$1" == "--render-only" ]]; then
     shift
@@ -383,28 +410,32 @@ main() {
   need_cmd scp
 
   local classes=("$@")
-  guard_owner_validated_targets "${classes[@]}"
+  [[ -n "${FIXTURE_NAME:-}" ]] || guard_owner_validated_targets "${classes[@]}"
 
   mkdir -p "$PARAMS_DIR"
 
   deploy_repo_to_master
   update_node_codemgr_block "${classes[@]}"
 
-  echo "==> Running puppet agent (need 2 successful runs; fail if 2nd run applies changes)"
-  local out1 out2
+  echo "==> Running puppet agent (run 1 may change; run 2 must exit 0 with no events; timeout ${AGENT_TIMEOUT_SECONDS}s each)"
+  local out1 out2 rc1 rc2 offending
 
-  out1="$(run_agent_once)" || { echo "$out1"; die "Agent run 1 failed"; }
+  out1="$(run_agent)" && rc1=0 || rc1=$?
   echo "$out1"
+  [[ $rc1 -eq 0 || $rc1 -eq 2 ]] || die_agent_rc 1 "$rc1"
 
-  out2="$(run_agent_once)" || { echo "$out2"; die "Agent run 2 failed"; }
+  out2="$(run_agent)" && rc2=0 || rc2=$?
   echo "$out2"
+  [[ $rc2 -eq 0 || $rc2 -eq 2 ]] || die_agent_rc 2 "$rc2"
 
-  # Practical idempotency: fail only if 2nd run shows "changes applied"
-  if echo "$out2" | grep -E "Notice: .*changed|Notice: .*created|Notice: .*defined content as|Info: .*Scheduling refresh of" >/dev/null 2>&1; then
-    die "Run 2 still applied changes (not idempotent yet). Fix and re-run."
+  offending="$(grep -E "$RUN2_FORBIDDEN_RE" <<<"$out2" || true)"
+  if [[ -n "$offending" ]]; then
+    printf 'Run 2 events:\n%s\n' "$offending" >&2
+    die "Run 2 still applied changes (not idempotent). Fix and re-run."
   fi
+  [[ $rc2 -eq 0 ]] || die "Run 2 exited ${rc2}; GREEN requires exit 0 (no changes, no failures)."
 
-  echo "GREEN: 2 successful runs (practical idempotency)."
+  echo "GREEN: run 2 exited 0 with no change events (gate v2)."
 }
 
 main "$@"

@@ -59,6 +59,8 @@ if name in ("ssh", "scp", "rsync"):
                 rule["_i"] = min(idx + 1, len(seq) - 1)
                 save()
                 out = seq[idx]
+                if out.get("sleep"):
+                    import time; time.sleep(out["sleep"])
                 sys.stdout.write(out.get("stdout", ""))
                 sys.exit(out.get("rc", 0))
             sys.stdout.write(rule.get("stdout", ""))

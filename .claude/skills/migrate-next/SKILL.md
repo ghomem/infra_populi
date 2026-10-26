@@ -31,7 +31,8 @@ FOR EACH CLASS:
    any Codex output.
    - PASS: count it.
    - FAIL: read the evidence. If it is a records/annotation/header gap, fix with ONE targeted
-     `codex exec -c 'sandbox_mode="danger-full-access"' -c 'approval_policy="never"' '<precise fix>'`,
+     `timeout -k 30 900 codex exec -c 'sandbox_mode="danger-full-access"' -c 'approval_policy="never"' '<precise fix>' </dev/null`
+     (outer timeout and closed stdin are mandatory on every `codex exec`),
      requiring its fix commit message to start with `P8: record <class>: `, then re-run the reviewer
      once. If it is faithfulness (reimplementation) or non-idempotency: back
      the migration out with a corrective commit (never force-push), preserve the manifest as
