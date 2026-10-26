@@ -29,6 +29,8 @@ Salatiel decides infrastructure and strategy. Rationale for every rule below is 
   (engine self-test manifests in `.codex_state/tools/tests/fixtures/`). GREEN = run 2 exits 0, no change
   events, target resources present in the catalog (gate v2). Pre-VM gate:
   `.codex_state/tools/pregate.sh <class>` (laptop + puppet8master; exit 0 CLEAN / 1 FINDINGS / 2 ERROR).
+  Compile without the node: `test_class.sh --compile-only [--facts debian|redhat] [--defaults] [--no-expand]
+  <classes>`; standing composites + default variants: `.codex_state/tools/composite_compile.py [--defaults]`.
   Engine pre-commit hook: `.git/hooks/pre-commit -> ../../.codex_state/tools/pre-commit` (mandatory;
   per-clone, install with `ln -s ../../.codex_state/tools/pre-commit .git/hooks/pre-commit`). Lab-master
   fixture state: `.codex_state/tools/master_fixtures.sh` (idempotent). Tool tests:

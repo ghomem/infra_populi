@@ -48,7 +48,10 @@ FOR EACH CLASS:
 7. FAILED (no green, no block): read the log tail. Apply the stop condition — if the failure yields a
    hypothesis you can act on within your authority, act once and retry from step 3 once. Otherwise
    block with evidence and continue.
-8. Regenerate the order file, commit if it changed, push. Move to the next class.
+8. Regenerate the order file, commit if it changed, push. Standing composite check (step 2.2):
+   `python3 .codex_state/tools/composite_compile.py` — every line must be `OK`; a `DIFF` is a regression
+   (investigate before the next class) or a fix (update `compile/composites.txt` in its own commit).
+   Move to the next class.
 
 END OF RUN: revert the node to baseline. Confirm `git status` clean and pushed. Print a summary table:
 class | outcome (PASS/BLOCKED cat N/ESCALATED) | commit | one-line note. List every escalation file.

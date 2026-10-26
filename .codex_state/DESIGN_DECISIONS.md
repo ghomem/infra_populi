@@ -571,3 +571,17 @@ to WHERE): `puppet parser validate` and puppet-lint run on puppet8master over ss
 installed with /opt/puppetlabs/puppet/bin/gem at a pinned version by the master-fixtures script
 (ruling 6). pregate prints the tool versions it used. Everything else in pregate stays laptop-side.
 Ruling 1 baseline pin CONFIRMED: release-0.9.10 == upstream commit cf477c6 (not the moving branch).
+
+## 2026-10-26 — passwd_common (lab-local) resource listing, per ruling 6a
+Provenance (ruling 6a): `passwd_common` on puppet8master is lab-local, part of the lab baseline in
+puppet8node.pp, not a copy of production's; the engine never reads or edits its source.
+Listing via compile-only (`test_class.sh --compile-only`, filter `.codex_state/tools/compile/filter.rb`,
+types/titles only): Class[Passwd_common] is in puppet8node's catalog and declares **0 resources**
+(every compile on 2026-10-26: puppet_backup, node_base debian/redhat attempts, meaningful_desktop
+closure). Coverage (harness and compile) selects a target's resources by class tag, so passwd_common's
+resources — if it ever gains any — are never attributed to a target; the filter prints a PASSWD_COMMON
+count/title line on every compile so a change is visible. Harness dependence on it: none observed beyond
+the harness user's SSH access (it manages nothing on the node today).
+Incident (recorded for honesty): while prototyping, a ruby JSON parse error echoed one full puppet8node
+catalog into the advisor's terminal. With Passwd_common empty, no passwd content was exposed. The shipped
+filter withholds the input on every error path (lab-tested with a marker string).

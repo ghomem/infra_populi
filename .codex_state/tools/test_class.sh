@@ -34,6 +34,7 @@ MASTER_NODE_FILE="/etc/puppetlabs/code/environments/production/manifests/nodes/p
 PARAMS_DIR="${HOME}/.config/infra_populi/params"
 FIXTURE_DIR="${LOCAL_REPO}/.codex_state/tools/tests/fixtures"
 REVERT_TOOL="${LOCAL_REPO}/.codex_state/tools/revert_node.sh"
+COMPILE_DIR="${LOCAL_REPO}/.codex_state/tools/compile"
 
 # GREEN v2 (ruling 2 / step 1.1): every agent run has an outer timeout; run 2 must exit 0.
 AGENT_TIMEOUT_SECONDS="${AGENT_TIMEOUT_SECONDS:-600}"
@@ -196,7 +197,7 @@ expand_one_class() {
   [[ "$state" == "2" ]] && return
   [[ "$state" != "1" ]] || die "Circular required_base dependency while expanding class '${cls}'"
 
-  if [[ "$kind" != "external" ]]; then
+  if [[ "$kind" != "external" && "${NO_EXPAND:-0}" != "1" ]]; then
     classify_target "$cls"
     required_bases=("${CLASSIFY_REQUIRED_BASES[@]}")
     required_externals=("${CLASSIFY_REQUIRED_EXTERNALS[@]}")
@@ -239,7 +240,14 @@ render_manifest_lines_for_classes() {
     resource_type="$CLASSIFY_RESOURCE_TYPE"
     title="$CLASSIFY_TITLE"
     pfile="$(json_params_path_for_class "$cls")"
-    if [[ -f "$pfile" ]]; then
+    if [[ "${COMPILE_DEFAULTS:-0}" == "1" ]]; then
+      # Default-parameter variant (step 2.2): ignore the params fixture.
+      if [[ "$resource_type" == "define" ]]; then
+        echo "${cls} { '${title}': }"
+      else
+        echo "include ${cls}"
+      fi
+    elif [[ -f "$pfile" ]]; then
       python3 - "$cls" "$pfile" "$resource_type" "$title" <<'PY'
 import json, sys
 cls = sys.argv[1]
@@ -273,6 +281,10 @@ for k, v in data.items():
     print(f"  {k} => {puppet_literal(v)},")
 print("}")
 PY
+    elif [[ "$resource_type" == "define" && "${COMPILE_ONLY:-0}" == "1" ]]; then
+      # Compile-only: render the define with its plan title; a mandatory parameter then shows up
+      # as a compile error instead of aborting the render.
+      echo "${cls} { '${title}': }"
     elif [[ "$resource_type" == "define" ]]; then
       die "Cannot render define '${cls}': required params file not found at ${pfile}"
     else
@@ -405,6 +417,29 @@ PY
   [[ $rc -eq 0 ]] || die "Coverage check could not read the node's cached catalog (exit ${rc})."
 }
 
+compile_on_master() {
+  # Step 2.2: compile puppet8node's catalog on the master with live node facts (optionally rewritten
+  # to a RedHat family); the node is never touched beyond reading its facts. Prints only what
+  # compile/filter.rb prints. Returns 0 ok, 3 empty target, 4 unparseable, 5 compile failed.
+  local variant="$1"; shift
+  local -a targets=()
+  local cls work facts_json rc
+  for cls in "$@"; do targets+=("puppet_infrastructure::${cls#puppet_infrastructure::}"); done
+  work="$(mktemp -d)"
+  mkdir "$work/facts"
+  facts_json="$(timeout 60 ssh "$NODE_HOST" "sudo -n /opt/puppetlabs/bin/puppet facts show --render-as json" 2>/dev/null)" ||
+    { rm -r "$work"; die "Could not read facts from ${NODE_HOST} (is the node up?)"; }
+  python3 "$COMPILE_DIR/facts.py" "$variant" <<<"$facts_json" >"$work/facts/puppet8node.yaml" ||
+    { rm -r "$work"; die "Could not build ${variant} facts"; }
+  cp "$COMPILE_DIR/run.sh" "$COMPILE_DIR/filter.rb" "$work/"
+  rc=0
+  # shellcheck disable=SC2029  # target names expand locally by design
+  tar -C "$work" -cf - . | timeout 180 ssh -T "$MASTER_HOST" \
+    "d=\$(mktemp -d /tmp/p8compile.XXXXXX) && tar -C \"\$d\" -xf - && bash \"\$d/run.sh\" \"\$d\" ${targets[*]}; rc=\$?; sudo -n rm -rf \"\$d\"; exit \$rc" || rc=$?
+  rm -r "$work"
+  return "$rc"
+}
+
 render_fixture_block() {
   local name="$1" path
   [[ "$name" =~ ^[a-z0-9_]+$ ]] || die "Invalid fixture name: '${name}'"
@@ -418,6 +453,37 @@ render_fixture_block() {
 
 main() {
   need_cmd python3
+
+  if [[ "${1:-}" == "--compile-only" ]]; then
+    shift
+    local variant="debian"
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --facts) variant="${2:-}"; shift 2 ;;
+        --defaults) export COMPILE_DEFAULTS=1; shift ;;
+        --no-expand) export NO_EXPAND=1; shift ;;
+        *) break ;;
+      esac
+    done
+    [[ "$variant" == "debian" || "$variant" == "redhat" ]] || die "--facts must be debian or redhat"
+    export COMPILE_ONLY=1
+    [[ $# -ge 1 ]] || die "Usage: $0 --compile-only [--facts debian|redhat] [--defaults] [--no-expand] <class1> [class2 ...]"
+    need_cmd rsync; need_cmd ssh; need_cmd tar
+    guard_owner_validated_targets "$@"
+    # SKIP_DEPLOY=1: the caller already deployed this tree (composite runner, step 2.2).
+    [[ "${SKIP_DEPLOY:-0}" == "1" ]] || deploy_repo_to_master
+    update_node_codemgr_block "$@"
+    echo "==> Compiling on the master (facts: ${variant}; params: $([[ "${COMPILE_DEFAULTS:-0}" == 1 ]] && echo defaults || echo fixtures)); the node is not run"
+    local crc=0
+    compile_on_master "$variant" "$@" || crc=$?
+    case "$crc" in
+      0) echo "COMPILE OK (${variant}): $*" ;;
+      3) die "Compile succeeded but a target has no concrete resources." ;;
+      5) die "COMPILE FAILED (${variant}): $*" ;;
+      *) die "Compile check failed (exit ${crc})." ;;
+    esac
+    exit 0
+  fi
 
   local revert_first=0
   if [[ "${1:-}" == "--revert-first" ]]; then
