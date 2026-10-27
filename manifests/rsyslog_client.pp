@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none.
 # Configure a node to forward its local logs to a remote rsyslog server over TLS.
 
 class puppet_infrastructure::rsyslog_client (
