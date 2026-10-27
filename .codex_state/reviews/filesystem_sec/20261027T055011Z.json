@@ -1,0 +1,92 @@
+{
+ "schema": 1,
+ "class": "filesystem_sec",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T05:50:11Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "929062b90f18",
+ "migrate_subject": "P8: migrate puppet_infrastructure::filesystem_sec",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 929062b90f18; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/filesystem_sec.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `filesystem_sec Done [from: release-0.9.10; upstream defect fixed: default group assigned to a new variable (no parameter reassignment)]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 13 catalog events; COVERAGE puppet_infrastructure::filesystem_sec: 14 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-2): migration header comment only (purpose of fix + 'Module dependencies: none').",
+   "DIFF A hunk 2 (lines 9-23): exactly the ruled change in .codex_state/rules/upstream_defects.md#filesystem_sec (status ruled, HQ ck1 ruling 6): baseline 'restricted_group = wheel/sudo' reassigned the parameter (Puppet 8 'Cannot reassign variable'); now $restricted_group_real = 'wheel' (RedHat) / 'sudo' (other) when param is '', else $restricted_group; file { $restricted_cmds: group => $restricted_group_real }. Same values on every branch; owner root, mode $restricted_mode, resource title/type, params and defaults unchanged; no other line changed; no comment removed.",
+   "DIFF B: re-migration replacing the earlier 'validated unchanged' header and the same reassignment lines with the identical ruled fix; matches DIFF A."
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 7,
+  "removed": 3,
+  "non_comment_changes": 8,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest; upstream defect fixed (HQ ruling 2026-10-27): the default branch reassigned the parameter $restricted_group (Puppet 8: Cannot reassign variable) and now assigns $restricted_group_real, same values.",
+  "# Module dependencies: none."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 13,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::filesystem_sec: 14 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 28.161,
+   "master_check_s": 0.92,
+   "poweroff_s": 0.686,
+   "restore_s": 0.218,
+   "boot_to_ssh_s": 16.043,
+   "apt_update_s": 8.837,
+   "verify_s": 1.457
+  },
+  "log": ".codex_state/logs/reviews/filesystem_sec.20261027T054859Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
