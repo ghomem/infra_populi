@@ -652,3 +652,19 @@ filesystem_sec escalations, master-fixtures script) → checkpoint 2.
    (generator, status.py "verified", reviewer — unchanged code paths).
 3. The tracker marker of a re-migrated class becomes `[from: release-0.9.10]`: the content is now baseline +
    reviewed translations. This is a new migration, not the retro-annotation CLAUDE.md forbids.
+
+## 2026-10-27 — A/B reconciliation done (HQ ck1 ruling 1): 16/16 reviewer-v2 PASS; one routing correction
+All 16 group-A/B classes were re-migrated advisor-direct (baseline text + attribute-rename hunks + 2-line
+header → revert-first harness GREEN → record_green.sh → reviewer v2, `--fresh`): every one PASS. status.py:
+24 verified (gate v2) / 7 done (gate v1, reconciliation pending) = groups C, D, E, left for the normal loop.
+Correction to the reconciliation list (2026-10-27): firewall_addon_xrdp's `state => ['ESTABLISHED']` →
+`'ESTABLISHED'` is NOT noise to revert. With puppetlabs-firewall 8.3.0 the one-element array is re-applied on
+every run (`state changed 'ESTABLISHED' to ['ESTABLISHED'] (corrective)`, gate v2 RED): the provider parses a
+one-element state back as a String. The string form produces the same `--state ESTABLISHED` rule, so it is
+an API translation and was kept, with the reason in the header; the reviewer verified it in the module source.
+Translation choice for firewall attributes: rename only, values kept (`provider => 'ip6tables'` →
+`protocol => 'ip6tables'`, `action => drop` → `jump => drop`; the type accepts both and upcases jump values).
+One reviewer FAIL on the way (firewall_addon_caching_nameserver header named `puppetlabs-firewall` without a
+version) → fixed via `record_green.sh --fix`, re-reviewed PASS; record_green's header-check now refuses it (b15d041).
+dns_client's params fixture was reordered (8.8.8.8, 1.1.1.1) so run 1 is not a no-op; nginx_default_removal's
+empty run 1 was justified by the reviewer (nginx absent on the baseline node).
