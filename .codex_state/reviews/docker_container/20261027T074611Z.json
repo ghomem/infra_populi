@@ -1,0 +1,90 @@
+{
+ "schema": 1,
+ "class": "docker_container",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T07:46:11Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "60ce0b0767d0",
+ "migrate_subject": "P8: migrate puppet_infrastructure::docker_container",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 60ce0b0767d0; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `docker_container Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-docker', '10.4.1')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['docker0', 'enp0s3', 'enp0s8', 'veth31ce2c4'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 17 catalog events; COVERAGE puppet_infrastructure::docker_container: 7 concrete resources (+3 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (lines 1-2 added: migration header naming puppetlabs-docker 10.4.1; define body identical to release-0.9.10 cf477c6, 0 non-comment changes)"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependency: puppetlabs-docker 10.4.1 (Class['docker'] declared by the node, not by this define)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 17,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::docker_container: 7 concrete resources (+3 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 36.485,
+   "master_check_s": 1.079,
+   "poweroff_s": 1.261,
+   "restore_s": 0.488,
+   "boot_to_ssh_s": 19.886,
+   "apt_update_s": 12.302,
+   "verify_s": 1.469
+  },
+  "log": ".codex_state/logs/reviews/docker_container.20261027T074409Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
