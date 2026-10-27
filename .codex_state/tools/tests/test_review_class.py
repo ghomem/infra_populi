@@ -148,3 +148,18 @@ def test_migrate_commits_lists_newest_first(monkeypatch):
     assert rc.migrate_commits("x") == [("c3", "P8: migrate puppet_infrastructure::x"),
                                        ("c1", "P8: migrate puppet_infrastructure::x")]
     assert rc.migrate_commit("x")[0] == "c3"
+
+
+def test_defect_registry_entries_parse(tmp_path):
+    reg = tmp_path / "upstream_defects.md"
+    reg.write_text("# x\n\n## filesystem_sec\n- Short: s\n- Ruled change: assign into a new\n  variable only\n"
+                   "- Status: ruled\n\n## user_lock, mysql_server\n- Ruled change: none yet\n- Status: pending HQ\n")
+    assert rc.defect_entry("filesystem_sec", reg) == {"status": "ruled", "change": "assign into a new variable only"}
+    assert rc.defect_entry("mysql_server", reg)["status"] == "pending HQ"
+    assert rc.defect_entry("backup", reg) is None
+
+
+def test_repo_registry_has_the_ruled_fixes():
+    for cls in ("filesystem_sec", "puppet_boot_run", "openvpn_nm_connection"):
+        assert rc.defect_entry(cls)["status"].startswith("ruled"), cls
+    assert rc.defect_entry("user_base")["status"] == "pending HQ"

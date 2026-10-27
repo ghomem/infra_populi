@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-43 entries; 5 marked superseded (in whole or part); newest first.
+44 entries; 5 marked superseded (in whole or part); newest first.
+
+## 2026-10-27 — Step 4.2a: upstream-defect registry; the reviewer may read it
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-10-27 — Step 4.1d: lab-master fixture state (ruling 6) built by master_fixtures.sh
 - (no numbered/Rule/Decision lines; read the entry)

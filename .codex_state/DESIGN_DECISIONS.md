@@ -753,3 +753,15 @@ Verified on the real lab: sysmon_backup COMPILE OK (was: lookup of sysmon::based
 `extra_files_probe` (revert-first) fetched puppet:///extra_files/ssl/p8test.crt to the node and went GREEN.
 Nothing is production-derived. The master now differs from its last snapshot (puppet-lint gem, 4 Forge modules,
 these fixtures): HQ takes the new master snapshot at checkpoint 2 (ck1 ruling 4).
+
+## 2026-10-27 — Step 4.2a: upstream-defect registry; the reviewer may read it
+`.codex_state/rules/upstream_defects.md` lists every class whose marker is (or will be) `upstream defect fixed`:
+defect, the RULED change (or none yet), status (`ruled` / `applied <commit>` / `pending HQ`), CTO note. It is a
+rules file, not an escalation: the reviewer may read it (reviewer.md), review_class prints the ruled change with
+the diffs, and `records` fails a defect marker whose class has no `ruled`/`applied` entry. With such a marker
+DIFF A may contain exactly the ruled change in addition to ordinary translations. It doubles as the CTO batch.
+Entries now: filesystem_sec (ruled, ck1 ruling 6), puppet_boot_run (ruled, ruling 8), openvpn_nm_connection
+(ruled per ck1 ruling 3: fqdn_rand_uuid → stdlib fqdn_uuid; class still blocked otherwise), user_base (pending HQ —
+its escalation is written last in 4.x and HQ confirms it), user_lock / linux_policies_user / mysql_server
+(pending; ruling 2's mysql question answered: upstream 874f854 does NOT guard the cert-generation exec, it moves it
+verbatim into the new mariadb_server.pp:99-102).

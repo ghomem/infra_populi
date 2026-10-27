@@ -121,6 +121,8 @@ validated end-to-end) / `.reimplemented.pp`. Both filename and header must say w
   "release-0.9.10 manifest validated unchanged" + deps), then `record_green.sh <class>`, which writes
   `<class> Done [from: release-0.9.10]` (or `[from: release-0.9.10; upstream defect fixed: <short>]` for an
   HQ-ruled fix), adds the header's modules to necessary_modules.txt, regenerates the order file, commits, pushes.
+  A `--defect` marker needs a `ruled` entry in `.codex_state/rules/upstream_defects.md` (registry + CTO batch;
+  the reviewer reads it and allows exactly that change).
 - Historical plain `Done` entries stay plain (pre-baseline); never retro-annotate. `[from: release-0.9.8]`
   survives only where the class's content changed in 0.9.10 (docker_container) until it is re-migrated.
 - New design decisions → APPEND a dated entry to DESIGN_DECISIONS.md; never edit prior entries.

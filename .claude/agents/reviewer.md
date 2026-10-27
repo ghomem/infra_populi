@@ -33,6 +33,10 @@ Steps, all required:
      parameter with `$settings::...`, replacing a module resource with an exec); whole-file
      re-indentation/reformatting of unchanged code; any deleted upstream comment or warning (the
      `comments_preserved` check lists them).
+   - If the tracker marker reads `[from: release-0.9.10; upstream defect fixed: <short>]`, the check output
+     prints the RULED UPSTREAM-DEFECT CHANGE from `.codex_state/rules/upstream_defects.md` (you may read that
+     file). DIFF A may then also contain exactly that change — no more, no less; any other non-translation hunk
+     still FAILs. A marker without a ruled registry entry fails `records` mechanically.
    - DIFF B (the newest migrate commit itself) shows what the migration changed; `provenance` reports drift
      that predates it. For a RE-migration (the class has an earlier migrate commit) DIFF B replaces the earlier
      migrated content: that content is expected to differ from the baseline, and DIFF A carries the whole

@@ -144,6 +144,28 @@ def class_paths(cls: str, base: baseline.Baseline) -> list[str]:
     return sorted(paths)
 
 
+def defect_entry(cls: str, path: Path | None = None) -> dict | None:
+    """The class's entry in .codex_state/rules/upstream_defects.md: {'status', 'change'} or None."""
+    path = path or STATE / "rules" / "upstream_defects.md"
+    if not path.is_file():
+        return None
+    for block in path.read_text(encoding="utf-8").split("\n## ")[1:]:
+        head, _, body = block.partition("\n")
+        if cls not in [n.strip() for n in head.split(",")]:
+            continue
+        fields: dict[str, str] = {}
+        key = None
+        for line in body.splitlines():
+            m = re.match(r"^- (\w[\w ]*?): (.*)$", line)
+            if m:
+                key = m.group(1).lower()
+                fields[key] = m.group(2).strip()
+            elif key and line.startswith("  "):
+                fields[key] += " " + line.strip()
+        return {"status": fields.get("status", ""), "change": fields.get("ruled change", "")}
+    return None
+
+
 def header_block(text: str) -> list[str]:
     lines = []
     for line in text.splitlines():
@@ -316,6 +338,14 @@ def run_checks(cls: str, harness: bool, fresh: bool) -> dict:
             rec.append(f"tracker line {tracker[0]!r} lacks `Done [from: {base.name}...]`")
         elif entry.defect_fixed:
             out["defect_fixed"] = entry.defect_fixed
+            ruled = defect_entry(cls)
+            if ruled is None:
+                rec.append(f"marker says `upstream defect fixed: {entry.defect_fixed}` but .codex_state/rules/"
+                           "upstream_defects.md has no entry for the class")
+            elif not ruled["status"].startswith(("ruled", "applied")):
+                rec.append(f"upstream defect fix not authorized: registry status `{ruled['status']}`")
+            else:
+                out["ruled_change"] = ruled["change"]
     if any(l.split()[:1] == [cls] for l in (STATE / "blocked.txt").read_text().splitlines() if not l.startswith("#")):
         rec.append("class is listed in blocked.txt")
     order = (STATE / "migration_order.md").read_text()
@@ -439,6 +469,8 @@ def cmd_check(argv: list[str]) -> int:
             detail = ch["detail"] if isinstance(ch["detail"], str) else " | ".join(map(str, ch["detail"]))
             print(f"  {name}={ch['status']}: {detail[:600]}")
     print(f"  diff_summary: {data.get('diff_summary')}")
+    if data.get("ruled_change"):
+        print(f"  RULED UPSTREAM-DEFECT CHANGE (tracker: {data.get('defect_fixed')}): {data['ruled_change']}")
     print("---- DIFF A: final content vs baseline (what the tracker marker claims) ----")
     print(data["diffs"].get("final_vs_baseline", "")[:12000])
     print("---- DIFF B: the migrate commit itself (what the migration changed) ----")
