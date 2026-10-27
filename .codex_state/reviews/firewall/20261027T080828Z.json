@@ -1,0 +1,93 @@
+{
+ "schema": 1,
+ "class": "firewall",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T08:08:28Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "425ba12e5de6",
+ "migrate_subject": "P8: migrate puppet_infrastructure::firewall",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 425ba12e5de6; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `firewall Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-firewall', '8.3.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 16 catalog events; COVERAGE puppet_infrastructure::firewall: 9 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A @@-1,2: migration header comment only (2 added comment lines)",
+   "DIFF A @@-34,10: '000 accept all icmp' and '001 accept all to lo interface' action => 'accept' -> jump => 'accept' (puppetlabs-firewall 8 rename), values and titles unchanged",
+   "DIFF A @@-45,10: '002 reject local traffic not on loopback interface' action => 'reject' -> jump => 'reject'; '003 accept related established rules' action => 'accept' -> jump => 'accept'; other attributes unchanged",
+   "DIFF A @@-57,5: ssh dport 22 rule action => 'accept' -> jump => 'accept'; no resources added/removed, no logic or comment changes"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 7,
+  "removed": 5,
+  "non_comment_changes": 10,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest; firewall action renamed to jump, preserving rules and policies.",
+  "# Module dependency: puppetlabs-firewall 8.3.0."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 16,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::firewall: 9 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 41.836,
+   "master_check_s": 1.225,
+   "poweroff_s": 1.278,
+   "restore_s": 0.499,
+   "boot_to_ssh_s": 25.232,
+   "apt_update_s": 11.997,
+   "verify_s": 1.605
+  },
+  "log": ".codex_state/logs/reviews/firewall.20261027T080649Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
