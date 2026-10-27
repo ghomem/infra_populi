@@ -84,6 +84,12 @@ def test_method_call_before_a_block_is_not_a_resource_type():
     assert "empty" not in pregate.resource_types(manifest) and "notify" in pregate.resource_types(manifest)
 
 
+def test_comparison_with_undef_before_a_block_is_not_a_resource_type():
+    # rsyslog_client.pp `if $target_ip != undef {` (found in the first /migrate-next batch, 2026-10-27)
+    manifest = "class x { if $a != undef { notify { 'n': } } if $b == true { notify { 'm': } } }"
+    assert {"undef", "true"}.isdisjoint(pregate.resource_types(manifest))
+
+
 def test_comments_are_not_code():
     r = pregate.Report("c")
     pregate.scan_hazards("# exec { 'old': command => 'dnf install x' }\n# validate_re($x)\n", None, r)

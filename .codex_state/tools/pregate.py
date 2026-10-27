@@ -38,7 +38,8 @@ CORE_TYPES = {
     "notify", "package", "resources", "schedule", "scheduled_task", "selboolean", "selmodule", "service",
     "ssh_authorized_key", "sshkey", "stage", "tidy", "user", "yumrepo", "zfs", "zone", "zpool",
 }
-KEYWORDS = {"class", "define", "node", "if", "elsif", "else", "unless", "case", "default", "and", "or", "in"}
+KEYWORDS = {"class", "define", "node", "if", "elsif", "else", "unless", "case", "default", "and", "or", "in", "undef",
+            "true", "false"}
 STDLIB4_REMOVED = re.compile(
     r"\b(validate_[a-z0-9_]+|is_(?:absolute_path|array|bool|domain_name|email_address|float|function_available|"
     r"hash|integer|ip_address|ipv4_address|ipv6_address|mac_address|numeric|string)|has_key|private|type3x|"
