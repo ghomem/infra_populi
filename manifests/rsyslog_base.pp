@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none.
 # Shared rsyslog setup for both server and client nodes.
 # Installs rsyslog + GnuTLS and copies Puppet TLS material so rsyslog can use it.
 
