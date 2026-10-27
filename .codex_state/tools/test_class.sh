@@ -136,7 +136,12 @@ for base in required_base:
     print(f"BASE={base}")
 for external in required_external:
     print(f"EXTERNAL={external}")
+node_fixture = data.get("node_fixture", "")
+if not isinstance(node_fixture, str) or (node_fixture and not re.fullmatch(r"[a-z0-9_]+", node_fixture)):
+    fail(f"node_fixture is invalid: {node_fixture!r}")
+
 print(f"OWNER_VALIDATED={owner_validated}")
+print(f"NODE_FIXTURE={node_fixture}")
 print("END")
 PY
 )"
@@ -152,6 +157,7 @@ PY
   CLASSIFY_REQUIRED_BASES=()
   CLASSIFY_REQUIRED_EXTERNALS=()
   CLASSIFY_OWNER_VALIDATED=""
+  CLASSIFY_NODE_FIXTURE=""
   mapfile -t records <<< "$parsed"
   for line in "${records[@]}"; do
     case "$line" in
@@ -160,6 +166,7 @@ PY
       BASE=*) CLASSIFY_REQUIRED_BASES+=("${line#BASE=}") ;;
       EXTERNAL=*) CLASSIFY_REQUIRED_EXTERNALS+=("${line#EXTERNAL=}") ;;
       OWNER_VALIDATED=*) CLASSIFY_OWNER_VALIDATED="${line#OWNER_VALIDATED=}" ;;
+      NODE_FIXTURE=*) CLASSIFY_NODE_FIXTURE="${line#NODE_FIXTURE=}" ;;
       END) ;;
       *) die "Invalid classification for class '${requested}': unexpected parsed field" ;;
     esac
@@ -303,8 +310,25 @@ render_managed_block() {
   fi
   expand_target_classes "$@"
   echo "# BEGIN CODEX MANAGED (do not edit by hand)"
+  render_node_fixtures "$@"
   render_manifest_lines_for_classes "${EXPANDED_CLASSES[@]}"
   echo "# END CODEX MANAGED"
+}
+
+render_node_fixtures() {
+  # HQ 2026-10-27 ruling 7: a target's plan `node_fixture` (synthetic paths/users/commands of a service the lab node
+  # does not run) is applied with it. MOCK-APPLY: the GREEN proves syntax + idempotency, not behaviour.
+  local target path
+  local -A seen=()
+  for target in "$@"; do
+    classify_target "$target"
+    [[ -n "$CLASSIFY_NODE_FIXTURE" && -z "${seen[$CLASSIFY_NODE_FIXTURE]-}" ]] || continue
+    seen[$CLASSIFY_NODE_FIXTURE]=1
+    path="${FIXTURE_DIR}/node/${CLASSIFY_NODE_FIXTURE}.pp"
+    [[ -f "$path" ]] || die "Node fixture not found: ${path}"
+    echo "# MOCK-APPLY node fixture: ${CLASSIFY_NODE_FIXTURE}"
+    cat "$path"
+  done
 }
 
 deploy_repo_to_master() {

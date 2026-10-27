@@ -347,7 +347,15 @@ def run_checks(cls: str, harness: bool, fresh: bool) -> dict:
         entry = generator.parse_tracker_line(tracker[0])
         if entry is None or not entry.done or entry.from_ref != base.name:
             rec.append(f"tracker line {tracker[0]!r} lacks `Done [from: {base.name}...]`")
-        elif entry.defect_fixed:
+        else:
+            row = generator.parse_plan().get(cls)
+            fixture = row.node_fixture if row else ""
+            if bool(fixture) != bool(entry.mock_apply):
+                rec.append(f"plan node_fixture {fixture or '(none)'} vs tracker mock-apply "
+                           f"{entry.mock_apply or '(none)'}: a node-fixture GREEN must be labelled mock-apply and only then")
+            elif fixture:
+                out["mock_apply"] = f"{entry.mock_apply} (node fixture {fixture}: behaviour NOT verified)"
+        if entry is not None and entry.done and entry.from_ref == base.name and entry.defect_fixed:
             out["defect_fixed"] = entry.defect_fixed
             ruled = defect_entry(cls)
             if ruled is None:
@@ -480,6 +488,8 @@ def cmd_check(argv: list[str]) -> int:
             detail = ch["detail"] if isinstance(ch["detail"], str) else " | ".join(map(str, ch["detail"]))
             print(f"  {name}={ch['status']}: {detail[:600]}")
     print(f"  diff_summary: {data.get('diff_summary')}")
+    if data.get("mock_apply"):
+        print(f"  MOCK-APPLY: {data['mock_apply']}")
     if data.get("ruled_change"):
         print(f"  RULED UPSTREAM-DEFECT CHANGE (tracker: {data.get('defect_fixed')}): {data['ruled_change']}")
     print("---- DIFF A: final content vs baseline (what the tracker marker claims) ----")

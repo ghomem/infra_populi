@@ -260,3 +260,23 @@ def test_updated_puppetfile_export_rides_with_the_class_commit(clone):
     assert clone.run("--no-push").returncode == 0
     files = git(clone.root, "show", "--name-only", "--format=", "HEAD~1").split()
     assert ".codex_state/lab/Puppetfile" in files
+
+
+def test_mock_apply_marker_is_required_exactly_with_a_node_fixture(clone):
+    clone.stamp()
+    clone.add_header()
+    proc = clone.run("--mock-apply", "not a fixture class", "--no-push")  # sysmon_fs_health has no node_fixture
+    assert proc.returncode == 1 and "--mock-apply is required exactly when" in proc.stderr
+    import importlib.util, sys
+    spec = importlib.util.spec_from_file_location("records_mock", TOOLS / "records.py")
+    records = importlib.util.module_from_spec(spec); sys.modules["records_mock"] = records; spec.loader.exec_module(records)
+    assert records.tracker_text("user_sysmon\n", "user_sysmon", "release-0.9.10", "", "synthetic Naemon/Thruk") == \
+        "user_sysmon Done [from: release-0.9.10; mock-apply: synthetic Naemon/Thruk]\n"
+
+
+def test_harness_renders_the_node_fixture_before_the_class(lab):
+    proc = lab.run([str(TOOLS / "test_class.sh"), "--render-only", "puppet_infrastructure::user_sysmon"])
+    assert proc.returncode == 0, proc.stderr
+    out = proc.stdout
+    assert out.index("# MOCK-APPLY node fixture: sysmon_server") < out.index("puppet_infrastructure::user_sysmon {")
+    assert "user { 'naemon':" in out

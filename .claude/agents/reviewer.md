@@ -39,6 +39,9 @@ Steps, all required:
      prints the RULED UPSTREAM-DEFECT CHANGE from `.codex_state/upstream_defects.md` (you may read that
      file). DIFF A may then also contain exactly that change — no more, no less; any other non-translation hunk
      still FAILs. A marker without a ruled registry entry fails `records` mechanically.
+   - A tracker marker with `mock-apply: <short>` means the harness applied the plan's synthetic node fixture
+     (`.codex_state/tools/tests/fixtures/node/<name>.pp`, paths/users/commands of a service the lab lacks): judge the
+     class as usual; the fixture is not part of the class and is not in DIFF A. Behaviour stays unverified.
    - DIFF B (the newest migrate commit itself) shows what the migration changed; `provenance` reports drift
      that predates it. For a RE-migration (the class has an earlier migrate commit) DIFF B replaces the earlier
      migrated content: that content is expected to differ from the baseline, and DIFF A carries the whole

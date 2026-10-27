@@ -5,7 +5,9 @@
 # tracker, and the standing composite compiles still match their expectations. Then it writes the
 # tracker marker, commits, regenerates the order file, commits that, and pushes.
 #
-# Usage: record_green.sh <class> [--defect "<short>"] [--fix "<what>"] [--no-push]
+# Usage: record_green.sh <class> [--defect "<short>"] [--mock-apply "<short>"] [--fix "<what>"] [--no-push]
+#   --mock-apply  marker `; mock-apply: <short>` — required exactly when the plan gives the class a node_fixture
+#                 (HQ 2026-10-27 ruling 7: GREEN on synthetic service paths; behaviour unverified).
 #   --defect   tracker marker `[from: <baseline>; upstream defect fixed: <short>]` (HQ ck1 ruling 3);
 #              only for a fix HQ has ruled on.
 #   --fix      a records fix after a reviewer FAIL on an already-recorded class: comments/header and the
@@ -30,10 +32,11 @@ refuse() { echo "RECORD REFUSED: $*" >&2; exit 1; }
 CLS="${1#puppet_infrastructure::}"
 shift
 [[ "$CLS" =~ ^[a-z][a-z0-9_]*$ ]] || refuse "invalid class name '${CLS}'"
-DEFECT="" FIX="" PUSH=1
+DEFECT="" MOCK="" FIX="" PUSH=1
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --defect) DEFECT="${2:-}"; [[ -n "$DEFECT" ]] || refuse "--defect needs a short description"; shift 2 ;;
+    --mock-apply) MOCK="${2:-}"; [[ -n "$MOCK" ]] || refuse "--mock-apply needs a short description"; shift 2 ;;
     --fix) FIX="${2:-}"; [[ -n "$FIX" ]] || refuse "--fix needs a short description"; shift 2 ;;
     --no-push) PUSH=0; shift ;;
     *) refuse "unknown argument '$1'" ;;
@@ -79,11 +82,10 @@ if ! $COMPOSITE_CMD; then
 fi
 
 # 6. tracker marker, then the class commit.
-if [[ -n "$DEFECT" ]]; then
-  "${RECORDS[@]}" tracker-set "$CLS" --defect "$DEFECT"
-else
-  "${RECORDS[@]}" tracker-set "$CLS"
-fi
+tracker_args=()
+[[ -z "$DEFECT" ]] || tracker_args+=(--defect "$DEFECT")
+[[ -z "$MOCK" ]] || tracker_args+=(--mock-apply "$MOCK")
+"${RECORDS[@]}" tracker-set "$CLS" "${tracker_args[@]}" || refuse "tracker marker rejected"
 for path in "${allowed[@]}"; do
   if [[ -n "$(git status --porcelain -- "$path")" ]]; then git add -- "$path"; fi
 done

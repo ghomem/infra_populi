@@ -806,3 +806,22 @@ The "verified (gate v2)" derivation moved into the generator; status.py uses it 
    fixtures for the paths/users the classes expect, labelled mock-apply where the real service is absent — the same
    rule as user_samba (ruling 7, 2026-10-26).
 8. The "Decisions needed" and "CTO" sections of the diagnosis and the checkpoint files are rewritten to reflect 1–7.
+
+## 2026-10-27 — Ruling 7 mechanics: node fixtures and the mock-apply label
+New optional plan column `node_fixture` = a synthetic node fixture manifest
+`.codex_state/tools/tests/fixtures/node/<name>.pp` that the harness renders into the managed block BEFORE the class
+(the generator fails if the file is missing; coverage still counts only class-tagged resources). A GREEN with a
+node fixture is MOCK-APPLY: syntax and idempotency proven, behaviour not. The tracker marker gains
+`; mock-apply: <short>` (parser/generator/status/records), written by `record_green.sh --mock-apply`, which is
+REQUIRED exactly when the plan names a node_fixture; review_class `records` fails a mismatch either way and shows
+the label to the reviewer (reviewer.md). Fixtures: `sysmon_server` (naemon system user/group, /etc/thruk,
+/etc/naemon/conf.d/contacts — user_sysmon) and `samba_dc_standin` (stateful stand-ins for pdbedit, ldbsearch,
+create-user.pl, set-user-samba-hash.sh keeping a fake store, so user_samba's unless-guards see its own effect;
+the 2026-10-26 ruling-7 stand-in). The sysmon_* check classes need no fixture: they are node-side NRPE checks whose
+prerequisites (nagios plugins, lib64 symlink) come from packages_base / filesystem_lib64.
+REAL LAB: user_sysmon revert-first GREEN with its fixture (Htpasswd + contact file created, run 2 clean);
+user_samba GREEN with its stand-in once a throwaway probe added the repository-standard
+`$localdir = lookup('filesystem::localdir')` (hazard 7; the real fix is the class's own syntax work; probe
+reverted, its GREEN stamp deleted). blocked.txt: user_sysmon and user_samba UNBLOCKED (3 remain:
+extra_packages_el — RHEL node, post-sprint; mount_shares_desktop — desktop fixture; openvpn_nm_connection —
+NetworkManager).

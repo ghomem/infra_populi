@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-46 entries; 5 marked superseded (in whole or part); newest first.
+47 entries; 5 marked superseded (in whole or part); newest first.
+
+## 2026-10-27 — Ruling 7 mechanics: node fixtures and the mock-apply label
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-10-27 — HQ rulings: production facts settled (no CTO tier for this phase)
 - 1. STANDING FACT: the runtime is OpenVox, settled since the project started. "Runtime decision" is deleted from

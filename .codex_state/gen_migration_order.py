@@ -63,6 +63,7 @@ class ClassRow:
     required_base: tuple[str, ...]
     required_external: tuple[str, ...]
     owner_validated: str
+    node_fixture: str = ""
 
     @property
     def sort_key(self) -> tuple[int, int, int, str]:
@@ -84,6 +85,7 @@ class TrackerEntry:
     done: bool
     from_ref: str
     defect_fixed: str
+    mock_apply: str = ""
 
 
 def fail(message: str) -> None:
@@ -149,6 +151,7 @@ def parse_plan() -> dict[str, ClassRow]:
     owner_validated_index = (
         headers.index("owner_validated") if "owner_validated" in headers else None
     )
+    node_fixture_index = headers.index("node_fixture") if "node_fixture" in headers else None
     rows: dict[str, ClassRow] = {}
 
     for line_number, line in enumerate(lines[header_index + 2 :], start=header_index + 3):
@@ -198,6 +201,11 @@ def parse_plan() -> dict[str, ClassRow]:
         if owner_validated and not re.fullmatch(r"[A-Za-z0-9_]+", owner_validated):
             fail(f"invalid owner_validated class short-name for {name}: {owner_validated!r}")
 
+        node_fixture = cells[node_fixture_index] if node_fixture_index is not None else ""
+        if node_fixture and not re.fullmatch(r"[a-z0-9_]+", node_fixture):
+            fail(f"invalid node_fixture for {name}: {node_fixture!r}")
+        if node_fixture and not (SCRIPT_DIR / "tools" / "tests" / "fixtures" / "node" / f"{node_fixture}.pp").is_file():
+            fail(f"node_fixture for {name} does not exist: tools/tests/fixtures/node/{node_fixture}.pp")
         rows[name] = ClassRow(
             name=name,
             complexity=parse_int(cells[indexes["complexity"]], "complexity", name),
@@ -210,6 +218,7 @@ def parse_plan() -> dict[str, ClassRow]:
             required_base=required_base,
             required_external=required_external,
             owner_validated=owner_validated,
+            node_fixture=node_fixture,
         )
 
     if not rows:
@@ -229,7 +238,8 @@ def parse_plan() -> dict[str, ClassRow]:
 
 TRACKER_LINE = re.compile(
     r"(?:(?P<name>[A-Za-z0-9_]+)(?P<done> Done)?|Done (?P<name2>[A-Za-z0-9_]+))"
-    r"(?: \[from: (?P<ref>[A-Za-z0-9._-]+)(?:; upstream defect fixed: (?P<defect>[^\]\[;]+?))?\])?"
+    r"(?: \[from: (?P<ref>[A-Za-z0-9._-]+)(?:; upstream defect fixed: (?P<defect>[^\]\[;]+?))?"
+    r"(?:; mock-apply: (?P<mock>[^\]\[;]+?))?\])?"
 )
 
 
@@ -247,6 +257,7 @@ def parse_tracker_line(line: str) -> TrackerEntry | None:
         done=bool(match.group("done") or match.group("name2")),
         from_ref=match.group("ref") or "",
         defect_fixed=(match.group("defect") or "").strip(),
+        mock_apply=(match.group("mock") or "").strip(),
     )
 
 
@@ -699,6 +710,7 @@ def classify(class_name: str) -> None:
                 "required_base": row.required_base,
                 "required_external": row.required_external,
                 "owner_validated": row.owner_validated,
+                "node_fixture": row.node_fixture,
             }
         )
     )

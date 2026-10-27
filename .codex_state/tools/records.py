@@ -8,7 +8,7 @@
   records.py verify-stamp <class>       exit 0 if a GREEN stamp matches the current code, else 1.
   records.py header-check <class>       exit 0 if the manifest gained a migration header naming its
                                         module dependencies (or `none`) versus the baseline, else 1.
-  records.py tracker-set <class> [--defect SHORT]
+  records.py tracker-set <class> [--defect SHORT] [--mock-apply SHORT]
       Rewrites the class's migrated_classes.txt line to `<class> Done [from: <baseline>]` or
       `<class> Done [from: <baseline>; upstream defect fixed: SHORT]` (HQ checkpoint-1 ruling 3).
   records.py code-unchanged <class>     exit 0 if the class's code equals HEAD's (comment-only change).
@@ -155,10 +155,11 @@ def cmd_header_check(cls: str) -> int:
     return 0
 
 
-def tracker_text(text: str, cls: str, base_name: str, defect: str) -> str:
-    marker = f"[from: {base_name}" + (f"; upstream defect fixed: {defect}" if defect else "") + "]"
+def tracker_text(text: str, cls: str, base_name: str, defect: str, mock: str = "") -> str:
+    marker = (f"[from: {base_name}" + (f"; upstream defect fixed: {defect}" if defect else "")
+              + (f"; mock-apply: {mock}" if mock else "") + "]")
     new_line = f"{cls} Done {marker}"
-    if generator.parse_tracker_line(new_line) != generator.TrackerEntry(cls, True, base_name, defect):
+    if generator.parse_tracker_line(new_line) != generator.TrackerEntry(cls, True, base_name, defect, mock):
         raise SystemExit(f"ERROR: marker does not parse back: {new_line!r}")
     lines, hits = [], 0
     for line in text.splitlines():
@@ -175,10 +176,15 @@ def tracker_text(text: str, cls: str, base_name: str, defect: str) -> str:
 
 def cmd_tracker_set(cls: str, argv: list[str]) -> int:
     defect = argv[argv.index("--defect") + 1].strip() if "--defect" in argv else ""
+    mock = argv[argv.index("--mock-apply") + 1].strip() if "--mock-apply" in argv else ""
+    fixture = generator.parse_plan().get(cls)
+    if bool(mock) != bool(fixture and fixture.node_fixture):
+        raise SystemExit(f"ERROR: --mock-apply is required exactly when the plan gives {cls} a node_fixture "
+                         f"(plan: {fixture.node_fixture if fixture else None!r})")
     base_name = baseline.for_class(cls).name
-    TRACKER.write_text(tracker_text(TRACKER.read_text(encoding="utf-8"), cls, base_name, defect))
-    fixed = f"; upstream defect fixed: {defect}" if defect else ""
-    print(f"TRACKER {cls} Done [from: {base_name}{fixed}]")
+    TRACKER.write_text(tracker_text(TRACKER.read_text(encoding="utf-8"), cls, base_name, defect, mock))
+    extra = (f"; upstream defect fixed: {defect}" if defect else "") + (f"; mock-apply: {mock}" if mock else "")
+    print(f"TRACKER {cls} Done [from: {base_name}{extra}]")
     return 0
 
 

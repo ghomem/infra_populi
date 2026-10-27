@@ -176,3 +176,17 @@ def test_repo_queue_follows_the_hq_order(gen):
     firsts = [n for n, w in queue if w == "first"]
     assert firsts == [n for n in ["rsyslog_base", "rsyslog_client", "docker_container", "filesystem_yum",
                                   "backup_rsnapshot_pre"] if n in firsts]
+
+
+def test_mock_apply_marker_grammar(gen):
+    e = gen.parse_tracker_line("user_sysmon Done [from: release-0.9.10; mock-apply: Naemon/Thruk paths synthetic]")
+    assert (e.from_ref, e.defect_fixed, e.mock_apply) == ("release-0.9.10", "", "Naemon/Thruk paths synthetic")
+    e = gen.parse_tracker_line("x Done [from: 874f854; upstream defect fixed: guard; mock-apply: stand-ins]")
+    assert (e.from_ref, e.defect_fixed, e.mock_apply) == ("874f854", "guard", "stand-ins")
+
+
+def test_repo_node_fixtures_exist_for_the_planned_classes(gen):
+    rows = gen.parse_plan()
+    assert rows["user_sysmon"].node_fixture == "sysmon_server"
+    assert rows["user_samba"].node_fixture == "samba_dc_standin"
+    assert sum(1 for r in rows.values() if r.node_fixture) == 2
