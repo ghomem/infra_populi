@@ -58,7 +58,8 @@ def test_prompt_carries_the_orientation_packet_and_the_record_recipe(lab):
     assert "ORIENTATION PACKET puppet_infrastructure::sysmon_fs_health" in prompt
     assert "plan: resource_type=define title=sysmon_fs_health" in prompt
     assert "record_green.sh puppet_infrastructure::sysmon_fs_health" in prompt
-    assert "supersedes runbook section 2 steps 5-7" in prompt
+    assert "TRACKED single source since 2026-10-27" in prompt  # the repo runbook, not ~/.config
+    assert "Pre-migration hazard checklist — SINGLE SOURCE" in prompt and "13. Runtime-baseline drift" in prompt
 
 
 def test_wrapper_writes_revert_and_codex_metrics_events(lab):

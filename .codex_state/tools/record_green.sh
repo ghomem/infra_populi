@@ -21,6 +21,8 @@ COMPOSITE_CMD="${P8_COMPOSITE_CMD:-python3 $TOOLS/composite_compile.py}"
 TRACKER=".codex_state/migrated_classes.txt"
 ORDER=".codex_state/migration_order.md"
 NECESSARY=".codex_state/necessary_modules.txt"
+PUPPETFILE_EXPORT=".codex_state/lab/Puppetfile"
+PUPPETFILE_CMD="${P8_PUPPETFILE_CMD:-python3 $TOOLS/export_puppetfile.py --verify}"
 
 refuse() { echo "RECORD REFUSED: $*" >&2; exit 1; }
 
@@ -47,7 +49,7 @@ START_HEAD="$(git rev-parse HEAD)"
 
 # 2. the worktree holds only this class's files and the tracker.
 mapfile -t allowed < <("${RECORDS[@]}" class-files "$CLS")
-allowed+=("$TRACKER")
+allowed+=("$TRACKER" "$PUPPETFILE_EXPORT")
 mapfile -t dirty < <(git status --porcelain --untracked-files=all | cut -c4-)
 for path in "${dirty[@]}"; do
   [[ -n "$path" ]] || continue
@@ -64,6 +66,9 @@ if [[ -n "$FIX" ]]; then
   grep -qE "^(${CLS} Done|Done ${CLS})( |$)" "$TRACKER" || refuse "--fix is for an already-recorded class; ${CLS} is not Done"
   "${RECORDS[@]}" code-unchanged "$CLS" || refuse "--fix may not change code"
 fi
+
+# 4b. the repo's Puppetfile export equals the master's (step 3.5: exported on every change).
+$PUPPETFILE_CMD || refuse "the master Puppetfile differs from ${PUPPETFILE_EXPORT}: run export_puppetfile.py and include it"
 
 # 5. standing composite compiles (step 2.2) on the tree being recorded.
 echo "==> Standing composite compiles"

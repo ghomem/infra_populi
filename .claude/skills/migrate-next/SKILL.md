@@ -16,7 +16,7 @@ FOR EACH CLASS:
    `manifests/<class>.pp`. If deps are not DONE, the order file is wrong — investigate, do not skip silently.
 2. HAZARDS: first run `.codex_state/tools/pregate.sh <class>` (drift, parse, lint, templates, static
    hazards 1/2/5/6/9 — it prints its tool versions); every FINDING is a hazard to tier below. Then run
-   the checklist from CLAUDE.md against the manifest (grep, read templates it uses,
+   the 13-item checklist in `.codex_state/rules/hazards.md` (the single source) against the manifest (grep, read templates it uses,
    check external types against the master's `puppet module list` and the production module list in
    the 2026-09-30 design entry). For each hazard found decide the tier:
    - You can resolve (pin+install a module via Puppetfile+r10k on the master following the module rules;

@@ -40,7 +40,7 @@ def clone(tmp_path, lab):
         git(work, "push", "-q")
     (work / ".codex_state" / "necessary_modules.txt").write_text("puppetlabs-stdlib\n")
     lab.world["ssh"].insert(0, {"match": "bash -s", "stdout": INVENTORY})
-    env = {"P8_GREEN_DIR": str(tmp_path / "green"), "P8_COMPOSITE_CMD": "true"}
+    env = {"P8_GREEN_DIR": str(tmp_path / "green"), "P8_COMPOSITE_CMD": "true", "P8_PUPPETFILE_CMD": "true"}
 
     class Clone:
         root, bare = work, origin
@@ -178,7 +178,7 @@ def test_fix_mode_commits_comment_and_tracker_only_as_a_record_commit(clone, lab
     path = clone.root / f"manifests/{done}.pp"
     path.write_text(path.read_text().replace("# Puppet 8 migration:", "# Puppet 8 migration (records fix):", 1))
     proc = lab.run(["bash", str(clone.root / ".codex_state/tools/record_green.sh"), done, "--fix", "header wording",
-                    "--no-push"], env={**env, "P8_COMPOSITE_CMD": "true"}, cwd=clone.root)
+                    "--no-push"], env={**env, "P8_COMPOSITE_CMD": "true", "P8_PUPPETFILE_CMD": "true"}, cwd=clone.root)
     assert proc.returncode == 0, proc.stderr
     assert git(clone.root, "log", "--format=%s", "-2").splitlines()[1] == f"P8: record {done}: header wording"
 
@@ -190,7 +190,7 @@ def test_fix_mode_refuses_a_code_change(clone, lab):
     path.write_text(path.read_text().replace("{", "{\n  $p8_extra = 1", 1))
     lab.run(["python3", str(clone.root / ".codex_state/tools/records.py"), "stamp", "--", done], env=env)
     proc = lab.run(["bash", str(clone.root / ".codex_state/tools/record_green.sh"), done, "--fix", "x", "--no-push"],
-                   env={**env, "P8_COMPOSITE_CMD": "true"}, cwd=clone.root)
+                   env={**env, "P8_COMPOSITE_CMD": "true", "P8_PUPPETFILE_CMD": "true"}, cwd=clone.root)
     assert proc.returncode == 1 and "may not change code" in proc.stderr
 
 
@@ -241,3 +241,22 @@ def test_record_event_and_metrics_close_commit(clone, lab):
     record = json.loads(runs.read_text().splitlines()[-1])
     assert record["commits"] and record["path"] == "unchanged-validated"
     assert git(clone.bare, "rev-parse", "main") == git(clone.root, "rev-parse", "HEAD")
+
+
+def test_puppetfile_export_out_of_date_is_refused(clone):
+    clone.stamp()
+    clone.add_header()
+    head = git(clone.root, "rev-parse", "HEAD")
+    proc = clone.run("--no-push", P8_PUPPETFILE_CMD="false")
+    assert proc.returncode == 1 and "differs from .codex_state/lab/Puppetfile" in proc.stderr
+    assert git(clone.root, "rev-parse", "HEAD") == head
+
+
+def test_updated_puppetfile_export_rides_with_the_class_commit(clone):
+    clone.stamp()
+    clone.add_header()
+    export = clone.root / ".codex_state/lab/Puppetfile"
+    export.write_text(export.read_text() + "mod 'puppet-example', '1.2.3'\n")
+    assert clone.run("--no-push").returncode == 0
+    files = git(clone.root, "show", "--name-only", "--format=", "HEAD~1").split()
+    assert ".codex_state/lab/Puppetfile" in files

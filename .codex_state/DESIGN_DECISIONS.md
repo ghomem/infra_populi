@@ -684,3 +684,19 @@ commits are never part of a review; the reviewer tool already ignores `P8: recor
 are kept: `codex_tokens` (Codex's total_tokens, which recounts cached input every turn) and
 `codex_tokens_uncached` (fresh input + output); the diagnosis's "68 k/class" must be re-derived against one of
 them, stated. Metrics never change a verdict: every emitter is best-effort.
+
+## 2026-10-27 — Step 3.5: single sources for the engine's instructions
+1. Hazard checklist: ONE file, `.codex_state/rules/hazards.md` (13 items: CLAUDE.md's 8 + diagnosis G items
+   9–13 approved by ruling 12, with the runbook §5 lessons folded in). CLAUDE.md @-imports it, the skill
+   points to it, the wrapper appends it to every Codex prompt. Edit only there.
+2. Runbook: tracked at `.codex_state/rules/CODEX_RUNBOOK.md` (moved from ~/.config/infra_populi/; the old file is
+   renamed `CODEX_RUNBOOK.md.moved-to-repo-2026-10-27`, not deleted). §2 now records through record_green.sh
+   only; §5 defers to the hazard file; the wrapper's own recording override is removed (no second copy).
+3. Puppetfile export on every change: record_green.sh refuses while `export_puppetfile.py --verify` finds the
+   master's Puppetfile different from `.codex_state/lab/Puppetfile`; an updated export may ride in the class's
+   migrate commit (record_green allows it; the reviewer's scope check counts it as a state file).
+4. Generated "current rules" digest: `.codex_state/rules/CURRENT_RULES.md`, derived by
+   `gen_rules_digest.py` (rule lines per entry, newest first; SUPERSEDED marks from `supersedes <date>
+   "<title>"` references; unmatched references listed). The engine pre-commit hook refuses a staged
+   DESIGN_DECISIONS.md whose digest is not regenerated and staged with it. Read it as an index into this log,
+   never instead of it.

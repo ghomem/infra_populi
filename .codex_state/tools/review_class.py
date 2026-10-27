@@ -40,7 +40,8 @@ VERDICTS = STATE / "reviews"
 HARNESS = TOOLS / "test_class.sh"
 PARAMS_DIR = Path.home() / ".config" / "infra_populi" / "params"
 STATE_FILES = {".codex_state/migrated_classes.txt", ".codex_state/migration_order.md",
-               ".codex_state/migration_plan.md", ".codex_state/blocked.txt", ".codex_state/DESIGN_DECISIONS.md"}
+               ".codex_state/migration_plan.md", ".codex_state/blocked.txt", ".codex_state/DESIGN_DECISIONS.md",
+               ".codex_state/lab/Puppetfile"}
 RECORD_SUBJECTS = ("P8: regenerate migration order", "P8: record")
 FORGE_AUTHORS = {"puppetlabs", "puppet", "saz", "thias", "leinaddm", "citrin", "camptocamp", "voxpupuli"}
 CHECKS = ("git", "scope", "provenance", "records", "header_modules", "comments_preserved", "syntax",

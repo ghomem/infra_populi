@@ -22,10 +22,11 @@ exec </dev/null
 [[ $# -ge 1 ]] || { echo "Usage: codex_migrate_class <puppet_class_name>"; exit 2; }
 CLASS="$1"
 
-RUNBOOK="$HOME/.config/infra_populi/CODEX_RUNBOOK.md"
-[[ -f "$RUNBOOK" ]] || { echo "Missing runbook: $RUNBOOK"; exit 2; }
-
 cd /home/salatiel/work/infra_populi
+# Single sources (step 3.5): the tracked runbook, then the tracked hazard checklist.
+RUNBOOK=".codex_state/rules/CODEX_RUNBOOK.md"
+HAZARDS=".codex_state/rules/hazards.md"
+for f in "$RUNBOOK" "$HAZARDS"; do [[ -f "$f" ]] || { echo "Missing $f"; exit 2; }; done
 BASELINE="$(python3 .codex_state/tools/baseline.py name)"
 BASELINE_LABEL="$(python3 .codex_state/tools/baseline.py label)"
 # Outer timeout (ruling 2 / step 1.1). Longest observed run: 985 s; a hang was 47 min.
@@ -50,15 +51,15 @@ timeout --kill-after=30 "$CODEX_TIMEOUT_SECONDS" codex exec \
   -c 'approval_policy="never"' \
   "$(cat "$RUNBOOK")
 
+$(cat "$HAZARDS")
+
 TARGET CLASS: $CLASS
 
 $PACKET
 
 The wrapper has just reverted the node to its baseline. First action: run the harness (line above).
 Baseline: ${BASELINE_LABEL}. Read baseline content ONLY with: python3 .codex_state/tools/baseline.py show <path>.
-RECORDING (supersedes runbook section 2 steps 5-7): when GREEN, add the header, then run
-.codex_state/tools/record_green.sh $CLASS — it writes the tracker, commits, regenerates and pushes. Never
-hand-write tracker lines or commit class files yourself. A deliberate divergence from ${BASELINE}: stop and report.
+Record with .codex_state/tools/record_green.sh $CLASS (runbook section 2). A deliberate divergence from ${BASELINE}: stop and report.
 " || rc=$?
 if [[ $rc -eq 124 || $rc -eq 137 ]]; then
   echo "CODEX_TIMEOUT: codex exec killed after ${CODEX_TIMEOUT_SECONDS}s" >&2

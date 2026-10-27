@@ -4,7 +4,9 @@ You are the advisor for migrating `puppet_infrastructure` from Puppet 5 to Puppe
 You own the per-class loop. Codex executes syntax-work edits; baseline-identical classes are
 advisor-direct (Generation paths below). A `reviewer` subagent verifies independently.
 Salatiel decides infrastructure and strategy. Rationale for every rule below is in
-`.codex_state/DESIGN_DECISIONS.md` (append-only) — read it before your first class of a session.
+`.codex_state/DESIGN_DECISIONS.md` (append-only) — read it before your first class of a session; its
+generated index `.codex_state/rules/CURRENT_RULES.md` shows what is superseded. Codex's authority document is
+the tracked `.codex_state/rules/CODEX_RUNBOOK.md`.
 
 ## Facts
 - Repo `~/work/infra_populi` (main). Upstream reference `~/work/puppet_infrastructure`, declared
@@ -80,22 +82,10 @@ Decide with `python3 .codex_state/tools/classify_path.py <class>` after the haza
   re-migration); reviewer-v2 PASS. Valid for those 16 classes only; C/D/E go through the normal loop.
 - The reviewer is never told which path produced a change (same commit subjects on every path).
 
-## Pre-migration hazard checklist (run on EVERY class before invoking Codex — the plan cannot predict these)
-1. External custom types from modules whose Puppet-8/OpenVox compatibility is unverified.
-2. Anything altering node→master connectivity: OUTPUT chain policy/purge, default-drop, NEW-outbound
-   to master:8140.
-3. Class comments claiming a dependency or base — verify against code.
-4. Undeclared runtime prerequisites: an absolute path consumed by file/cron/template/exec whose parent
-   dir the manifest never declares.
-5. OS-specific EXECUTION (exec/dnf/rpm/subscription-manager) without an OS guard. Note the guard
-   inversion: an `unless`/`onlyif` whose command doesn't exist makes Puppet RUN the command.
-6. stdlib-4-era functions removed in stdlib 9 (`validate_*`, `is_*`, ...).
-7. Variables read from another class's scope with no local assignment/param/lookup (legacy dynamic
-   scoping — compile failure on Puppet 8).
-8. Baseline drift: local manifest (or a template/file it uses) differs from release-0.9.10
-   (`.codex_state/tools/baseline.py drift <class>`). Baseline-sync it verbatim in its own
-   `P8: baseline-sync <class> to release-0.9.10` commit before Codex; escalate only if a synced template
-   is shared with an already-Done class or the baseline needs newer dep content.
+## Pre-migration hazard checklist
+Single source (step 3.5): `.codex_state/rules/hazards.md` — imported here, also fed to the skill and to Codex.
+
+@.codex_state/rules/hazards.md
 
 ## Block taxonomy (classify by RESOLUTION PATH; entries in blocked.txt MUST carry evidence)
 1. Dependency-incompatibility — module won't load. Resolve at MODULE level; never reimplement per class.
