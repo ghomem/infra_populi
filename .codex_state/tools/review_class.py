@@ -102,13 +102,38 @@ def parse_inventory(text: str) -> dict:
 
 # ----------------------------------------------------------------------------- pieces
 
-def migrate_commit(cls: str) -> tuple[str, str] | None:
+def migrate_commits(cls: str) -> list[tuple[str, str]]:
+    """Every `P8: migrate puppet_infrastructure::<cls>` commit, newest first."""
     pattern = re.compile(rf"^P8: migrate puppet_infrastructure::{re.escape(cls)}$")
+    found = []
     for line in git("log", "--format=%H%x09%s").splitlines():
         commit, _, subject = line.partition("\t")
         if pattern.match(subject):
-            return commit, subject
-    return None
+            found.append((commit, subject))
+    return found
+
+
+def migrate_commit(cls: str) -> tuple[str, str] | None:
+    found = migrate_commits(cls)
+    return found[0] if found else None
+
+
+def provenance_problems(migrate_diff: list[str], pre_drift: list[str], remigration: bool) -> tuple[list[str], str]:
+    """A first migration must start from baseline content. A RE-migration (an earlier migrate commit exists)
+    starts from the previous migration by definition: its pre-existing drift is what it replaces, and DIFF A
+    (final vs baseline) carries the whole claim."""
+    prov = []
+    if not migrate_diff:
+        prov.append("the migrate commit changed no class file (manifest/templates/files)")
+    if pre_drift and not remigration:
+        prov.append(f"pre-migrate content differed from the baseline (drift predates the migration): {pre_drift}")
+    if prov:
+        return prov, ""
+    if remigration:
+        return [], ("re-migration: the newest migrate commit replaced earlier migrated content"
+                    + (f" that differed from the baseline in {pre_drift}" if pre_drift else "")
+                    + "; DIFF A is judged in full")
+    return [], "migration started from baseline content; the migrate commit changed class files"
 
 
 def class_paths(cls: str, base: baseline.Baseline) -> list[str]:
@@ -221,6 +246,8 @@ def run_checks(cls: str, harness: bool, fresh: bool) -> dict:
         return out
     commit, subject = found
     out["migrate_commit"], out["migrate_subject"] = commit[:12], subject
+    remigration = len(migrate_commits(cls)) > 1
+    out["remigration"] = remigration
 
     # git
     problems = []
@@ -272,13 +299,8 @@ def run_checks(cls: str, harness: bool, fresh: bool) -> dict:
     code_changes = [l for l in added_all + removed_all if not is_comment(l)]
     out["diff_summary"] = {"added": len(added_all), "removed": len(removed_all), "non_comment_changes": len(code_changes),
                            "header_only": not code_changes}
-    prov = []
-    if not migrate_diff:
-        prov.append("the migrate commit changed no class file (manifest/templates/files)")
-    if pre_drift:
-        prov.append(f"pre-migrate content differed from the baseline (drift predates the migration): {pre_drift}")
-    c["provenance"] = result("fail" if prov else "ok",
-                             prov or "migration started from baseline content; the migrate commit changed class files")
+    prov, prov_ok = provenance_problems(migrate_diff, pre_drift, remigration)
+    c["provenance"] = result("fail" if prov else "ok", prov or prov_ok)
     c["comments_preserved"] = result("fail" if removed_comments else "ok",
                                      removed_comments or "no baseline comment line removed")
 

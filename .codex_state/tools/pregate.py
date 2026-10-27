@@ -120,7 +120,7 @@ def local_vars(manifest: str) -> set[str]:
 
 def resource_types(manifest: str) -> set[str]:
     code = strip_comments(manifest)
-    found = set(re.findall(r"(?<![\w:$])([a-z][a-z0-9_]*(?:::[a-z][a-z0-9_]*)*)\s*\{\s*(?=['\"$\[]|[a-z])", code))
+    found = set(re.findall(r"(?<![\w:$.])([a-z][a-z0-9_]*(?:::[a-z][a-z0-9_]*)*)\s*\{\s*(?=['\"$\[]|[a-z])", code))
     return {t for t in found if t not in KEYWORDS}
 
 

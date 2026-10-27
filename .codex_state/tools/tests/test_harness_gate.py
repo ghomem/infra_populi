@@ -114,6 +114,8 @@ CLEAN = [{"rc": 2, "stdout": APPLIED}, {"rc": 0, "stdout": APPLIED}]
 
 
 def test_coverage_lists_target_resources_and_is_green(lab):
+    real = TOOLS.parent / "logs" / "green" / "puppet_backup.json"
+    before = real.stat().st_mtime_ns if real.exists() else None
     agent_runs(lab, *CLEAN)
     lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "stdout":
         "COVERAGE puppet_infrastructure::puppet_backup: 2 concrete resources (+1 defined-type instances)\n"
@@ -124,6 +126,9 @@ def test_coverage_lists_target_resources_and_is_green(lab):
     coverage_calls = [c for c in lab.calls("ssh") if "python3 -" in " ".join(c)]
     assert len(coverage_calls) == 1
     assert "filesystem_base" not in " ".join(coverage_calls[0])  # required base is not a target
+    # a stub GREEN stamps into the test's own dir, never the real repo's logs (record_green.sh trusts those)
+    assert (lab.root / "green" / "puppet_backup.json").is_file()
+    assert (real.stat().st_mtime_ns if real.exists() else None) == before
 
 
 def test_zero_coverage_is_red(lab):

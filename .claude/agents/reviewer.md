@@ -32,8 +32,10 @@ Steps, all required:
      parameter with `$settings::...`, replacing a module resource with an exec); whole-file
      re-indentation/reformatting of unchanged code; any deleted upstream comment or warning (the
      `comments_preserved` check lists them).
-   - DIFF B (the migrate commit itself) shows what the migration changed; `provenance` reports drift that
-     predates it. Cite concrete lines either way.
+   - DIFF B (the newest migrate commit itself) shows what the migration changed; `provenance` reports drift
+     that predates it. For a RE-migration (the class has an earlier migrate commit) DIFF B replaces the earlier
+     migrated content: that content is expected to differ from the baseline, and DIFF A carries the whole
+     claim. Cite concrete lines either way.
 3. Record the verdict: `python3 .codex_state/tools/review_class.py verdict <class> --faithful ok|fail
    --evidence "<one concrete reason per hunk or 'DIFF A: header comment only'>" [--evidence ...]`.
    If `idempotent=needs-justification` (run 1 changed nothing after a revert), either pass

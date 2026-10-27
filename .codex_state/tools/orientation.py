@@ -41,14 +41,14 @@ def plan_line(row: generator.ClassRow) -> str:
 
 
 def params_line(cls: str, params_dir: Path = PARAMS_DIR) -> str:
-    path = params_dir / f"{cls}.json"
+    path = params_dir / f"puppet_infrastructure::{cls}.json"  # same name test_class.sh reads
     if not path.is_file():
         return "none (class: rendered as `include`; define: the harness dies without one)"
     try:
         keys = list(json.loads(path.read_text(encoding="utf-8")))
     except (OSError, ValueError) as exc:
         return f"{path} UNREADABLE ({exc})"
-    return f"~/.config/infra_populi/params/{cls}.json keys: {', '.join(keys) or '(empty)'}"
+    return f"~/.config/infra_populi/params/{path.name} keys: {', '.join(keys) or '(empty)'}"
 
 
 def module_lines(manifest: str, inv: dict) -> list[str]:

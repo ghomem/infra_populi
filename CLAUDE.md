@@ -1,7 +1,8 @@
 # infra_populi — Phase 1 migration advisor
 
 You are the advisor for migrating `puppet_infrastructure` from Puppet 5 to Puppet 8 / Vox Pupuli.
-You own the per-class loop. Codex executes edits. A `reviewer` subagent verifies independently.
+You own the per-class loop. Codex executes syntax-work edits; baseline-identical classes are
+advisor-direct (Generation paths below). A `reviewer` subagent verifies independently.
 Salatiel decides infrastructure and strategy. Rationale for every rule below is in
 `.codex_state/DESIGN_DECISIONS.md` (append-only) — read it before your first class of a session.
 
@@ -35,7 +36,7 @@ Salatiel decides infrastructure and strategy. Rationale for every rule below is 
   <class> [--defect "<short>"] [--fix "<what>"]` — refuses unless the harness's GREEN stamp
   (`.codex_state/logs/green/<class>.json`) matches the code, the header is there, the worktree holds only the
   class's files, and the composites match; then tracker + commit + order regeneration + push. Codex prompt
-  facts: `.codex_state/tools/orientation.py <class>`.
+  facts: `.codex_state/tools/orientation.py <class>`. Path decision: `.codex_state/tools/classify_path.py <class>`.
   Engine pre-commit hook: `.git/hooks/pre-commit -> ../../.codex_state/tools/pre-commit` (mandatory;
   per-clone, install with `ln -s ../../.codex_state/tools/pre-commit .git/hooks/pre-commit`). Lab-master
   fixture state: `.codex_state/tools/master_fixtures.sh` (idempotent). Tool tests:
@@ -58,6 +59,24 @@ Salatiel decides infrastructure and strategy. Rationale for every rule below is 
   NEVER restore or power-cycle the master. Codex may start a stopped VM only.
 - Git: commit only when GREEN and idempotent; message `P8: migrate puppet_infrastructure::<class>`;
   never commit params, tooling scratch, or a class that is not GREEN. `.bak` files are never committed.
+
+## Generation paths (ruling 3, 2026-10-26; supersedes 2026-07-01 "born via Codex")
+Decide with `python3 .codex_state/tools/classify_path.py <class>` after the hazard checklist:
+- `unchanged-validated` (exit 0: identical to the baseline, pregate CLEAN, compile-only OK) — ADVISOR-DIRECT,
+  no Codex: `test_class.sh --revert-first <class>` to GREEN, write the 2-line header (`release-0.9.10
+  manifest validated unchanged` + every module dependency with version; `orientation.py` lists them), then
+  `record_green.sh <class>`. The reviewer verifies exactly as for any class.
+- `syntax-work` (exit 1) — Codex through the wrapper (orientation packet). One run is the target; a second
+  run needs a reason written in the class's log first.
+- `baseline-sync first` (exit 3) — hazard 8, then classify again. `context-gap` (exit 4) — supply the params
+  fixture, the master Hiera fixture or the plan's required_base (category 3), then classify again. `ERROR` (exit 2) — decide nothing.
+- Records — `record_green.sh` only; nothing writes tracker lines, order files or annotations by hand.
+- ONE-OFF EXCEPTION (HQ checkpoint 1, 2026-10-27): reconciling the gate-v1 groups A (records only) and B
+  (comments/format) of `.codex_state/escalations/2026-10-27-done-class-reconciliation.md` is advisor-direct
+  even where syntax hunks exist. Method: baseline file + the re-applied syntax hunks + 2-line header; the diff
+  vs the baseline shows only those; harness GREEN; `record_green.sh` (one `P8: migrate` commit = a
+  re-migration); reviewer-v2 PASS. Valid for those 16 classes only; C/D/E go through the normal loop.
+- The reviewer is never told which path produced a change (same commit subjects on every path).
 
 ## Pre-migration hazard checklist (run on EVERY class before invoking Codex — the plan cannot predict these)
 1. External custom types from modules whose Puppet-8/OpenVox compatibility is unverified.
@@ -103,7 +122,9 @@ validated end-to-end) / `.reimplemented.pp`. Both filename and header must say w
 
 ## Loop invariants
 - Verification is a GATE: the next class does not start until the reviewer has passed the previous one.
-- One class per Codex invocation, via the wrapper only.
+- One class per Codex invocation, via the wrapper only (syntax-work path).
+- A re-migration of a done class is a new `P8: migrate` commit (via record_green.sh); the reviewer judges the
+  final content vs the baseline (DIFF A) and treats the replaced earlier content as expected drift.
 - After GREEN: header comment on the manifest (purpose + module dependencies with versions, or
   "release-0.9.10 manifest validated unchanged" + deps), then `record_green.sh <class>`, which writes
   `<class> Done [from: release-0.9.10]` (or `[from: release-0.9.10; upstream defect fixed: <short>]` for an

@@ -115,3 +115,30 @@ def test_tool_never_prints_commit_authors_or_bodies():
     source = (TOOLS / "review_class.py").read_text()
     assert "%an" not in source and "%ae" not in source and "%b" not in source
     assert '"--format=%H%x09%s"' in source
+
+
+def test_first_migration_must_start_from_baseline_content():
+    prov, _ = rc.provenance_problems(["diff"], ["manifests/x.pp"], remigration=False)
+    assert prov and "drift predates the migration" in prov[0]
+    prov, ok = rc.provenance_problems(["diff"], [], remigration=False)
+    assert prov == [] and "started from baseline content" in ok
+
+
+def test_remigration_replaces_earlier_content_and_is_judged_by_diff_a():
+    prov, ok = rc.provenance_problems(["diff"], ["manifests/x.pp"], remigration=True)
+    assert prov == [] and "re-migration" in ok and "manifests/x.pp" in ok
+
+
+def test_a_migrate_commit_that_changes_no_class_file_fails_either_way():
+    for remigration in (False, True):
+        prov, _ = rc.provenance_problems([], [], remigration=remigration)
+        assert prov == ["the migrate commit changed no class file (manifest/templates/files)"]
+
+
+def test_migrate_commits_lists_newest_first(monkeypatch):
+    log = "c3\tP8: migrate puppet_infrastructure::x\nc2\tP8: record x: header\nc1\tP8: migrate puppet_infrastructure::x\n" \
+          "c0\tP8: migrate puppet_infrastructure::xy\n"
+    monkeypatch.setattr(rc, "git", lambda *a, **k: log)
+    assert rc.migrate_commits("x") == [("c3", "P8: migrate puppet_infrastructure::x"),
+                                       ("c1", "P8: migrate puppet_infrastructure::x")]
+    assert rc.migrate_commit("x")[0] == "c3"

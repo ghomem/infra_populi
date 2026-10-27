@@ -199,3 +199,17 @@ def test_fix_mode_refuses_a_class_that_is_not_recorded(clone):
     clone.add_header()
     proc = clone.run("--fix", "x", "--no-push")
     assert proc.returncode == 1 and "not Done" in proc.stderr
+
+
+def test_orientation_reads_the_params_file_the_harness_reads(tmp_path):
+    import importlib.util
+    import sys
+    spec = importlib.util.spec_from_file_location("orientation_under_test", TOOLS / "orientation.py")
+    orientation = importlib.util.module_from_spec(spec)
+    sys.modules["orientation_under_test"] = orientation
+    spec.loader.exec_module(orientation)
+    (tmp_path / "puppet_infrastructure::dns_client.json").write_text('{"nameservers": ["192.0.2.53"]}')
+    line = orientation.params_line("dns_client", tmp_path)
+    assert line.endswith("puppet_infrastructure::dns_client.json keys: nameservers")
+    assert "192.0.2.53" not in line  # keys only, never values
+    assert orientation.params_line("backup", tmp_path).startswith("none")

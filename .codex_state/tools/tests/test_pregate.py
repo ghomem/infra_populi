@@ -78,6 +78,12 @@ def test_missing_module_types_and_classes_use_master_inventory():
     assert len(got) == 3
 
 
+def test_method_call_before_a_block_is_not_a_resource_type():
+    # node_base.pp:138 `if $ntp_servers.empty {` (found by the 3.3 path sweep: false hazard1 `empty`)
+    manifest = "class x { if $ntp_servers.empty { notify { 'n': } } }"
+    assert "empty" not in pregate.resource_types(manifest) and "notify" in pregate.resource_types(manifest)
+
+
 def test_comments_are_not_code():
     r = pregate.Report("c")
     pregate.scan_hazards("# exec { 'old': command => 'dnf install x' }\n# validate_re($x)\n", None, r)

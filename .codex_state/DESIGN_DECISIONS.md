@@ -635,3 +635,20 @@ Any verdict recorded on the frozen lists before this fix (caching_nameserver) is
    created rule showed 0 events (fix 90a8a44; the exit-0 rule still protected run 2).
 Sequence from here: 3.2 → 3.3 → A/B reconciliation → 3.4 → 3.5 → 4.1–4.3 (E plan fix, exec-guard and
 filesystem_sec escalations, master-fixtures script) → checkpoint 2.
+
+## 2026-10-27 — Step 3.3: advisor-direct path mechanics; re-migration is a plain `P8: migrate` commit
+1. Path decision is a tool, not a judgement: `classify_path.py <class>` → unchanged-validated (identical to
+   the baseline + pregate CLEAN + compile-only OK; advisor-direct, no Codex), syntax-work (Codex),
+   baseline-sync first (hazard 8), context-gap (a Hiera key, a mandatory-parameter fixture or a
+   required_base the compile lacks: block category 3 resolutions), or ERROR (decide nothing). An
+   inherited (also-in-baseline) pregate finding counts as a finding: such a class is syntax-work, because
+   ruling 3 requires pregate to pass. An advisor-direct class that is not GREEN falls back to Codex.
+2. A re-migration of a done class (the A/B reconciliation now; C/D later) is a new `P8: migrate` commit made
+   by record_green.sh, not a new commit type: the subject is identical on every path, so the reviewer
+   cannot tell who or which path produced it (ruling 3, P1). review_class treats a class with an earlier
+   migrate commit as a re-migration: pre-existing drift is what the commit replaces (provenance ok, with
+   the replaced paths in the detail) and DIFF A (final vs baseline) carries the whole claim. A first
+   migration still fails provenance on pre-existing drift. Effective commit = the newest migrate commit
+   (generator, status.py "verified", reviewer — unchanged code paths).
+3. The tracker marker of a re-migrated class becomes `[from: release-0.9.10]`: the content is now baseline +
+   reviewed translations. This is a new migration, not the retro-annotation CLAUDE.md forbids.
