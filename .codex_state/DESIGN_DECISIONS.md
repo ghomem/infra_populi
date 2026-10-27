@@ -873,3 +873,17 @@ snapshot P8NODE_BASELINE_GREEN was deleted by HQ; the node baseline is P8NODE_BA
 never restored by the engine (standing rule); the snapshot is HQ's recovery point.
 Next: `/migrate-next 7` (the gate-v1 re-migrations), then snapshot_master.sh + read-only VBoxManage permissions
 (HQ VM-operations ruling) in one engine commit.
+
+## 2026-10-27 — HQ VM-operations ruling: snapshot_master.sh and read-only VBoxManage permissions
+`.codex_state/tools/snapshot_master.sh <P8MASTER_NAME> [--dry-run]` is the only master shutdown the engine performs:
+take-only (never restore/delete/edit), offline via ACPI with a timeout (on timeout it refuses and leaves the master
+running — never a hard poweroff), refused while any engine run is live (test_class.sh, codex_migrate_class/codex
+exec, review_class check, composite_compile, record_green, revert_node), while the master is not running, when the
+name exists or is malformed, when the worktree is dirty, or when the master Puppetfile differs from the repo export.
+The description is generated: repo HEAD, pinned baseline, Puppetfile sha256, `puppet module list` sha256 + count.
+After the take it starts the master headless and verifies SSH, puppetserver active and 8140 status running; name +
+UUID are appended to `.codex_state/lab/master_snapshots.jsonl` (commit it). `.claude/settings.json`: the blanket
+`VBoxManage *` allow is replaced by read-only `list`, `showvminfo` and `snapshot <vm> list` on both VMs plus the
+script; denied on both VMs: snapshot restore/restorecurrent/delete/edit, unregistervm, modifyvm; on the master also
+direct snapshot take, controlvm poweroff and acpipowerbutton (shutdown only through the script). revert_node.sh keeps
+its own node operations (script internals are not Bash-tool commands). CLAUDE.md "Node lifecycle" updated.

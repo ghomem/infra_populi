@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-50 entries; 6 marked superseded (in whole or part); newest first.
+51 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-10-27 — HQ VM-operations ruling: snapshot_master.sh and read-only VBoxManage permissions
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-10-27 — Master snapshot P8MASTER_BASELINE_GREEN_v3
 - (no numbered/Rule/Decision lines; read the entry)

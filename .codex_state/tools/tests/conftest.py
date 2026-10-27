@@ -46,7 +46,34 @@ if name == "VBoxManage":
         save()
     elif args[:1] == ["startvm"]:
         vms[args[1]]["state"] = "running"; save()
+    elif args[:1] == ["controlvm"] and args[2] == "acpipowerbutton":
+        if world.get("acpi_works", True):
+            vms[args[1]]["state"] = "poweroff"; save()
+    elif args[:1] == ["snapshot"] and args[2] == "list":
+        for i, snap in enumerate(vms[args[1]].get("snapshots", [])):
+            suffix = "" if i == 0 else "-" + "-".join(["1"] * i)
+            print(f'SnapshotName{suffix}="{snap["name"]}"')
+            print(f'SnapshotUUID{suffix}="{snap["uuid"]}"')
+    elif args[:1] == ["snapshot"] and args[2] == "take":
+        vm = vms[args[1]]
+        if vm["state"] != "poweroff" and world.get("require_offline_take", True):
+            print("take while running", file=sys.stderr); sys.exit(1)
+        vm.setdefault("snapshots", []).append({"name": args[3], "uuid": f"uuid-{len(vm['snapshots']) + 1}"})
+        vm["last_description"] = args[args.index("--description") + 1] if "--description" in args else ""
+        save()
+    elif args[:1] == ["snapshot"] and args[2] == "showvminfo":
+        snap = next((x for x in vms[args[1]].get("snapshots", []) if x["name"] == args[3]), None)
+        if snap is None:
+            sys.exit(1)
+        print(f'SnapshotUUID="{snap["uuid"]}"')
     sys.exit(0)
+
+if name == "pgrep":
+    busy = world.get("busy", "")
+    if busy:
+        print(busy)
+        sys.exit(0)
+    sys.exit(1)
 
 if name in ("ssh", "scp", "rsync"):
     line = " ".join(args)
@@ -79,7 +106,7 @@ class FakeLab:
         self.world_path = root / "world.json"
         self.calls_path = root / "calls.jsonl"
         self.calls_path.write_text("")
-        for name in ("VBoxManage", "ssh", "scp", "rsync", "sleep"):
+        for name in ("VBoxManage", "ssh", "scp", "rsync", "sleep", "pgrep"):
             path = self.bin / name
             path.write_text(STUB)
             path.chmod(0o755)

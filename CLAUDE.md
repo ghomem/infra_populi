@@ -62,7 +62,10 @@ the tracked `.codex_state/rules/CODEX_RUNBOOK.md`.
   `puppet generate types --environment production` and restart puppetserver. `r10k --force` purges
   `puppet_infrastructure` — the next harness run re-deploys it.
 - Node lifecycle: revert node to `P8NODE_BASELINE_GREEN_v2` before EVERY class (`revert_node.sh`).
-  NEVER restore or power-cycle the master. Codex may start a stopped VM only.
+  NEVER restore the master or hard-power it off. The ONLY master shutdown is `.codex_state/tools/snapshot_master.sh
+  <P8MASTER_NAME>` (HQ VM-operations ruling: take-only offline snapshot via ACPI with timeout; refuses during any
+  harness/Codex/reviewer run; restarts and verifies puppetserver + 8140; records name+UUID in
+  `.codex_state/lab/master_snapshots.jsonl`). Codex may start a stopped VM only.
 - Git: commit only when GREEN and idempotent; message `P8: migrate puppet_infrastructure::<class>`;
   never commit params, tooling scratch, or a class that is not GREEN. `.bak` files are never committed.
 
