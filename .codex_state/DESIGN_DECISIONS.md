@@ -777,3 +777,32 @@ nginx_frontend 24), prod-0 classes last. The HQ ck1 re-migration order lives in
 docker_container → filesystem_yum → backup_rsnapshot_pre; `sink` = after it: firewall,
 sysmon_puppet_cert_status); the order file renders the still-unverified ones and `Next class` follows that order.
 The "verified (gate v2)" derivation moved into the generator; status.py uses it (one implementation).
+
+## 2026-10-27 — HQ rulings: production facts settled (no CTO tier for this phase)
+1. STANDING FACT: the runtime is OpenVox, settled since the project started. "Runtime decision" is deleted from
+   every open list. SUPERSEDES ruling 9's "8 openvox-only pins prepared but unapplied until the runtime answer"
+   (2026-10-26 "HQ rulings on the engine diagnosis") and the hold in "Step 4.1b": the prepared openvox-only pins are
+   applied now (inside declared ranges; generate types + puppetserver restart; clean `puppet module list`). The
+   nginx/ssl stack is unparked.
+2. Upstream defects are fixed in infra_populi only, with the `upstream defect fixed` marker; the running list lives
+   in `.codex_state/upstream_defects.md` for reference; no upstream patches and no escalation of these to anyone.
+   SUPERSEDES "batched for the CTO" in ruling 8 (puppet_boot_run), ck1 rulings 2 and 6, and "Step 4.2a" (the registry
+   moves from .codex_state/rules/ to that path and loses its CTO wording). Reading (advisor, flagged at checkpoint 2):
+   this also confirms the proposed user_base post-condition guard (escalations/user_base-exec-guard.md) and makes
+   option A of escalations/openvpn_server-upstream-defects.md the rule (drop our duplicate service; marker).
+3. All production nodes are agent-mode; every catalog comes from the master. firewall_addon_hosting: find what
+   permits outbound to the master on 8140 (with firewall_secure); if present the lab failure was fixture/ordering —
+   rebuild the test; if absent add the OUTPUT accept for the master on 8140 with the marker. Unblock either way.
+4. mysql: Issue #122 is merged at upstream 874f854 and is the code that will run. mysql_server migrates from
+   874f854; mariadb_server and mysql_db are imported from it; each is annotated `[from: 874f854]` as a per-class
+   baseline exception (like docker_container's `[from: release-0.9.8]`). SUPERSEDES ruling 1's "the mysql rewrite
+   stays out until released (CTO decision 5)" and 4.2a's remark on 874f854. Universe: 92 classes.
+5. Migrate everything: no retire list. Fleet usage is a priority ORDER, never a filter — zero-declaration classes stay
+   in the queue, sorted last. hello_world_flask* stays. SUPERSEDES ruling 9's "zero-declaration classes sink until the
+   CTO rules" (they sink, permanently in the queue) and every "retire/park" option (diagnosis C14).
+6. RHEL: due diligence applies; extra_packages_el and the RedHat branches stay in scope. Post-sprint infrastructure:
+   revive the existing RHEL9 VM (re-base, install OpenVox, check `subscription-manager status`) alongside the EL9 container.
+7. Sysmon: the monitoring side lives in another repository. user_sysmon and the sysmon_* checks get synthetic node
+   fixtures for the paths/users the classes expect, labelled mock-apply where the real service is absent — the same
+   rule as user_samba (ruling 7, 2026-10-26).
+8. The "Decisions needed" and "CTO" sections of the diagnosis and the checkpoint files are rewritten to reflect 1–7.

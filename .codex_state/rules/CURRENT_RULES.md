@@ -2,7 +2,17 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-45 entries; 5 marked superseded (in whole or part); newest first.
+46 entries; 5 marked superseded (in whole or part); newest first.
+
+## 2026-10-27 — HQ rulings: production facts settled (no CTO tier for this phase)
+- 1. STANDING FACT: the runtime is OpenVox, settled since the project started. "Runtime decision" is deleted from
+- 2. Upstream defects are fixed in infra_populi only, with the `upstream defect fixed` marker; the running list lives
+- 3. All production nodes are agent-mode; every catalog comes from the master. firewall_addon_hosting: find what
+- 4. mysql: Issue #122 is merged at upstream 874f854 and is the code that will run. mysql_server migrates from
+- 5. Migrate everything: no retire list. Fleet usage is a priority ORDER, never a filter — zero-declaration classes stay
+- 6. RHEL: due diligence applies; extra_packages_el and the RedHat branches stay in scope. Post-sprint infrastructure:
+- 7. Sysmon: the monitoring side lives in another repository. user_sysmon and the sysmon_* checks get synthetic node
+- 8. The "Decisions needed" and "CTO" sections of the diagnosis and the checkpoint files are rewritten to reflect 1–7.
 
 ## 2026-10-27 — Step 4.3: fleet-weighted order; HQ re-migration queue in the order file
 - (no numbered/Rule/Decision lines; read the entry)
@@ -179,3 +189,7 @@ DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate 
 - 2026-10-26 — HQ rulings on the engine diagnosis (batch entry): supersedes 2026-07-26 "candidates force-added past the .codex_state/ exclude"
 - 2026-10-26 — HQ amendment: the laptop is a production Puppet 5 node; ruling 4 amended; baseline confirmed: supersedes (no date) "pregate.sh on the laptop ... parser validate, allowlisted puppet-lint"
 - 2026-10-27 — Step 3.5: single sources for the engine's instructions: supersedes (no date) "<title>"
+- 2026-10-27 — HQ rulings: production facts settled (no CTO tier for this phase): supersedes (no date) "8 openvox-only pins prepared but unapplied until the runtime answer"
+- 2026-10-27 — HQ rulings: production facts settled (no CTO tier for this phase): supersedes (no date) "batched for the CTO"
+- 2026-10-27 — HQ rulings: production facts settled (no CTO tier for this phase): supersedes (no date) "the mysql rewrite    stays out until released (CTO decision 5)"
+- 2026-10-27 — HQ rulings: production facts settled (no CTO tier for this phase): supersedes (no date) "zero-declaration classes sink until the    CTO rules"

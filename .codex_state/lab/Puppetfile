@@ -33,4 +33,12 @@ mod 'puppet-kmod', '4.1.0'
 mod 'puppetlabs-mysql', '17.3.0'
 mod 'thias-sysctl', '1.0.8'
 mod 'citrin-htpasswd', '1.0.3'
-mod 'puppet-openvpn', '11.0.1'  # declares puppet AND openvox >=7 <9 (12.0.0 is openvox-only: prepared list)
+mod 'puppet-openvpn', '12.0.0'
+
+# HQ 2026-10-27 (production facts): runtime is OpenVox; openvox-only pins applied
+mod 'puppet-nginx', '8.4.0'
+mod 'puppet-letsencrypt', '13.4.0'
+mod 'puppet-epel', '6.0.0'
+mod 'puppet-archive', '8.1.0'
+mod 'puppet-rabbitmq', '15.0.0'
+mod 'puppet-gitlab', '11.1.0'

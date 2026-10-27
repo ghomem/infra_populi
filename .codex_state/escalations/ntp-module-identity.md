@@ -11,3 +11,8 @@ stdlib 9.7.0), listed in `.codex_state/lab/Puppetfile.openvox-only.prepared` as 
 `ls /etc/puppetlabs/code/environments/production/modules/ntp/` + its `metadata.json` (name, version) and the
 module providing `chrony`, if any. With that: pick the Puppet-8 release of the same module whose parameters match
 node_base's call (advisor tier), pin, compile.
+
+## Resolved 2026-10-27 (production read-only, `puppet module list` on puppet.mdops.es)
+- puppetlabs-ntp v8.5.0
+- puppet-chrony v1.0.0
+HQ ruling: pin the Puppet-8-compatible release of each on the lab, inside the module's declared range (ruling 9 applies: openvox-only releases go to the prepared list, not applied). Confirm from node_base.pp which of the two is included under which condition, and record both pins with versions in the Puppetfile export.
