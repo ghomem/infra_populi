@@ -1,6 +1,6 @@
 # Puppet Class Migration Order
 
-Generated: 2026-10-27 07:50:13 UTC
+Generated: 2026-10-27 07:55:10 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
@@ -8,7 +8,7 @@ Precedence: git > migrated_classes.txt (canonical) > migration_order.md (advisor
 
 Status summary: 31 done / 1 owner_validated / 3 blocked / 0 gated / 0 needs verification / 57 pending / 92 total.
 
-Next class: `puppet_infrastructure::filesystem_yum (re-migration)`
+Next class: `puppet_infrastructure::backup_rsnapshot_pre (re-migration)`
 
 Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — dependencies first, then `prod` (production node statements from `.codex_state/diagnosis/fleet_class_usage.md`, composites propagated) descending, then cx/dep/p8 — then re-migrations marked `sink`. prod 0 = no production declaration: they stay in the queue, last (HQ 2026-10-27: migrate everything).
 
@@ -16,10 +16,9 @@ Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — de
 
 | # | class | when |
 |---:|---|---|
-| 1 | `puppet_infrastructure::filesystem_yum` | first |
-| 2 | `puppet_infrastructure::backup_rsnapshot_pre` | first |
-| 3 | `puppet_infrastructure::firewall` | sink |
-| 4 | `puppet_infrastructure::sysmon_puppet_cert_status` | sink |
+| 1 | `puppet_infrastructure::backup_rsnapshot_pre` | first |
+| 2 | `puppet_infrastructure::firewall` | sink |
+| 3 | `puppet_infrastructure::sysmon_puppet_cert_status` | sink |
 
 ## DONE (git-derived)
 
