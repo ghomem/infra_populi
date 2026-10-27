@@ -89,9 +89,15 @@ the entry's `Ruled change` (plus ordinary Puppet 8 translations); anything else 
 - Status: ruled
 
 ## linux_policies_user
-- Short: (none yet)
+- Short: exec runs only under the policy script's own login check (no effect without a session)
 - Defect: `exec { "Execute linux policies for: ${username}": command => "${policies_script_exec} puppet-agent", user =>
-  $username }` (linux_policies_user.pp:71-75) runs on every agent run BY DESIGN: execute_linux_policies_user.sh runs the
-  user's policy script (arbitrary shell lines from `$policies`) to re-apply desktop policies each run. The comment says
-  "if the user is logged in" but nothing checks a login. There is no post-condition to test.
-- Status: pending HQ (checkpoint 2 decision: guard by an active session, or an exec that is re-applied by design)
+  $username }` (linux_policies_user.pp:71-75) has no guard, so it runs every agent run. The policy lines are opaque
+  (arbitrary calls into files/linux-policies/COMMON/common), so there is no queryable post-condition.
+- Why a session guard preserves behaviour (HQ checkpoint-2 ruling 2): the script the exec runs is assembled from
+  templates/linux-policies/puppet_header.sh.erb, which itself does `who | awk '{print $1}' | grep -q "^$USERNAME\$"`
+  and otherwise logs "not loged in, skipping policies execution" and `exit 0` — the policies cannot take effect without a
+  login session. The guard uses the IDENTICAL predicate, so the policies run in exactly the same cases; the only
+  difference is that the "not logged in" syslog line is no longer written when nobody is logged in.
+- Ruled change: add `onlyif => "who | awk '{print \$1}' | grep -q '^${username}\$'"` (path as needed); command, user,
+  environment unchanged. With the user logged in it still runs every agent run (re-applying policies by design).
+- Status: ruled
