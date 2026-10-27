@@ -1,0 +1,92 @@
+{
+ "schema": 1,
+ "class": "ssh_secure",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T04:15:17Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "49b4339699cf",
+ "migrate_subject": "P8: migrate puppet_infrastructure::ssh_secure",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 49b4339699cf; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "1 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/ssh_secure.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `ssh_secure Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('saz-ssh', '13.1.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 5 catalog events; COVERAGE puppet_infrastructure::ssh_secure: 7 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-2): added migration header comment only (purpose + saz-ssh 13.1.0 dependency)",
+   "DIFF A hunk 2 (line 15): case $::osfamily -> case $facts['os']['family'] -- legacy top-scope fact to facts hash, identical behaviour; case branches and all resources unchanged",
+   "DIFF B: migrate commit adds header comment only; fact translation predates it and is judged in full in DIFF A"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 3,
+  "removed": 1,
+  "non_comment_changes": 2,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest; legacy fact $::osfamily -> $facts['os']['family'] only.",
+  "# Module dependency: saz-ssh 13.1.0."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 5,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::ssh_secure: 7 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 38.034,
+   "master_check_s": 1.464,
+   "poweroff_s": 1.007,
+   "restore_s": 0.529,
+   "boot_to_ssh_s": 21.018,
+   "apt_update_s": 12.432,
+   "verify_s": 1.584
+  },
+  "log": ".codex_state/logs/reviews/ssh_secure.20261027T041357Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
