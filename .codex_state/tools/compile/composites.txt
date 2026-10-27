@@ -2,7 +2,8 @@
 # name | facts | expect | classes
 #   expect: pass, or fail:<substring of the compile error that is currently expected>
 # A result that differs from `expect` fails the check (regression, or a fix to record here).
-node_base_debian | debian | fail:Could not find class ::ntp | node_base
+# node_base_debian: ntp resolved 2026-10-27 (puppetlabs-ntp 11.2.0); next expected error = firewall_secure's pending syntax work.
+node_base_debian | debian | fail:no parameter named 'action' | node_base
 node_base_redhat | redhat | fail:Duplicate declaration: File[/opt/puppet-infrastructure] | node_base
 # meaningful_puppet::meaningful_desktop's DIRECT puppet_infrastructure declarations (fleet_class_usage.md;
 # ≈20 laptops). Their own includes pull in the rest. Full 7-class closure since the 4.1c import (2026-10-27);

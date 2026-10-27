@@ -2,12 +2,23 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-47 entries; 5 marked superseded (in whole or part); newest first.
+49 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-10-27 — Checkpoint-2 rulings 3–5 applied on the lab master
+- (no numbered/Rule/Decision lines; read the entry)
+
+## 2026-10-27 — HQ rulings at sprint checkpoint 2
+- 1. Confirmed: user_base's post-condition guard (HQ confirmed 06:10; the determinism check — the command is a pure
+- 2. linux_policies_user: prefer a true post-condition guard if the policy lines are queryable state
+- 3. rabbitmq and gitlab (and therefore puppet-archive, pulled in only for rabbitmq) are REMOVED from the lab Puppetfile
+- 4. saz-ssh 13.1.0 and saz-sudo 9.0.2 are held for Phase 1; upgraded at Phase 6 module alignment, with re-review.
+- 5. ntp/chrony from production (`puppet module list` on the production master, 2026-10-27): puppetlabs-ntp v8.5.0 and
+- 6. /migrate-next resumes after the master snapshot and the old node snapshot deletion. First batch: `/migrate-next 7`
 
 ## 2026-10-27 — Ruling 7 mechanics: node fixtures and the mock-apply label
 - (no numbered/Rule/Decision lines; read the entry)
 
-## 2026-10-27 — HQ rulings: production facts settled (no CTO tier for this phase)
+## 2026-10-27 — HQ rulings: production facts settled (no CTO tier for this phase) — **SUPERSEDED (whole or part) by** 2026-10-27 — HQ rulings at sprint checkpoint 2
 - 1. STANDING FACT: the runtime is OpenVox, settled since the project started. "Runtime decision" is deleted from
 - 2. Upstream defects are fixed in infra_populi only, with the `upstream defect fixed` marker; the running list lives
 - 3. All production nodes are agent-mode; every catalog comes from the master. firewall_addon_hosting: find what

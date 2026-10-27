@@ -8,3 +8,11 @@
 # would change the modules under already-verified classes (ssh_secure, sftp_only, ...): not done here.
 # Still not a pin: an ntp/chrony module for node_base — needs the production module identity
 # (escalations/ntp-module-identity.md).
+
+# REMOVED 2026-10-27 (HQ checkpoint-2 ruling 3): puppet-rabbitmq 15.0.0, puppet-gitlab 11.1.0 and their dependency
+# puppet-archive 8.1.0 — meaningful_puppet's (company layer) dependencies, not infra_populi's; extra modules add noise to
+# the reviewer's header oracle. Recommended pins kept here for the company-layer upgrade:
+#   mod 'puppet-rabbitmq', '15.0.0'   # openvox >=8.19 <9; deps stdlib >=9 <10, puppet-archive >=2 <9, puppet-systemd >=6 <10
+#   mod 'puppet-archive',  '8.1.0'    # puppet+openvox >=7 <9 (9.0.0 needs openvox >=8.19 <10 but rabbitmq wants archive <9)
+#   mod 'puppet-gitlab',   '11.1.0'   # openvox >=8.19 <9; deps stdlib, puppetlabs-apt >=9.2 <12
+# ADDED 2026-10-27 (ruling 5): puppetlabs-ntp 11.2.0, puppet-chrony 6.0.0 (see DESIGN_DECISIONS checkpoint-2 entry).

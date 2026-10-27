@@ -825,3 +825,42 @@ user_samba GREEN with its stand-in once a throwaway probe added the repository-s
 reverted, its GREEN stamp deleted). blocked.txt: user_sysmon and user_samba UNBLOCKED (3 remain:
 extra_packages_el — RHEL node, post-sprint; mount_shares_desktop — desktop fixture; openvpn_nm_connection —
 NetworkManager).
+
+## 2026-10-27 — HQ rulings at sprint checkpoint 2
+1. Confirmed: user_base's post-condition guard (HQ confirmed 06:10; the determinism check — the command is a pure
+   decode of the .b64 file — is recorded in escalations/user_base-exec-guard.md) and openvpn_server option A (drop our
+   duplicate service, notify the module's resource).
+2. linux_policies_user: prefer a true post-condition guard if the policy lines are queryable state
+   (dconf/gsettings/xdg): guard = "any current value differs from desired". If the lines are opaque, a login-session
+   guard is acceptable only if the exec cannot take effect without a session anyway — then say so in the marker. One
+   attempt; if neither holds, block it as "intentionally non-idempotent; needs a logged-in desktop fixture (Phase 3)".
+3. rabbitmq and gitlab (and therefore puppet-archive, pulled in only for rabbitmq) are REMOVED from the lab Puppetfile
+   (r10k --force, clean module list): meaningful_puppet's dependencies, not infra_populi's, and extra modules add noise
+   to the reviewer's header oracle. Their pins are kept in a note for the company-layer upgrade.
+   SUPERSEDES the rabbitmq/gitlab part of "HQ rulings: production facts settled" ruling 1 as applied in pf1.
+4. saz-ssh 13.1.0 and saz-sudo 9.0.2 are held for Phase 1; upgraded at Phase 6 module alignment, with re-review.
+5. ntp/chrony from production (`puppet module list` on the production master, 2026-10-27): puppetlabs-ntp v8.5.0 and
+   puppet-chrony v1.0.0. Pin the OpenVox-compatible release of each inside its declared range; confirm from node_base.pp
+   which one is included under which condition; record the parameter renames between production's versions and the
+   pins for the parameters node_base passes.
+6. /migrate-next resumes after the master snapshot and the old node snapshot deletion. First batch: `/migrate-next 7`
+   (the gate-v1 re-migrations, rsyslog_base first), then stop with a batch report built from the per-attempt metrics
+   (wall per class, Codex runs per green, reviewer verdicts, reverts) — the engine's first measurement.
+
+## 2026-10-27 — Checkpoint-2 rulings 3–5 applied on the lab master
+- Removed rabbitmq 15.0.0, gitlab 11.1.0 and archive 8.1.0 (r10k --force; their 12 generated pcore types removed from
+  .resource_types/ so nothing stale remains); pins kept as a note in .codex_state/lab/Puppetfile.openvox-only.prepared.
+- ntp/chrony (production: puppetlabs-ntp 8.5.0, puppet-chrony 1.0.0): pinned the newest releases declaring a range that
+  includes the lab runtime — puppetlabs-ntp 11.2.0 (puppet >=8 <10; stdlib >=4.13.1 <11) and puppet-chrony 6.0.0
+  (openvox >=8.19 <10; stdlib >=4.25.1 <11); lab stdlib 9.7.0 is inside both. node_base.pp:134-160: chrony on
+  `os.family == RedHat`, ntp on every other family; with `$custom_ntp` it passes only `servers => $ntp_servers`, else a
+  plain include. Parameter diff, production → pin (from the Forge tarballs): ntp `servers` is Array[String] in 8.5.0
+  and 11.2.0 with identical Debian defaults; the class lost `config_template` and gained `logfile_user`/`logfile_group`
+  — node_base passes neither. chrony `servers` is `Chrony::Servers` (Hash[Host, Optional[Array]] | Array[Host]) with the
+  same default pool hash in 1.0.0 and 6.0.0; 6.0.0's Debian.yaml sets `servers: {}`, which never applies (node_base uses
+  chrony only on RedHat). → no rename affects node_base. Module list: 0 invalid (only the known Windows-only docker
+  warnings). Composite node_base_debian now compiles past ntp; its expected first error is firewall_secure's pending
+  `action` syntax (composites.txt updated).
+- saz-ssh 13.1.0 / saz-sudo 9.0.2 held for Phase 1 (ruling 4).
+- Observed: the old node snapshot P8NODE_BASELINE_GREEN is gone from the node's snapshot tree (v2 now hangs under
+  "Codex Setup Done"); the node was found powered off and was brought back by revert_node.sh.

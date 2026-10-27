@@ -40,6 +40,13 @@ pregate hazard 9). Its effect: `${ecryptdir}/wrapped-passphrase` = base64-decode
   command — i.e. today's behaviour. Both are in coreutils/diffutils on every supported Ubuntu (present on the node).
   The guard runs as the same `user` as the command, which owns both files.
 
+## Determinism check (HQ checkpoint-2 ruling 1)
+The command is a PURE DECODE: `cat <.b64> | base64 -d > wrapped-passphrase`. Its output depends only on the bytes of
+`wrapped-passphrase.b64` (no time, randomness, environment or other input; `base64 -d` is deterministic), so "the file
+already equals the decode of .b64" is exactly the state the command would produce, and skipping the command in that
+state cannot change anything. That is what makes `cmp`-against-the-decode a true post-condition guard rather than an
+approximation. Confirmed by HQ 2026-10-27 06:10.
+
 ## Evidence (REAL lab, 2026-10-27)
 - Engine fixture `.codex_state/tools/tests/fixtures/exec_guard_postcondition.pp` = this exact pattern + guard in a p8test
   directory: `test_class.sh --revert-first --fixture exec_guard_postcondition` → run 1 `executed successfully` once,
