@@ -1,0 +1,97 @@
+{
+ "schema": 1,
+ "class": "docker_container",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-26T23:59:06Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "ca30e2ac2a6b",
+ "migrate_subject": "P8: migrate puppet_infrastructure::docker_container",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit ca30e2ac2a6b; 56 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "fail",
+   "detail": [
+    "the migrate commit changed no class file (manifest/templates/files)",
+    "pre-migrate content differed from the baseline (drift predates the migration): ['manifests/docker_container.pp']"
+   ]
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "tracker line 'docker_container Done [from: release-0.9.8]' lacks `Done [from: release-0.9.10]`",
+    "no migration header (no comment lines added before the class/define line)"
+   ]
+  },
+  "header_modules": {
+   "status": "fail",
+   "detail": [
+    "class uses module `puppetlabs-docker` 10.4.1 but the header does not name it"
+   ]
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 17 catalog events; COVERAGE puppet_infrastructure::docker_container: 7 concrete resources (+3 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "fail",
+  "evidence": [
+   "DIFF A @@ -12: baseline parameter '$command = undef' is removed from HEAD (a removed class parameter is an interface/behaviour change, not a Puppet 8 syntax translation)",
+   "DIFF A @@ -86: attribute 'command => $command' removed from the docker::run resource (changed resource attributes vs release-0.9.10)",
+   "DIFF B: the migrate commit ca30e2ac2a6b changed no class file; the divergence is pre-migrate drift (provenance), and the file carries no migration header"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 0,
+  "removed": 2,
+  "non_comment_changes": 2,
+  "header_only": false
+ },
+ "header": [],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 17,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::docker_container: 7 concrete resources (+3 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 33.557,
+   "master_check_s": 1.178,
+   "poweroff_s": 1.11,
+   "restore_s": 0.452,
+   "boot_to_ssh_s": 17.715,
+   "apt_update_s": 11.488,
+   "verify_s": 1.614
+  },
+  "log": ".codex_state/logs/reviews/docker_container.20261026T235709Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

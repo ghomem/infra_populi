@@ -1,0 +1,94 @@
+{
+ "schema": 1,
+ "class": "sftp_only",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T00:40:35Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "76286a4a946e",
+ "migrate_subject": "P8: migrate puppet_infrastructure::sftp_only",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 76286a4a946e; 66 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "1 files, all within scope"
+  },
+  "provenance": {
+   "status": "fail",
+   "detail": [
+    "the migrate commit changed no class file (manifest/templates/files)"
+   ]
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "no migration header (no comment lines added before the class/define line)"
+   ]
+  },
+  "header_modules": {
+   "status": "fail",
+   "detail": [
+    "class uses module `saz-ssh` 13.1.0 but the header does not name it"
+   ]
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 5 catalog events; COVERAGE puppet_infrastructure::sftp_only: 2 concrete resources (+5 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: final content identical to release-0.9.10 baseline (no non-comment changes, no header either)",
+   "DIFF B: migrate commit 76286a4a946e changed no class file; faithfulness trivially holds but records/header_modules/provenance checks fail mechanically"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 0,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 5,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::sftp_only: 2 concrete resources (+5 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 34.453,
+   "master_check_s": 1.221,
+   "poweroff_s": 1.256,
+   "restore_s": 0.478,
+   "boot_to_ssh_s": 17.576,
+   "apt_update_s": 11.901,
+   "verify_s": 2.021
+  },
+  "log": ".codex_state/logs/reviews/sftp_only.20261027T003920Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

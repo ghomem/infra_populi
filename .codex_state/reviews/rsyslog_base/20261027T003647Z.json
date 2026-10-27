@@ -1,0 +1,110 @@
+{
+ "schema": 1,
+ "class": "rsyslog_base",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T00:36:47Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "989e6cd862d4",
+ "migrate_subject": "P8: migrate puppet_infrastructure::rsyslog_base",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 989e6cd862d4; 119 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "fail",
+   "detail": [
+    "pre-migrate content differed from the baseline (drift predates the migration): ['manifests/rsyslog_base.pp']"
+   ]
+  },
+  "comments_preserved": {
+   "status": "fail",
+   "detail": [
+    "manifests/rsyslog_base.pp: # Shared rsyslog setup for both server and client nodes.",
+    "manifests/rsyslog_base.pp: # Installs rsyslog + GnuTLS and copies Puppet TLS material so rsyslog can use it.",
+    "manifests/rsyslog_base.pp: # Install rsyslog and TLS support.",
+    "manifests/rsyslog_base.pp: # Keep the legacy syslog user/group layout on RedHat-based systems.",
+    "manifests/rsyslog_base.pp: # Normal nodes use the default Puppet SSL dir; the master can override it.",
+    "manifests/rsyslog_base.pp: # Copy the CA, cert and key to a place rsyslog can read.",
+    "manifests/rsyslog_base.pp: # Keep rsyslog running and reload it whenever the TLS files change."
+   ]
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "tracker line 'Done rsyslog_base' lacks `Done [from: release-0.9.10]`"
+   ]
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 5 catalog events; COVERAGE puppet_infrastructure::rsyslog_base: 7 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "fail",
+  "evidence": [
+   "DIFF A: baseline parameter 'Optional[String] $ssldir_override = undef' and the selector defaulting $ssldir to '/var/lib/puppet/ssl' are removed; HEAD uses '$ssldir = $settings::ssldir' - removed parameter, changed default value and a different mechanism ($settings::...), explicitly a FAIL",
+   "DIFF B: migrate commit itself changes '$ssldir = '/var/lib/puppet/ssl'' to '$ssldir = $settings::ssldir' - a changed value/mechanism, not a syntax translation",
+   "DIFF A: all 7 baseline comments deleted/rewritten (e.g. '# Shared rsyslog setup for both server and client nodes.', '# Normal nodes use the default Puppet SSL dir; the master can override it.'); comments_preserved=fail",
+   "DIFF A: group/user resources and file ca/cert/key resources collapsed onto single lines, trailing commas dropped, attribute alignment changed - reformatting of unchanged code (pre-existing drift; provenance=fail)",
+   "DIFF A/B: source values changed from '${ssldir}/certs/...' to 'file://${ssldir}/certs/...' on three file resources - equivalent for local absolute paths but not required by Puppet 8",
+   "records=fail: tracker line is plain 'Done rsyslog_base' without '[from: release-0.9.10]'"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 30,
+  "removed": 47,
+  "non_comment_changes": 61,
+  "header_only": false
+ },
+ "header": [
+  "#",
+  "# Configures the base rsyslog service and copies this node's Puppet TLS",
+  "# materials so rsyslog can use them for encrypted forwarding.",
+  "# Dependencies: Puppet agent SSL state, rsyslog, rsyslog-gnutls.",
+  "#"
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 5,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::rsyslog_base: 7 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 36.411,
+   "master_check_s": 1.068,
+   "poweroff_s": 1.186,
+   "restore_s": 0.49,
+   "boot_to_ssh_s": 19.233,
+   "apt_update_s": 12.959,
+   "verify_s": 1.475
+  },
+  "log": ".codex_state/logs/reviews/rsyslog_base.20261027T003517Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

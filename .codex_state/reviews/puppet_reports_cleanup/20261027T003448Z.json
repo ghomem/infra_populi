@@ -1,0 +1,103 @@
+{
+ "schema": 1,
+ "class": "puppet_reports_cleanup",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T00:34:48Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "1369d70ac42c",
+ "migrate_subject": "P8: migrate puppet_infrastructure::puppet_reports_cleanup",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 1369d70ac42c; 120 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "1 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "fail",
+   "detail": [
+    "manifests/puppet_reports_cleanup.pp: ### Purpose ########",
+    "manifests/puppet_reports_cleanup.pp: # This class cleans up puppet reports to avoid filling the disk"
+   ]
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "tracker line 'Done puppet_reports_cleanup' lacks `Done [from: release-0.9.10]`"
+   ]
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 1 catalog events; COVERAGE puppet_infrastructure::puppet_reports_cleanup: 1 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "fail",
+  "evidence": [
+   "DIFF A hunk @@-1,4 +1,10@@: upstream comment lines 1-2 ('### Purpose ########' / '# This class cleans up puppet reports to avoid filling the disk') were deleted and replaced by a new header instead of the header being added alongside them; deleting an upstream comment is a FAIL (comments_preserved also flags both lines). The new header's Hiera-dependency claims do match the code (lookup('puppet::reportdir') and lookup('puppet::reportdays') at lines 11-12).",
+   "DIFF A hunk @@-7,9 +13,9@@: the five cron attribute lines (command/user/monthday/hour/minute) were re-indented from 2 to 4 spaces with values unchanged. No Puppet 8 translation is involved, so this is reformatting noise on unchanged code. The baseline already parses and compiles as-is, and its lookup() calls are already Puppet 8 compliant, so no syntax change was needed.",
+   "DIFF B is identical to DIFF A, so the migrate commit itself introduced both problems (provenance=ok, nothing predates it). Separately, records=fail: the tracker line is plain 'Done puppet_reports_cleanup' without the '[from: release-0.9.10]' marker."
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 13,
+  "removed": 7,
+  "non_comment_changes": 10,
+  "header_only": false
+ },
+ "header": [
+  "# puppet_infrastructure::puppet_reports_cleanup",
+  "#",
+  "# Removes Puppet report files older than the configured retention period to",
+  "# prevent unbounded growth in the report directory.",
+  "#",
+  "# Dependencies:",
+  "# - Hiera data for `puppet::reportdir`",
+  "# - Hiera data for `puppet::reportdays`"
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 1,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::puppet_reports_cleanup: 1 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 40.323,
+   "master_check_s": 0.954,
+   "poweroff_s": 1.236,
+   "restore_s": 0.494,
+   "boot_to_ssh_s": 23.696,
+   "apt_update_s": 12.143,
+   "verify_s": 1.8
+  },
+  "log": ".codex_state/logs/reviews/puppet_reports_cleanup.20261027T003325Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

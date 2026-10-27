@@ -1,0 +1,92 @@
+{
+ "schema": 1,
+ "class": "ssh_secure",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T00:42:19Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "f4cca21fcd01",
+ "migrate_subject": "P8: migrate puppet_infrastructure::ssh_secure",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit f4cca21fcd01; 68 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "no migration header (no comment lines added before the class/define line)"
+   ]
+  },
+  "header_modules": {
+   "status": "fail",
+   "detail": [
+    "class uses module `saz-ssh` 13.1.0 but the header does not name it"
+   ]
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 5 catalog events; COVERAGE puppet_infrastructure::ssh_secure: 7 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk @@ -13 (line 15): legacy top-scope fact $::osfamily -> $facts['os']['family'] in the case selector; pure Puppet 8 fact-access translation, identical behaviour. No other non-comment change; DIFF B identical to DIFF A (no pre-migrate drift).",
+   "No migration header comment was added (records=fail) and header does not name saz-ssh 13.1.0 (header_modules=fail); these are mechanical record failures, not faithfulness issues."
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 1,
+  "removed": 1,
+  "non_comment_changes": 2,
+  "header_only": false
+ },
+ "header": [],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 5,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::ssh_secure: 7 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 33.503,
+   "master_check_s": 1.03,
+   "poweroff_s": 1.145,
+   "restore_s": 0.501,
+   "boot_to_ssh_s": 17.467,
+   "apt_update_s": 11.874,
+   "verify_s": 1.486
+  },
+  "log": ".codex_state/logs/reviews/ssh_secure.20261027T004103Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

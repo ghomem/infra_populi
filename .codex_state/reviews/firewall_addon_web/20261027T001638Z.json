@@ -1,0 +1,113 @@
+{
+ "schema": 1,
+ "class": "firewall_addon_web",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T00:16:38Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "0593ce208385",
+ "migrate_subject": "P8: migrate puppet_infrastructure::firewall_addon_web",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 0593ce208385; 113 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "fail",
+   "detail": [
+    "manifests/firewall_addon_web.pp: ### Purpose ########",
+    "manifests/firewall_addon_web.pp: # This class provides COMPLEMENTARY firewall configurations for web traffic",
+    "manifests/firewall_addon_web.pp: ### Warnings #######",
+    "manifests/firewall_addon_web.pp: # Do not forget to do the main firewall configuration,",
+    "manifests/firewall_addon_web.pp: # either by including one of our base classes",
+    "manifests/firewall_addon_web.pp: # (puppet_infrastructure::firewall or puppet_infrastructure::firewall_secure)",
+    "manifests/firewall_addon_web.pp: # or trough some other alternative (e.g. bash scripts).",
+    "manifests/firewall_addon_web.pp: ### Dependencies ###",
+    "manifests/firewall_addon_web.pp: #  modules: puppetlabs-firewall"
+   ]
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "tracker line 'Done firewall_addon_web' lacks `Done [from: release-0.9.10]`",
+    "migration header does not state module dependencies (or `none`)"
+   ]
+  },
+  "header_modules": {
+   "status": "fail",
+   "detail": [
+    "header names `puppetlabs-firewall` without a version"
+   ]
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 2 catalog events; COVERAGE puppet_infrastructure::firewall_addon_web: 2 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "fail",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-9): every upstream comment is deleted \u2014 '### Purpose ########', 'This class provides COMPLEMENTARY firewall configurations for web traffic', the whole '### Warnings #######' block ('Do not forget to do the main firewall configuration, ... or trough some other alternative (e.g. bash scripts).') and '### Dependencies ### modules: puppetlabs-firewall' \u2014 and replaced by a rewritten @summary/@note/@see block; deleted upstream comments/warnings are a FAIL regardless of the paraphrase",
+   "DIFF A hunk 1 (firewall lines): '200 accept http' and '201 accept https' change action => 'accept' to jump => 'accept' (valid puppetlabs-firewall 8 translation, titles/proto/dport unchanged); the accompanying 'proto  =>'/'dport  =>' double-space to single-space edits are cosmetic only",
+   "DIFF B is identical to DIFF A (provenance ok: migration started from baseline content), so the comment deletion was introduced by the migrate commit 0593ce208385 itself"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 10,
+  "removed": 11,
+  "non_comment_changes": 4,
+  "header_only": false
+ },
+ "header": [
+  "# @summary Adds HTTP and HTTPS ingress rules for hosts with a managed firewall.",
+  "#",
+  "# @note This class only adds web traffic rules. Include a base firewall class,",
+  "#   such as puppet_infrastructure::firewall or",
+  "#   puppet_infrastructure::firewall_secure, or provide equivalent firewall",
+  "#   setup before applying this addon.",
+  "#",
+  "# @see puppetlabs-firewall"
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 2,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::firewall_addon_web: 2 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 34.083,
+   "master_check_s": 1.084,
+   "poweroff_s": 1.185,
+   "restore_s": 0.482,
+   "boot_to_ssh_s": 17.497,
+   "apt_update_s": 12.139,
+   "verify_s": 1.696
+  },
+  "log": ".codex_state/logs/reviews/firewall_addon_web.20261027T001522Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

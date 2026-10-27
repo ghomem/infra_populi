@@ -1,0 +1,95 @@
+{
+ "schema": 1,
+ "class": "firewall",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T00:09:49Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "ad68e2987b01",
+ "migrate_subject": "P8: migrate puppet_infrastructure::firewall",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit ad68e2987b01; 121 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "1 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "tracker line 'Done firewall' lacks `Done [from: release-0.9.10]`",
+    "no migration header (no comment lines added before the class/define line)"
+   ]
+  },
+  "header_modules": {
+   "status": "fail",
+   "detail": [
+    "class uses module `puppetlabs-firewall` 8.3.0 but the header does not name it"
+   ]
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 5 catalog events; COVERAGE puppet_infrastructure::firewall: 11 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "fail",
+  "evidence": [
+   "DIFF A/B hunk @@ -9,9 +9,20 @@ (HEAD lines 11-26): adds two resources not in release-0.9.10 - file { $localdir: ensure => directory } and file { \"${localdir}/bin\": ensure => directory, require => File[$localdir] }. Baseline only references File[\"${localdir}/bin\"] (require on iptables-flush.sh) and relies on another class to declare it; declaring it here is an added resource (reimplementation / harness workaround), not a syntax translation, and would duplicate-declare against the owning class.",
+   "Same hunk: removes the baseline resource default 'Firewall { require => undef, }' - a deleted mechanism (it overrides any inherited Firewall require default from an enclosing scope); no Puppet 8 / firewall 8 API requires its removal.",
+   "Hunks @@ -34,10 +45,10 @@, @@ -45,10 +56,10 @@, @@ -57,5 +68,5 @@: action => accept/reject -> jump => accept/reject on rules 000-003 and the SSH rule - correct puppetlabs-firewall 8 translation (acceptable; arrow alignment now inconsistent, cosmetic).",
+   "No migration header was added (lines 1-8 identical to baseline) and the existing Dependencies line does not name the pinned version; tracker entry is plain 'Done firewall' without [from: release-0.9.10] (records/header_modules fail)."
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 18,
+  "removed": 8,
+  "non_comment_changes": 26,
+  "header_only": false
+ },
+ "header": [],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 5,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::firewall: 11 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 32.32,
+   "master_check_s": 0.964,
+   "poweroff_s": 1.217,
+   "restore_s": 0.476,
+   "boot_to_ssh_s": 16.624,
+   "apt_update_s": 11.372,
+   "verify_s": 1.667
+  },
+  "log": ".codex_state/logs/reviews/firewall.20261027T000828Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

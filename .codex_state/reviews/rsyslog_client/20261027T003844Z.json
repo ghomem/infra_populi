@@ -1,0 +1,116 @@
+{
+ "schema": 1,
+ "class": "rsyslog_client",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T00:38:44Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "5cdcde1df862",
+ "migrate_subject": "P8: migrate puppet_infrastructure::rsyslog_client",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 5cdcde1df862; 115 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "fail",
+   "detail": [
+    "pre-migrate content differed from the baseline (drift predates the migration): ['manifests/rsyslog_client.pp', 'templates/rsyslog/forward_simple.conf.epp']"
+   ]
+  },
+  "comments_preserved": {
+   "status": "fail",
+   "detail": [
+    "manifests/rsyslog_client.pp: # Configure a node to forward its local logs to a remote rsyslog server over TLS.",
+    "manifests/rsyslog_client.pp: # Reuse the shared rsyslog setup; allow the SSL dir to be overridden when needed.",
+    "manifests/rsyslog_client.pp: # Only pin the target in /etc/hosts when an explicit IP is provided.",
+    "manifests/rsyslog_client.pp: # Do the same for the optional failover target.",
+    "manifests/rsyslog_client.pp: # Render the forwarding rule and restart rsyslog if it changes.",
+    "templates/rsyslog/forward_simple.conf.epp: # Read auth.log directly and bind it to a forwarding-only ruleset so it does not",
+    "templates/rsyslog/forward_simple.conf.epp: # re-enter the normal local auth logging pipeline."
+   ]
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "tracker line 'Done rsyslog_client' lacks `Done [from: release-0.9.10]`"
+   ]
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 6 catalog events; COVERAGE puppet_infrastructure::rsyslog_client: 9 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "fail",
+  "evidence": [
+   "DIFF A params hunk: baseline params ssldir_override and forward_auth_log removed; target_ip changed from Optional[String]=undef to required String (changed default/interface, not a syntax translation)",
+   "DIFF A rsyslog_base hunk: resource-like class { 'puppet_infrastructure::rsyslog_base': ssldir_override => $ssldir_override } replaced by 'include puppet_infrastructure::rsyslog_base' (different mechanism, override lost)",
+   "DIFF A conditionals: 'if $target_ip != undef' -> 'if $target_ip' and 'if $failover != undef and $failover_ip != undef' -> nested 'if $failover { if $failover_ip' (changed logic form); file resource epp() no longer passes forward_auth_log",
+   "DIFF A template forward_simple.conf.epp: forward_auth_log parameter and the entire 'if $forward_auth_log' block (ruleset forward_authlog_only, imfile input for /var/log/auth.log) removed -> removed behaviour",
+   "comments_preserved=fail: 5 baseline manifest comments and the template auth.log comment deleted; owner/group/mode collapsed onto one line (reformatting)",
+   "DIFF B: migrate commit only added header and rewrote comments; provenance=fail shows the divergence from release-0.9.10 predates the migration (pre-migrate manifest and template already drifted, no baseline-sync), and records=fail: tracker line is plain 'Done rsyslog_client' without [from: release-0.9.10]"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 38,
+  "removed": 87,
+  "non_comment_changes": 105,
+  "header_only": false
+ },
+ "header": [
+  "#",
+  "# Class: puppet_infrastructure::rsyslog_client",
+  "#",
+  "# Purpose:",
+  "#   Configure rsyslog client forwarding to a primary remote endpoint, with",
+  "#   optional failover endpoint support.",
+  "#",
+  "# Dependencies:",
+  "#   - puppet_infrastructure::rsyslog_base",
+  "#   - puppet_infrastructure/rsyslog/forward_simple.conf.epp",
+  "#"
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 6,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::rsyslog_client: 9 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 32.72,
+   "master_check_s": 0.993,
+   "poweroff_s": 1.263,
+   "restore_s": 0.444,
+   "boot_to_ssh_s": 16.812,
+   "apt_update_s": 11.625,
+   "verify_s": 1.583
+  },
+  "log": ".codex_state/logs/reviews/rsyslog_client.20261027T003722Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

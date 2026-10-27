@@ -1,0 +1,107 @@
+{
+ "schema": 1,
+ "class": "sysmon_puppet_cert_status",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T00:44:08Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "8f11086851fd",
+ "migrate_subject": "P8: migrate puppet_infrastructure::sysmon_puppet_cert_status",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 8f11086851fd; 118 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "fail",
+   "detail": [
+    "manifests/sysmon_puppet_cert_status.pp: # along with permission for launching puppet cert health check runs"
+   ]
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "tracker line 'Done sysmon_puppet_cert_status' lacks `Done [from: release-0.9.10]`"
+   ]
+  },
+  "header_modules": {
+   "status": "fail",
+   "detail": [
+    "header names `saz-sudo` without a version"
+   ]
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 5 catalog events; COVERAGE puppet_infrastructure::sysmon_puppet_cert_status: 10 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "fail",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-49): new exec 'sysmon_puppet_cert_status_apt_update' resource added and package require retargeted from Exec['apt_update'] to it \u2014 added resource + changed attribute value, not a syntax translation",
+   "DIFF A hunk 1: new if $facts['os']['family'] == 'Debian' / else conditional wrapping package{} \u2014 new logic absent from baseline",
+   "DIFF A hunk 1: added file{$localdir} and file{\"${localdir}/bin\"} directory resources \u2014 added resources (reimplementation)",
+   "DIFF A hunk 2 (line 58): upstream comment '# along with permission for launching puppet cert health check runs' deleted/reworded (comments_preserved=fail)",
+   "DIFF B identical to DIFF A: all divergence introduced by migrate commit 8f11086851fd; provenance ok"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 38,
+  "removed": 4,
+  "non_comment_changes": 31,
+  "header_only": false
+ },
+ "header": [
+  "#",
+  "# Installs the Puppet certificate health check script and grants the Naemon",
+  "# user passwordless sudo access to execute it.",
+  "#",
+  "# Dependencies:",
+  "# - Hiera data for `filesystem::localdir`",
+  "# - System package `python3-yaml`",
+  "# - `sudo::conf` defined type from the `saz-sudo` module",
+  "#"
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 5,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::sysmon_puppet_cert_status: 10 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 40.518,
+   "master_check_s": 1.169,
+   "poweroff_s": 1.062,
+   "restore_s": 0.515,
+   "boot_to_ssh_s": 23.846,
+   "apt_update_s": 12.463,
+   "verify_s": 1.463
+  },
+  "log": ".codex_state/logs/reviews/sysmon_puppet_cert_status.20261027T004248Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

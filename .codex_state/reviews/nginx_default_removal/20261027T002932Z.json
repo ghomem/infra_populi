@@ -1,0 +1,101 @@
+{
+ "schema": 1,
+ "class": "nginx_default_removal",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T00:29:32Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "a1f1399c01e7",
+ "migrate_subject": "P8: migrate puppet_infrastructure::nginx_default_removal",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit a1f1399c01e7; 121 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "1 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "fail",
+   "detail": [
+    "manifests/nginx_default_removal.pp: # This removes the default config file from the package"
+   ]
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "tracker line 'Done nginx_default_removal' lacks `Done [from: release-0.9.10]`"
+   ]
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "needs-justification",
+   "detail": "GREEN, but run 1 after a revert applied 0 catalog events"
+  }
+ },
+ "faithful": {
+  "status": "fail",
+  "evidence": [
+   "DIFF A/B hunk @@ -1,4 +1,11 @@: adds migration header comment (ok) but DELETES upstream comment line 2 '# This removes the default config file from the package' (comments_preserved=fail); deleted upstream comment = FAIL per rules",
+   "Non-comment code (file { '/etc/nginx/sites-enabled/default': ensure => absent }) is identical to release-0.9.10"
+  ]
+ },
+ "justify_run1": "Reverted baseline node has no nginx package (dpkg-query: no packages found matching nginx) and /etc/nginx/sites-enabled/default does not exist (ls: No such file or directory), so File[/etc/nginx/sites-enabled/default] ensure=>absent is already satisfied; 0 events in run 1 is expected",
+ "diff_summary": {
+  "added": 8,
+  "removed": 1,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "## Class: puppet_infrastructure::nginx_default_removal",
+  "#",
+  "# Purpose:",
+  "#   Remove the distro-provided default nginx site configuration.",
+  "#",
+  "# Dependencies:",
+  "#   - Package/layout that provides /etc/nginx/sites-enabled/default (typically nginx base setup).",
+  "#"
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 0,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::nginx_default_removal: 1 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 36.786,
+   "master_check_s": 0.997,
+   "poweroff_s": 1.199,
+   "restore_s": 0.488,
+   "boot_to_ssh_s": 20.897,
+   "apt_update_s": 11.634,
+   "verify_s": 1.571
+  },
+  "log": ".codex_state/logs/reviews/nginx_default_removal.20261027T002812Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

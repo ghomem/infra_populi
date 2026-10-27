@@ -1,0 +1,102 @@
+{
+ "schema": 1,
+ "class": "filesystem_lib64",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T00:04:26Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "6565ce887a2f",
+ "migrate_subject": "P8: migrate puppet_infrastructure::filesystem_lib64",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 6565ce887a2f; 115 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "fail",
+   "detail": [
+    "manifests/filesystem_lib64.pp: ### Purpose ########",
+    "manifests/filesystem_lib64.pp: # This class provides a ubuntu only filesystem compatibility measure related to nagios plugins invocation"
+   ]
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "tracker line 'Done filesystem_lib64' lacks `Done [from: release-0.9.10]`"
+   ]
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 1 catalog events; COVERAGE puppet_infrastructure::filesystem_lib64: 2 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "fail",
+  "evidence": [
+   "DIFF A/B hunk @@ -1,4 +1,10 @@: resource code (File['/usr/lib64/'] directory, File['/usr/lib64/nagios/'] link -> /usr/lib/nagios, require) is byte-identical to release-0.9.10; non_comment_changes=0",
+   "DIFF A/B same hunk: upstream comment lines '### Purpose ########' and '# This class provides a ubuntu only filesystem compatibility measure related to nagios plugins invocation' were deleted and replaced by a rewritten header; the 'ubuntu only' warning is lost (comments_preserved=fail). Deleting an upstream comment/warning is a FAIL; the migration header must be added alongside the original comments, not replace them"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 8,
+  "removed": 2,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Class: puppet_infrastructure::filesystem_lib64",
+  "#",
+  "# Purpose:",
+  "#   Creates a `/usr/lib64/nagios` compatibility symlink for hosts where Nagios",
+  "#   plugins are installed under `/usr/lib/nagios`.",
+  "#",
+  "# Dependencies:",
+  "#   None."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 1,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::filesystem_lib64: 2 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 37.006,
+   "master_check_s": 1.012,
+   "poweroff_s": 1.246,
+   "restore_s": 0.457,
+   "boot_to_ssh_s": 20.83,
+   "apt_update_s": 11.838,
+   "verify_s": 1.623
+  },
+  "log": ".codex_state/logs/reviews/filesystem_lib64.20261027T000303Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

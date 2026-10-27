@@ -1,0 +1,91 @@
+{
+ "schema": 1,
+ "class": "filesystem_base",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T00:00:59Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "69e3ea46f22d",
+ "migrate_subject": "P8: migrate puppet_infrastructure::filesystem_base",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 69e3ea46f22d; 39 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `filesystem_base Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['docker0', 'enp0s3', 'enp0s8', 'vethc043e02'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 7 catalog events; COVERAGE puppet_infrastructure::filesystem_base: 8 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added comment lines at top; no non-comment change vs release-0.9.10 manifests/filesystem_base.pp)",
+   "DIFF B: migrate commit 69e3ea46f22d adds only the same 2 header comment lines; provenance ok, no pre-migrate drift"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.8 manifest validated unchanged.",
+  "# Module dependencies: none (uses Puppet built-in file resources and lookup())."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 7,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::filesystem_base: 8 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 47.036,
+   "master_check_s": 1.032,
+   "poweroff_s": 1.037,
+   "restore_s": 0.483,
+   "boot_to_ssh_s": 30.887,
+   "apt_update_s": 12.045,
+   "verify_s": 1.552
+  },
+  "log": ".codex_state/logs/reviews/filesystem_base.20261026T235935Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

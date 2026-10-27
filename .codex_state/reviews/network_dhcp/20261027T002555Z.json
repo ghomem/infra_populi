@@ -1,0 +1,96 @@
+{
+ "schema": 1,
+ "class": "network_dhcp",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T00:25:55Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "0ecf985569b9",
+ "migrate_subject": "P8: migrate puppet_infrastructure::network_dhcp",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 0ecf985569b9; 53 commits since"
+  },
+  "scope": {
+   "status": "fail",
+   "detail": [
+    "blocked.txt delta names other classes: ['network_static', 'network_vpn', 'openvpn_server']"
+   ]
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "migration header does not state module dependencies (or `none`)"
+   ]
+  },
+  "header_modules": {
+   "status": "fail",
+   "detail": [
+    "class uses module `puppet-network` 2.2.1 but the header does not name it"
+   ]
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 2 catalog events; COVERAGE puppet_infrastructure::network_dhcp: 2 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (added line 1 '# Puppet 8 migration: release-0.9.8 manifest validated unchanged.'; no non-comment change vs release-0.9.10)",
+   "DIFF B: identical to DIFF A \u2014 migrate commit 0ecf985569b9 added only that header line; provenance ok, no pre-migrate drift"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 1,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.8 manifest validated unchanged."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 2,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::network_dhcp: 2 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 33.208,
+   "master_check_s": 1.056,
+   "poweroff_s": 1.028,
+   "restore_s": 0.48,
+   "boot_to_ssh_s": 17.096,
+   "apt_update_s": 11.816,
+   "verify_s": 1.732
+  },
+  "log": ".codex_state/logs/reviews/network_dhcp.20261027T002432Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

@@ -1,0 +1,101 @@
+{
+ "schema": 1,
+ "class": "caching_nameserver",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-26T23:49:16Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "e11cb27e0e46",
+ "migrate_subject": "P8: migrate puppet_infrastructure::caching_nameserver",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit e11cb27e0e46; 121 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "1 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "fail",
+   "detail": [
+    "manifests/caching_nameserver.pp: ### Purpose ########",
+    "manifests/caching_nameserver.pp: # This class provides a caching nameserver server using bind"
+   ]
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "tracker line 'caching_nameserver Done' lacks `Done [from: release-0.9.10]`"
+   ]
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "fail",
+   "detail": [
+    "Notice: Requesting catalog from puppet8master.example.com:8140 (192.168.77.166)",
+    "Notice: Catalog compiled by puppet8master",
+    "Notice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/Service[named]: Dependency Package[bind] has failures: true",
+    "Notice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/Service[named]: Dependency File[/etc/bind/named.conf.options] has failures: true",
+    "Notice: Applied catalog in 1.97 seconds",
+    "ERROR: Agent run 1 failed (exit 4)."
+   ]
+  }
+ },
+ "faithful": {
+  "status": "fail",
+  "evidence": [
+   "DIFF A/B hunk @@ -1,4 +1,5 @@: deletes upstream comment lines '### Purpose ########' and '# This class provides a caching nameserver server using bind' (replaced by a rewritten header) - deleted upstream comment is a FAIL per rules (comments_preserved=fail); otherwise no non-comment changes (diff_summary non_comment_changes=0)",
+   "harness run 1 exit 4: Package[bind] and File[/etc/bind/named.conf.options] failed, Service[named] skipped on dependency failures - not GREEN"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 3,
+  "removed": 2,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "### Purpose/Dependencies ########",
+  "# Configures a BIND-based caching nameserver.",
+  "# Dependencies: system packages/service only (bind or bind9); no external Puppet module dependencies."
+ ],
+ "harness": {
+  "rc": 1,
+  "run1_catalog_events": null,
+  "coverage": [],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 21.757,
+   "master_check_s": 1.028,
+   "poweroff_s": 1.265,
+   "restore_s": 0.521,
+   "boot_to_ssh_s": 17.001,
+   "verify_s": 1.942
+  },
+  "log": ".codex_state/logs/reviews/caching_nameserver.20261026T234831Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

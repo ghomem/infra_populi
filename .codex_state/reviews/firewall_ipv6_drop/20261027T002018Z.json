@@ -1,0 +1,106 @@
+{
+ "schema": 1,
+ "class": "firewall_ipv6_drop",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T00:20:18Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "a8aa30c8fc0f",
+ "migrate_subject": "P8: migrate puppet_infrastructure::firewall_ipv6_drop",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit a8aa30c8fc0f; 109 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "fail",
+   "detail": [
+    "manifests/firewall_ipv6_drop.pp: ### Purpose ########",
+    "manifests/firewall_ipv6_drop.pp: # This class provides an add on to firewall_secure that DROPs all IPv6 traffic",
+    "manifests/firewall_ipv6_drop.pp: ### Dependencies ###",
+    "manifests/firewall_ipv6_drop.pp: #  modules: puppetlabs-firewall"
+   ]
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "tracker line 'Done firewall_ipv6_drop' lacks `Done [from: release-0.9.10]`"
+   ]
+  },
+  "header_modules": {
+   "status": "fail",
+   "detail": [
+    "header names `puppetlabs-firewall` without a version"
+   ]
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 2 catalog events; COVERAGE puppet_infrastructure::firewall_ipv6_drop: 2 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "fail",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-7): upstream comment block deleted and replaced, not preserved - '### Purpose ########', '# This class provides an add on to firewall_secure that DROPs all IPv6 traffic', '### Dependencies ###', '#  modules: puppetlabs-firewall' are all removed (comments_preserved=fail); replacement header '@dependencies - puppetlabs-firewall' carries no version (header_modules=fail)",
+   "DIFF A hunk 2 (firewall '600'/'601' INPUT/FORWARD): 'action => drop' -> 'jump => \"DROP\"' and 'provider => \"ip6tables\"' -> 'protocol => \"IPv6\"' are the accepted puppetlabs-firewall 8 translations with identical behaviour; titles, chain and proto unchanged - this hunk alone is faithful",
+   "DIFF B is identical to DIFF A (provenance=ok): the comment deletion was introduced by the migrate commit a8aa30c8fc0f itself, not by prior drift"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 11,
+  "removed": 8,
+  "non_comment_changes": 8,
+  "header_only": false
+ },
+ "header": [
+  "# @summary Drop inbound and forwarded IPv6 traffic.",
+  "#",
+  "# Applies IPv6 filter-table rules that drop all traffic entering the INPUT and",
+  "# FORWARD chains. Intended as an add-on to the base firewall policy.",
+  "#",
+  "# @dependencies",
+  "# - puppetlabs-firewall"
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 2,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::firewall_ipv6_drop: 2 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 34.597,
+   "master_check_s": 1.076,
+   "poweroff_s": 1.221,
+   "restore_s": 0.463,
+   "boot_to_ssh_s": 18.806,
+   "apt_update_s": 11.486,
+   "verify_s": 1.545
+  },
+  "log": ".codex_state/logs/reviews/firewall_ipv6_drop.20261027T001903Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

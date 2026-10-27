@@ -1,0 +1,107 @@
+{
+ "schema": 1,
+ "class": "filesystem_sec",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T00:06:10Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "bd4e4749ab8b",
+ "migrate_subject": "P8: migrate puppet_infrastructure::filesystem_sec",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit bd4e4749ab8b; 78 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "fail",
+   "detail": [
+    "manifests/filesystem_sec.pp: ### Purpose ########",
+    "manifests/filesystem_sec.pp: # This classe provides extra filesystem security by restricting a certain set of commands to a certain group"
+   ]
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `filesystem_sec Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 13 catalog events; COVERAGE puppet_infrastructure::filesystem_sec: 14 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "fail",
+  "evidence": [
+   "DIFF A/B hunk 1 (lines 1-3): upstream comments '### Purpose ########' and '# This classe provides extra filesystem security by restricting a certain set of commands to a certain group' deleted and replaced by a rewritten @summary block - deleted upstream comment (comments_preserved=fail)",
+   "DIFF A/B hunk 1 (lines 3-4): one-line define signature '( $restricted_cmds = '' , ... )\\n{' reformatted to a multi-line parameter list with trailing comma - reformatting of unchanged code, not a syntax translation (no data types added, parses on Puppet 8 as-is)",
+   "DIFF A/B hunk 1 (line 6) and hunk 2 (trailing lines): whitespace-only line cleanup and removal of blank lines before/after closing brace - formatting noise",
+   "DIFF A/B hunk 2: owner => root -> owner => 'root' - behaviour-identical quoting (bareword already a valid string), lint-style change not required to parse; acceptable in isolation"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 19,
+  "removed": 5,
+  "non_comment_changes": 9,
+  "header_only": false
+ },
+ "header": [
+  "# @summary Restricts selected commands to members of a designated group.",
+  "#",
+  "# Applies root ownership and the requested group and mode to each command path.",
+  "# When no group is provided, RedHat-family systems use `wheel` and all other",
+  "# systems use `sudo`.",
+  "#",
+  "# @param restricted_cmds Command path or paths to restrict.",
+  "# @param restricted_group Group permitted to execute the commands.",
+  "# @param restricted_mode File mode applied to the commands.",
+  "#",
+  "# @dependencies",
+  "# - The structured `os.family` fact",
+  "# - The target system's `wheel` or `sudo` group when no group is specified"
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 13,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::filesystem_sec: 14 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 34.838,
+   "master_check_s": 1.033,
+   "poweroff_s": 1.191,
+   "restore_s": 0.508,
+   "boot_to_ssh_s": 18.82,
+   "apt_update_s": 11.705,
+   "verify_s": 1.581
+  },
+  "log": ".codex_state/logs/reviews/filesystem_sec.20261027T000454Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

@@ -1,0 +1,104 @@
+{
+ "schema": 1,
+ "class": "dns_client",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-26T23:56:37Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "0fbf5bab12de",
+ "migrate_subject": "P8: migrate puppet_infrastructure::dns_client",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 0fbf5bab12de; 123 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "1 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "fail",
+   "detail": [
+    "manifests/dns_client.pp: ### PURPOSE #######",
+    "manifests/dns_client.pp: # This class configures the DNS servers for the client",
+    "manifests/dns_client.pp: # This class is incompatible with the package 'network-manager'",
+    "manifests/dns_client.pp: # This is a list of IP adresses that will be set as DNS servers for the client"
+   ]
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "tracker line 'dns_client Done' lacks `Done [from: release-0.9.10]`"
+   ]
+  },
+  "header_modules": {
+   "status": "fail",
+   "detail": [
+    "header names `puppet-resolv_conf`, which is not installed under that name",
+    "class uses module `saz-resolv_conf` 8.0.1 but the header does not name it"
+   ]
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "needs-justification",
+   "detail": "GREEN, but run 1 after a revert applied 0 catalog events"
+  }
+ },
+ "faithful": {
+  "status": "fail",
+  "evidence": [
+   "DIFF A hunk @@-1,7: no code change, but upstream comments deleted/rewritten: '### PURPOSE #######', '# This class configures the DNS servers for the client', '# This class is incompatible with the package 'network-manager'' replaced by a new header (lines 1-3); upstream comments must be preserved, header must be added, not substituted",
+   "DIFF A same hunk: parameter comment '# This is a list of IP adresses that will be set as DNS servers for the client' reworded (typo fix + period) - a deleted upstream comment, flagged by comments_preserved",
+   "Header line 2 names module 'puppet-resolv_conf'; installed module is saz-resolv_conf 8.0.1 and no version is given (header_modules=fail)",
+   "DIFF B identical to DIFF A: the migrate commit 0fbf5bab12de made only these comment edits; provenance ok (started from baseline content)"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 4,
+  "removed": 4,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Purpose: manage client DNS resolver nameservers via /etc/resolv.conf.",
+  "# Dependencies: `resolv_conf` class (from `puppet-resolv_conf` module).",
+  "# Note: this class is incompatible with the `network-manager` package."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 0,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::dns_client: 2 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 36.826,
+   "master_check_s": 0.932,
+   "poweroff_s": 1.002,
+   "restore_s": 0.481,
+   "boot_to_ssh_s": 21.088,
+   "apt_update_s": 11.688,
+   "verify_s": 1.635
+  },
+  "log": ".codex_state/logs/reviews/dns_client.20261026T235518Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

@@ -1,0 +1,91 @@
+{
+ "schema": 1,
+ "class": "puppet_commush",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T00:32:59Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "3137fd318d10",
+ "migrate_subject": "P8: migrate puppet_infrastructure::puppet_commush",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 3137fd318d10; 37 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `puppet_commush Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 8 catalog events; COVERAGE puppet_infrastructure::puppet_commush: 1 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added comment lines at top of manifests/puppet_commush.pp; 0 non-comment changes vs release-0.9.10)",
+   "DIFF B: migrate commit 3137fd318d10 adds only the same 2 header comment lines; provenance=ok, no pre-migrate drift"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.8 manifest validated unchanged.",
+  "# Module dependencies: none (uses Puppet built-in file resources and lookup())."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 8,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::puppet_commush: 1 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 33.874,
+   "master_check_s": 0.989,
+   "poweroff_s": 1.299,
+   "restore_s": 0.426,
+   "boot_to_ssh_s": 17.93,
+   "apt_update_s": 11.763,
+   "verify_s": 1.467
+  },
+  "log": ".codex_state/logs/reviews/puppet_commush.20261027T003150Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

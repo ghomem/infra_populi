@@ -1,0 +1,102 @@
+{
+ "schema": 1,
+ "class": "firewall_addon_caching_nameserver",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T00:14:51Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "c844283fc5ff",
+ "migrate_subject": "P8: migrate puppet_infrastructure::firewall_addon_caching_nameserver",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit c844283fc5ff; 114 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "fail",
+   "detail": [
+    "manifests/firewall_addon_caching_nameserver.pp: ### Purpose ########",
+    "manifests/firewall_addon_caching_nameserver.pp: # This class provides necessary firewall configurations for caching nameservers"
+   ]
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "tracker line 'Done firewall_addon_caching_nameserver' lacks `Done [from: release-0.9.10]`"
+   ]
+  },
+  "header_modules": {
+   "status": "fail",
+   "detail": [
+    "header names `puppetlabs-firewall` without a version"
+   ]
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 1 catalog events; COVERAGE puppet_infrastructure::firewall_addon_caching_nameserver: 1 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "fail",
+  "evidence": [
+   "DIFF A L1-2: upstream comment '### Purpose ########' / '# This class provides necessary firewall configurations for caching nameservers' deleted and replaced by a rewritten @summary (deleted upstream comment = FAIL)",
+   "DIFF A L6-16: whole-file reformatting of unchanged code: params re-indented 4->2 spaces, blank lines removed, '){' -> ') {', one-line firewall resource exploded into multi-line block with aligned arrows; not a syntax translation",
+   "DIFF A firewall '1301 accept nameserver': action => 'accept' -> jump => 'accept' is a valid puppetlabs-firewall 8 translation; proto/iniface/dport/title/param defaults unchanged",
+   "DIFF B identical to DIFF A: all drift introduced by migrate commit c844283; provenance ok"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 13,
+  "removed": 6,
+  "non_comment_changes": 13,
+  "header_only": false
+ },
+ "header": [
+  "# @summary Allow LAN clients to query the local caching nameserver.",
+  "#",
+  "# @dependencies",
+  "# - puppetlabs-firewall"
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 1,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::firewall_addon_caching_nameserver: 1 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 40.432,
+   "master_check_s": 0.937,
+   "poweroff_s": 1.261,
+   "restore_s": 0.486,
+   "boot_to_ssh_s": 23.832,
+   "apt_update_s": 12.166,
+   "verify_s": 1.75
+  },
+  "log": ".codex_state/logs/reviews/firewall_addon_caching_nameserver.20261027T001329Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}

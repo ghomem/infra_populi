@@ -1,0 +1,108 @@
+{
+ "schema": 1,
+ "class": "backup_rsnapshot_pre",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-26T23:47:52Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "a138db16d4d2",
+ "migrate_subject": "P8: migrate puppet_infrastructure::backup_rsnapshot_pre",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit a138db16d4d2; 115 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "fail",
+   "detail": [
+    "manifests/backup_rsnapshot_pre.pp: ### Purpose ########",
+    "manifests/backup_rsnapshot_pre.pp: # This class implements prerequisites for the backup_base_rsync defined type"
+   ]
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "tracker line 'Done backup_rsnapshot_pre' lacks `Done [from: release-0.9.10]`"
+   ]
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "fail",
+   "detail": [
+    "Notice: Requesting catalog from puppet8master.example.com:8140 (192.168.77.166)",
+    "Notice: Catalog compiled by puppet8master",
+    "Notice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/Package[rsnapshot]/ensure: created",
+    "Notice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/File[/etc/rsnapshot.d]/ensure: created",
+    "Notice: Applied catalog in 10.37 seconds",
+    "ERROR: Agent run 1 failed (exit 6)."
+   ]
+  }
+ },
+ "faithful": {
+  "status": "fail",
+  "evidence": [
+   "DIFF A/B hunk @@ -1,4 +1,12 @@: upstream comments '### Purpose ########' and '# This class implements prerequisites for the backup_base_rsync defined type' deleted and replaced by a rewritten header (comments_preserved=fail); deleting an upstream comment is not a syntax translation",
+   "No non-comment changes otherwise (diff_summary non_comment_changes=0); class body unchanged vs release-0.9.10"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 10,
+  "removed": 2,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Class: puppet_infrastructure::backup_rsnapshot_pre",
+  "#",
+  "# Purpose:",
+  "#   Prepare the shared rsnapshot prerequisites used by rsnapshot-based",
+  "#   backup definitions.",
+  "#",
+  "# Dependencies:",
+  "#   - Hiera data for `filesystem::bindir`",
+  "#   - `backups/rdiff.sh` file served from this module's files directory",
+  "#"
+ ],
+ "harness": {
+  "rc": 1,
+  "run1_catalog_events": null,
+  "coverage": [],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 21.545,
+   "master_check_s": 1.105,
+   "poweroff_s": 1.229,
+   "restore_s": 0.484,
+   "boot_to_ssh_s": 16.686,
+   "verify_s": 2.041
+  },
+  "log": ".codex_state/logs/reviews/backup_rsnapshot_pre.20261026T234658Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
