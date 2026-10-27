@@ -16,7 +16,7 @@ The escalation files hold the evidence; this file holds only what the reviewer a
   'sudo' (other) when the parameter is '', else the parameter; `file { $restricted_cmds: group => $restricted_group_real }`.
   Same values on every branch; no other line changes.
 - CTO note: every production node must pass `restricted_group` explicitly until upstream takes the fix.
-- Status: ruled
+- Status: applied 929062b (reviewer v2 PASS 2026-10-27)
 
 ## puppet_boot_run
 - Short: ensure dropped
