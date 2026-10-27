@@ -1,4 +1,5 @@
-# Puppet 8 migration: release-0.9.8 manifest validated unchanged.
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: puppet-network 2.2.1 (network_config), puppet-filemapper 4.0.0, puppet-kmod 4.1.0.
 ### Purpose ########
 # This class configures a network interface with DHCP.
 #
