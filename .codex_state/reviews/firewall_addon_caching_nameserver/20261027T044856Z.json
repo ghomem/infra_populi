@@ -1,0 +1,92 @@
+{
+ "schema": 1,
+ "class": "firewall_addon_caching_nameserver",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T04:48:56Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "fb0d4593276b",
+ "migrate_subject": "P8: migrate puppet_infrastructure::firewall_addon_caching_nameserver",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit fb0d4593276b; 5 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/firewall_addon_caching_nameserver.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `firewall_addon_caching_nameserver Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-firewall', '8.3.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 1 catalog events; COVERAGE puppet_infrastructure::firewall_addon_caching_nameserver: 1 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-2): added migration header comment only; baseline '### Purpose' comment block retained verbatim",
+   "DIFF A hunk 2 (line 13): firewall '1301 accept nameserver' action => 'accept' -> jump => 'accept' (puppetlabs-firewall 8 rename); title, proto, iniface, dport, params and defaults unchanged, original single-line formatting preserved",
+   "DIFF B: re-migration; reverts earlier reformatted/@summary-rewritten content back to baseline layout, so DIFF A carries the full claim"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 3,
+  "removed": 1,
+  "non_comment_changes": 2,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest; firewall type attribute renames for Puppet 8 only (action -> jump).",
+  "# Module dependency: puppetlabs-firewall 8.3.0."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 1,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::firewall_addon_caching_nameserver: 1 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 23.691,
+   "master_check_s": 0.81,
+   "poweroff_s": 0.492,
+   "restore_s": 0.222,
+   "boot_to_ssh_s": 12.625,
+   "apt_update_s": 8.25,
+   "verify_s": 1.292
+  },
+  "log": ".codex_state/logs/reviews/firewall_addon_caching_nameserver.20261027T044802Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
