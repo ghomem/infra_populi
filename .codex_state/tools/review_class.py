@@ -151,17 +151,28 @@ def defect_entry(cls: str, path: Path | None = None) -> dict | None:
         return None
     for block in path.read_text(encoding="utf-8").split("\n## ")[1:]:
         head, _, body = block.partition("\n")
-        if cls not in [n.strip() for n in head.split(",")]:
+        if cls not in [n.strip() for n in head.split("(", 1)[0].split(",")]:  # "## a, b (note)"
             continue
         fields: dict[str, str] = {}
         key = None
         for line in body.splitlines():
-            m = re.match(r"^- (\w[\w ]*?): (.*)$", line)
+            # "- Key: value" or "- Key (provenance, may span lines): value"
+            m = re.match(r"^- ([A-Z][\w -]*?)(?: \(|:)", line)
             if m:
-                key = m.group(1).lower()
-                fields[key] = m.group(2).strip()
+                key = m.group(1).strip().lower()
+                fields[key] = line
             elif key and line.startswith("  "):
                 fields[key] += " " + line.strip()
+        for key, text in fields.items():  # value = text after the first ": " that closes the key part
+            text = text[2:]
+            depth, cut = 0, None
+            for i, ch in enumerate(text):
+                depth += ch == "("
+                depth -= ch == ")"
+                if ch == ":" and depth == 0:
+                    cut = i
+                    break
+            fields[key] = text[cut + 1:].strip() if cut is not None else ""
         return {"status": fields.get("status", ""), "change": fields.get("ruled change", "")}
     return None
 

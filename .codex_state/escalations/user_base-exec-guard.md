@@ -1,7 +1,8 @@
-# user_base: unguarded exec at the baseline — proposed post-condition guard (HQ ck1 ruling 2; CONFIRMATION NEEDED)
+# user_base: unguarded exec at the baseline — post-condition guard (HQ ck1 ruling 2; ruled)
 
-Status: WAITING FOR HQ CONFIRMATION (2026-10-27). Per ck1 ruling 2 this is the first exec-guard escalation; the other
-three (user_lock, linux_policies_user, mysql_server) are written in this format once HQ confirms it.
+Status: RULED (2026-10-27) — HQ production-facts ruling 2 (upstream defects fixed in infra_populi with the marker,
+no escalation) read as confirming this guard; flagged at checkpoint 2. The other exec guards are entries in
+`.codex_state/upstream_defects.md` (user_lock, mariadb_server ruled; linux_policies_user pending HQ — no post-condition).
 Class content: identical to release-0.9.10 (cf477c6). Production use: 3 node statements, plus it is the base of the
 whole user* family (the p8testuser fixture account).
 
@@ -52,6 +53,5 @@ pregate hazard 9). Its effect: `${ecryptdir}/wrapped-passphrase` = base64-decode
 
 ## Decision requested
 1. Confirm the guard (or choose `refreshonly => true` and accept that out-of-band damage is no longer repaired).
-2. On confirmation: registry entry `user_base` → `ruled` with this line as the ruled change; the class is migrated in
-   the loop with the marker `[from: release-0.9.10; upstream defect fixed: exec guarded by its post-condition]`;
-   the three remaining exec-guard escalations follow in this format, batched for the CTO.
+2. Done: `.codex_state/upstream_defects.md` entry `user_base` → `ruled`; the class is migrated in the loop with the
+   marker `[from: release-0.9.10; upstream defect fixed: exec guarded by its post-condition]`.

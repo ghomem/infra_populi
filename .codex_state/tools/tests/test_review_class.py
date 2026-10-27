@@ -157,9 +157,12 @@ def test_defect_registry_entries_parse(tmp_path):
     assert rc.defect_entry("filesystem_sec", reg) == {"status": "ruled", "change": "assign into a new variable only"}
     assert rc.defect_entry("mysql_server", reg)["status"] == "pending HQ"
     assert rc.defect_entry("backup", reg) is None
+    reg.write_text("# list\n\n## mariadb_server (moved by 874f854)\n- Ruled change (proposal, lab-tested;\n  confirmed: yes): add `unless => \"a: b\"`\n- Status: ruled\n")
+    assert rc.defect_entry("mariadb_server", reg) == {"status": "ruled", "change": 'add `unless => "a: b"`'}
 
 
 def test_repo_registry_has_the_ruled_fixes():
-    for cls in ("filesystem_sec", "puppet_boot_run", "openvpn_nm_connection"):
+    for cls in ("filesystem_sec", "puppet_boot_run", "openvpn_nm_connection", "user_base", "user_lock",
+                "mariadb_server", "openvpn_server", "firewall_addon_hosting"):
         assert rc.defect_entry(cls)["status"].startswith(("ruled", "applied")), cls
-    assert rc.defect_entry("user_base")["status"] == "pending HQ"
+    assert rc.defect_entry("linux_policies_user")["status"].startswith("pending HQ")
