@@ -1,6 +1,6 @@
 # Puppet Class Migration Order
 
-Generated: 2026-10-27 05:34:54 UTC
+Generated: 2026-10-27 05:48:43 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
@@ -123,6 +123,10 @@ Next class: `puppet_infrastructure::rsyslog_apparmor_exception`
 | 50 | `puppet_infrastructure::nginx_frontend_mail` | 8 | 7 | 6 | no | ssl_nginx_domain,nginx_frontend_domain |
 | 51 | `puppet_infrastructure::nginx_frontend` | 8 | 8 | 6 | no | nginx_base,nginx_default_removal,ssl_nginx_domain,nginx_frontend_domain |
 | 52 | `puppet_infrastructure::hashman_web` | 8 | 7 | 7 | no | hashman_base,nginx_frontend |
+
+## UPSTREAM DEFECTS FIXED LOCALLY (tracker markers, for the CTO batch)
+
+- `puppet_infrastructure::filesystem_sec` [from: release-0.9.10] — default group assigned to a new variable (no parameter reassignment)
 
 ## KNOWN GAPS
 
