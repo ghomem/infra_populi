@@ -38,7 +38,8 @@ COMPILE_DIR="${LOCAL_REPO}/.codex_state/tools/compile"
 
 # GREEN v2 (ruling 2 / step 1.1): every agent run has an outer timeout; run 2 must exit 0.
 AGENT_TIMEOUT_SECONDS="${AGENT_TIMEOUT_SECONDS:-600}"
-RUN2_FORBIDDEN_RE='Notice: .*changed|Notice: .*created|Notice: .*defined content as|Notice: .*executed successfully|Notice: .*removed|Info: .*Scheduling refresh of'
+# "defined '<attr>' as" is how Resource API types (e.g. puppetlabs-firewall 8) report a creation.
+RUN2_FORBIDDEN_RE="Notice: .*changed|Notice: .*created|Notice: .*defined content as|Notice: .*defined '[^']+' as|Notice: .*executed successfully|Notice: .*removed|Info: .*Scheduling refresh of"
 
 # ----------------------------
 # Helpers

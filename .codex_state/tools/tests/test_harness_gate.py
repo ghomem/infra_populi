@@ -140,3 +140,20 @@ def test_unreadable_catalog_is_red(lab):
     lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "rc": 1})
     proc = lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"])
     assert proc.returncode == 1 and "could not read" in proc.stderr
+
+
+RESOURCE_API_CREATE = ("Notice: /Stage[main]/Puppet_infrastructure::Firewall_addon_caching_nameserver/"
+                       "Firewall[1301 accept nameserver]/ensure: defined 'ensure' as 'present'\n")
+
+
+def test_resource_api_creation_counts_on_run1(lab):
+    # Real line from puppetlabs-firewall 8.3.0 on 2026-10-27 (sweep: counted as 0 before the fix).
+    agent_runs(lab, {"rc": 2, "stdout": RESOURCE_API_CREATE + APPLIED}, {"rc": 0, "stdout": APPLIED})
+    proc = lab.run([SCRIPT, "--revert-first", "--fixture", "guarded_exec"])
+    assert "RUN1_EVENTS: 1 catalog" in proc.stdout
+
+
+def test_resource_api_creation_on_run2_is_red(lab):
+    agent_runs(lab, {"rc": 2, "stdout": RESOURCE_API_CREATE + APPLIED}, {"rc": 0, "stdout": RESOURCE_API_CREATE + APPLIED})
+    proc = harness(lab)
+    assert proc.returncode == 1 and "not idempotent" in proc.stderr
