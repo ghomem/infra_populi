@@ -213,3 +213,13 @@ def test_orientation_reads_the_params_file_the_harness_reads(tmp_path):
     assert line.endswith("puppet_infrastructure::dns_client.json keys: nameservers")
     assert "192.0.2.53" not in line  # keys only, never values
     assert orientation.params_line("backup", tmp_path).startswith("none")
+
+
+def test_header_naming_a_module_without_a_version_is_refused(clone):
+    # real case 2026-10-27: "puppetlabs-firewall 8 attribute renames" failed the reviewer's header_modules
+    clone.stamp()
+    path = clone.root / f"manifests/{CLS}.pp"
+    path.write_text("# Puppet 8 migration: release-0.9.10 manifest; puppetlabs-firewall 8 attribute renames only.\n"
+                    "# Module dependency: puppetlabs-firewall 8.3.0.\n" + path.read_text())
+    proc = clone.run("--no-push")
+    assert proc.returncode == 1 and "puppetlabs-firewall without a version" in proc.stderr

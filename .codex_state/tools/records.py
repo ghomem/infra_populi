@@ -145,6 +145,12 @@ def cmd_header_check(cls: str) -> int:
     if not any(re.search(r"depend", line, re.I) for line in added):
         print(f"HEADER on manifests/{cls}.pp does not state module dependencies (or `none`)", file=sys.stderr)
         return 1
+    # same claim parser as the reviewer's header_modules check (offline: known Forge authors only)
+    unversioned = [forge for forge, version in review_class.module_claims(added, {"modules": {}}) if not version]
+    if unversioned:
+        print(f"HEADER on manifests/{cls}.pp names {', '.join(unversioned)} without a version (x.y.z) — the reviewer "
+              "reads every `author-module` in the header as a dependency claim", file=sys.stderr)
+        return 1
     print(f"HEADER OK {cls}: " + " | ".join(line.strip() for line in added))
     return 0
 
