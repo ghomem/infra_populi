@@ -4,7 +4,8 @@
 # A result that differs from `expect` fails the check (regression, or a fix to record here).
 # node_base_debian: ntp resolved 2026-10-27 (puppetlabs-ntp 11.2.0); next expected error = firewall_secure's pending syntax work.
 node_base_debian | debian | fail:no parameter named 'action' | node_base
-node_base_redhat | redhat | fail:Duplicate declaration: File[/opt/puppet-infrastructure] | node_base
+# node_base_redhat: the filesystem_yum duplicate is gone with its 2026-10-27 re-migration (baseline content, no extra dirs).
+node_base_redhat | redhat | fail:no parameter named 'action' | node_base
 # meaningful_puppet::meaningful_desktop's DIRECT puppet_infrastructure declarations (fleet_class_usage.md;
 # ≈20 laptops). Their own includes pull in the rest. Full 7-class closure since the 4.1c import (2026-10-27);
 # first error now from firewall_ipv6_drop_policy_desktop.pp:13 (pending syntax work), same substring.
