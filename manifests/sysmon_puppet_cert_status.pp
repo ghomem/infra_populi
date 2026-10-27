@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: saz-sudo 9.0.2 (sudo::conf), puppetlabs-apt 11.3.2 (Exec['apt_update']).
 class puppet_infrastructure::sysmon_puppet_cert_status {
 
   $check_puppet_cert_health_deps = [ 'python3-yaml' ]
