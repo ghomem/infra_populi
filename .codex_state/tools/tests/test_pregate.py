@@ -178,6 +178,8 @@ def staged_repo(tmp_path, monkeypatch):
     git(up, "commit", "-qm", "base")
     base = pregate.baseline.Baseline("release-test", git(up, "rev-parse", "HEAD"), up)
     monkeypatch.setattr(pregate.baseline, "load", lambda: base)
+    monkeypatch.setattr(pregate.baseline, "for_path", lambda path: base)
+    monkeypatch.setattr(pregate.baseline, "for_class", lambda cls: base)
     monkeypatch.setattr(pregate, "REPO", repo)
     sent = []
 

@@ -5,8 +5,12 @@
   baseline.py commit                -> full upstream commit the baseline is pinned to
   baseline.py label                 -> "release-0.9.10 (cf477c6)" for headers and prompts
   baseline.py show <path>           -> file content at the baseline (exit 1 if absent)
+  baseline.py show --for <class> <path>  -> same, at the CLASS's baseline (per-class exceptions)
   baseline.py paths <class>         -> manifest + templates/files the baseline class references
-  baseline.py drift <class>         -> local manifest/templates/files vs baseline; exit 1 on drift
+  baseline.py drift <class>         -> local manifest/templates/files vs the class's baseline; exit 1 on drift
+  baseline.py for <class>           -> the class's baseline label (exception or the pin)
+
+Per-class exceptions (HQ 2026-10-27 production-facts ruling 4): .codex_state/rules/baseline_exceptions.txt.
 
 Never reads upstream HEAD or a branch name: the release-0.9.10 branch moved after the pin.
 """
@@ -24,6 +28,7 @@ sys.dont_write_bytecode = True
 
 REPO = Path(__file__).resolve().parents[2]
 ENV_FILE = REPO / ".codex_state" / "baseline.env"
+EXCEPTIONS_FILE = REPO / ".codex_state" / "rules" / "baseline_exceptions.txt"
 
 # template('puppet_infrastructure/x'), epp(...), file(...), puppet:///modules/puppet_infrastructure/x
 REF_RE = re.compile(
@@ -53,6 +58,39 @@ def load(env_file: Path = ENV_FILE) -> Baseline:
         raise SystemExit("ERROR: BASELINE_COMMIT must be a full 40-hex commit id")
     return Baseline(values["BASELINE_NAME"], values["BASELINE_COMMIT"],
                     Path(os.path.expanduser(values["UPSTREAM_REPO"])))
+
+
+def exceptions(path: Path | None = None) -> dict[str, tuple[str, str]]:
+    """class -> (full commit, marker name) from the per-class exceptions file."""
+    path = path or EXCEPTIONS_FILE
+    out: dict[str, tuple[str, str]] = {}
+    if not path.is_file():
+        return out
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        parts = line.split()
+        if len(parts) < 3 or not re.fullmatch(r"[0-9a-f]{40}", parts[1]) or not parts[1].startswith(parts[2]):
+            raise SystemExit(f"ERROR: bad line in {path}: {line!r}")
+        out[parts[0]] = (parts[1], parts[2])
+    return out
+
+
+def for_class(cls: str, env_file: Path = ENV_FILE, exceptions_file: Path | None = None) -> Baseline:
+    """The baseline a class is migrated from: its per-class exception, else the pin."""
+    base = load(env_file)
+    exc = exceptions(exceptions_file).get(cls)
+    return Baseline(exc[1], exc[0], base.upstream) if exc else base
+
+
+def for_path(path: str, env_file: Path = ENV_FILE, exceptions_file: Path | None = None) -> Baseline:
+    """The baseline a single file is judged against: an exception class's ref if the file is that class's
+    manifest or one of its templates/files at that ref, else the pin."""
+    base = load(env_file)
+    for cls, (commit, name) in exceptions(exceptions_file).items():
+        if path == f"manifests/{cls}.pp" or path in class_paths(cls, commit, base.upstream):
+            return Baseline(name, commit, base.upstream)
+    return base
 
 
 def git_show(upstream: Path, ref: str, path: str) -> bytes | None:
@@ -129,6 +167,16 @@ def main(argv: list[str]) -> int:
         print(base.commit)
     elif argv == ["label"]:
         print(f"{base.name} ({base.commit[:7]})")
+    elif len(argv) == 4 and argv[:2] == ["show", "--for"]:
+        cb = for_class(argv[2])
+        data = git_show(cb.upstream, cb.commit, argv[3])
+        if data is None:
+            print(f"ERROR: {argv[3]} not present at {cb.name}", file=sys.stderr)
+            return 1
+        sys.stdout.buffer.write(data)
+    elif len(argv) == 2 and argv[0] == "for":
+        cb = for_class(argv[1])
+        print(f"{cb.name} ({cb.commit[:7]})")
     elif len(argv) == 2 and argv[0] == "show":
         data = git_show(base.upstream, base.commit, argv[1])
         if data is None:
@@ -136,13 +184,15 @@ def main(argv: list[str]) -> int:
             return 1
         sys.stdout.buffer.write(data)
     elif len(argv) == 2 and argv[0] == "paths":
-        print("\n".join(class_paths(argv[1], base.commit, base.upstream)))
+        cb = for_class(argv[1])
+        print("\n".join(class_paths(argv[1], cb.commit, cb.upstream)))
     elif len(argv) == 2 and argv[0] == "drift":
-        drift = local_drift(argv[1], base)
+        cb = for_class(argv[1])
+        drift = local_drift(argv[1], cb)
         for path in drift:
             print(f"DRIFT {path}")
         if not drift:
-            print(f"OK {argv[1]} identical to {base.name}")
+            print(f"OK {argv[1]} identical to {cb.name}")
         return 1 if drift else 0
     else:
         print(__doc__.strip(), file=sys.stderr)

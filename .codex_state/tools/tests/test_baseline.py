@@ -103,3 +103,30 @@ def test_self_check_tolerates_kept_marker_and_catches_other_edits():
     assert reannotate.only_markers_changed(before, "a Done [from: new]\nd Done [from: old]\n", "old", "new")
     assert not reannotate.only_markers_changed(before, "a Done [from: new]\nd Done\n", "old", "new")
     assert not reannotate.only_markers_changed(before, "a Done [from: new]\nx Done [from: old]\n", "old", "new")
+
+
+def test_per_class_exceptions(tmp_path):
+    import importlib.util, sys
+    spec = importlib.util.spec_from_file_location("baseline_x", TOOLS / "baseline.py")
+    b = importlib.util.module_from_spec(spec); sys.modules["baseline_x"] = b; spec.loader.exec_module(b)
+    exc = tmp_path / "exc.txt"
+    exc.write_text("# c\nmysql_server 874f8542d239c19228d77e3a0553a8949d759636 874f854 reason words\n")
+    assert b.exceptions(exc) == {"mysql_server": ("874f8542d239c19228d77e3a0553a8949d759636", "874f854")}
+    assert b.for_class("mysql_server", exceptions_file=exc).name == "874f854"
+    assert b.for_class("backup", exceptions_file=exc).name == "release-0.9.10"
+    assert b.for_path("manifests/mysql_server.pp", exceptions_file=exc).name == "874f854"
+    assert b.for_path("templates/mysql/server.cnf.epp", exceptions_file=exc).name == "874f854"
+    assert b.for_path("manifests/backup.pp", exceptions_file=exc).name == "release-0.9.10"
+    bad = tmp_path / "bad.txt"
+    bad.write_text("mysql_server 874f854 874f854\n")
+    import pytest
+    with pytest.raises(SystemExit):
+        b.exceptions(bad)
+
+
+def test_repo_exceptions_are_the_mysql_trio():
+    import importlib.util, sys
+    spec = importlib.util.spec_from_file_location("baseline_y", TOOLS / "baseline.py")
+    b = importlib.util.module_from_spec(spec); sys.modules["baseline_y"] = b; spec.loader.exec_module(b)
+    assert set(b.exceptions()) == {"mysql_server", "mariadb_server", "mysql_db"}
+    assert {v[1] for v in b.exceptions().values()} == {"874f854"}

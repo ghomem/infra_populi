@@ -13,8 +13,10 @@ run writes), `.codex_state/runs/` (per-attempt metrics: they name the generation
 `.codex_state/sprint/`, any transcript or note. `P8: record metrics after <class>` commits touch only
 `.codex_state/runs/` and are not part of any class's review. Do not look at who authored or committed anything (no `git log`/`git show` author fields, bodies or
 trailers): authorship is irrelevant to the verdict. Never edit, stage or commit a file; never change node,
-master or params state by hand. Baseline content only via `python3 .codex_state/tools/baseline.py show <path>`
-(release-0.9.10, pinned to upstream commit cf477c6 — never the upstream branch or HEAD).
+master or params state by hand. Baseline content only via `python3 .codex_state/tools/baseline.py show --for <class> <path>`
+(the class's baseline: release-0.9.10 pinned to upstream commit cf477c6, or its per-class exception in
+`.codex_state/rules/baseline_exceptions.txt`, e.g. 874f854 for the mysql classes — never the upstream branch or HEAD;
+the check output names the baseline it used).
 
 Steps, all required:
 1. Run `python3 .codex_state/tools/review_class.py check <class>` (append `--fresh` if you were given it).
@@ -34,7 +36,7 @@ Steps, all required:
      re-indentation/reformatting of unchanged code; any deleted upstream comment or warning (the
      `comments_preserved` check lists them).
    - If the tracker marker reads `[from: release-0.9.10; upstream defect fixed: <short>]`, the check output
-     prints the RULED UPSTREAM-DEFECT CHANGE from `.codex_state/rules/upstream_defects.md` (you may read that
+     prints the RULED UPSTREAM-DEFECT CHANGE from `.codex_state/upstream_defects.md` (you may read that
      file). DIFF A may then also contain exactly that change — no more, no less; any other non-translation hunk
      still FAILs. A marker without a ruled registry entry fails `records` mechanically.
    - DIFF B (the newest migrate commit itself) shows what the migration changed; `provenance` reports drift

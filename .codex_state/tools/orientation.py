@@ -66,7 +66,7 @@ def module_lines(manifest: str, inv: dict) -> list[str]:
 
 
 def packet(cls: str) -> str:
-    base = baseline.load()
+    base = baseline.for_class(cls)
     rows = generator.parse_plan()
     lines = [f"ORIENTATION PACKET puppet_infrastructure::{cls} (facts gathered before you started)"]
     row = rows.get(cls)

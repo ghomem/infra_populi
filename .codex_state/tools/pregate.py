@@ -373,7 +373,7 @@ def is_done(cls: str) -> bool:
 
 def pregate_class(cls: str) -> Report:
     report = Report(cls)
-    base = baseline.load()
+    base = baseline.for_class(cls)
     report.versions["baseline"] = f"{base.name} ({base.commit[:7]})"
     report.versions["python"] = sys.version.split()[0]
     manifest_path = REPO / f"manifests/{cls}.pp"
@@ -428,9 +428,10 @@ def pregate_staged() -> Report:
         if not re.fullmatch(r"(manifests/.+\.pp|templates/.+)", name):
             continue
         staged = subprocess.run(["git", "-C", str(REPO), "show", f":{name}"], capture_output=True, check=True).stdout
-        upstream = baseline.git_show(base.upstream, base.commit, name)
+        fb = baseline.for_path(name)  # per-class baseline exceptions (874f854 for the mysql classes)
+        upstream = baseline.git_show(fb.upstream, fb.commit, name)
         if staged == upstream:
-            report.add("PASS", "baseline-verbatim", f"{name} identical to {base.name}; not linted")
+            report.add("PASS", "baseline-verbatim", f"{name} identical to {fb.name}; not linted")
             continue
         local[name] = staged
         if upstream is not None:

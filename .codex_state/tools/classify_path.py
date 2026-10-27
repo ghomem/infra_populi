@@ -55,7 +55,7 @@ def compile_only(cls: str) -> tuple[str, str]:
 
 
 def decide(cls: str) -> tuple[int, str, list[str]]:
-    base = baseline.load()
+    base = baseline.for_class(cls)
     drift = baseline.local_drift(cls, base)
     if drift:
         return 3, "baseline-sync first", [f"{p} differs from {base.name}" for p in drift]

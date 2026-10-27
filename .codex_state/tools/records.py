@@ -128,7 +128,7 @@ def cmd_verify_stamp(cls: str) -> int:
 
 
 def header_added(cls: str) -> list[str]:
-    base = baseline.load()
+    base = baseline.for_class(cls)
     upstream = (baseline.git_show(base.upstream, base.commit, f"manifests/{cls}.pp") or b"").decode("utf-8", "replace")
     local = (REPO / f"manifests/{cls}.pp").read_text(encoding="utf-8")
     added, _ = review_class.diff_lines("\n".join(review_class.header_block(upstream)),
@@ -175,7 +175,7 @@ def tracker_text(text: str, cls: str, base_name: str, defect: str) -> str:
 
 def cmd_tracker_set(cls: str, argv: list[str]) -> int:
     defect = argv[argv.index("--defect") + 1].strip() if "--defect" in argv else ""
-    base_name = baseline.load().name
+    base_name = baseline.for_class(cls).name
     TRACKER.write_text(tracker_text(TRACKER.read_text(encoding="utf-8"), cls, base_name, defect))
     fixed = f"; upstream defect fixed: {defect}" if defect else ""
     print(f"TRACKER {cls} Done [from: {base_name}{fixed}]")

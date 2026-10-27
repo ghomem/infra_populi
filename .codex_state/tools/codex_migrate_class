@@ -27,8 +27,10 @@ cd /home/salatiel/work/infra_populi
 RUNBOOK=".codex_state/rules/CODEX_RUNBOOK.md"
 HAZARDS=".codex_state/rules/hazards.md"
 for f in "$RUNBOOK" "$HAZARDS"; do [[ -f "$f" ]] || { echo "Missing $f"; exit 2; }; done
-BASELINE="$(python3 .codex_state/tools/baseline.py name)"
-BASELINE_LABEL="$(python3 .codex_state/tools/baseline.py label)"
+SHORT="${CLASS#puppet_infrastructure::}"
+# The CLASS's baseline: the pin, or its per-class exception (.codex_state/rules/baseline_exceptions.txt).
+BASELINE_LABEL="$(python3 .codex_state/tools/baseline.py for "$SHORT")"
+BASELINE="${BASELINE_LABEL%% *}"
 # Outer timeout (ruling 2 / step 1.1). Longest observed run: 985 s; a hang was 47 min.
 CODEX_TIMEOUT_SECONDS="${CODEX_TIMEOUT_SECONDS:-1800}"
 
@@ -58,7 +60,7 @@ TARGET CLASS: $CLASS
 $PACKET
 
 The wrapper has just reverted the node to its baseline. First action: run the harness (line above).
-Baseline: ${BASELINE_LABEL}. Read baseline content ONLY with: python3 .codex_state/tools/baseline.py show <path>.
+Baseline for this class: ${BASELINE_LABEL}. Read baseline content ONLY with: python3 .codex_state/tools/baseline.py show --for $SHORT <path>.
 Record with .codex_state/tools/record_green.sh $CLASS (runbook section 2). A deliberate divergence from ${BASELINE}: stop and report.
 " || rc=$?
 if [[ $rc -eq 124 || $rc -eq 137 ]]; then

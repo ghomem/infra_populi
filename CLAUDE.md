@@ -12,7 +12,9 @@ the tracked `.codex_state/rules/CODEX_RUNBOOK.md`.
 - Repo `~/work/infra_populi` (main). Upstream reference `~/work/puppet_infrastructure`, declared
   baseline `release-0.9.10`, pinned to upstream commit `cf477c6` in `.codex_state/baseline.env`
   (single source; read it with `.codex_state/tools/baseline.py`). The upstream `release-0.9.10`
-  branch has moved past the pin: never use the branch name or upstream HEAD as the baseline.
+  branch has moved past the pin: never use the branch name or upstream HEAD as the baseline. Per-class
+  exceptions (single source `.codex_state/rules/baseline_exceptions.txt`): mysql_server, mariadb_server, mysql_db
+  migrate from upstream 874f854 (HQ 2026-10-27) and carry `[from: 874f854]`; `baseline.py for|show --for <class>`.
   Namespace stays `puppet_infrastructure::`.
 - Phase 1 = SYNTAX migration only, behaviour preserved. Not functional testing (Phase 3).
 - The laptop is a PRODUCTION Puppet 5 node (puppet-agent 5.5.22, agent active). Never install system
@@ -121,7 +123,7 @@ validated end-to-end) / `.reimplemented.pp`. Both filename and header must say w
   "release-0.9.10 manifest validated unchanged" + deps), then `record_green.sh <class>`, which writes
   `<class> Done [from: release-0.9.10]` (or `[from: release-0.9.10; upstream defect fixed: <short>]` for an
   HQ-ruled fix), adds the header's modules to necessary_modules.txt, regenerates the order file, commits, pushes.
-  A `--defect` marker needs a `ruled` entry in `.codex_state/rules/upstream_defects.md` (registry + CTO batch;
+  A `--defect` marker needs a `ruled` entry in `.codex_state/upstream_defects.md` (running list of locally fixed upstream defects;
   the reviewer reads it and allows exactly that change).
 - Historical plain `Done` entries stay plain (pre-baseline); never retro-annotate. `[from: release-0.9.8]`
   survives only where the class's content changed in 0.9.10 (docker_container) until it is re-migrated.

@@ -145,8 +145,8 @@ def class_paths(cls: str, base: baseline.Baseline) -> list[str]:
 
 
 def defect_entry(cls: str, path: Path | None = None) -> dict | None:
-    """The class's entry in .codex_state/rules/upstream_defects.md: {'status', 'change'} or None."""
-    path = path or STATE / "rules" / "upstream_defects.md"
+    """The class's entry in .codex_state/upstream_defects.md: {'status', 'change'} or None."""
+    path = path or STATE / "upstream_defects.md"
     if not path.is_file():
         return None
     for block in path.read_text(encoding="utf-8").split("\n## ")[1:]:
@@ -260,7 +260,7 @@ def expanded_classes(cls: str) -> list[str]:
 # ----------------------------------------------------------------------------- checks
 
 def run_checks(cls: str, harness: bool, fresh: bool) -> dict:
-    base = baseline.load()
+    base = baseline.for_class(cls)
     out: dict = {"class": cls, "baseline": f"{base.name} ({base.commit[:7]})", "checks": {}, "diffs": {}}
     c = out["checks"]
     found = migrate_commit(cls)
@@ -340,8 +340,8 @@ def run_checks(cls: str, harness: bool, fresh: bool) -> dict:
             out["defect_fixed"] = entry.defect_fixed
             ruled = defect_entry(cls)
             if ruled is None:
-                rec.append(f"marker says `upstream defect fixed: {entry.defect_fixed}` but .codex_state/rules/"
-                           "upstream_defects.md has no entry for the class")
+                rec.append(f"marker says `upstream defect fixed: {entry.defect_fixed}` but "
+                           ".codex_state/upstream_defects.md has no entry for the class")
             elif not ruled["status"].startswith(("ruled", "applied")):
                 rec.append(f"upstream defect fix not authorized: registry status `{ruled['status']}`")
             else:
