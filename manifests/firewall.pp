@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest; firewall action renamed to jump, preserving rules and policies.
+# Module dependency: puppetlabs-firewall 8.3.0.
 ### Purpose ########
 # This class provides a base firewall configuration that DROPs INPUT and FORWARD
 # allowing OUTPUT and specific INPUTs for SSH and ICMP
@@ -33,30 +35,30 @@ class puppet_infrastructure::firewall {
   # Default firewall rules
   firewall { '000 accept all icmp':
     proto  => 'icmp',
-    action => 'accept',
+    jump   => 'accept',
   }
   -> firewall { '001 accept all to lo interface':
     proto   => 'all',
     iniface => 'lo',
-    action  => 'accept',
+    jump    => 'accept',
   }
   -> firewall { '002 reject local traffic not on loopback interface':
     iniface     => '! lo',
     proto       => 'all',
     destination => '127.0.0.1/8',
-    action      => 'reject',
+    jump        => 'reject',
   }
   -> firewall { '003 accept related established rules':
     proto  => 'all',
     state  => ['RELATED', 'ESTABLISHED'],
-    action => 'accept',
+    jump   => 'accept',
   }
 
   # accept SSH from all
   firewall { '100 accept ssh':
     proto  => 'tcp',
     dport  => 22,
-    action => 'accept',
+    jump   => 'accept',
   }
 
 }
