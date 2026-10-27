@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none.
 ### Purpose ########
 # This class implements prerequisites for the backup_base_rsync defined type
 class puppet_infrastructure::backup_rsnapshot_pre {
