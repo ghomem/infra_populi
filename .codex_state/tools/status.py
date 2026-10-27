@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import json
 import re
 import sys
 from pathlib import Path
@@ -13,32 +12,14 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import gen_migration_order as generator
 
-REVIEWS = generator.SCRIPT_DIR / "reviews"
-VERIFIED = "verified (gate v2)"
-PENDING_RECONCILIATION = "done (gate v1, reconciliation pending)"
+REVIEWS = generator.REVIEWS_PATH
+VERIFIED = generator.VERIFIED
+PENDING_RECONCILIATION = generator.PENDING_RECONCILIATION
 
 
-def latest_verdict(name: str, reviews: Path = REVIEWS) -> dict | None:
-    files = sorted((reviews / name).glob("*.json")) if (reviews / name).is_dir() else []
-    return json.loads(files[-1].read_text(encoding="utf-8")) if files else None
-
-
-def verification_state(
-    name: str, migration: generator.MigrationCommit, flagged: set[str], reviews: Path = REVIEWS
-) -> tuple[str, dict | None]:
-    """Derived (HQ checkpoint-1 ruling 1): verified only by a reviewer-v2 PASS whose reviewed commit is
-    the class's current effective commit, with no non-record manifest change since."""
-    verdict = latest_verdict(name, reviews)
-    reviewed = (verdict or {}).get("migrate_commit") or ""
-    if (
-        verdict
-        and verdict.get("verdict") == "PASS"
-        and reviewed
-        and migration.commit.startswith(reviewed)
-        and name not in flagged
-    ):
-        return VERIFIED, verdict
-    return PENDING_RECONCILIATION, verdict
+def verification_state(name, migration, flagged, reviews: Path = REVIEWS):
+    """Single implementation lives in the generator (step 4.3 moved it there)."""
+    return generator.verification_state(name, migration, flagged, reviews)
 
 
 def failing_checks(verdict: dict | None) -> str:
@@ -95,12 +76,15 @@ def main() -> None:
     if conflicting:
         generator.fail("owner_validated classes must not also be blocked: " + ", ".join(conflicting))
     done = set(migrations) - set(blocked) - owner_validated
-    pending, gated = generator.topological_pending(rows, done, set(blocked), owner_validated)
+    prod = generator.read_prod_nodes()
+    pending, gated = generator.topological_pending(rows, done, set(blocked), owner_validated, prod)
 
     tracker = generator.read_tracker()
 
     # Render in memory to keep the summary identical to the generator's output.
-    rendered = generator.render(rows, done, blocked, flagged, pending, gated, owner_validated, tracker)
+    remigrations = generator.remigration_queue(migrations, flagged)
+    rendered = generator.render(rows, done, blocked, flagged, pending, gated, owner_validated, tracker, prod,
+                                remigrations)
     prefix = "Status summary: "
     summary = next(line for line in rendered.splitlines() if line.startswith(prefix))
     print(summary.removeprefix(prefix).removesuffix("."))
@@ -133,11 +117,14 @@ def main() -> None:
         ],
     )
 
+    print("\nRe-migration queue (HQ ck1 order)")
+    print_table(("class", "when"), [(f"{generator.PREFIX}{name}", when) for name, when in remigrations])
+
     print("\nTop 15 pending")
     print_table(
-        ("class", "complexity", "dep_score"),
+        ("class", "prod", "complexity", "dep_score"),
         [
-            (f"{generator.PREFIX}{row.name}", str(row.complexity), str(row.dep_score))
+            (f"{generator.PREFIX}{row.name}", str(prod.get(row.name, 0)), str(row.complexity), str(row.dep_score))
             for row in pending[:15]
         ],
     )

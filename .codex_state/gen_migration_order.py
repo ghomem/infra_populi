@@ -18,6 +18,11 @@ PLAN_PATH = SCRIPT_DIR / "migration_plan.md"
 ORDER_PATH = SCRIPT_DIR / "migration_order.md"
 BLOCKED_PATH = SCRIPT_DIR / "blocked.txt"
 TRACKER_PATH = SCRIPT_DIR / "migrated_classes.txt"
+FLEET_PATH = SCRIPT_DIR / "diagnosis" / "fleet_class_usage.md"
+REVIEWS_PATH = SCRIPT_DIR / "reviews"
+REMIGRATION_PATH = SCRIPT_DIR / "rules" / "remigration_order.txt"
+VERIFIED = "verified (gate v2)"
+PENDING_RECONCILIATION = "done (gate v1, reconciliation pending)"
 BASELINE_ENV = SCRIPT_DIR / "baseline.env"
 PREFIX = "puppet_infrastructure::"
 REQUIRED_COLUMNS = {
@@ -264,6 +269,69 @@ def tracker_mismatches(entries: dict[str, TrackerEntry], done: set[str]) -> tupl
     return sorted(done - tracked_done), sorted(tracked_done - done)
 
 
+def read_prod_nodes(path: Path | None = None) -> dict[str, int]:
+    """Production node statements per class (`prod` column of fleet_class_usage.md, composites propagated).
+    Step 4.3: the secondary sort key after dependencies. A class missing from the table counts 0."""
+    path = path or FLEET_PATH
+    if not path.is_file():
+        return {}
+    prod: dict[str, int] = {}
+    header: list[str] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        cells = split_markdown_row(line)
+        if cells[:2] == ["class", "prod"]:
+            header = cells
+            continue
+        if header and len(cells) == len(header) and re.fullmatch(r"[a-z][a-z0-9_]*", cells[0]):
+            try:
+                prod[cells[0]] = int(cells[1])
+            except ValueError:
+                fail(f"invalid prod value for {cells[0]} in {path.name}: {cells[1]!r}")
+        elif header and not cells:
+            header = []
+    return prod
+
+
+def latest_verdict(name: str, reviews: Path | None = None) -> dict | None:
+    reviews = reviews or REVIEWS_PATH
+    files = sorted((reviews / name).glob("*.json")) if (reviews / name).is_dir() else []
+    return json.loads(files[-1].read_text(encoding="utf-8")) if files else None
+
+
+def verification_state(name: str, migration: "MigrationCommit", flagged: set[str],
+                       reviews: Path | None = None) -> tuple[str, dict | None]:
+    """Derived (HQ checkpoint-1 ruling 1): verified only by a reviewer-v2 PASS whose reviewed commit is the
+    class's current effective commit, with no non-record manifest change since."""
+    verdict = latest_verdict(name, reviews)
+    reviewed = (verdict or {}).get("migrate_commit") or ""
+    if verdict and verdict.get("verdict") == "PASS" and reviewed and migration.commit.startswith(reviewed) \
+            and name not in flagged:
+        return VERIFIED, verdict
+    return PENDING_RECONCILIATION, verdict
+
+
+def read_remigration_order(path: Path | None = None) -> list[tuple[str, str]]:
+    path = path or REMIGRATION_PATH
+    if not path.is_file():
+        return []
+    order = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        parts = line.split()
+        if len(parts) != 2 or parts[1] not in ("first", "sink"):
+            fail(f"bad line in {path.name}: {line!r}")
+        order.append((parts[0], parts[1]))
+    return order
+
+
+def remigration_queue(migrations: dict[str, "MigrationCommit"], flagged: set[str],
+                      reviews: Path | None = None, order_path: Path | None = None) -> list[tuple[str, str]]:
+    """The HQ-ordered re-migrations still pending reconciliation: [(class, first|sink)]."""
+    return [(name, when) for name, when in read_remigration_order(order_path)
+            if name in migrations and verification_state(name, migrations[name], flagged, reviews)[0] != VERIFIED]
+
+
 def run_git(args: list[str]) -> str:
     try:
         result = subprocess.run(
@@ -333,7 +401,9 @@ def topological_pending(
     done: set[str],
     blocked: set[str],
     owner_validated: set[str],
+    prod: dict[str, int] | None = None,
 ) -> tuple[list[ClassRow], set[str]]:
+    prod = prod or {}
     pending = set(rows) - done - blocked - owner_validated
     placed: set[str] = set()
     ordered: list[ClassRow] = []
@@ -377,7 +447,8 @@ def topological_pending(
                 stuck_lines.append(f"{name}: {', '.join(waiting) if waiting else '(none)'}")
             fail("dependency cycle or missing dependency; stuck classes waiting on:\n" + "\n".join(stuck_lines))
 
-        chosen = sorted(schedulable, key=lambda row: row.sort_key)[0]
+        # dependencies first (schedulable), then production use (step 4.3), then the plan scores
+        chosen = sorted(schedulable, key=lambda row: (-prod.get(row.name, 0), *row.sort_key))[0]
         ordered.append(chosen)
         pending.remove(chosen.name)
         placed.add(chosen.name)
@@ -421,10 +492,10 @@ def format_gated_reason(
     return "; ".join(formatted)
 
 
-def table_row(index: int | str, row: ClassRow) -> str:
+def table_row(index: int | str, row: ClassRow, prod: dict[str, int] | None = None) -> str:
     deps = ",".join(row.internal_deps)
     return (
-        f"| {index} | `{PREFIX}{row.name}` | {row.complexity} | {row.dep_score} | "
+        f"| {index} | `{PREFIX}{row.name}` | {(prod or {}).get(row.name, 0)} | {row.complexity} | {row.dep_score} | "
         f"{row.p8_surface} | {row.self_contained} | {deps} |"
     )
 
@@ -438,7 +509,11 @@ def render(
     gated: set[str],
     owner_validated: set[str],
     tracker: dict[str, TrackerEntry] | None = None,
+    prod: dict[str, int] | None = None,
+    remigrations: list[tuple[str, str]] | None = None,
 ) -> str:
+    prod = prod or {}
+    remigrations = remigrations or []
     found_done = sorted((done & set(rows)) - owner_validated, key=lambda name: rows[name].sort_key)
     unknown_done = sorted(done - set(rows))
     found_blocked = sorted(
@@ -459,7 +534,7 @@ def render(
     gated_count = len(found_gated)
     owner_validated_count = len(found_owner_validated)
     pending_count = len(pending_order)
-    next_class = f"{PREFIX}{pending_order[0].name}" if pending_order else "all migrated"
+    next_class = next_class_name(pending_order, remigrations)
     generated = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     lines = [
@@ -479,16 +554,32 @@ def render(
         "",
         f"Next class: `{next_class}`" if next_class != "all migrated" else "Next class: all migrated",
         "",
+        "Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — dependencies first, then "
+        "`prod` (production node statements from `.codex_state/diagnosis/fleet_class_usage.md`, composites "
+        "propagated) descending, then cx/dep/p8 — then re-migrations marked `sink`. prod 0 = no production "
+        "declaration: those sink until the CTO rules.",
+        "",
+        "## RE-MIGRATION QUEUE (gate-v1 done, reconciliation pending; HQ ck1 order, `.codex_state/rules/remigration_order.txt`)",
+        "",
+        "| # | class | when |",
+        "|---:|---|---|",
+    ]
+    if remigrations:
+        lines.extend(f"| {i} | `{PREFIX}{name}` | {when} |" for i, (name, when) in enumerate(remigrations, start=1))
+    else:
+        lines.append("| - | - | - |")
+    lines.extend([
+        "",
         "## DONE (git-derived)",
         "",
-        "| # | class | cx | dep | p8 | sc | internal_deps |",
-        "|---:|---|---:|---:|---:|---|---|",
-    ]
+        "| # | class | prod | cx | dep | p8 | sc | internal_deps |",
+        "|---:|---|---:|---:|---:|---:|---|---|",
+    ])
 
     if found_done:
-        lines.extend(table_row(index, rows[name]) for index, name in enumerate(found_done, start=1))
+        lines.extend(table_row(index, rows[name], prod) for index, name in enumerate(found_done, start=1))
     else:
-        lines.append("| - | - | - | - | - | - | - |")
+        lines.append("| - | - | - | - | - | - | - | - |")
 
     lines.extend(["", "## OWNER-VALIDATED", "", "| # | class | owner |", "|---:|---|---|"])
     if found_owner_validated:
@@ -528,14 +619,14 @@ def render(
             "",
             "## PENDING QUEUE",
             "",
-            "| # | class | cx | dep | p8 | sc | internal_deps |",
-            "|---:|---|---:|---:|---:|---|---|",
+            "| # | class | prod | cx | dep | p8 | sc | internal_deps |",
+            "|---:|---|---:|---:|---:|---:|---|---|",
         ]
     )
     if pending_order:
-        lines.extend(table_row(index, row) for index, row in enumerate(pending_order, start=1))
+        lines.extend(table_row(index, row, prod) for index, row in enumerate(pending_order, start=1))
     else:
-        lines.append("| - | - | - | - | - | - | - |")
+        lines.append("| - | - | - | - | - | - | - | - |")
 
     defects = sorted((name, entry) for name, entry in (tracker or {}).items() if entry.defect_fixed)
     if defects:
@@ -582,6 +673,16 @@ def render(
     return "\n".join(lines)
 
 
+def next_class_name(pending_order: list[ClassRow], remigrations: list[tuple[str, str]]) -> str:
+    first = [name for name, when in remigrations if when == "first"]
+    if first:
+        return f"{PREFIX}{first[0]} (re-migration)"
+    if pending_order:
+        return f"{PREFIX}{pending_order[0].name}"
+    sink = [name for name, when in remigrations if when == "sink"]
+    return f"{PREFIX}{sink[0]} (re-migration)" if sink else "all migrated"
+
+
 def classify(class_name: str) -> None:
     rows = parse_plan()
     name = class_name.removeprefix(PREFIX)
@@ -620,9 +721,11 @@ def main() -> None:
     if conflicting:
         fail("owner_validated classes must not also be blocked: " + ", ".join(conflicting))
     done = set(migrations) - set(blocked) - owner_validated
-    pending_order, gated = topological_pending(rows, done, set(blocked), owner_validated)
+    prod = read_prod_nodes()
+    pending_order, gated = topological_pending(rows, done, set(blocked), owner_validated, prod)
     tracker = read_tracker()
-    output = render(rows, done, blocked, flagged, pending_order, gated, owner_validated, tracker)
+    remigrations = remigration_queue(migrations, flagged)
+    output = render(rows, done, blocked, flagged, pending_order, gated, owner_validated, tracker, prod, remigrations)
     ORDER_PATH.write_text(output, encoding="utf-8")
 
     unknown_done = sorted(done - set(rows))
@@ -635,7 +738,7 @@ def main() -> None:
     blocked_count = len((set(blocked) & set(rows)) - owner_validated)
     gated_count = len((gated & set(rows)) - owner_validated)
     owner_validated_count = len(owner_validated & set(rows))
-    next_class = f"{PREFIX}{pending_order[0].name}" if pending_order else "all migrated"
+    next_class = next_class_name(pending_order, remigrations)
     print(
         f"{done_count} done / {owner_validated_count} owner_validated / "
         f"{blocked_count} blocked / {gated_count} gated / "

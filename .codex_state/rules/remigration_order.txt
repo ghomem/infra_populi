@@ -1,0 +1,11 @@
+# Re-migration order for the gate-v1 done classes still pending reconciliation (HQ checkpoint-1 ruling 1).
+# Consumed by gen_migration_order.py (RE-MIGRATION QUEUE section, "Next class"). A class leaves the queue when
+# its latest reviewer-v2 verdict is a PASS on its current migrate commit (status.py "verified (gate v2)").
+# Format: <class> <when>   when = first (ahead of the pending queue) | sink (with the zero-declaration classes)
+rsyslog_base first
+rsyslog_client first
+docker_container first
+filesystem_yum first
+backup_rsnapshot_pre first
+firewall sink
+sysmon_puppet_cert_status sink

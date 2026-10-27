@@ -765,3 +765,15 @@ Entries now: filesystem_sec (ruled, ck1 ruling 6), puppet_boot_run (ruled, rulin
 its escalation is written last in 4.x and HQ confirms it), user_lock / linux_policies_user / mysql_server
 (pending; ruling 2's mysql question answered: upstream 874f854 does NOT guard the cert-generation exec, it moves it
 verbatim into the new mariadb_server.pp:99-102).
+
+## 2026-10-27 — Step 4.3: fleet-weighted order; HQ re-migration queue in the order file
+Pending order = dependencies first (unchanged topological rule), then `prod` DESCENDING, then cx/dep/p8/name.
+`prod` is read live from `.codex_state/diagnosis/fleet_class_usage.md` (production node statements, composites
+propagated) — the generator's single source, NOT a copied plan column (P2). Result, as ruling 9 asks without any
+cluster list: the node_base closure first (packages_base 59, firewall_secure 59, puppet_boot_run, filesystem_apt,
+sysmon_base, firewall_secure_extra, then node_base itself), then the ssl/nginx stack (ssl_base 38 …
+nginx_frontend 24), prod-0 classes last. The HQ ck1 re-migration order lives in
+`.codex_state/rules/remigration_order.txt` (`first` = ahead of the pending queue: rsyslog_base → rsyslog_client →
+docker_container → filesystem_yum → backup_rsnapshot_pre; `sink` = after it: firewall,
+sysmon_puppet_cert_status); the order file renders the still-unverified ones and `Next class` follows that order.
+The "verified (gate v2)" derivation moved into the generator; status.py uses it (one implementation).

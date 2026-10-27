@@ -161,5 +161,5 @@ def test_defect_registry_entries_parse(tmp_path):
 
 def test_repo_registry_has_the_ruled_fixes():
     for cls in ("filesystem_sec", "puppet_boot_run", "openvpn_nm_connection"):
-        assert rc.defect_entry(cls)["status"].startswith("ruled"), cls
+        assert rc.defect_entry(cls)["status"].startswith(("ruled", "applied")), cls
     assert rc.defect_entry("user_base")["status"] == "pending HQ"

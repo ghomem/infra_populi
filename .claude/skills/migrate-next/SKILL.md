@@ -11,7 +11,9 @@ and 8140 listening. Regenerate the order file. Create `.codex_state/logs/` if mi
 `.git/hooks/pre-commit` must be a symlink to `../../.codex_state/tools/pre-commit` (install it if missing).
 
 FOR EACH CLASS:
-1. PICK: next PENDING row in migration_order.md that is not in blocked.txt. Read its plan row
+1. PICK: the order file's `Next class:` — the RE-MIGRATION QUEUE's `first` entries (HQ order; a done class
+   being re-migrated: hazard 8 baseline-sync first if it drifted, then its path as usual), then the next PENDING
+   row not in blocked.txt (dependencies, then `prod` descending), then the queue's `sink` entries. Read its plan row
    (resource_type, internal_deps, required_base, required_external, self_contained) and
    `manifests/<class>.pp`. If deps are not DONE, the order file is wrong — investigate, do not skip silently.
 2. HAZARDS: first run `.codex_state/tools/pregate.sh <class>` (drift, parse, lint, templates, static
