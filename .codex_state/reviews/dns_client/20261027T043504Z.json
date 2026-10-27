@@ -1,0 +1,91 @@
+{
+ "schema": 1,
+ "class": "dns_client",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T04:35:04Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "91ae3ff2cbd0",
+ "migrate_subject": "P8: migrate puppet_infrastructure::dns_client",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 91ae3ff2cbd0; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/dns_client.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `dns_client Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('saz-resolv_conf', '8.0.1')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 1 catalog events; COVERAGE puppet_infrastructure::dns_client: 2 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added lines '# Puppet 8 migration: release-0.9.10 manifest validated unchanged.' / '# Module dependency: saz-resolv_conf 8.0.1.'); independent diff of baseline.py show manifests/dns_client.pp vs HEAD confirms no other change",
+   "DIFF B: re-migration restores baseline verbatim \u2014 replaces earlier rewritten header/param comment with the release-0.9.10 PURPOSE block and original 'IP adresses' param comment; no code lines changed"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependency: saz-resolv_conf 8.0.1."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 1,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::dns_client: 2 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 37.108,
+   "master_check_s": 1.068,
+   "poweroff_s": 1.303,
+   "restore_s": 0.548,
+   "boot_to_ssh_s": 20.013,
+   "apt_update_s": 12.529,
+   "verify_s": 1.647
+  },
+  "log": ".codex_state/logs/reviews/dns_client.20261027T043344Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
