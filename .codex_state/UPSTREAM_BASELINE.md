@@ -13,7 +13,9 @@ Single source: `.codex_state/baseline.env`. Read baseline content only through
 
 **Never use the upstream branch name or HEAD.** `origin/release-0.9.10` is a branch, not a tag; on
 2026-10-06 it moved to 874f854 by merging the Issue #122 MySQL rewrite (mariadb_server.pp, mysql_db.pp,
-rewritten mysql_server.pp), which ruling 1 keeps out until the CTO says it is released. The local
+rewritten mysql_server.pp). SETTLED 2026-10-27 (HQ production-facts ruling 4): that merge is the code that will run —
+mysql_server, mariadb_server and mysql_db use upstream 874f854 as per-class baseline exceptions
+(`.codex_state/rules/baseline_exceptions.txt`, marker `[from: 874f854]`). The local
 upstream clone also sits on an unmerged branch. A `git fetch` must never change what "baseline" means.
 
 Old repo: git@github.com:ghomem/puppet_infrastructure.git

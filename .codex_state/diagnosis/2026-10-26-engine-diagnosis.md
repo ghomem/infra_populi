@@ -69,7 +69,7 @@ Full table: `fleet_class_usage.md`. Method: transitive closure over three layers
 | nginx_base | 33 | PENDING | |
 | nginx_frontend | 24 | PENDING | |
 
-### B.3 Unused (zero declarations in node files) — candidates for a CTO decision not to migrate
+### B.3 Unused (zero declarations in node files) — migrated anyway, sorted last (HQ 2026-10-27 ruling 5)
 33 classes have zero declarations anywhere (including deleted/ and tests/): firewall (the non-secure base; production uses firewall_secure), firewall_addon_hosting (blocked cat 3), firewall_addon_xrdp, firewall_ipv6_drop_policy, letsencrypt_certificate†, linux_policies_common, linux_policies_user, mount_shares_desktop (blocked), network_static, nginx_frontend_mail, nginx_proxy_smtp_auth_ppa, nginx_static, node_base_desktop, node_base_domain_desktop, openvpn_domain, openvpn_nm_connection (blocked), openvpn_set_vpn_passwd_file, postfix_smtp_base, postfix_smtp_base_config_file, sftp_only†, ssl_nginx, ssl_postfix, sysmon_fs_health, sysmon_integrity_master, sysmon_integrity_node, sysmon_mysqldump_health, sysmon_puppet_cert_status, user_desktop, user_desktop_sudoer, user_lock†, user_samba† (blocked), user_sysmon† (blocked), users_sudoers†. `hello_world_flask*` appear only in `tests/`.
 † = user/identity/secret-bearing defines that are declared from the confidential `passwd_*` layer (188 references from node files) — **these are under-counted, not unused**. The engine already spent 4 of its 7 blocks (user_samba, user_sysmon, mount_shares_desktop, openvpn_nm_connection) and 4 of 31 greens (firewall_addon_xrdp, firewall_ipv6_drop_policy, network_static, openvpn_set_vpn_passwd_file, sftp_only) on classes with no node-file usage; the plan orders by complexity, not by fleet impact.
 
@@ -222,15 +222,15 @@ Sources: 11 read-only cluster audits (one agent per cluster, re-verified where s
 | **ssl_base (38)** → ssl_nginx, ssl_nginx_domain (37), ssl_postfix | Code is Puppet-8 clean. Sources `puppet:///extra_files/ssl/*`, but the lab master has no `extra_files` mount, so apply fails (*predicted*). | Master fileserver mount + self-signed p8test PKI (never production certs); Salatiel-approved lab-master change | `openssl x509 -noout -subject -enddate` on deployed files; key/cert modulus match; perms/owner; notified service reloaded |
 | **nginx_base (33)**, nginx_frontend_domain (35), nginx_frontend (24), nginx_static_domain | puppet-nginx not installed; recommended pin 8.4.0 (openvox ≥8.19; every parameter used was checked against 8.x). Needs required_external=apt (`Exec['apt_update']`). **One real Puppet-8 break: `nginx_frontend_domain.pp:247 port => $element_split[1] + 0`**: string→number coercion is an error under `strict=error` (Puppet 8 default). Fix is `Integer($element_split[1])`; it propagates to frontend and frontend_mail. Also needs the extra_files cert fixture. | Forge pin + plan fix + Codex syntax fix + master fixture | HTTP/TLS probes per vhost (status, redirects, HSTS, upstream pass-through to a fixture backend on 127.0.0.1:8080, cert served), `nginx -t` |
 | letsencrypt_base / letsencrypt_certificate | Drifted (lacks 0.9.8's `hetzner-cloud` provider and pip pins). puppet-letsencrypt 13.4.0 + its hard dep puppet-epel. Ubuntu 24.04 PEP 668 blocks the pip branch (upstream issue). The certificate needs a real ACME flow. | Baseline-sync; Forge pins; ACME sandbox (Pebble or a Let's Encrypt staging + sandbox DNS zone); production info on the provider used | `certbot certificates`; cert chain issued by the staging CA; renewal hook dry-run |
-| mysql_server (1) | puppetlabs-mysql absent; production 10.5 cannot run on Puppet 8. Candidate 17.x (Forge audit). Ubuntu-only package names without OS guard. Upstream has an unmerged rewrite (H4). | Forge pin; params fixture; decide 0.9.8 vs the unmerged rewrite (CTO) | `mysql -e 'SELECT 1'` over TLS as the rw user; grants as declared; self-signed cert deployed |
+| mysql_server (1) | puppetlabs-mysql absent; production 10.5 cannot run on Puppet 8. Candidate 17.x (Forge audit). Ubuntu-only package names without OS guard. Upstream has an unmerged rewrite (H4). | Forge pin; params fixture; decide 0.9.8 vs the unmerged rewrite (CTO) | `mysql -e 'SELECT 1'` over TLS as the rw user; grants as declared; self-signed cert deployed  **Settled 2026-10-27: migrate from 874f854 (Issue #122 merged); mariadb_server + mysql_db imported.** |
 | openvpn_server (3) / network_vpn (3) | puppet-openvpn 12.0.0 (first Puppet-8 line is 11.x) **plus two upstream defects that no module fixes**: `notify => Service['openvpn']` (`:208`) references a resource the module declares only on non-systemd hosts (compile error), and `service { 'openvpn-server@puppet_infrastructure' }` (`:117`) duplicates the module's own title on Debian-family. Undeclared `Network_config[$local_interface]` subscription. sysctl ruling. Bridge `br0` with `lo:0` as port. | Upstream-bug ruling (escalation), Forge pins, second NIC on the node VM, test PKI, second VM as client | client VM connects (tap), gets a pool address, pings br0 and a LAN host; PAM password auth works; wrong password rejected |
 | openvpn_domain (0) | **Legacy fact in a template**: `templates/openvpn/smb.conf.erb:5` uses `@hostname`, which renders empty under Puppet 8. Silent, still GREEN (D.2). `id user@DOMAIN` guard can rerun forever. Needs a DC to go GREEN at all. | Legacy-facts rule (hazard addition) + Samba DC | `net ads testjoin`; `wbinfo -u`; `getent passwd user@DOMAIN` |
 | hashman_base / hashman_web (1) | Gated by the nginx stack and Hiera keys; needs an MTA for mail flows; Flask/gunicorn on the master role. | nginx stack, Hiera fixture, local MTA (postfix_smtp_* pending) | headless browser: load login page, submit a password change for a fixture user, verify the `.pp` record written and the mail captured |
-| rsyslog_server (1) | Baseline-synced to 0.9.8, but production 0.9.10 changed it again (+64 lines, retention script, logrotate timer). The plan's "external rsyslog module" column is a **false lead**: no `rsyslog::` token exists in any version since 0.9.8. | CTO ruling: migrate 0.9.8 now or catch up to 0.9.10 first; second node for TLS forwarding | client → server over TLS 6514: a `logger` line on the client appears in the server's per-host file; cert verification on |
+| rsyslog_server (1) | Baseline-synced to 0.9.8, but production 0.9.10 changed it again (+64 lines, retention script, logrotate timer). The plan's "external rsyslog module" column is a **false lead**: no `rsyslog::` token exists in any version since 0.9.8. | CTO ruling: migrate 0.9.8 now or catch up to 0.9.10 first; second node for TLS forwarding | client → server over TLS 6514: a `logger` line on the client appears in the server's per-host file; cert verification on  **Settled: migrates from release-0.9.10 (synced 2026-10-27).** |
 | postfix_smtp_node (3) / postfix_smtp_base | Hiera fixture keys on the master; legacy facts in templates; extra_files certs; second node for relay. | Hiera fixture + legacy-facts rule + PKI + second node | `postfix check`; `swaks` relays via the base server with SASL; message delivered to a fixture mailbox |
 | user_base and the user* family (passwd layer) | Code clean (`fqdn_rand_string`, ecryptfs). Fixture `p8testuser` must be created by user_base first (2026-10-05 entry). Drift: user_kde_lock_screen, user_desktop, user_desktop_sudoer (param renames) must be synced in order. | Baseline-sync order + plan fixes | `getent passwd p8testuser`; `su - p8testuser -c true` with the fixture password; `sudo -l -U p8testuser`; SSH key login |
-| node_base_desktop / node_base_domain_desktop (0) | Unused in production (B.3). Syncing node_base_desktop requires the 3 missing classes. | CTO decision to retire or keep | — |
-| nginx_proxy_smtp_auth_ppa (0) | PPA publishes focal only; template hardcodes kinetic/20.04; the feature is stock nginx since 1.19. Unused. | CTO decision to retire | — |
+| node_base_desktop / node_base_domain_desktop (0) | Unused in production (B.3). Syncing node_base_desktop requires the 3 missing classes. | migrate (HQ 2026-10-27 ruling 5: no retire list; sorted last) | — |
+| nginx_proxy_smtp_auth_ppa (0) | PPA publishes focal only; template hardcodes kinetic/20.04; the feature is stock nginx since 1.19. Unused. | migrate (HQ 2026-10-27 ruling 5: no retire list; sorted last) | — |
 
 ### E.3 Capabilities grouped, with class counts
 | # | capability | classes it unblocks (Phase 1 / Phase 3) | tier | cost |
@@ -247,8 +247,8 @@ Sources: 11 read-only cluster audits (one agent per cluster, re-verified where s
 | C10 | **RHEL-family node + node selection** | extra_packages_el (P1); RedHat branches of packages_base, node_base, filesystem_yum, filesystem_base, filesystem_sec, ssh_secure, sysmon_base, hello_world_flask — **1 / 9** | Salatiel (VM), advisor (harness) | 4–8 h |
 | C11 | **Samba DC** (plain samba-tool) / **Zentyal VM** (faithful) | openvpn_domain / user_samba — **2 / 2** | Salatiel | 3 h / 6–8 h |
 | C12 | **Behaviour-check framework** (F.5) | all 31 done + every future green — **0 / 87** | advisor-built | 8–12 h + ~0.5 h per class |
-| C13 | **Production information trip** (read-only on the production master) | firewall_addon_hosting (masterless?), ntp module identity, nginx_base params, sysmon check account, user_samba helper scripts, RHEL node count, sysctl/htpasswd/fqdn evidence refresh — **~8** | Salatiel | 1–2 h |
-| C14 | **Retire/park decisions** | nginx_proxy_smtp_auth_ppa, node_base_desktop, node_base_domain_desktop, and the 33 zero-declaration classes reviewed against the passwd layer | CTO | ruling only |
+| C13 | **Production information** (read-only, Salatiel) — settled 2026-10-27 except the ntp/chrony module identity | node_base, node_base_domain_desktop (ntp/chrony). Settled: hosting nodes are agent-mode; RHEL → revive the RHEL9 VM post-sprint; Naemon/Zentyal → synthetic node fixtures (mock-apply) | Salatiel | — |
+| C14 | ~~Retire/park decisions~~ — WITHDRAWN (HQ 2026-10-27 ruling 5: migrate everything; zero-declaration classes sorted last) | — | — | — |
 
 Tally (my count from the tables above, each class counted once): of the 59 not-done classes (56 in the plan + 3 missing), **9 need new infrastructure or production information** before Phase 1 can finish. They are extra_packages_el (RHEL node), user_samba (Zentyal), openvpn_domain (DC), mount_shares_desktop (desktop baseline), openvpn_nm_connection (ruling + NetworkManager), user_sysmon (module + monitoring-server role), openvpn_server and network_vpn (second NIC for a safe bridge, plus rulings), and firewall_addon_hosting (information). **The other 50 are reachable on the existing two VMs** with C1–C6. 5 of those 50 also wait on a Salatiel/Gustavo ruling (C5) and 16 on the lab-master fixture change (C4).
 
@@ -277,7 +277,7 @@ Sources: forgeapi.puppet.com, module CHANGELOG/REFERENCE.md at exact tags, the m
 | rsyslog module | none since 0.9.8 | — | **none** | | the plan's "external rsyslog module" is a false lead |
 | cron_core | built-in on Puppet 5 | vendored 1.3.0 | none | | |
 
-**Cross-cutting finding.** The newest release of 8 of these modules is openvox-only (nginx, letsencrypt, openvpn, rabbitmq, gitlab, saz-ssh ≥14, saz-sudo ≥10, resolv_conf 8). The module roadmap therefore depends on the CTO's runtime decision. If production stays on Perforce Puppet, several pins must be held at older majors, or run on a runtime the module never tested.
+**Cross-cutting finding.** The newest release of 8 of these modules is openvox-only (nginx, letsencrypt, openvpn, rabbitmq, gitlab, saz-ssh ≥14, saz-sudo ≥10, resolv_conf 8). The module roadmap therefore depends on the CTO's runtime decision. If production stays on Perforce Puppet, several pins must be held at older majors, or run on a runtime the module never tested. **Settled 2026-10-27: the runtime is OpenVox (HQ); the openvox-only pins are applied.**
 
 ---
 
@@ -460,24 +460,28 @@ Baseline for "after" numbers (C): ~6.5 min wall per "validated unchanged" class 
 Epic 1 (1.1–1.5), Epic 2 (2.1–2.2), Epic 3.1 + 3.2, Epic 4.1 for the node_base closure and the nginx/ssl stack, plus all Epic 4.2 escalation files.
 **Expected throughput after it** (*estimate*, to be checked against the 3.4 metrics): unchanged-validated classes ~3–4 min wall (from ~6.5); syntax-work classes ~10–15 min with one Codex run each, instead of one run per reactively discovered blocker. That puts the 50 reachable classes at roughly **6–9 hours of loop time (2–3 sessions)**, gated mainly by how fast the C4/C5 rulings come back. The node_base closure (58 servers) and the company-layer nginx stack (37 servers) can be done in the first of those sessions. The improvement can be measured: revert_s, codex_s, tokens/class, Codex runs per green, and reviewer FAIL rate, from the per-attempt JSONL.
 
-### Decisions needed, by owner
-**Salatiel / HQ** (engine, lab, process, budget):
-1. Approve the harness correctness changes (Epic 1) and the generation-model change for unchanged classes (3.3).
-2. Lab-master changes: `extra_files` fileserver mount with throwaway PKI; Hiera fixture keys; pinning the 5 unpinned Puppetfile lines; exporting the Puppetfile and node files into the repo.
-3. puppet_boot_run escalation (option a/b/c in E.0) before the next `/migrate-next`.
-4. Import of `gnome_lock_screen`, `firewall_ipv6_drop_policy_desktop`, `rsyslog_apparmor_exception` (edits beyond a target class).
-5. Module rulings: sysctl (thias 1.0.8 vs augeasproviders), htpasswd (citrin fork vs patch), user_samba stand-in script vs Zentyal.
-6. Reconciliation of done classes found defective (filesystem_yum provenance, sysmon_puppet_cert_status, firewall, rsyslog_base/client, 4 headers).
-7. Which new nodes to fund: an EL9 container (cheap), the RHEL9 VM (subscription), desktop VM, Samba DC.
-8. Phase-3 entry: adopt the behaviour-check format, and re-derive the escalation bar for Phase 3 (CLAUDE.md "Phase scoping").
-
-**CTO (Gustavo)** (production and upstream):
-1. **Runtime:** OpenVox 8 now / OpenVox 9 in 2027, vs Perforce Puppet Core. Perforce's public Puppet 8 binaries stopped at 8.10 (2024-10-22). Puppet Core needs a Forge API key, and its 2026-02-26 licence counts Open Source Puppet nodes as Managed Nodes, with fees beyond 25 nodes (the fleet has 78). The choice also fixes the module majors (E.4).
-2. **Upstream bugs:** `fqdn_rand_uuid` (openvpn_nm_connection); openvpn_server's `Service['openvpn']` and duplicate `openvpn-server@` service; puppet_boot_run's oneshot + `ensure => running`; `nginx_frontend_domain.pp:247` string coercion; `filesystem_sec`'s documented default-group branch that cannot compile; `ClientAliveCountMax 0` semantics in ssh_secure.
-3. **Hosting nodes and 8140:** do hosting servers run agent-mode? (firewall_addon_hosting).
-4. **Unused classes to drop**, from the 33 zero-declaration classes (checked against the passwd layer, which this diagnosis could not read): candidates are nginx_proxy_smtp_auth_ppa, node_base_desktop, node_base_domain_desktop, nginx_frontend_mail, nginx_static, linux_policies_*, openvpn_domain, the firewall base class (production uses firewall_secure), firewall_addon_xrdp, network_static, hello_world_flask*.
-5. **Baseline target:** migrate rsyslog_server to 0.9.8 now or catch up to 0.9.10 first; whether the unmerged Issue #122 MySQL rewrite will be released before mysql_server is migrated.
-6. **Production facts** for the inspection trip: the ntp module identity, the RHEL server count, the Naemon check account, where the Zentyal helper scripts come from, and nginx_base parameters as used by the company layer.
+### Decisions — SETTLED (rewritten 2026-10-27 per HQ "production facts" ruling 8; no CTO tier for this phase)
+Every decision this section used to list is ruled; the rulings are in `.codex_state/DESIGN_DECISIONS.md`
+(2026-10-26 batch, checkpoint 1, and "production facts settled"). Do not re-ask these:
+- Harness correctness (Epic 1), generation model (3.3), lab-master fixtures (extra_files, PKI, Hiera), Puppetfile pins
+  and export, puppet_boot_run, the 3 imports, sysctl (thias 1.0.8) / htpasswd (citrin 1.0.3) / user_samba stand-in,
+  reconciliation of the defective done classes: approved and DONE in the 2026-10-26 sprint.
+- Runtime: **OpenVox**, settled since the project started; the openvox-only module majors are applied.
+- Upstream bugs (fqdn_rand_uuid, openvpn_server duplicate service, puppet_boot_run oneshot, filesystem_sec default
+  branch, the unguarded execs, firewall_addon_hosting 8140): **fixed in infra_populi only**, with the `upstream defect
+  fixed` marker; running list `.codex_state/upstream_defects.md`; no upstream patches, no escalation.
+  `nginx_frontend_domain.pp:247` `Integer()` is a syntax fix (ruling 8). `ClientAliveCountMax 0` is a Phase-3 check.
+- Hosting nodes: **all production nodes are agent-mode**; firewall_addon_hosting gets the OUTPUT accept to the master
+  on 8140 (marker) and is unblocked.
+- Unused classes: **migrate everything** — fleet usage orders the queue (zero-declaration classes last), never filters it.
+- Baseline targets: rsyslog_server migrates from release-0.9.10 (synced); mysql_server migrates from upstream 874f854
+  (Issue #122, merged) with mariadb_server and mysql_db imported from it — per-class baseline exceptions `[from: 874f854]`.
+- RHEL: in scope; reviving the RHEL9 VM (OpenVox, `subscription-manager status`) is the post-sprint infrastructure
+  item with the EL9 container.
+- Sysmon / Samba: synthetic node fixtures, labelled mock-apply (user_sysmon, user_samba).
+Still open (owner Salatiel/HQ): the production ntp + chrony module identities for node_base
+(`escalations/ntp-module-identity.md`); Phase-3 entry and its escalation bar; any item in the latest
+`.codex_state/escalations/sprint-checkpoint-*.md`.
 
 
 ---

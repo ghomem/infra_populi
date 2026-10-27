@@ -19,27 +19,18 @@ Per-step detail and measures: `.codex_state/sprint/2026-10-26-engine-sprint.md`.
 | 1.4 reviewer v2 | 1d69607 | the 6 predicted FAILs fail for the documented reasons |
 | 1.5 sweep | this commit | **8 PASS / 23 FAIL**; list: `escalations/2026-10-27-done-class-reconciliation.md` |
 
-## Decisions needed from HQ
-1. **Sweep result.** Accept 8/31 as the gate-v2-verified count, and the routing in the reconciliation list:
-   A (3, records only) and B (13, restore baseline comments/layout keeping only syntax translations) as
-   advisor tier; C (4) and D (3) through the normal loop after the sprint (ruling 8). rsyslog_client (57
-   servers, missing `forward_auth_log`) is the highest-impact item.
-2. **Unguarded execs at the baseline** (pregate, confirmed in the baseline text): `user_base`
-   (`${ecryptdir}/wrapped-passphrase`), `user_lock`, `linux_policies_user`, `mysql_server`. Gate v2 holds
-   them RED by design (run 2 re-executes). user_base is the required base that creates `p8testuser` for
-   the user* defines, so the whole user family is blocked behind it. Options: (a) authorize adding the
-   obvious guard as an upstream-defect fix (behaviour-preserving in intent, not in letter); (b) a
-   gate-v2 exemption list with evidence; (c) block them category 2 until upstream fixes.
-3. **puppet_boot_run marker** for its one-line ruled divergence: `[from: release-0.9.10]` would be false;
-   `[reimplemented: ...]` overstates it. Proposal: `Done [from: release-0.9.10; upstream defect fixed: ensure dropped]`.
-4. **Master snapshot.** puppet-lint 4.3.0 was installed in the master's agent ruby (ruling 4 amended) —
-   the master needs a new snapshot; my settings deny master snapshots, so HQ takes it.
-5. **Old node snapshot** P8NODE_BASELINE_GREEN: kept as ruled; delete or keep? (Deletion is HQ's.)
-6. **filesystem_sec default branch** cannot compile on Puppet 8 (`Cannot reassign variable
-   '$restricted_group'`, upstream reassigns a parameter). Upstream-defect ruling for the CTO batch?
-7. **Reviewer agent type.** This session loaded the `reviewer` definition before v2 existed, so the sweep
-   ran a general-purpose agent prompted with reviewer.md's verbatim body. A fresh session uses
-   `subagent_type: reviewer` directly. No action unless HQ prefers otherwise.
+## Decisions — RULED (HQ 2026-10-27; rewritten per the "production facts" ruling 8 so no session re-asks)
+1. Sweep accepted (8 verified); derived "verified (gate v2)" state in status.py; groups A/B advisor-direct (one-off,
+   DONE: 16/16 PASS → 24 verified); C/D/E normal loop, first in the queue: rsyslog_base → rsyslog_client →
+   docker_container → filesystem_yum (→ backup_rsnapshot_pre); firewall and sysmon_puppet_cert_status sink.
+2. Unguarded execs at the baseline: fixed per class with a guard testing the command's post-condition, marker
+   `upstream defect fixed` — fixed in infra_populi only, no escalation (production-facts ruling 2); list in
+   `.codex_state/upstream_defects.md`. mysql_server: 874f854 moves the exec unguarded into mariadb_server.
+3. Marker approved and generalised: `[from: <ref>; upstream defect fixed: <short>]` (+ `; mock-apply: <short>`).
+4. Master snapshot: Salatiel takes it at checkpoint 2.
+5. Old node snapshot P8NODE_BASELINE_GREEN kept through checkpoint 2.
+6. filesystem_sec: fixed locally (applied 929062b, reviewer PASS); no upstream escalation.
+7. Reviewer: a fresh session uses `subagent_type: reviewer` (the sweep used general-purpose agents with reviewer.md).
 
 ## Facts HQ should know
 - Two engine defects were found by the sweep and fixed in place (apt lists frozen by the v2 snapshot;

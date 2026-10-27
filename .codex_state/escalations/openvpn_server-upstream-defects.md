@@ -1,6 +1,8 @@
-# openvpn_server (+ network_vpn): upstream defects that no module version fixes — ruling needed (CTO batch)
+# openvpn_server (+ network_vpn): upstream defects that no module version fixes — RULED: fixed locally (option A)
 
-Status: ESCALATED 2026-10-27 (sprint 4.2). Class content = release-0.9.10 (no drift). Production use: 3 node statements.
+Status: RULED 2026-10-27 — HQ production-facts ruling 2 (upstream defects fixed in infra_populi with the marker,
+no escalation) → option A; entry `openvpn_server` in `.codex_state/upstream_defects.md`. Module: puppet-openvpn 12.0.0
+(runtime is OpenVox). Originally escalated in sprint 4.2. Class content = release-0.9.10 (no drift). Production use: 3 node statements.
 Module now in the lab: puppet-openvpn 11.0.1 (declares puppet AND openvox >=7 <9; sprint 4.1b). Params fixture
 (untracked) uses RFC 5737 addresses and p8test interface names, so compile-only never touches a real NIC.
 
@@ -26,5 +28,5 @@ Module now in the lab: puppet-openvpn 11.0.1 (declares puppet AND openvox >=7 <9
   `Service["openvpn-server@puppet_infrastructure"]`; then investigate defect 2 at module level before migrating.
 - B: set the module's `manage_service => false` and keep our service resource (behaviour: the module stops managing
   the unit; ours does). Needs a check that nothing else in the module expects its service.
-- C: keep blocked until upstream fixes the class (it cannot compile on Puppet 8 / this module major on systemd).
+- ~~C: keep blocked until upstream fixes the class~~ — withdrawn: no upstream patches, no waiting on upstream (ruling 2).
 Behaviour verification (Phase 3) additionally needs the second NIC (exists: vboxnet0/enp0s8) and a client VM.

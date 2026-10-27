@@ -1,7 +1,7 @@
-# puppet_boot_run — upstream defect fixed locally (ruling 8, batched for the CTO)
+# puppet_boot_run — upstream defect fixed locally (ruling 8)
 
 Status: RULED (provisional ruling 8 applied: drop `ensure => running`, keep `enable => true`).
-No intent conflict found (below), so no HQ stop. Recorded for the CTO batch as "upstream defect fixed
+No intent conflict found (below), so no HQ stop. Recorded as "upstream defect fixed
 locally". The class itself migrates later through the normal loop (it is drifted: baseline-sync first).
 
 ## Baseline content (release-0.9.10 = upstream cf477c6; identical at release-0.9.8)
@@ -81,6 +81,6 @@ oneshot unit (ruling 8, escalations/puppet_boot_run.md)". Marker: this is a deli
 tracker line needs HQ's marker choice at checkpoint 1 (`[from: release-0.9.10]` would be false
 provenance by the 2026-07-01 rules; `[reimplemented: ...]` overstates a one-line fix).
 
-## For the CTO (batch)
+## Record (HQ 2026-10-27 production-facts ruling 2: fixed in infra_populi only; no upstream patch, no escalation)
 Upstream fix suggestion: drop `ensure => running` from `puppet_boot_run` (or add `RemainAfterExit=yes`
 if a "has it run since boot" signal is wanted). Affects every node with `$run_puppet_on_boot` (node_base).

@@ -12,4 +12,5 @@ dependency with an interface the local dependency does not have — hazard 8's e
 - A (recommended): sync node_base_desktop after rsyslog_client's D-group re-migration (already first in the
   post-sprint queue: rsyslog_base → rsyslog_client → docker_container → filesystem_yum), as an ordinary
   `P8: baseline-sync` commit; no ruling beyond acknowledging the order.
-- B: CTO retires node_base_desktop and node_base_domain_desktop (0 production declarations; diagnosis C14).
+- ~~B: retire node_base_desktop / node_base_domain_desktop~~ — withdrawn (HQ 2026-10-27 ruling 5: migrate everything;
+  zero-declaration classes stay in the queue, sorted last). Option A is the path.

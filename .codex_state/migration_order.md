@@ -1,6 +1,6 @@
 # Puppet Class Migration Order
 
-Generated: 2026-10-27 06:45:54 UTC
+Generated: 2026-10-27 06:47:27 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
@@ -10,7 +10,7 @@ Status summary: 31 done / 1 owner_validated / 3 blocked / 0 gated / 0 needs veri
 
 Next class: `puppet_infrastructure::rsyslog_base (re-migration)`
 
-Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — dependencies first, then `prod` (production node statements from `.codex_state/diagnosis/fleet_class_usage.md`, composites propagated) descending, then cx/dep/p8 — then re-migrations marked `sink`. prod 0 = no production declaration: those sink until the CTO rules.
+Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — dependencies first, then `prod` (production node statements from `.codex_state/diagnosis/fleet_class_usage.md`, composites propagated) descending, then cx/dep/p8 — then re-migrations marked `sink`. prod 0 = no production declaration: they stay in the queue, last (HQ 2026-10-27: migrate everything).
 
 ## RE-MIGRATION QUEUE (gate-v1 done, reconciliation pending; HQ ck1 order, `.codex_state/rules/remigration_order.txt`)
 
@@ -140,7 +140,7 @@ Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — de
 | 56 | `puppet_infrastructure::nginx_frontend_mail` | 0 | 8 | 7 | 6 | no | ssl_nginx_domain,nginx_frontend_domain |
 | 57 | `puppet_infrastructure::node_base_desktop` | 0 | 8 | 10 | 5 | no | packages_base,ssh_secure,firewall_secure,firewall_ipv6_drop_policy,filesystem_base_desktop,filesystem_apt,rsyslog_client,user_kde_lock_screen |
 
-## UPSTREAM DEFECTS FIXED LOCALLY (tracker markers, for the CTO batch)
+## UPSTREAM DEFECTS FIXED LOCALLY (tracker markers; list: .codex_state/upstream_defects.md)
 
 - `puppet_infrastructure::filesystem_sec` [from: release-0.9.10] — default group assigned to a new variable (no parameter reassignment)
 

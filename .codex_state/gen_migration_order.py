@@ -568,7 +568,7 @@ def render(
         "Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — dependencies first, then "
         "`prod` (production node statements from `.codex_state/diagnosis/fleet_class_usage.md`, composites "
         "propagated) descending, then cx/dep/p8 — then re-migrations marked `sink`. prod 0 = no production "
-        "declaration: those sink until the CTO rules.",
+        "declaration: they stay in the queue, last (HQ 2026-10-27: migrate everything).",
         "",
         "## RE-MIGRATION QUEUE (gate-v1 done, reconciliation pending; HQ ck1 order, `.codex_state/rules/remigration_order.txt`)",
         "",
@@ -641,7 +641,7 @@ def render(
 
     defects = sorted((name, entry) for name, entry in (tracker or {}).items() if entry.defect_fixed)
     if defects:
-        lines.extend(["", "## UPSTREAM DEFECTS FIXED LOCALLY (tracker markers, for the CTO batch)", ""])
+        lines.extend(["", "## UPSTREAM DEFECTS FIXED LOCALLY (tracker markers; list: .codex_state/upstream_defects.md)", ""])
         lines.extend(
             f"- `{PREFIX}{name}` [from: {entry.from_ref}] — {entry.defect_fixed}" for name, entry in defects
         )

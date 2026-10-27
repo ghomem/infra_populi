@@ -21,7 +21,10 @@ The baseline is the commit, not the branch: `.codex_state/baseline.env` pins
 `.codex_state/tools/baseline.py`. This matches the confirmed ruling, the 90-class universe and the
 "mysql stays out" clause. The local upstream ref was NOT fast-forwarded.
 
-## Questions for HQ / CTO
+## Questions — ANSWERED (HQ 2026-10-27)
+Baseline cf477c6 confirmed (2026-10-26 amendment). Issue #122 (874f854) is merged and is the code that will run:
+mysql_server migrates from 874f854, mariadb_server and mysql_db are imported from it, each `[from: 874f854]` as a
+per-class baseline exception (production-facts ruling 4). Original questions, for the record:
 1. Confirm cf477c6 as the baseline (recommended), or name another commit.
 2. Is the Issue #122 merge into the release-0.9.10 branch a "release" in the sense of CTO decision 5?
    If yes, the bump is a ruling naming the new commit; mysql_server then changes content and two
