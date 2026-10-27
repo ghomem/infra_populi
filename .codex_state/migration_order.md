@@ -1,6 +1,6 @@
 # Puppet Class Migration Order
 
-Generated: 2026-10-27 08:05:43 UTC
+Generated: 2026-10-27 08:11:54 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
@@ -16,8 +16,7 @@ Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — de
 
 | # | class | when |
 |---:|---|---|
-| 1 | `puppet_infrastructure::firewall` | sink |
-| 2 | `puppet_infrastructure::sysmon_puppet_cert_status` | sink |
+| 1 | `puppet_infrastructure::sysmon_puppet_cert_status` | sink |
 
 ## DONE (git-derived)
 
