@@ -1,4 +1,4 @@
-# Puppet 8 migration: release-0.9.10 manifest; puppetlabs-firewall 8 attribute renames only (action -> jump).
+# Puppet 8 migration: release-0.9.10 manifest; firewall type attribute renames for Puppet 8 only (action -> jump).
 # Module dependency: puppetlabs-firewall 8.3.0.
 ### Purpose ########
 # This class provides necessary firewall configurations for caching nameservers
