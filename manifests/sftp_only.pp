@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependency: saz-ssh 13.1.0.
 ### Purpose ########
 # This defined resource configures ssh-server to restrict the given user to only use SFTP,
 # only in the given folder, and only from the given IP(s).
