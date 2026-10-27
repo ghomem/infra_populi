@@ -1,0 +1,91 @@
+{
+ "schema": 1,
+ "class": "nginx_default_removal",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T05:04:25Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "ab675a0302f9",
+ "migrate_subject": "P8: migrate puppet_infrastructure::nginx_default_removal",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit ab675a0302f9; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/nginx_default_removal.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `nginx_default_removal Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "needs-justification",
+   "detail": "GREEN, but run 1 after a revert applied 0 catalog events"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added lines '# Puppet 8 migration: release-0.9.10 manifest validated unchanged.' / '# Module dependencies: none.'); File['/etc/nginx/sites-enabled/default'] ensure=>absent and the baseline comment are byte-identical to cf477c6",
+   "DIFF B (re-migration): drops the earlier non-baseline '## Class:' doc block and restores the baseline comment '# This removes the default config file from the package'; final content == baseline + header"
+  ]
+ },
+ "justify_run1": "P8NODE_BASELINE_GREEN_v2 has no nginx: dpkg-query finds no nginx/nginx-common and /etc/nginx does not exist on puppet8node (checked read-only via ssh after the reviewer run; the catalog's only resource is ensure=>absent, which cannot create it), so File[/etc/nginx/sites-enabled/default] ensure=>absent is already satisfied and run 1 correctly applied 0 events",
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependencies: none."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 0,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::nginx_default_removal: 1 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 22.976,
+   "master_check_s": 0.676,
+   "poweroff_s": 0.679,
+   "restore_s": 0.232,
+   "boot_to_ssh_s": 11.782,
+   "apt_update_s": 8.455,
+   "verify_s": 1.152
+  },
+  "log": ".codex_state/logs/reviews/nginx_default_removal.20261027T050323Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
