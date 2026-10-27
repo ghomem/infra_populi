@@ -735,3 +735,21 @@ rsyslog_apparmor_exception, each with an advisor-scored plan row (rsyslog_apparm
 required_base=rsyslog_base for Service['rsyslog']) and a pending tracker line → 90 classes. Composite
 meaningful_desktop now compiles its full 7-class direct closure (same expected first error, now from
 firewall_ipv6_drop_policy_desktop.pp:13).
+
+## 2026-10-27 — Step 4.1d: lab-master fixture state (ruling 6) built by master_fixtures.sh
+`.codex_state/tools/master_fixtures.sh all` (idempotent; second run = OK x4) on puppet8master:
+- extra_files: `[extra_files]` mount in /etc/puppetlabs/puppet/fileserver.conf → /etc/puppetlabs/code/
+  p8test_extra_files (root:puppet 0750); puppetserver restarted once (mount change only). The default auth.conf
+  already allows /puppet/v3/file_content to every node.
+- pki: a self-signed "p8test throwaway CA" (O = "p8test lab fixture (THROWAWAY, not a real CA)") and one server
+  cert CN p8test.invalid (SANs *.p8test.invalid, star.example.com), 10 years; 2048-bit DH; laid out under every
+  name the manifests source (ssl/<prefix>.{crt,key,pem,intermediate.crt}, -key.pem, -chain.pem for prefixes
+  p8test and star.example.com — the lab Hiera's example hashman::sslprefix; ssl/db/*; openvpn/keys/*). 19 files,
+  keys 0640 root:puppet. The CA key never leaves the temp dir and is discarded. Marker records the cert sha256.
+- hiera: data/p8test_fixtures.yaml (sysmon::basedir/address/backdir/backdays,
+  puppet8node::postfix_smtp_node::relayuser/relaypass — fake values) as a hierarchy level AFTER Common, so it
+  can never override an existing lab key. hiera.yaml was rewritten by Ruby YAML (backup kept beside it).
+Verified on the real lab: sysmon_backup COMPILE OK (was: lookup of sysmon::basedir failed); engine fixture
+`extra_files_probe` (revert-first) fetched puppet:///extra_files/ssl/p8test.crt to the node and went GREEN.
+Nothing is production-derived. The master now differs from its last snapshot (puppet-lint gem, 4 Forge modules,
+these fixtures): HQ takes the new master snapshot at checkpoint 2 (ck1 ruling 4).
