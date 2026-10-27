@@ -62,9 +62,15 @@ FOR EACH CLASS:
 8. `record_green.sh` already ran the standing composite compiles (step 2.2), regenerated the order file and
    pushed. Its exit 4 means a composite no longer matches `compile/composites.txt`: a regression (investigate
    before the next class) or a fix (update composites.txt in its own commit, then re-run record_green.sh).
-   After a block, regenerate the order file yourself, commit if it changed, push. Move to the next class.
+   After a block, regenerate the order file yourself, commit if it changed, push.
+9. METRICS (step 3.4): the tools logged events while you worked (path, revert, harness, codex, record,
+   review). Close the attempt: `python3 .codex_state/tools/metrics.py close <class> --outcome
+   PASS|FAIL|BLOCKED|FAILED|ESCALATED [--interventions N] [--note "<why a 2nd Codex run>"]` — it appends one
+   record to `.codex_state/runs/metrics.jsonl` and commits `P8: record metrics after <class>` (worktree must
+   be clean otherwise). Then move to the next class.
 
-END OF RUN: revert the node to baseline. Confirm `git status` clean and pushed. Print a summary table:
+END OF RUN: `python3 .codex_state/tools/metrics.py summary` (medians/rates per path) goes in the summary.
+Revert the node to baseline. Confirm `git status` clean and pushed. Print a summary table:
 class | outcome (PASS/BLOCKED cat N/ESCALATED) | commit | one-line note. List every escalation file.
 If any design decision was made (a new rule, a corrected diagnosis), append a dated entry to
 DESIGN_DECISIONS.md before the final push.

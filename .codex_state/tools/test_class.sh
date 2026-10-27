@@ -36,6 +36,7 @@ FIXTURE_DIR="${LOCAL_REPO}/.codex_state/tools/tests/fixtures"
 REVERT_TOOL="${LOCAL_REPO}/.codex_state/tools/revert_node.sh"
 COMPILE_DIR="${LOCAL_REPO}/.codex_state/tools/compile"
 RECORDS_TOOL="${LOCAL_REPO}/.codex_state/tools/records.py"
+METRICS_TOOL="${LOCAL_REPO}/.codex_state/tools/metrics.py"
 
 # GREEN v2 (ruling 2 / step 1.1): every agent run has an outer timeout; run 2 must exit 0.
 AGENT_TIMEOUT_SECONDS="${AGENT_TIMEOUT_SECONDS:-600}"
@@ -45,7 +46,7 @@ RUN2_FORBIDDEN_RE="Notice: .*changed|Notice: .*created|Notice: .*defined content
 # ----------------------------
 # Helpers
 # ----------------------------
-die() { echo "ERROR: $*" >&2; exit 1; }
+die() { HARNESS_REASON="$*"; echo "ERROR: $*" >&2; exit 1; }
 need_cmd() { command -v "$1" >/dev/null 2>&1 || die "Missing command: $1"; }
 
 json_params_path_for_class() {
@@ -443,6 +444,37 @@ compile_on_master() {
   return "$rc"
 }
 
+# ----------------------------
+# Step 3.4: per-attempt metrics events (best effort: a metrics failure never changes the verdict)
+# ----------------------------
+HARNESS_REASON=""
+HARNESS_RUN1_EVENTS=""
+HARNESS_REVERT_FIRST=0
+declare -a HARNESS_CLASSES=() HARNESS_AGENT_RUNS=()
+
+agent_run_summary() {
+  local summary
+  summary="$(timeout 30 ssh "$NODE_HOST" "sudo -n cat /opt/puppetlabs/puppet/public/last_run_summary.yaml; sudo -n grep -m1 '^transaction_uuid:' /opt/puppetlabs/puppet/cache/state/last_run_report.yaml" 2>/dev/null |
+    python3 "$METRICS_TOOL" agent-summary 2>/dev/null)" && HARNESS_AGENT_RUNS+=("$summary") || true
+}
+
+harness_metrics_event() {
+  local rc="$1" cls json
+  [[ ${#HARNESS_CLASSES[@]} -gt 0 && -z "${FIXTURE_NAME:-}" ]] || return 0
+  json="$(python3 - "$rc" "$HARNESS_REVERT_FIRST" "${HARNESS_RUN1_EVENTS:-null}" "${HARNESS_START/,/.}" "${EPOCHREALTIME/,/.}" \
+      "$HARNESS_REASON" "${HARNESS_AGENT_RUNS[@]}" <<'PY' 2>/dev/null
+import json, sys
+rc, rf, r1, t0, t1, reason, *runs = sys.argv[1:]
+print(json.dumps({"rc": int(rc), "revert_first": rf == "1", "run1_events": None if r1 in ("", "null") else int(r1),
+                  "duration_s": round(float(t1) - float(t0), 1), "reason": reason or None,
+                  "agent_runs": [json.loads(r) for r in runs]}))
+PY
+)" || return 0
+  for cls in "${HARNESS_CLASSES[@]}"; do
+    python3 "$METRICS_TOOL" event "$cls" harness "$json" >/dev/null 2>&1 || true
+  done
+}
+
 render_fixture_block() {
   local name="$1" path
   [[ "$name" =~ ^[a-z0-9_]+$ ]] || die "Invalid fixture name: '${name}'"
@@ -519,12 +551,22 @@ main() {
 
   local classes=("$@")
   [[ -n "${FIXTURE_NAME:-}" ]] || guard_owner_validated_targets "${classes[@]}"
+  HARNESS_START="${EPOCHREALTIME}"
+  HARNESS_REVERT_FIRST="$revert_first"
+  HARNESS_CLASSES=("${classes[@]}")
+  trap 'harness_metrics_event $?' EXIT
 
   mkdir -p "$PARAMS_DIR"
 
   if [[ $revert_first -eq 1 ]]; then
     echo "==> Reverting the node to its baseline first"
-    "$REVERT_TOOL" || die "Node revert failed; not running the class on an unknown node state."
+    local revert_out revert_json cls
+    revert_out="$("$REVERT_TOOL")" || { echo "$revert_out"; die "Node revert failed; not running the class on an unknown node state."; }
+    echo "$revert_out"
+    revert_json="$(sed -n 's/^REVERT_METRICS //p' <<<"$revert_out" | tail -1)"
+    if [[ -n "$revert_json" && -z "${FIXTURE_NAME:-}" ]]; then
+      for cls in "${classes[@]}"; do python3 "$METRICS_TOOL" event "$cls" revert "$revert_json" >/dev/null 2>&1 || true; done
+    fi
   fi
 
   deploy_repo_to_master
@@ -535,10 +577,12 @@ main() {
 
   out1="$(run_agent)" && rc1=0 || rc1=$?
   echo "$out1"
+  agent_run_summary
   [[ $rc1 -eq 0 || $rc1 -eq 2 ]] || die_agent_rc 1 "$rc1"
   # Catalog events only: pluginsync writes /File[/opt/puppetlabs/puppet/cache/...] outside Stage[main].
   run1_events="$(grep -E 'Notice: /Stage\[main\]/' <<<"$out1" | grep -cE "$RUN2_FORBIDDEN_RE" || true)"
   run1_plugins="$(grep -cE 'Notice: /File\[/opt/puppetlabs/puppet/cache/' <<<"$out1" || true)"
+  HARNESS_RUN1_EVENTS="$run1_events"
   echo "RUN1_EVENTS: ${run1_events} catalog, ${run1_plugins} pluginsync (rc ${rc1}; node $([[ $revert_first -eq 1 ]] && echo "reverted first" || echo "NOT reverted first"))"
   if [[ $revert_first -eq 1 && $run1_events -eq 0 ]]; then
     echo "WARNING: run 1 on a freshly reverted node applied nothing; the class may be a no-op here." >&2
@@ -546,6 +590,7 @@ main() {
 
   out2="$(run_agent)" && rc2=0 || rc2=$?
   echo "$out2"
+  agent_run_summary
   [[ $rc2 -eq 0 || $rc2 -eq 2 ]] || die_agent_rc 2 "$rc2"
 
   offending="$(grep -E "$RUN2_FORBIDDEN_RE" <<<"$out2" || true)"

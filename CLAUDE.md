@@ -37,6 +37,8 @@ Salatiel decides infrastructure and strategy. Rationale for every rule below is 
   (`.codex_state/logs/green/<class>.json`) matches the code, the header is there, the worktree holds only the
   class's files, and the composites match; then tracker + commit + order regeneration + push. Codex prompt
   facts: `.codex_state/tools/orientation.py <class>`. Path decision: `.codex_state/tools/classify_path.py <class>`.
+  Per-attempt metrics (tracked, append-only, own commit `P8: record metrics after <class>`): tools log events;
+  `.codex_state/tools/metrics.py close <class> --outcome ...` folds them into `.codex_state/runs/metrics.jsonl`.
   Engine pre-commit hook: `.git/hooks/pre-commit -> ../../.codex_state/tools/pre-commit` (mandatory;
   per-clone, install with `ln -s ../../.codex_state/tools/pre-commit .git/hooks/pre-commit`). Lab-master
   fixture state: `.codex_state/tools/master_fixtures.sh` (idempotent). Tool tests:

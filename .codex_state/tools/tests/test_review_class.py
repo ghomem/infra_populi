@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+from pathlib import Path
 import sys
 
 import pytest
@@ -101,6 +102,11 @@ def test_verdict_persists_json_and_prints_report(tmp_path, monkeypatch, capsys):
     record = json.loads(saved.read_text())
     assert record["verdict"] == "FAIL" and record["faithful"]["evidence"] == ["DIFF A: header comment only"]
     assert "author" not in json.dumps(record).lower()
+    import os
+    events = Path(os.environ["P8_METRICS_DIR"]) / "events.jsonl"
+    (event,) = [json.loads(l) for l in events.read_text().splitlines()]
+    assert event["class"] == "x" and event["kind"] == "review"
+    assert event["data"]["verdict"] == "FAIL" and event["data"]["failed_checks"] == ["records"]
 
 
 def test_verdict_requires_judgement_and_evidence(tmp_path, monkeypatch):

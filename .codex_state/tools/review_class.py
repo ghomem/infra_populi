@@ -423,7 +423,9 @@ def decide(checks: dict, faithful: str, justify_run1: str | None) -> str:
 
 def cmd_check(argv: list[str]) -> int:
     cls = argv[0]
+    started = dt.datetime.now(dt.timezone.utc)
     data = run_checks(cls, harness="--no-harness" not in argv, fresh="--fresh" in argv)
+    data["check_s"] = round((dt.datetime.now(dt.timezone.utc) - started).total_seconds(), 1)
     data["checked_at"] = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     DRAFTS.mkdir(parents=True, exist_ok=True)
     draft = DRAFTS / f"{cls}.{data['checked_at'].replace(':', '').replace('-', '')}.draft.json"
@@ -486,6 +488,11 @@ def cmd_verdict(argv: list[str]) -> int:
     for e in evidence:
         print(f"  faithful: {e}"[:900])
     print(f"persisted: {path.relative_to(REPO)}")
+    # step 3.4: metrics event (the reviewer never reads .codex_state/runs/ or the event log)
+    failed = [n for n in CHECKS if checks.get(n, {}).get("status") != "ok"] + ([] if faithful == "ok" else ["faithful"])
+    subprocess.run([sys.executable, str(TOOLS / "metrics.py"), "event", cls, "review",
+                    json.dumps({"verdict": verdict, "failed_checks": failed, "check_s": draft.get("check_s"),
+                                "file": str(path.relative_to(REPO))})], capture_output=True)
     return 0
 
 

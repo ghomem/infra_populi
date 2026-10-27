@@ -17,6 +17,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import sys
@@ -80,6 +81,9 @@ def main(argv: list[str]) -> int:
         return 2
     cls = argv[0].removeprefix("puppet_infrastructure::")
     code, path, reasons = decide(cls)
+    if code != 2:  # step 3.4: metrics event
+        subprocess.run([sys.executable, str(TOOLS / "metrics.py"), "event", cls, "path",
+                        json.dumps({"path": path, "reasons": reasons[:5]})], capture_output=True)
     print(f"PATH {cls}: {path}")
     for reason in reasons:
         print(f"  - {reason}")

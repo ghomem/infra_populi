@@ -162,3 +162,30 @@ def test_resource_api_creation_on_run2_is_red(lab):
     agent_runs(lab, {"rc": 2, "stdout": RESOURCE_API_CREATE + APPLIED}, {"rc": 0, "stdout": RESOURCE_API_CREATE + APPLIED})
     proc = harness(lab)
     assert proc.returncode == 1 and "not idempotent" in proc.stderr
+
+
+def test_harness_writes_revert_and_harness_metrics_events_on_green_and_red(lab):
+    import json
+    agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 0, "stdout": APPLIED})
+    lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "stdout":
+        "COVERAGE puppet_infrastructure::puppet_backup: 2 concrete resources (+1 defined-type instances)\n"})
+    lab.world["ssh"].insert(0, {"match": "last_run_summary.yaml", "stdout":
+        "resources:\n  changed: 9\n  total: 26\ntime:\n  total: 10.4\ntransaction_uuid: u-1\n"})
+    assert lab.run([SCRIPT, "--revert-first", "puppet_infrastructure::puppet_backup"]).returncode == 0
+    events = [json.loads(l) for l in (lab.root / "metrics" / "events.jsonl").read_text().splitlines()]
+    assert [e["kind"] for e in events] == ["revert", "harness"]
+    assert events[0]["data"]["snapshot"] == "P8NODE_BASELINE_GREEN_v2"
+    h = events[1]["data"]
+    assert h["rc"] == 0 and h["revert_first"] is True and h["run1_events"] == 0 and h["reason"] is None
+    assert [r["transaction_uuid"] for r in h["agent_runs"]] == ["u-1", "u-1"] and h["agent_runs"][0]["res_changed"] == 9
+
+    agent_runs(lab, {"rc": 4, "stdout": "Error: boom\n"})
+    assert lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"]).returncode == 1
+    last = json.loads((lab.root / "metrics" / "events.jsonl").read_text().splitlines()[-1])
+    assert last["kind"] == "harness" and last["data"]["rc"] == 1 and "Agent run 1 failed" in last["data"]["reason"]
+
+
+def test_fixture_runs_write_no_metrics(lab):
+    agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 0, "stdout": APPLIED})
+    assert harness(lab).returncode == 0
+    assert not (lab.root / "metrics" / "events.jsonl").exists()

@@ -59,3 +59,15 @@ def test_prompt_carries_the_orientation_packet_and_the_record_recipe(lab):
     assert "plan: resource_type=define title=sysmon_fs_health" in prompt
     assert "record_green.sh puppet_infrastructure::sysmon_fs_health" in prompt
     assert "supersedes runbook section 2 steps 5-7" in prompt
+
+
+def test_wrapper_writes_revert_and_codex_metrics_events(lab):
+    import json
+    stub_codex(lab, "exit 0")
+    assert lab.run([WRAPPER, "puppet_infrastructure::dns_client"]).returncode == 0
+    events = [json.loads(l) for l in (lab.root / "metrics" / "events.jsonl").read_text().splitlines()]
+    kinds = [e["kind"] for e in events]
+    assert kinds[0] == "revert" and kinds[-1] == "codex"
+    codex = events[-1]["data"]
+    assert codex["rc"] == 0 and codex["timeout"] is False and isinstance(codex["codex_s"], float)
+    assert events[-1]["class"] == "dns_client"

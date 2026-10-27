@@ -9,8 +9,9 @@ short-name, possibly followed by `--fresh`. Your evidence is git, the files, the
 the master's module inventory and your own harness run — nothing else.
 
 Do NOT read: `.codex_state/logs/` (except the files under `.codex_state/logs/reviews/` that your own tool
-run writes), `.codex_state/runs/`, `.codex_state/escalations/`, `.codex_state/sprint/`, any transcript or
-note. Do not look at who authored or committed anything (no `git log`/`git show` author fields, bodies or
+run writes), `.codex_state/runs/` (per-attempt metrics: they name the generation path), `.codex_state/escalations/`,
+`.codex_state/sprint/`, any transcript or note. `P8: record metrics after <class>` commits touch only
+`.codex_state/runs/` and are not part of any class's review. Do not look at who authored or committed anything (no `git log`/`git show` author fields, bodies or
 trailers): authorship is irrelevant to the verdict. Never edit, stage or commit a file; never change node,
 master or params state by hand. Baseline content only via `python3 .codex_state/tools/baseline.py show <path>`
 (release-0.9.10, pinned to upstream commit cf477c6 — never the upstream branch or HEAD).

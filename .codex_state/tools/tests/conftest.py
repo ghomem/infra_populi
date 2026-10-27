@@ -127,3 +127,11 @@ def lab(tmp_path):
 
 
 sys.dont_write_bytecode = True
+
+
+@pytest.fixture(autouse=True)
+def isolated_logs(tmp_path, monkeypatch):
+    """No test, in-process or subprocess, writes GREEN stamps or metrics events into the real repo's logs."""
+    monkeypatch.setenv("P8_GREEN_DIR", str(tmp_path / "iso_green"))
+    monkeypatch.setenv("P8_METRICS_DIR", str(tmp_path / "iso_metrics"))
+    monkeypatch.setenv("P8_RUNS_FILE", str(tmp_path / "iso_runs" / "metrics.jsonl"))

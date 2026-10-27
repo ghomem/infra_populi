@@ -31,13 +31,20 @@ BASELINE_LABEL="$(python3 .codex_state/tools/baseline.py label)"
 # Outer timeout (ruling 2 / step 1.1). Longest observed run: 985 s; a hang was 47 min.
 CODEX_TIMEOUT_SECONDS="${CODEX_TIMEOUT_SECONDS:-1800}"
 
+METRICS=(python3 .codex_state/tools/metrics.py)
+
 # Revert first (step 1.2): Codex's first harness run must start from the clean baseline.
-.codex_state/tools/revert_node.sh || { echo "REVERT_FAILED: node not restored; Codex not started" >&2; exit 3; }
+revert_out="$(.codex_state/tools/revert_node.sh)" || { echo "$revert_out"; echo "REVERT_FAILED: node not restored; Codex not started" >&2; exit 3; }
+echo "$revert_out"
+# Step 3.4: per-attempt metrics events (untracked until `metrics.py close`).
+revert_json="$(sed -n 's/^REVERT_METRICS //p' <<<"$revert_out" | tail -1)"
+[[ -z "$revert_json" ]] || "${METRICS[@]}" event "$CLASS" revert "$revert_json" || true
 
 # Orientation packet (step 3.2): facts gathered now, so Codex does not rediscover them.
 PACKET="$(python3 .codex_state/tools/orientation.py "$CLASS" 2>&1)" || PACKET="ORIENTATION PACKET unavailable: ${PACKET}"
 
 rc=0
+codex_start="${EPOCHREALTIME}"
 timeout --kill-after=30 "$CODEX_TIMEOUT_SECONDS" codex exec \
   -c 'sandbox_mode="danger-full-access"' \
   -c 'approval_policy="never"' \
@@ -56,4 +63,7 @@ hand-write tracker lines or commit class files yourself. A deliberate divergence
 if [[ $rc -eq 124 || $rc -eq 137 ]]; then
   echo "CODEX_TIMEOUT: codex exec killed after ${CODEX_TIMEOUT_SECONDS}s" >&2
 fi
+codex_s="$(python3 -c 'import sys; print(round(float(sys.argv[2]) - float(sys.argv[1]), 1))' "${codex_start/,/.}" "${EPOCHREALTIME/,/.}")"
+usage="$("${METRICS[@]}" codex-usage "${codex_start/,/.}" 2>/dev/null || echo '{}')"
+"${METRICS[@]}" event "$CLASS" codex "{\"rc\": ${rc}, \"codex_s\": ${codex_s}, \"timeout\": $([[ $rc -eq 124 || $rc -eq 137 ]] && echo true || echo false), \"usage\": ${usage}}" || true
 exit "$rc"

@@ -223,3 +223,21 @@ def test_header_naming_a_module_without_a_version_is_refused(clone):
                     "# Module dependency: puppetlabs-firewall 8.3.0.\n" + path.read_text())
     proc = clone.run("--no-push")
     assert proc.returncode == 1 and "puppetlabs-firewall without a version" in proc.stderr
+
+
+def test_record_event_and_metrics_close_commit(clone, lab):
+    import json
+    clone.stamp()
+    clone.add_header()
+    assert clone.run("--no-push").returncode == 0
+    events = [json.loads(l) for l in (lab.root / "metrics" / "events.jsonl").read_text().splitlines()]
+    assert events[-1]["kind"] == "record" and len(events[-1]["data"]["commits"]) == 2
+    runs = clone.root / ".codex_state/runs/metrics.jsonl"
+    proc = lab.run(["python3", str(clone.root / ".codex_state/tools/metrics.py"), "close", CLS, "--outcome", "GREEN",
+                    "--path", "unchanged-validated"], env={"P8_RUNS_FILE": str(runs)}, cwd=clone.root)
+    assert proc.returncode == 0, proc.stderr
+    assert git(clone.root, "log", "--format=%s", "-1").strip() == f"P8: record metrics after {CLS}"
+    assert git(clone.root, "show", "--name-only", "--format=", "HEAD").split() == [".codex_state/runs/metrics.jsonl"]
+    record = json.loads(runs.read_text().splitlines()[-1])
+    assert record["commits"] and record["path"] == "unchanged-validated"
+    assert git(clone.bare, "rev-parse", "main") == git(clone.root, "rev-parse", "HEAD")

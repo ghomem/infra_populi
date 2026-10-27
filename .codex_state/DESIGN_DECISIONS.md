@@ -668,3 +668,19 @@ One reviewer FAIL on the way (firewall_addon_caching_nameserver header named `pu
 version) → fixed via `record_green.sh --fix`, re-reviewed PASS; record_green's header-check now refuses it (b15d041).
 dns_client's params fixture was reordered (8.8.8.8, 1.1.1.1) so run 1 is not a no-op; nginx_default_removal's
 empty run 1 was justified by the reviewer (nginx absent on the baseline node).
+
+## 2026-10-27 — Step 3.4: per-attempt metrics (ruling 5 / F.9)
+Events, not hand-written records: every tool appends what it measured to the untracked
+`.codex_state/logs/metrics/events.jsonl` — classify_path (path), the harness on EVERY exit (rc, revert-first,
+run-1 events, duration, die reason, and per agent run the node's last_run_summary: transaction_uuid,
+resources total/changed/failed, time), revert (REVERT_METRICS), the wrapper (codex rc/seconds/timeout and token
+usage from ~/.codex/sessions rollouts — tokens, tool calls, model, effort, cli version; account ids are never
+copied), record_green (commits) and review_class verdict (verdict, failed checks, check seconds).
+`metrics.py close <class> --outcome ...` folds the events since the class's previous close into ONE record in
+the TRACKED `.codex_state/runs/metrics.jsonl` (append-only history, P2-exempt) and commits it alone as
+`P8: record metrics after <class>` (refused if anything else is dirty). Reviewer exemption: reviewer.md forbids
+`.codex_state/runs/` (the records name the generation path, i.e. who authored) and states that metrics
+commits are never part of a review; the reviewer tool already ignores `P8: record` subjects. Two token figures
+are kept: `codex_tokens` (Codex's total_tokens, which recounts cached input every turn) and
+`codex_tokens_uncached` (fresh input + output); the diagnosis's "68 k/class" must be re-derived against one of
+them, stated. Metrics never change a verdict: every emitter is best-effort.
