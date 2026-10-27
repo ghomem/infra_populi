@@ -31,6 +31,11 @@ Salatiel decides infrastructure and strategy. Rationale for every rule below is 
   `.codex_state/tools/pregate.sh <class>` (laptop + puppet8master; exit 0 CLEAN / 1 FINDINGS / 2 ERROR).
   Compile without the node: `test_class.sh --compile-only [--facts debian|redhat] [--defaults] [--no-expand]
   <classes>`; standing composites + default variants: `.codex_state/tools/composite_compile.py [--defaults]`.
+  Records path (the ONLY writer of tracker markers and record commits): `.codex_state/tools/record_green.sh
+  <class> [--defect "<short>"] [--fix "<what>"]` — refuses unless the harness's GREEN stamp
+  (`.codex_state/logs/green/<class>.json`) matches the code, the header is there, the worktree holds only the
+  class's files, and the composites match; then tracker + commit + order regeneration + push. Codex prompt
+  facts: `.codex_state/tools/orientation.py <class>`.
   Engine pre-commit hook: `.git/hooks/pre-commit -> ../../.codex_state/tools/pre-commit` (mandatory;
   per-clone, install with `ln -s ../../.codex_state/tools/pre-commit .git/hooks/pre-commit`). Lab-master
   fixture state: `.codex_state/tools/master_fixtures.sh` (idempotent). Tool tests:
@@ -49,7 +54,7 @@ Salatiel decides infrastructure and strategy. Rationale for every rule below is 
   `puppet module list` and treat `invalid` as FAILURE; after adding a module with custom types run
   `puppet generate types --environment production` and restart puppetserver. `r10k --force` purges
   `puppet_infrastructure` — the next harness run re-deploys it.
-- Node lifecycle: revert node to `P8NODE_BASELINE_GREEN` before EVERY class (`revert_node.sh`).
+- Node lifecycle: revert node to `P8NODE_BASELINE_GREEN_v2` before EVERY class (`revert_node.sh`).
   NEVER restore or power-cycle the master. Codex may start a stopped VM only.
 - Git: commit only when GREEN and idempotent; message `P8: migrate puppet_infrastructure::<class>`;
   never commit params, tooling scratch, or a class that is not GREEN. `.bak` files are never committed.
@@ -100,8 +105,9 @@ validated end-to-end) / `.reimplemented.pp`. Both filename and header must say w
 - Verification is a GATE: the next class does not start until the reviewer has passed the previous one.
 - One class per Codex invocation, via the wrapper only.
 - After GREEN: header comment on the manifest (purpose + module dependencies with versions, or
-  "release-0.9.10 manifest validated unchanged" + deps), `<class> Done [from: release-0.9.10]` in
-  migrated_classes.txt, modules added to necessary_modules.txt, order file regenerated, commit+push.
+  "release-0.9.10 manifest validated unchanged" + deps), then `record_green.sh <class>`, which writes
+  `<class> Done [from: release-0.9.10]` (or `[from: release-0.9.10; upstream defect fixed: <short>]` for an
+  HQ-ruled fix), adds the header's modules to necessary_modules.txt, regenerates the order file, commits, pushes.
 - Historical plain `Done` entries stay plain (pre-baseline); never retro-annotate. `[from: release-0.9.8]`
   survives only where the class's content changed in 0.9.10 (docker_container) until it is re-migrated.
 - New design decisions → APPEND a dated entry to DESIGN_DECISIONS.md; never edit prior entries.

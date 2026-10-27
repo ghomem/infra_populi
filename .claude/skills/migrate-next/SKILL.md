@@ -29,17 +29,19 @@ FOR EACH CLASS:
 3. REVERT: the wrapper reverts the node itself before Codex starts (step 1.2). If it prints
    `REVERT_FAILED`, stop the run and report.
 4. CODEX: `~/.local/bin/codex_migrate_class puppet_infrastructure::<class> 2>&1 | tee .codex_state/logs/<class>.$(date +%s).log`.
-   Run it in the foreground with a long timeout. Do not interrupt it. Read only the LAST 60 lines to
-   classify the outcome: GREEN+committed / BLOCKED (it wrote blocked.txt) / FAILED (neither).
+   The wrapper puts the orientation packet (`.codex_state/tools/orientation.py <class>`) in the prompt and
+   tells Codex to record through `record_green.sh` only. Run it in the foreground with a long timeout. Do not
+   interrupt it. Read only the LAST 60 lines to classify the outcome: GREEN+recorded (`RECORDED ... P8: migrate`)
+   / BLOCKED (it wrote blocked.txt) / FAILED (neither). GREEN but not recorded: run
+   `.codex_state/tools/record_green.sh <class>` yourself — it refuses unless the GREEN stamp matches the code.
 5. VERIFY: spawn the `reviewer` subagent with the message "<class> --fresh" and nothing else (reviewer
    v2: it must not learn who authored the change — never mention Codex or paste any output). It persists
    `.codex_state/reviews/<class>/<UTC>.json`; commit that file as `P8: record review <class>`.
    - PASS: count it.
-   - FAIL: read the evidence. If it is a records/annotation/header gap, fix with ONE targeted
-     `timeout -k 30 900 codex exec -c 'sandbox_mode="danger-full-access"' -c 'approval_policy="never"' '<precise fix>' </dev/null`
-     (outer timeout and closed stdin are mandatory on every `codex exec`),
-     requiring its fix commit message to start with `P8: record <class>: `, then re-run the reviewer
-     once. If it is faithfulness (reimplementation) or non-idempotency: back
+   - FAIL: read the evidence. If it is a records/annotation/header gap, fix the header comment yourself
+     and record it with `.codex_state/tools/record_green.sh <class> --fix "<what>"` (comments + tracker only;
+     it refuses a code change; commit `P8: record <class>: <what>`), then re-run the reviewer once.
+     (Any ad-hoc `codex exec` keeps the mandatory `timeout -k 30 900 ... </dev/null`.) If it is faithfulness (reimplementation) or non-idempotency: back
      the migration out with a corrective commit (never force-push), preserve the manifest as
      `candidates/<class>.partial.pp` or `.reimplemented.pp` with a header, block with evidence, escalate.
 6. BLOCKED by Codex: read its blocked.txt entry. It must carry category + evidence; if not, fix the entry.
@@ -49,10 +51,10 @@ FOR EACH CLASS:
 7. FAILED (no green, no block): read the log tail. Apply the stop condition — if the failure yields a
    hypothesis you can act on within your authority, act once and retry from step 3 once. Otherwise
    block with evidence and continue.
-8. Regenerate the order file, commit if it changed, push. Standing composite check (step 2.2):
-   `python3 .codex_state/tools/composite_compile.py` — every line must be `OK`; a `DIFF` is a regression
-   (investigate before the next class) or a fix (update `compile/composites.txt` in its own commit).
-   Move to the next class.
+8. `record_green.sh` already ran the standing composite compiles (step 2.2), regenerated the order file and
+   pushed. Its exit 4 means a composite no longer matches `compile/composites.txt`: a regression (investigate
+   before the next class) or a fix (update composites.txt in its own commit, then re-run record_green.sh).
+   After a block, regenerate the order file yourself, commit if it changed, push. Move to the next class.
 
 END OF RUN: revert the node to baseline. Confirm `git status` clean and pushed. Print a summary table:
 class | outcome (PASS/BLOCKED cat N/ESCALATED) | commit | one-line note. List every escalation file.

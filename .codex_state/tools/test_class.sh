@@ -35,6 +35,7 @@ PARAMS_DIR="${HOME}/.config/infra_populi/params"
 FIXTURE_DIR="${LOCAL_REPO}/.codex_state/tools/tests/fixtures"
 REVERT_TOOL="${LOCAL_REPO}/.codex_state/tools/revert_node.sh"
 COMPILE_DIR="${LOCAL_REPO}/.codex_state/tools/compile"
+RECORDS_TOOL="${LOCAL_REPO}/.codex_state/tools/records.py"
 
 # GREEN v2 (ruling 2 / step 1.1): every agent run has an outer timeout; run 2 must exit 0.
 AGENT_TIMEOUT_SECONDS="${AGENT_TIMEOUT_SECONDS:-600}"
@@ -414,6 +415,7 @@ sys.exit(3 if empty else 0)
 PY
 )" && rc=0 || rc=$?
   echo "$report"
+  COVERAGE_REPORT="$report"
   [[ $rc -ne 3 ]] || die "Coverage: a target has no concrete resources in the applied catalog (body skipped by a conditional? wrong fixture?)."
   [[ $rc -eq 0 ]] || die "Coverage check could not read the node's cached catalog (exit ${rc})."
 }
@@ -560,6 +562,12 @@ main() {
   fi
 
   echo "GREEN: run 2 exited 0 with no change events (gate v2)."
+  if [[ -z "${FIXTURE_NAME:-}" ]]; then
+    # Step 3.2: stamp the code that went GREEN; record_green.sh refuses anything else.
+    local -a stamp_opts=(--run1-events "$run1_events" --coverage "${COVERAGE_REPORT:-}")
+    [[ $revert_first -eq 1 ]] && stamp_opts+=(--revert-first)
+    python3 "$RECORDS_TOOL" stamp "${stamp_opts[@]}" -- "${classes[@]}" || die "Could not write the GREEN stamp."
+  fi
 }
 
 main "$@"

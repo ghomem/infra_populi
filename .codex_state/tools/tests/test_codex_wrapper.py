@@ -48,3 +48,14 @@ def test_wrapper_does_not_start_codex_when_revert_fails(lab):
     proc = lab.run([WRAPPER, "puppet_infrastructure::dns_client"])
     assert proc.returncode == 3 and "REVERT_FAILED" in proc.stderr
     assert not marker.exists()
+
+
+def test_prompt_carries_the_orientation_packet_and_the_record_recipe(lab):
+    out = lab.root / "prompt.txt"
+    stub_codex(lab, f'printf "%s" "${{@: -1}}" > {out}')
+    assert lab.run([WRAPPER, "puppet_infrastructure::sysmon_fs_health"]).returncode == 0
+    prompt = out.read_text()
+    assert "ORIENTATION PACKET puppet_infrastructure::sysmon_fs_health" in prompt
+    assert "plan: resource_type=define title=sysmon_fs_health" in prompt
+    assert "record_green.sh puppet_infrastructure::sysmon_fs_health" in prompt
+    assert "supersedes runbook section 2 steps 5-7" in prompt

@@ -197,9 +197,27 @@ def test_staged_changed_manifest_with_parse_error_blocks(staged_repo):
     repo, git, sent, remote = staged_repo
     (repo / "manifests/a.pp").write_text("class a { \n")
     git(repo, "add", "manifests/a.pp")
-    remote.output = "@@BEGIN parse local manifests/a.pp 1\nError: Syntax error\n@@END\n"
+    remote.output = ("@@VERSION puppet 8.24.2\n@@BEGIN parse local manifests/a.pp 1\nError: Syntax error\n@@END\n"
+                     "@@BEGIN lint local manifests/a.pp 0\n[]\n@@END\n")
     report = pregate.pregate_staged()
     assert report.status == "FINDINGS" and len(sent) == 1
+
+
+@pytest.mark.parametrize("output, problem", [
+    ("", "no puppet version line"),
+    ("@@VERSION puppet 8.24.2\n", "no parse result for manifests/a.pp"),
+    ("@@VERSION puppet 8.24.2\n@@BEGIN parse local manifests/a.pp 0\n\n@@END\n", "no lint result"),
+    ("@@VERSION puppet 8.24.2\n@@BEGIN parse local manifests/a.pp 0\n\n@@END\n"
+     "@@BEGIN lint local manifests/a.pp 127\n\n@@END\n", "puppet-lint exited 127"),
+])
+def test_staged_incomplete_master_batch_fails_closed(staged_repo, output, problem):
+    repo, git, _, remote = staged_repo
+    (repo / "manifests/a.pp").write_text("class a { notify { 'x': } }\n")
+    git(repo, "add", "manifests/a.pp")
+    remote.output = output
+    report = pregate.pregate_staged()
+    assert report.status == "ERROR"
+    assert any(problem in d for lvl, c, d in report.lines if lvl == "ERROR")
 
 
 def test_staged_unreachable_master_blocks(staged_repo, monkeypatch):

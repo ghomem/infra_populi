@@ -311,6 +311,25 @@ def lint_key(problem: dict) -> tuple[str, str]:
     return (problem["check"], re.sub(r"\d+", "N", problem.get("message", "")))
 
 
+def expected_checks(path: str) -> tuple[str, ...]:
+    if path.endswith(".pp"):
+        return ("parse", "lint")
+    if path.startswith("templates/"):
+        return ("epp",) if path.endswith(".epp") else ("erb",)
+    return ()
+
+
+def incomplete_batch(local: dict, versions: dict, results: list[dict]) -> list[str]:
+    """Fail closed: every file sent must come back with its checks, from a master that named its puppet."""
+    problems = [] if versions.get("puppet") else ["no puppet version line"]
+    got = {(r["check"], r["path"]) for r in results if r["side"] == "local"}
+    problems += [f"no {check} result for {path}" for path in sorted(local)
+                 for check in expected_checks(path) if (check, path) not in got]
+    problems += [f"puppet-lint exited {r['rc']} on {r['path']}" for r in results
+                 if r["check"] == "lint" and r["rc"] > 1]
+    return problems
+
+
 def apply_remote(results: list[dict], report: Report, report_inherited: bool,
                  identical_to_baseline: frozenset[str] = frozenset()) -> None:
     by = {(r["check"], r["side"], r["path"]): r for r in results}
@@ -383,6 +402,9 @@ def pregate_class(cls: str) -> Report:
         report.add("ERROR", "master", str(exc))
         versions, results, inventory = {}, [], None
     report.versions.update(versions)
+    if inventory is not None:
+        for problem in incomplete_batch(local, versions, results):
+            report.add("ERROR", "master", f"incomplete master batch: {problem}")
     identical = frozenset(p for p in local if p.endswith(".pp") and p not in base_files
                           and baseline.git_show(base.upstream, base.commit, p) == local[p])
     apply_remote(results, report, report_inherited=True, identical_to_baseline=identical)
@@ -420,6 +442,8 @@ def pregate_staged() -> Report:
             report.add("ERROR", "master", f"{exc} — puppet files cannot be committed unchecked")
             return report
         report.versions.update(versions)
+        for problem in incomplete_batch(local, versions, results):
+            report.add("ERROR", "master", f"incomplete master batch: {problem} — puppet files cannot be committed unchecked")
         apply_remote(results, report, report_inherited=False)
     return report
 
