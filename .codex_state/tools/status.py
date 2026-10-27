@@ -10,6 +10,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(1, str(Path(__file__).resolve().parent))
 import gen_migration_order as generator
 
 REVIEWS = generator.REVIEWS_PATH
@@ -88,7 +89,10 @@ def main() -> None:
     prefix = "Status summary: "
     summary = next(line for line in rendered.splitlines() if line.startswith(prefix))
     print(summary.removeprefix(prefix).removesuffix("."))
-    print(f"Baseline: {generator.baseline_name()}")
+    import baseline as _baseline  # noqa: PLC0415  (tools dir; per-class exceptions)
+    exc = _baseline.exceptions()
+    print(f"Baseline: {generator.baseline_name()}"
+          + (f" (+ per-class exceptions: {', '.join(f'{c} at {n}' for c, (_, n) in sorted(exc.items()))})" if exc else ""))
 
     states = {name: verification_state(name, migrations[name], flagged) for name in sorted(done)}
     verified = [name for name, (state, _) in states.items() if state == VERIFIED]
