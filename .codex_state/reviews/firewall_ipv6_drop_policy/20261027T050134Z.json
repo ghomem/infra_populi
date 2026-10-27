@@ -1,0 +1,91 @@
+{
+ "schema": 1,
+ "class": "firewall_ipv6_drop_policy",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T05:01:34Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "8cdde136ab1c",
+ "migrate_subject": "P8: migrate puppet_infrastructure::firewall_ipv6_drop_policy",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 8cdde136ab1c; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/firewall_ipv6_drop_policy.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `firewall_ipv6_drop_policy Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-firewall', '8.3.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 2 catalog events; COVERAGE puppet_infrastructure::firewall_ipv6_drop_policy: 2 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added lines: migration header + puppetlabs-firewall 8.3.0 dependency); independent diff of baseline.py show vs HEAD confirms byte-identical body",
+   "DIFF B: re-migration restores the release-0.9.10 content verbatim (Purpose/Dependencies comments, single-line firewallchain FORWARD:filter:IPv6 and INPUT:filter:IPv6 with ensure=>present, purge=>true, policy=>drop), replacing the earlier reformatted migration"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependency: puppetlabs-firewall 8.3.0."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 2,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::firewall_ipv6_drop_policy: 2 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 23.391,
+   "master_check_s": 0.679,
+   "poweroff_s": 0.713,
+   "restore_s": 0.218,
+   "boot_to_ssh_s": 12.57,
+   "apt_update_s": 7.926,
+   "verify_s": 1.285
+  },
+  "log": ".codex_state/logs/reviews/firewall_ipv6_drop_policy.20261027T050039Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
