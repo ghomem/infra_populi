@@ -30,6 +30,7 @@ TOOLS = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS))
 sys.path.insert(1, str(TOOLS.parent))
 import baseline  # noqa: E402
+import gen_migration_order as generator  # noqa: E402
 import pregate  # noqa: E402
 
 REPO = baseline.REPO
@@ -284,11 +285,14 @@ def run_checks(cls: str, harness: bool, fresh: bool) -> dict:
     # records
     rec = []
     tracker = [l for l in (STATE / "migrated_classes.txt").read_text().splitlines() if cls in l.split()]
-    marker = f"[from: {base.name}]"
     if len(tracker) != 1:
         rec.append(f"tracker has {len(tracker)} lines for the class")
-    elif marker not in tracker[0] or "Done" not in tracker[0].split():
-        rec.append(f"tracker line {tracker[0]!r} lacks `Done {marker}`")
+    else:
+        entry = generator.parse_tracker_line(tracker[0])
+        if entry is None or not entry.done or entry.from_ref != base.name:
+            rec.append(f"tracker line {tracker[0]!r} lacks `Done [from: {base.name}...]`")
+        elif entry.defect_fixed:
+            out["defect_fixed"] = entry.defect_fixed
     if any(l.split()[:1] == [cls] for l in (STATE / "blocked.txt").read_text().splitlines() if not l.startswith("#")):
         rec.append("class is listed in blocked.txt")
     order = (STATE / "migration_order.md").read_text()

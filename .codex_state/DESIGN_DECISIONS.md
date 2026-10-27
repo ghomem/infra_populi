@@ -596,3 +596,42 @@ Decision (advisor tier; keeps the ruled snapshot unchanged): revert_node.sh runs
 fails. This keeps the ruling's intent — no apt activity concurrent with a harness run — and restores
 current lists. Cost: ~12 s per revert (measured 12.2 s; revert 39 s total). REVERT_METRICS gains apt_update_s.
 Any verdict recorded on the frozen lists before this fix (caching_nameserver) is superseded by a re-review.
+
+## 2026-10-27 — HQ rulings at sprint checkpoint 1 (re-review sweep: 8 PASS / 23 FAIL)
+1. Sweep accepted: 8 of the 31 git-done classes are verified. Git stays the fact for DONE. A DERIVED state
+   is added (status.py, from the persisted reviewer-v2 verdicts in `.codex_state/reviews/`): "verified
+   (gate v2)" = the latest verdict for the class's current effective commit is PASS; otherwise "done (gate
+   v1, reconciliation pending)". A class returns to verified only through a reviewer-v2 PASS recorded
+   after its fix commit.
+   - Groups A (records only, 3) and B (comments/format, 13): advisor-direct, as a RECORDED ONE-OFF
+     EXCEPTION to ruling 3 (2026-10-26), valid for gate-v1 reconciliation only. Method for B: the baseline
+     file + the re-applied syntax hunks + a 2-line header; the diff vs the baseline shows only those;
+     reviewer-v2 PASS per class; one commit per class. Done after 3.2 and 3.3 exist.
+   - C, D, E: the normal loop after the sprint, at the head of the queue in this order: rsyslog_base →
+     rsyslog_client → docker_container → filesystem_yum. firewall and sysmon_puppet_cert_status sink with
+     the zero-declaration classes. E's plan fix (backup_rsnapshot_pre required_base) goes into 4.1.
+2. Unguarded execs at the baseline (user_base, user_lock, linux_policies_user, mysql_server): option (a),
+   per class, NO exemption list. The added guard must test the command's post-condition so the effect is
+   preserved. One escalation per class (command, guard, why the effect is unchanged), marker per 3,
+   batched for the CTO. user_base's escalation is written first and HQ confirms that one before it is
+   applied; mysql_server: record whether upstream 874f854 already guards it.
+3. Marker approved and generalised: `[from: <ref>; upstream defect fixed: <short>]`, used for
+   puppet_boot_run, the exec guards, fqdn_rand_uuid and filesystem_sec. The generator and status.py parse
+   it (with a test). Word order on the tracker line stays the CLAUDE.md loop-invariant form
+   `<class> Done [...]`; the parser also accepts the historical `Done <class> [...]` lines.
+4. Master snapshot (puppet-lint gem installed 2026-10-26) deferred to checkpoint 2, after the
+   master-fixtures script has run; Salatiel takes it then.
+5. Old node snapshot P8NODE_BASELINE_GREEN kept through checkpoint 2.
+6. filesystem_sec: fixed locally with the minimal change (assign into a new variable instead of
+   reassigning the parameter), marker per 3; on the CTO upstream-defect list with the note that the
+   production nodes must all pass the parameter explicitly (the default branch never compiled on Puppet 8).
+7. Reviewer: the 1.5 sweep ran general-purpose subagents carrying reviewer.md verbatim (this session had
+   loaded the pre-v2 agent definition); a fresh session uses `subagent_type: reviewer`.
+8. Evidence that gate v2 catches ENGINE errors, not only class errors: the 1.5 sweep found two defects in
+   the engine itself, both fixed in place and the affected classes re-reviewed — (a) the v2 node snapshot
+   froze apt lists at 2026-02-17 because ruling 5 disabled the apt timers, so `Package[bind]` 404'd
+   (revert-first made it visible; fix 6947198, revert now refreshes lists); (b) the run-1 count and run-2
+   regex missed puppetlabs-firewall 8 Resource-API creations (`defined 'ensure' as 'present'`), so a
+   created rule showed 0 events (fix 90a8a44; the exit-0 rule still protected run 2).
+Sequence from here: 3.2 → 3.3 → A/B reconciliation → 3.4 → 3.5 → 4.1–4.3 (E plan fix, exec-guard and
+filesystem_sec escalations, master-fixtures script) → checkpoint 2.

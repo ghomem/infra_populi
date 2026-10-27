@@ -17,6 +17,7 @@ REPO_ROOT = SCRIPT_DIR.parent
 PLAN_PATH = SCRIPT_DIR / "migration_plan.md"
 ORDER_PATH = SCRIPT_DIR / "migration_order.md"
 BLOCKED_PATH = SCRIPT_DIR / "blocked.txt"
+TRACKER_PATH = SCRIPT_DIR / "migrated_classes.txt"
 BASELINE_ENV = SCRIPT_DIR / "baseline.env"
 PREFIX = "puppet_infrastructure::"
 REQUIRED_COLUMNS = {
@@ -67,6 +68,17 @@ class ClassRow:
 class MigrationCommit:
     commit: str
     date: str
+
+
+@dataclass(frozen=True)
+class TrackerEntry:
+    """One migrated_classes.txt line. Marker grammar (HQ checkpoint-1 ruling 3):
+    `[from: <ref>]` or `[from: <ref>; upstream defect fixed: <short>]`."""
+
+    name: str
+    done: bool
+    from_ref: str
+    defect_fixed: str
 
 
 def fail(message: str) -> None:
@@ -208,6 +220,48 @@ def parse_plan() -> dict[str, ClassRow]:
         if owner.resource_type != "class":
             fail(f"owner_validated owner for {name} is not a class: {row.owner_validated}")
     return rows
+
+
+TRACKER_LINE = re.compile(
+    r"(?:(?P<name>[A-Za-z0-9_]+)(?P<done> Done)?|Done (?P<name2>[A-Za-z0-9_]+))"
+    r"(?: \[from: (?P<ref>[A-Za-z0-9._-]+)(?:; upstream defect fixed: (?P<defect>[^\]\[;]+?))?\])?"
+)
+
+
+def parse_tracker_line(line: str) -> TrackerEntry | None:
+    """Parse one tracker line; None for blank/comment lines; fail() on anything malformed.
+    Accepts `<class>`, `<class> Done [marker]` and the historical `Done <class> [marker]`."""
+    stripped = line.strip()
+    if not stripped or stripped.startswith("#"):
+        return None
+    match = TRACKER_LINE.fullmatch(stripped)
+    if not match or (match.group("ref") and not (match.group("done") or match.group("name2"))):
+        fail(f"malformed migrated_classes.txt line: {stripped!r}")
+    return TrackerEntry(
+        name=match.group("name") or match.group("name2"),
+        done=bool(match.group("done") or match.group("name2")),
+        from_ref=match.group("ref") or "",
+        defect_fixed=(match.group("defect") or "").strip(),
+    )
+
+
+def read_tracker(path: Path | None = None) -> dict[str, TrackerEntry]:
+    path = path or TRACKER_PATH
+    entries: dict[str, TrackerEntry] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        entry = parse_tracker_line(line)
+        if entry is None:
+            continue
+        if entry.name in entries:
+            fail(f"duplicate class in {path.name}: {entry.name}")
+        entries[entry.name] = entry
+    return entries
+
+
+def tracker_mismatches(entries: dict[str, TrackerEntry], done: set[str]) -> tuple[list[str], list[str]]:
+    """(git-done but not Done in the tracker, Done in the tracker but not git-done)."""
+    tracked_done = {name for name, entry in entries.items() if entry.done}
+    return sorted(done - tracked_done), sorted(tracked_done - done)
 
 
 def run_git(args: list[str]) -> str:
@@ -383,6 +437,7 @@ def render(
     pending_order: list[ClassRow],
     gated: set[str],
     owner_validated: set[str],
+    tracker: dict[str, TrackerEntry] | None = None,
 ) -> str:
     found_done = sorted((done & set(rows)) - owner_validated, key=lambda name: rows[name].sort_key)
     unknown_done = sorted(done - set(rows))
@@ -482,6 +537,13 @@ def render(
     else:
         lines.append("| - | - | - | - | - | - | - |")
 
+    defects = sorted((name, entry) for name, entry in (tracker or {}).items() if entry.defect_fixed)
+    if defects:
+        lines.extend(["", "## UPSTREAM DEFECTS FIXED LOCALLY (tracker markers, for the CTO batch)", ""])
+        lines.extend(
+            f"- `{PREFIX}{name}` [from: {entry.from_ref}] — {entry.defect_fixed}" for name, entry in defects
+        )
+
     lines.extend(["", "## KNOWN GAPS", "", KNOWN_GAP, ""])
 
     if unknown_done:
@@ -559,7 +621,8 @@ def main() -> None:
         fail("owner_validated classes must not also be blocked: " + ", ".join(conflicting))
     done = set(migrations) - set(blocked) - owner_validated
     pending_order, gated = topological_pending(rows, done, set(blocked), owner_validated)
-    output = render(rows, done, blocked, flagged, pending_order, gated, owner_validated)
+    tracker = read_tracker()
+    output = render(rows, done, blocked, flagged, pending_order, gated, owner_validated, tracker)
     ORDER_PATH.write_text(output, encoding="utf-8")
 
     unknown_done = sorted(done - set(rows))
@@ -592,6 +655,11 @@ def main() -> None:
             print(f"- {PREFIX}{name}")
     else:
         print("blocked classes not found in plan table: none")
+    untracked_done, stale_done = tracker_mismatches(tracker, done)
+    print(f"git-DONE classes not Done in migrated_classes.txt: {', '.join(untracked_done) or 'none'}")
+    print(f"migrated_classes.txt Done classes not git-DONE: {', '.join(stale_done) or 'none'}")
+    defects = [name for name, entry in tracker.items() if entry.defect_fixed]
+    print(f"upstream defects fixed locally (tracker markers): {', '.join(sorted(defects)) or 'none'}")
 
 
 if __name__ == "__main__":
