@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependency: puppetlabs-docker 10.4.1 (Class['docker'] declared by the node, not by this define).
 define puppet_infrastructure::docker_container (
   $image,
   $app_port = '',
