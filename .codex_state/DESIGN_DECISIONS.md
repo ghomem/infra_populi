@@ -864,3 +864,12 @@ NetworkManager).
 - saz-ssh 13.1.0 / saz-sudo 9.0.2 held for Phase 1 (ruling 4).
 - Observed: the old node snapshot P8NODE_BASELINE_GREEN is gone from the node's snapshot tree (v2 now hangs under
   "Codex Setup Done"); the node was found powered off and was brought back by revert_node.sh.
+
+## 2026-10-27 — Master snapshot P8MASTER_BASELINE_GREEN_v3
+HQ took the master snapshot `P8MASTER_BASELINE_GREEN_v3` OFFLINE after commit 0a71977 (master state: puppet-lint 4.3.0,
+the 27 Puppetfile pins of .codex_state/lab/Puppetfile, regenerated .resource_types/, the master_fixtures.sh state:
+[extra_files] mount + p8test PKI + Hiera fixture level). The previous master snapshot v2 was deleted by HQ. The old node
+snapshot P8NODE_BASELINE_GREEN was deleted by HQ; the node baseline is P8NODE_BASELINE_GREEN_v2. The master is still
+never restored by the engine (standing rule); the snapshot is HQ's recovery point.
+Next: `/migrate-next 7` (the gate-v1 re-migrations), then snapshot_master.sh + read-only VBoxManage permissions
+(HQ VM-operations ruling) in one engine commit.

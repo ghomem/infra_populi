@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-49 entries; 6 marked superseded (in whole or part); newest first.
+50 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-10-27 — Master snapshot P8MASTER_BASELINE_GREEN_v3
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-10-27 — Checkpoint-2 rulings 3–5 applied on the lab master
 - (no numbered/Rule/Decision lines; read the entry)
