@@ -472,6 +472,10 @@ def main(argv: list[str]) -> int:
         print(__doc__.strip(), file=sys.stderr)
         return 2
     print_report(report, as_json)
+    if report.target != "staged":  # step 3.4: per-attempt metrics event (best effort)
+        findings = [f"{c}: {d}"[:200] for lvl, c, d in report.lines if lvl in ("FINDING", "ERROR")]
+        subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "metrics.py"), "event", report.target,
+                        "pregate", json.dumps({"status": report.status, "findings": findings})], capture_output=True)
     return {"CLEAN": 0, "FINDINGS": 1, "ERROR": 2}[report.status]
 
 

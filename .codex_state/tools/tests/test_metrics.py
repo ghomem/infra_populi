@@ -113,3 +113,17 @@ def test_summary_runs(env, capsys):
     assert metrics.main(["summary"]) == 0
     out = capsys.readouterr().out
     assert "syntax-work: 1 attempts, 1 green/pass" in out and "codex runs/green 1.0" in out
+
+
+def test_pregate_events_fold_into_the_record_and_summary_reports_uncached_tokens(env, capsys):
+    metrics.add_event("y", "pregate", {"status": "FINDINGS", "findings": ["hazard2-connectivity: default-drop"]})
+    metrics.add_event("y", "codex", {"rc": 0, "codex_s": 471.1, "usage": {"total_tokens": 2721530, "input_tokens": 2700000,
+                                                                          "cached_input_tokens": 2600000, "output_tokens": 21530,
+                                                                          "tool_calls": 33, "model": "m", "cli_version": "v", "effort": "e"}})
+    metrics.main(["close", "y", "--outcome", "PASS", "--path", "syntax-work", "--no-commit"])
+    (record,) = [r for r in metrics.read_jsonl(metrics.runs_path()) if r["class"] == "y"]
+    assert record["pregate"] == [{"status": "FINDINGS", "findings": ["hazard2-connectivity: default-drop"]}]
+    assert record["codex_tokens_uncached"] == 121530
+    metrics.main(["summary"])
+    out = capsys.readouterr().out
+    assert "codex uncached tokens/attempt 121530" in out and "pregate findings 1" in out

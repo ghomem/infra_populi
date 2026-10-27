@@ -10,7 +10,7 @@ P2-exempt) and commits it as `P8: record metrics after <class>` (own commit type
                    [--note TEXT] [--no-commit]
   metrics.py summary                         medians/rates over the tracked records
 
-Event kinds written by the tools: path (classify_path), revert (harness --revert-first, wrapper), harness
+Event kinds written by the tools: path (classify_path), pregate (pregate.py, class mode), revert (harness --revert-first, wrapper), harness
 (test_class.sh, every exit), codex (wrapper), record (record_green.sh), review (review_class.py verdict).
 The reviewer never reads .codex_state/runs/ (reviewer.md): these records name the generation path.
 P8_METRICS_DIR / P8_RUNS_FILE redirect the event log / tracked file (tests).
@@ -154,6 +154,7 @@ def fold(cls: str, events: list[dict], records: list[dict], outcome: str, path: 
     codex = kinds("codex")
     reviews = kinds("review")
     paths = kinds("path")
+    pregates = kinds("pregate")
     usage = [c.get("usage") or {} for c in codex]
     record = {
         "schema": 1, "class": cls, "attempt": 1 + sum(1 for r in records if r["class"] == cls),
@@ -174,6 +175,7 @@ def fold(cls: str, events: list[dict], records: list[dict], outcome: str, path: 
                                      + int(u.get("output_tokens", 0)) for u in usage),
         "codex_tool_calls": sum(int(u.get("tool_calls", 0)) for u in usage),
         "reviews": [{k: r.get(k) for k in ("verdict", "failed_checks", "check_s", "file")} for r in reviews],
+        "pregate": [{k: g.get(k) for k in ("status", "findings")} for g in pregates],
         "commits": [c for e in kinds("record") for c in e.get("commits", [])],
         "human_interventions": interventions, "note": note or None,
     }
@@ -227,7 +229,9 @@ def cmd_summary() -> int:
         print(f"- {path}: {len(rs)} attempts, {len(greens)} green/pass; "
               f"median revert_s {median([s for r in rs for s in r['revert_s']])}, "
               f"codex_s {median([s for r in rs for s in r['codex_s']])}, "
-              f"codex tokens/attempt {median([r['codex_tokens'] for r in rs if r['codex_runs']])}, "
+              f"codex uncached tokens/attempt {median([r.get('codex_tokens_uncached', 0) for r in rs if r['codex_runs']])} "
+              f"(total incl. cached re-reads {median([r['codex_tokens'] for r in rs if r['codex_runs']])}), "
+              f"pregate findings {sum(len(p.get('findings', [])) for r in rs for p in r.get('pregate', []))}, "
               f"codex runs/green {round(sum(r['codex_runs'] for r in rs) / len(greens), 2) if greens else None}, "
               f"reviewer FAIL rate {f'{fails}/{len(reviews)}' if reviews else None}")
     return 0
