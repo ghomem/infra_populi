@@ -1,0 +1,27 @@
+# PREPARED, NOT APPLIED (HQ ruling 9): pins whose newest suitable release declares `openvox` and NOT `puppet`.
+# Applied only after the CTO's runtime answer (stay on Perforce Puppet vs move to OpenVox). Requirements and
+# dependencies read from forgeapi.puppet.com on 2026-10-27. Each line names the classes that wait on it.
+
+# nginx stack (nginx_base, nginx_frontend*, nginx_static*, hashman_web, ssl_nginx*): openvox >=8.19 <9;
+# deps concat >=4.1 <11 (lab 9.1.0), stdlib >=5 <11 (lab 9.7.0)
+mod 'puppet-nginx', '8.4.0'
+
+# letsencrypt_base / letsencrypt_certificate: openvox >=8.19 <9; deps stdlib, inifile >=2.5 <7 (lab 6.5.0), epel >=3.0.1 <7
+# (11.0.0 changed the certonly cert_name default to domains[0]: affects letsencrypt_certificate.pp:32 — Phase-3 check)
+mod 'puppet-letsencrypt', '13.4.0'
+mod 'puppet-epel', '6.0.0'
+
+# openvpn_server / network_vpn: 11.0.1 (puppet+openvox) is APPLIED in the lab Puppetfile; 12.0.0 is the openvox-only line
+# mod 'puppet-openvpn', '12.0.0'
+
+# Outside the 87 classes (production module list): openvox-only latest
+# mod 'puppet-rabbitmq', '15.0.0'
+# mod 'puppet-gitlab', '11.1.0'
+
+# Held at their last puppet-declaring majors in the lab (newer majors are openvox-only): saz-ssh 13.1.0 (14.x+),
+# saz-sudo 9.0.2 (10.x). ALREADY IN THE LAB and openvox-only: saz-resolv_conf 8.0.1 (dns_client) — flagged for the
+# CTO's runtime decision, not removed.
+
+# NOT a pin decision yet — needs production information (escalation 4.2): an ntp module for node_base /
+# node_base_domain_desktop. Candidate puppetlabs-ntp 11.0.0 (puppet >=7 <9, stdlib >=4.13.1 <10) only after the
+# production master's ntp module identity/version is read.

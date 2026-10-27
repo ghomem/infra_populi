@@ -700,3 +700,25 @@ them, stated. Metrics never change a verdict: every emitter is best-effort.
    "<title>"` references; unmatched references listed). The engine pre-commit hook refuses a staged
    DESIGN_DECISIONS.md whose digest is not regenerated and staged with it. Read it as an index into this log,
    never instead of it.
+
+## 2026-10-27 — Step 4.1b: Forge pins applied (non-openvox-only) and the htpasswd provider diff (ruling 7)
+Applied to the lab master's Puppetfile (r10k; `puppet module list` before/after: +4 modules, 0 invalid; r10k
+purged puppet_infrastructure as always, redeployed by the next harness run; `puppet generate types` +
+puppetserver restart for the custom types): puppetlabs-mysql 17.3.0 (puppet >=8 <10), thias-sysctl 1.0.8
+(ruling 7; puppet <9), citrin-htpasswd 1.0.3 (ruling 7), puppet-openvpn 11.0.1 (declares puppet AND openvox
+>=7 <9; 12.0.0 is the openvox-only line). Repo export updated (22 pins).
+htpasswd provider diff, as ruling 7 requires (leinaddm-htpasswd 0.0.3 vs citrin-htpasswd 1.0.3, Forge tarballs
+sha256 c492bb7e… / fbd0b3c5…): providers htpasswd/parsed.rb and htgroup/parsed.rb BYTE-IDENTICAL; types
+identical once whitespace is ignored except the Puppet-3 wrapper `module Puppet; newtype(...)` →
+`Puppet::Type.newtype(...)` (the very API Puppet 8 removed); functions ht_crypt/ht_md5/ht_sha1 moved from 3.x
+`Puppet::Parser::Functions` to 4.x `htpasswd::ht_*` with the same algorithms (user_sysmon calls none of them).
+Result: identical semantics for user_sysmon → module swap, advisor tier. Caveat recorded: citrin's metadata
+declares puppet >=5.5.10 <8.0.0 (informational; the types load: user_sysmon COMPILE OK on OpenVox 8.24.2).
+sysctl: thias-sysctl 1.0.8 loads on OpenVox 8 (firewall_addon_openvpn_server compiles with
+Sysctl[net.ipv4.ip_forward] once its 3 `action` are probed as `jump`) → ruling 7's augeasproviders fallback is
+not triggered. blocked.txt: firewall_addon_openvpn_server UNBLOCKED (remaining work is syntax); user_sysmon
+re-categorized 1 → 5 (needs a Naemon/Thruk monitoring-server node; module blocker resolved).
+Prepared, not applied (ruling 9): `.codex_state/lab/Puppetfile.openvox-only.prepared` (puppet-nginx 8.4.0,
+puppet-letsencrypt 13.4.0 + puppet-epel 6.0.0, puppet-openvpn 12.0.0, rabbitmq/gitlab outside the 87; saz-ssh and
+saz-sudo held; saz-resolv_conf 8.0.1 already in the lab is openvox-only — flagged). ntp: no pin until production's
+ntp module is read (escalation, 4.2).

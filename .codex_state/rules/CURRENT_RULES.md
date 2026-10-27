@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-40 entries; 5 marked superseded (in whole or part); newest first.
+41 entries; 5 marked superseded (in whole or part); newest first.
+
+## 2026-10-27 — Step 4.1b: Forge pins applied (non-openvox-only) and the htpasswd provider diff (ruling 7)
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-10-27 — Step 3.5: single sources for the engine's instructions
 - 1. Hazard checklist: ONE file, `.codex_state/rules/hazards.md` (13 items: CLAUDE.md's 8 + diagnosis G items
