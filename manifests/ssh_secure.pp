@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest; legacy fact $::osfamily -> $facts['os']['family'] only.
+# Module dependency: saz-ssh 13.1.0.
 ### Purpose ########
 # This class provides sshd management class with improved security settings
 
