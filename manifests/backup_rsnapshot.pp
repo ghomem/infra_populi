@@ -1,24 +1,10 @@
-# @summary Configures a named rsnapshot backup and its daily cron schedule.
-#
-# Renders an rsnapshot configuration for a local directory and schedules the
-# daily retention level.
-#
-# @dependencies
-# - `puppet_infrastructure::backup_rsnapshot_pre` for rsnapshot and its
-#   configuration directory
-# - `puppet_infrastructure/backup/rsnapshot.conf.erb` from this module
-define puppet_infrastructure::backup_rsnapshot (
-  $basedir,
-  $prefix,
-  $backdir,
-  $ndays,
-  $user = 'root',
-  $hour = '23',
-  $minute = '0',
-) {
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependency: puppetlabs-cron_core 1.3.0 (vendored with Puppet 8.24.2).
+### Purpose ########
+# This class implements simple rsnapshot based generic backups
+define puppet_infrastructure::backup_rsnapshot ( $basedir, $prefix, $backdir, $ndays, $user = 'root', $hour = '23', $minute = '0')  {
 
   $myconffile = "/etc/rsnapshot.d/rsnapshot-${title}.conf"
-
   file { $myconffile:
     mode    => '0644',
     owner   => 'root',
@@ -31,6 +17,7 @@ define puppet_infrastructure::backup_rsnapshot (
     user    => $user,
     hour    => $hour,
     minute  => $minute,
-    require => File[$myconffile],
+    require => File[ $myconffile ]
   }
+
 }
