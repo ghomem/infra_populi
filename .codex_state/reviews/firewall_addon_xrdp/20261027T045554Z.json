@@ -1,0 +1,94 @@
+{
+ "schema": 1,
+ "class": "firewall_addon_xrdp",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-10-27T04:55:54Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "7ede9b57d983",
+ "migrate_subject": "P8: migrate puppet_infrastructure::firewall_addon_xrdp",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 7ede9b57d983; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/firewall_addon_xrdp.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `firewall_addon_xrdp Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-firewall', '8.3.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 3 catalog events; COVERAGE puppet_infrastructure::firewall_addon_xrdp: 3 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk 1: added 2-line migration header comment only; baseline Purpose block and the xrdp/IPv6 explanatory comment block preserved verbatim (comments_preserved=ok)",
+   "DIFF A hunk 2 ('3389 allow xrdp'): action => 'accept' -> jump => 'accept' (puppetlabs-firewall 8 rename), proto/dport unchanged",
+   "DIFF A hunk 3 ('5900' lo INPUT rule): action -> jump, provider => 'ip6tables' -> protocol => 'ip6tables'; value kept, valid in firewall 8.3.0 type Enum['iptables','ip6tables','IPv4','IPv6'] (lib/puppet/type/firewall.rb:157); iniface/dport unchanged",
+   "DIFF A hunk 4 ('003 Allow established ipv6'): action -> jump, provider -> protocol 'ip6tables'; state ['ESTABLISHED'] -> 'ESTABLISHED' is an API translation with identical rule: type accepts String or Array (type/firewall.rb:567), provider format wraps a String into an Array before emitting '--state ESTABLISHED' (provider/firewall/firewall.rb ~988), while the parser strips one-element arrays to a String (~615) so the Array form never matches in insync? (~418) -> non-idempotent; proto/sport unchanged",
+   "No resource added/removed/retitled, no attribute value or logic changed; DIFF B is a re-migration that restores baseline layout/comments and replaces earlier protocol 'IPv6' with baseline's 'ip6tables'"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 8,
+  "removed": 6,
+  "non_comment_changes": 12,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest; firewall type attribute renames for Puppet 8 (action -> jump, provider -> protocol) and state ['ESTABLISHED'] -> 'ESTABLISHED' (the Puppet 8 firewall type reports a one-element state as a string and re-applied the array on every run; same iptables rule).",
+  "# Module dependency: puppetlabs-firewall 8.3.0."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 3,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::firewall_addon_xrdp: 3 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 27.148,
+   "master_check_s": 0.802,
+   "poweroff_s": 0.71,
+   "restore_s": 0.236,
+   "boot_to_ssh_s": 15.68,
+   "apt_update_s": 8.521,
+   "verify_s": 1.199
+  },
+  "log": ".codex_state/logs/reviews/firewall_addon_xrdp.20261027T045437Z.harness.log"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
