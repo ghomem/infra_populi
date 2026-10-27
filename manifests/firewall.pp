@@ -8,22 +8,11 @@
 # IMPORTANT: consider using firewall_secure instead of this class
 
 class puppet_infrastructure::firewall {
+  Firewall {
+    require => undef,
+  }
+
   $localdir = lookup('filesystem::localdir')
-
-  file { $localdir:
-    ensure => directory,
-    mode   => '0755',
-    owner  => 'root',
-    group  => 'root',
-  }
-
-  file { "${localdir}/bin":
-    ensure => directory,
-    mode   => '0755',
-    owner  => 'root',
-    group  => 'root',
-    require => File[$localdir],
-  }
 
   # Script that clears all firewall rules to be used only in exceptional cases (see issue 119)
   file { "${localdir}/bin/iptables-flush.sh":
@@ -44,30 +33,30 @@ class puppet_infrastructure::firewall {
   # Default firewall rules
   firewall { '000 accept all icmp':
     proto  => 'icmp',
-    jump => 'accept',
+    action => 'accept',
   }
   -> firewall { '001 accept all to lo interface':
     proto   => 'all',
     iniface => 'lo',
-    jump  => 'accept',
+    action  => 'accept',
   }
   -> firewall { '002 reject local traffic not on loopback interface':
     iniface     => '! lo',
     proto       => 'all',
     destination => '127.0.0.1/8',
-    jump        => 'reject',
+    action      => 'reject',
   }
   -> firewall { '003 accept related established rules':
     proto  => 'all',
     state  => ['RELATED', 'ESTABLISHED'],
-    jump => 'accept',
+    action => 'accept',
   }
 
   # accept SSH from all
   firewall { '100 accept ssh':
     proto  => 'tcp',
     dport  => 22,
-    jump => 'accept',
+    action => 'accept',
   }
 
 }
