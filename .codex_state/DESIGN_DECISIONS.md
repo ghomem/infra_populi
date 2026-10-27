@@ -722,3 +722,16 @@ Prepared, not applied (ruling 9): `.codex_state/lab/Puppetfile.openvox-only.prep
 puppet-letsencrypt 13.4.0 + puppet-epel 6.0.0, puppet-openvpn 12.0.0, rabbitmq/gitlab outside the 87; saz-ssh and
 saz-sudo held; saz-resolv_conf 8.0.1 already in the lab is openvox-only — flagged). ntp: no pin until production's
 ntp module is read (escalation, 4.2).
+
+## 2026-10-27 — Step 4.1c: baseline-syncs (C3) and the three imports (ruling 8): 90-class universe
+Baseline-synced verbatim to release-0.9.10 (cf477c6), one `P8: baseline-sync` commit each, none shares a drifted
+template/file with a done class (`git grep` in the baseline): filesystem_apt (+files/apt/apt-update-kernel.sh),
+letsencrypt_base, puppet_boot_run (+files/etc/puppet_boot_run.sh), rsyslog_server (+4 templates; ruling 1:
+migrates from 0.9.10 directly), user_kde_lock_screen, user_desktop, user_desktop_sudoer.
+NOT synced: node_base_desktop — its baseline passes parameters to rsyslog_client, whose local copy is the
+pre-baseline (group D) version, i.e. "the baseline needs newer dep content" (hazard 8) → escalation (4.2).
+Imported from the baseline as baseline-syncs: gnome_lock_screen, firewall_ipv6_drop_policy_desktop,
+rsyslog_apparmor_exception, each with an advisor-scored plan row (rsyslog_apparmor_exception:
+required_base=rsyslog_base for Service['rsyslog']) and a pending tracker line → 90 classes. Composite
+meaningful_desktop now compiles its full 7-class direct closure (same expected first error, now from
+firewall_ipv6_drop_policy_desktop.pp:13).

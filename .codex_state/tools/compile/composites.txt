@@ -5,6 +5,6 @@
 node_base_debian | debian | fail:Could not find class ::ntp | node_base
 node_base_redhat | redhat | fail:Duplicate declaration: File[/opt/puppet-infrastructure] | node_base
 # meaningful_puppet::meaningful_desktop's DIRECT puppet_infrastructure declarations (fleet_class_usage.md;
-# ≈20 laptops). Their own includes pull in the rest. gnome_lock_screen and firewall_ipv6_drop_policy_desktop
-# join after their 4.1 import.
-meaningful_desktop | debian | fail:no parameter named 'action' | filesystem_base_desktop firewall_secure packages_base rsyslog_client user_kde_lock_screen
+# ≈20 laptops). Their own includes pull in the rest. Full 7-class closure since the 4.1c import (2026-10-27);
+# first error now from firewall_ipv6_drop_policy_desktop.pp:13 (pending syntax work), same substring.
+meaningful_desktop | debian | fail:no parameter named 'action' | filesystem_base_desktop firewall_ipv6_drop_policy_desktop firewall_secure gnome_lock_screen packages_base rsyslog_client user_kde_lock_screen
