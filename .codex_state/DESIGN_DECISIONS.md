@@ -1005,3 +1005,11 @@ revert state is refused. Strict for `--fix` records too (re-run `--revert-first`
 stale run GREEN — it is evidence, just not recordable. CODEX_RUNBOOK §2.4: after iterating on a used node, finish with
 `test_class.sh --revert-first`. Evidence for the rule: firewall_ipv6_drop_policy_desktop's recorded GREEN (batch 3) was
 "not reverted first". Real node token read OK (boot aa9bd922…, last_run present in the snapshot).
+
+## 2026-11-10 — HQ batch-3 acceptance (2/4): notify events accepted; Phase 5 backlog file
+`Notify[...]` expected run-2 events are accepted on the same basis as `Exec[apt_update]`: upstream behaviour that
+reports a change on every agent run, allowed only through a plan expected_run2_events entry with a header
+justification. The Phase 5 list now has a single source, `.codex_state/rules/phase5_backlog.md` (advisor-only via
+rules/*): item 1 apt frequency 'always' → 'daily' (moved from the 2026-11-10 batch-2 entry's "Phase 5 question"),
+item 2 replace notify resources with notice()/debug() calls, with every carrier found by grep (nginx_frontend_domain
+:256/:262, mariadb_server :64 — pending, will need the same plan entry —, ssl_base :98 conditional).
