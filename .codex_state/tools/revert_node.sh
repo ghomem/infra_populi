@@ -13,8 +13,8 @@
 #   node snapshot P8NODE_BASELINE_GREEN_v2 (offline; GRUB_RECORDFAIL_TIMEOUT=2,
 #                 apt timers off, NIC2 host-only vboxnet0 — sprint step 3.1);
 #                 its apt lists are refreshed after every restore (apt-get update)
-#   SSH aliases   puppet8node, puppet8master
-#   Wi-Fi bridge  host interface wlo1 (typically takes about 45s to settle)
+#   SSH aliases   puppet8node, puppet8master (host-only 192.168.56.20 / .10), puppet8node-wifi (bridged fallback)
+#   Wi-Fi bridge  host interface wlo1 (NIC1, internet; in bridged mode the node is reached over it)
 #   master check  puppet8master.example.com:8140, opened from the node
 # Parameterizing these via environment variables is a known future improvement.
 #

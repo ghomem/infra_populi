@@ -1,7 +1,7 @@
 # Lab network: host-only static IPs — plan for HQ review (2026-11-10)
 
-**Status: STEP REVIEW APPROVED by HQ with amendments A–E (2026-11-10, folded in below, listed in §6). Step 0 PASSED
-(2026-11-10 16:58Z). Step 1 is Salatiel's — waiting for it. No lab change has been made.**
+**Status: STEP REVIEW APPROVED by HQ with amendments A–E (2026-11-10, folded in below, listed in §6). Steps 0–7
+PASSED (execution log below); step 8 (canary) next.**
 
 Step 0 log (2026-11-10 16:58:33Z), all PASS:
 - worktree clean; no engine run; node snapshot v2 and master snapshot v3 exist; puppetserver active; vboxnet0
@@ -14,6 +14,30 @@ Step 0 log (2026-11-10 16:58:33Z), all PASS:
 
 The only commands run so far were reads: VBoxManage `showvminfo`, `list` and `snapshot list`; `ip`, `cat` and `systemctl
 is-enabled` over ssh; `revert_node.sh --node-state`.
+
+## Execution log (2026-11-10)
+| step | result | evidence |
+|---|---|---|
+| 0 | PASS 16:58Z | below |
+| 1 [Salatiel] | verified 17:03Z | nic2 hostonly/vboxnet0; puppetserver active after 6 s; enp0s8 present (DOWN); node→master:8140 over the old path |
+| 1a | PASS | `~/.ssh/{config,known_hosts}.pre-p8net-step1a`. 3 keys seeded per name, identical to the trusted address entries. All 6 aliases: HostKeyAlias set, strict checking `ask`, BatchMode connects. |
+| 2 | PASS 17:04Z | dead-man armed 17:03:53Z. ping, enp0s8 .10/24 + default via enp0s3, and puppetserver all checked over `ho`; `-wifi` intact. Timer stopped 17:04:19Z before firing. |
+| 3 | PASS 17:05Z | over `ho`: default route enp0s3, node→192.168.56.10:8140, hosts edited, getent ASSERT .10, noop agent rc 0, apt update. Node reverted afterwards (step 4's real run). |
+| 4 | PASS (1c3c00d) | lab.env + hostonly overlay mode; 7 new tests; real bridged revert unchanged (enp0s8 DOWN, master .166) |
+| 5 | PASS | `/etc/hosts.pre-p8net` holds the original line; getent puppet8node.example.com ASSERT .20. My first run read `PIPESTATUS` in zsh (empty, cosmetic); the edit was not re-run, so the backup is intact. |
+| 6 | PASS (b33167c) | `~/.ssh/config.pre-p8net-step6`. Pre-switch: `ho` .10/.20. Sockets closed before the edit. `ssh -G` asserts PASS. lab.env → hostonly. The gate caught stub tests that followed the live setting; they are pinned to bridged now. Verify: both aliases' SSH_CONNECTION from .1, the first real hostonly revert SUCCESS (token = snapshot's), compile-only OK. |
+| 7 | PASS | params: firewall_secure/_extra `acl` and node_base `ssh_acl` → 192.168.56.1, rsyslog_client `target_ip` → 192.168.56.10 (network_static gateway stays). Node SSH_CLIENT 192.168.56.1 = params. Sweep below. |
+
+Step 7 sweep of the master (file names only; passwd directory pruned), triage:
+- `/etc/hosts.pre-p8net`: the step 5 backup. Expected.
+- `/etc/puppetlabs/code/environments/production/modules/puppet_infrastructure/CLAUDE.md`: the harness-deployed copy
+  of this repo's CLAUDE.md. Documentation, fixed by the step 7 docs commit at the next deploy.
+- `/etc/hosts`: the **master's own name** `puppet8master.example.com` → 192.168.77.166. That is lab addressing, and
+  Wi-Fi off (step 10) would leave it pointing at the bridged NIC.
+  - Fixed as fixture state, like step 5: separate backup `/etc/hosts.pre-p8net-step7`, line → 192.168.56.10,
+    getent ASSERT .10, no 192.168.77 literal left in /etc/hosts.
+  - compile-only OK afterwards.
+  - Added to step 9: the master snapshot captures it.
 
 ## 1. Why
 

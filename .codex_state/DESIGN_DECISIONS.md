@@ -1140,3 +1140,13 @@ Steps executed so far (escalations/lab-network-static.md):
 - step 2 (master enp0s8 192.168.56.10 under the dead-man timer, disarmed after the path-asserted checks) PASS;
 - step 3 (one-off node trial: 8140 and getent asserted over host-only, noop agent rc 0, apt over NIC1) PASS, node
   reverted.
+
+## 2026-11-10 — lab network steps 5–7 done; host-only is the engine's path
+- **Addresses:** the main aliases now resolve to 192.168.56.10 (master) and .20 (node), and lab.env is `hostonly`.
+  revert_node.sh applies the v2 overlay and proves the path on every revert.
+- **Params:** the harness-source ACL params are 192.168.56.1, and rsyslog_client's `target_ip` is 192.168.56.10.
+- **Master:** `/etc/hosts` resolves the node to .20, and — found by the step 7 sweep — its own name to .10 (was its
+  Wi-Fi .166).
+- **Documents:** CLAUDE.md Facts, hazards.md item 12 and the revert_node.sh header follow.
+- **Next:** the canary (step 8), then the snapshot refresh (step 9) and the Wi-Fi-off proof (step 10). The `-wifi`
+  aliases stay until step 10 passes.

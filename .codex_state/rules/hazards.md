@@ -40,7 +40,8 @@ the rest are read from the manifest, its templates and the plan.
     (ssh, nginx, mysql, networking) must not cut the harness's own SSH path — say how it stays alive. SSH
     rate limits (firewall_secure family): the harness and the reviewer multiplex over one ESTABLISHED connection
     (`.codex_state/tools/sshmux/ssh`), and the params fixture must whitelist the harness's SSH source as the node
-    sees it (`ssh puppet8node 'echo $SSH_CLIENT'` — the laptop address is DHCP-assigned; re-check before dispatch).
+    sees it (`ssh puppet8node 'echo $SSH_CLIENT'`: the static host-only 192.168.56.1 since the 2026-11-10 lab-network
+    change; still re-check before dispatch).
 13. Runtime-baseline drift of the node itself (apt lists, timers): the revert refreshes apt lists; anything
     else a class depends on that is not in P8NODE_BASELINE_GREEN_v2 is a fixture to declare, not to assume.
 14. Module resources without the module's base class: the class uses a Puppetfile module's defines/native types

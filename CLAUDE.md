@@ -20,8 +20,10 @@ the tracked `.codex_state/rules/CODEX_RUNBOOK.md`.
 - The laptop is a PRODUCTION Puppet 5 node (puppet-agent 5.5.22, agent active). Never install system
   ruby, Puppet 8 packages or gems on it, and never run `puppet` there. Puppet-side checks (parser
   validate, puppet-lint, compiles) run on puppet8master over ssh.
-- Lab: OpenVox. Master `puppet8master` (192.168.77.166), node `puppet8node` (192.168.77.185),
-  rsync aliases `puppet8master-rsync`/`puppet8node-rsync`. Node is Ubuntu 24.04, netplan-only.
+- Lab: OpenVox. Master `puppet8master` (192.168.56.10), node `puppet8node` (192.168.56.20), on the host-only
+  network vboxnet0 (laptop 192.168.56.1, the harness's SSH source); NIC1 of both VMs stays bridged to Wi-Fi for
+  internet. rsync aliases `puppet8master-rsync`/`puppet8node-rsync`; every lab alias has `HostKeyAlias`. Node is
+  Ubuntu 24.04, netplan-only. Network mode: `.codex_state/lab/lab.env` (escalations/lab-network-static.md).
 - State (tracked): `.codex_state/migration_plan.md` (scores, internal_deps, resource_type,
   required_base, required_external), `migration_order.md` (git-derived, REGENERATED never edited),
   `migrated_classes.txt`, `blocked.txt`, `candidates/`, `DESIGN_DECISIONS.md`.

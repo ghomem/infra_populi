@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-70 entries; 6 marked superseded (in whole or part); newest first.
+71 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-10 — lab network steps 5–7 done; host-only is the engine's path
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-10 — lab network step 4: tracked overlay setting (HQ step review C)
 - 1. Reach the restored v2 node over `puppet8node-wifi`.
