@@ -77,7 +77,7 @@ $PUPPETFILE_CMD || refuse "the master Puppetfile differs from ${PUPPETFILE_EXPOR
 echo "==> Standing composite compiles"
 if ! $COMPOSITE_CMD; then
   echo "RECORD REFUSED: a composite compile no longer matches compile/composites.txt — a regression to" \
-       "investigate, or a fix to record in composites.txt in its own commit first" >&2
+       "investigate, or a fix: composites.txt is the advisor's (stop and report the DIFF line; do not edit it)" >&2
   exit 4
 fi
 

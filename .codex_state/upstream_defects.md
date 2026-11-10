@@ -23,7 +23,7 @@ the entry's `Ruled change` (plus ordinary Puppet 8 translations); anything else 
   from inside an agent run.
 - Ruled change (HQ ruling 8; intent check passed, escalations/puppet_boot_run.md): drop `ensure => running` from the
   service; keep `enable => true`.
-- Status: ruled
+- Status: applied 1f3e212 (reviewer v2 PASS 2026-11-10)
 
 ## openvpn_nm_connection
 - Short: fqdn_rand_uuid replaced by stdlib fqdn_uuid
