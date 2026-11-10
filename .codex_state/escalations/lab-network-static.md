@@ -1,7 +1,16 @@
 # Lab network: host-only static IPs — plan for HQ review (2026-11-10)
 
-**Status: STEP REVIEW APPROVED by HQ with amendments A–E (2026-11-10, folded in below, listed in §6). Step 0 run (see
-its result). Step 1 is Salatiel's — waiting for it. No lab change has been made.**
+**Status: STEP REVIEW APPROVED by HQ with amendments A–E (2026-11-10, folded in below, listed in §6). Step 0 PASSED
+(2026-11-10 16:58Z). Step 1 is Salatiel's — waiting for it. No lab change has been made.**
+
+Step 0 log (2026-11-10 16:58:33Z), all PASS:
+- worktree clean; no engine run; node snapshot v2 and master snapshot v3 exist; puppetserver active; vboxnet0
+  192.168.56.1/24.
+- Master certificate SANs: `DNS:puppet8master, DNS:puppet8master.example.com, DNS:puppet8master` (no IP).
+- Trusted host keys: 3 for each of 192.168.77.166 and 192.168.77.185.
+- `ho` over the Wi-Fi path refused with 97 (`PATH ASSERT FAILED: 192.168.77.203 … 192.168.77.166 22`).
+- The first attempt failed "no engine run" only because `pgrep -f` matched the checking command's own text. Fixed
+  with bracketed patterns (4e856bd); no engine process was running.
 
 The only commands run so far were reads: VBoxManage `showvminfo`, `list` and `snapshot list`; `ip`, `cat` and `systemctl
 is-enabled` over ssh; `revert_node.sh --node-state`.
