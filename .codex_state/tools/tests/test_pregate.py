@@ -249,3 +249,30 @@ def test_staged_ignores_non_puppet_files(staged_repo):
     (repo / "README.md").write_text("x\n")
     git(repo, "add", "README.md")
     assert pregate.pregate_staged().status == "CLEAN" and sent == []
+
+
+INV14 = {"modules": {"firewall", "sudo", "apt", "docker"}, "types": {"firewall", "firewallchain", "cron"},
+         "defines": {"firewall", "sudo", "sudo::conf", "apt", "apt::ppa", "docker", "docker::run"},
+         "type_modules": {"firewall": ("firewall", "env"), "firewallchain": ("firewall", "env"),
+                          "cron": ("cron_core", "vendored")}}
+
+
+def test_hazard14_module_resources_without_their_base_class():
+    m = ("class x {\n  firewall { '100 a': proto => 'tcp' }\n  sudo::conf { 'c': content => 'x' }\n"
+         "  package { 'p': require => Exec['apt_update'] }\n  cron { 'c': command => 'true' }\n}\n")
+    got = pregate.module_base_findings(m, INV14)
+    assert [g.split("`")[1] for g in got] == ["apt", "firewall", "sudo"]  # cron is vendored: no base class needed
+    assert "Exec['apt_update']" in got[0] and "required_external=firewall" in got[1]
+
+
+def test_hazard14_is_satisfied_by_a_declaration_or_the_plan():
+    m = "class x {\n  include sudo\n  class { 'apt': }\n  firewall { '100 a': proto => 'tcp' }\n  sudo::conf { 'c': }\n}\n"
+    assert [g.split("`")[3] for g in pregate.module_base_findings(m, INV14)] == ["firewall"]
+    assert pregate.module_base_findings(m, INV14, required_external=("firewall",)) == []
+    assert pregate.module_base_findings("class x { docker::run { 'r': } }", INV14, ("docker",)) == []
+
+
+def test_hazard14_reported_by_scan_hazards():
+    r = pregate.Report("m")
+    pregate.scan_hazards("class x { firewall { '100 a': proto => 'tcp' } }", INV14, r)
+    assert findings(r, "hazard14-module-base")

@@ -18,7 +18,7 @@ FOR EACH CLASS:
    `manifests/<class>.pp`. If deps are not DONE, the order file is wrong — investigate, do not skip silently.
 2. HAZARDS: first run `.codex_state/tools/pregate.sh <class>` (drift, parse, lint, templates, static
    hazards 1/2/5/6/9 — it prints its tool versions); every FINDING is a hazard to tier below. Then run
-   the 13-item checklist in `.codex_state/rules/hazards.md` (the single source) against the manifest (grep, read templates it uses,
+   the 14-item checklist in `.codex_state/rules/hazards.md` (the single source) against the manifest (grep, read templates it uses,
    check external types against the master's `puppet module list` and the production module list in
    the 2026-09-30 design entry). For each hazard found decide the tier:
    - You can resolve (pin+install a module via Puppetfile+r10k on the master following the module rules;
@@ -58,6 +58,10 @@ FOR EACH CLASS:
    If the category is one YOU can resolve (cat 1 with a known compatible module; cat 3 with an existing
    capability whose plan column is simply unset), resolve it and retry the class ONCE from step 3.
    Otherwise accept the block, add an escalation file if Salatiel-tier, commit, continue.
+6b. MISSING_PREREQUISITE (runbook 2b): Codex stopped with `MISSING_PREREQUISITE: <column>=<value> — <evidence>`.
+   Verify the evidence, apply the plan edit yourself (`plan(<class>): ...` commit), and dispatch the class again from
+   step 3 (counts as the class's second Codex run, with that reason in the metrics note). A plan commit made by Codex
+   is a runbook violation: review it, keep or revert it, and note it in the batch report.
 7. FAILED (no green, no block): read the log tail. Apply the stop condition — if the failure yields a
    hypothesis you can act on within your authority, act once and retry from step 3 once. Otherwise
    block with evidence and continue.

@@ -911,3 +911,15 @@ with live masters for node and master. firewall_secure's fixture `acl` = the har
 (192.168.77.203 via `$SSH_CLIENT`), so rule 100 accepts the harness before the 15/min NEW-connection limit; that
 address is DHCP-assigned — re-checked before every dispatch (hazards.md item 12). firewall_secure_extra: if
 xtables-addons/geoip cannot be installed on the node → escalate and continue (ruling).
+
+## 2026-11-10 — HQ rulings before batch 2 (3/3): plan edits are the advisor's; hazard 14
+Codex's plan commit 7bc4be6 (firewall required_external=firewall) stands. Runbook §2b: plan columns are advisor
+authority; Codex reports a missing prerequisite as one structured line
+`MISSING_PREREQUISITE: <column>=<value> — <evidence>` and stops; the advisor verifies, commits `plan(<class>)` and
+dispatches again (skill step 6b; it is that class's second Codex run, with the reason in the metrics note).
+Hazard 14 (hazards.md, mechanised in pregate as `hazard14-module-base`): a class using a Puppetfile module's
+defines or native types (inventory now maps each type to its module and env/vendored) or `Exec['apt_update']`
+without declaring the module's base class and without plan required_external for it. classify_path routes a class
+whose ONLY finding is hazard 14 to context-gap (a plan fix), not to Codex. Real lab: flags firewall_secure (and,
+informationally, the verified firewall addons, which went GREEN without Class['firewall']); clean for
+sysmon_puppet_cert_status, nginx_proxy_smtp_auth_ppa, packages_base.

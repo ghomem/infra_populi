@@ -63,6 +63,8 @@ def decide(cls: str) -> tuple[int, str, list[str]]:
     if report.status == "ERROR":
         return 2, "ERROR", [f"pregate {c}: {d}" for lvl, c, d in report.lines if lvl == "ERROR"]
     reasons = [f"pregate {c}: {d}" for lvl, c, d in report.lines if lvl == "FINDING"]
+    if reasons and all(c == "hazard14-module-base" for lvl, c, d in report.lines if lvl == "FINDING"):
+        return 4, "context-gap", reasons  # a plan required_external (advisor), not syntax work
     if reasons:
         return 1, "syntax-work", reasons
     status, line = compile_only(cls)

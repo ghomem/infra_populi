@@ -4,7 +4,7 @@ appends this file to the runbook). Edit only here. Items 1-8: CLAUDE.md before 2
 diagnosis G, approved by HQ ruling 12 (2026-10-26). -->
 
 Run on EVERY class before the generation path starts — the plan cannot predict these.
-`.codex_state/tools/pregate.sh <class>` mechanises items 1, 2, 5, 6, 8 and 9 (plus parse, lint, templates);
+`.codex_state/tools/pregate.sh <class>` mechanises items 1, 2, 5, 6, 8, 9 and 14 (plus parse, lint, templates);
 the rest are read from the manifest, its templates and the plan.
 
 1. External custom types from modules whose Puppet-8/OpenVox compatibility is unverified. Check the module's
@@ -40,6 +40,11 @@ the rest are read from the manifest, its templates and the plan.
     sees it (`ssh puppet8node 'echo $SSH_CLIENT'` — the laptop address is DHCP-assigned; re-check before dispatch).
 13. Runtime-baseline drift of the node itself (apt lists, timers): the revert refreshes apt lists; anything
     else a class depends on that is not in P8NODE_BASELINE_GREEN_v2 is a fixture to declare, not to assume.
+14. Module resources without the module's base class: the class uses a Puppetfile module's defines/native types
+    (or `Exec['apt_update']`) but never declares that module's class, and the plan has no required_external for it.
+    Production declares the base elsewhere; the harness needs `required_external=<module>` (advisor). pregate reports
+    it (`hazard14-module-base`) and classify_path routes a class whose only finding it is to context-gap.
+    Evidence: firewall needed Class['firewall'] for rule persistence (batch 1, 7bc4be6).
 
 Also known (each cost a cycle):
 - `internal_deps` in migration_plan.md is an Ubuntu-node projection, not universal (see the plan header).

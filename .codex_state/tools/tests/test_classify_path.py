@@ -82,3 +82,11 @@ def test_a_check_that_cannot_run_decides_nothing(world, which):
 
 def test_usage(capsys):
     assert cp.main([]) == 2 and cp.main(["../x"]) == 2
+
+
+def test_only_hazard14_findings_route_to_context_gap(world):
+    world["report"] = report(("FINDING", "hazard14-module-base", "uses firewall without class firewall"))
+    code, path, _ = cp.decide("x")
+    assert (code, path) == (4, "context-gap") and world["compiled"] == []
+    world["report"] = report(("FINDING", "hazard14-module-base", "x"), ("FINDING", "lint:legacy_facts", "y"))
+    assert cp.decide("x")[:2] == (1, "syntax-work")

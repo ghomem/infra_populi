@@ -80,8 +80,11 @@ done
 if [ "$inventory" = 1 ]; then
   M=/etc/puppetlabs/code/environments/production/modules
   for m in "$M"/*/; do m="$(basename "$m")"; [ "$m" = puppet_infrastructure ] || echo "@@MODULE $m"; done
-  for t in "$M"/*/lib/puppet/type/*.rb /opt/puppetlabs/puppet/vendor_modules/*/lib/puppet/type/*.rb; do
-    [ -f "$t" ] && echo "@@TYPE $(basename "$t" .rb)"
+  for t in "$M"/*/lib/puppet/type/*.rb; do
+    [ -f "$t" ] && echo "@@TYPE $(basename "$t" .rb) $(basename "${t%/lib/puppet/type/*}") env"
+  done
+  for t in /opt/puppetlabs/puppet/vendor_modules/*/lib/puppet/type/*.rb; do
+    [ -f "$t" ] && echo "@@TYPE $(basename "$t" .rb) $(basename "${t%/lib/puppet/type/*}") vendored"
   done
   for m in "$M"/*/; do
     mod="$(basename "$m")"; [ "$mod" = puppet_infrastructure ] && continue
@@ -167,7 +170,39 @@ def enclosed_by_os_guard(code: str, pos: int) -> bool:
     return False
 
 
-def scan_hazards(manifest: str, inventory: dict | None, report: Report) -> None:
+def module_base_findings(manifest: str, inventory: dict, required_external: tuple[str, ...] = ()) -> list[str]:
+    """Hazard 14 (HQ 2026-11-10 ruling 3): a class that uses a Puppetfile module's resources (its defines, native types,
+    or `Exec['apt_update']`) without declaring the module's base class, and whose plan has no required_external for it.
+    In production the base class is declared elsewhere (node/composite); the harness needs it named."""
+    code = strip_comments(manifest)
+    declared = {c.split("::")[0] if c.count("::") == 0 else c for c in declared_classes(manifest)}
+    declared |= {m.lower() for m in re.findall(r"Class\[\s*['\"](?:::)?([A-Za-z][\w:]*)['\"]\s*\]", code)}
+    have = declared | {e.lstrip(":") for e in required_external}
+    uses: dict[str, set[str]] = {}
+    for t in resource_types(manifest):
+        if "::" in t:
+            mod = t.split("::")[0]
+            if mod == "puppet_infrastructure" or mod not in inventory["modules"]:
+                continue
+        else:
+            owner = inventory.get("type_modules", {}).get(t)
+            if not owner or owner[1] != "env":
+                continue
+            mod = owner[0]
+        uses.setdefault(mod, set()).add(t)
+    if re.search(r"Exec\[\s*['\"]apt_update['\"]\s*\]", code) and "apt" in inventory["modules"]:
+        uses.setdefault("apt", set()).add("Exec['apt_update']")
+    out = []
+    for mod, used in sorted(uses.items()):
+        if mod not in inventory["defines"] or mod in have:  # no base class to declare, or already there
+            continue
+        out.append(f"uses {', '.join(sorted(used))} from module `{mod}` without declaring class `{mod}`; the harness "
+                   f"needs plan required_external={mod} (advisor) unless the class is meant to work standalone")
+    return out
+
+
+def scan_hazards(manifest: str, inventory: dict | None, report: Report,
+                 required_external: tuple[str, ...] = ()) -> None:
     code = strip_comments(manifest)
     # 1. external custom types / classes from modules that are not installed
     if inventory is not None:
@@ -198,6 +233,10 @@ def scan_hazards(manifest: str, inventory: dict | None, report: Report) -> None:
             report.add("FINDING", "hazard9-exec-guard", f"exec {title} has no unless/onlyif/creates/refreshonly (runs every agent run)")
         for guard in re.findall(r"(?:unless|onlyif)\s*=>\s*['\"]([^'\"]+)", body):
             report.add("INFO", "hazard9-exec-guard", f"exec {title} guard command `{guard.split()[0]}` must exist on the node (a missing guard binary RUNS the command)")
+    # 14. module resources without the module's base class (needs required_external)
+    if inventory is not None:
+        for finding in module_base_findings(manifest, inventory, required_external):
+            report.add("FINDING", "hazard14-module-base", finding)
     # 6. stdlib-4 functions removed in stdlib 9
     for fn in sorted(set(STDLIB4_REMOVED.findall(code))):
         report.add("FINDING", "hazard6-stdlib", f"calls `{fn}()`, removed in stdlib 9")
@@ -268,7 +307,7 @@ def run_remote(tar_bytes: bytes, inventory: bool) -> str:
 
 def parse_remote(output: str) -> tuple[dict, list[dict], dict]:
     versions, results = {}, []
-    inventory = {"modules": set(), "types": set(), "defines": set()}
+    inventory = {"modules": set(), "types": set(), "defines": set(), "type_modules": {}}
     lines, i = output.splitlines(), 0
     while i < len(lines):
         line = lines[i]
@@ -278,7 +317,10 @@ def parse_remote(output: str) -> tuple[dict, list[dict], dict]:
         elif line.startswith("@@MODULE "):
             inventory["modules"].add(line.split(" ", 1)[1])
         elif line.startswith("@@TYPE "):
-            inventory["types"].add(line.split(" ", 1)[1])
+            parts = line.split()
+            inventory["types"].add(parts[1])
+            if len(parts) >= 4:
+                inventory["type_modules"][parts[1]] = (parts[2], parts[3])
         elif line.startswith("@@DEFINE "):
             inventory["defines"].add(line.split(" ", 1)[1])
         elif line.startswith("@@BEGIN "):
@@ -409,7 +451,9 @@ def pregate_class(cls: str) -> Report:
     identical = frozenset(p for p in local if p.endswith(".pp") and p not in base_files
                           and baseline.git_show(base.upstream, base.commit, p) == local[p])
     apply_remote(results, report, report_inherited=True, identical_to_baseline=identical)
-    scan_hazards(manifest, inventory, report)
+    import gen_migration_order as gen  # noqa: PLC0415
+    row = gen.parse_plan().get(cls)
+    scan_hazards(manifest, inventory, report, row.required_external if row else ())
     variables = local_vars(manifest)
     for p in files:
         if p.startswith("templates/"):

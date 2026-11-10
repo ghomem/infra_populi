@@ -29,6 +29,15 @@ Phase 1 scope: Puppet 5 -> Puppet 8 / Vox Pupuli syntax migration, behaviour pre
 5. Add the 2-line header to the manifest: purpose (or '<baseline> manifest validated unchanged') and every module dependency with its installed version.
 6. Record: .codex_state/tools/record_green.sh <class>. It is the ONLY recorder: it checks the GREEN stamp, the header, the worktree and the standing composites, writes the tracker marker, commits 'P8: migrate puppet_infrastructure::<class>', regenerates the order file, commits and pushes. Never hand-write migrated_classes.txt or migration_order.md, never commit class files yourself.
 
+## 2b. Plan columns are the advisor's (HQ 2026-11-10)
+
+`.codex_state/migration_plan.md` (required_base, required_external, resource_type, title, node_fixture,
+expected_run2_events) is advisor authority: never edit or commit it. If the class needs a prerequisite the plan
+lacks (a base class, a module's base class, a fixture), stop that step and report it as ONE structured line in your
+final message, then stop the run:
+`MISSING_PREREQUISITE: <column>=<value> — <evidence: the exact error and where you traced it>`
+The advisor applies it and dispatches the class again.
+
 ## 3. What stops you - PHASE-SCOPED, expect this section to be replaced
 
 These triggers are correct BECAUSE Phase 1 is syntax-only. Later phases will have different ones - Phase 3's work IS behavioural, so "any behaviour change" would halt everything there. The durable principle: escalate decisions whose consequences extend beyond the current class.
