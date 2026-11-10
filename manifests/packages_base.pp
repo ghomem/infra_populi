@@ -1,3 +1,6 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependency: puppetlabs-apt 11.3.2.
+# Expected run-2 events: Exec[apt_update] — upstream's `class { 'apt': update => { frequency => 'always' } }` (this file, comment above it) makes the apt module run apt update on every agent run (its update.pp turns 'always' into refreshonly => false).
 ### Purpose ########
 # This class provides the minimum set of packages for a generic Ubuntu node
 class puppet_infrastructure::packages_base (
