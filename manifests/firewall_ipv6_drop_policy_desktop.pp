@@ -1,3 +1,5 @@
+# Puppet 8 migration: preserve desktop IPv6 DROP policies and loopback acceptance.
+# Module dependency: puppetlabs-firewall 8.3.0.
 ### Purpose ########
 # This class provides a desktop-safe IPv6 DROP policy.
 #
@@ -14,8 +16,8 @@ class puppet_infrastructure::firewall_ipv6_drop_policy_desktop {
     chain    => 'INPUT',
     proto    => 'all',
     iniface  => 'lo',
-    action   => accept,
-    provider => 'ip6tables',
+    jump     => accept,
+    protocol => 'ip6tables',
   }
 
   firewallchain { 'FORWARD:filter:IPv6': ensure => present, purge => true, policy => drop, }
