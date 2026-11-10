@@ -4,7 +4,7 @@ appends this file to the runbook). Edit only here. Items 1-8: CLAUDE.md before 2
 diagnosis G, approved by HQ ruling 12 (2026-10-26). -->
 
 Run on EVERY class before the generation path starts — the plan cannot predict these.
-`.codex_state/tools/pregate.sh <class>` mechanises items 1, 2, 5, 6, 8, 9 and 14 (plus parse, lint, templates);
+`.codex_state/tools/pregate.sh <class>` mechanises items 1, 2, 4, 5, 6, 8, 9 and 14 (plus parse, lint, templates);
 the rest are read from the manifest, its templates and the plan.
 
 1. External custom types from modules whose Puppet-8/OpenVox compatibility is unverified. Check the module's
@@ -15,7 +15,10 @@ the rest are read from the manifest, its templates and the plan.
    to master:8140.
 3. Class comments claiming a dependency or base — verify against code.
 4. Undeclared runtime prerequisites: an absolute path consumed by file/cron/template/exec whose parent
-   dir the manifest never declares.
+   dir the manifest never declares. Mechanised (pregate `hazard4-prereq`, HQ 2026-11-11): file parents, link targets,
+   local sources and exec/cron command paths (lookup() resolved against the master's Hiera) are checked against the
+   clean-node inventory (`node_inventory.py`); a missing path that no class of the required_base closure declares,
+   and that no `rules/provided_paths.txt` provider in the closure creates, is a finding → context-gap (plan fix).
 5. OS-specific EXECUTION (exec/dnf/rpm/subscription-manager) without an OS guard. Note the guard
    inversion: an `unless`/`onlyif` whose command doesn't exist makes Puppet RUN the command.
 6. stdlib-4-era functions removed in stdlib 9 (`validate_*`, `is_*`, ...).

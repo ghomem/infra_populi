@@ -90,3 +90,9 @@ def test_only_hazard14_findings_route_to_context_gap(world):
     assert (code, path) == (4, "context-gap") and world["compiled"] == []
     world["report"] = report(("FINDING", "hazard14-module-base", "x"), ("FINDING", "lint:legacy_facts", "y"))
     assert cp.decide("x")[:2] == (1, "syntax-work")
+
+
+def test_only_prerequisite_probe_findings_route_to_context_gap(world):
+    world["report"] = report(("FINDING", "hazard4-prereq", "/usr/lib64/nagios/plugins ... does not exist"),
+                             ("FINDING", "hazard14-module-base", "uses firewall"))
+    assert cp.decide("x")[:2] == (4, "context-gap")

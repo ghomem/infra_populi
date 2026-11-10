@@ -1,0 +1,5 @@
+# Paths created by a module class or the package it installs (HQ 2026-11-11 ruling 4, pregate dynamic probe).
+# A needed path under <prefix> counts as provided when a class of the required_base closure declares <provider>
+# (include / class { } / contain) or the plan lists it in required_external. Advisor-maintained; each line names its
+# evidence. Format: <absolute path prefix> <provider class> — <evidence>
+/etc/nginx nginx — puppet-nginx 8.4.0 class nginx installs the nginx package (Ubuntu: /etc/nginx/conf.d, sites-enabled)

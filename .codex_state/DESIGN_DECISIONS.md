@@ -951,3 +951,16 @@ the run are compared by blob hash, so the advisor's own work in progress is not 
 stderr and exit 5. blocked.txt is now advisor-only: the runbook (§1, §4) has Codex report `BLOCKED: category <N> —
 …` + evidence and stop; the advisor writes the entry (SKILL step 6). record_green's commits (class files, tracker,
 order file, Puppetfile export) are outside the list. The wrapper derives its repo from its own location.
+
+## 2026-11-11 — HQ rulings before batch 3 (4): dynamic prerequisite probe in pregate
+`node_inventory.py --refresh` reverts the node and records every path of the clean P8NODE_BASELINE_GREEN_v2 root
+filesystem (find -xdev; 146,292 paths, 50 s) into an untracked cache; pregate answers "exists on the clean reverted
+node?" from it (one revert per snapshot, not per class). pregate extracts the absolute paths a class consumes —
+parents of its file resources (literal, interpolated, $var and array titles), link targets, local sources, exec/cron
+command paths — resolving `lookup()` variables against the master's Hiera (sent in the same ssh round trip), and
+reports `hazard4-prereq` for each missing path that no class of the required_base closure declares and that no
+provider listed in `.codex_state/rules/provided_paths.txt` (advisor-maintained, evidence per line; first entry
+/etc/nginx ← class nginx) creates. classify_path routes probe-only findings to context-gap. Validation: the sysmon_base
+case is flagged with filesystem_lib64 removed from the closure and clears with it; 0 findings over all 38 done classes
+(no false positives); batch-3 pre-scan flags nginx_frontend (`/opt/puppet-infrastructure/bin`, missing
+required_base=filesystem_base — a real catch).

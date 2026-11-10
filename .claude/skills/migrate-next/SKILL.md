@@ -9,6 +9,8 @@ PREFLIGHT (once): read CLAUDE.md and the three most recent DESIGN_DECISIONS.md e
 clean and HEAD == origin/main (fix by push if only ahead; STOP if diverged). `ssh puppet8master` reachable
 and 8140 listening. Regenerate the order file. Create `.codex_state/logs/` if missing.
 `.git/hooks/pre-commit` must be a symlink to `../../.codex_state/tools/pre-commit` (install it if missing).
+`python3 .codex_state/tools/node_inventory.py --show` must find the clean-node inventory (else `--refresh`, ~1 min:
+it reverts the node) — pregate's dynamic prerequisite probe needs it.
 
 FOR EACH CLASS:
 1. PICK: the order file's `Next class:` — the RE-MIGRATION QUEUE's `first` entries (HQ order; a done class

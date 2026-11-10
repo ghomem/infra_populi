@@ -78,6 +78,9 @@ for side in local base; do
   done
 done
 if [ "$inventory" = 1 ]; then
+  for h in /etc/puppetlabs/code/environments/production/data/*.yaml; do
+    sudo -n cat "$h" 2>/dev/null | sed -n 's/^\([A-Za-z0-9_:]*\):[[:space:]]*\(.*\)$/@@HIERA \1 \2/p'
+  done
   M=/etc/puppetlabs/code/environments/production/modules
   for m in "$M"/*/; do m="$(basename "$m")"; [ "$m" = puppet_infrastructure ] || echo "@@MODULE $m"; done
   for t in "$M"/*/lib/puppet/type/*.rb; do
@@ -201,6 +204,176 @@ def module_base_findings(manifest: str, inventory: dict, required_external: tupl
     return out
 
 
+# ---------------------------------------------------------------- dynamic prerequisite probe (HQ 2026-11-11 ruling 4)
+
+ASSIGN = re.compile(r"^\s*(?:[A-Z][\w:\[\], ]*\s+)?\$(\w+)\s*=\s*(.+?),?\s*(?:#.*)?$", re.M)
+LOOKUP = re.compile(r"^lookup\(\s*['\"]([^'\"]+)['\"]")
+FILE_TITLE = re.compile(r"\bfile\s*\{\s*(?:(['\"])(.+?)\1|\$(\{?\w+\}?)|\[(.*?)\])\s*:", re.S)
+
+
+def _hiera_value(key: str, hiera: dict, depth: int = 0) -> str | None:
+    value = hiera.get(key)
+    if value is None or depth > 5:
+        return None
+    def sub(m):
+        inner = _hiera_value(m.group(1), hiera, depth + 1)
+        return inner if inner is not None else m.group(0)
+    value = re.sub(r"%\{(?:hiera|lookup)\(['\"]([^'\"]+)['\"]\)\}", sub, value)
+    return None if "%{" in value else value
+
+
+def resolve_vars(code: str, hiera: dict) -> dict[str, str]:
+    raw = {m.group(1): m.group(2).strip() for m in ASSIGN.finditer(code)}
+    out: dict[str, str] = {}
+    for _ in range(4):
+        for name, expr in raw.items():
+            if name in out:
+                continue
+            m = LOOKUP.match(expr)
+            if m:
+                v = _hiera_value(m.group(1), hiera)
+            elif expr[:1] in "'\"" and expr[-1:] == expr[:1]:
+                v = expand(expr[1:-1], out) if expr[0] == '"' else expr[1:-1]
+            else:
+                v = None
+            if v is not None:
+                out[name] = v
+    return out
+
+
+def expand(text: str, variables: dict[str, str]) -> str | None:
+    def sub(m):
+        name = m.group(1) or m.group(2)
+        return variables.get(name, "\0UNRESOLVED")
+    value = re.sub(r"\$\{(\w+)\}|\$(\w+)", sub, text)
+    return None if "\0UNRESOLVED" in value or "${" in value else value
+
+
+def title_paths(m: re.Match, variables: dict[str, str], arrays: dict[str, list[str]]) -> list[str]:
+    """Resolved paths of one file resource title: 'lit', "interp", $var, $array_var or [ items ]."""
+    if m.group(2) is not None:
+        items = [("'" if m.group(1) == "'" else '"') + m.group(2) + m.group(1)]
+    elif m.group(3) is not None:
+        items = ["$" + m.group(3).strip("{}")]
+    else:
+        items = [i.strip() for i in m.group(4).split(",") if i.strip()]
+    out: list[str] = []
+    for item in items:
+        if item.startswith("$") and item[1:].strip("{}") in arrays:
+            out += arrays[item[1:].strip("{}")]
+            continue
+        if item[:1] in "'\"":
+            item = item[1:-1]
+        v = expand(item, variables)
+        if v:
+            out.append(v)
+    return out
+
+
+def resolve_arrays(code: str, variables: dict[str, str]) -> dict[str, list[str]]:
+    arrays: dict[str, list[str]] = {}
+    for name, expr in re.findall(r"^\s*\$(\w+)\s*=\s*\[(.*?)\]", code, re.M | re.S):
+        vals = []
+        for item in (i.strip() for i in expr.split(",") if i.strip()):
+            if item[:1] in "'\"":
+                item = item[1:-1]
+            v = expand(item, variables)
+            if v:
+                vals.append(v)
+        arrays[name] = vals
+    return arrays
+
+
+def path_items(manifest: str, hiera: dict) -> tuple[set[str], list[tuple[str, str]]]:
+    """(paths the manifest declares as file resources, [(path it needs to exist beforehand, why)])."""
+    code = strip_comments(manifest)
+    variables = resolve_vars(code, hiera)
+    arrays = resolve_arrays(code, variables)
+    declared: set[str] = set()
+    needed: list[tuple[str, str]] = []
+    for m in FILE_TITLE.finditer(code):
+      for path in title_paths(m, variables, arrays):
+        if not path or not path.startswith("/"):
+            continue
+        path = path.rstrip("/") or "/"
+        declared.add(path)
+        body = code[m.end(): code.find("}", m.end())]
+        parent = path.rsplit("/", 1)[0] or "/"
+        needed.append((parent, f"File[{path}]"))
+        for attr in ("target", "source"):
+            a = re.search(rf"\b{attr}\s*=>\s*(['\"])(.+?)\1", body)
+            if a:
+                v = expand(a.group(2), variables)
+                if v and v.startswith("/"):
+                    needed.append((v.rstrip("/"), f"{attr} of File[{path}]"))
+    for kind in ("exec", "cron"):
+        for m in re.finditer(rf"\b{kind}\s*\{{(.*?)\}}", code, re.S):
+            c = re.search(r"\bcommand\s*=>\s*(['\"])(.+?)\1", m.group(1), re.S)
+            if c:
+                first = expand(c.group(2).split()[0], variables) if c.group(2).split() else None
+                if first and first.startswith("/"):
+                    needed.append((first, f"{kind} command"))
+    return declared, needed
+
+
+def base_closure(cls: str) -> list[str]:
+    import gen_migration_order as gen  # noqa: PLC0415
+    rows, seen, todo = gen.parse_plan(), [], [cls]
+    while todo:
+        c = todo.pop()
+        if c in seen or c not in rows:
+            continue
+        seen.append(c)
+        todo.extend(rows[c].required_base)
+    return seen
+
+
+def provided_paths(repo: Path = REPO) -> list[tuple[str, str]]:
+    path = repo / ".codex_state" / "rules" / "provided_paths.txt"
+    out = []
+    for line in path.read_text(encoding="utf-8").splitlines() if path.is_file() else []:
+        parts = line.split()
+        if len(parts) >= 2 and parts[0].startswith("/") and not line.lstrip().startswith("#"):
+            out.append((parts[0].rstrip("/"), parts[1]))
+    return out
+
+
+def prerequisite_findings(cls: str, node_paths: dict[str, str], hiera: dict, repo: Path = REPO) -> list[str]:
+    """Paths the class needs that do not exist on the clean node and that no class of its required_base closure
+    (including itself) declares — the sysmon_base / filesystem_lib64 shape (hazard 4)."""
+    import gen_migration_order as gen  # noqa: PLC0415
+    rows = gen.parse_plan()
+    declared: set[str] = set()
+    providers: set[str] = set()
+    needed: list[tuple[str, str]] = []
+    for c in base_closure(cls):
+        f = repo / f"manifests/{c}.pp"
+        if not f.is_file():
+            continue
+        text = f.read_text(encoding="utf-8")
+        d, n = path_items(text, hiera)
+        declared |= d
+        providers |= {x.lstrip(":") for x in declared_classes(text)}
+        providers |= {x.lstrip(":") for x in (rows[c].required_external if c in rows else ())}
+        if c == cls:
+            needed = n
+    missing: dict[str, list[str]] = {}
+    provided = [prefix for prefix, provider in provided_paths(repo) if provider in providers]
+    for path, why in needed:
+        if path in node_paths or any(path == d or path.startswith(d + "/") for d in declared):
+            continue
+        if any(path == pre or path.startswith(pre + "/") for pre in provided):
+            continue
+        missing.setdefault(path, []).append(why)
+    closure = base_closure(cls)
+    out = []
+    for path, whys in sorted(missing.items()):
+        shown = ", ".join(whys[:2]) + (f" and {len(whys) - 2} more" if len(whys) > 2 else "")
+        out.append(f"{path} (needed by {shown}) does not exist on the clean node and no class in the required_base "
+                   f"closure {closure} declares it")
+    return out
+
+
 def scan_hazards(manifest: str, inventory: dict | None, report: Report,
                  required_external: tuple[str, ...] = ()) -> None:
     code = strip_comments(manifest)
@@ -307,7 +480,7 @@ def run_remote(tar_bytes: bytes, inventory: bool) -> str:
 
 def parse_remote(output: str) -> tuple[dict, list[dict], dict]:
     versions, results = {}, []
-    inventory = {"modules": set(), "types": set(), "defines": set(), "type_modules": {}}
+    inventory = {"modules": set(), "types": set(), "defines": set(), "type_modules": {}, "hiera": {}}
     lines, i = output.splitlines(), 0
     while i < len(lines):
         line = lines[i]
@@ -321,6 +494,9 @@ def parse_remote(output: str) -> tuple[dict, list[dict], dict]:
             inventory["types"].add(parts[1])
             if len(parts) >= 4:
                 inventory["type_modules"][parts[1]] = (parts[2], parts[3])
+        elif line.startswith("@@HIERA "):
+            _, key, *value = line.split(" ", 2)
+            inventory["hiera"].setdefault(key, (value[0] if value else "").split(" #")[0].strip().strip("'\""))
         elif line.startswith("@@DEFINE "):
             inventory["defines"].add(line.split(" ", 1)[1])
         elif line.startswith("@@BEGIN "):
@@ -454,6 +630,14 @@ def pregate_class(cls: str) -> Report:
     import gen_migration_order as gen  # noqa: PLC0415
     row = gen.parse_plan().get(cls)
     scan_hazards(manifest, inventory, report, row.required_external if row else ())
+    # HQ 2026-11-11 ruling 4: dynamic prerequisite probe against the clean-node inventory
+    import node_inventory  # noqa: PLC0415
+    node_paths = node_inventory.load()
+    if node_paths is None:
+        report.add("INFO", "hazard4-prereq", "no clean-node inventory: run .codex_state/tools/node_inventory.py --refresh")
+    elif inventory is not None:
+        for finding in prerequisite_findings(cls, node_paths, inventory.get("hiera", {})):
+            report.add("FINDING", "hazard4-prereq", finding)
     variables = local_vars(manifest)
     for p in files:
         if p.startswith("templates/"):

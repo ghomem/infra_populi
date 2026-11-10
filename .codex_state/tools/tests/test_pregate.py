@@ -276,3 +276,60 @@ def test_hazard14_reported_by_scan_hazards():
     r = pregate.Report("m")
     pregate.scan_hazards("class x { firewall { '100 a': proto => 'tcp' } }", INV14, r)
     assert findings(r, "hazard14-module-base")
+
+
+# --- HQ 2026-11-11 ruling 4: dynamic prerequisite probe
+HIERA = {"filesystem::localdir": "/opt/p", "filesystem::bindir": "%{lookup('filesystem::localdir')}/bin"}
+NODE = {"/": "d", "/usr": "d", "/usr/lib64": "d", "/usr/lib": "d", "/usr/lib/nagios": "d", "/usr/bin": "d",
+        "/usr/bin/env": "f", "/etc": "d"}
+
+
+def probe_repo(tmp_path, monkeypatch, manifests, plan):
+    repo = tmp_path / "repo"
+    (repo / "manifests").mkdir(parents=True)
+    (repo / ".codex_state" / "rules").mkdir(parents=True)
+    for name, text in manifests.items():
+        (repo / "manifests" / f"{name}.pp").write_text(text)
+    rows = {n: type("R", (), {"required_base": tuple(b), "required_external": tuple(e)})() for n, (b, e) in plan.items()}
+    import gen_migration_order
+    monkeypatch.setattr(gen_migration_order, "parse_plan", lambda: rows)
+    return repo
+
+
+SYSMON = ("class s {\n  $bindir = lookup('filesystem::bindir')\n"
+          "  file { '/usr/lib64/nagios/plugins/check_cpu.py': mode => '0755' }\n"
+          "  file { \"${bindir}/x.sh\": mode => '0755' }\n}\n")
+BASE = "class b {\n  $localdir = lookup('filesystem::localdir')\n  $bindir = lookup('filesystem::bindir')\n" \
+       "  $dirs = [ $localdir, $bindir ]\n  file { [ $dirs ]: ensure => directory }\n}\n"
+LIB64 = "class l {\n  file { '/usr/lib64/nagios': ensure => link, target => '/usr/lib/nagios' }\n}\n"
+
+
+def test_probe_flags_the_sysmon_base_shape_and_clears_with_the_right_bases(tmp_path, monkeypatch):
+    repo = probe_repo(tmp_path, monkeypatch, {"s": SYSMON, "b": BASE, "l": LIB64},
+                      {"s": (["b"], []), "b": ([], []), "l": ([], [])})
+    got = pregate.prerequisite_findings("s", NODE, HIERA, repo)
+    assert len(got) == 1 and got[0].startswith("/usr/lib64/nagios/plugins (needed by File[/usr/lib64/nagios/plugins/check_cpu.py])")
+    repo = probe_repo(tmp_path / "2", monkeypatch, {"s": SYSMON, "b": BASE, "l": LIB64},
+                      {"s": (["b", "l"], []), "b": ([], []), "l": ([], [])})
+    assert pregate.prerequisite_findings("s", NODE, HIERA, repo) == []
+
+
+def test_probe_resolves_lookup_and_array_titles():
+    declared, needed = pregate.path_items(BASE, HIERA)
+    assert declared == {"/opt/p", "/opt/p/bin"}
+    assert ("/opt", "File[/opt/p]") in needed
+
+
+def test_probe_checks_link_targets_and_exec_commands():
+    code = ("class c {\n  file { '/etc/x': ensure => link, target => '/usr/share/missing' }\n"
+            "  exec { 'e': command => '/usr/local/bin/tool --flag', creates => '/x' }\n}\n")
+    _, needed = pregate.path_items(code, {})
+    assert ("/usr/share/missing", "target of File[/etc/x]") in needed and ("/usr/local/bin/tool", "exec command") in needed
+
+
+def test_probe_honours_provided_paths_for_a_declared_provider(tmp_path, monkeypatch):
+    nginx = "class n {\n  class { 'nginx': }\n  file { '/etc/nginx/conf.d/x.conf': content => 'x' }\n}\n"
+    repo = probe_repo(tmp_path, monkeypatch, {"n": nginx}, {"n": ([], [])})
+    assert pregate.prerequisite_findings("n", NODE, {}, repo)  # no provided_paths line yet
+    (repo / ".codex_state/rules/provided_paths.txt").write_text("/etc/nginx nginx — evidence\n")
+    assert pregate.prerequisite_findings("n", NODE, {}, repo) == []
