@@ -1,3 +1,6 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: puppet-nginx 8.4.0 (nginx::resource::*), puppetlabs-host_core 1.3.0 (vendored with Puppet 8.24.2; host).
+# Expected run-2 events: Notify[Generated Upstream members for *] — declared by the puppet_infrastructure::nginx_frontend_domain this class declares (baseline `notify { ...: loglevel => 'debug' }`); a notify reports its message on every run.
 ### Purpose ########
 # Our nginx frontend class does three things:
 # - it installs nginx servers for the given domain (using our defined type
