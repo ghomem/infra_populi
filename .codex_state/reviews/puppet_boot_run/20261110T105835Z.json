@@ -1,0 +1,93 @@
+{
+ "schema": 1,
+ "class": "puppet_boot_run",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-10T10:58:35Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "1f3e212d685b",
+ "migrate_subject": "P8: migrate puppet_infrastructure::puppet_boot_run",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 1f3e212d685b; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `puppet_boot_run Done [from: release-0.9.10; upstream defect fixed: ensure dropped]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 10 catalog events; COVERAGE puppet_infrastructure::puppet_boot_run: 4 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-2): migration header comment only (purpose of change + 'Module dependencies: none')",
+   "DIFF A hunk 2 (service 'puppet_boot_run'): removes only 'ensure => running'; enable => true, provider => 'systemd' and require list unchanged \u2014 exactly the ruled upstream-defect change 'ensure dropped' in upstream_defects.md (HQ ruling 8); no other non-comment change vs baseline cf477c6",
+   "DIFF B identical to DIFF A (migration started from baseline content); file/exec resources, lookup('filesystem::bindir'), template and comments verbatim"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 1,
+  "non_comment_changes": 1,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest; upstream defect fixed (HQ ruling 8): `ensure => running` dropped from the oneshot unit (it restarted the unit on every agent run); `enable => true` kept.",
+  "# Module dependencies: none."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 10,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::puppet_boot_run: 4 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 35.539,
+   "master_check_s": 0.55,
+   "poweroff_s": 1.343,
+   "restore_s": 0.395,
+   "boot_to_ssh_s": 17.655,
+   "apt_update_s": 14.97,
+   "verify_s": 0.626
+  },
+  "log": ".codex_state/logs/reviews/puppet_boot_run.20261110T105719Z.harness.log",
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
