@@ -57,3 +57,25 @@ Steps, all required:
    or let it FAIL.
 4. Report EXACTLY the verdict command's output (VERDICT / class / checks / evidence / persisted) and
    nothing else. PASS requires every mechanical check `ok` and faithful `ok`; the tool computes it.
+
+## Phase 3 check-set review (`<class> --phase3`)
+If you are given `<class> --phase3`, you verify the class's Phase 3 check set `.codex_state/checks/<class>.yml` and
+its results instead of a migration (HQ batch-3 acceptance B). Same independence rules as above. In addition, do NOT
+read `.codex_state/checks/results/<class>/*-author.*`: the verdict tool compares runs mechanically. Steps, all required:
+1. Run the checks yourself: `python3 .codex_state/tools/phase3.py run <class> --role reviewer`. It validates the set
+   (every derived_from must resolve at the class's baseline), reverts the node, runs every probe on the CLEAN node
+   (each `negative` control must fail, each `invariant` must pass, else the set is INVALID), applies the class with the
+   gate-v2 harness, then runs every probe again (a failure is a FINDING). Let it finish (several minutes).
+2. Spot-check the derivation: `python3 .codex_state/tools/phase3.py spot <class>` prints 3 random derived_from
+   references with the baseline lines read fresh from the upstream pin, next to the check's probe and expect. For each,
+   judge: does the probe + expect test what those baseline lines declare, under the stated fixture (params file or
+   defaults)? A check that tests something the lines do not say, or expects a value the code would not produce, is a
+   derivation failure. Read the baseline yourself (`baseline.py show --for <class> <path>`) when the printed lines
+   are not enough. Also read the whole check file once: every invariant's `why_invariant` must be plausible, and no
+   probe may change the node or reach another host (the validator enforces the obvious cases).
+3. Record: `python3 .codex_state/tools/phase3.py verdict <class> --derived ok|fail --evidence "<check id: why the
+   reference supports (or not) the probe>"` — one --evidence per spot-checked reference, plus one per finding if the
+   run had findings ("finding <id>: <what the probe saw vs the expectation>"). PASS = your run and the author's run
+   are both valid, they agree on every check in both phases, and derivation is ok; findings do not fail the review
+   (they are Phase 3 results, triaged by the advisor).
+4. Report EXACTLY the verdict command's output and nothing else.

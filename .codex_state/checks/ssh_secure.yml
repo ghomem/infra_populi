@@ -1,0 +1,150 @@
+# Phase 3 checks for puppet_infrastructure::ssh_secure (class, parameter defaults: no params file).
+# The node is Ubuntu 24.04 (osfamily Debian): $ssh_service = ssh, $admin_group = sudo. No Hiera key
+# `puppet8node::ssh::othergroups` on the lab master, so AllowGroups = "sudo naemon  ssh_in".
+# Effective configuration is read with `sshd -T` (what sshd will enforce, after Includes and defaults); negotiation
+# checks connect from the node to itself (127.0.0.1) and stop at algorithm negotiation or authentication — no login.
+class: ssh_secure
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 1.4
+  notes: >-
+    Wall clock 2026-11-10T15:59:21Z (class-specific: Hiera othergroups lookup on the master, moduli hash) to
+    16:00:44Z (validated; includes a runner fix — the ssh-command rule matched the path /etc/ssh/moduli). Not
+    checkable, recorded as an authoring finding: `Protocol 2` and `UsePrivilegeSeparation yes` (lines 57, 77) are
+    deprecated and ignored by OpenSSH >= 7.5 (the node runs 9.6p1), so they have no behaviour to test.
+checks:
+  - id: kex-only-dh-gex-sha256
+    what: the effective KexAlgorithms is exactly diffie-hellman-group-exchange-sha256
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "10", text: "String $kex_algorithm            = 'diffie-hellman-group-exchange-sha256',"}
+      - {path: manifests/ssh_secure.pp, lines: "59", text: "'KexAlgorithms'           => $kex_algorithm,"}
+    probe: sshd -T 2>/dev/null | grep -E '^kexalgorithms '
+    expect: {rc: 0, stdout: "\\Akexalgorithms diffie-hellman-group-exchange-sha256\\n\\Z"}
+
+  - id: kex-negotiation-refuses-curve25519
+    what: a client offering only curve25519-sha256 cannot negotiate a key exchange with the node's sshd
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "10", text: "diffie-hellman-group-exchange-sha256"}
+    probe: ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o KexAlgorithms=curve25519-sha256 nobody@127.0.0.1 true 2>&1
+    expect: {rc: 255, stdout: "no matching key exchange method found"}
+
+  - id: ciphers-exact
+    what: the effective Ciphers list is exactly the class's five AES-GCM/CTR ciphers, in order
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "11", text: "'aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr'"}
+      - {path: manifests/ssh_secure.pp, lines: "60", text: "'Ciphers'                 => $ciphers,"}
+    probe: sshd -T 2>/dev/null | grep -E '^ciphers '
+    expect: {rc: 0, stdout: "\\Aciphers aes256-gcm@openssh\\.com,aes128-gcm@openssh\\.com,aes256-ctr,aes192-ctr,aes128-ctr\\n\\Z"}
+
+  - id: cipher-negotiation-refuses-chacha20
+    what: a client offering only chacha20-poly1305 cannot negotiate a cipher
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "11", text: "aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr"}
+    probe: ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Ciphers=chacha20-poly1305@openssh.com nobody@127.0.0.1 true 2>&1
+    expect: {rc: 255, stdout: "no matching cipher found"}
+
+  - id: macs-exact
+    what: the effective MACs list is exactly the class's four SHA-2 MACs, in order
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "12", text: "'hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256'"}
+      - {path: manifests/ssh_secure.pp, lines: "61", text: "'MACs'                    => $macs,"}
+    probe: sshd -T 2>/dev/null | grep -E '^macs '
+    expect: {rc: 0, stdout: "\\Amacs hmac-sha2-512-etm@openssh\\.com,hmac-sha2-256-etm@openssh\\.com,hmac-sha2-512,hmac-sha2-256\\n\\Z"}
+
+  - id: mac-negotiation-refuses-umac
+    what: with a non-AEAD cipher, a client offering only umac-64-etm cannot negotiate a MAC
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "12", text: "hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256"}
+    probe: ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Ciphers=aes256-ctr -o MACs=umac-64-etm@openssh.com nobody@127.0.0.1 true 2>&1
+    expect: {rc: 255, stdout: "no matching MAC found"}
+
+  - id: password-auth-off
+    what: password authentication is disabled — effective setting `no`, and the server offers only publickey
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "6", text: "Boolean $password_authentication = false,"}
+      - {path: manifests/ssh_secure.pp, lines: "43-47", text: "$my_password_authentication = 'no'"}
+      - {path: manifests/ssh_secure.pp, lines: "66", text: "'PasswordAuthentication'  => $my_password_authentication ,"}
+    probe: |
+      sshd -T 2>/dev/null | grep -E '^passwordauthentication '
+      ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no nobody@127.0.0.1 true 2>&1 | grep -o 'Permission denied ([a-z,-]*)'
+    expect: {rc: 0, stdout: "\\Apasswordauthentication no\\nPermission denied \\(publickey\\)\\n\\Z"}
+
+  - id: root-login-off
+    what: the effective PermitRootLogin is `no`
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "7", text: "Boolean $root_login              = false,"}
+      - {path: manifests/ssh_secure.pp, lines: "49-53", text: "$my_root_login = 'no'"}
+      - {path: manifests/ssh_secure.pp, lines: "68", text: "'PermitRootLogin'         => $my_root_login ,"}
+    probe: sshd -T 2>/dev/null | grep -E '^permitrootlogin '
+    expect: {rc: 0, stdout: "\\Apermitrootlogin no\\n\\Z"}
+
+  - id: client-alive
+    what: ClientAliveInterval 14400 with ClientAliveCountMax 0
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "5", text: "Integer $client_alive_interval   = 14400,"}
+      - {path: manifests/ssh_secure.pp, lines: "75-76", text: "'ClientAliveCountMax'     => '0',"}
+    probe: sshd -T 2>/dev/null | grep -E '^clientalive' | sort
+    expect: {rc: 0, stdout: "\\Aclientalivecountmax 0\\nclientaliveinterval 14400\\n\\Z"}
+
+  - id: allow-groups
+    what: only members of sudo (Debian admin group), naemon and ssh_in may log in
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "20-23", text: "$admin_group = 'sudo'"}
+      - {path: manifests/ssh_secure.pp, lines: "41", text: "$othergroups = join([lookup ( \"${clientcert}::ssh::othergroups\", String, 'first', '' ), ' ssh_in'])"}
+      - {path: manifests/ssh_secure.pp, lines: "79", text: "'AllowGroups'             => \"${admin_group} naemon ${othergroups}\" ,"}
+    probe: sshd -T 2>/dev/null | awk '$1 == "allowgroups" { for (i = 2; i <= NF; i++) print $i }'
+    expect: {rc: 0, stdout: "\\Asudo\\nnaemon\\nssh_in\\n\\Z"}
+
+  - id: ssh-in-group
+    what: the group ssh_in exists (for non-sudoers that need ssh in)
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "35-38", text: "group {'ssh_in':"}
+    probe: getent group ssh_in
+    expect: {rc: 0, stdout: "^ssh_in:"}
+
+  - id: host-keys-in-order
+    what: sshd loads exactly the ed25519, ecdsa and rsa host keys, in the class's order
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "9", text: "['/etc/ssh/ssh_host_ed25519_key','/etc/ssh/ssh_host_ecdsa_key','/etc/ssh/ssh_host_rsa_key']"}
+      - {path: manifests/ssh_secure.pp, lines: "58", text: "'HostKey'                 => $host_keys,"}
+    probe: sshd -T 2>/dev/null | grep -E '^hostkey '
+    expect: {rc: 0, stdout: "\\Ahostkey /etc/ssh/ssh_host_ed25519_key\\nhostkey /etc/ssh/ssh_host_ecdsa_key\\nhostkey /etc/ssh/ssh_host_rsa_key\\n\\Z"}
+
+  - id: moduli-file
+    what: /etc/ssh/moduli is the module's own file, 0644 root:root
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "26-33", text: "source => 'puppet:///modules/puppet_infrastructure/ssh/moduli',"}
+      - {path: files/ssh/moduli, sha256: 01f903391abe367b549ae37822983bd3d5a8dd3d6465523f3b5f14729573b8b0}
+    probe: |
+      sha256sum /etc/ssh/moduli | cut -d' ' -f1
+      stat -c '%a %U %G' /etc/ssh/moduli
+    expect: {rc: 0, stdout: "\\A01f903391abe367b549ae37822983bd3d5a8dd3d6465523f3b5f14729573b8b0\\n644 root root\\n\\Z"}
+
+  - id: unchanged-hardening-defaults
+    what: the class's remaining options hold (port 22, LoginGraceTime 120, INFO/AUTH logging, no host-based auth, ...)
+    control: invariant
+    why_invariant: >-
+      Ubuntu 24.04's OpenSSH 9.6 defaults already equal these twelve values on the clean node (read 2026-11-10);
+      the check guards that the class's sshd_config keeps them, it cannot discriminate before/after.
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "62-74", text: "'HostbasedAuthentication' => 'no' ,"}
+      - {path: manifests/ssh_secure.pp, lines: "78", text: "'X11DisplayOffset'        => '10' ,"}
+      - {path: manifests/ssh_secure.pp, lines: "8", text: "Integer $port                    = 22,"}
+    probe: sshd -T 2>/dev/null | grep -E '^(hostbasedauthentication|ignorerhosts|logingracetime|loglevel|permitemptypasswords|port|printlastlog|pubkeyauthentication|strictmodes|syslogfacility|tcpkeepalive|x11displayoffset) ' | sort
+    expect:
+      rc: 0
+      stdout: "\\Ahostbasedauthentication no\\nignorerhosts yes\\nlogingracetime 120\\nloglevel INFO\\npermitemptypasswords no\\nport 22\\nprintlastlog yes\\npubkeyauthentication yes\\nstrictmodes yes\\nsyslogfacility AUTH\\ntcpkeepalive yes\\nx11displayoffset 10\\n\\Z"

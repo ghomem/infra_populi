@@ -137,3 +137,21 @@ validated end-to-end) / `.reimplemented.pp`. Both filename and header must say w
 The escalation bar above is PHASE 1 (syntax-only). "Any behaviour change" is a stop trigger BECAUSE
 this phase is syntax-only. It is expected to be re-derived at the Phase 2/3 transition — do not carry
 it forward unchanged.
+
+## Phase 3 checks (ruling 11, 2026-10-27; runner built for HQ batch-3 acceptance B)
+Behaviour checks per class in `.codex_state/checks/<class>.yml` (advisor-authored, advisor-only), run by
+`.codex_state/tools/phase3.py` (laptop-side, over ssh to the node only):
+- `validate <class>` (no node): every check carries `derived_from` lines that must resolve at the class's baseline
+  commit (exact text, or the whole file's sha256). Probes may not reach another host or change the node.
+- `run <class>`:
+  1. Revert the node.
+  2. CLEAN phase: each `negative` control must FAIL and each `invariant` must PASS, or the set is INVALID. At least
+     one negative control is mandatory.
+  3. Harness apply.
+  4. APPLIED phase: a failure is a FINDING.
+
+  Output is JSON + JUnit in `checks/results/<class>/`.
+- Reviewer: `reviewer` with `<class> --phase3` re-runs the checks, spot-checks derived_from (`spot`) and persists a
+  verdict (`verdict`) in `checks/reviews/<class>/`.
+- Phase 1 metrics are not touched: harness events go to `logs/phase3-metrics`.
+- Pilots: backup_rsnapshot, ssh_secure, nginx_static_domain. They run after the lab-network change, as its canary.

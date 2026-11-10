@@ -2,7 +2,16 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-64 entries; 6 marked superseded (in whole or part); newest first.
+65 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-10 — HQ batch-3 acceptance B: the Phase 3 runner
+- 1. **derived_from references the baseline.** Every check carries baseline references, each `{path, lines, text}`
+- 2. **Probes test the node only.** The runner has one execution path, `ssh puppet8node sudo -n bash -s`, with the
+- 3. **Negative controls are mandatory (≥1) and must FAIL on the freshly reverted node.** An `invariant` (holds before
+- 4. **Run order:** revert → CLEAN phase → apply with the gate-v2 harness (NODE_FRESH) → APPLIED phase. A failed
+- 5. **Output:** JSON + JUnit (suites `phase3.<class>.clean` / `.applied`) in `checks/results/<class>/<UTC>-<role>`.
+- 6. **The reviewer re-runs the checks and spot-checks derivation.** It runs `run --role reviewer` and `spot` (3 random
+- 7. **Authoring minutes:** each check file records its own measured wall clock (`authoring.minutes`, required).
 
 ## 2026-11-10 — HQ batch-3 acceptance (4/4): skipped tests carry a reason in the report
 - (no numbered/Rule/Decision lines; read the entry)

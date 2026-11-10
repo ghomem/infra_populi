@@ -1,0 +1,108 @@
+# Phase 3 checks for puppet_infrastructure::nginx_static_domain (define, harness title `nginx_static_domain`).
+# Fixture (params): domain p8test.example.com, www_root /var/www/html, static_sslprefix p8test, ssl, manage_ssl,
+# redirect_to_https = true; redirect_to_www, server_default_create, allow_directory_listing, letsencrypt = false.
+# Resulting servers (lines 136-205): static_main_redirector (HTTP, 301 to https://<domain>) and static_https (HTTPS,
+# www_root); static_http, static_default and static_https_www_redirector are absent. Required base: nginx_base
+# (2048-bit DH group at /etc/nginx/dhparams.pem). Probes talk to the node's own nginx on 127.0.0.1 only.
+class: nginx_static_domain
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 1.3
+  notes: >-
+    Wall clock 2026-11-10T16:00:52Z (class-specific: nginx_base DH size) to 16:02:11Z (validated). validate caught
+    one authoring error: nginx_base.pp:38 was the LOCAL line (the 2-line migration header shifts it); the baseline
+    line is 36. One probe rewritten before validation so that it writes no file (curl -o /tmp → captured output).
+    Uses the fixture certificate (throwaway p8test PKI, RSA 2048, SAN p8test.invalid/star.example.com): the checks
+    compare fingerprints rather than names, since the fixture domain is not in the SAN.
+checks:
+  - id: nginx-config-valid
+    what: the nginx configuration the define produces passes `nginx -t`
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_static_domain.pp, lines: "298-318", text: "nginx::resource::server { \"static_https_${domain}\":"}
+    probe: nginx -t 2>&1
+    expect: {rc: 0, stdout: "test is successful"}
+
+  - id: http-redirects-to-https-same-host
+    what: plain HTTP for the domain answers 301 to https://<domain> keeping the path and query (redirect_to_https, no www)
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_static_domain.pp, lines: "168-177", text: "$redirect_string = \"301 https://${domain}\\$request_uri\""}
+      - {path: manifests/nginx_static_domain.pp, lines: "252-261", text: "'return' => $redirect_string"}
+    probe: |
+      curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' -H 'Host: p8test.example.com' 'http://127.0.0.1/p8/phase3?q=1'
+    expect: {rc: 0, stdout: "\\A301 https://p8test\\.example\\.com/p8/phase3\\?q=1\\n\\Z"}
+
+  - id: https-serves-www-root
+    what: the HTTPS server for the domain serves files from www_root byte for byte
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_static_domain.pp, lines: "136-140", text: "$https_ensure = 'present'"}
+      - {path: manifests/nginx_static_domain.pp, lines: "298-303", text: "www_root                  => $www_root,"}
+    probe: |
+      f=$(find /var/www/html -maxdepth 1 -type f -printf '%f\n' 2>/dev/null | sort | head -1)
+      test -n "$f" || { echo "no file in www_root"; exit 1; }
+      a=$(curl -sk --resolve p8test.example.com:443:127.0.0.1 "https://p8test.example.com/$f" | sha256sum)
+      b=$(sha256sum < "/var/www/html/$f")
+      test "$a" = "$b" && echo same-content
+    expect: {rc: 0, stdout: "^same-content$"}
+
+  - id: https-no-directory-listing
+    what: with allow_directory_listing false, the document root is never listed (autoindex off)
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_static_domain.pp, lines: "42-43", text: "Boolean $allow_directory_listing       = false,"}
+      - {path: manifests/nginx_static_domain.pp, lines: "118-122", text: "false   : { $autoindex = 'off' }"}
+      - {path: manifests/nginx_static_domain.pp, lines: "303", text: "autoindex                 => $autoindex,"}
+    probe: |
+      out=$(curl -sk --resolve p8test.example.com:443:127.0.0.1 -w '\nstatus %{http_code}' https://p8test.example.com/)
+      printf '%s\n' "$out" | tail -1
+      printf '%s\n' "$out" | grep -c 'Index of /'
+    expect: {rc: 1, stdout: "\\Astatus (200|403)\\n0\\n\\Z"}
+
+  - id: served-certificate-is-the-bundle
+    what: the HTTPS server presents the certificate at /etc/ssl/certs/<static_sslprefix>.nginx.bundle.crt
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_static_domain.pp, lines: "86-92", text: "$ssl_cert_path = \"${ssl_certs_dir}/${static_sslprefix}.nginx.bundle.crt\""}
+      - {path: manifests/nginx_static_domain.pp, lines: "308-309", text: "ssl_cert                  => $ssl_cert_path,"}
+    probe: |
+      a=$(openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com </dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256)
+      b=$(openssl x509 -in /etc/ssl/certs/p8test.nginx.bundle.crt -noout -fingerprint -sha256)
+      test -n "$a" && test "$a" = "$b" && echo served-cert-is-bundle
+    expect: {rc: 0, stdout: "^served-cert-is-bundle$"}
+
+  - id: tls12-only
+    what: TLS 1.2 is accepted and TLS 1.3 refused (ssl_protocols = base prefix ['TLSv1.2'], no additions)
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_static_domain.pp, lines: "46", text: "Array $base_ssl_protocols_prefix       = ['TLSv1.2', ],"}
+      - {path: manifests/nginx_static_domain.pp, lines: "96-97", text: "$base_ssl_protocols = join($base_ssl_protocols_array, ' ')"}
+      - {path: manifests/nginx_static_domain.pp, lines: "310", text: "ssl_protocols             => $base_ssl_protocols,"}
+    probe: |
+      openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -tls1_2 </dev/null 2>&1 | grep -oE '^New, TLSv1\.2, Cipher is'
+      if openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -tls1_3 </dev/null >/dev/null 2>&1; then echo tls13-accepted; else echo tls13-refused; fi
+    expect: {rc: 0, stdout: "\\ANew, TLSv1\\.2, Cipher is\\ntls13-refused\\n\\Z"}
+
+  - id: server-cipher-order-and-dh-group
+    what: the server's cipher order wins (prefer_server_ciphers on) — DHE-RSA-AES128-GCM-SHA256 over a client-preferred ECDHE suite — with the 2048-bit DH group
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_static_domain.pp, lines: "47", text: "String $base_ssl_ciphers_prefix        = 'DHE-RSA-AES128-GCM-SHA256:"}
+      - {path: manifests/nginx_static_domain.pp, lines: "94-95", text: "$base_ssl_prefer_server_ciphers = 'on'"}
+      - {path: manifests/nginx_static_domain.pp, lines: "311-313", text: "ssl_dhparam               => $base_dh_params,"}
+      - {path: manifests/nginx_base.pp, lines: "36", text: "$dh_params_bits = 2048,"}
+    probe: |
+      openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -tls1_2 -cipher 'ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-GCM-SHA256' </dev/null 2>&1 | grep -oE '^(New, TLSv1\.2, Cipher is \S+|Server Temp Key: [^,]+, [0-9]+ bits)$'
+    expect: {rc: 0, stdout: "\\AServer Temp Key: DH, 2048 bits\\nNew, TLSv1\\.2, Cipher is DHE-RSA-AES128-GCM-SHA256\\n\\Z"}
+
+  - id: ecdh-curve-prime256v1
+    what: an ECDHE handshake uses the prime256v1 curve (ssl_ecdh_curve)
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_static_domain.pp, lines: "49", text: "String $base_ssl_ecdh_curve            = 'prime256v1',"}
+      - {path: manifests/nginx_static_domain.pp, lines: "314-316", text: "'ssl_ecdh_curve' => $base_ssl_ecdh_curve,"}
+    probe: |
+      openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -tls1_2 -cipher 'ECDHE-RSA-AES128-GCM-SHA256' </dev/null 2>&1 | grep -oE '^Server Temp Key: .*$'
+    expect: {rc: 0, stdout: "\\AServer Temp Key: ECDH, prime256v1, 256 bits\\n\\Z"}

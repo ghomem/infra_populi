@@ -1,0 +1,63 @@
+# Phase 3 checks for puppet_infrastructure::backup_rsnapshot (define, harness title `backup_rsnapshot`).
+# Fixture (params): basedir /etc, prefix etc, backdir /opt/puppet-infrastructure/backup, ndays 7; user/hour/minute
+# at their defaults (root, 23, 0). Required base (plan): backup_rsnapshot_pre (rsnapshot package, /etc/rsnapshot.d),
+# filesystem_base. Probes are read-only: `rsnapshot -t` is rsnapshot's test mode (prints, executes nothing).
+class: backup_rsnapshot
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.7
+  notes: >-
+    Wall clock 2026-11-10T15:58:20Z (class-specific reading: backup_rsnapshot_pre, template hash) to 15:59:02Z
+    (file validated). Shared research for the three pilots (baselines, fixtures, read-only look at the clean node's
+    sshd/tools, fixture certificate type), 15:52-15:57Z, is reported once in the pilot report.
+checks:
+  - id: conf-file-mode
+    what: the per-title rsnapshot config exists at /etc/rsnapshot.d/rsnapshot-<title>.conf, 0644 root:root
+    control: negative
+    derived_from:
+      - {path: manifests/backup_rsnapshot.pp, lines: "5-11", text: "$myconffile = \"/etc/rsnapshot.d/rsnapshot-${title}.conf\""}
+      - {path: manifests/backup_rsnapshot.pp, lines: "7-9", text: "mode    => '0644',"}
+    probe: stat -c '%a %U %G' /etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf
+    expect: {rc: 0, stdout: "^644 root root$"}
+
+  - id: conf-rendered-values
+    what: the template renders snapshot_root, retain, backup point and lockfile from the parameters and title
+    control: negative
+    derived_from:
+      - {path: templates/backup/rsnapshot.conf.erb, lines: "4", text: "snapshot_root\t<%= @backdir %>"}
+      - {path: templates/backup/rsnapshot.conf.erb, lines: "7", text: "retain\tdaily\t<%= @ndays %>"}
+      - {path: templates/backup/rsnapshot.conf.erb, lines: "12", text: "backup\t<%= @basedir %>\t./<%= @prefix %>"}
+      - {path: templates/backup/rsnapshot.conf.erb, lines: "23", text: "lockfile\t/tmp/rsnapshot_<%= @title %>.pid"}
+    probe: grep -E '^(snapshot_root|retain|backup|lockfile)[[:space:]]' /etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf | tr -s '\t ' ' '
+    expect:
+      rc: 0
+      stdout: "\\Asnapshot_root /opt/puppet-infrastructure/backup\\nretain daily 7\\nbackup /etc \\./etc\\nlockfile /tmp/rsnapshot_backup_rsnapshot\\.pid\\n\\Z"
+
+  - id: conf-syntax
+    what: rsnapshot accepts the rendered config (configtest), i.e. the template is a valid rsnapshot file
+    control: negative
+    derived_from:
+      - {path: templates/backup/rsnapshot.conf.erb, sha256: 7000d5569e7c2a4d33fc7d2c018505ef5ccea75b6979138583fe908dd9a7b06c}
+      - {path: manifests/backup_rsnapshot.pp, lines: "14", text: "/usr/bin/rsnapshot -c ${myconffile} daily"}
+    probe: /usr/bin/rsnapshot -c /etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf configtest 2>&1
+    expect: {rc: 0, stdout: "^Syntax OK$"}
+
+  - id: daily-plan
+    what: a `daily` run would rsync the backup point /etc into <snapshot_root>/daily.0 with /usr/bin/rsync
+    control: negative
+    derived_from:
+      - {path: manifests/backup_rsnapshot.pp, lines: "14", text: "/usr/bin/rsnapshot -c ${myconffile} daily"}
+      - {path: templates/backup/rsnapshot.conf.erb, lines: "12-14", text: "cmd_rsync\t/usr/bin/rsync"}
+    probe: |
+      /usr/bin/rsnapshot -c /etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf -t daily 2>&1 | sed -e ':a' -e '/\\$/N; s/\\\n *//; ta'
+    expect: {rc: 0, stdout: "^/usr/bin/rsync .*--relative.* /etc /opt/puppet-infrastructure/backup/daily\\.0/"}
+
+  - id: cron-daily-2300
+    what: root's crontab runs `rsnapshot -c <conf> daily` at 23:00 (hour/minute/user defaults)
+    control: negative
+    derived_from:
+      - {path: manifests/backup_rsnapshot.pp, lines: "3", text: "$user = 'root', $hour = '23', $minute = '0'"}
+      - {path: manifests/backup_rsnapshot.pp, lines: "13-19", text: "command => \"/usr/bin/rsnapshot -c ${myconffile} daily\","}
+    probe: crontab -l -u root
+    expect: {rc: 0, stdout: "^0 23 \\* \\* \\* /usr/bin/rsnapshot -c /etc/rsnapshot\\.d/rsnapshot-backup_rsnapshot\\.conf daily$"}

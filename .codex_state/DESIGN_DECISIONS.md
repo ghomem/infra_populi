@@ -1039,3 +1039,30 @@ The engine pre-commit hook runs pytest with a JUnit XML and reads each skipped t
 Today's only skips are the three opt-in LAB tests in test_compile.py ("needs puppet8master (set P8_LAB_TESTS=1)").
 They run the compile filter on the real master and were run on demand today: 11/11 passed. The batch-3 report gains
 a "Skipped tests" addendum, and the skill's END OF RUN step requires that section.
+
+## 2026-11-10 — HQ batch-3 acceptance B: the Phase 3 runner
+`.codex_state/tools/phase3.py` implements ruling 11 (2026-10-27): checks per class in `.codex_state/checks/<class>.yml`
+(advisor-only), laptop-side Python over ssh.
+
+1. **derived_from references the baseline.** Every check carries baseline references, each `{path, lines, text}`
+   (the text must be an exact substring of those lines) or `{path, sha256}`. They resolve at the class's baseline
+   commit through baseline.py, never at the local tree. The file's `baseline:` must equal `baseline.py for <class>`.
+2. **Probes test the node only.** The runner has one execution path, `ssh puppet8node sudo -n bash -s`, with the
+   probe on stdin and the ControlMaster shim. `validate` refuses:
+   - any other lab host or address, scp/sftp/rsync, and ssh to anything but 127.0.0.1/localhost;
+   - Puppet runs, service or package changes, rm/tee/chmod-style edits, and redirects into a file.
+3. **Negative controls are mandatory (≥1) and must FAIL on the freshly reverted node.** An `invariant` (holds before
+   and after) needs `why_invariant` and must PASS on the clean node. Any miss makes the set INVALID, and the class is
+   never applied.
+4. **Run order:** revert → CLEAN phase → apply with the gate-v2 harness (NODE_FRESH) → APPLIED phase. A failed
+   check after apply is a FINDING (exit 1). An invalid set exits 2, an apply or environment failure 3.
+5. **Output:** JSON + JUnit (suites `phase3.<class>.clean` / `.applied`) in `checks/results/<class>/<UTC>-<role>`.
+   Harness metrics events go to `logs/phase3-metrics`, never into Phase 1 records.
+6. **The reviewer re-runs the checks and spot-checks derivation.** It runs `run --role reviewer` and `spot` (3 random
+   references printed beside the baseline lines read fresh), then records a `verdict`. PASS = both runs valid +
+   identical per-check outcomes on the same check file + derivation ok. Findings do not fail a review.
+7. **Authoring minutes:** each check file records its own measured wall clock (`authoring.minutes`, required).
+
+Pilots authored and validated (backup_rsnapshot 5 checks, ssh_secure 14, nginx_static_domain 8; 59 baseline
+references), not run: per HQ they run after the network change, as its canary. Report:
+`escalations/phase3-pilots.md`. CLAUDE.md gains the Phase-3 section that ruling 11 asked for.
