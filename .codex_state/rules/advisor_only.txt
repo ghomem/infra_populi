@@ -1,0 +1,18 @@
+# Advisor-only paths (HQ 2026-11-11 ruling 2) — single source. A commit made under the Codex run marker (CODEX_RUN=1,
+# exported by codex_migrate_class) that touches any of these is rejected by the engine pre-commit hook, and the
+# wrapper's post-run audit reports AUTHORITY_VIOLATION for any such commit or leftover change (it also catches
+# `git commit --no-verify`). Bash glob patterns, repo-relative; `*` also matches `/`.
+.codex_state/migration_plan.md
+.codex_state/blocked.txt
+.codex_state/DESIGN_DECISIONS.md
+.codex_state/upstream_defects.md
+.codex_state/baseline.env
+.codex_state/rules/*
+.codex_state/tools/*
+.codex_state/escalations/*
+.codex_state/diagnosis/*
+.codex_state/sprint/*
+.codex_state/reviews/*
+.codex_state/runs/*
+.claude/*
+CLAUDE.md

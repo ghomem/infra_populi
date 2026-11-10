@@ -17,8 +17,8 @@ Phase 1 scope: Puppet 5 -> Puppet 8 / Vox Pupuli syntax migration, behaviour pre
 - Research - Forge, docs, web. Module compatibility and Puppet 8 semantics are yours to establish.
 - Environment recovery - run .codex_state/tools/revert_node.sh whenever the node needs a clean baseline. You may START a stopped or aborted master or node VM and verify it. You must NEVER restore a snapshot of the MASTER, power it off, or reset it - that would discard the Puppetfile, installed Forge modules, and node manifests that are deliberately kept there. Node snapshot restores are fine and expected; the node is disposable, the master is not.
 - Iterate - read the error, form a hypothesis, fix, rerun. Repeat while each attempt teaches you something.
-- Record a block - write the blocked.txt entry yourself when you hit a section 3 wall.
-- Cleaning up after a failed dependency. If you install a Forge module and it turns out to be incompatible with Puppet 8, you must leave the environment as you found it: remove the mod line from the master's Puppetfile, re-run r10k so the module directory matches, and delete the installed module directory if r10k leaves it behind. Do NOT record it in necessary_modules.txt - that file lists modules the migration NEEDS AND USES, and a module that will not load is a blocker, not a dependency. Record it in blocked.txt with evidence instead. An orphaned module left installed is debris that misleads the next session about what the environment requires.
+- Report a block - when you hit a section 3 wall, report it as section 4 says (the advisor writes blocked.txt; it is advisor-only since 2026-11-11).
+- Cleaning up after a failed dependency. If you install a Forge module and it turns out to be incompatible with Puppet 8, you must leave the environment as you found it: remove the mod line from the master's Puppetfile, re-run r10k so the module directory matches, and delete the installed module directory if r10k leaves it behind. Do NOT record it in necessary_modules.txt - that file lists modules the migration NEEDS AND USES, and a module that will not load is a blocker, not a dependency. Report it as a block (section 4) with evidence instead. An orphaned module left installed is debris that misleads the next session about what the environment requires.
 
 ## 2. The loop
 
@@ -32,7 +32,8 @@ Phase 1 scope: Puppet 5 -> Puppet 8 / Vox Pupuli syntax migration, behaviour pre
 ## 2b. Plan columns are the advisor's (HQ 2026-11-10)
 
 `.codex_state/migration_plan.md` (required_base, required_external, resource_type, title, node_fixture,
-expected_run2_events) is advisor authority: never edit or commit it. If the class needs a prerequisite the plan
+expected_run2_events) is advisor authority: never edit or commit it. Every advisor-only path is listed in
+`.codex_state/rules/advisor_only.txt`; your run carries CODEX_RUN=1 and the pre-commit hook refuses those files. If the class needs a prerequisite the plan
 lacks (a base class, a module's base class, a fixture), stop that step and report it as ONE structured line in your
 final message, then stop the run:
 `MISSING_PREREQUISITE: <column>=<value> — <evidence: the exact error and where you traced it>`
@@ -58,7 +59,9 @@ HAND-REPAIRING NODE STATE. If GREEN would need manual fixes to the node outside 
 
 ## 4. Recording a block
 
-Append to .codex_state/blocked.txt, then STOP AND REPORT. The entry must carry EVIDENCE, not just a classification:
+Do NOT edit .codex_state/blocked.txt (advisor-only; a commit of it under your run is refused and audited). STOP AND REPORT
+with ONE structured line in your final message, `BLOCKED: category <N> — <one-line reason>`, followed by the EVIDENCE,
+not just a classification:
 
 - The actual error text
 - The traced chain (what needs what, and where you established it)
@@ -68,7 +71,7 @@ Append to .codex_state/blocked.txt, then STOP AND REPORT. The entry must carry E
 
 A conclusion without working shown cannot be verified.
 
-Environment failures are NOT class blocks. If the harness fails before it reaches classification or catalog compilation - master unreachable, a VM aborted, SSH failing, rsync unable to connect - that is an infrastructure problem, not a property of the class. Recover it yourself where you are permitted to (start a stopped VM, revert the node) and continue. Do NOT write it to blocked.txt: that file records classes with real obstacles, and infrastructure incidents pollute it. Only report and stop if recovery is outside your authority or fails.
+Environment failures are NOT class blocks. If the harness fails before it reaches classification or catalog compilation - master unreachable, a VM aborted, SSH failing, rsync unable to connect - that is an infrastructure problem, not a property of the class. Recover it yourself where you are permitted to (start a stopped VM, revert the node) and continue. It is not a block: blocked.txt records classes with real obstacles, and infrastructure incidents pollute it. Only report and stop if recovery is outside your authority or fails.
 
 ## 5. Hazards
 

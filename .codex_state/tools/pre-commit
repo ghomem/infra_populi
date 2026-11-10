@@ -5,8 +5,27 @@
 # Codex commits through it. The repo-root `pre-commit` is upstream module content and is NOT used
 # (it runs the laptop's production Puppet 5 and reads /dev/tty).
 # Step 3.5: a staged DESIGN_DECISIONS.md must come with its regenerated rules digest.
+# HQ 2026-11-11 ruling 2: under CODEX_RUN=1, advisor-only files (.codex_state/rules/advisor_only.txt) are refused.
 set -euo pipefail
 repo="$(git rev-parse --show-toplevel)"
+
+# HQ 2026-11-11 ruling 2: under the Codex run marker, advisor-only files cannot be committed.
+if [[ "${CODEX_RUN:-}" == 1 ]]; then
+  mapfile -t patterns < <(grep -vE '^\s*(#|$)' "$repo/.codex_state/rules/advisor_only.txt")
+  violations=()
+  while IFS= read -r path; do
+    [[ -n "$path" ]] || continue
+    for pat in "${patterns[@]}"; do
+      # shellcheck disable=SC2053  # the right-hand side is a glob on purpose
+      if [[ "$path" == $pat ]]; then violations+=("$path"); break; fi
+    done
+  done < <(git diff --cached --name-only)
+  if [[ ${#violations[@]} -gt 0 ]]; then
+    echo "AUTHORITY: commit rejected under CODEX_RUN=1 — advisor-only files staged: ${violations[*]}" >&2
+    echo "Report it instead (runbook 2b: MISSING_PREREQUISITE / BLOCKED line) and stop." >&2
+    exit 1
+  fi
+fi
 if git diff --cached --name-only --diff-filter=ACM | grep -qE '^(manifests/.+\.pp|templates/.+)$'; then
   "$repo/.codex_state/tools/pregate.sh" --staged
 fi

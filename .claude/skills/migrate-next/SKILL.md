@@ -54,7 +54,9 @@ FOR EACH CLASS:
      (Any ad-hoc `codex exec` keeps the mandatory `timeout -k 30 900 ... </dev/null`.) If it is faithfulness (reimplementation) or non-idempotency: back
      the migration out with a corrective commit (never force-push), preserve the manifest as
      `candidates/<class>.partial.pp` or `.reimplemented.pp` with a header, block with evidence, escalate.
-6. BLOCKED by Codex: read its blocked.txt entry. It must carry category + evidence; if not, fix the entry.
+6. BLOCKED by Codex: Codex reports `BLOCKED: category <N> — ...` + evidence (it cannot write blocked.txt: advisor-only,
+   enforced under CODEX_RUN=1 and by the wrapper's audit — `AUTHORITY_VIOLATION`/exit 5 means it tried; review and
+   revert the change, note it in the batch report). Write the blocked.txt entry yourself with category + evidence.
    If the category is one YOU can resolve (cat 1 with a known compatible module; cat 3 with an existing
    capability whose plan column is simply unset), resolve it and retry the class ONCE from step 3.
    Otherwise accept the block, add an escalation file if Salatiel-tier, commit, continue.

@@ -939,3 +939,15 @@ The harness records where each expected run-2 ref comes from — the target's ow
 expanded required_base class — prints `[own: …; inherited: <ref> via <class>]` and puts it in the harness event; the
 run record keeps it (`run2_expected`) and `metrics.py batch-report <classes>` renders the batch table with phases
 and the run-2 expectations spelled out. Batch-1/2 records predate this and show no phases.
+
+## 2026-11-11 — HQ rulings before batch 3 (2): authority enforcement under a Codex run marker
+`.codex_state/rules/advisor_only.txt` (single source, globs): migration_plan, blocked.txt, DESIGN_DECISIONS,
+upstream_defects, baseline.env, rules/* (runbook, hazards, digest, exceptions, remigration order, this list), tools/*
+(engine code incl. compile/composites.txt), escalations/*, diagnosis/*, sprint/*, reviews/*, runs/*, .claude/*,
+CLAUDE.md. The wrapper exports CODEX_RUN=1 around `codex exec`; the engine pre-commit hook refuses any staged
+advisor-only path under it. Because `--no-verify` bypasses hooks, the wrapper also audits after the run: every commit
+since the run started and every advisor-only file whose content changed during the run (files already dirty before
+the run are compared by blob hash, so the advisor's own work in progress is not flagged) → `AUTHORITY_VIOLATION` on
+stderr and exit 5. blocked.txt is now advisor-only: the runbook (§1, §4) has Codex report `BLOCKED: category <N> —
+…` + evidence and stop; the advisor writes the entry (SKILL step 6). record_green's commits (class files, tracker,
+order file, Puppetfile export) are outside the list. The wrapper derives its repo from its own location.

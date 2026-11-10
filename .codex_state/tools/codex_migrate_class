@@ -22,7 +22,8 @@ exec </dev/null
 [[ $# -ge 1 ]] || { echo "Usage: codex_migrate_class <puppet_class_name>"; exit 2; }
 CLASS="$1"
 
-cd /home/salatiel/work/infra_populi
+REPO="$(git -C "$(dirname "$(readlink -f "$0")")" rev-parse --show-toplevel)"
+cd "$REPO"
 # Single sources (step 3.5): the tracked runbook, then the tracked hazard checklist.
 RUNBOOK=".codex_state/rules/CODEX_RUNBOOK.md"
 HAZARDS=".codex_state/rules/hazards.md"
@@ -48,6 +49,12 @@ PACKET="$(python3 .codex_state/tools/orientation.py "$CLASS" 2>&1)" || PACKET="O
 
 rc=0
 codex_start="${EPOCHREALTIME}"
+start_head="$(git rev-parse HEAD)"
+# content of every file already dirty before the run, so the audit reports only what the run changed
+pre_dirty="$(git status --porcelain --untracked-files=all | cut -c4- | while IFS= read -r f; do
+  printf '%s\t%s\n' "$f" "$(git hash-object -- "$f" 2>/dev/null || echo gone)"; done)"
+# HQ 2026-11-11 ruling 2: the run marker — the pre-commit hook refuses advisor-only files under it.
+export CODEX_RUN=1
 timeout --kill-after=30 "$CODEX_TIMEOUT_SECONDS" codex exec \
   -c 'sandbox_mode="danger-full-access"' \
   -c 'approval_policy="never"' \
@@ -68,5 +75,36 @@ if [[ $rc -eq 124 || $rc -eq 137 ]]; then
 fi
 codex_s="$(python3 -c 'import sys; print(round(float(sys.argv[2]) - float(sys.argv[1]), 1))' "${codex_start/,/.}" "${EPOCHREALTIME/,/.}")"
 usage="$("${METRICS[@]}" codex-usage "${codex_start/,/.}" 2>/dev/null || echo '{}')"
+# Post-run authority audit (catches `git commit --no-verify` and uncommitted edits too).
+unset CODEX_RUN
+violations="$(P8_PRE_DIRTY="$pre_dirty" python3 - "$start_head" <<'PY'
+import fnmatch, os, subprocess, sys
+pats = [l.strip() for l in open(".codex_state/rules/advisor_only.txt") if l.strip() and not l.lstrip().startswith("#")]
+def bad(path):
+    return any(fnmatch.fnmatchcase(path, p) for p in pats)
+out = []
+log = subprocess.run(["git", "log", "--format=%h", f"{sys.argv[1]}..HEAD"], capture_output=True, text=True).stdout.split()
+for c in log:
+    files = subprocess.run(["git", "show", "--name-only", "--format=", c], capture_output=True, text=True).stdout.split()
+    hit = [f for f in files if bad(f)]
+    if hit:
+        out.append(f"commit {c}: {' '.join(hit)}")
+before = dict(l.split("\t", 1) for l in os.environ.get("P8_PRE_DIRTY", "").splitlines() if "\t" in l)
+def blob(path):
+    r = subprocess.run(["git", "hash-object", "--", path], capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else "gone"
+dirty = [l[3:] for l in subprocess.run(["git", "status", "--porcelain", "--untracked-files=all"],
+                                        capture_output=True, text=True).stdout.splitlines()]
+hit = [f for f in dirty if bad(f) and before.get(f) != blob(f)]
+if hit:
+    out.append(f"uncommitted: {' '.join(hit)}")
+print("\n".join(out))
+PY
+)"
+if [[ -n "$violations" ]]; then
+  echo "AUTHORITY_VIOLATION: Codex changed advisor-only files (.codex_state/rules/advisor_only.txt):" >&2
+  echo "$violations" >&2
+  [[ $rc -ne 0 ]] || rc=5
+fi
 "${METRICS[@]}" event "$CLASS" codex "{\"rc\": ${rc}, \"codex_s\": ${codex_s}, \"timeout\": $([[ $rc -eq 124 || $rc -eq 137 ]] && echo true || echo false), \"usage\": ${usage}}" || true
 exit "$rc"
