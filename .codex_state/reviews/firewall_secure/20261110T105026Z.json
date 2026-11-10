@@ -1,0 +1,94 @@
+{
+ "schema": 1,
+ "class": "firewall_secure",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-10T10:50:26Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "e342bdacfc3c",
+ "migrate_subject": "P8: migrate puppet_infrastructure::firewall_secure",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit e342bdacfc3c; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `firewall_secure Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-firewall', '8.3.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 27 catalog events; COVERAGE puppet_infrastructure::firewall_secure: 20 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A @@-1,2: two-line migration header comment only (purpose + puppetlabs-firewall 8.3.0, matches master)",
+   "DIFF A @@-55,10 / @@-66,20 / @@-87,5 / @@-93,11: every 'action => accept|reject|drop' on rules 000-003, 100 whitelist, 111, 112, 114, 116, 117 (both strict branches) renamed to 'jump =>' with identical value; firewall 8.3.0 type has jump: Optional[String[1]] and no action attribute; no resource added/removed/retitled, ordering arrows and conditionals unchanged",
+   "DIFF A @@-66,20 lines 79-80: $indilim '8'->8 and $indilim_minute '15'->15; only consumers are connlimit_above (type Optional[Integer]) on rule 112 and rhitcount (Optional[Integer[1]]) on rule 114 -> strict-type conversion, same value; $overlim_minute stays '20' as it feeds limit (Pattern string) unchanged",
+   "DIFF A @@-93,11 rule 114: rseconds '60'->60, firewall 8.3.0 rseconds type Optional[Integer[1]] -> strict-type conversion, same value; inline comments preserved (comments_preserved ok)"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 15,
+  "removed": 13,
+  "non_comment_changes": 26,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 firewall rules preserved; action renamed to jump and numeric limits typed as integers.",
+  "# Module dependency: puppetlabs-firewall 8.3.0."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 27,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::firewall_secure: 20 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 32.638,
+   "master_check_s": 0.553,
+   "poweroff_s": 1.395,
+   "restore_s": 0.485,
+   "boot_to_ssh_s": 17.482,
+   "apt_update_s": 12.163,
+   "verify_s": 0.56
+  },
+  "log": ".codex_state/logs/reviews/firewall_secure.20261110T104815Z.harness.log",
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
