@@ -1078,3 +1078,7 @@ HQ approved the host-only/static-IP design (escalations/lab-network-static.md):
     are refreshed and verified (step 9).
 
 No step runs until HQ's step review returns; step 1 (`modifyvm`) is Salatiel's.
+
+## 2026-11-10 — HQ: Phase 5 backlog item 3, dead ssh options
+`Protocol 2` and `UsePrivilegeSeparation yes` in ssh_secure (local :59/:79, baseline :57/:77) are ignored by OpenSSH
+≥ 7.5; the node runs 9.6p1. They go to `rules/phase5_backlog.md` as item 3 (removal). Phase 1 keeps them verbatim.
