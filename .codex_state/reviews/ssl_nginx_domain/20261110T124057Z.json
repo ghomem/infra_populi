@@ -1,0 +1,92 @@
+{
+ "schema": 1,
+ "class": "ssl_nginx_domain",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-10T12:40:57Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "58b9dbbdd82d",
+ "migrate_subject": "P8: migrate puppet_infrastructure::ssl_nginx_domain",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 58b9dbbdd82d; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `ssl_nginx_domain Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 12 catalog events; COVERAGE puppet_infrastructure::ssl_nginx_domain: 5 concrete resources (+4 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added lines 1-2; define body lines 3-18 identical to release-0.9.10 cf477c6: ssl_base wrapper with myprefix/myservice/myservicename/letsencrypt_certificate unchanged)",
+   "Header claim 'Module dependencies: none' holds: the define declares only puppet_infrastructure::ssl_base, no Forge module resource"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependencies: none (wraps puppet_infrastructure::ssl_base; Service['nginx'] comes from puppet_infrastructure::nginx_base)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 12,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::ssl_nginx_domain: 5 concrete resources (+4 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 35.676,
+   "master_check_s": 0.575,
+   "poweroff_s": 1.351,
+   "restore_s": 0.511,
+   "boot_to_ssh_s": 20.466,
+   "apt_update_s": 12.153,
+   "verify_s": 0.62
+  },
+  "log": ".codex_state/logs/reviews/ssl_nginx_domain.20261110T123854Z.harness.log",
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
