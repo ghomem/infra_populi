@@ -7,6 +7,8 @@ import pytest
 
 from conftest import TOOLS
 
+pytestmark = pytest.mark.slow  # excluded from the per-commit fast subset (HQ 2026-11-11 ruling 3)
+
 REPO = TOOLS.parents[1]
 MASTER = "Ubuntu24-puppet8-Master"
 NODE = "ubuntu24-puppet8-Node"

@@ -964,3 +964,10 @@ provider listed in `.codex_state/rules/provided_paths.txt` (advisor-maintained, 
 case is flagged with filesystem_lib64 removed from the closure and clears with it; 0 findings over all 38 done classes
 (no false positives); batch-3 pre-scan flags nginx_frontend (`/opt/puppet-infrastructure/bin`, missing
 required_base=filesystem_base — a real catch).
+
+## 2026-11-11 — HQ rulings before batch 3 (3): the pre-commit hook runs the tests
+No commit lands with a failing test. The engine pre-commit hook runs the fast subset on every commit
+(`pytest -m "not slow and not repo_state"`, 139 tests, ~7 s) and the full suite when a batch report
+(`.codex_state/escalations/batch-*.md`) is staged; a failure rejects the commit. `slow` = clone and stub-lab
+harness tests (6 files); `repo_state` = the live tracker-vs-git consistency test, which is inconsistent by design
+while record_green's own commit is being made. Codex commits through record_green go through the same gate.

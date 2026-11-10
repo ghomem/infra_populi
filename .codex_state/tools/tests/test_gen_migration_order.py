@@ -94,6 +94,7 @@ def test_tracker_mismatches(gen, tmp_path):
     assert gen.tracker_mismatches(entries, {"a", "c"}) == (["c"], ["b"])
 
 
+@pytest.mark.repo_state  # inconsistent by design while record_green's own commit is being made
 def test_repo_tracker_parses_and_matches_git(gen):
     entries = gen.read_tracker()
     rows = gen.parse_plan()

@@ -10,6 +10,8 @@ import pytest
 
 from conftest import TOOLS
 
+pytestmark = pytest.mark.slow  # excluded from the per-commit fast subset (HQ 2026-11-11 ruling 3)
+
 REPO = TOOLS.parents[1]
 CLS = "sysmon_fs_health"  # pending, identical to the baseline, plain tracker line
 HEADER = ("# Puppet 8 migration: release-0.9.10 manifest validated unchanged.\n"

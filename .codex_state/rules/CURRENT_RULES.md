@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-58 entries; 6 marked superseded (in whole or part); newest first.
+59 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-11 — HQ rulings before batch 3 (3): the pre-commit hook runs the tests
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-11 — HQ rulings before batch 3 (4): dynamic prerequisite probe in pregate
 - (no numbered/Rule/Decision lines; read the entry)

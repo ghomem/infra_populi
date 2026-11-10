@@ -1,6 +1,9 @@
 """Gate v2 (step 1.1): run 2 must exit 0, exec/removed events fail, agent runs time out."""
 
 from conftest import TOOLS
+import pytest
+
+pytestmark = pytest.mark.slow  # excluded from the per-commit fast subset (HQ 2026-11-11 ruling 3)
 
 SCRIPT = str(TOOLS / "test_class.sh")
 AGENT = r"puppet8node sudo /opt/puppetlabs/bin/puppet agent -t"

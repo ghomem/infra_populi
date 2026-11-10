@@ -1,6 +1,9 @@
 """The Codex wrapper carries an outer timeout and closes stdin (steps 1.1, 2026-10-01 rule)."""
 
 from conftest import TOOLS
+import pytest
+
+pytestmark = pytest.mark.slow  # excluded from the per-commit fast subset (HQ 2026-11-11 ruling 3)
 
 WRAPPER = str(TOOLS / "codex_migrate_class")
 

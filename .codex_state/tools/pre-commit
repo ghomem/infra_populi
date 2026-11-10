@@ -32,3 +32,20 @@ fi
 if git diff --cached --name-only | grep -qxE '\.codex_state/(DESIGN_DECISIONS\.md|rules/CURRENT_RULES\.md)'; then
   python3 "$repo/.codex_state/tools/gen_rules_digest.py" --staged
 fi
+
+# HQ 2026-11-11 ruling 3: no commit lands with a failing test. Fast subset on every commit; the full suite when a
+# batch report is staged. Skipped only where the engine's tests do not exist (scratch repos used by the tests).
+tests="$repo/.codex_state/tools/tests"
+if [[ -d "$tests" ]]; then
+  if git diff --cached --name-only | grep -qE '^\.codex_state/escalations/batch-.*\.md$'; then
+    selection=(); label="full suite (batch report staged)"
+  else
+    selection=(-m "not slow and not repo_state"); label="fast subset"
+  fi
+  if ! out="$(cd "$repo" && PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -x -p no:cacheprovider "${selection[@]}" "$tests" 2>&1)"; then
+    printf '%s\n' "$out" | tail -25 >&2
+    echo "TESTS: commit rejected — the ${label} failed" >&2
+    exit 1
+  fi
+  echo "TESTS: ${label} passed ($(printf '%s\n' "$out" | tail -1))"
+fi

@@ -163,3 +163,9 @@ def isolated_logs(tmp_path, monkeypatch):
     monkeypatch.setenv("P8_GREEN_DIR", str(tmp_path / "iso_green"))
     monkeypatch.setenv("P8_METRICS_DIR", str(tmp_path / "iso_metrics"))
     monkeypatch.setenv("P8_RUNS_FILE", str(tmp_path / "iso_runs" / "metrics.jsonl"))
+
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "slow: clones, stub-lab harness runs; full suite only (pre-commit runs the rest)")
+    config.addinivalue_line("markers", "repo_state: checks the live repo's consistency; full suite only")
