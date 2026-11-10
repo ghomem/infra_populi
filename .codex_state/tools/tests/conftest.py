@@ -135,6 +135,7 @@ class FakeLab:
             # never write GREEN stamps or metrics events into the real repo's logs from a stub run
             "P8_GREEN_DIR": str(self.root / "green"),
             "P8_METRICS_DIR": str(self.root / "metrics"),
+            "P8_SSH_CONTROL_DIR": str(self.root / "ssh-cm"),
         })
         env.update(kw.pop("env", {}))
         return subprocess.run(argv, capture_output=True, text=True, env=env, timeout=60,

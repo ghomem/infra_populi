@@ -901,3 +901,13 @@ First use: packages_base `Exec[apt_update]` — packages_base.pp:19 `class { 'ap
 'always' } }`, the comment at :11 states the intent ("make sure apt-get update ... runs on each puppet run"), and
 puppetlabs-apt 11.3.2 update.pp:13-15/89-93 turns 'always' into `refreshonly => false` (module-documented).
 Phase 5 question for HQ (recorded, not acted on): `frequency => 'daily'` instead of 'always'.
+
+## 2026-11-10 — HQ rulings before batch 2 (2/3): SSH ControlMaster; firewall_secure fixture
+`.codex_state/tools/sshmux/ssh` adds `ControlMaster=auto`, `ControlPath=~/.ssh/p8-cm/%C`, `ControlPersist=300` and execs
+the next ssh on PATH; test_class.sh and revert_node.sh put it first on PATH (so `timeout … ssh` and `rsync -e ssh` are
+multiplexed; the reviewer is covered because review_class runs the harness). revert_node.sh sends `ssh -O exit` to the
+node before the hard poweroff so no stale control socket outlives a revert. Real lab: revert-first fixture run GREEN
+with live masters for node and master. firewall_secure's fixture `acl` = the harness SSH source as the node sees it
+(192.168.77.203 via `$SSH_CLIENT`), so rule 100 accepts the harness before the 15/min NEW-connection limit; that
+address is DHCP-assigned — re-checked before every dispatch (hazards.md item 12). firewall_secure_extra: if
+xtables-addons/geoip cannot be installed on the node → escalate and continue (ruling).

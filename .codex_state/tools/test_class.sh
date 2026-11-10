@@ -36,6 +36,9 @@ FIXTURE_DIR="${LOCAL_REPO}/.codex_state/tools/tests/fixtures"
 REVERT_TOOL="${LOCAL_REPO}/.codex_state/tools/revert_node.sh"
 COMPILE_DIR="${LOCAL_REPO}/.codex_state/tools/compile"
 RECORDS_TOOL="${LOCAL_REPO}/.codex_state/tools/records.py"
+# HQ 2026-11-10 ruling 2: every ssh/rsync of the harness goes through a ControlMaster shim (one ESTABLISHED
+# connection; firewall_secure rate-limits NEW SSH connections). scp keeps its own ssh path.
+PATH="${LOCAL_REPO}/.codex_state/tools/sshmux:${PATH}"
 METRICS_TOOL="${LOCAL_REPO}/.codex_state/tools/metrics.py"
 
 # GREEN v2 (ruling 2 / step 1.1): every agent run has an outer timeout; run 2 must exit 0.

@@ -37,6 +37,8 @@ readonly POWEROFF_TIMEOUT_SECONDS=30
 readonly SSH_TIMEOUT_SECONDS=120
 readonly POLL_INTERVAL_SECONDS=2
 readonly APT_UPDATE_TIMEOUT_SECONDS=180
+# HQ 2026-11-10 ruling 2: ssh through the ControlMaster shim (see sshmux/ssh).
+PATH="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)/sshmux:${PATH}"
 
 readonly -a SSH_OPTIONS=(
   -o BatchMode=yes
@@ -133,6 +135,8 @@ case "$node_state" in
     ;;
   running | paused | stuck | gurumeditation)
     printf 'Hard poweroff of node VM %q (state: %s)...\n' "$NODE_VM" "$node_state"
+    # close the multiplexed SSH master first, so no stale control socket outlives the node
+    timeout 10 ssh -O exit "$NODE_SSH_ALIAS" >/dev/null 2>&1 || true
     VBoxManage controlvm "$NODE_VM" poweroff ||
       fail "Could not power off node VM '$NODE_VM'."
 

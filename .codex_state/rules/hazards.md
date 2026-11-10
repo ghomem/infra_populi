@@ -34,7 +34,10 @@ the rest are read from the manifest, its templates and the plan.
 11. Shared template/file: list every `template()`/`epp()`/`source =>` the class uses and whether another
     class consumes it (`git grep` in the baseline); a change to a shared one is beyond-target.
 12. Package/service side effects on the node: a class that installs packages or restarts services
-    (ssh, nginx, mysql, networking) must not cut the harness's own SSH path — say how it stays alive.
+    (ssh, nginx, mysql, networking) must not cut the harness's own SSH path — say how it stays alive. SSH
+    rate limits (firewall_secure family): the harness and the reviewer multiplex over one ESTABLISHED connection
+    (`.codex_state/tools/sshmux/ssh`), and the params fixture must whitelist the harness's SSH source as the node
+    sees it (`ssh puppet8node 'echo $SSH_CLIENT'` — the laptop address is DHCP-assigned; re-check before dispatch).
 13. Runtime-baseline drift of the node itself (apt lists, timers): the revert refreshes apt lists; anything
     else a class depends on that is not in P8NODE_BASELINE_GREEN_v2 is a fixture to declare, not to assume.
 

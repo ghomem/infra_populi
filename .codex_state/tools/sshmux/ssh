@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# SSH ControlMaster for the engine (HQ 2026-11-10 ruling 2): one multiplexed, ESTABLISHED connection per host, so a
+# class that rate-limits NEW SSH connections (firewall_secure: 15/min per IP) cannot throttle the harness or the
+# reviewer. test_class.sh and revert_node.sh put this directory first on PATH; it adds the options and execs the next
+# `ssh` on PATH (the real one, or the test stub). revert_node.sh closes the node's master before powering it off.
+set -euo pipefail
+self="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+next=""
+IFS=: read -ra dirs <<<"$PATH"
+for d in "${dirs[@]}"; do
+  [[ -n "$d" && -x "$d/ssh" ]] || continue
+  [[ "$(cd "$d" 2>/dev/null && pwd -P)" == "$self" ]] && continue
+  next="$d/ssh"; break
+done
+[[ -n "$next" ]] || { echo "sshmux: no ssh binary on PATH" >&2; exit 255; }
+dir="${P8_SSH_CONTROL_DIR:-$HOME/.ssh/p8-cm}"
+mkdir -p "$dir" && chmod 700 "$dir"
+exec "$next" -o ControlMaster=auto -o "ControlPath=${dir}/%C" -o ControlPersist=300 "$@"
