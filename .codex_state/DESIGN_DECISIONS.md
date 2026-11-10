@@ -923,3 +923,8 @@ without declaring the module's base class and without plan required_external for
 whose ONLY finding is hazard 14 to context-gap (a plan fix), not to Codex. Real lab: flags firewall_secure (and,
 informationally, the verified firewall addons, which went GREEN without Class['firewall']); clean for
 sysmon_puppet_cert_status, nginx_proxy_smtp_auth_ppa, packages_base.
+
+## 2026-11-11 — HQ rulings before batch 3 (5): the desktop regex node weighs 20 machines
+`prod` (secondary sort key after dependencies) is now production MACHINES = servers + 20 × desktop statements
+(fleet_class_usage.md columns; the desktops/ regex node covers 20 laptops per the production document). firewall_secure
+78, gnome_lock_screen 20, openvpn_server 3: the desktop closure sorts above the three-node tier (dependencies still first).

@@ -135,7 +135,7 @@ def row(gen, name, cx=1, deps=()):
 def test_prod_nodes_parse_only_the_class_table(gen, tmp_path):
     f = tmp_path / "fleet.md"
     f.write_text(FLEET)
-    assert gen.read_prod_nodes(f) == {"heavy": 58, "light": 1}
+    assert gen.read_prod_nodes(f) == {"heavy": 58, "light": 1}  # no desktop statements in the fixture
     assert gen.read_prod_nodes(tmp_path / "missing.md") == {}
 
 
@@ -198,3 +198,17 @@ def test_expected_run2_events_parse(gen):
     # every entry is a reviewed, justified exception (HQ 2026-11-10 ruling 1): keep this set explicit
     assert {n for n, r in rows.items() if r.expected_run2_events} == {"packages_base", "node_base"}
     assert rows["node_base"].expected_run2_events == ("Exec[apt_update]",)
+
+
+
+def test_desktop_statement_weighs_twenty_machines(gen, tmp_path):
+    f = tmp_path / "fleet.md"
+    f.write_text("| class | prod | servers | desktop stmts | deleted |\n|---|---:|---:|---|---:|\n"
+                 "| `both` | 59 | 58 | 1 (≈20) | 9 |\n| `desk` | 1 | 0 | 1 (≈20) | 0 |\n| `three` | 3 | 3 | 0 | 0 |\n")
+    assert gen.read_prod_nodes(f) == {"both": 78, "desk": 20, "three": 3}
+
+
+def test_repo_desktop_closure_sorts_above_the_three_node_tier(gen):
+    prod = gen.read_prod_nodes()
+    assert prod["gnome_lock_screen"] == 20 and prod["firewall_secure"] == 78
+    assert prod["gnome_lock_screen"] > prod["openvpn_server"] == 3

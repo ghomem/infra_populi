@@ -1,6 +1,6 @@
 # Puppet Class Migration Order
 
-Generated: 2026-11-10 11:34:04 UTC
+Generated: 2026-11-10 11:55:12 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
@@ -10,7 +10,7 @@ Status summary: 38 done / 1 owner_validated / 3 blocked / 0 gated / 0 needs veri
 
 Next class: `puppet_infrastructure::ssl_base`
 
-Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — dependencies first, then `prod` (production node statements from `.codex_state/diagnosis/fleet_class_usage.md`, composites propagated) descending, then cx/dep/p8 — then re-migrations marked `sink`. prod 0 = no production declaration: they stay in the queue, last (HQ 2026-10-27: migrate everything).
+Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — dependencies first, then `prod` (production MACHINES: servers + 20 per desktop regex statement, from `.codex_state/diagnosis/fleet_class_usage.md`, composites propagated) descending, then cx/dep/p8 — then re-migrations marked `sink`. prod 0 = no production declaration: they stay in the queue, last (HQ 2026-10-27: migrate everything).
 
 ## RE-MIGRATION QUEUE (gate-v1 done, reconciliation pending; HQ ck1 order, `.codex_state/rules/remigration_order.txt`)
 
@@ -35,7 +35,7 @@ Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — de
 | 11 | `puppet_infrastructure::firewall_ipv6_drop` | 58 | 2 | 4 | 4 | yes |  |
 | 12 | `puppet_infrastructure::firewall_ipv6_drop_policy` | 0 | 2 | 4 | 4 | yes |  |
 | 13 | `puppet_infrastructure::hello_world_flask_common` | 0 | 2 | 5 | 3 | no | filesystem_base |
-| 14 | `puppet_infrastructure::user_kde_lock_screen_common` | 1 | 2 | 6 | 3 | no | filesystem_base |
+| 14 | `puppet_infrastructure::user_kde_lock_screen_common` | 20 | 2 | 6 | 3 | no | filesystem_base |
 | 15 | `puppet_infrastructure::backup_rsnapshot` | 2 | 3 | 1 | 4 | yes |  |
 | 16 | `puppet_infrastructure::openvpn_set_vpn_passwd_file` | 0 | 3 | 1 | 5 | yes |  |
 | 17 | `puppet_infrastructure::caching_nameserver` | 3 | 3 | 2 | 4 | yes |  |
@@ -47,16 +47,16 @@ Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — de
 | 23 | `puppet_infrastructure::sftp_only` | 0 | 4 | 1 | 4 | yes | ssh_secure |
 | 24 | `puppet_infrastructure::docker_container` | 13 | 4 | 3 | 4 | no |  |
 | 25 | `puppet_infrastructure::filesystem_yum` | 58 | 4 | 5 | 4 | no | filesystem_base |
-| 26 | `puppet_infrastructure::rsyslog_client` | 57 | 4 | 6 | 3 | no | rsyslog_base |
-| 27 | `puppet_infrastructure::filesystem_base_desktop` | 1 | 4 | 7 | 4 | yes |  |
+| 26 | `puppet_infrastructure::rsyslog_client` | 76 | 4 | 6 | 3 | no | rsyslog_base |
+| 27 | `puppet_infrastructure::filesystem_base_desktop` | 20 | 4 | 7 | 4 | yes |  |
 | 28 | `puppet_infrastructure::sysmon_puppet_cert_status` | 0 | 5 | 5 | 5 | no | filesystem_base |
 | 29 | `puppet_infrastructure::firewall` | 0 | 5 | 5 | 8 | yes |  |
 | 30 | `puppet_infrastructure::ssh_secure` | 58 | 5 | 7 | 5 | yes |  |
-| 31 | `puppet_infrastructure::rsyslog_base` | 58 | 5 | 8 | 5 | yes |  |
+| 31 | `puppet_infrastructure::rsyslog_base` | 77 | 5 | 8 | 5 | yes |  |
 | 32 | `puppet_infrastructure::filesystem_base` | 58 | 5 | 9 | 4 | yes |  |
-| 33 | `puppet_infrastructure::packages_base` | 59 | 6 | 10 | 5 | yes |  |
+| 33 | `puppet_infrastructure::packages_base` | 78 | 6 | 10 | 5 | yes |  |
 | 34 | `puppet_infrastructure::filesystem_apt` | 58 | 7 | 5 | 5 | no | filesystem_base |
-| 35 | `puppet_infrastructure::firewall_secure` | 59 | 7 | 8 | 7 | no | filesystem_base |
+| 35 | `puppet_infrastructure::firewall_secure` | 78 | 7 | 8 | 7 | no | filesystem_base |
 | 36 | `puppet_infrastructure::sysmon_base` | 58 | 8 | 8 | 6 | no | filesystem_base,packages_base |
 | 37 | `puppet_infrastructure::firewall_secure_extra` | 58 | 9 | 8 | 8 | no | filesystem_base |
 | 38 | `puppet_infrastructure::node_base` | 58 | 9 | 10 | 6 | no | packages_base,sysmon_base,ssh_secure,firewall_secure,firewall_ipv6_drop,filesystem_base,filesystem_apt,filesystem_lib64,filesystem_sec,dns_client |
@@ -88,18 +88,18 @@ Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — de
 | 3 | `puppet_infrastructure::nginx_base` | 33 | 7 | 10 | 6 | no |  |
 | 4 | `puppet_infrastructure::nginx_frontend_domain` | 35 | 10 | 7 | 7 | no | nginx_base,nginx_default_removal |
 | 5 | `puppet_infrastructure::nginx_frontend` | 24 | 8 | 8 | 6 | no | nginx_base,nginx_default_removal,ssl_nginx_domain,nginx_frontend_domain |
-| 6 | `puppet_infrastructure::firewall_addon_openvpn_server` | 3 | 3 | 3 | 5 | no |  |
-| 7 | `puppet_infrastructure::postfix_smtp_node` | 3 | 6 | 4 | 6 | yes |  |
-| 8 | `puppet_infrastructure::user_base` | 3 | 7 | 8 | 6 | yes |  |
-| 9 | `puppet_infrastructure::openvpn_server` | 3 | 9 | 6 | 7 | no |  |
-| 10 | `puppet_infrastructure::network_vpn` | 3 | 8 | 7 | 6 | no | caching_nameserver,firewall_addon_caching_nameserver,firewall_addon_openvpn_server,openvpn_server |
-| 11 | `puppet_infrastructure::user` | 2 | 1 | 4 | 2 | yes | user_base |
-| 12 | `puppet_infrastructure::sync` | 2 | 4 | 3 | 4 | no | filesystem_base |
-| 13 | `puppet_infrastructure::rsyslog_apparmor_exception` | 1 | 2 | 2 | 3 | no | rsyslog_base |
-| 14 | `puppet_infrastructure::firewall_ipv6_drop_policy_desktop` | 1 | 2 | 4 | 4 | yes |  |
-| 15 | `puppet_infrastructure::user_kde_lock_screen` | 1 | 2 | 5 | 3 | no | user_kde_lock_screen_common,filesystem_base,user_base |
-| 16 | `puppet_infrastructure::user_sudoer` | 1 | 2 | 5 | 3 | yes | user_base |
-| 17 | `puppet_infrastructure::gnome_lock_screen` | 1 | 3 | 2 | 3 | yes |  |
+| 6 | `puppet_infrastructure::firewall_ipv6_drop_policy_desktop` | 20 | 2 | 4 | 4 | yes |  |
+| 7 | `puppet_infrastructure::gnome_lock_screen` | 20 | 3 | 2 | 3 | yes |  |
+| 8 | `puppet_infrastructure::firewall_addon_openvpn_server` | 3 | 3 | 3 | 5 | no |  |
+| 9 | `puppet_infrastructure::postfix_smtp_node` | 3 | 6 | 4 | 6 | yes |  |
+| 10 | `puppet_infrastructure::user_base` | 3 | 7 | 8 | 6 | yes |  |
+| 11 | `puppet_infrastructure::user_kde_lock_screen` | 20 | 2 | 5 | 3 | no | user_kde_lock_screen_common,filesystem_base,user_base |
+| 12 | `puppet_infrastructure::openvpn_server` | 3 | 9 | 6 | 7 | no |  |
+| 13 | `puppet_infrastructure::network_vpn` | 3 | 8 | 7 | 6 | no | caching_nameserver,firewall_addon_caching_nameserver,firewall_addon_openvpn_server,openvpn_server |
+| 14 | `puppet_infrastructure::user` | 2 | 1 | 4 | 2 | yes | user_base |
+| 15 | `puppet_infrastructure::sync` | 2 | 4 | 3 | 4 | no | filesystem_base |
+| 16 | `puppet_infrastructure::rsyslog_apparmor_exception` | 1 | 2 | 2 | 3 | no | rsyslog_base |
+| 17 | `puppet_infrastructure::user_sudoer` | 1 | 2 | 5 | 3 | yes | user_base |
 | 18 | `puppet_infrastructure::sysmon_backup` | 1 | 3 | 4 | 4 | no | backup,filesystem_base |
 | 19 | `puppet_infrastructure::rsyslog_server` | 1 | 4 | 6 | 3 | no | rsyslog_base |
 | 20 | `puppet_infrastructure::letsencrypt_base` | 1 | 6 | 7 | 5 | no | filesystem_base |

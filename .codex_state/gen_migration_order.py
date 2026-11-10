@@ -288,9 +288,14 @@ def tracker_mismatches(entries: dict[str, TrackerEntry], done: set[str]) -> tupl
     return sorted(done - tracked_done), sorted(tracked_done - done)
 
 
+# HQ 2026-11-11 ruling 5: the desktops/ regex node statement covers 20 laptops (production document, see
+# fleet_class_usage.md header) — it weighs 20 machines in `prod`, not 1.
+DESKTOP_MACHINES_PER_STATEMENT = 20
+
+
 def read_prod_nodes(path: Path | None = None) -> dict[str, int]:
-    """Production node statements per class (`prod` column of fleet_class_usage.md, composites propagated).
-    Step 4.3: the secondary sort key after dependencies. A class missing from the table counts 0."""
+    """Production MACHINES per class: servers + 20 x desktop statements, from fleet_class_usage.md (composites
+    propagated). Step 4.3 / HQ 2026-11-11 ruling 5: the secondary sort key after dependencies. Missing class = 0."""
     path = path or FLEET_PATH
     if not path.is_file():
         return {}
@@ -302,10 +307,13 @@ def read_prod_nodes(path: Path | None = None) -> dict[str, int]:
             header = cells
             continue
         if header and len(cells) == len(header) and re.fullmatch(r"[a-z][a-z0-9_]*", cells[0]):
+            row = dict(zip(header, cells))
             try:
-                prod[cells[0]] = int(cells[1])
-            except ValueError:
-                fail(f"invalid prod value for {cells[0]} in {path.name}: {cells[1]!r}")
+                servers = int(row["servers"]) if "servers" in row else int(row["prod"])
+                desktop = int(re.match(r"\s*(\d+)", row.get("desktop stmts", "0") or "0").group(1))
+            except (ValueError, AttributeError):
+                fail(f"invalid servers/desktop values for {cells[0]} in {path.name}: {cells[1:4]!r}")
+            prod[cells[0]] = servers + DESKTOP_MACHINES_PER_STATEMENT * desktop
         elif header and not cells:
             header = []
     return prod
@@ -574,8 +582,8 @@ def render(
         f"Next class: `{next_class}`" if next_class != "all migrated" else "Next class: all migrated",
         "",
         "Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — dependencies first, then "
-        "`prod` (production node statements from `.codex_state/diagnosis/fleet_class_usage.md`, composites "
-        "propagated) descending, then cx/dep/p8 — then re-migrations marked `sink`. prod 0 = no production "
+        "`prod` (production MACHINES: servers + 20 per desktop regex statement, from "
+        "`.codex_state/diagnosis/fleet_class_usage.md`, composites propagated) descending, then cx/dep/p8 — then re-migrations marked `sink`. prod 0 = no production "
         "declaration: they stay in the queue, last (HQ 2026-10-27: migrate everything).",
         "",
         "## RE-MIGRATION QUEUE (gate-v1 done, reconciliation pending; HQ ck1 order, `.codex_state/rules/remigration_order.txt`)",
