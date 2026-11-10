@@ -72,7 +72,11 @@ read `.codex_state/checks/results/<class>/*-author.*`: the verdict tool compares
    defaults)? A check that tests something the lines do not say, or expects a value the code would not produce, is a
    derivation failure. Read the baseline yourself (`baseline.py show --for <class> <path>`) when the printed lines
    are not enough. Also read the whole check file once: every invariant's `why_invariant` must be plausible, and no
-   probe may change the node or reach another host (the validator enforces the obvious cases).
+   probe may reach another host or change the node, except a check that opts in with `mutates` (HQ 2026-11-10). For
+   each such check, judge that `mutates` declares everything its action (`probe`) changes, that the action is what the
+   cited baseline lines would run (e.g. the cron's command), and that the read-only `effect` — the evidence `expect`
+   is matched against — shows the action's result, not the action's own output. The runner runs actions only after
+   apply and only once every read-only check passed; on the clean node it runs the effect alone.
 3. Record: `python3 .codex_state/tools/phase3.py verdict <class> --derived ok|fail --evidence "<check id: why the
    reference supports (or not) the probe>"` — one --evidence per spot-checked reference, plus one per finding if the
    run had findings ("finding <id>: <what the probe saw vs the expectation>"). PASS = your run and the author's run

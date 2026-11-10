@@ -1082,3 +1082,22 @@ No step runs until HQ's step review returns; step 1 (`modifyvm`) is Salatiel's.
 ## 2026-11-10 — HQ: Phase 5 backlog item 3, dead ssh options
 `Protocol 2` and `UsePrivilegeSeparation yes` in ssh_secure (local :59/:79, baseline :57/:77) are ignored by OpenSSH
 ≥ 7.5; the node runs 9.6p1. They go to `rules/phase5_backlog.md` as item 3 (removal). Phase 1 keeps them verbatim.
+
+## 2026-11-10 — HQ: Phase 3 mutating probes (opt-in)
+A check may change the node only if it opts in.
+- **Declaration:** `mutates: <declared change>`. Its `probe` is then the action, and `effect` is a read-only probe
+  that `expect` is matched against. The evidence is the effect, never the action's own output; the action's rc and
+  output are recorded alongside.
+- **Validation:**
+  - the action keeps the host rules (no other host, nothing master-ish, no Puppet runs);
+  - the effect keeps every read-only rule;
+  - a mutating check must be a negative control;
+  - an `effect` without `mutates` is refused.
+- **Clean phase:** only the effect runs, and it must fail. The action never runs before apply, so the node the harness
+  applies to stays the reverted baseline.
+- **Applied phase:** read-only checks first. Mutating checks follow in file order, only if every read-only check
+  passed; otherwise each one is recorded `not_run` (exit 1, JUnit skipped).
+- **Never on the master:** the runner's only execution path is the node.
+- **First use:** backup_rsnapshot `daily-backup-executes` runs the cron's command once and checks daily.0 for a
+  byte-identical /etc/hostname.
+- **Reviewer:** reviewer.md now judges the declaration against the action. 11 new runner tests.

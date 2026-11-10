@@ -150,6 +150,10 @@ Behaviour checks per class in `.codex_state/checks/<class>.yml` (advisor-authore
   3. Harness apply.
   4. APPLIED phase: a failure is a FINDING.
 
+  Mutating probes (HQ 2026-11-10) are opt-in per check: `mutates` declares the change and a read-only `effect` is the
+  evidence. They are negative controls (on the clean node only the effect runs) and run after apply, once every
+  read-only check passed. Never on the master: the node is the runner's only target.
+
   Output is JSON + JUnit in `checks/results/<class>/`.
 - Reviewer: `reviewer` with `<class> --phase3` re-runs the checks, spot-checks derived_from (`spot`) and persists a
   verdict (`verdict`) in `checks/reviews/<class>/`.

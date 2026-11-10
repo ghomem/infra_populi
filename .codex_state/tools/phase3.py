@@ -34,10 +34,17 @@ Check file .codex_state/checks/<class>.yml:
         - {path: files/x, sha256: <of the whole baseline file>}
       probe: <shell, run as root on the node via `ssh <node> sudo -n bash -s`>
       expect: {rc: 0, stdout: <regex, re.M>, stdout_not: <regex>}   # rc defaults to 0
+      # opt-in MUTATING check (HQ 2026-11-10): `probe` is an action that changes the node; the evidence is its effect
+      mutates: <what the action changes on the node, declared>
+      effect: <read-only shell; `expect` is matched against ITS output, never the action's>
 
 Probe rules (validate): the node is the only host — no other host name or address, no ssh/scp/sftp/rsync except to
-the node itself (127.0.0.1/localhost); read-only — no puppet agent/apply/resource, no service or package state
-change, no rm/tee/redirect into a file.
+the node itself (127.0.0.1/localhost), never Puppet (agent/apply/resource); read-only — no service or package state
+change, no rm/tee/redirect into a file. Mutating checks (HQ 2026-11-10): opt-in per check with `mutates` (declared
+change) + a read-only `effect`; the action may change node state (host rules and the Puppet ban still apply); they are
+negative controls whose EFFECT must be absent on the clean node (the action never runs there); after apply they run
+only once every read-only check has passed, in file order, and pass on the effect. Never on the master: the runner's
+only execution path is the node.
 P8_PHASE3_DIR redirects checks/results/reviews; P8_PHASE3_HARNESS / P8_PHASE3_REVERT replace the harness and the
 revert tool, P8_PARAMS_DIR the params directory (tests). Harness metrics events go to .codex_state/logs/phase3-metrics, never into Phase 1 records.
 """
@@ -146,8 +153,12 @@ def resolve_ref(ref: dict, base: baseline.Baseline) -> tuple[str | None, str]:
     return None, text
 
 
-def probe_problems(probe: str) -> list[str]:
-    out = [f"probe {why}: {pat.pattern}" for pat, why in FORBIDDEN if pat.search(probe)]
+HOST_RULES = 3  # FORBIDDEN[:3] keep probes on the node and away from Puppet; the rest keep them read-only
+
+
+def probe_problems(probe: str, mutating: bool = False) -> list[str]:
+    rules = FORBIDDEN[:HOST_RULES] if mutating else FORBIDDEN
+    out = [f"probe {why}: {pat.pattern}" for pat, why in rules if pat.search(probe)]
     if LOCAL_SSH.search(probe) and not LOCAL_TARGET.search(probe):
         out.append("probe uses ssh to a host other than the node itself (127.0.0.1/localhost)")
     return out
@@ -194,10 +205,23 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
             problems.append(f"{where}: derived_from (baseline references) is required")
         else:
             problems += [f"{where}: {p}" for p, _ in (resolve_ref(r, base) for r in refs) if p]
+        mutating = "mutates" in c
         if not isinstance(c.get("probe"), str) or not c["probe"].strip():
             problems.append(f"{where}: probe is required")
         else:
-            problems += [f"{where}: {p}" for p in probe_problems(c["probe"])]
+            problems += [f"{where}: {p}" for p in probe_problems(c["probe"], mutating)]
+        if mutating:
+            if not isinstance(c["mutates"], str) or len(c["mutates"].strip()) < 10:
+                problems.append(f"{where}: mutates must declare what the action changes")
+            if not isinstance(c.get("effect"), str) or not c["effect"].strip():
+                problems.append(f"{where}: a mutating check needs a read-only `effect` probe (the evidence)")
+            else:
+                problems += [f"{where}: effect {p}" for p in probe_problems(c["effect"])]
+            if c.get("control") != "negative":
+                problems.append(f"{where}: a mutating check is a negative control (its effect must be absent "
+                                "on the clean node)")
+        elif "effect" in c:
+            problems.append(f"{where}: `effect` without `mutates` (declare the change to opt in)")
         exp = c.get("expect") or {}
         if not isinstance(exp, dict) or not set(exp) <= {"rc", "stdout", "stdout_not"}:
             problems.append(f"{where}: expect takes rc, stdout, stdout_not")
@@ -220,7 +244,8 @@ def cmd_validate(cls: str) -> int:
     if problems:
         return 2
     neg = sum(1 for c in data["checks"] if c["control"] == "negative")
-    print(f"VALID {cls}: {len(data['checks'])} checks ({neg} negative controls), "
+    mut = sum(1 for c in data["checks"] if "mutates" in c)
+    print(f"VALID {cls}: {len(data['checks'])} checks ({neg} negative controls, {mut} mutating), "
           f"{sum(len(c['derived_from']) for c in data['checks'])} baseline references at {data['baseline']}")
     return 0
 
@@ -233,21 +258,34 @@ def node_env() -> dict:
     return env
 
 
-def run_probe(check: dict) -> dict:
+def on_node(script: str) -> tuple[int, str, str]:
     try:
-        proc = subprocess.run(["ssh", "-o", "BatchMode=yes", NODE, "sudo -n bash -s"], input=check["probe"],
+        proc = subprocess.run(["ssh", "-o", "BatchMode=yes", NODE, "sudo -n bash -s"], input=script,
                               capture_output=True, text=True, timeout=PROBE_TIMEOUT, env=node_env())
-        rc, out, err = proc.returncode, proc.stdout, proc.stderr
+        return proc.returncode, proc.stdout, proc.stderr
     except subprocess.TimeoutExpired:
-        rc, out, err = 124, "", f"probe timed out after {PROBE_TIMEOUT}s"
+        return 124, "", f"probe timed out after {PROBE_TIMEOUT}s"
+
+
+def run_probe(check: dict, act: bool = False) -> dict:
+    """Read-only checks run `probe`. A mutating check runs its `effect` only — preceded by the action when `act`."""
+    action = None
+    if "mutates" in check and act:
+        arc, aout, aerr = on_node(check["probe"])
+        action = {"mutates": check["mutates"], "rc": arc, "stdout": aout[-1000:], "stderr": aerr[-500:]}
+    rc, out, err = on_node(check["effect"] if "mutates" in check else check["probe"])
     exp = check.get("expect") or {}
     passed = rc == exp.get("rc", 0)
     if passed and "stdout" in exp:
         passed = re.search(exp["stdout"], out, re.M) is not None
     if passed and "stdout_not" in exp:
         passed = re.search(exp["stdout_not"], out, re.M) is None
-    return {"id": check["id"], "control": check["control"], "rc": rc, "passed": passed,
-            "stdout": out[-2000:], "stderr": err[-1000:]}
+    row = {"id": check["id"], "control": check["control"], "rc": rc, "passed": passed,
+           "stdout": out[-2000:], "stderr": err[-1000:]}
+    if "mutates" in check:
+        row["mutating"] = True
+        row["action"] = action  # None in the clean phase: the action never runs before the class is applied
+    return row
 
 
 def git_head() -> str:
@@ -262,6 +300,9 @@ def junit(cls: str, record: dict) -> bytes:
         bad = 0
         for r in rows:
             case = ET.SubElement(suite, "testcase", classname=f"phase3.{cls}.{phase}", name=r["id"])
+            if r.get("not_run"):
+                ET.SubElement(case, "skipped", message=r["not_run"])
+                continue
             if rule == "control":
                 ok, msg = r["ok"], ("negative control passed on the clean node" if r["control"] == "negative"
                                     else "invariant failed on the clean node")
@@ -291,7 +332,7 @@ def cmd_run(cls: str, role: str) -> int:
     problems, data, raw = validate(cls)
     record = {"class": cls, "role": role, "at": started, "runner": git_head(), "baseline": data.get("baseline"),
               "check_file_sha256": hashlib.sha256(raw).hexdigest(), "valid": not problems, "problems": problems,
-              "clean": [], "apply": None, "applied": [], "findings": [], "outcome": None}
+              "clean": [], "apply": None, "applied": [], "findings": [], "not_run": [], "outcome": None}
 
     def finish(outcome: str, rc: int) -> int:
         record["outcome"] = outcome
@@ -309,7 +350,7 @@ def cmd_run(cls: str, role: str) -> int:
     if subprocess.run([revert], env=node_env()).returncode != 0:
         record["problems"].append("node revert failed")
         return finish("ENVIRONMENT_FAILED", 3)
-    print("==> CLEAN phase: negative controls must fail, invariants must pass")
+    print("==> CLEAN phase: negative controls must fail, invariants must pass (mutating checks: effect only)")
     for check in data["checks"]:
         r = run_probe(check)
         r["ok"] = (not r["passed"]) if check["control"] == "negative" else r["passed"]
@@ -332,13 +373,28 @@ def cmd_run(cls: str, role: str) -> int:
                        "tail": (proc.stdout + proc.stderr)[-1500:]}
     if not green:
         return finish("APPLY_FAILED", 3)
-    print("==> APPLIED phase: every check must pass")
-    for check in data["checks"]:
+    print("==> APPLIED phase: every check must pass (read-only first; mutating only if all of those pass)")
+    readonly = [c for c in data["checks"] if "mutates" not in c]
+    mutating = [c for c in data["checks"] if "mutates" in c]
+    for check in readonly:
         r = run_probe(check)
         record["applied"].append(r)
         print(f"  {'pass' if r['passed'] else 'FAIL'} {check['id']}")
-    record["findings"] = [r["id"] for r in record["applied"] if not r["passed"]]
-    if record["findings"]:
+    gate = [r["id"] for r in record["applied"] if not r["passed"]]
+    for check in mutating:
+        if gate:
+            reason = f"not run: read-only checks failed ({', '.join(gate)})"
+            record["applied"].append({"id": check["id"], "control": check["control"], "mutating": True,
+                                      "passed": False, "not_run": reason, "rc": None, "stdout": "", "stderr": ""})
+            print(f"  SKIP {check['id']} (mutating; {reason})")
+            continue
+        r = run_probe(check, act=True)
+        record["applied"].append(r)
+        print(f"  {'pass' if r['passed'] else 'FAIL'} {check['id']} (mutating: {check['mutates']}; "
+              f"action rc {r['action']['rc']}, judged on the effect)")
+    record["not_run"] = [r["id"] for r in record["applied"] if r.get("not_run")]
+    record["findings"] = [r["id"] for r in record["applied"] if not r["passed"] and not r.get("not_run")]
+    if record["findings"] or record["not_run"]:
         return finish("FINDINGS", 1)
     return finish("ALL_PASS", 0)
 
@@ -363,7 +419,13 @@ def cmd_spot(cls: str, n: int, seed: int | None) -> int:
         print(f"reference: {r['path']}" + (f":{r['lines']}" if "lines" in r else " (whole file)"))
         print("baseline lines (read now from the upstream pin):")
         print("\n".join(f"  | {l}" for l in text.splitlines()))
-        print("probe:\n" + "\n".join(f"  $ {l}" for l in c["probe"].strip().splitlines()))
+        if "mutates" in c:
+            print(f"MUTATING — declared change: {c['mutates']}")
+            print("action:\n" + "\n".join(f"  $ {l}" for l in c["probe"].strip().splitlines()))
+            print("effect (evidence; expect applies here):\n" +
+                  "\n".join(f"  $ {l}" for l in c["effect"].strip().splitlines()))
+        else:
+            print("probe:\n" + "\n".join(f"  $ {l}" for l in c["probe"].strip().splitlines()))
         print(f"expect: {json.dumps(c.get('expect') or {'rc': 0})}")
     print("\nJudge each: does the probe + expect test what these baseline lines declare, under the fixture?")
     return 0

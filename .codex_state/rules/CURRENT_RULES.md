@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-67 entries; 6 marked superseded (in whole or part); newest first.
+68 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-10 — HQ: Phase 3 mutating probes (opt-in)
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-10 — HQ: Phase 5 backlog item 3, dead ssh options
 - (no numbered/Rule/Decision lines; read the entry)

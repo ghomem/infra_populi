@@ -85,7 +85,7 @@ def test_a_set_bound_to_the_baseline_validates(p3):
                                             "sha256": "01f903391abe367b549ae37822983bd3d5a8dd3d6465523f3b5f14729573b8b0"}])))
     proc = p3.run("validate", CLS)
     assert proc.returncode == 0, proc.stderr
-    assert "VALID backup_rsnapshot: 2 checks (1 negative controls), 2 baseline references at release-0.9.10" in proc.stdout
+    assert "VALID backup_rsnapshot: 2 checks (1 negative controls, 0 mutating), 2 baseline references at release-0.9.10" in proc.stdout
 
 
 @pytest.mark.parametrize("mutate, message", [
@@ -253,3 +253,66 @@ def test_the_pilot_check_sets_validate(cls):
     import subprocess
     proc = subprocess.run(["python3", SCRIPT, "validate", cls], capture_output=True, text=True)
     assert proc.returncode == 0, proc.stderr
+
+
+# HQ 2026-11-10: mutating probes — opt-in per check, declared change, after all read-only checks, evidence = effect.
+def mutating(cid="backup-runs", action="act-backup; rm -f /tmp/x", effect="eff-backup",
+             mutates="runs one rsnapshot daily snapshot into the snapshot root", **extra):
+    return check(cid, action, mutates=mutates, effect=effect, **extra)
+
+
+def test_a_mutating_check_validates_with_a_declared_change_and_a_read_only_effect(p3):
+    p3.write(check_set(check("conf", "probe-conf"), mutating()))
+    proc = p3.run("validate", CLS)
+    assert proc.returncode == 0, proc.stderr
+    assert "(2 negative controls, 1 mutating)" in proc.stdout
+
+
+@pytest.mark.parametrize("bad, message", [
+    (mutating(action="/opt/puppetlabs/bin/puppet agent -t"), "runs Puppet"),
+    (mutating(action="ssh puppet8master true"), "names another lab host"),
+    (mutating(effect="rm -f /x"), "effect probe changes files or accounts"),
+    (mutating(effect=""), "needs a read-only `effect` probe"),
+    (mutating(mutates="x"), "mutates must declare what the action changes"),
+    (mutating(control="invariant", why_invariant="x"), "a mutating check is a negative control"),
+    (check("conf2", "probe", effect="eff"), "`effect` without `mutates`"),
+    (check("conf2", "rm -f /x"), "changes files or accounts"),  # without opt-in, still read-only
+])
+def test_mutating_checks_keep_the_host_rules_and_need_the_opt_in(p3, bad, message):
+    p3.write(check_set(check("conf", "probe-conf"), bad))
+    proc = p3.run("validate", CLS)
+    assert proc.returncode == 2 and message in proc.stderr, proc.stderr
+
+
+def test_the_action_runs_only_after_apply_after_every_read_only_check_and_is_judged_on_its_effect(p3, lab):
+    p3.write(check_set(mutating(), check("conf", "probe-conf")))  # mutating listed first, still runs last
+    p3.probe_rule("probe-conf", FAIL, OK)
+    lab.world["ssh"].insert(0, {"match": "act-backup", "outputs": [{"rc": 3, "stdout": "rsnapshot said no\n"}]})
+    p3.probe_rule("eff-backup", FAIL, OK)
+    proc = p3.run("run", CLS)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    record, _ = p3.result()
+    clean = {r["id"]: r for r in record["clean"]}
+    assert clean["backup-runs"]["action"] is None and clean["backup-runs"]["ok"]  # effect only, action never ran
+    assert [r["id"] for r in record["applied"]] == ["conf", "backup-runs"]
+    applied = record["applied"][1]
+    assert applied["passed"] and applied["action"]["rc"] == 3  # evidence is the effect, the action's rc is recorded
+    assert applied["action"]["mutates"].startswith("runs one rsnapshot")
+    ssh = lab.calls("ssh")
+    assert len(ssh) == 5 and all(c[-2:] == ["puppet8node", "sudo -n bash -s"] for c in ssh)  # 2 clean + 3 applied
+    out = proc.stdout
+    assert out.index("pass conf") < out.index("pass backup-runs (mutating")
+
+
+def test_a_failed_read_only_check_skips_every_mutating_action(p3, lab):
+    p3.write(check_set(check("conf", "probe-conf"), mutating()))
+    p3.probe_rule("probe-conf", FAIL, FAIL)
+    lab.world["ssh"].insert(0, {"match": "act-backup", "stdout": "", "rc": 0})
+    p3.probe_rule("eff-backup", FAIL, OK)
+    proc = p3.run("run", CLS)
+    assert proc.returncode == 1 and "SKIP backup-runs (mutating; not run: read-only checks failed (conf))" in proc.stdout
+    record, xml = p3.result()
+    assert record["findings"] == ["conf"] and record["not_run"] == ["backup-runs"]
+    assert not any("act-backup" in " ".join(c) for c in lab.calls("ssh"))
+    assert len(lab.calls("ssh")) == 3  # 2 clean (probe + effect) + 1 applied read-only; the action never sent
+    assert any(s.get("message", "").startswith("not run: read-only checks failed") for s in xml.iter("skipped"))

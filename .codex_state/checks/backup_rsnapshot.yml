@@ -1,15 +1,17 @@
 # Phase 3 checks for puppet_infrastructure::backup_rsnapshot (define, harness title `backup_rsnapshot`).
 # Fixture (params): basedir /etc, prefix etc, backdir /opt/puppet-infrastructure/backup, ndays 7; user/hour/minute
 # at their defaults (root, 23, 0). Required base (plan): backup_rsnapshot_pre (rsnapshot package, /etc/rsnapshot.d),
-# filesystem_base. Probes are read-only: `rsnapshot -t` is rsnapshot's test mode (prints, executes nothing).
+# filesystem_base. Read-only probes, except daily-backup-executes (opt-in mutating: one real `rsnapshot daily`,
+# judged on the snapshot it leaves). `rsnapshot -t` in daily-plan is test mode (prints, executes nothing).
 class: backup_rsnapshot
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
-  minutes: 0.7
+  minutes: 1.0
   notes: >-
     Wall clock 2026-11-10T15:58:20Z (class-specific reading: backup_rsnapshot_pre, template hash) to 15:59:02Z
-    (file validated). Shared research for the three pilots (baselines, fixtures, read-only look at the clean node's
+    (file validated), plus 0.3 min on 16:17Z for the mutating check daily-backup-executes (HQ allowed opt-in
+    mutating probes 2026-11-10). Shared research for the three pilots (baselines, fixtures, read-only look at the clean node's
     sshd/tools, fixture certificate type), 15:52-15:57Z, is reported once in the pilot report.
 checks:
   - id: conf-file-mode
@@ -61,3 +63,20 @@ checks:
       - {path: manifests/backup_rsnapshot.pp, lines: "13-19", text: "command => \"/usr/bin/rsnapshot -c ${myconffile} daily\","}
     probe: crontab -l -u root
     expect: {rc: 0, stdout: "^0 23 \\* \\* \\* /usr/bin/rsnapshot -c /etc/rsnapshot\\.d/rsnapshot-backup_rsnapshot\\.conf daily$"}
+
+  - id: daily-backup-executes
+    what: the cron's command, run once, takes a daily snapshot holding a byte-identical copy of the backup point /etc
+    control: negative
+    derived_from:
+      - {path: manifests/backup_rsnapshot.pp, lines: "14", text: "/usr/bin/rsnapshot -c ${myconffile} daily"}
+      - {path: templates/backup/rsnapshot.conf.erb, lines: "4", text: "snapshot_root\t<%= @backdir %>"}
+      - {path: templates/backup/rsnapshot.conf.erb, lines: "12", text: "backup\t<%= @basedir %>\t./<%= @prefix %>"}
+    mutates: >-
+      runs `rsnapshot daily` once: creates /opt/puppet-infrastructure/backup/daily.0 (a copy of /etc), takes and
+      releases the lockfile /tmp/rsnapshot_backup_rsnapshot.pid, logs through logger to syslog
+    probe: /usr/bin/rsnapshot -c /etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf daily 2>&1
+    effect: |
+      f=$(find /opt/puppet-infrastructure/backup/daily.0 -path '*/etc/hostname' -type f 2>/dev/null | head -1)
+      test -n "$f" || { echo "no snapshot of /etc/hostname under daily.0"; exit 1; }
+      cmp -s "$f" /etc/hostname && echo "daily.0 holds /etc ($f)"
+    expect: {rc: 0, stdout: "^daily\\.0 holds /etc \\(/opt/puppet-infrastructure/backup/daily\\.0/.*etc/hostname\\)$"}

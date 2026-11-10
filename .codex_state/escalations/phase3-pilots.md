@@ -11,7 +11,7 @@ Runner: `.codex_state/tools/phase3.py` (tests: `tests/test_phase3.py`, 39). Usag
 ## Authoring minutes (wall clock, measured)
 | class | checks | negative controls | invariants | baseline references | authoring (class-specific) |
 |---|---:|---:|---:|---:|---:|
-| backup_rsnapshot | 5 | 5 | 0 | 12 | 0.7 min (15:58:20Z → 15:59:02Z) |
+| backup_rsnapshot | 6 (1 mutating) | 6 | 0 | 15 | 1.0 min (15:58:20Z → 15:59:02Z; +0.3 min 16:17Z, mutating check) |
 | ssh_secure | 14 | 13 | 1 | 28 | 1.4 min (15:59:21Z → 16:00:44Z, includes a runner fix) |
 | nginx_static_domain | 8 | 8 | 0 | 19 | 1.3 min (16:00:52Z → 16:02:11Z) |
 | shared research for all three | | | | | ~5 min (15:52Z → 15:57Z): baselines, fixtures, read-only clean-node sshd/tools, fixture certificate type |
@@ -40,9 +40,18 @@ set's `authoring` block carries its own numbers and method.
    the handshake checks will confirm OpenSSL ignores it.
 6. **The validator caught one authoring error before any run.** nginx_base.pp:38 was the local line (the migration
    header shifts lines by 2); the baseline line is 36. derived_from binds to the pin, not to the local tree.
-7. **backup_rsnapshot: probes are read-only, so a real backup is not executed.** `rsnapshot -t daily` (test mode)
-   shows the planned rsync instead. Executing a snapshot would be the first exercise-type (mutating) probe; that is a
-   rule decision for HQ (the node is reverted before every run, so it is safe to allow).
+7. **backup_rsnapshot: a real backup now runs.** HQ allowed mutating probes on 2026-11-10: opt-in per check, the
+   change declared, run after all read-only probes pass, never on the master, the evidence is the effect.
+   `daily-backup-executes` runs the cron's own command once and passes only if `daily.0` holds a byte-identical
+   `/etc/hostname`. It adds 0.3 min to the class's authoring time (now 1.0 min).
+
+## HQ instructions for the runs (2026-11-10)
+- **If ssh_secure's `password-auth-off` shows password authentication enforced ON** (effective `sshd -T` value `yes`,
+  or the server offering `password`): write it up as an upstream defect, with the sshd_config.d drop-in evidence
+  (which file, which line, and the rendered sshd_config's `Include` position), and flag it to Salatiel directly, not
+  only in this report.
+- **Fixture PKI:** the server certificate gains the fixture domain SAN (`p8test.example.com`) through
+  master_fixtures.sh (pki v2), so name-based TLS verification becomes possible.
 
 ## Next (after the network change)
 For each pilot:
