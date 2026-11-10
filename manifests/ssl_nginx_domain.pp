@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none (wraps puppet_infrastructure::ssl_base; Service['nginx'] comes from puppet_infrastructure::nginx_base).
 ### Purpose ########
 # defined type to control ssl cert and key for nginx
 define puppet_infrastructure::ssl_nginx_domain (
