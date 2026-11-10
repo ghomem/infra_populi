@@ -330,6 +330,19 @@ def base_closure(cls: str) -> list[str]:
     return seen
 
 
+def closure_providers(cls: str, repo: Path = REPO) -> set[str]:
+    """Module/base classes the harness brings in with `cls`: every class declared by a manifest of its required_base
+    closure (itself included) plus the closure's required_external entries."""
+    import gen_migration_order as gen  # noqa: PLC0415
+    rows, providers = gen.parse_plan(), set()
+    for c in base_closure(cls):
+        f = repo / f"manifests/{c}.pp"
+        if f.is_file():
+            providers |= {x.lstrip(":") for x in declared_classes(f.read_text(encoding="utf-8"))}
+        providers |= {x.lstrip(":") for x in (rows[c].required_external if c in rows else ())}
+    return providers
+
+
 def provided_paths(repo: Path = REPO) -> list[tuple[str, str]]:
     path = repo / ".codex_state" / "rules" / "provided_paths.txt"
     out = []
@@ -343,20 +356,15 @@ def provided_paths(repo: Path = REPO) -> list[tuple[str, str]]:
 def prerequisite_findings(cls: str, node_paths: dict[str, str], hiera: dict, repo: Path = REPO) -> list[str]:
     """Paths the class needs that do not exist on the clean node and that no class of its required_base closure
     (including itself) declares — the sysmon_base / filesystem_lib64 shape (hazard 4)."""
-    import gen_migration_order as gen  # noqa: PLC0415
-    rows = gen.parse_plan()
     declared: set[str] = set()
-    providers: set[str] = set()
+    providers = closure_providers(cls, repo)
     needed: list[tuple[str, str]] = []
     for c in base_closure(cls):
         f = repo / f"manifests/{c}.pp"
         if not f.is_file():
             continue
-        text = f.read_text(encoding="utf-8")
-        d, n = path_items(text, hiera)
+        d, n = path_items(f.read_text(encoding="utf-8"), hiera)
         declared |= d
-        providers |= {x.lstrip(":") for x in declared_classes(text)}
-        providers |= {x.lstrip(":") for x in (rows[c].required_external if c in rows else ())}
         if c == cls:
             needed = n
     missing: dict[str, list[str]] = {}
@@ -631,9 +639,8 @@ def pregate_class(cls: str) -> Report:
     identical = frozenset(p for p in local if p.endswith(".pp") and p not in base_files
                           and baseline.git_show(base.upstream, base.commit, p) == local[p])
     apply_remote(results, report, report_inherited=True, identical_to_baseline=identical)
-    import gen_migration_order as gen  # noqa: PLC0415
-    row = gen.parse_plan().get(cls)
-    scan_hazards(manifest, inventory, report, row.required_external if row else ())
+    # hazard 14 is satisfied by a base class the required_base closure declares (nginx_base -> class nginx) too
+    scan_hazards(manifest, inventory, report, tuple(sorted(closure_providers(cls))))
     # HQ 2026-11-11 ruling 4: dynamic prerequisite probe against the clean-node inventory
     import node_inventory  # noqa: PLC0415
     node_paths = node_inventory.load()

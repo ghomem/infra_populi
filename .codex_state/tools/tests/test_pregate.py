@@ -346,3 +346,17 @@ def test_probe_honours_provided_paths_for_a_declared_provider(tmp_path, monkeypa
     assert pregate.prerequisite_findings("n", NODE, {}, repo)  # no provided_paths line yet
     (repo / ".codex_state/rules/provided_paths.txt").write_text("/etc/nginx nginx — evidence\n")
     assert pregate.prerequisite_findings("n", NODE, {}, repo) == []
+
+
+def test_hazard14_is_satisfied_by_a_base_class_of_the_required_base_closure(tmp_path, monkeypatch):
+    # nginx_frontend_domain shape: nginx::resource::* in a define whose required_base (nginx_base) declares class nginx
+    fd = "define f ($d) {\n  require Class['b']\n  nginx::resource::server { $d: }\n}\n"
+    nb = "class b {\n  class { 'nginx': manage_repo => false }\n}\n"
+    inv = {**INV14, "modules": INV14["modules"] | {"nginx"}, "bases": INV14["bases"] | {"nginx"},
+           "defines": INV14["defines"] | {"nginx", "nginx::resource::server"}}
+    repo = probe_repo(tmp_path, monkeypatch, {"f": fd, "b": nb}, {"f": (["b"], ["apt"]), "b": ([], [])})
+    assert pregate.closure_providers("f", repo) == {"nginx", "apt"}  # `require Class[b]` is no declaration
+    assert pregate.module_base_findings(fd, inv) and pregate.module_base_findings(
+        fd, inv, tuple(pregate.closure_providers("f", repo))) == []
+    repo = probe_repo(tmp_path / "2", monkeypatch, {"f": fd, "b": nb}, {"f": ([], []), "b": ([], [])})
+    assert pregate.module_base_findings(fd, inv, tuple(pregate.closure_providers("f", repo)))  # no base: still a finding
