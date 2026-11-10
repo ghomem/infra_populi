@@ -65,3 +65,22 @@ def test_hiera_level_goes_after_common_and_never_overrides():
 def test_mount_with_another_path_is_left_alone():
     body = remotes()[1]
     assert "has an [extra_files] mount with another path; not touching it" in body
+
+
+def test_pki_v2_names_the_harness_fixture_domain_and_replaces_v1():
+    """HQ 2026-11-10: the fixture certificate carries the fixture domain (p8test.example.com) so TLS names verify."""
+    pki = remotes()[2]
+    san = next(l for l in pki.splitlines() if "subjectAltName=" in l)
+    assert "DNS:p8test.example.com" in san and "DNS:*.p8test.example.com" in san
+    assert "DNS:p8test.invalid" in san and "DNS:star.example.com" in san  # earlier names kept
+    assert 'marker="$1/.p8test_pki_v2"' in pki  # a v1 layout is not OK any more: it is regenerated
+    assert pki.index('rm -f "$dir/.p8test_pki_v1"') > pki.index('>"$marker"')  # v1 marker dropped only after v2 exists
+
+
+def test_every_remote_script_parses():
+    """shellcheck never sees the REMOTE heredocs; a syntax error there surfaces only on the master (pki v2, 2026-11-10:
+    a stray quote on the last line made a successful run exit 2)."""
+    import subprocess
+    for body in remotes():
+        proc = subprocess.run(["bash", "-n"], input=body, capture_output=True, text=True)
+        assert proc.returncode == 0, proc.stderr

@@ -13,7 +13,7 @@ Runner: `.codex_state/tools/phase3.py` (tests: `tests/test_phase3.py`, 39). Usag
 |---|---:|---:|---:|---:|---:|
 | backup_rsnapshot | 6 (1 mutating) | 6 | 0 | 15 | 1.0 min (15:58:20Z → 15:59:02Z; +0.3 min 16:17Z, mutating check) |
 | ssh_secure | 14 | 13 | 1 | 28 | 1.4 min (15:59:21Z → 16:00:44Z, includes a runner fix) |
-| nginx_static_domain | 8 | 8 | 0 | 19 | 1.3 min (16:00:52Z → 16:02:11Z) |
+| nginx_static_domain | 9 | 9 | 0 | 23 | 2.0 min (16:00:52Z → 16:02:11Z; +~0.7 min 16:21:30Z → 16:22:16Z, name check) |
 | shared research for all three | | | | | ~5 min (15:52Z → 15:57Z): baselines, fixtures, read-only clean-node sshd/tools, fixture certificate type |
 
 Building the runner and its tests (15:56Z → 15:58Z, then fixes) is engine time and is not counted above. Each check
@@ -32,9 +32,11 @@ set's `authoring` block carries its own numbers and method.
    line above the class's options, sshd's first-value-wins rule lets the drop-in override the class.
    `password-auth-off` tests the EFFECTIVE value (`sshd -T`) and the server's offered methods, so either outcome is
    reported as a fact, not assumed.
-4. **nginx_static_domain: the fixture certificate does not name the fixture domain.** It is the throwaway p8test PKI
-   (RSA 2048, SAN p8test.invalid / *.p8test.invalid / star.example.com). The checks compare the served certificate's
-   fingerprint with the deployed bundle, not names.
+4. **nginx_static_domain: the fixture certificate did not name the fixture domain** (throwaway p8test PKI, SAN
+   p8test.invalid / *.p8test.invalid / star.example.com). Resolved per HQ: master_fixtures.sh pki v2 adds
+   `p8test.example.com` and `*.p8test.example.com` and was applied to the master on 2026-11-10 16:21Z (new CA and server
+   cert, `openssl verify` OK, a second run reports OK). The new check `https-name-verifies` verifies the name; the
+   fingerprint check stays.
 5. **nginx_static_domain: the baseline cipher string has an empty element.** `${prefix}:${additional}:${suffix}` with
    no additional ciphers renders as `…:ECDHE-RSA-AES256-SHA::!DSS:!EXPORT`. It was accepted at GREEN; `nginx -t` and
    the handshake checks will confirm OpenSSL ignores it.

@@ -1101,3 +1101,18 @@ A check may change the node only if it opts in.
 - **First use:** backup_rsnapshot `daily-backup-executes` runs the cron's command once and checks daily.0 for a
   byte-identical /etc/hostname.
 - **Reviewer:** reviewer.md now judges the declaration against the action. 11 new runner tests.
+
+## 2026-11-10 — HQ: fixture PKI names the fixture domain (master_fixtures.sh pki v2)
+The throwaway p8test server certificate gains `DNS:p8test.example.com` and `DNS:*.p8test.example.com` (the harness
+fixture domain of the nginx/ssl classes), keeping p8test.invalid, *.p8test.invalid and star.example.com.
+- **How:** the pki section's marker moves to `.p8test_pki_v2`. A v1 layout is replaced as a whole (new CA, new server
+  cert, same file names, CA key discarded), and the v1 marker is removed only after v2 is written.
+- **Applied to the master 2026-11-10 16:21Z** (ruling-6 fixture state; nothing else touched):
+  - CHANGED 19 files, `openssl verify` OK, and a second run reports OK.
+  - The new server cert's sha256 is 29:34:A9:…:81:E7 (replaces 50:DF:0A:…:AC:99 of 2026-10-27).
+  - The next master snapshot (network plan step 9, v4) captures it.
+- **The first run exited 2 after doing all its work:** I had left a stray quote on the script's last line.
+  - shellcheck never sees the REMOTE heredocs, so a new test runs `bash -n` over every remote script. It is proven to
+    catch that error.
+- **New pilot check:** nginx_static_domain `https-name-verifies`, a hostname-verified TLS handshake against the
+  bundle's CA.

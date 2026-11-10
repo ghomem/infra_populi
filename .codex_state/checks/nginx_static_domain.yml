@@ -8,13 +8,14 @@ class: nginx_static_domain
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
-  minutes: 1.3
+  minutes: 2.0
   notes: >-
     Wall clock 2026-11-10T16:00:52Z (class-specific: nginx_base DH size) to 16:02:11Z (validated). validate caught
     one authoring error: nginx_base.pp:38 was the LOCAL line (the 2-line migration header shifts it); the baseline
     line is 36. One probe rewritten before validation so that it writes no file (curl -o /tmp → captured output).
-    Uses the fixture certificate (throwaway p8test PKI, RSA 2048, SAN p8test.invalid/star.example.com): the checks
-    compare fingerprints rather than names, since the fixture domain is not in the SAN.
+    Fixture certificate: throwaway p8test PKI (RSA 2048). Since pki v2 (HQ 2026-11-10, master_fixtures.sh) its SAN
+    names p8test.example.com, so https-name-verifies (added 16:21:30Z-16:22:16Z, ~0.7 min with the bundle lookup) checks the name; served-certificate-is-
+    the-bundle keeps the fingerprint comparison.
 checks:
   - id: nginx-config-valid
     what: the nginx configuration the define produces passes `nginx -t`
@@ -72,6 +73,18 @@ checks:
       b=$(openssl x509 -in /etc/ssl/certs/p8test.nginx.bundle.crt -noout -fingerprint -sha256)
       test -n "$a" && test "$a" = "$b" && echo served-cert-is-bundle
     expect: {rc: 0, stdout: "^served-cert-is-bundle$"}
+
+  - id: https-name-verifies
+    what: a client that trusts the bundle's CA verifies the HTTPS server as <domain> (served cert + chain + name match)
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_static_domain.pp, lines: "74-84", text: "puppet_infrastructure::ssl_nginx_domain { $static_sslprefix:"}
+      - {path: manifests/nginx_static_domain.pp, lines: "168-172", text: "$server_name = $domain"}
+      - {path: manifests/nginx_static_domain.pp, lines: "298-300", text: "server_name               => [$server_name, ],"}
+      - {path: manifests/ssl_base.pp, lines: "115-118", text: "source => $intermediate_cert_source,"}
+    probe: |
+      openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -verify_hostname p8test.example.com -CAfile /etc/ssl/certs/p8test.nginx.bundle.crt -verify_return_error </dev/null 2>&1 | grep -oE '^Verify return code: .*$'
+    expect: {rc: 0, stdout: "\\AVerify return code: 0 \\(ok\\)\\n\\Z"}
 
   - id: tls12-only
     what: TLS 1.2 is accepted and TLS 1.3 refused (ssl_protocols = base prefix ['TLSv1.2'], no additions)

@@ -11,7 +11,8 @@
 #   extra_files  fileserver mount [extra_files] -> /etc/puppetlabs/code/p8test_extra_files (puppet:///extra_files/...
 #          used by ssl_*, mysql_server, openvpn_server); restarts puppetserver only when the mount changed.
 #   pki    throwaway p8test PKI inside that mount: a self-signed "p8test throwaway CA" and one server cert
-#          (CN p8test.invalid; SANs *.p8test.invalid, star.example.com) laid out under every name the
+#          (CN p8test.invalid; SANs *.p8test.invalid, star.example.com, and since v2 (HQ 2026-11-10) the harness
+#          fixture domain p8test.example.com + *.p8test.example.com, so TLS names verify) laid out under every name the
 #          manifests source (ssl/<prefix>.*, ssl/db/*, openvpn/keys/*) for prefixes p8test and
 #          star.example.com (the lab Hiera's example hashman::sslprefix). The CA key is discarded.
 #   hiera  lab fixture keys the manifests look up and the lab Hiera lacks, in data/p8test_fixtures.yaml, as
@@ -79,17 +80,19 @@ REMOTE
 section_pki() {
   ssh -T "$MASTER_HOST" "sudo -n bash -s -- '$EXTRA_DIR'" <<'REMOTE'
 set -euo pipefail
-dir="$1" marker="$1/.p8test_pki_v1"
+dir="$1" marker="$1/.p8test_pki_v2"
 [[ -d "$dir" ]] || { echo "ERROR pki: ${dir} missing — run the extra_files section first" >&2; exit 1; }
 if [[ -f "$marker" ]]; then
   echo "OK pki: throwaway p8test PKI present ($(cat "$marker"))"; exit 0
 fi
+# an older layout (v1: no fixture-domain SAN) is replaced as a whole: new CA, new server cert, same file names
+previous="$(cat "$dir"/.p8test_pki_v* 2>/dev/null || true)"
 w="$(mktemp -d /tmp/p8test_pki.XXXXXX)"; trap 'rm -rf "$w"' EXIT
 cd "$w"
 subj_o="/O=p8test lab fixture (THROWAWAY, not a real CA)"
 openssl req -x509 -newkey rsa:2048 -nodes -keyout ca.key -out ca.crt -days 3650 -subj "${subj_o}/CN=p8test throwaway CA" 2>/dev/null
 openssl req -newkey rsa:2048 -nodes -keyout server.key -out server.csr -subj "${subj_o}/CN=p8test.invalid" 2>/dev/null
-printf 'subjectAltName=DNS:p8test.invalid,DNS:*.p8test.invalid,DNS:star.example.com\nbasicConstraints=CA:FALSE\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n' >ext.cnf
+printf 'subjectAltName=DNS:p8test.invalid,DNS:*.p8test.invalid,DNS:star.example.com,DNS:p8test.example.com,DNS:*.p8test.example.com\nbasicConstraints=CA:FALSE\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n' >ext.cnf
 openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 3650 -extfile ext.cnf 2>/dev/null
 openssl dhparam -out dh2048.pem 2048 2>/dev/null
 put() { install -D -o root -g puppet -m "$3" "$1" "${dir}/$2"; }
@@ -106,7 +109,9 @@ openssl verify -CAfile ca.crt server.crt >/dev/null
 fp="$(openssl x509 -noout -fingerprint -sha256 -in server.crt | cut -d= -f2)"
 echo "created $(date -u +%Y-%m-%dT%H:%M:%SZ); server cert sha256 ${fp}; CA key discarded" >"$marker"
 chmod 0644 "$marker"
-echo "CHANGED pki: $(find "$dir" -type f ! -name '.*' | wc -l) files; $(openssl x509 -noout -subject -enddate -in server.crt | tr '\n' ' ')"
+rm -f "$dir/.p8test_pki_v1"
+echo "CHANGED pki: $(find "$dir" -type f ! -name '.*' | wc -l) files; $(openssl x509 -noout -subject -enddate -in server.crt | tr '\n' ' ')${previous:+; replaced: ${previous}}"
+openssl x509 -noout -ext subjectAltName -in server.crt | tail -1
 REMOTE
 }
 
