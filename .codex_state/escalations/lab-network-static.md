@@ -1,6 +1,7 @@
 # Lab network: host-only static IPs — plan for HQ review (2026-11-10)
 
-**Status: STOPPED FOR HQ REVIEW. Nothing below has been executed; no lab change has been made.**
+**Status: DESIGN APPROVED by HQ (2026-11-10, see §6). STOPPED until HQ's step review returns. Step 1 is Salatiel's.
+Nothing below has been executed; no lab change has been made.**
 
 The only commands run so far were reads: VBoxManage `showvminfo`, `list` and `snapshot list`; `ip`, `cat` and `systemctl
 is-enabled` over ssh; `revert_node.sh --node-state`.
@@ -76,7 +77,12 @@ VBoxManage snapshot ubuntu24-puppet8-Node list --machinereadable | grep -c P8NOD
 VBoxManage snapshot Ubuntu24-puppet8-Master list --machinereadable | grep -c P8MASTER_BASELINE_GREEN_v3   # 1
 ssh puppet8master 'systemctl is-active puppetserver'     # active
 ip -br addr show vboxnet0                                # 192.168.56.1/24 UP
+# the master's certificate must name the master by DNS only (an IP SAN would tie TLS to the old address):
+ssh puppet8master 'sudo -n openssl x509 -in /etc/puppetlabs/puppet/ssl/certs/puppet8master.pem -noout -ext subjectAltName' \
+  | tee /dev/stderr | grep -q 'IP Address' && echo 'STOP: IP SAN present' || echo 'SAN name-only'
 ```
+Read on 2026-11-10: `DNS:puppet8master, DNS:puppet8master.example.com, DNS:puppet8master` — name-only. Step 0 re-reads
+it; an `IP Address:` entry stops the plan (re-issuing the master cert would be a new HQ decision).
 Rollback: none (no change).
 
 ### Step 1 — [HUMAN] add NIC2 (host-only vboxnet0) to the master
@@ -139,8 +145,12 @@ used up the node.
 
 ### Step 4 — canary-period node overlay in revert_node.sh (advisor; tool change + tests + shellcheck, own commit)
 - **Mode.** An opt-in mode `P8_NODE_NET=hostonly`, documented in the script header.
-- **Boot path.** After restoring v2 and booting, reach the node over the bridged path through a new alias,
-  `puppet8node-bridged` (HostName 192.168.77.185, the same DHCP fragility as today, for the canary period only).
+- **Fallback aliases first (HQ).** Back up `~/.ssh/config` (`cp -p ~/.ssh/config ~/.ssh/config.pre-p8net`) and add
+  `puppet8master-wifi` (HostName 192.168.77.166) and `puppet8node-wifi` (HostName 192.168.77.185), same options as
+  the main aliases. They are kept until step 9 has refreshed BOTH snapshots and verified them; they are the recovery
+  path for every step until then. Verify: `ssh puppet8master-wifi true && ssh puppet8node-wifi true`.
+- **Boot path.** After restoring v2 and booting, reach the node over the Wi-Fi path through `puppet8node-wifi`
+  (the same DHCP fragility as today, for the canary period only).
 - **Overlay.**
   - Write step 3's netplan file and apply it.
   - Re-point the `/etc/hosts` master line to 192.168.56.10.
@@ -168,7 +178,7 @@ Rollback: `ssh puppet8master 'sudo -n cp -p /etc/hosts.pre-p8net /etc/hosts'`.
 
 ### Step 6 — switch the laptop aliases (advisor; the user's own `~/.ssh/config`, backed up)
 1. Back up the file: `cp -p ~/.ssh/config ~/.ssh/config.pre-p8net`.
-2. Add `puppet8node-bridged` (HostName 192.168.77.185, the same options as `puppet8node`) for step 4.
+2. The `-wifi` fallback aliases from step 4 stay as they are.
 3. Verify the new addresses before switching:
    ```bash
    ssh -o HostName=192.168.56.10 puppet8master true && ssh -o HostName=192.168.56.20 puppet8node true
@@ -184,7 +194,8 @@ ssh puppet8node 'echo $SSH_CLIENT'                                            # 
 P8_NODE_NET=hostonly .codex_state/tools/revert_node.sh                        # SUCCESS + REVERT_NODE_STATE
 .codex_state/tools/test_class.sh --compile-only puppet_infrastructure::dns_client   # master over host-only
 ```
-Rollback: `cp -p ~/.ssh/config.pre-p8net ~/.ssh/config`, then `ssh -O exit` for both.
+Rollback: `cp -p ~/.ssh/config.pre-p8net ~/.ssh/config` (it already holds the `-wifi` aliases), then `ssh -O exit` for
+both.
 
 ### Step 7 — fixtures and documents (advisor)
 - **Params (untracked):**
@@ -203,8 +214,17 @@ routes.
 
 Rollback: restore the four params values; `git revert` the commit.
 
-### Step 8 — canary (advisor; §5)
-Recommended: run the canary under `P8_NODE_NET=hostonly`. If it fails, roll back steps 7 → 1 in reverse order.
+### Step 8 — canary (advisor; §5, HQ-chosen)
+Under `P8_NODE_NET=hostonly`, in this order; each item must pass before the next:
+1. firewall_secure — reviewer `firewall_secure --fresh` (revert-first harness; default-drop with the harness-source ACL
+   192.168.56.1, agent→master 8140 over host-only). Verdict committed as usual.
+2. rsyslog_client — reviewer `rsyslog_client --fresh` (its `host` resource pins puppet8master.example.com to the step-7
+   fixture address 192.168.56.10; the agent must still reach the master after the pin).
+3. The three Phase 3 pilots — `phase3.py run <class>` then reviewer `<class> --phase3`, for backup_rsnapshot, ssh_secure,
+   nginx_static_domain (escalations/phase3-pilots.md).
+
+A FAIL that traces to the network rolls back steps 7 → 1 in reverse order. A Phase 3 FINDING is a pilot result, not a
+network failure.
 
 ### Step 9 — refresh both snapshots (only after the canary passes; old snapshots kept)
 - **Node:**
@@ -212,8 +232,8 @@ Recommended: run the canary under `P8_NODE_NET=hostonly`. If it fails, roll back
   2. A clean shutdown, `ssh puppet8node 'sudo -n systemctl poweroff'`, and wait for `poweroff`.
   3. `VBoxManage snapshot ubuntu24-puppet8-Node take P8NODE_BASELINE_GREEN_v3 --description "<v2 + enp0s8
      192.168.56.20/24 + hosts master 192.168.56.10; repo <sha>>"`.
-  4. revert_node.sh: `NODE_SNAPSHOT=P8NODE_BASELINE_GREEN_v3`, remove the overlay mode and `puppet8node-bridged`,
-     and make the post-restore check verify enp0s8 = .20 (tests + shellcheck, own commit).
+  4. revert_node.sh: `NODE_SNAPSHOT=P8NODE_BASELINE_GREEN_v3`, remove the overlay mode (it no longer uses
+     `puppet8node-wifi`), and make the post-restore check verify enp0s8 = .20 (tests + shellcheck, own commit).
   5. Verify: two consecutive real reverts, then `test_class.sh --revert-first --fixture guarded_exec` GREEN.
 - **Master:** `.codex_state/tools/snapshot_master.sh P8MASTER_BASELINE_GREEN_v4` (take-only, ACPI, restarts and
   verifies puppetserver + 8140, records the name and UUID).
@@ -221,26 +241,21 @@ Recommended: run the canary under `P8_NODE_NET=hostonly`. If it fails, roll back
   - Node: point revert_node.sh back at v2 with the overlay (the previous commit).
   - Master: v4 is only an added snapshot; nothing to undo.
   - v2 and v3 remain until HQ rules on deletion.
+- **Last:** only after both new snapshots are verified, remove the `puppet8master-wifi` / `puppet8node-wifi` aliases
+  (HQ: fallback aliases are kept until the snapshots are refreshed).
 
-## 5. Canary — decision for HQ
-**Recommended:** both of these, in order:
-1. **firewall_secure re-verification** (reviewer `--fresh`: revert-first harness on the new network). It is the most
-   network-sensitive done class: default-drop with the harness-source ACL and agent→master 8140.
-2. **The three Phase 3 pilots** (backup_rsnapshot, ssh_secure, nginx_static_domain), as HQ already scheduled them.
+## 5. Canary (HQ decision)
+firewall_secure + rsyslog_client (reviewer re-verification) + the three Phase 3 pilots — step 8.
 
-**Alternative:** the next pending class (gnome_lock_screen) through the full loop, which would open batch 4.
-
-## 6. Decisions for HQ
-1. **Approve steps 1–9 as written.** Step 1 is human-only; I execute the rest in order and stop at any failed
-   verification.
-2. **NIC1 stays bridged (recommended) or becomes NAT.** NAT removes the VMs from the Wi-Fi LAN entirely and makes
-   apt independent of it.
-   - With NAT: `[HUMAN] VBoxManage controlvm <vm> nic1 nat` (live), or `modifyvm --nic1 nat` while powered off, for
-     both VMs, inserted before step 8. The canary then also proves apt over NAT.
-   - Recommended: keep bridged for this project and decide NAT separately. Host-only already removes every DHCP
-     dependency from lab addressing.
-3. **Canary choice (§5).**
-4. **Addresses:** 192.168.56.10 / .20 (outside the vboxnet0 DHCP pool .101–.254).
+## 6. HQ decisions (2026-11-10)
+1. **Design approved.** Execution waits for HQ's step review; step 1 is Salatiel's. I execute steps 0 and 2–9 in
+   order and stop at any failed verification.
+2. **NIC1 stays bridged** for internet. NAT is a follow-up plan, written once host-only control is proven (after
+   step 9).
+3. **Canary:** §5.
+4. **Addresses:** 192.168.56.10 (master) / 192.168.56.20 (node) confirmed.
+5. **Added by HQ:** step 0 verifies that the master certificate's SANs are name-only; the `-wifi` fallback aliases
+   (step 4) are kept until both snapshots are refreshed (step 9).
 
 ## 7. Risks
 - **netplan apply on a guest briefly re-renders networkd for every interface.** The DHCP lease on enp0s3 is normally

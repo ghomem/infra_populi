@@ -1066,3 +1066,15 @@ a "Skipped tests" addendum, and the skill's END OF RUN step requires that sectio
 Pilots authored and validated (backup_rsnapshot 5 checks, ssh_secure 14, nginx_static_domain 8; 59 baseline
 references), not run: per HQ they run after the network change, as its canary. Report:
 `escalations/phase3-pilots.md`. CLAUDE.md gains the Phase-3 section that ruling 11 asked for.
+
+## 2026-11-10 — HQ: lab-network design approved (stop until step review)
+HQ approved the host-only/static-IP design (escalations/lab-network-static.md):
+- **Addresses:** 192.168.56.10 (master) / .20 (node).
+- **NIC1:** stays bridged for internet. NAT is a follow-up plan, written once host-only control is proven.
+- **Canary:** firewall_secure + rsyslog_client re-verification, plus the three Phase 3 pilots.
+- **Added to the plan:**
+  - step 0 verifies that the master certificate's SANs are name-only (read today: DNS only);
+  - the `puppet8master-wifi` / `puppet8node-wifi` fallback aliases are added in step 4 and kept until both snapshots
+    are refreshed and verified (step 9).
+
+No step runs until HQ's step review returns; step 1 (`modifyvm`) is Salatiel's.

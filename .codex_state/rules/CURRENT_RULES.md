@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-65 entries; 6 marked superseded (in whole or part); newest first.
+66 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-10 — HQ: lab-network design approved (stop until step review)
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-10 — HQ batch-3 acceptance B: the Phase 3 runner
 - 1. **derived_from references the baseline.** Every check carries baseline references, each `{path, lines, text}`
