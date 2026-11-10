@@ -75,9 +75,11 @@ FOR EACH CLASS:
    After a block, regenerate the order file yourself, commit if it changed, push.
 9. METRICS (step 3.4): the tools logged events while you worked (path, revert, harness, codex, record,
    review). Close the attempt: `python3 .codex_state/tools/metrics.py close <class> --outcome
-   PASS|FAIL|BLOCKED|FAILED|ESCALATED [--interventions N] [--note "<why a 2nd Codex run>"]` — it appends one
-   record to `.codex_state/runs/metrics.jsonl` and commits `P8: record metrics after <class>` (worktree must
-   be clean otherwise). Then move to the next class.
+   PASS|FAIL|BLOCKED|FAILED|ESCALATED [--interventions codex=N,advisor=N,human=N] [--note "<why a 2nd Codex run>"]`
+   — it appends one record to `.codex_state/runs/metrics.jsonl` and commits `P8: record metrics after <class>`
+   (worktree must be clean otherwise). Interventions count episodes AFTER dispatch, by actor (metrics.py docstring):
+   codex = Codex stopped/handed back or overstepped; advisor = you stepped in (fix after a RED or a stop, recording
+   on Codex's behalf, a 2nd dispatch); human = Salatiel/HQ acted. Name every one in --note. Then move to the next class.
 
 END OF RUN: the batch report's table is `python3 .codex_state/tools/metrics.py batch-report <class>...` (wall =
 dispatch→verdict, phases prep/pregate/harness/codex/record/review/wait, expected run-2 events listed own vs inherited —

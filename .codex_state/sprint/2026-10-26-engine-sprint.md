@@ -99,3 +99,4 @@ band commits from now on stash unrelated work first.
 | b3 batch 3 (nginx/ssl stack) | done | this commit | 7/7 PASS, 45 done = 45 verified; report escalations/batch-2026-11-10-3.md |
 | b4-pre1 record_green requires a GREEN started on the latest revert (HQ batch-3 acceptance 1) | done | this commit | revert_node marks boot ID + last_run_summary sha256; harness fresh-check before run 1 into the stamp; record_green verify-fresh (also voided by a later revert); runbook §2.4; 10 tests |
 | b4-pre2 notify accepted; Phase 5 backlog single source (HQ batch-3 acceptance 2) | done | this commit | rules/phase5_backlog.md: apt frequency + notify→notice()/debug() with carriers (grep) |
+| b4-pre3 three intervention counters codex/advisor/human (HQ batch-3 acceptance 3) | done | this commit | metrics schema 2; close --interventions codex=,advisor=,human=; summary + batch-report; schema-1 backfill (22 lines, zero human); skill step 9; 7 tests |

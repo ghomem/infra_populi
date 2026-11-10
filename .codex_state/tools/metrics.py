@@ -6,8 +6,8 @@ P2-exempt) and commits it as `P8: record metrics after <class>` (own commit type
   metrics.py event <class> <kind> [JSON]     append an event (untracked .codex_state/logs/metrics/events.jsonl)
   metrics.py codex-usage <since-epoch>       JSON: tokens, tool calls, model of the codex exec sessions since then
   metrics.py agent-summary                   JSON from last_run_summary.yaml on stdin (`puppet` YAML subset)
-  metrics.py close <class> --outcome GREEN|PASS|FAIL|BLOCKED|FAILED|ESCALATED [--path P] [--interventions N]
-                   [--note TEXT] [--no-commit]
+  metrics.py close <class> --outcome GREEN|PASS|FAIL|BLOCKED|FAILED|ESCALATED [--path P]
+                   [--interventions codex=N,advisor=N,human=N] [--note TEXT] [--no-commit]
   metrics.py summary                         medians/rates over the tracked records
   metrics.py batch-report <class>...         markdown table of the latest attempt per class: wall = dispatch→verdict,
                                              phases prep/pregate/harness/codex/record/review/wait, run-2 expectations
@@ -16,6 +16,17 @@ Event kinds written by the tools: path (classify_path), pregate (pregate.py, cla
 (test_class.sh, every exit), codex (wrapper), record (record_green.sh), review (review_class.py verdict).
 The reviewer never reads .codex_state/runs/ (reviewer.md): these records name the generation path.
 P8_METRICS_DIR / P8_RUNS_FILE redirect the event log / tracked file (tests).
+
+Interventions (HQ batch-3 acceptance item 3) — three counters per attempt. Each counts EPISODES after dispatch in
+which the nominal flow stopped or was overstepped (one episode may hold several edits); prep before dispatch is not one.
+  codex    Codex stopped and handed the class back (MISSING_PREREQUISITE, a reported block, a refused record), repaired
+           its environment (VM start, module rollback), or acted beyond its authority (a plan/composites commit).
+  advisor  the advisor stepped in: a fix after dispatch or after a RED (plan, fixture, harness capability, composite
+           expectation, header), recording a GREEN on Codex's behalf, a second Codex dispatch.
+  human    Salatiel/HQ acted for this attempt (a ruling mid-attempt, a host or VM action by hand).
+Schema-1 records (batches 1–3) carry a single `human_interventions` count, used in practice for advisor actions. Their
+three counters come from `.codex_state/runs/interventions_backfill.jsonl` (append-only; each line cites its basis,
+human 0 per HQ); a schema-1 record without a backfill line reads codex/advisor unknown (None), human 0.
 """
 
 from __future__ import annotations
@@ -194,8 +205,39 @@ def phases(events: list[dict], closed_at: float) -> dict:
 
 # ------------------------------------------------------------------ close / summary
 
+ACTORS = ("codex", "advisor", "human")
+
+
+def parse_interventions(text: str | None) -> dict:
+    counts = dict.fromkeys(ACTORS, 0)
+    for part in (text or "").split(","):
+        if not part.strip():
+            continue
+        actor, _, n = part.partition("=")
+        if actor.strip() not in ACTORS or not n.strip().isdigit():
+            raise SystemExit(f"ERROR: --interventions takes codex=N,advisor=N,human=N (got {text!r}); "
+                             "say whose action it was")
+        counts[actor.strip()] = int(n)
+    return counts
+
+
+def backfill_path() -> Path:
+    return runs_path().with_name("interventions_backfill.jsonl")
+
+
+def interventions(record: dict) -> dict:
+    """The three counters of any record: its own (schema 2) or the backfill line for a schema-1 attempt."""
+    if "interventions" in record:
+        return record["interventions"]
+    lines = [b for b in read_jsonl(backfill_path())
+             if (b["class"], b["attempt"]) == (record["class"], record["attempt"])]
+    if lines:
+        return {a: lines[-1][a] for a in ACTORS}
+    return {"codex": None, "advisor": None, "human": 0}
+
+
 def fold(cls: str, events: list[dict], records: list[dict], outcome: str, path: str | None,
-         interventions: int, note: str) -> dict:
+         counts: dict, note: str) -> dict:
     mine = [e for e in events if e["class"] == cls]
     # events since this class's previous close
     last_close = max((r["closed_at"] for r in records if r["class"] == cls), default="")
@@ -209,7 +251,7 @@ def fold(cls: str, events: list[dict], records: list[dict], outcome: str, path: 
     pregates = kinds("pregate")
     usage = [c.get("usage") or {} for c in codex]
     record = {
-        "schema": 1, "class": cls, "attempt": 1 + sum(1 for r in records if r["class"] == cls),
+        "schema": 2, "class": cls, "attempt": 1 + sum(1 for r in records if r["class"] == cls),
         "opened_at": mine[0]["ts"] if mine else None, "closed_at": now(), "outcome": outcome,
         "path": path or (paths[-1].get("path") if paths else None),
         "advisor": ADVISOR,
@@ -231,7 +273,7 @@ def fold(cls: str, events: list[dict], records: list[dict], outcome: str, path: 
         "run2_expected": [h["run2_expected"] for h in harness if h.get("run2_expected")],
         "pregate": [{k: g.get(k) for k in ("status", "findings")} for g in pregates],
         "commits": [c for e in kinds("record") for c in e.get("commits", [])],
-        "human_interventions": interventions, "note": note or None,
+        "interventions": counts, "note": note or None,
     }
     record["phases"] = phases(mine, _ts(record["closed_at"]))
     return record
@@ -255,8 +297,8 @@ def cmd_close(cls: str, argv: list[str]) -> int:
     if outcome not in OUTCOMES:
         raise SystemExit(f"ERROR: --outcome must be one of {', '.join(OUTCOMES)}")
     records = read_jsonl(runs_path())
-    record = fold(cls, read_jsonl(events_path()), records, outcome, opt("--path"), int(opt("--interventions", "0")),
-                  opt("--note", ""))
+    record = fold(cls, read_jsonl(events_path()), records, outcome, opt("--path"),
+                  parse_interventions(opt("--interventions")), opt("--note", ""))
     runs_path().parent.mkdir(parents=True, exist_ok=True)
     with runs_path().open("a", encoding="utf-8") as f:
         f.write(json.dumps(record, sort_keys=False) + "\n")
@@ -274,6 +316,7 @@ def median(values: list) -> float | None:
 def cmd_summary() -> int:
     records = read_jsonl(runs_path())
     print(f"{len(records)} attempt records in {runs_path().relative_to(REPO) if runs_path().is_relative_to(REPO) else runs_path()}")
+    print(f"- all paths: interventions {intervention_text(records)}")
     by_path: dict[str, list[dict]] = {}
     for r in records:
         by_path.setdefault(r.get("path") or "unknown", []).append(r)
@@ -288,8 +331,19 @@ def cmd_summary() -> int:
               f"(total incl. cached re-reads {median([r['codex_tokens'] for r in rs if r['codex_runs']])}), "
               f"pregate findings {sum(len(p.get('findings', [])) for r in rs for p in r.get('pregate', []))}, "
               f"codex runs/green {round(sum(r['codex_runs'] for r in rs) / len(greens), 2) if greens else None}, "
-              f"reviewer FAIL rate {f'{fails}/{len(reviews)}' if reviews else None}")
+              f"reviewer FAIL rate {f'{fails}/{len(reviews)}' if reviews else None}, "
+              f"interventions {intervention_text(rs)}")
     return 0
+
+
+def intervention_text(records: list[dict]) -> str:
+    """codex/advisor/human totals; `?` where a schema-1 record did not count that actor."""
+    out = []
+    for actor in ACTORS:
+        values = [interventions(r)[actor] for r in records]
+        known = sum(v for v in values if v is not None)
+        out.append(f"{actor} {known}{'+?' if None in values else ''}")
+    return ", ".join(out)
 
 
 def run2_text(record: dict) -> str:
@@ -308,8 +362,9 @@ def cmd_batch_report(classes: list[str]) -> int:
     rows, missing = [], [c for c in classes if c not in latest]
     m = lambda v: "–" if v is None else (f"{v / 60:.1f} min" if v >= 60 else f"{v:.0f} s")  # noqa: E731
     print("| class | path | wall (dispatch→verdict) | prep | pregate | harness | codex | record | review | wait | "
-          "Codex runs (s, uncached tok, calls) | reverts (median s) | reviewer | expected run-2 events |")
-    print("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|---|")
+          "Codex runs (s, uncached tok, calls) | reverts (median s) | interventions codex/advisor/human | reviewer | "
+          "expected run-2 events |")
+    print("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|---|---|")
     for c in classes:
         if c not in latest:
             continue
@@ -323,13 +378,14 @@ def cmd_batch_report(classes: list[str]) -> int:
         print(f"| {c} | {r.get('path')} | {m(ph.get('wall_s'))} | {m(ph.get('prep_s'))} | {m(ph.get('pregate_s'))} | "
               f"{m(ph.get('harness_s'))} | {m(ph.get('codex_s'))} | {m(ph.get('record_s'))} | {m(ph.get('review_s'))} | "
               f"{m(ph.get('wait_s'))} | {codex} | {len(rs)} ({median(rs)}) | "
+              f"{'/'.join('?' if v is None else str(v) for v in interventions(r).values())} | "
               f"{reviews[-1]['verdict'] if reviews else '–'} | {run2_text(r)} |")
     greens = [r for r in rows if r["outcome"] in ("GREEN", "PASS")]
     walls = [r["phases"]["wall_s"] for r in rows if (r.get("phases") or {}).get("wall_s")]
     print(f"\n{len(rows)} attempts, {len(greens)} green/pass; Codex runs per green "
           f"{round(sum(r['codex_runs'] for r in rows) / len(greens), 2) if greens else None}; median wall "
           f"{m(median(walls)) if walls else '–'}; reverts {sum(len(r['revert_s']) for r in rows)} "
-          f"(median {median([x for r in rows for x in r['revert_s']])} s)")
+          f"(median {median([x for r in rows for x in r['revert_s']])} s); interventions {intervention_text(rows)}")
     if missing:
         print(f"no record for: {', '.join(missing)}")
     return 0

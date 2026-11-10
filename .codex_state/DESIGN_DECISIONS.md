@@ -1013,3 +1013,16 @@ justification. The Phase 5 list now has a single source, `.codex_state/rules/pha
 rules/*): item 1 apt frequency 'always' → 'daily' (moved from the 2026-11-10 batch-2 entry's "Phase 5 question"),
 item 2 replace notify resources with notice()/debug() calls, with every carrier found by grep (nginx_frontend_domain
 :256/:262, mariadb_server :64 — pending, will need the same plan entry —, ssl_base :98 conditional).
+
+## 2026-11-10 — HQ batch-3 acceptance (3/4): three intervention counters
+Metrics records (schema 2) carry `interventions: {codex, advisor, human}` instead of one `human_interventions`; `close
+--interventions codex=N,advisor=N,human=N` (a bare number is refused: say whose action it was). Each counts EPISODES
+after dispatch (prep before dispatch is not one): codex = Codex stopped and handed back, repaired its environment, or
+overstepped its authority; advisor = the advisor stepped in (fix after a RED or a stop, recording on Codex's behalf, a
+second dispatch); human = Salatiel/HQ acted. `summary` and `batch-report` show the three. The 22 schema-1 records
+(batches 1–3) are append-only; their counters come from `.codex_state/runs/interventions_backfill.jsonl`, one line per
+attempt citing its basis from the record's note: zero human (HQ), codex 4 (firewall and firewall_secure: plan /
+composites commits beyond authority, before the 2026-11-11 marker; nginx_frontend_domain run 1 stop;
+firewall_ipv6_drop_policy_desktop's refused record), advisor 5 (filesystem_yum, packages_base, sysmon_base,
+nginx_frontend_domain, firewall_ipv6_drop_policy_desktop). The schema-1 field was named human but was used for advisor
+actions (packages_base, firewall_ipv6 = 1 each); both read as advisor now.

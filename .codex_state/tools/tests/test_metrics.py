@@ -70,11 +70,12 @@ def test_second_close_counts_only_new_events_and_increments_attempt(env):
     metrics.add_event("x", "harness", {"rc": 1})
     metrics.main(["close", "x", "--outcome", "FAILED", "--no-commit"])
     metrics.add_event("x", "harness", {"rc": 0})
-    metrics.main(["close", "x", "--outcome", "GREEN", "--no-commit", "--interventions", "1", "--note", "fixture"])
+    metrics.main(["close", "x", "--outcome", "GREEN", "--no-commit", "--interventions", "advisor=1", "--note", "fixture"])
     first, second = metrics.read_jsonl(metrics.runs_path())
     assert (first["attempt"], second["attempt"]) == (1, 2)
     assert second["harness_runs"] == 1 and second["harness_green"] == 1
-    assert second["human_interventions"] == 1 and second["note"] == "fixture"
+    assert second["interventions"] == {"codex": 0, "advisor": 1, "human": 0} and second["note"] == "fixture"
+    assert first["interventions"] == {"codex": 0, "advisor": 0, "human": 0} and second["schema"] == 2
 
 
 def test_close_rejects_unknown_outcome(env):
@@ -166,3 +167,47 @@ def test_batch_report_renders_phases_and_run2(env, capsys):
     out = capsys.readouterr().out
     assert "| k | unchanged-validated |" in out and "own Exec[apt_update] (1 event(s) on the green run)" in out
     assert "no record for: absent" in out
+
+
+# HQ batch-3 acceptance item 3: three intervention counters (codex, advisor, human).
+@pytest.mark.parametrize("bad", ["1", "codex=1,admin=2", "human=x", "advisor"])
+def test_interventions_must_say_whose(env, bad):
+    with pytest.raises(SystemExit, match="say whose action"):
+        metrics.main(["close", "x", "--outcome", "PASS", "--no-commit", "--interventions", bad])
+    assert metrics.read_jsonl(metrics.runs_path()) == []
+
+
+def test_schema1_records_read_their_counters_from_the_backfill(env, capsys):
+    old = {"schema": 1, "class": "a", "attempt": 1, "outcome": "PASS", "path": "syntax-work", "human_interventions": 1,
+           "revert_s": [], "codex_s": [], "codex_runs": 1, "codex_tokens": 0, "codex_tool_calls": 0, "reviews": []}
+    unknown = {**old, "class": "b"}
+    metrics.runs_path().parent.mkdir(parents=True, exist_ok=True)
+    metrics.runs_path().write_text(json.dumps(old) + "\n" + json.dumps(unknown) + "\n")
+    metrics.backfill_path().write_text(json.dumps({"class": "a", "attempt": 1, "codex": 1, "advisor": 1, "human": 0,
+                                                   "basis": "x"}) + "\n")
+    assert metrics.interventions(old) == {"codex": 1, "advisor": 1, "human": 0}
+    assert metrics.interventions(unknown) == {"codex": None, "advisor": None, "human": 0}
+    metrics.main(["summary"])
+    assert "interventions codex 1+?, advisor 1+?, human 0" in capsys.readouterr().out
+
+
+def test_batch_report_shows_the_three_counters(env, capsys):
+    metrics.add_event("k", "harness", {"rc": 0})
+    metrics.main(["close", "k", "--outcome", "PASS", "--no-commit", "--interventions", "codex=1,advisor=2"])
+    capsys.readouterr()
+    metrics.main(["batch-report", "k"])
+    out = capsys.readouterr().out
+    assert "interventions codex/advisor/human" in out and "| 1/2/0 |" in out
+    assert "interventions codex 1, advisor 2, human 0" in out
+
+
+def test_tracked_history_is_zero_human_and_fully_attributed():
+    """Batches 1-3 (schema 1): every attempt has a backfill line; HQ: zero human."""
+    real = metrics.REPO / ".codex_state" / "runs"
+    records = metrics.read_jsonl(real / "metrics.jsonl")
+    backfill = {(b["class"], b["attempt"]): b for b in metrics.read_jsonl(real / "interventions_backfill.jsonl")}
+    for r in records:
+        if r.get("schema", 1) == 1:
+            b = backfill[(r["class"], r["attempt"])]
+            assert b["human"] == 0 and b["basis"]
+            assert b["advisor"] >= r.get("human_interventions", 0)
