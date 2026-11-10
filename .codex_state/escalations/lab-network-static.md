@@ -92,7 +92,7 @@ ho() {  # ho <alias> <host-only IP> '<remote command>'
 ### Step 0 — preflight (advisor, read-only)
 ```bash
 test -z "$(git -C ~/work/infra_populi status --porcelain)"                                   # clean worktree
-! pgrep -f 'test_class.sh|codex exec|review_class.py|phase3.py'                             # no engine run
+! pgrep -f '[t]est_class.sh|[c]odex exec|[r]eview_class.py|[p]hase3.py'                     # no engine run (brackets: never matches itself)
 VBoxManage snapshot ubuntu24-puppet8-Node list --machinereadable | grep -qx 'SnapshotName[-0-9]*="P8NODE_BASELINE_GREEN_v2"'
 VBoxManage snapshot Ubuntu24-puppet8-Master list --machinereadable | grep -qx 'SnapshotName[-0-9]*="P8MASTER_BASELINE_GREEN_v3"'
 test "$(ssh puppet8master 'systemctl is-active puppetserver')" = active
