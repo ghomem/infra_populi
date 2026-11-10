@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: puppet-nginx 8.4.0 (class nginx), puppetlabs-apt 11.3.2 (Exec['apt_update'] on Ubuntu).
 ### Purpose ########
 # Our base nginx class installs nginx and performs configurations common to all servers (aka vhosts)
 
