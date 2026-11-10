@@ -195,4 +195,6 @@ def test_repo_node_fixtures_exist_for_the_planned_classes(gen):
 def test_expected_run2_events_parse(gen):
     rows = gen.parse_plan()
     assert rows["packages_base"].expected_run2_events == ("Exec[apt_update]",)
-    assert sum(1 for r in rows.values() if r.expected_run2_events) == 1
+    # every entry is a reviewed, justified exception (HQ 2026-11-10 ruling 1): keep this set explicit
+    assert {n for n, r in rows.items() if r.expected_run2_events} == {"packages_base", "node_base"}
+    assert rows["node_base"].expected_run2_events == ("Exec[apt_update]",)
