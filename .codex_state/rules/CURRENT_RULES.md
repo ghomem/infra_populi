@@ -2,7 +2,12 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-59 entries; 6 marked superseded (in whole or part); newest first.
+60 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-10 — batch 3: run-2 report stage; glob refs; runbook minimal-change rule
+- 1. Gate v2 gains a REPORT stage. A resource that changes below the notice log level (nginx_frontend_domain's baseline
+- 2. expected_run2_events refs may contain `*` (any text) for titles built from the define title or params; everything
+- 3. CODEX_RUNBOOK §2 step 3: change only what Puppet 8 / the gate rejects; inherited `(also in baseline)` lint is left;
 
 ## 2026-11-11 — HQ rulings before batch 3 (3): the pre-commit hook runs the tests
 - (no numbered/Rule/Decision lines; read the entry)

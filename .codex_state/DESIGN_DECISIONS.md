@@ -971,3 +971,19 @@ No commit lands with a failing test. The engine pre-commit hook runs the fast su
 (`.codex_state/escalations/batch-*.md`) is staged; a failure rejects the commit. `slow` = clone and stub-lab
 harness tests (6 files); `repo_state` = the live tracker-vs-git consistency test, which is inconsistent by design
 while record_green's own commit is being made. Codex commits through record_green go through the same gate.
+
+## 2026-11-10 — batch 3: run-2 report stage; glob refs; runbook minimal-change rule
+1. Gate v2 gains a REPORT stage. A resource that changes below the notice log level (nginx_frontend_domain's baseline
+   `notify { "Generated Upstream members ...": loglevel => 'debug' }`) makes run 2 exit 2 with no console line, so the
+   console filter could neither excuse it nor name it (Codex run 1 BLOCKED cat 3, correctly). When run 2 exits 2 and the
+   console shows nothing unexpected, test_class.sh reads the run's `last_run_report.yaml` with the node's own Puppet
+   ruby and lists changed resources that have no console event; each must match the plan's expected_run2_events or the
+   run is RED. An unreadable report fails closed.
+2. expected_run2_events refs may contain `*` (any text) for titles built from the define title or params; everything
+   else matches literally. First user: `Notify[Generated Upstream members for *]` (nginx_frontend_domain; a notify
+   resource changes on every run in production too, so this is the baseline's behaviour, not a migration artefact).
+3. CODEX_RUNBOOK §2 step 3: change only what Puppet 8 / the gate rejects; inherited `(also in baseline)` lint is left;
+   baseline comment lines are never deleted or rewritten (add a line beside a stale one); an `HQ ruling for this class`
+   packet line fixes the change's shape. Evidence: run 1 also reordered parameters (parameter_order lint, baseline-
+   inherited, not a compile error) and replaced the two baseline comment lines above the ruled `Integer()` change —
+   both would fail review (comments_preserved). Run 1's edits were discarded; run 2 is dispatched with this runbook.

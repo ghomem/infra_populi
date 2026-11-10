@@ -243,3 +243,51 @@ def test_inherited_expected_run2_is_named_in_output_and_metrics(lab):
     assert "[own: none; inherited: Exec[apt_update] via packages_base]" in proc.stdout
     h = [json.loads(l) for l in (lab.root / "metrics" / "events.jsonl").read_text().splitlines()][-1]["data"]
     assert h["run2_expected"] == {"hits": 1, "own": [], "inherited": {"packages_base": ["Exec[apt_update]"]}}
+
+
+# --- run-2 REPORT stage (batch 3, nginx_frontend_domain): a change logged below notice has no console line
+REPORT_CALL = r"puppet/bin/ruby - /opt/puppetlabs/puppet/cache/state/last_run_report.yaml"
+DEBUG_NOTIFY = ("Notify[Generated Upstream members for p8test.example.com are: {127.0.0.1:8080 in p8test.example.com"
+                " => {server => 127.0.0.1, port => 8080}}]")
+
+
+def report(lab, stdout, rc=0):
+    lab.world["ssh"].insert(0, {"match": REPORT_CALL, "stdout": stdout, "rc": rc})
+
+
+def test_silent_report_change_without_expectation_is_red(lab):
+    agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 2, "stdout": APPLIED})
+    report(lab, "Notify[debug note]\n")
+    proc = harness(lab)
+    assert proc.returncode == 1 and "not idempotent" in proc.stderr
+    assert "Run-2 report, changed with no console event (log level below notice): Notify[debug note]" in proc.stderr
+
+
+def test_unreadable_run2_report_fails_closed(lab):
+    agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 2, "stdout": APPLIED})
+    report(lab, "", rc=255)
+    proc = harness(lab)
+    assert proc.returncode == 1 and "report could not be read" in proc.stderr and "GREEN" not in proc.stdout
+
+
+def test_expected_silent_event_with_a_glob_title_is_green(lab):
+    params = lab.root / "home" / ".config" / "infra_populi" / "params"
+    params.mkdir(parents=True)
+    (params / "puppet_infrastructure::nginx_frontend_domain.json").write_text('{"domain": "p8test.example.com"}')
+    agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 2, "stdout": APPLIED})
+    report(lab, DEBUG_NOTIFY + "\n")
+    lab.world["ssh"].insert(0, {"match": r"python3 - puppet_infrastructure::nginx_frontend_domain$", "stdout":
+                                "COVERAGE puppet_infrastructure::nginx_frontend_domain: 9 concrete resources (+3 defined-type instances)\n"})
+    proc = lab.run([SCRIPT, "puppet_infrastructure::nginx_frontend_domain"], env={"HOME": str(lab.root / "home")})
+    assert proc.returncode == 0, proc.stderr
+    assert "RUN2_EXPECTED_EVENTS: 1 from Notify[Generated Upstream members for *]" in proc.stdout
+    assert "GREEN: run 2 events limited to the plan's expected_run2_events" in proc.stdout
+
+
+def test_an_event_on_console_and_in_the_report_counts_once(lab):
+    agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 2, "stdout": APT_EVENT + APPLIED})
+    report(lab, "Exec[apt_update]\n")
+    lab.world["ssh"].insert(0, PKG_COVERAGE)
+    proc = lab.run([SCRIPT, "puppet_infrastructure::packages_base"])
+    assert proc.returncode == 0, proc.stderr
+    assert "RUN2_EXPECTED_EVENTS: 1 from Exec[apt_update]" in proc.stdout

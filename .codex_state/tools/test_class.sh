@@ -556,18 +556,52 @@ describe_expected_run2() {
   echo "own: ${own:-none}; inherited: ${inherited:-none}"
 }
 
-# Splits run-2 event lines into unexpected ones (stdout) and counts the expected ones (EXPECTED_RUN2_HITS).
+# Splits run-2 lines (stdin) into unexpected ones (stdout) and adds the expected ones to EXPECTED_RUN2_HITS.
+# $1 = console (agent output lines: the ref appears as /<ref>/ or /<ref>:) | report (bare resource refs).
+# A ref matches literally; `*` in it matches any text (a dynamic title, e.g. a Notify naming its define's title).
 filter_expected_run2() {
-  local line ref hit
-  EXPECTED_RUN2_HITS=0
-  while IFS= read -r line; do
-    [[ -n "$line" ]] || continue
-    hit=0
-    for ref in "${EXPECTED_RUN2_REFS[@]}"; do
-      if [[ "$line" == *"/${ref}/"* || "$line" == *"/${ref}:"* ]]; then hit=1; break; fi
-    done
-    if [[ $hit -eq 1 ]]; then EXPECTED_RUN2_HITS=$((EXPECTED_RUN2_HITS + 1)); else printf '%s\n' "$line"; fi
-  done
+  local result lines
+  lines="$(cat)"  # the heredoc below is python's stdin (its script): the lines travel in the environment
+  result="$(P8_RUN2_REFS="$(printf '%s\n' "${EXPECTED_RUN2_REFS[@]-}")" P8_RUN2_LINES="$lines" python3 - "${1:-console}" <<'PY'
+import os, re, sys
+pats = [re.escape(r).replace(r"\*", ".*") for r in os.environ.get("P8_RUN2_REFS", "").splitlines() if r]
+hits, out = 0, []
+for line in os.environ.get("P8_RUN2_LINES", "").splitlines():
+    if not line.strip():
+        continue
+    if sys.argv[1] == "console":
+        hit = any(re.search("/" + p + "[/:]", line) for p in pats)
+    else:
+        hit = any(re.fullmatch(p, line) for p in pats)
+    hits += hit
+    if not hit:
+        out.append(line)
+print(hits)
+print("\n".join(out))
+PY
+)"
+  EXPECTED_RUN2_HITS=$(( ${EXPECTED_RUN2_HITS:-0} + $(head -1 <<<"$result") ))
+  tail -n +2 <<<"$result" | sed '/^$/d'
+}
+
+# Resources the run-2 REPORT marks changed that have no event line on the console: a change logged below notice
+# (e.g. `notify { ...: loglevel => 'debug' }`) still makes run 2 exit 2. Read with the node's own Puppet ruby.
+# $1 = run-2 console output. Prints one resource ref per line; fails when the report cannot be read.
+run2_silent_changes() {
+  local changed
+  changed="$(timeout 60 ssh "$NODE_HOST" 'sudo -n /opt/puppetlabs/puppet/bin/ruby - /opt/puppetlabs/puppet/cache/state/last_run_report.yaml' <<'RB'
+require "puppet"
+report = YAML.unsafe_load_file(ARGV[0])
+report.resource_statuses.each { |ref, status| puts ref if status.changed }
+RB
+)" || return 1
+  python3 - "$1" "$changed" <<'PY'
+import sys
+console, changed = sys.argv[1], sys.argv[2]
+for ref in filter(None, changed.splitlines()):
+    if f"/{ref}/" not in console and f"/{ref}:" not in console:
+        print(ref)
+PY
 }
 
 render_fixture_block() {
@@ -690,11 +724,22 @@ main() {
 
   offending="$(grep -E "$RUN2_FORBIDDEN_RE" <<<"$out2" || true)"
   collect_expected_run2 "${classes[@]}"
+  EXPECTED_RUN2_HITS=0
+  local unexpected_file silent
+  unexpected_file="$(mktemp)"
   if [[ ${#EXPECTED_RUN2_REFS[@]} -gt 0 ]]; then
-    local unexpected_file
-    unexpected_file="$(mktemp)"
-    filter_expected_run2 <<<"$offending" >"$unexpected_file"
-    offending="$(cat "$unexpected_file")"; rm -f "$unexpected_file"
+    filter_expected_run2 console <<<"$offending" >"$unexpected_file"
+    offending="$(cat "$unexpected_file")"
+  fi
+  if [[ $rc2 -eq 2 && -z "$offending" ]]; then
+    silent="$(run2_silent_changes "$out2")" || { rm -f "$unexpected_file"; die "Run 2 exited 2 and its report could not be read from the node (the gate fails closed)."; }
+    if [[ -n "$silent" ]]; then
+      filter_expected_run2 report <<<"$silent" >"$unexpected_file"
+      offending="$(sed 's/^/Run-2 report, changed with no console event (log level below notice): /' "$unexpected_file")"
+    fi
+  fi
+  rm -f "$unexpected_file"
+  if [[ ${#EXPECTED_RUN2_REFS[@]} -gt 0 ]]; then
     echo "RUN2_EXPECTED_EVENTS: ${EXPECTED_RUN2_HITS} from ${EXPECTED_RUN2_REFS[*]} [$(describe_expected_run2)] (plan expected_run2_events)"
   fi
   if [[ -n "$offending" ]]; then
