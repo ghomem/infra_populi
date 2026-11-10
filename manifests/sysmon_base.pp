@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none.
 ### Purpose ########
 # This class provides a nagios plugin that can be used trigger and monitor puppet runs, cpu, memory and zimbra
 class puppet_infrastructure::sysmon_base {
