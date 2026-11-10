@@ -30,6 +30,9 @@ Phase 1 scope: Puppet 5 -> Puppet 8 / Vox Pupuli syntax migration, behaviour pre
    own comment line next to it (a removed baseline comment fails review). An `HQ ruling for this class` line in the
    orientation packet fixes the shape of that change: apply it as written.
 4. Loop to GREEN (gate v2): run 2 exits 0 with no change events and the class's resources are in the catalog. The harness stamps the code that went GREEN.
+   The GREEN you record must come from a harness run that started on the node's LATEST revert with no agent run in
+   between (the harness prints `NODE_FRESH: yes|no`; record_green.sh refuses `no`). After iterating on a used node,
+   finish with `test_class.sh --revert-first <class>` and record that GREEN.
 5. Add the 2-line header to the manifest: purpose (or '<baseline> manifest validated unchanged') and every module dependency with its installed version.
 6. Record: .codex_state/tools/record_green.sh <class>. It is the ONLY recorder: it checks the GREEN stamp, the header, the worktree and the standing composites, writes the tracker marker, commits 'P8: migrate puppet_infrastructure::<class>', regenerates the order file, commits and pushes. Never hand-write migrated_classes.txt or migration_order.md, never commit class files yourself.
 

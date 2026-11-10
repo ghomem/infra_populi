@@ -38,7 +38,8 @@ the tracked `.codex_state/rules/CODEX_RUNBOOK.md`.
   <classes>`; standing composites + default variants: `.codex_state/tools/composite_compile.py [--defaults]`.
   Records path (the ONLY writer of tracker markers and record commits): `.codex_state/tools/record_green.sh
   <class> [--defect "<short>"] [--fix "<what>"]` — refuses unless the harness's GREEN stamp
-  (`.codex_state/logs/green/<class>.json`) matches the code, the header is there, the worktree holds only the
+  (`.codex_state/logs/green/<class>.json`) matches the code and its run started on the node's latest revert (boot ID +
+  last_run_summary token, no agent run in between), the header is there, the worktree holds only the
   class's files, and the composites match; then tracker + commit + order regeneration + push. Codex prompt
   facts: `.codex_state/tools/orientation.py <class>`. Path decision: `.codex_state/tools/classify_path.py <class>`.
   Per-attempt metrics (tracked, append-only, own commit `P8: record metrics after <class>`): tools log events;

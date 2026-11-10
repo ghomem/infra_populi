@@ -701,6 +701,23 @@ main() {
   deploy_repo_to_master
   update_node_codemgr_block "${classes[@]}"
 
+  # HQ batch-3 acceptance, item 1: is the node still on the latest revert's boot with no agent run since?
+  # Checked right before run 1 and carried in the GREEN stamp; record_green.sh refuses a stale one.
+  local fresh_boot="" stale_reason="" token fresh_err
+  if token="$(timeout 30 "$REVERT_TOOL" --node-state 2>/dev/null)" && [[ -n "$token" ]]; then
+    fresh_err="$(mktemp)"
+    fresh_boot="$(python3 "$RECORDS_TOOL" fresh-check <<<"$token" 2>"$fresh_err")" ||
+      { stale_reason="$(cat "$fresh_err")"; fresh_boot=""; }
+    rm -f "$fresh_err"
+  else
+    stale_reason="the node state token could not be read"
+  fi
+  if [[ -n "$fresh_boot" ]]; then
+    echo "NODE_FRESH: yes (boot ${fresh_boot:0:8} of the latest revert, no agent run since)"
+  else
+    echo "NODE_FRESH: no (${stale_reason}); record_green.sh will refuse this run's GREEN — use --revert-first" >&2
+  fi
+
   echo "==> Running puppet agent (run 1 may change; run 2 must exit 0 with no events; timeout ${AGENT_TIMEOUT_SECONDS}s each)"
   local out1 out2 rc1 rc2 offending run1_events
 
@@ -768,6 +785,7 @@ main() {
     # Step 3.2: stamp the code that went GREEN; record_green.sh refuses anything else.
     local -a stamp_opts=(--run1-events "$run1_events" --coverage "${COVERAGE_REPORT:-}")
     [[ $revert_first -eq 1 ]] && stamp_opts+=(--revert-first)
+    if [[ -n "$fresh_boot" ]]; then stamp_opts+=(--fresh-boot "$fresh_boot"); else stamp_opts+=(--stale-reason "$stale_reason"); fi
     python3 "$RECORDS_TOOL" stamp "${stamp_opts[@]}" -- "${classes[@]}" || die "Could not write the GREEN stamp."
   fi
 }

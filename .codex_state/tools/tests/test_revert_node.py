@@ -77,3 +77,24 @@ def test_failed_apt_update_fails_the_revert(lab):
     proc = lab.run([SCRIPT])
     assert proc.returncode == 1
     assert "apt-get update failed" in proc.stderr
+
+
+def test_every_revert_marks_the_node_state_token_and_node_state_touches_no_vm(lab):
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 0, proc.stderr
+    record = json.loads((lab.root / "node_revert.json").read_text())
+    assert record["snapshot"] == "P8NODE_BASELINE_GREEN_v2" and record["last_run"] == "absent"
+    assert "REVERT_NODE_STATE boot " + record["boot_id"] in proc.stdout
+    token_read = next(i for i, c in enumerate(lab.calls()) if c[0] == "ssh" and "random/boot_id" in " ".join(c))
+    assert token_read > max(i for i, c in enumerate(lab.calls()) if c[0] == "ssh" and "/dev/tcp/" in " ".join(c))
+    before = len(lab.calls("VBoxManage"))
+    state = lab.run([SCRIPT, "--node-state"])
+    assert state.returncode == 0 and state.stdout.splitlines()[0] == record["boot_id"]
+    assert len(lab.calls("VBoxManage")) == before
+
+
+def test_unreadable_node_state_token_fails_the_revert(lab):
+    lab.world["ssh"].insert(0, {"match": r"random/boot_id", "stdout": ""})
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 1 and "state token" in proc.stderr
+    assert not (lab.root / "node_revert.json").exists()

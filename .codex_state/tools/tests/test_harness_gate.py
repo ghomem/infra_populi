@@ -172,7 +172,7 @@ def test_harness_writes_revert_and_harness_metrics_events_on_green_and_red(lab):
     agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 0, "stdout": APPLIED})
     lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "stdout":
         "COVERAGE puppet_infrastructure::puppet_backup: 2 concrete resources (+1 defined-type instances)\n"})
-    lab.world["ssh"].insert(0, {"match": "last_run_summary.yaml", "stdout":
+    lab.world["ssh"].insert(0, {"match": "cat /opt/puppetlabs/puppet/public/last_run_summary.yaml", "stdout":
         "resources:\n  changed: 9\n  total: 26\ntime:\n  total: 10.4\ntransaction_uuid: u-1\n"})
     assert lab.run([SCRIPT, "--revert-first", "puppet_infrastructure::puppet_backup"]).returncode == 0
     events = [json.loads(l) for l in (lab.root / "metrics" / "events.jsonl").read_text().splitlines()]

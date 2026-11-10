@@ -22,6 +22,10 @@
 # from an offline snapshot immediately afterwards, so a graceful shutdown buys
 # nothing. The master is never powered off, reset or restored by this script.
 # Last line on success: REVERT_METRICS {json} with phase timings (step 3.4).
+# Every successful revert marks the node's state token (kernel boot ID + hash of the agent's
+# last_run_summary) through records.py revert-mark; record_green.sh accepts a GREEN only if its harness
+# run started on that token (HQ batch-3 acceptance, item 1). `revert_node.sh --node-state` prints the token and
+# touches no VM.
 # ---------------------------------------------------------------------------
 
 set -euo pipefail
@@ -38,7 +42,8 @@ readonly SSH_TIMEOUT_SECONDS=120
 readonly POLL_INTERVAL_SECONDS=2
 readonly APT_UPDATE_TIMEOUT_SECONDS=180
 # HQ 2026-11-10 ruling 2: ssh through the ControlMaster shim (see sshmux/ssh).
-PATH="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)/sshmux:${PATH}"
+TOOLS_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+PATH="${TOOLS_DIR}/sshmux:${PATH}"
 
 readonly -a SSH_OPTIONS=(
   -o BatchMode=yes
@@ -51,6 +56,19 @@ fail() {
   printf 'ERROR: %s\n' "$*" >&2
   exit 1
 }
+
+# Two lines: the node's kernel boot ID, then the sha256 of last_run_summary.yaml (`absent` if none).
+# A reboot changes the first, any agent run the second.
+node_state_token() {
+  ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" \
+    'cat /proc/sys/kernel/random/boot_id; { sudo -n sha256sum /opt/puppetlabs/puppet/public/last_run_summary.yaml 2>/dev/null || echo absent; } | cut -d" " -f1'
+}
+
+if [[ "${1:-}" == "--node-state" ]]; then
+  node_state_token
+  exit
+fi
+[[ $# -eq 0 ]] || fail "Usage: $0 [--node-state]"
 
 ms_to_s() { printf '%d.%03d' "$(($1 / 1000))" "$(($1 % 1000))"; }
 
@@ -214,6 +232,9 @@ if ! ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" \
 fi
 
 t_end="$(now_ms)"
+
+node_state_token | python3 "${TOOLS_DIR}/records.py" revert-mark "$NODE_SNAPSHOT" ||
+  fail "Could not read or record the node's state token after the revert."
 
 printf 'SUCCESS: node %q restored to %q; SSH, hostname, and %s:%s connectivity verified.\n' \
   "$NODE_VM" "$NODE_SNAPSHOT" "$MASTER_SERVICE_HOST" "$MASTER_SERVICE_PORT"

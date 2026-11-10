@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 TOOLS = Path(__file__).resolve().parents[1]
+BOOT_ID = "0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0"
 
 STUB = r'''#!/usr/bin/env python3
 import json, os, re, sys
@@ -118,6 +119,8 @@ class FakeLab:
             "ssh": [
                 {"match": r"systemctl is-active puppetserver", "stdout": "active\n"},
                 {"match": r"puppet8node hostname$", "stdout": "puppet8node\n"},
+                # revert_node.sh --node-state: boot ID, last_run_summary sha256 (HQ batch-3 acceptance item 1)
+                {"match": r"random/boot_id", "stdout": BOOT_ID + "\nabsent\n"},
             ],
         }
 
@@ -136,6 +139,7 @@ class FakeLab:
             "P8_GREEN_DIR": str(self.root / "green"),
             "P8_METRICS_DIR": str(self.root / "metrics"),
             "P8_SSH_CONTROL_DIR": str(self.root / "ssh-cm"),
+            "P8_REVERT_RECORD": str(self.root / "node_revert.json"),
         })
         env.update(kw.pop("env", {}))
         return subprocess.run(argv, capture_output=True, text=True, env=env, timeout=60,
@@ -163,6 +167,7 @@ def isolated_logs(tmp_path, monkeypatch):
     monkeypatch.setenv("P8_GREEN_DIR", str(tmp_path / "iso_green"))
     monkeypatch.setenv("P8_METRICS_DIR", str(tmp_path / "iso_metrics"))
     monkeypatch.setenv("P8_RUNS_FILE", str(tmp_path / "iso_runs" / "metrics.jsonl"))
+    monkeypatch.setenv("P8_REVERT_RECORD", str(tmp_path / "iso_reverts" / "node_revert.json"))
 
 
 

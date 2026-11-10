@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import TOOLS
+from conftest import BOOT_ID, TOOLS
 
 pytestmark = pytest.mark.slow  # excluded from the per-commit fast subset (HQ 2026-11-11 ruling 3)
 
@@ -17,6 +17,20 @@ CLS = "sysmon_fs_health"  # pending, identical to the baseline, plain tracker li
 HEADER = ("# Puppet 8 migration: release-0.9.10 manifest validated unchanged.\n"
           "# Module dependencies: none.\n")
 INVENTORY = "MODULE firewall env puppetlabs-firewall 8.3.0\n"
+SHA = "ab" * 32
+
+
+def mark_revert(lab, boot_id=BOOT_ID, last_run="absent"):
+    """The latest revert as revert_node.sh records it (records.py revert-mark), at the lab's record path."""
+    (lab.root / "node_revert.json").write_text(json.dumps(
+        {"snapshot": "P8NODE_BASELINE_GREEN_v2", "boot_id": boot_id, "last_run": last_run, "at": "2026-11-10T00:00:00Z"}))
+
+
+def stamp(lab, root, cls, env, fresh=True):
+    """A GREEN stamp as the harness writes it; fresh = the run started on the latest revert's boot."""
+    opts = ["--fresh-boot", BOOT_ID] if fresh else ["--stale-reason", "an agent run happened since the latest revert"]
+    return lab.run(["python3", str(root / ".codex_state/tools/records.py"), "stamp", "--run1-events", "3", *opts,
+                    "--", cls], env=env, cwd=root)
 
 
 def git(cwd, *args):
@@ -43,6 +57,7 @@ def clone(tmp_path, lab):
     (work / ".codex_state" / "necessary_modules.txt").write_text("puppetlabs-stdlib\n")
     lab.world["ssh"].insert(0, {"match": "bash -s", "stdout": INVENTORY})
     env = {"P8_GREEN_DIR": str(tmp_path / "green"), "P8_COMPOSITE_CMD": "true", "P8_PUPPETFILE_CMD": "true"}
+    mark_revert(lab)
 
     class Clone:
         root, bare = work, origin
@@ -51,9 +66,8 @@ def clone(tmp_path, lab):
             return lab.run(["bash", str(work / ".codex_state/tools/record_green.sh"), CLS, *args],
                            env={**env, **extra}, cwd=work)
 
-        def stamp(self):
-            return lab.run(["python3", str(work / ".codex_state/tools/records.py"), "stamp", "--run1-events", "3",
-                            "--", CLS], env=env, cwd=work)
+        def stamp(self, fresh=True):
+            return stamp(lab, work, CLS, env, fresh)
 
         def add_header(self):
             path = work / f"manifests/{CLS}.pp"
@@ -176,7 +190,7 @@ def test_tracker_text_rewrites_historical_order_to_canonical(tmp_path):
 def test_fix_mode_commits_comment_and_tracker_only_as_a_record_commit(clone, lab):
     done = "backup"
     env = {"P8_GREEN_DIR": str(clone.root.parent / "green")}
-    lab.run(["python3", str(clone.root / ".codex_state/tools/records.py"), "stamp", "--", done], env=env)
+    stamp(lab, clone.root, done, env)
     path = clone.root / f"manifests/{done}.pp"
     path.write_text(path.read_text().replace("# Puppet 8 migration:", "# Puppet 8 migration (records fix):", 1))
     proc = lab.run(["bash", str(clone.root / ".codex_state/tools/record_green.sh"), done, "--fix", "header wording",
@@ -190,7 +204,7 @@ def test_fix_mode_refuses_a_code_change(clone, lab):
     env = {"P8_GREEN_DIR": str(clone.root.parent / "green")}
     path = clone.root / f"manifests/{done}.pp"
     path.write_text(path.read_text().replace("{", "{\n  $p8_extra = 1", 1))
-    lab.run(["python3", str(clone.root / ".codex_state/tools/records.py"), "stamp", "--", done], env=env)
+    stamp(lab, clone.root, done, env)
     proc = lab.run(["bash", str(clone.root / ".codex_state/tools/record_green.sh"), done, "--fix", "x", "--no-push"],
                    env={**env, "P8_COMPOSITE_CMD": "true", "P8_PUPPETFILE_CMD": "true"}, cwd=clone.root)
     assert proc.returncode == 1 and "may not change code" in proc.stderr
@@ -282,3 +296,78 @@ def test_harness_renders_the_node_fixture_before_the_class(lab):
     out = proc.stdout
     assert out.index("# MOCK-APPLY node fixture: sysmon_server") < out.index("puppet_infrastructure::user_sysmon {")
     assert "user { 'naemon':" in out
+
+
+# HQ batch-3 acceptance, item 1: a GREEN counts only if its harness run started after the node's latest revert.
+def test_green_from_a_run_not_started_on_a_fresh_revert_is_refused(clone):
+    clone.stamp(fresh=False)
+    clone.add_header()
+    proc = clone.run("--no-push")
+    assert proc.returncode == 1 and "did not start after the node's latest revert" in proc.stderr
+    assert "an agent run happened since the latest revert" in proc.stderr
+    assert not git(clone.root, "log", "--format=%s", "-1").startswith("P8: migrate")
+
+
+def test_a_revert_after_the_green_run_voids_it(clone, lab):
+    clone.stamp()
+    clone.add_header()
+    mark_revert(lab, boot_id="99999999-0000-0000-0000-000000000000")  # e.g. the reviewer reverted since
+    proc = clone.run("--no-push")
+    assert proc.returncode == 1 and "reverted again after the GREEN run" in proc.stderr
+
+
+def test_a_stamp_without_revert_state_is_refused(clone, lab, tmp_path):
+    clone.stamp()
+    clone.add_header()
+    path = tmp_path / "green" / f"{CLS}.json"
+    legacy = json.loads(path.read_text())
+    del legacy["revert"]  # a stamp written before this rule
+    path.write_text(json.dumps(legacy))
+    proc = clone.run("--no-push")
+    assert proc.returncode == 1 and "no revert state in the stamp" in proc.stderr
+
+
+def harness_rules(lab):
+    lab.world["ssh"].insert(0, {"match": r"agent -t", "outputs": [
+        {"rc": 2, "stdout": "Notice: /Stage[main]/X/File[/a]/ensure: created\n"}, {"rc": 0, "stdout": ""}]})
+    lab.world["ssh"].insert(0, {"match": r"python3 - puppet_infrastructure::dns_client",
+                                "stdout": "COVERAGE puppet_infrastructure::dns_client: 1 concrete resources (+0 defined-type instances)\n"})
+
+
+def test_harness_revert_first_stamps_the_revert_boot_as_fresh(lab, tmp_path):
+    harness_rules(lab)
+    green = tmp_path / "green"
+    proc = lab.run([str(TOOLS / "test_class.sh"), "--revert-first", "dns_client"], env={"P8_GREEN_DIR": str(green)})
+    assert proc.returncode == 0, proc.stderr
+    assert "NODE_FRESH: yes" in proc.stdout
+    assert json.loads((lab.root / "node_revert.json").read_text())["boot_id"] == BOOT_ID  # revert_node marked it
+    assert json.loads((green / "dns_client.json").read_text())["revert"] == {"fresh": True, "boot_id": BOOT_ID}
+    check = lab.run(["python3", str(TOOLS / "records.py"), "verify-fresh", "dns_client"], env={"P8_GREEN_DIR": str(green)})
+    assert check.returncode == 0, check.stderr
+
+
+@pytest.mark.parametrize("token, reason", [
+    (BOOT_ID + "\n" + SHA + "\n", "an agent run happened since the latest revert"),
+    ("11111111-2222-3333-4444-555555555555\nabsent\n", "the node rebooted or was reverted elsewhere"),
+])
+def test_harness_without_revert_after_an_agent_run_or_reboot_stamps_stale(lab, tmp_path, token, reason):
+    harness_rules(lab)
+    mark_revert(lab)  # the latest revert: boot BOOT_ID, no last_run_summary
+    lab.world["ssh"].insert(0, {"match": r"random/boot_id", "stdout": token})
+    green = tmp_path / "green"
+    proc = lab.run([str(TOOLS / "test_class.sh"), "dns_client"], env={"P8_GREEN_DIR": str(green)})
+    assert proc.returncode == 0, proc.stderr  # still GREEN (it is evidence), but not recordable
+    assert "NODE_FRESH: no" in proc.stderr and reason in proc.stderr
+    stamp_rec = json.loads((green / "dns_client.json").read_text())["revert"]
+    assert stamp_rec["fresh"] is False and reason in stamp_rec["reason"]
+    check = lab.run(["python3", str(TOOLS / "records.py"), "verify-fresh", "dns_client"], env={"P8_GREEN_DIR": str(green)})
+    assert check.returncode == 1 and "STALE NODE" in check.stderr
+
+
+def test_harness_with_no_revert_recorded_stamps_stale(lab, tmp_path):
+    harness_rules(lab)
+    green = tmp_path / "green"
+    proc = lab.run([str(TOOLS / "test_class.sh"), "dns_client"], env={"P8_GREEN_DIR": str(green)})
+    assert proc.returncode == 0, proc.stderr
+    assert json.loads((green / "dns_client.json").read_text())["revert"] == \
+        {"fresh": False, "reason": "no revert recorded on this laptop"}

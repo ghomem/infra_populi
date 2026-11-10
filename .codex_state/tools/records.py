@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 """Record helpers (step 3.2) for the harness and record_green.sh. Nothing else writes records.
 
-  records.py stamp [--revert-first] --run1-events N [--coverage TEXT] -- <class> [<class> ...]
+  records.py stamp [--revert-first] [--fresh-boot ID] --run1-events N [--coverage TEXT] -- <class> [<class> ...]
       Called by test_class.sh on GREEN: writes .codex_state/logs/green/<class>.json (untracked) with the
       CODE hash of the class's files as they went GREEN (comment-only and blank lines of manifests are
       ignored, so adding the header after GREEN keeps the stamp valid; any code change voids it).
+      --fresh-boot: the run started on the boot of the latest revert with no agent run since (fresh-check).
   records.py verify-stamp <class>       exit 0 if a GREEN stamp matches the current code, else 1.
+  records.py revert-mark <snapshot>     revert_node.sh, after every revert: reads the node's state token
+                                        (boot ID line, last_run_summary sha256 line) on stdin and writes it
+                                        as the latest revert (.codex_state/logs/node_revert.json, untracked).
+  records.py fresh-check                the harness, before run 1: token on stdin; exit 0 and print the boot
+                                        ID if it equals the latest revert's token, else 1 with the reason.
+  records.py verify-fresh <class>       record_green.sh: exit 0 if the class's GREEN stamp started on the
+                                        boot of the LATEST revert with no agent run in between, else 1.
   records.py header-check <class>       exit 0 if the manifest gained a migration header naming its
                                         module dependencies (or `none`) versus the baseline, else 1.
   records.py tracker-set <class> [--defect SHORT] [--mock-apply SHORT]
@@ -16,7 +24,7 @@
   records.py header-modules <class>     Forge modules the header names that are installed in the
                                         master's environment (for necessary_modules.txt).
 
-The stamp directory can be redirected with P8_GREEN_DIR (tests).
+The stamp directory can be redirected with P8_GREEN_DIR, the revert record with P8_REVERT_RECORD (tests).
 """
 
 from __future__ import annotations
@@ -53,6 +61,66 @@ def short_name(name: str) -> str:
 
 def green_dir() -> Path:
     return Path(os.environ.get("P8_GREEN_DIR") or REPO / ".codex_state" / "logs" / "green")
+
+
+def revert_record() -> Path:
+    return Path(os.environ.get("P8_REVERT_RECORD") or REPO / ".codex_state" / "logs" / "node_revert.json")
+
+
+def read_token(text: str) -> dict:
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    if len(lines) != 2 or not re.fullmatch(r"[0-9a-zA-Z-]{4,64}", lines[0]) \
+            or not re.fullmatch(r"absent|[0-9a-f]{64}", lines[1]):
+        raise SystemExit(f"ERROR: unreadable node state token {text!r} (want: boot ID line, sha256|absent line)")
+    return {"boot_id": lines[0], "last_run": lines[1]}
+
+
+def latest_revert() -> dict | None:
+    path = revert_record()
+    return json.loads(path.read_text()) if path.is_file() else None
+
+
+def cmd_revert_mark(snapshot: str) -> int:
+    token = read_token(sys.stdin.read())
+    record = {"snapshot": snapshot, **token, "at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
+    revert_record().parent.mkdir(parents=True, exist_ok=True)
+    revert_record().write_text(json.dumps(record) + "\n")
+    print(f"REVERT_NODE_STATE boot {token['boot_id']} last_run {token['last_run'][:12]}")
+    return 0
+
+
+def cmd_fresh_check() -> int:
+    token = read_token(sys.stdin.read())
+    latest = latest_revert()
+    if latest is None:
+        print("no revert recorded on this laptop", file=sys.stderr)
+        return 1
+    if token["boot_id"] != latest["boot_id"]:
+        print(f"the node rebooted or was reverted elsewhere since the latest recorded revert ({latest['at']})",
+              file=sys.stderr)
+        return 1
+    if token["last_run"] != latest["last_run"]:
+        print(f"an agent run happened since the latest revert ({latest['at']})", file=sys.stderr)
+        return 1
+    print(token["boot_id"])
+    return 0
+
+
+def cmd_verify_fresh(cls: str) -> int:
+    path = green_dir() / f"{cls}.json"
+    stamp = json.loads(path.read_text()) if path.is_file() else {}
+    revert = stamp.get("revert") or {}
+    latest = latest_revert()
+    if not revert.get("fresh"):
+        print(f"STALE NODE for {cls}: the GREEN run at {stamp.get('at')} did not start on a freshly reverted node "
+              f"({revert.get('reason') or 'no revert state in the stamp'})", file=sys.stderr)
+        return 1
+    if latest is None or revert.get("boot_id") != latest.get("boot_id"):
+        print(f"STALE NODE for {cls}: the node was reverted again after the GREEN run at {stamp.get('at')}; "
+              "the GREEN must come from a run after the latest revert", file=sys.stderr)
+        return 1
+    print(f"FRESH NODE OK {cls} (GREEN run started on the revert of {latest['at']}, boot {latest['boot_id'][:8]})")
+    return 0
 
 
 def code_lines(path: str, data: bytes) -> bytes:
@@ -98,13 +166,16 @@ def cmd_stamp(argv: list[str]) -> int:
     revert_first = "--revert-first" in opts
     run1 = opts[opts.index("--run1-events") + 1] if "--run1-events" in opts else "0"
     coverage = opts[opts.index("--coverage") + 1] if "--coverage" in opts else ""
+    fresh_boot = opts[opts.index("--fresh-boot") + 1] if "--fresh-boot" in opts else ""
+    stale = opts[opts.index("--stale-reason") + 1] if "--stale-reason" in opts else "fresh-check not run"
+    revert = {"fresh": True, "boot_id": fresh_boot} if fresh_boot else {"fresh": False, "reason": stale}
     names = [short_name(c) for c in classes]
     green_dir().mkdir(parents=True, exist_ok=True)
     for cls in names:
         sha, files = code_hash(cls)
         record = {"class": cls, "at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                   "code_sha256": sha, "files": files, "targets": names, "revert_first": revert_first,
-                  "run1_events": int(run1), "head": head(),
+                  "run1_events": int(run1), "head": head(), "revert": revert,
                   "coverage": [l for l in coverage.splitlines() if l.startswith("COVERAGE ")]}
         (green_dir() / f"{cls}.json").write_text(json.dumps(record, indent=1) + "\n")
         print(f"GREEN_STAMP {cls} {sha[:12]}")
@@ -204,11 +275,17 @@ def cmd_header_modules(cls: str) -> int:
 def main(argv: list[str]) -> int:
     if argv[:1] == ["stamp"]:
         return cmd_stamp(argv[1:])
-    if len(argv) >= 2 and argv[0] in ("verify-stamp", "header-check", "tracker-set", "class-files", "header-modules",
-                                         "code-unchanged"):
+    if len(argv) == 2 and argv[0] == "revert-mark":
+        return cmd_revert_mark(argv[1])
+    if argv == ["fresh-check"]:
+        return cmd_fresh_check()
+    if len(argv) >= 2 and argv[0] in ("verify-stamp", "verify-fresh", "header-check", "tracker-set", "class-files",
+                                         "header-modules", "code-unchanged"):
         cls = short_name(argv[1])
         if argv[0] == "verify-stamp":
             return cmd_verify_stamp(cls)
+        if argv[0] == "verify-fresh":
+            return cmd_verify_fresh(cls)
         if argv[0] == "header-check":
             return cmd_header_check(cls)
         if argv[0] == "tracker-set":

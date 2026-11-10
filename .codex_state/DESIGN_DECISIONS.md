@@ -991,3 +991,17 @@ while record_green's own commit is being made. Codex commits through record_gree
    `lint:parameter_order` alone (COSMETIC_INHERITED): Puppet 8 accepts the order (compile-only still decides) and §2.3
    tells Codex to leave it, so a dispatch would be empty. Other inherited lint (legacy_facts, top_scope_facts, ...) stays
    syntax-work — those are real Puppet 8 breaks. First case: nginx_frontend.
+
+## 2026-11-10 — HQ batch-3 acceptance (1/4): a recorded GREEN must start on the latest revert
+record_green.sh refuses any GREEN whose harness run did not start after the node's latest revert. Mechanism: every
+successful revert_node.sh run ends by reading the node's state token — kernel boot ID (`/proc/sys/kernel/random/boot_id`)
+and the sha256 of `last_run_summary.yaml` (`absent` if none) — and `records.py revert-mark` writes it as the latest revert
+(`.codex_state/logs/node_revert.json`, local). Right before run 1 the harness reads the token again (`revert_node.sh
+--node-state`, no VM action) and `records.py fresh-check` compares: a different boot ID = rebooted or reverted elsewhere,
+a different last_run hash = an agent run in between. The verdict goes into the GREEN stamp (`revert: {fresh, boot_id |
+reason}`) and is printed as `NODE_FRESH: yes|no`. record_green's `verify-fresh` requires `fresh` AND the stamp's boot ID
+equal to the latest revert's, so a revert after the GREEN (e.g. a reviewer run) also voids it; a pre-rule stamp without
+revert state is refused. Strict for `--fix` records too (re-run `--revert-first`; ~2 min). The harness still reports a
+stale run GREEN — it is evidence, just not recordable. CODEX_RUNBOOK §2.4: after iterating on a used node, finish with
+`test_class.sh --revert-first`. Evidence for the rule: firewall_ipv6_drop_policy_desktop's recorded GREEN (batch 3) was
+"not reverted first". Real node token read OK (boot aa9bd922…, last_run present in the snapshot).

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Records path (ruling 3 / step 3.2): the ONLY way a GREEN class is recorded. It refuses unless the
-# class's current code is exactly what went GREEN (harness stamp), the manifest carries a migration
+# class's current code is exactly what went GREEN (harness stamp), that GREEN run started on the boot of
+# the node's latest revert with no agent run in between (HQ batch-3 acceptance), the manifest carries a migration
 # header naming its module dependencies, the worktree holds nothing but the class's files and the
 # tracker, and the standing composite compiles still match their expectations. Then it writes the
 # tracker marker, commits, regenerates the order file, commits that, and pushes.
@@ -62,8 +63,10 @@ for path in "${dirty[@]}"; do
   [[ $ok -eq 1 ]] || refuse "worktree holds '${path}', which is not a file of ${CLS} (stash or commit it separately)"
 done
 
-# 3. GREEN stamp matches the current code; 4. header present.
+# 3. GREEN stamp matches the current code and its run started on the latest revert; 4. header present.
 "${RECORDS[@]}" verify-stamp "$CLS" || refuse "no valid GREEN stamp"
+"${RECORDS[@]}" verify-fresh "$CLS" ||
+  refuse "the GREEN run did not start after the node's latest revert: test_class.sh --revert-first ${CLS}"
 "${RECORDS[@]}" header-check "$CLS" || refuse "migration header missing or incomplete"
 if [[ -n "$FIX" ]]; then
   python3 .codex_state/gen_migration_order.py --classify "$CLS" >/dev/null
