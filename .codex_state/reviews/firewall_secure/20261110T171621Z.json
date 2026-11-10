@@ -1,0 +1,97 @@
+{
+ "schema": 1,
+ "class": "firewall_secure",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-10T17:16:21Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "e342bdacfc3c",
+ "migrate_subject": "P8: migrate puppet_infrastructure::firewall_secure",
+ "checks": {
+  "git": {
+   "status": "fail",
+   "detail": [
+    "--fresh: migrate commit is under 92 later commits: ['P8: engine: b4-A7 \u2014 network steps 5-7: params, master sweep, documents', 'P8: engine: b4-A6 \u2014 lab.env NODE_NET=hostonly (switched with the ssh aliases)', 'P8: engine: b4-A4 \u2014 lab.env NODE_NET; revert_node.sh host-only overlay mode (path-asserted)', 'P8: engine: b4-A \u2014 network plan step 0 PASSED; step 1 handed to Salatiel', 'P8: engine: b4-A3 \u2014 network plan step 0: engine-run check cannot match itself']"
+   ]
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `firewall_secure Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-firewall', '8.3.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 27 catalog events; COVERAGE puppet_infrastructure::firewall_secure: 20 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-2): 2-line migration header comment only",
+   "DIFF A hunks 2-3 (rules 000-003): action => accept/reject renamed to jump => with same value (puppetlabs-firewall 8 removed action); no resource, title or other attribute changed",
+   "DIFF A hunk 3 (vars): $indilim '8'->8 and $indilim_minute '15'->15 \u2014 sole consumers are connlimit_above (master firewall.rb:1304 Optional[Integer]) and rhitcount (firewall.rb:900 Optional[Integer[1]]); same values, strict typing required; $overlim_minute stays a string (interpolated)",
+   "DIFF A hunk 3 (100 SSH whitelist) and hunk 4 (117 strict branch): action => accept/drop -> jump =>, same values, conditional unchanged",
+   "DIFF A hunk 5 (rules 111-117): action -> jump same values; rseconds '60'->60 (firewall.rb:883 Optional[Integer[1]]), same value; resources, titles, chains, ordering unchanged; no comment removed; whitespace changes limited to alignment on edited lines"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 15,
+  "removed": 13,
+  "non_comment_changes": 26,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 firewall rules preserved; action renamed to jump and numeric limits typed as integers.",
+  "# Module dependency: puppetlabs-firewall 8.3.0."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 27,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::firewall_secure: 20 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 27.909,
+   "master_check_s": 0.281,
+   "poweroff_s": 0.795,
+   "restore_s": 0.235,
+   "boot_to_ssh_s": 18.35,
+   "apt_update_s": 7.915,
+   "verify_s": 0.333
+  },
+  "log": ".codex_state/logs/reviews/firewall_secure.20261110T171459Z.harness.log",
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
