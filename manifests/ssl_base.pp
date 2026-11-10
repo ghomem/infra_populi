@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependency: puppetlabs-concat 9.1.0; the notified Service[$myservicename] belongs to the consumer (harness: puppet-nginx 8.4.0 class nginx).
 ### Purpose ########
 # This defined type is used by our classes which control the deploy
 # of ssl certs and keys for different types of services in different distributions
