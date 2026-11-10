@@ -227,3 +227,16 @@ def test_class_without_expected_events_still_fails_on_the_same_event(lab):
         "COVERAGE puppet_infrastructure::puppet_backup: 2 concrete resources (+1 defined-type instances)\n"})
     proc = lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"])
     assert proc.returncode == 1 and "Exec[apt_update]" in proc.stderr
+
+
+def test_inherited_expected_run2_is_named_in_output_and_metrics(lab):
+    import json
+    # sysmon_base's required_base includes packages_base, whose plan entry is Exec[apt_update]
+    agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 2, "stdout": APT_EVENT + APPLIED})
+    lab.world["ssh"].insert(0, {"match": r"python3 - puppet_infrastructure::sysmon_base$", "stdout":
+                                "COVERAGE puppet_infrastructure::sysmon_base: 13 concrete resources (+0 defined-type instances)\n"})
+    proc = lab.run([SCRIPT, "puppet_infrastructure::sysmon_base"])
+    assert proc.returncode == 0, proc.stderr
+    assert "[own: none; inherited: Exec[apt_update] via packages_base]" in proc.stdout
+    h = [json.loads(l) for l in (lab.root / "metrics" / "events.jsonl").read_text().splitlines()][-1]["data"]
+    assert h["run2_expected"] == {"hits": 1, "own": [], "inherited": {"packages_base": ["Exec[apt_update]"]}}

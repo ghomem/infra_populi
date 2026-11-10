@@ -46,6 +46,7 @@ cd "$REPO"
 [[ -f "manifests/${CLS}.pp" ]] || refuse "no manifests/${CLS}.pp"
 
 START_HEAD="$(git rev-parse HEAD)"
+RECORD_START="${EPOCHREALTIME/,/.}"
 # 1. git position: on main, level with origin/main, no merge/rebase in progress.
 [[ "$(git rev-parse --abbrev-ref HEAD)" == main ]] || refuse "not on main"
 [[ "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]] || refuse "HEAD != origin/main (push or pull first)"
@@ -120,4 +121,5 @@ fi
 # 10. metrics event (step 3.4): the commits this record made.
 mapfile -t made < <(git log --format=%h "${START_HEAD}..HEAD")
 python3 "$TOOLS/metrics.py" event "$CLS" record \
-  "$(python3 -c 'import json, sys; print(json.dumps({"commits": sys.argv[1:]}))' "${made[@]}")" || true
+  "$(python3 -c 'import json, sys; print(json.dumps({"commits": sys.argv[3:], "duration_s": round(float(sys.argv[2]) - float(sys.argv[1]), 1)}))' \
+      "$RECORD_START" "${EPOCHREALTIME/,/.}" "${made[@]}")" || true

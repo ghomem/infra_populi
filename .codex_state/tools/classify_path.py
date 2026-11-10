@@ -82,10 +82,13 @@ def main(argv: list[str]) -> int:
         print(__doc__.strip(), file=sys.stderr)
         return 2
     cls = argv[0].removeprefix("puppet_infrastructure::")
+    import time  # noqa: PLC0415
+    started = time.monotonic()
     code, path, reasons = decide(cls)
     if code != 2:  # step 3.4: metrics event
         subprocess.run([sys.executable, str(TOOLS / "metrics.py"), "event", cls, "path",
-                        json.dumps({"path": path, "reasons": reasons[:5]})], capture_output=True)
+                        json.dumps({"path": path, "reasons": reasons[:5],
+                                    "duration_s": round(time.monotonic() - started, 1)})], capture_output=True)
     print(f"PATH {cls}: {path}")
     for reason in reasons:
         print(f"  - {reason}")

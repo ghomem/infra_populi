@@ -9,6 +9,8 @@ P2-exempt) and commits it as `P8: record metrics after <class>` (own commit type
   metrics.py close <class> --outcome GREEN|PASS|FAIL|BLOCKED|FAILED|ESCALATED [--path P] [--interventions N]
                    [--note TEXT] [--no-commit]
   metrics.py summary                         medians/rates over the tracked records
+  metrics.py batch-report <class>...         markdown table of the latest attempt per class: wall = dispatch→verdict,
+                                             phases prep/pregate/harness/codex/record/review/wait, run-2 expectations
 
 Event kinds written by the tools: path (classify_path), pregate (pregate.py, class mode), revert (harness --revert-first, wrapper), harness
 (test_class.sh, every exit), codex (wrapper), record (record_green.sh), review (review_class.py verdict).
@@ -140,6 +142,56 @@ def agent_summary(text: str) -> dict:
             "t_catalog": num("time", "config_retrieval"), "t_apply": num("time", "catalog_application")}
 
 
+# ------------------------------------------------------------------ phases (HQ 2026-11-11 ruling 1)
+
+PHASE_PRIORITY = ("review", "codex", "record", "harness", "pregate", "prep")
+
+
+def _ts(value: str) -> float:
+    return dt.datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp()
+
+
+def event_interval(e: dict) -> tuple[str, float, float] | None:
+    """(phase, start, end) of one event; every event's ts is its END."""
+    d, end = e.get("data") or {}, _ts(e["ts"])
+    kind = e["kind"]
+    if kind == "review":
+        start = _ts(d["check_started"]) if d.get("check_started") else end - float(d.get("check_s") or 0)
+        return "review", start, end
+    seconds = {"path": d.get("duration_s"), "pregate": d.get("duration_s"), "harness": d.get("duration_s"),
+               "codex": d.get("codex_s"), "record": d.get("duration_s"), "revert": d.get("total_s")}.get(kind)
+    if seconds is None:
+        return None
+    phase = {"path": "prep", "revert": "harness"}.get(kind, kind)
+    return phase, end - float(seconds), end
+
+
+def phases(events: list[dict], closed_at: float) -> dict:
+    """Wall = dispatch (first harness/Codex/revert start) -> verdict (last review end); every second of the wall is
+    attributed to the highest-priority phase covering it, uncovered seconds are `wait`. Prep = first event -> dispatch
+    (it includes pregate/classification before dispatch; pregate_s is also reported in full)."""
+    intervals = [iv for iv in (event_interval(e) for e in events) if iv]
+    if not intervals:
+        return {}
+    opened = min(start for _, start, _ in intervals)
+    dispatch = min((start for ph, start, _ in intervals if ph in ("harness", "codex")), default=None)
+    reviews = [end for ph, _, end in intervals if ph == "review"]
+    verdict = max(reviews) if reviews else closed_at
+    out = {"prep_s": round((dispatch - opened) if dispatch else 0.0, 1),
+           "pregate_s": round(sum(end - start for ph, start, end in intervals if ph == "pregate"), 1)}
+    if dispatch is None or verdict <= dispatch:
+        return {**out, "wall_s": None}
+    cuts = sorted({dispatch, verdict, *[t for _, a, b in intervals for t in (a, b) if dispatch < t < verdict]})
+    spent = {ph: 0.0 for ph in ("harness", "codex", "record", "review", "wait")}
+    for a, b in zip(cuts, cuts[1:]):
+        covering = [ph for ph, start, end in intervals if start <= a and end >= b and ph in spent]
+        ph = min(covering, key=PHASE_PRIORITY.index) if covering else "wait"
+        spent[ph] += b - a
+    return {**out, **{f"{k}_s": round(v, 1) for k, v in spent.items()}, "wall_s": round(verdict - dispatch, 1),
+            "dispatch_at": dt.datetime.fromtimestamp(dispatch, dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "verdict_at": dt.datetime.fromtimestamp(verdict, dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
+
+
 # ------------------------------------------------------------------ close / summary
 
 def fold(cls: str, events: list[dict], records: list[dict], outcome: str, path: str | None,
@@ -175,10 +227,13 @@ def fold(cls: str, events: list[dict], records: list[dict], outcome: str, path: 
                                      + int(u.get("output_tokens", 0)) for u in usage),
         "codex_tool_calls": sum(int(u.get("tool_calls", 0)) for u in usage),
         "reviews": [{k: r.get(k) for k in ("verdict", "failed_checks", "check_s", "file")} for r in reviews],
+        # HQ 2026-11-11 ruling 6: run-2 expectations stated explicitly per harness run (own vs inherited via base)
+        "run2_expected": [h["run2_expected"] for h in harness if h.get("run2_expected")],
         "pregate": [{k: g.get(k) for k in ("status", "findings")} for g in pregates],
         "commits": [c for e in kinds("record") for c in e.get("commits", [])],
         "human_interventions": interventions, "note": note or None,
     }
+    record["phases"] = phases(mine, _ts(record["closed_at"]))
     return record
 
 
@@ -237,6 +292,49 @@ def cmd_summary() -> int:
     return 0
 
 
+def run2_text(record: dict) -> str:
+    seen = [r for r in record.get("run2_expected", []) if r]
+    if not seen:
+        return "none"
+    r = seen[-1]
+    parts = [f"own {', '.join(r['own'])}"] if r.get("own") else []
+    parts += [f"inherited {', '.join(refs)} via {cls}" for cls, refs in sorted(r.get("inherited", {}).items())]
+    return "; ".join(parts) + f" ({r.get('hits', 0)} event(s) on the green run)"
+
+
+def cmd_batch_report(classes: list[str]) -> int:
+    records = read_jsonl(runs_path())
+    latest = {r["class"]: r for r in records}
+    rows, missing = [], [c for c in classes if c not in latest]
+    m = lambda v: "–" if v is None else (f"{v / 60:.1f} min" if v >= 60 else f"{v:.0f} s")  # noqa: E731
+    print("| class | path | wall (dispatch→verdict) | prep | pregate | harness | codex | record | review | wait | "
+          "Codex runs (s, uncached tok, calls) | reverts (median s) | reviewer | expected run-2 events |")
+    print("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|---|")
+    for c in classes:
+        if c not in latest:
+            continue
+        r = latest[c]
+        ph = r.get("phases") or {}
+        reviews = r.get("reviews") or []
+        codex = (f"{r['codex_runs']} ({', '.join(str(round(x)) for x in r['codex_s'])}; "
+                 f"{r.get('codex_tokens_uncached', 0):,}; {r['codex_tool_calls']})") if r["codex_runs"] else "0"
+        rs = [x for x in r["revert_s"] if isinstance(x, (int, float))]
+        rows.append(r)
+        print(f"| {c} | {r.get('path')} | {m(ph.get('wall_s'))} | {m(ph.get('prep_s'))} | {m(ph.get('pregate_s'))} | "
+              f"{m(ph.get('harness_s'))} | {m(ph.get('codex_s'))} | {m(ph.get('record_s'))} | {m(ph.get('review_s'))} | "
+              f"{m(ph.get('wait_s'))} | {codex} | {len(rs)} ({median(rs)}) | "
+              f"{reviews[-1]['verdict'] if reviews else '–'} | {run2_text(r)} |")
+    greens = [r for r in rows if r["outcome"] in ("GREEN", "PASS")]
+    walls = [r["phases"]["wall_s"] for r in rows if (r.get("phases") or {}).get("wall_s")]
+    print(f"\n{len(rows)} attempts, {len(greens)} green/pass; Codex runs per green "
+          f"{round(sum(r['codex_runs'] for r in rows) / len(greens), 2) if greens else None}; median wall "
+          f"{m(median(walls)) if walls else '–'}; reverts {sum(len(r['revert_s']) for r in rows)} "
+          f"(median {median([x for r in rows for x in r['revert_s']])} s)")
+    if missing:
+        print(f"no record for: {', '.join(missing)}")
+    return 0
+
+
 def main(argv: list[str]) -> int:
     if len(argv) >= 3 and argv[0] == "event":
         data = json.loads(argv[3]) if len(argv) > 3 else {}
@@ -252,6 +350,8 @@ def main(argv: list[str]) -> int:
         return cmd_close(short(argv[1]), argv[2:])
     if argv == ["summary"]:
         return cmd_summary()
+    if len(argv) >= 2 and argv[0] == "batch-report":
+        return cmd_batch_report([short(c) for c in argv[1:]])
     print(__doc__.strip(), file=sys.stderr)
     return 2
 

@@ -127,3 +127,42 @@ def test_pregate_events_fold_into_the_record_and_summary_reports_uncached_tokens
     metrics.main(["summary"])
     out = capsys.readouterr().out
     assert "codex uncached tokens/attempt 121530" in out and "pregate findings 1" in out
+
+
+def ev(ts, cls, kind, **data):
+    return {"ts": ts, "class": cls, "kind": kind, "data": data}
+
+
+def test_phases_split_dispatch_to_verdict_and_report_prep_separately():
+    events = [
+        ev("2026-11-11T10:00:10Z", "c", "pregate", status="CLEAN", findings=[], duration_s=10),   # 10:00:00-10:00:10
+        ev("2026-11-11T10:00:30Z", "c", "path", path="unchanged-validated", duration_s=15),   # prep
+        ev("2026-11-11T10:02:00Z", "c", "harness", rc=0, duration_s=60),                      # 10:01:00-10:02:00
+        ev("2026-11-11T10:03:00Z", "c", "record", commits=["a"], duration_s=30),              # 10:02:30-10:03:00
+        ev("2026-11-11T10:04:30Z", "c", "harness", rc=0, duration_s=50),                      # inside the review
+        ev("2026-11-11T10:05:00Z", "c", "review", verdict="PASS", check_s=90,
+           check_started="2026-11-11T10:03:30.000000Z"),                                        # 10:03:30-10:05:00
+    ]
+    ph = metrics.phases(events, metrics._ts("2026-11-11T10:06:00Z"))
+    assert ph["prep_s"] == 60 and ph["pregate_s"] == 10
+    assert ph["wall_s"] == 240  # 10:01:00 dispatch -> 10:05:00 verdict
+    assert (ph["harness_s"], ph["record_s"], ph["review_s"]) == (60, 30, 90)  # reviewer's harness counted as review
+    assert ph["wait_s"] == 60 and ph["codex_s"] == 0
+    assert ph["dispatch_at"] == "2026-11-11T10:01:00Z" and ph["verdict_at"] == "2026-11-11T10:05:00Z"
+
+
+def test_run2_text_lists_inherited_explicitly():
+    record = {"run2_expected": [{"hits": 1, "own": [], "inherited": {"packages_base": ["Exec[apt_update]"]}}]}
+    assert metrics.run2_text(record) == "inherited Exec[apt_update] via packages_base (1 event(s) on the green run)"
+    assert metrics.run2_text({"run2_expected": []}) == "none"
+
+
+def test_batch_report_renders_phases_and_run2(env, capsys):
+    metrics.add_event("k", "harness", {"rc": 0, "duration_s": 40, "run2_expected":
+                                       {"hits": 1, "own": ["Exec[apt_update]"], "inherited": {}}})
+    metrics.add_event("k", "review", {"verdict": "PASS", "check_s": 5})
+    metrics.main(["close", "k", "--outcome", "PASS", "--path", "unchanged-validated", "--no-commit"])
+    assert metrics.main(["batch-report", "k", "absent"]) == 0
+    out = capsys.readouterr().out
+    assert "| k | unchanged-validated |" in out and "own Exec[apt_update] (1 event(s) on the green run)" in out
+    assert "no record for: absent" in out

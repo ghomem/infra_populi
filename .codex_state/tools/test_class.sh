@@ -484,7 +484,7 @@ compile_on_master() {
 HARNESS_REASON=""
 HARNESS_RUN1_EVENTS=""
 HARNESS_REVERT_FIRST=0
-declare -a HARNESS_CLASSES=() HARNESS_AGENT_RUNS=()
+declare -a HARNESS_CLASSES=() HARNESS_AGENT_RUNS=() EXPECTED_RUN2_REFS=() EXPECTED_RUN2_SOURCES=()
 
 agent_run_summary() {
   local summary
@@ -495,12 +495,24 @@ agent_run_summary() {
 harness_metrics_event() {
   local rc="$1" cls json
   [[ ${#HARNESS_CLASSES[@]} -gt 0 && -z "${FIXTURE_NAME:-}" ]] || return 0
-  json="$(python3 - "$rc" "$HARNESS_REVERT_FIRST" "${HARNESS_RUN1_EVENTS:-null}" "${HARNESS_START/,/.}" "${EPOCHREALTIME/,/.}" \
+  json="$(P8_RUN2_SOURCES="${EXPECTED_RUN2_SOURCES[*]-}" P8_RUN2_HITS="${EXPECTED_RUN2_HITS:-}" python3 - "$rc" \
+      "$HARNESS_REVERT_FIRST" "${HARNESS_RUN1_EVENTS:-null}" "${HARNESS_START/,/.}" "${EPOCHREALTIME/,/.}" \
       "$HARNESS_REASON" "${HARNESS_AGENT_RUNS[@]}" <<'PY' 2>/dev/null
-import json, sys
+import json, os, sys
 rc, rf, r1, t0, t1, reason, *runs = sys.argv[1:]
+own, inherited = [], {}
+for src in os.environ.get("P8_RUN2_SOURCES", "").split():
+    kind, _, rest = src.partition(":")
+    if kind == "own":
+        own.append(rest)
+    elif kind == "inherited":
+        ref, _, cls = rest.rpartition("@")
+        inherited.setdefault(cls, []).append(ref)
+hits = os.environ.get("P8_RUN2_HITS", "")
 print(json.dumps({"rc": int(rc), "revert_first": rf == "1", "run1_events": None if r1 in ("", "null") else int(r1),
                   "duration_s": round(float(t1) - float(t0), 1), "reason": reason or None,
+                  "run2_expected": ({"hits": int(hits) if hits else 0, "own": own, "inherited": inherited}
+                                    if own or inherited else None),
                   "agent_runs": [json.loads(r) for r in runs]}))
 PY
 )" || return 0
@@ -512,15 +524,36 @@ PY
 # HQ 2026-11-10 ruling 1: plan `expected_run2_events` of the target and its expanded required_base — the only
 # resources allowed to report events on run 2 (each justified in the class header and checked by the reviewer).
 collect_expected_run2() {
-  local cls
+  # HQ 2026-11-11 ruling 6: record WHERE each expected ref comes from — the target's own plan entry, or inherited
+  # from an expanded required_base class — so the run record and the batch report list it explicitly.
+  local cls ref target is_target
+  local -a targets=()
   EXPECTED_RUN2_REFS=()
+  EXPECTED_RUN2_SOURCES=()
   [[ -z "${FIXTURE_NAME:-}" ]] || return 0
+  for target in "$@"; do targets+=("puppet_infrastructure::${target#puppet_infrastructure::}"); done
   expand_target_classes "$@"
   for cls in "${EXPANDED_CLASSES[@]}"; do
     [[ "$cls" == puppet_infrastructure::* ]] || continue
     classify_target "$cls"
-    EXPECTED_RUN2_REFS+=("${CLASSIFY_EXPECTED_RUN2[@]}")
+    is_target=0
+    for target in "${targets[@]}"; do [[ "$target" == "$cls" ]] && is_target=1; done
+    for ref in "${CLASSIFY_EXPECTED_RUN2[@]}"; do
+      EXPECTED_RUN2_REFS+=("$ref")
+      if [[ $is_target -eq 1 ]]; then EXPECTED_RUN2_SOURCES+=("own:${ref}"); else EXPECTED_RUN2_SOURCES+=("inherited:${ref}@${cls#puppet_infrastructure::}"); fi
+    done
   done
+}
+
+describe_expected_run2() {
+  local src own="" inherited=""
+  for src in "${EXPECTED_RUN2_SOURCES[@]}"; do
+    case "$src" in
+      own:*) own+="${own:+, }${src#own:}" ;;
+      inherited:*) src="${src#inherited:}"; inherited+="${inherited:+, }${src%@*} via ${src##*@}" ;;
+    esac
+  done
+  echo "own: ${own:-none}; inherited: ${inherited:-none}"
 }
 
 # Splits run-2 event lines into unexpected ones (stdout) and counts the expected ones (EXPECTED_RUN2_HITS).
@@ -662,7 +695,7 @@ main() {
     unexpected_file="$(mktemp)"
     filter_expected_run2 <<<"$offending" >"$unexpected_file"
     offending="$(cat "$unexpected_file")"; rm -f "$unexpected_file"
-    echo "RUN2_EXPECTED_EVENTS: ${EXPECTED_RUN2_HITS} from ${EXPECTED_RUN2_REFS[*]} (plan expected_run2_events)"
+    echo "RUN2_EXPECTED_EVENTS: ${EXPECTED_RUN2_HITS} from ${EXPECTED_RUN2_REFS[*]} [$(describe_expected_run2)] (plan expected_run2_events)"
   fi
   if [[ -n "$offending" ]]; then
     printf 'Run 2 events:\n%s\n' "$offending" >&2

@@ -478,6 +478,15 @@ def run_checks(cls: str, harness: bool, fresh: bool) -> dict:
 
 # ----------------------------------------------------------------------------- CLI
 
+def check_started(draft: dict) -> str | None:
+    """UTC start of the mechanical check (checked_at is its end) — the start of the review phase in the metrics."""
+    try:
+        end = dt.datetime.strptime(draft["checked_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=dt.timezone.utc)
+        return (end - dt.timedelta(seconds=float(draft.get("check_s") or 0))).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    except (KeyError, ValueError):
+        return None
+
+
 def latest_draft(cls: str) -> Path:
     drafts = sorted(DRAFTS.glob(f"{cls}.*.draft.json"))
     if not drafts:
@@ -571,7 +580,8 @@ def cmd_verdict(argv: list[str]) -> int:
     failed = [n for n in CHECKS if checks.get(n, {}).get("status") != "ok"] + ([] if faithful == "ok" else ["faithful"])
     subprocess.run([sys.executable, str(TOOLS / "metrics.py"), "event", cls, "review",
                     json.dumps({"verdict": verdict, "failed_checks": failed, "check_s": draft.get("check_s"),
-                                "file": str(path.relative_to(REPO))})], capture_output=True)
+                                "check_started": check_started(draft), "file": str(path.relative_to(REPO))})],
+                   capture_output=True)
     return 0
 
 

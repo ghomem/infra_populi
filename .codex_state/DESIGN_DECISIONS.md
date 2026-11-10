@@ -928,3 +928,14 @@ sysmon_puppet_cert_status, nginx_proxy_smtp_auth_ppa, packages_base.
 `prod` (secondary sort key after dependencies) is now production MACHINES = servers + 20 × desktop statements
 (fleet_class_usage.md columns; the desktops/ regex node covers 20 laptops per the production document). firewall_secure
 78, gnome_lock_screen 20, openvpn_server 3: the desktop closure sorts above the three-node tier (dependencies still first).
+
+## 2026-11-11 — HQ rulings before batch 3 (1, 6): metrics phases; expected run-2 events stated explicitly
+Every event now carries a duration (pregate, path, harness, codex, record, revert; review = mechanical check start →
+verdict), so `metrics.py close` stores `phases`: wall = dispatch (first harness/Codex/revert start) → verdict (last
+review end); within it every second goes to the highest-priority covering phase (review > codex > record > harness),
+the rest is `wait`; prep (first event → dispatch, incl. classification and pregate before dispatch) and pregate_s
+are reported separately. A harness run inside a review or a Codex run counts as that phase (no double counting).
+The harness records where each expected run-2 ref comes from — the target's own plan entry or inherited via an
+expanded required_base class — prints `[own: …; inherited: <ref> via <class>]` and puts it in the harness event; the
+run record keeps it (`run2_expected`) and `metrics.py batch-report <classes>` renders the batch table with phases
+and the run-2 expectations spelled out. Batch-1/2 records predate this and show no phases.

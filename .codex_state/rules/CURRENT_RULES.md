@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-55 entries; 6 marked superseded (in whole or part); newest first.
+56 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-11 — HQ rulings before batch 3 (1, 6): metrics phases; expected run-2 events stated explicitly
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-11 — HQ rulings before batch 3 (5): the desktop regex node weighs 20 machines
 - (no numbered/Rule/Decision lines; read the entry)

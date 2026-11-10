@@ -75,7 +75,9 @@ FOR EACH CLASS:
    record to `.codex_state/runs/metrics.jsonl` and commits `P8: record metrics after <class>` (worktree must
    be clean otherwise). Then move to the next class.
 
-END OF RUN: `python3 .codex_state/tools/metrics.py summary` (medians/rates per path) goes in the summary.
+END OF RUN: the batch report's table is `python3 .codex_state/tools/metrics.py batch-report <class>...` (wall =
+dispatch→verdict, phases prep/pregate/harness/codex/record/review/wait, expected run-2 events listed own vs inherited —
+never implied), plus `metrics.py summary` (medians/rates per path). The node_base-style composite compiles go in too.
 Revert the node to baseline. Confirm `git status` clean and pushed. Print a summary table:
 class | outcome (PASS/BLOCKED cat N/ESCALATED) | commit | one-line note. List every escalation file.
 If any design decision was made (a new rule, a corrected diagnosis), append a dated entry to
