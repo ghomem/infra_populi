@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependency: puppet-nginx 8.4.0 (nginx::resource::server).
 ### Purpose ########
 # Here 'domain' denotes this define type can be used to
 # set up a set of servers (aka vhosts in apache) for a given domain in a nginx
