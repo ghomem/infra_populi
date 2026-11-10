@@ -25,6 +25,7 @@ import pregate  # noqa: E402
 import review_class  # noqa: E402
 
 PARAMS_DIR = Path.home() / ".config" / "infra_populi" / "params"
+RULINGS = TOOLS.parent / "rules" / "class_rulings.txt"
 MAX_FINDINGS = 12
 
 
@@ -49,6 +50,18 @@ def params_line(cls: str, params_dir: Path = PARAMS_DIR) -> str:
     except (OSError, ValueError) as exc:
         return f"{path} UNREADABLE ({exc})"
     return f"~/.config/infra_populi/params/{path.name} keys: {', '.join(keys) or '(empty)'}"
+
+
+def ruling_lines(cls: str, path: Path = RULINGS) -> list[str]:
+    """HQ rulings that name a change in this class (rules/class_rulings.txt: `<class> <ruled change> — <ref>`)."""
+    if not path.is_file():
+        return []
+    out = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        name, _, ruling = line.partition(" ")
+        if name == cls and ruling.strip():
+            out.append(ruling.strip())
+    return out
 
 
 def module_lines(manifest: str, inv: dict) -> list[str]:
@@ -82,6 +95,7 @@ def packet(cls: str) -> str:
     if len(findings) > MAX_FINDINGS:
         lines.append(f"  - ... {len(findings) - MAX_FINDINGS} more: run .codex_state/tools/pregate.sh {cls}")
     lines.append(f"params fixture: {params_line(cls)}")
+    lines += [f"HQ ruling for this class: {r}" for r in ruling_lines(cls)]
     manifest = (baseline.REPO / f"manifests/{cls}.pp").read_text(encoding="utf-8")
     try:
         mods = module_lines(manifest, review_class.master_inventory())
