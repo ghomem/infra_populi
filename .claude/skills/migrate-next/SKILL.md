@@ -84,6 +84,8 @@ FOR EACH CLASS:
 END OF RUN: the batch report's table is `python3 .codex_state/tools/metrics.py batch-report <class>...` (wall =
 dispatch→verdict, phases prep/pregate/harness/codex/record/review/wait, expected run-2 events listed own vs inherited —
 never implied), plus `metrics.py summary` (medians/rates per path). The node_base-style composite compiles go in too.
+A `## Skipped tests` section names every test the full suite skipped, with its reason (the pre-commit hook prints them
+as `TESTS: skipped <module>::<test> — <reason>` and refuses a batch report that misses one).
 Revert the node to baseline. Confirm `git status` clean and pushed. Print a summary table:
 class | outcome (PASS/BLOCKED cat N/ESCALATED) | commit | one-line note. List every escalation file.
 If any design decision was made (a new rule, a corrected diagnosis), append a dated entry to

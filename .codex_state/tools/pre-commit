@@ -35,17 +35,56 @@ fi
 
 # HQ 2026-11-11 ruling 3: no commit lands with a failing test. Fast subset on every commit; the full suite when a
 # batch report is staged. Skipped only where the engine's tests do not exist (scratch repos used by the tests).
+# HQ batch-3 acceptance item 4: every skipped test carries a reason (a skip without one rejects the commit), the hook
+# prints each, and a staged batch report must name every skipped test of the full suite with its reason.
 tests="$repo/.codex_state/tools/tests"
 if [[ -d "$tests" ]]; then
-  if git diff --cached --name-only | grep -qE '^\.codex_state/escalations/batch-.*\.md$'; then
+  report=""
+  report="$(git diff --cached --name-only | grep -E '^\.codex_state/escalations/batch-.*\.md$' | head -1 || true)"
+  if [[ -n "$report" ]]; then
     selection=(); label="full suite (batch report staged)"
   else
     selection=(-m "not slow and not repo_state"); label="fast subset"
   fi
-  if ! out="$(cd "$repo" && PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -x -p no:cacheprovider "${selection[@]}" "$tests" 2>&1)"; then
+  junit="$(mktemp)"
+  if ! out="$(cd "$repo" && PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -x -p no:cacheprovider --junitxml="$junit" \
+      "${selection[@]}" "$tests" 2>&1)"; then
+    rm -f "$junit"
     printf '%s\n' "$out" | tail -25 >&2
     echo "TESTS: commit rejected — the ${label} failed" >&2
     exit 1
   fi
+  # one line per skipped test: <module>::<test>\t<reason>
+  skips="$(python3 - "$junit" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+for case in ET.parse(sys.argv[1]).iter("testcase"):
+    skipped = case.find("skipped")
+    if skipped is not None:
+        reason = (skipped.get("message") or "").strip()
+        reason = reason[len("Skipped: "):] if reason.startswith("Skipped: ") else reason
+        print(f"{case.get('classname', '').rsplit('.', 1)[-1]}::{case.get('name')}\t{reason}")
+PY
+)"
+  rm -f "$junit"
   echo "TESTS: ${label} passed ($(printf '%s\n' "$out" | tail -1))"
+  missing=() report_text=""
+  [[ -z "$report" ]] || report_text="$(git show ":${report}")"
+  while IFS=$'\t' read -r test reason; do
+    [[ -n "$test" ]] || continue
+    if [[ -z "$reason" || "$reason" == "unconditional skip" ]]; then
+      echo "TESTS: commit rejected — ${test} is skipped without a reason (give the skip mark a reason=)" >&2
+      exit 1
+    fi
+    echo "TESTS: skipped ${test} — ${reason}"
+    if [[ -n "$report" ]] && ! grep -qF -- "${test#*::}" <<<"$report_text"; then
+      missing+=("${test} — ${reason}")
+    fi
+  done <<<"$skips"
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "TESTS: commit rejected — the batch report ${report} does not name these skipped tests; add them with" \
+         "their reasons (e.g. a 'Skipped tests' section):" >&2
+    printf '  - %s\n' "${missing[@]}" >&2
+    exit 1
+  fi
 fi

@@ -1026,3 +1026,16 @@ composites commits beyond authority, before the 2026-11-11 marker; nginx_fronten
 firewall_ipv6_drop_policy_desktop's refused record), advisor 5 (filesystem_yum, packages_base, sysmon_base,
 nginx_frontend_domain, firewall_ipv6_drop_policy_desktop). The schema-1 field was named human but was used for advisor
 actions (packages_base, firewall_ipv6 = 1 each); both read as advisor now.
+
+## 2026-11-10 — HQ batch-3 acceptance (4/4): skipped tests carry a reason in the report
+The engine pre-commit hook runs pytest with a JUnit XML and reads each skipped test's reason from it.
+- **Reasons are mandatory.** A skip without one (`@pytest.mark.skip` with no reason, i.e. "unconditional skip")
+  rejects the commit.
+- **Each skip is printed.** The hook prints `TESTS: skipped <module>::<test> — <reason>` for every skip.
+- **Batch reports must name them.** When a batch report is staged, the full suite runs, and the report must name
+  every skipped test (it then states the reason beside it). Otherwise the hook rejects the commit and prints the
+  lines to add.
+
+Today's only skips are the three opt-in LAB tests in test_compile.py ("needs puppet8master (set P8_LAB_TESTS=1)").
+They run the compile filter on the real master and were run on demand today: 11/11 passed. The batch-3 report gains
+a "Skipped tests" addendum, and the skill's END OF RUN step requires that section.
