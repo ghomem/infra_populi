@@ -495,13 +495,13 @@ agent_run_summary() {
 harness_metrics_event() {
   local rc="$1" cls json
   [[ ${#HARNESS_CLASSES[@]} -gt 0 && -z "${FIXTURE_NAME:-}" ]] || return 0
-  json="$(P8_RUN2_SOURCES="${EXPECTED_RUN2_SOURCES[*]-}" P8_RUN2_HITS="${EXPECTED_RUN2_HITS:-}" python3 - "$rc" \
+  json="$(P8_RUN2_SOURCES="$(printf '%s\n' "${EXPECTED_RUN2_SOURCES[@]-}")" P8_RUN2_HITS="${EXPECTED_RUN2_HITS:-}" python3 - "$rc" \
       "$HARNESS_REVERT_FIRST" "${HARNESS_RUN1_EVENTS:-null}" "${HARNESS_START/,/.}" "${EPOCHREALTIME/,/.}" \
       "$HARNESS_REASON" "${HARNESS_AGENT_RUNS[@]}" <<'PY' 2>/dev/null
 import json, os, sys
 rc, rf, r1, t0, t1, reason, *runs = sys.argv[1:]
 own, inherited = [], {}
-for src in os.environ.get("P8_RUN2_SOURCES", "").split():
+for src in filter(None, os.environ.get("P8_RUN2_SOURCES", "").splitlines()):  # one per line: refs contain spaces
     kind, _, rest = src.partition(":")
     if kind == "own":
         own.append(rest)

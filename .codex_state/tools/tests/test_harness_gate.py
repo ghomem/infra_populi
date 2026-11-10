@@ -282,6 +282,10 @@ def test_expected_silent_event_with_a_glob_title_is_green(lab):
     assert proc.returncode == 0, proc.stderr
     assert "RUN2_EXPECTED_EVENTS: 1 from Notify[Generated Upstream members for *]" in proc.stdout
     assert "GREEN: run 2 events limited to the plan's expected_run2_events" in proc.stdout
+    import json
+    h = [json.loads(l) for l in (lab.root / "metrics" / "events.jsonl").read_text().splitlines()
+         if json.loads(l)["kind"] == "harness"][-1]["data"]
+    assert h["run2_expected"]["own"] == ["Notify[Generated Upstream members for *]"]  # a ref with spaces, whole
 
 
 def test_an_event_on_console_and_in_the_report_counts_once(lab):
