@@ -95,6 +95,8 @@ if [ "$inventory" = 1 ]; then
       p="${p#manifests/}"; p="${p%.pp}"
       if [ "$p" = init ]; then echo "@@DEFINE $mod"; else echo "@@DEFINE $mod::${p//\//::}"; fi
     done
+    # a module "base" is a CLASS named after the module (puppetlabs-concat's init.pp is a define: no base)
+    grep -qE "^[[:space:]]*class[[:space:]]+(::)?${mod}[[:space:]]*[({]" "$m/manifests/init.pp" 2>/dev/null && echo "@@BASE $mod"
   done
 fi
 '''
@@ -197,7 +199,7 @@ def module_base_findings(manifest: str, inventory: dict, required_external: tupl
         uses.setdefault("apt", set()).add("Exec['apt_update']")
     out = []
     for mod, used in sorted(uses.items()):
-        if mod not in inventory["defines"] or mod in have:  # no base class to declare, or already there
+        if mod not in inventory["bases"] or mod in have:  # no base class to declare, or already there
             continue
         out.append(f"uses {', '.join(sorted(used))} from module `{mod}` without declaring class `{mod}`; the harness "
                    f"needs plan required_external={mod} (advisor) unless the class is meant to work standalone")
@@ -480,7 +482,7 @@ def run_remote(tar_bytes: bytes, inventory: bool) -> str:
 
 def parse_remote(output: str) -> tuple[dict, list[dict], dict]:
     versions, results = {}, []
-    inventory = {"modules": set(), "types": set(), "defines": set(), "type_modules": {}, "hiera": {}}
+    inventory = {"modules": set(), "types": set(), "defines": set(), "bases": set(), "type_modules": {}, "hiera": {}}
     lines, i = output.splitlines(), 0
     while i < len(lines):
         line = lines[i]
@@ -499,6 +501,8 @@ def parse_remote(output: str) -> tuple[dict, list[dict], dict]:
             inventory["hiera"].setdefault(key, (value[0] if value else "").split(" #")[0].strip().strip("'\""))
         elif line.startswith("@@DEFINE "):
             inventory["defines"].add(line.split(" ", 1)[1])
+        elif line.startswith("@@BASE "):
+            inventory["bases"].add(line.split(" ", 1)[1])
         elif line.startswith("@@BEGIN "):
             _, check, side, rel, rc = line.split(" ", 4)
             body = []

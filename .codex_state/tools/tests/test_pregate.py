@@ -67,7 +67,7 @@ def test_connectivity_and_stdlib_findings():
 
 
 def test_missing_module_types_and_classes_use_master_inventory():
-    inv = {"modules": {"apt"}, "types": {"firewall"}, "defines": {"apt", "apt::source"}}
+    inv = {"modules": {"apt"}, "types": {"firewall"}, "defines": {"apt", "apt::source"}, "bases": {"apt"}}
     manifest = ("include apt\ninclude ::ntp\nclass { 'nginx': }\n"
                 "firewall { '100 x': }\nhtpasswd { $u: }\napt::source { 'a': }\nfile { '/x': }\n"
                 "puppet_infrastructure::backup { 'b': }\n")
@@ -252,7 +252,9 @@ def test_staged_ignores_non_puppet_files(staged_repo):
 
 
 INV14 = {"modules": {"firewall", "sudo", "apt", "docker"}, "types": {"firewall", "firewallchain", "cron"},
-         "defines": {"firewall", "sudo", "sudo::conf", "apt", "apt::ppa", "docker", "docker::run"},
+         "defines": {"firewall", "sudo", "sudo::conf", "apt", "apt::ppa", "docker", "docker::run", "concat",
+                     "concat::fragment"},
+         "bases": {"firewall", "sudo", "apt", "docker"},  # concat's init.pp is a define: no base class
          "type_modules": {"firewall": ("firewall", "env"), "firewallchain": ("firewall", "env"),
                           "cron": ("cron_core", "vendored")}}
 
@@ -270,6 +272,17 @@ def test_hazard14_is_satisfied_by_a_declaration_or_the_plan():
     assert [g.split("`")[3] for g in pregate.module_base_findings(m, INV14)] == ["firewall"]
     assert pregate.module_base_findings(m, INV14, required_external=("firewall",)) == []
     assert pregate.module_base_findings("class x { docker::run { 'r': } }", INV14, ("docker",)) == []
+
+
+def test_hazard14_ignores_a_module_whose_init_is_a_define():
+    m = "define x ($f) {\n  concat { $f: }\n  concat::fragment { 'a': target => $f, order => '01' }\n}\n"
+    assert pregate.module_base_findings(m, INV14) == []
+
+
+def test_parse_remote_records_module_bases_separately():
+    _, _, inv = pregate.parse_remote("@@MODULE concat\n@@DEFINE concat\n@@DEFINE concat::fragment\n"
+                                     "@@MODULE apt\n@@DEFINE apt\n@@BASE apt\n")
+    assert inv["bases"] == {"apt"} and {"concat", "apt"} <= inv["defines"]
 
 
 def test_hazard14_reported_by_scan_hazards():
