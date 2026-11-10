@@ -111,9 +111,9 @@ def ssh_lines(lab):
     return [" ".join(c[1:]) for c in lab.calls("ssh")]
 
 
-def test_tracked_setting_is_bridged_until_the_switch():
+def test_tracked_setting_has_exactly_one_valid_value():
     text = (TOOLS.parent / "lab" / "lab.env").read_text()
-    assert [l for l in text.splitlines() if l.startswith("NODE_NET=")] == ["NODE_NET=bridged"]
+    assert [l for l in text.splitlines() if l.startswith("NODE_NET=")] in (["NODE_NET=bridged"], ["NODE_NET=hostonly"])
 
 
 def test_bridged_mode_never_uses_the_wifi_alias_or_the_overlay(lab):

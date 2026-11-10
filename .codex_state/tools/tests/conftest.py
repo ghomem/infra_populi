@@ -140,6 +140,8 @@ class FakeLab:
             "P8_METRICS_DIR": str(self.root / "metrics"),
             "P8_SSH_CONTROL_DIR": str(self.root / "ssh-cm"),
             "P8_REVERT_RECORD": str(self.root / "node_revert.json"),
+            # stub runs never follow the live lab's .codex_state/lab/lab.env; host-only tests override this
+            "P8_NODE_NET": "bridged",
         })
         env.update(kw.pop("env", {}))
         return subprocess.run(argv, capture_output=True, text=True, env=env, timeout=60,
