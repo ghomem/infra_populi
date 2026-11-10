@@ -1,3 +1,5 @@
+# Puppet 8 migration: preserve release-0.9.10 rules using jump and integer numeric attributes; retain parameter defaults.
+# Module dependency: puppetlabs-firewall 8.3.0.
 ### Purpose ########
 # This class provides an extension of firewall secure with some extra features
 # like ddos mitigation and geographical IP filtering
@@ -90,104 +92,104 @@ class puppet_infrastructure::firewall_secure_extra ( $strict = false,
       proto  => 'icmp',
       icmp   => 'echo-request',
       limit  => '2/sec',
-      action => 'accept'
+      jump => 'accept'
     }
     -> firewall { '000 icmp drop':
       chain  => 'INPUT',
       proto  => 'icmp',
-      action => 'drop',
+      jump => 'drop',
     }
   } else {
     
     firewall { '000 accept all icmp':
       proto  => 'icmp',
-      action => 'accept',
+      jump => 'accept',
     }
     
   }
   -> firewall { '001 accept all to lo interface':
     proto   => 'all',
     iniface => 'lo',
-    action  => 'accept',
+    jump  => 'accept',
   }
   -> firewall { '002 reject local traffic not on loopback interface':
     iniface     => '! lo',
     proto       => 'all',
     destination => '127.0.0.1/8',
-    action      => 'reject',
+    jump      => 'reject',
   }
   -> firewall { '003 accept related established rules':
     proto  => 'all',
     state  => ['RELATED', 'ESTABLISHED'],
-    action => 'accept',
+    jump => 'accept',
   }
   
   $ip_blacklist.each |$bad_ip|{
-    firewall { "666 grounding naughty boys: ${bad_ip}":  chain => 'INPUT', source => $bad_ip,  action => 'drop', }
+    firewall { "666 grounding naughty boys: ${bad_ip}":  chain => 'INPUT', source => $bad_ip,  jump => 'drop', }
   }
 
   # paramters for every other host
-  $indilim='8'           # limit for individual IP simultaneous connections
-  $indilim_minute='15'   # limit individual IP new connections attempts per minute
+  $indilim=8           # limit for individual IP simultaneous connections
+  $indilim_minute=15   # limit individual IP new connections attempts per minute
   $overlim_minute='20'   # overall limit for new connections per minute
 
   # allow unfiltered access to the list of IPs
   $mylist.each |String $ip| {
-    firewall { "100 SSH whitelist ${ip}": chain => 'INPUT', proto  => 'tcp', dport  => $ssh_port, source => $ip,  action => 'accept', }
+    firewall { "100 SSH whitelist ${ip}": chain => 'INPUT', proto  => 'tcp', dport  => $ssh_port, source => $ip,  jump => 'accept', }
   }
 
   # on strict mode only listed IPs can actually access the system
   if ( $strict == true ) {
     firewallchain { 'LIMIT_OVERALL:filter:IPv4': ensure  => present }
-    firewall { '117 SSH DROP': chain => 'LIMIT_OVERALL', proto => tcp, dport => $ssh_port, action => 'drop' }
+    firewall { '117 SSH DROP': chain => 'LIMIT_OVERALL', proto => tcp, dport => $ssh_port, jump => 'drop' }
   }
   else {
     firewallchain { 'LIMIT_INDIVIDUAL:filter:IPv4': ensure  => present }
     -> firewallchain { 'LIMIT_OVERALL:filter:IPv4':    ensure  => present }
     -> firewall { '110 SSH LIMIT_INDIVIDUAL':   chain => 'INPUT',            proto => tcp, dport => $ssh_port, tcp_flags       => 'FIN,SYN,RST,ACK SYN', state => 'NEW', jump => 'LIMIT_INDIVIDUAL' }
-    -> firewall { '111 SSH ACCEPT ESTABLISHED': chain => 'INPUT',            proto => tcp, dport => $ssh_port, state           => 'ESTABLISHED', action => 'accept' }
-    -> firewall { '112 SSH connlimit':          chain => 'LIMIT_INDIVIDUAL', proto => tcp, dport => $ssh_port, connlimit_above => $indilim, action => 'drop', }
+    -> firewall { '111 SSH ACCEPT ESTABLISHED': chain => 'INPUT',            proto => tcp, dport => $ssh_port, state           => 'ESTABLISHED', jump => 'accept' }
+    -> firewall { '112 SSH connlimit':          chain => 'LIMIT_INDIVIDUAL', proto => tcp, dport => $ssh_port, connlimit_above => $indilim, jump => 'drop', }
     -> firewall { '113 SSH set recent':         chain => 'LIMIT_INDIVIDUAL', proto => tcp, dport => $ssh_port, recent          => 'set' }
-    -> firewall { '114 SSH set recent':         chain => 'LIMIT_INDIVIDUAL', proto => tcp, dport => $ssh_port, recent          => 'update', rseconds => '60', rhitcount => $indilim_minute, action => 'drop' }
+    -> firewall { '114 SSH set recent':         chain => 'LIMIT_INDIVIDUAL', proto => tcp, dport => $ssh_port, recent          => 'update', rseconds => 60, rhitcount => $indilim_minute, jump => 'drop' }
     -> firewall { '115 SSH LIMIT_INDIVIDUAL':   chain => 'LIMIT_INDIVIDUAL', proto => tcp, dport => $ssh_port, jump            => 'LIMIT_OVERALL' }
-    -> firewall { '116 SSH LIMIT_OVERALL':      chain => 'LIMIT_OVERALL',    proto => tcp, dport => $ssh_port, limit           => "${overlim_minute}/min", action => 'accept' }
-    -> firewall { '117 SSH DROP':               chain => 'LIMIT_OVERALL',    proto => tcp, dport => $ssh_port, action          => 'drop' }
+    -> firewall { '116 SSH LIMIT_OVERALL':      chain => 'LIMIT_OVERALL',    proto => tcp, dport => $ssh_port, limit           => "${overlim_minute}/min", jump => 'accept' }
+    -> firewall { '117 SSH DROP':               chain => 'LIMIT_OVERALL',    proto => tcp, dport => $ssh_port, jump          => 'drop' }
   }
   
   if ( $anti_ddos ) {
     
     ### 1: Drop invalid packets ### 
-    firewall { '501 drop invalid packets': chain => 'PREROUTING', table => 'mangle', ctstate => 'INVALID', action => 'drop', }
+    firewall { '501 drop invalid packets': chain => 'PREROUTING', table => 'mangle', ctstate => 'INVALID', jump => 'drop', }
 
     ### 2: Drop TCP packets that are new and are not SYN ###
-    -> firewall { '502 drop new packets not syn': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => '! FIN,SYN,RST,ACK SYN', ctstate => 'NEW', action => 'drop', }
+    -> firewall { '502 drop new packets not syn': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => '! FIN,SYN,RST,ACK SYN', ctstate => 'NEW', jump => 'drop', }
     
     ### 3: Drop SYN packets with suspicious MSS value ### 
-    -> firewall { '503 drop syn packets with suspicious mss': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', ctstate => 'NEW', mss => '! 536:65535', action  => 'drop', }
+    -> firewall { '503 drop syn packets with suspicious mss': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', ctstate => 'NEW', mss => '! 536:65535', jump  => 'drop', }
 
     ### 4: Block packets with bogus TCP flags ###
-    -> firewall { '504 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN,RST,PSH,ACK,URG NONE',                    action => 'drop', }
-    -> firewall { '505 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN FIN,SYN',                                 action => 'drop', }
-    -> firewall { '506 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'SYN,RST SYN,RST',                                 action => 'drop', }
-    -> firewall { '507 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN FIN,SYN',                                 action => 'drop', }
-    -> firewall { '508 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,RST FIN,RST',                                 action => 'drop', }
-    -> firewall { '509 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,ACK FIN',                                     action => 'drop', }
-    -> firewall { '510 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'ACK,URG URG',                                     action => 'drop', }
-    -> firewall { '511 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,ACK FIN',                                     action => 'drop', }
-    -> firewall { '512 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'PSH,ACK PSH',                                     action => 'drop', }
-    -> firewall { '513 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,PSH,ACK,URG', action => 'drop', }
-    -> firewall { '514 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN,RST,PSH,ACK,URG NONE',                    action => 'drop', }
-    -> firewall { '515 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN,RST,PSH,ACK,URG FIN,PSH,URG',             action => 'drop', }
-    -> firewall { '516 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN,RST,PSH,ACK,URG FIN,SYN,PSH,URG',         action => 'drop', }
-    -> firewall { '517 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,ACK,URG',     action => 'drop', }
+    -> firewall { '504 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN,RST,PSH,ACK,URG NONE',                    jump => 'drop', }
+    -> firewall { '505 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN FIN,SYN',                                 jump => 'drop', }
+    -> firewall { '506 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'SYN,RST SYN,RST',                                 jump => 'drop', }
+    -> firewall { '507 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN FIN,SYN',                                 jump => 'drop', }
+    -> firewall { '508 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,RST FIN,RST',                                 jump => 'drop', }
+    -> firewall { '509 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,ACK FIN',                                     jump => 'drop', }
+    -> firewall { '510 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'ACK,URG URG',                                     jump => 'drop', }
+    -> firewall { '511 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,ACK FIN',                                     jump => 'drop', }
+    -> firewall { '512 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'PSH,ACK PSH',                                     jump => 'drop', }
+    -> firewall { '513 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,PSH,ACK,URG', jump => 'drop', }
+    -> firewall { '514 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN,RST,PSH,ACK,URG NONE',                    jump => 'drop', }
+    -> firewall { '515 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN,RST,PSH,ACK,URG FIN,PSH,URG',             jump => 'drop', }
+    -> firewall { '516 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN,RST,PSH,ACK,URG FIN,SYN,PSH,URG',         jump => 'drop', }
+    -> firewall { '517 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,ACK,URG',     jump => 'drop', }
 
     ### 7: Drop fragments in all chains ###
-    -> firewall { '518 drop fragmented packages': chain => 'PREROUTING', table => 'mangle', isfragment => true, action => 'drop', }
+    -> firewall { '518 drop fragmented packages': chain => 'PREROUTING', table => 'mangle', isfragment => true, jump => 'drop', }
     
     ### 8: Limit RST packets ###
-    firewall { '519 limit RST tcp packets': chain => 'INPUT', proto => 'tcp', limit => '2/sec', burst => '2', tcp_flags => 'RST RST', action => 'accept', }
+    firewall { '519 limit RST tcp packets': chain => 'INPUT', proto => 'tcp', limit => '2/sec', burst => 2, tcp_flags => 'RST RST', jump => 'accept', }
     
-    -> firewall { '520 limit RST tcp packets (default behavior)': chain => 'INPUT', proto => 'tcp', tcp_flags => 'RST RST', action => 'drop', }
+    -> firewall { '520 limit RST tcp packets (default behavior)': chain => 'INPUT', proto => 'tcp', tcp_flags => 'RST RST', jump => 'drop', }
     
     if ($ip_filter){
       ### Here we whitelist the ip networks per name or country
@@ -224,7 +226,7 @@ class puppet_infrastructure::firewall_secure_extra ( $strict = false,
         
       ### 9: Limit connections per source IP ###
       $service_list.each |$service| {
-        firewall { "521 limit connections per source IP ${service}": chain => 'WHITELIST_SIDE_CHAIN', proto => $service[1], dport => $service[0], connlimit_above => $ddos_limit, action => 'drop', require => Firewall['518 drop fragmented packages'] }
+        firewall { "521 limit connections per source IP ${service}": chain => 'WHITELIST_SIDE_CHAIN', proto => $service[1], dport => $service[0], connlimit_above => Integer($ddos_limit, 10), jump => 'drop', require => Firewall['518 drop fragmented packages'] }
       }
         
       ### 10: Limit new connections per second per source IP ###
@@ -235,7 +237,7 @@ class puppet_infrastructure::firewall_secure_extra ( $strict = false,
           proto   => $service[1],
           limit   => "${ddos_limit_per_time_unit}/${ddos_limit_time_unit}",
           dport   => $service[0],
-          action  => 'accept',
+          jump  => 'accept',
           require => Firewall['520 limit RST tcp packets (default behavior)']
         }
         
@@ -244,25 +246,25 @@ class puppet_infrastructure::firewall_secure_extra ( $strict = false,
           ctstate => 'NEW',
           proto   => $service[1],
           dport   => $service[0],
-          action  => 'drop',
+          jump  => 'drop',
           require => Firewall["522 limit mew connections per source IP and time unit ${service}"]
         }
       }
       
-      firewall { '524 drop all traffic in the side chain': chain => 'WHITELIST_SIDE_CHAIN', action => 'drop', }
+      firewall { '524 drop all traffic in the side chain': chain => 'WHITELIST_SIDE_CHAIN', jump => 'drop', }
       
       if ($internal_forward) {
         $internal_forward_list.each |$internal_service| {
           # rules to allow the forwarding of packets to the internal IP:PORT that hosts the service
-          firewall { "123123123 allow forward ${internal_service}": chain => 'FORWARD', table => 'filter', iniface => $forward_iniface, dport => $internal_service[1], destination => $internal_service[0], action => 'accept', }
+          firewall { "123123123 allow forward ${internal_service}": chain => 'FORWARD', table => 'filter', iniface => $forward_iniface, dport => $internal_service[1], destination => $internal_service[0], jump => 'accept', }
 
 
           # in the rules bellow we do not consider protocol because the only traffic
           # arriving to this interface is either trusted or purposelly forward into here
           # rules to allow http and https on the internal IP:PORT that runs the server
-          firewall { "123123123 internal limit per source IP ${internal_service}": chain => 'INPUT', destination => $internal_service[0], dport => $internal_service[1], connlimit_above => $ddos_limit, action => 'drop', }
+          firewall { "123123123 internal limit per source IP ${internal_service}": chain => 'INPUT', destination => $internal_service[0], dport => $internal_service[1], connlimit_above => Integer($ddos_limit, 10), jump => 'drop', }
 
-          firewall { "123123123 limit mew connections per source IP and time unit ${internal_service}": chain => 'INPUT', destination => $internal_service[0], ctstate => 'NEW', limit => "${ddos_limit_per_time_unit}/${ddos_limit_time_unit}", dport => $internal_service[1], action => 'accept',}
+          firewall { "123123123 limit mew connections per source IP and time unit ${internal_service}": chain => 'INPUT', destination => $internal_service[0], ctstate => 'NEW', limit => "${ddos_limit_per_time_unit}/${ddos_limit_time_unit}", dport => $internal_service[1], jump => 'accept',}
         }
       }
     }
@@ -273,8 +275,8 @@ class puppet_infrastructure::firewall_secure_extra ( $strict = false,
           chain           => 'INPUT',
           proto           => $service[1],
           dport           => $service[0],
-          connlimit_above => $ddos_limit,
-          action          => 'drop',
+          connlimit_above => Integer($ddos_limit, 10),
+          jump          => 'drop',
           require         => Firewall['518 drop fragmented packages']
         }
       }
@@ -287,7 +289,7 @@ class puppet_infrastructure::firewall_secure_extra ( $strict = false,
           ctstate => 'NEW',
           limit   => "${ddos_limit_per_time_unit}/${ddos_limit_time_unit}",
           dport   => $service[0],
-          action  => 'accept',
+          jump  => 'accept',
           require => Firewall['520 limit RST tcp packets (default behavior)']
         }
         
@@ -296,7 +298,7 @@ class puppet_infrastructure::firewall_secure_extra ( $strict = false,
           ctstate => 'NEW',
           proto   => $service[1],
           dport   => $service[0],
-          action  => 'drop',
+          jump  => 'drop',
           require => Firewall["522 limit mew connections per source IP and time unit ${service}"]
         }
       }
@@ -307,7 +309,7 @@ class puppet_infrastructure::firewall_secure_extra ( $strict = false,
   # want to apply ddos protection, thus just opening the ports
   else {
     $service_list.each |$service| {
-      firewall { "555 open service ports: ${service}": chain => 'INPUT', proto => $service[1], dport => $service[0], action => 'accept', }
+      firewall { "555 open service ports: ${service}": chain => 'INPUT', proto => $service[1], dport => $service[0], jump => 'accept', }
     }
   }
 
