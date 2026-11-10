@@ -1,3 +1,6 @@
+# Puppet 8 migration: explicitly convert backend port strings to Integer for nginx upstream members.
+# Module dependencies: puppet-nginx 8.4.0 (nginx::resource::*), puppetlabs-stdlib 9.7.0 (concat/merge helpers).
+# Expected run-2 events: Notify[Generated Upstream members for *] — the baseline debug notification reports upstream members on every run without changing node configuration.
 ### Purpose ########
 # Here 'domain' denotes this define type can be used to
 # set up a set of servers (aka vhosts in apache) for a given domain
@@ -244,7 +247,8 @@ define puppet_infrastructure::nginx_frontend_domain (
                               server => $element_split[0],
                               # we need to sum a zero here so we can cast this variable to integer
                               # reference: https://puppet.com/docs/puppet/5.5/lang_data_number.html#converting-strings-to-numbers
-                              port   => $element_split[1] + 0,
+                              # Puppet 8 requires an explicit Integer conversion instead of adding zero.
+                              port   => Integer($element_split[1]),
                             },
                           }
       $previous_return.merge($new_hash_element)
