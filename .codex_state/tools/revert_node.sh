@@ -22,6 +22,13 @@
 # from an offline snapshot immediately afterwards, so a graceful shutdown buys
 # nothing. The master is never powered off, reset or restored by this script.
 # Last line on success: REVERT_METRICS {json} with phase timings (step 3.4).
+# Lab network mode (HQ step review C, 2026-11-10): the tracked setting .codex_state/lab/lab.env, NODE_NET=
+#   bridged   the node is reached over its bridged (Wi-Fi, DHCP) address; v2 as restored (default if the file is absent)
+#   hostonly  canary period of escalations/lab-network-static.md: after the v2 restore the node is reached over
+#             puppet8node-wifi, gets the host-only overlay (enp0s8 192.168.56.20/24, hosts master -> 192.168.56.10),
+#             and the revert fails unless SSH to puppet8node then comes from 192.168.56.1 to 192.168.56.20 and the
+#             node resolves the master to 192.168.56.10. No agent run: the state token stays the snapshot's.
+# P8_NODE_NET overrides the file (tests only).
 # Every successful revert marks the node's state token (kernel boot ID + hash of the agent's
 # last_run_summary) through records.py revert-mark; record_green.sh accepts a GREEN only if its harness
 # run started on that token (HQ batch-3 acceptance, item 1). `revert_node.sh --node-state` prints the token and
@@ -41,6 +48,12 @@ readonly POWEROFF_TIMEOUT_SECONDS=30
 readonly SSH_TIMEOUT_SECONDS=120
 readonly POLL_INTERVAL_SECONDS=2
 readonly APT_UPDATE_TIMEOUT_SECONDS=180
+readonly NODE_WIFI_ALIAS="puppet8node-wifi"
+readonly LAPTOP_HOSTONLY_IP="192.168.56.1"
+readonly NODE_HOSTONLY_IP="192.168.56.20"
+readonly MASTER_HOSTONLY_IP="192.168.56.10"
+# The overlay, run on the node as root through sudo: netplan for enp0s8, then the master's hosts line.
+readonly OVERLAY_CMD='printf "network:\n  version: 2\n  ethernets:\n    enp0s8:\n      dhcp4: false\n      addresses: [192.168.56.20/24]\n" | sudo -n tee /etc/netplan/60-p8-hostonly.yaml >/dev/null && sudo -n chmod 600 /etc/netplan/60-p8-hostonly.yaml && sudo -n netplan generate && sudo -n netplan apply && sudo -n sed -i -E "s/^[0-9.]+([[:space:]]+puppet8master\.example\.com)/192.168.56.10\1/" /etc/hosts'
 # HQ 2026-11-10 ruling 2: ssh through the ControlMaster shim (see sshmux/ssh).
 TOOLS_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 PATH="${TOOLS_DIR}/sshmux:${PATH}"
@@ -69,6 +82,17 @@ if [[ "${1:-}" == "--node-state" ]]; then
   exit
 fi
 [[ $# -eq 0 ]] || fail "Usage: $0 [--node-state]"
+
+LAB_ENV="${TOOLS_DIR}/../lab/lab.env"
+node_net="${P8_NODE_NET:-}"
+if [[ -z "$node_net" ]]; then
+  node_net="bridged"
+  if [[ -f "$LAB_ENV" ]]; then node_net="$(sed -n 's/^NODE_NET=//p' "$LAB_ENV" | tail -1)"; fi
+fi
+case "$node_net" in
+  bridged | hostonly) ;;
+  *) fail "NODE_NET must be bridged or hostonly (got '${node_net}'); no VM action was attempted." ;;
+esac
 
 ms_to_s() { printf '%d.%03d' "$(($1 / 1000))" "$(($1 % 1000))"; }
 
@@ -195,15 +219,40 @@ printf 'Starting node VM %q headless...\n' "$NODE_VM"
 VBoxManage startvm "$NODE_VM" --type headless ||
   fail "Could not start node VM '$NODE_VM'."
 
-printf 'Waiting up to %ss for SSH while the wlo1 bridge settles...\n' "$SSH_TIMEOUT_SECONDS"
-ssh_deadline=$((SECONDS + SSH_TIMEOUT_SECONDS))
-until ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" true >/dev/null 2>&1; do
-  if ((SECONDS >= ssh_deadline)); then
-    fail "Node '$NODE_SSH_ALIAS' did not become reachable by SSH within ${SSH_TIMEOUT_SECONDS}s."
-  fi
+wait_ssh() {
+  local alias="$1" ssh_deadline=$((SECONDS + SSH_TIMEOUT_SECONDS))
+  until ssh "${SSH_OPTIONS[@]}" "$alias" true >/dev/null 2>&1; do
+    if ((SECONDS >= ssh_deadline)); then
+      fail "Node '$alias' did not become reachable by SSH within ${SSH_TIMEOUT_SECONDS}s."
+    fi
 
-  sleep "$POLL_INTERVAL_SECONDS"
-done
+    sleep "$POLL_INTERVAL_SECONDS"
+  done
+}
+
+if [[ "$node_net" == "hostonly" ]]; then
+  printf 'Waiting up to %ss for SSH over %s while the wlo1 bridge settles...\n' "$SSH_TIMEOUT_SECONDS" "$NODE_WIFI_ALIAS"
+  wait_ssh "$NODE_WIFI_ALIAS"
+  printf 'Applying the host-only overlay (enp0s8 %s, master %s)...\n' "$NODE_HOSTONLY_IP" "$MASTER_HOSTONLY_IP"
+  # shellcheck disable=SC2029  # the overlay is a local constant
+  ssh "${SSH_OPTIONS[@]}" "$NODE_WIFI_ALIAS" "$OVERLAY_CMD" ||
+    fail "The host-only overlay failed on '$NODE_WIFI_ALIAS'."
+  wait_ssh "$NODE_SSH_ALIAS"
+  # The path, not only success: a fresh connection (-S none) must come from the laptop's host-only address.
+  # shellcheck disable=SC2016  # $SSH_CONNECTION is the node's
+  connection="$(ssh "${SSH_OPTIONS[@]}" -S none "$NODE_SSH_ALIAS" 'echo $SSH_CONNECTION')" ||
+    fail "Node '$NODE_SSH_ALIAS' stopped responding during the path check."
+  read -r conn_src _ conn_dst _ <<<"$connection"
+  [[ "$conn_src" == "$LAPTOP_HOSTONLY_IP" && "$conn_dst" == "$NODE_HOSTONLY_IP" ]] ||
+    fail "Path check failed: SSH_CONNECTION '${connection}', expected ${LAPTOP_HOSTONLY_IP} -> ${NODE_HOSTONLY_IP}."
+  # shellcheck disable=SC2029  # the host name is a local constant
+  resolved="$(ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" "getent hosts ${MASTER_SERVICE_HOST}")" || resolved=""
+  [[ "${resolved%% *}" == "$MASTER_HOSTONLY_IP" ]] ||
+    fail "The node resolves ${MASTER_SERVICE_HOST} to '${resolved%% *}', expected ${MASTER_HOSTONLY_IP}."
+else
+  printf 'Waiting up to %ss for SSH while the wlo1 bridge settles...\n' "$SSH_TIMEOUT_SECONDS"
+  wait_ssh "$NODE_SSH_ALIAS"
+fi
 t_ssh="$(now_ms)"
 
 if ! node_hostname="$(ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" hostname)"; then
@@ -236,8 +285,8 @@ t_end="$(now_ms)"
 node_state_token | python3 "${TOOLS_DIR}/records.py" revert-mark "$NODE_SNAPSHOT" ||
   fail "Could not read or record the node's state token after the revert."
 
-printf 'SUCCESS: node %q restored to %q; SSH, hostname, and %s:%s connectivity verified.\n' \
-  "$NODE_VM" "$NODE_SNAPSHOT" "$MASTER_SERVICE_HOST" "$MASTER_SERVICE_PORT"
+printf 'SUCCESS: node %q restored to %q (network %s); SSH, hostname, and %s:%s connectivity verified.\n' \
+  "$NODE_VM" "$NODE_SNAPSHOT" "$node_net" "$MASTER_SERVICE_HOST" "$MASTER_SERVICE_PORT"
 printf 'REVERT_METRICS {"snapshot":"%s","total_s":%s,"master_check_s":%s,"poweroff_s":%s,"restore_s":%s,"boot_to_ssh_s":%s,"apt_update_s":%s,"verify_s":%s}\n' \
   "$NODE_SNAPSHOT" \
   "$(ms_to_s $((t_end - t_start)))" "$(ms_to_s $((t_master - t_start)))" "$(ms_to_s $((t_off - t_master)))" \

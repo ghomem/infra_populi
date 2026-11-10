@@ -1116,3 +1116,27 @@ fixture domain of the nginx/ssl classes), keeping p8test.invalid, *.p8test.inval
     catch that error.
 - **New pilot check:** nginx_static_domain `https-name-verifies`, a hostname-verified TLS handshake against the
   bundle's CA.
+
+## 2026-11-10 — lab network step 4: tracked overlay setting (HQ step review C)
+`.codex_state/lab/lab.env` `NODE_NET=bridged|hostonly` is read by revert_node.sh; `P8_NODE_NET` overrides it in tests
+only; an unknown value fails before any VM action; an absent file means bridged.
+- **`bridged`:** unchanged behaviour, proven by tests and one real revert.
+- **`hostonly`:**
+  1. Reach the restored v2 node over `puppet8node-wifi`.
+  2. Apply the overlay: enp0s8 192.168.56.20/24 via netplan, and the hosts line for puppet8master.example.com →
+     192.168.56.10.
+  3. FAIL unless a fresh (`-S none`) SSH to `puppet8node` shows `$SSH_CONNECTION` 192.168.56.1 → 192.168.56.20 and the
+     node resolves the master to 192.168.56.10.
+  4. Run the usual checks.
+  5. Mark the state token last; no agent run.
+
+The setting flips to hostonly in step 6 with the aliases, and is removed with the overlay in step 9.
+
+Steps executed so far (escalations/lab-network-static.md):
+- step 0 PASS;
+- step 1 (Salatiel: master NIC2) verified;
+- step 1a (HostKeyAlias on all lab aliases, seeded from the trusted address entries; `-wifi` fallbacks; BatchMode
+  connects) PASS;
+- step 2 (master enp0s8 192.168.56.10 under the dead-man timer, disarmed after the path-asserted checks) PASS;
+- step 3 (one-off node trial: 8140 and getent asserted over host-only, noop agent rc 0, apt over NIC1) PASS, node
+  reverted.

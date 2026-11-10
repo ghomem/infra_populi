@@ -98,3 +98,63 @@ def test_unreadable_node_state_token_fails_the_revert(lab):
     proc = lab.run([SCRIPT])
     assert proc.returncode == 1 and "state token" in proc.stderr
     assert not (lab.root / "node_revert.json").exists()
+
+
+# HQ step review C (lab-network plan): NODE_NET from the tracked .codex_state/lab/lab.env; P8_NODE_NET = test override.
+HOSTONLY = [
+    {"match": r"SSH_CONNECTION", "stdout": "192.168.56.1 51234 192.168.56.20 22\n"},
+    {"match": r"getent hosts puppet8master\.example\.com", "stdout": "192.168.56.10   puppet8master.example.com puppet8master\n"},
+]
+
+
+def ssh_lines(lab):
+    return [" ".join(c[1:]) for c in lab.calls("ssh")]
+
+
+def test_tracked_setting_is_bridged_until_the_switch():
+    text = (TOOLS.parent / "lab" / "lab.env").read_text()
+    assert [l for l in text.splitlines() if l.startswith("NODE_NET=")] == ["NODE_NET=bridged"]
+
+
+def test_bridged_mode_never_uses_the_wifi_alias_or_the_overlay(lab):
+    proc = lab.run([SCRIPT], env={"P8_NODE_NET": "bridged"})
+    assert proc.returncode == 0, proc.stderr
+    assert not any("puppet8node-wifi" in l or "netplan" in l or "SSH_CONNECTION" in l for l in ssh_lines(lab))
+    assert "(network bridged)" in proc.stdout
+
+
+def test_hostonly_mode_overlays_over_wifi_then_proves_the_path_before_anything_else(lab):
+    lab.world["ssh"][:0] = HOSTONLY
+    proc = lab.run([SCRIPT], env={"P8_NODE_NET": "hostonly"})
+    assert proc.returncode == 0, proc.stderr
+    lines = ssh_lines(lab)
+    first = lambda pat: next(i for i, l in enumerate(lines) if pat in l)  # noqa: E731
+    overlay = first("netplan apply")
+    assert "puppet8node-wifi" in lines[overlay] and "192.168.56.20/24" in lines[overlay]
+    assert "puppet8master\\.example\\.com)/192.168.56.10" in lines[overlay]
+    assert lines.index(next(l for l in lines if l.endswith("puppet8node-wifi true"))) < overlay
+    path = first("SSH_CONNECTION")
+    assert "-S none" in lines[path] and "puppet8node echo" in lines[path]
+    assert overlay < path < first("getent hosts") < first("puppet8node hostname") < first("apt-get -q update") \
+        < first("/dev/tcp/") < first("random/boot_id")
+    assert master_actions(lab) == [] and "(network hostonly)" in proc.stdout
+
+
+@pytest.mark.parametrize("rule, message", [
+    ({"match": r"SSH_CONNECTION", "stdout": "192.168.77.203 51234 192.168.77.185 22\n"},
+     "Path check failed: SSH_CONNECTION '192.168.77.203 51234 192.168.77.185 22'"),
+    ({"match": r"getent hosts", "stdout": "192.168.77.166   puppet8master.example.com\n"},
+     "resolves puppet8master.example.com to '192.168.77.166', expected 192.168.56.10"),
+    ({"match": r"netplan apply", "rc": 1}, "The host-only overlay failed"),
+])
+def test_hostonly_mode_fails_closed_and_records_no_revert(lab, rule, message):
+    lab.world["ssh"][:0] = [rule] + HOSTONLY
+    proc = lab.run([SCRIPT], env={"P8_NODE_NET": "hostonly"})
+    assert proc.returncode == 1 and message in proc.stderr
+    assert not (lab.root / "node_revert.json").exists()  # no state token: the harness will call the node stale
+
+
+def test_an_unknown_network_mode_acts_on_no_vm(lab):
+    proc = lab.run([SCRIPT], env={"P8_NODE_NET": "nat"})
+    assert proc.returncode == 1 and "NODE_NET must be bridged or hostonly (got 'nat')" in proc.stderr
+    assert lab.calls("VBoxManage") == [] and lab.calls("ssh") == []

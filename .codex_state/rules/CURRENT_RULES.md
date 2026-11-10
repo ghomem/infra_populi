@@ -2,7 +2,14 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-69 entries; 6 marked superseded (in whole or part); newest first.
+70 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-10 — lab network step 4: tracked overlay setting (HQ step review C)
+- 1. Reach the restored v2 node over `puppet8node-wifi`.
+- 2. Apply the overlay: enp0s8 192.168.56.20/24 via netplan, and the hosts line for puppet8master.example.com →
+- 3. FAIL unless a fresh (`-S none`) SSH to `puppet8node` shows `$SSH_CONNECTION` 192.168.56.1 → 192.168.56.20 and the
+- 4. Run the usual checks.
+- 5. Mark the state token last; no agent run.
 
 ## 2026-11-10 — HQ: fixture PKI names the fixture domain (master_fixtures.sh pki v2)
 - (no numbered/Rule/Decision lines; read the entry)
