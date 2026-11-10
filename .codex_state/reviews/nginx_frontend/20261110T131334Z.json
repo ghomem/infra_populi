@@ -1,0 +1,93 @@
+{
+ "schema": 1,
+ "class": "nginx_frontend",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-10T13:13:34Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "582e60c3dfd3",
+ "migrate_subject": "P8: migrate puppet_infrastructure::nginx_frontend",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 582e60c3dfd3; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `nginx_frontend Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppet-nginx', '8.4.0'), ('puppetlabs-host_core', '1.3.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 33 catalog events; run 2: 1 event(s) only from expected_run2_events Notify[Generated Upstream members for *] [own: Notify[Generated Upstream members for *]; inherited: none] (judge the header justification); COVERAGE puppet_infrastructure::nginx_frontend: 53 concrete resources (+45 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (3 added comment lines at top; no non-comment change vs release-0.9.10 cf477c6; DIFF B identical)",
+   "Expected run-2 event Notify[Generated Upstream members for *] verified independently: baseline nginx_frontend.pp:280 declares puppet_infrastructure::nginx_frontend_domain {$domain:}, and baseline nginx_frontend_domain.pp:252 declares notify {\"Generated Upstream members for ${title} are: ...\": loglevel => 'debug'} in the Array branch; a notify resource emits its message as an event on every run, so the run-2 event is upstream design, not the migration"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 3,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependencies: puppet-nginx 8.4.0 (nginx::resource::*), puppetlabs-host_core 1.3.0 (vendored with Puppet 8.24.2; host).",
+  "# Expected run-2 events: Notify[Generated Upstream members for *] \u2014 declared by the puppet_infrastructure::nginx_frontend_domain this class declares (baseline `notify { ...: loglevel => 'debug' }`); a notify reports its message on every run."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 33,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::nginx_frontend: 53 concrete resources (+45 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v2",
+   "total_s": 60.881,
+   "master_check_s": 0.523,
+   "poweroff_s": 1.36,
+   "restore_s": 0.503,
+   "boot_to_ssh_s": 18.807,
+   "apt_update_s": 39.092,
+   "verify_s": 0.596
+  },
+  "log": ".codex_state/logs/reviews/nginx_frontend.20261110T131050Z.harness.log",
+  "run2_expected_events": "RUN2_EXPECTED_EVENTS: 1 from Notify[Generated Upstream members for *] [own: Notify[Generated Upstream members for *]; inherited: none] (plan"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
