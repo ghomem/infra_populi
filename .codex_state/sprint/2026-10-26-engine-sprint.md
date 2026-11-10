@@ -94,3 +94,4 @@ band commits from now on stash unrelated work first.
 | b3-rulings per-class HQ rulings reach Codex | done | this commit | rules/class_rulings.txt (single source: class → ruled change → DD ref); orientation.py prints them as facts; first entry nginx_frontend_domain Integer() (ck1 ruling 8); 2 tests |
 | b3-fix hazard14 honours the required_base closure | done | this commit | nginx_frontend_domain: nginx::resource::* + required_base nginx_base (declares class nginx) was still flagged; closure_providers() shared with the probe; 1 test |
 | b3-run2-report harness report stage + glob refs + runbook minimal-change | done | this commit | debug-level Notify invisible to the console gate (nginx_frontend_domain run 1 BLOCKED cat 3); report read via node Puppet ruby, fail closed; 4 tests |
+| b3-classify inherited parameter_order lint is not syntax-work | done | this commit | nginx_frontend: baseline-identical, compiles; only finding was inherited parameter_order x2; 2 tests |

@@ -54,6 +54,11 @@ def compile_only(cls: str) -> tuple[str, str]:
     return ("fail" if "COMPILE FAILED" in text or "no concrete resources" in text else "error"), first
 
 
+# Baseline-inherited lint that Puppet 8 accepts (the compile-only step still proves it): Codex is told to leave it
+# (CODEX_RUNBOOK §2.3), so it never routes a baseline-identical class to syntax-work on its own.
+COSMETIC_INHERITED = ("lint:parameter_order",)
+
+
 def decide(cls: str) -> tuple[int, str, list[str]]:
     base = baseline.for_class(cls)
     drift = baseline.local_drift(cls, base)
@@ -62,8 +67,11 @@ def decide(cls: str) -> tuple[int, str, list[str]]:
     report = pregate.pregate_class(cls)
     if report.status == "ERROR":
         return 2, "ERROR", [f"pregate {c}: {d}" for lvl, c, d in report.lines if lvl == "ERROR"]
-    reasons = [f"pregate {c}: {d}" for lvl, c, d in report.lines if lvl == "FINDING"]
-    if reasons and all(c in ("hazard14-module-base", "hazard4-prereq") for lvl, c, d in report.lines if lvl == "FINDING"):
+    findings = [(c, d) for lvl, c, d in report.lines if lvl == "FINDING"]
+    inherited = [(c, d) for c, d in findings if c in COSMETIC_INHERITED and d.endswith("(also in baseline)")]
+    findings = [f for f in findings if f not in inherited]
+    reasons = [f"pregate {c}: {d}" for c, d in findings]
+    if reasons and all(c in ("hazard14-module-base", "hazard4-prereq") for c, _ in findings):
         return 4, "context-gap", reasons  # a plan required_external (advisor), not syntax work
     if reasons:
         return 1, "syntax-work", reasons
@@ -74,7 +82,9 @@ def decide(cls: str) -> tuple[int, str, list[str]]:
         return 4, "context-gap", [f"compile-only: {line}"]
     if status == "fail":
         return 1, "syntax-work", [f"compile-only: {line}"]
-    return 0, "unchanged-validated", [f"identical to {base.name}; pregate CLEAN; compile-only OK"]
+    left = f" (inherited lint left as in {base.name}: {', '.join(sorted({c for c, _ in inherited}))} x{len(inherited)})" \
+        if inherited else ""
+    return 0, "unchanged-validated", [f"identical to {base.name}; pregate CLEAN{left}; compile-only OK"]
 
 
 def main(argv: list[str]) -> int:

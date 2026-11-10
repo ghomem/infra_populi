@@ -987,3 +987,7 @@ while record_green's own commit is being made. Codex commits through record_gree
    packet line fixes the change's shape. Evidence: run 1 also reordered parameters (parameter_order lint, baseline-
    inherited, not a compile error) and replaced the two baseline comment lines above the ruled `Integer()` change —
    both would fail review (comments_preserved). Run 1's edits were discarded; run 2 is dispatched with this runbook.
+4. (same day) classify_path no longer routes a baseline-identical class to syntax-work for baseline-inherited
+   `lint:parameter_order` alone (COSMETIC_INHERITED): Puppet 8 accepts the order (compile-only still decides) and §2.3
+   tells Codex to leave it, so a dispatch would be empty. Other inherited lint (legacy_facts, top_scope_facts, ...) stays
+   syntax-work — those are real Puppet 8 breaks. First case: nginx_frontend.

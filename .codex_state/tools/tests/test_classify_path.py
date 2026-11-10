@@ -96,3 +96,21 @@ def test_only_prerequisite_probe_findings_route_to_context_gap(world):
     world["report"] = report(("FINDING", "hazard4-prereq", "/usr/lib64/nagios/plugins ... does not exist"),
                              ("FINDING", "hazard14-module-base", "uses firewall"))
     assert cp.decide("x")[:2] == (4, "context-gap")
+
+
+def test_inherited_parameter_order_lint_alone_is_not_syntax_work(world):
+    world["report"] = report(("FINDING", "lint:parameter_order",
+                              "manifests/x.pp:25: optional parameter listed before required parameter (also in baseline)"))
+    code, path, reasons = cp.decide("x")
+    assert (code, path) == (0, "unchanged-validated") and world["compiled"] == ["x"]
+    assert "inherited lint left as in" in reasons[0] and "lint:parameter_order x1" in reasons[0]
+
+
+def test_inherited_lint_of_another_kind_or_a_new_one_is_still_syntax_work(world):
+    world["report"] = report(("FINDING", "lint:legacy_facts", "manifests/x.pp:3: legacy fact (also in baseline)"))
+    assert cp.decide("x")[:2] == (1, "syntax-work")
+    world["report"] = report(("FINDING", "lint:parameter_order", "manifests/x.pp:25: optional parameter listed first"))
+    assert cp.decide("x")[:2] == (1, "syntax-work")
+    world["compile"] = ("fail", "Error: no parameter named 'action'")
+    world["report"] = report(("FINDING", "lint:parameter_order", "manifests/x.pp:25: x (also in baseline)"))
+    assert cp.decide("x")[:2] == (1, "syntax-work")  # the compile still decides
