@@ -142,6 +142,11 @@ if not isinstance(node_fixture, str) or (node_fixture and not re.fullmatch(r"[a-
 
 print(f"OWNER_VALIDATED={owner_validated}")
 print(f"NODE_FIXTURE={node_fixture}")
+expected = data.get("expected_run2_events", [])
+if not isinstance(expected, list) or any(not isinstance(e, str) or not re.fullmatch(r"[A-Z][A-Za-z0-9_:]*\[[^\]\[\n]+\]", e) for e in expected):
+    fail(f"expected_run2_events is invalid: {expected!r}")
+for e in expected:
+    print(f"EXPECTED_RUN2={e}")
 print("END")
 PY
 )"
@@ -158,6 +163,7 @@ PY
   CLASSIFY_REQUIRED_EXTERNALS=()
   CLASSIFY_OWNER_VALIDATED=""
   CLASSIFY_NODE_FIXTURE=""
+  CLASSIFY_EXPECTED_RUN2=()
   mapfile -t records <<< "$parsed"
   for line in "${records[@]}"; do
     case "$line" in
@@ -167,6 +173,7 @@ PY
       EXTERNAL=*) CLASSIFY_REQUIRED_EXTERNALS+=("${line#EXTERNAL=}") ;;
       OWNER_VALIDATED=*) CLASSIFY_OWNER_VALIDATED="${line#OWNER_VALIDATED=}" ;;
       NODE_FIXTURE=*) CLASSIFY_NODE_FIXTURE="${line#NODE_FIXTURE=}" ;;
+      EXPECTED_RUN2=*) CLASSIFY_EXPECTED_RUN2+=("${line#EXPECTED_RUN2=}") ;;
       END) ;;
       *) die "Invalid classification for class '${requested}': unexpected parsed field" ;;
     esac
@@ -499,6 +506,34 @@ PY
   done
 }
 
+# HQ 2026-11-10 ruling 1: plan `expected_run2_events` of the target and its expanded required_base — the only
+# resources allowed to report events on run 2 (each justified in the class header and checked by the reviewer).
+collect_expected_run2() {
+  local cls
+  EXPECTED_RUN2_REFS=()
+  [[ -z "${FIXTURE_NAME:-}" ]] || return 0
+  expand_target_classes "$@"
+  for cls in "${EXPANDED_CLASSES[@]}"; do
+    [[ "$cls" == puppet_infrastructure::* ]] || continue
+    classify_target "$cls"
+    EXPECTED_RUN2_REFS+=("${CLASSIFY_EXPECTED_RUN2[@]}")
+  done
+}
+
+# Splits run-2 event lines into unexpected ones (stdout) and counts the expected ones (EXPECTED_RUN2_HITS).
+filter_expected_run2() {
+  local line ref hit
+  EXPECTED_RUN2_HITS=0
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    hit=0
+    for ref in "${EXPECTED_RUN2_REFS[@]}"; do
+      if [[ "$line" == *"/${ref}/"* || "$line" == *"/${ref}:"* ]]; then hit=1; break; fi
+    done
+    if [[ $hit -eq 1 ]]; then EXPECTED_RUN2_HITS=$((EXPECTED_RUN2_HITS + 1)); else printf '%s\n' "$line"; fi
+  done
+}
+
 render_fixture_block() {
   local name="$1" path
   [[ "$name" =~ ^[a-z0-9_]+$ ]] || die "Invalid fixture name: '${name}'"
@@ -618,11 +653,24 @@ main() {
   [[ $rc2 -eq 0 || $rc2 -eq 2 ]] || die_agent_rc 2 "$rc2"
 
   offending="$(grep -E "$RUN2_FORBIDDEN_RE" <<<"$out2" || true)"
+  collect_expected_run2 "${classes[@]}"
+  if [[ ${#EXPECTED_RUN2_REFS[@]} -gt 0 ]]; then
+    local unexpected_file
+    unexpected_file="$(mktemp)"
+    filter_expected_run2 <<<"$offending" >"$unexpected_file"
+    offending="$(cat "$unexpected_file")"; rm -f "$unexpected_file"
+    echo "RUN2_EXPECTED_EVENTS: ${EXPECTED_RUN2_HITS} from ${EXPECTED_RUN2_REFS[*]} (plan expected_run2_events)"
+  fi
   if [[ -n "$offending" ]]; then
     printf 'Run 2 events:\n%s\n' "$offending" >&2
     die "Run 2 still applied changes (not idempotent). Fix and re-run."
   fi
-  [[ $rc2 -eq 0 ]] || die "Run 2 exited ${rc2}; GREEN requires exit 0 (no changes, no failures)."
+  if [[ $rc2 -ne 0 && ${EXPECTED_RUN2_HITS:-0} -eq 0 ]]; then
+    die "Run 2 exited ${rc2}; GREEN requires exit 0 (no changes, no failures)."
+  fi
+  if [[ $rc2 -ne 0 && $rc2 -ne 2 ]]; then
+    die "Run 2 exited ${rc2}; only exit 2 caused solely by expected run-2 events is accepted."
+  fi
 
   if [[ -n "${FIXTURE_NAME:-}" ]]; then
     echo "COVERAGE: skipped for engine fixture '${FIXTURE_NAME}'"
@@ -630,7 +678,11 @@ main() {
     coverage_check "${classes[@]}"
   fi
 
-  echo "GREEN: run 2 exited 0 with no change events (gate v2)."
+  if [[ ${EXPECTED_RUN2_HITS:-0} -gt 0 ]]; then
+    echo "GREEN: run 2 events limited to the plan's expected_run2_events (${EXPECTED_RUN2_REFS[*]}) (gate v2)."
+  else
+    echo "GREEN: run 2 exited 0 with no change events (gate v2)."
+  fi
   if [[ -z "${FIXTURE_NAME:-}" ]]; then
     # Step 3.2: stamp the code that went GREEN; record_green.sh refuses anything else.
     local -a stamp_opts=(--run1-events "$run1_events" --coverage "${COVERAGE_REPORT:-}")

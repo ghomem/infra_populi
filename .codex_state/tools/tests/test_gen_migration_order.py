@@ -190,3 +190,9 @@ def test_repo_node_fixtures_exist_for_the_planned_classes(gen):
     assert rows["user_sysmon"].node_fixture == "sysmon_server"
     assert rows["user_samba"].node_fixture == "samba_dc_standin"
     assert sum(1 for r in rows.values() if r.node_fixture) == 2
+
+
+def test_expected_run2_events_parse(gen):
+    rows = gen.parse_plan()
+    assert rows["packages_base"].expected_run2_events == ("Exec[apt_update]",)
+    assert sum(1 for r in rows.values() if r.expected_run2_events) == 1

@@ -887,3 +887,17 @@ UUID are appended to `.codex_state/lab/master_snapshots.jsonl` (commit it). `.cl
 script; denied on both VMs: snapshot restore/restorecurrent/delete/edit, unregistervm, modifyvm; on the master also
 direct snapshot take, controlvm poweroff and acpipowerbutton (shutdown only through the script). revert_node.sh keeps
 its own node operations (script internals are not Bash-tool commands). CLAUDE.md "Node lifecycle" updated.
+
+## 2026-11-10 — HQ rulings before batch 2 (1/3): per-class expected_run2_events
+Ruling: a plan column `expected_run2_events` (`;`-separated `Type[title]`) names the ONLY resources allowed to report
+events on harness run 2, for a class whose upstream design re-runs something every agent run. Not a general
+exemption: every entry needs a class-header justification line `# Expected run-2 events: <refs> — <why>` (enforced by
+record_green's header-check and review_class `records`, which also rejects a justification line without a plan
+entry) and the reviewer verifies the justification independently against the code/module (reviewer.md).
+Mechanics: the harness unions the entries of the target and its expanded required_base (a base's justified events
+travel with it); run 2 is GREEN only if every event line belongs to one of those resources; exit 2 is accepted only
+when caused solely by expected events; any other exit stays RED; it prints `RUN2_EXPECTED_EVENTS: N from <refs>`.
+First use: packages_base `Exec[apt_update]` — packages_base.pp:19 `class { 'apt': update => { frequency =>
+'always' } }`, the comment at :11 states the intent ("make sure apt-get update ... runs on each puppet run"), and
+puppetlabs-apt 11.3.2 update.pp:13-15/89-93 turns 'always' into `refreshonly => false` (module-documented).
+Phase 5 question for HQ (recorded, not acted on): `frequency => 'daily'` instead of 'always'.

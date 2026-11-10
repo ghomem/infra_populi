@@ -189,3 +189,41 @@ def test_fixture_runs_write_no_metrics(lab):
     agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 0, "stdout": APPLIED})
     assert harness(lab).returncode == 0
     assert not (lab.root / "metrics" / "events.jsonl").exists()
+
+
+# --- HQ 2026-11-10 ruling 1: plan expected_run2_events (packages_base: Exec[apt_update])
+APT_EVENT = "Notice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\n"
+PKG_COVERAGE = {"match": r"python3 - puppet_infrastructure::packages_base$", "stdout":
+                "COVERAGE puppet_infrastructure::packages_base: 7 concrete resources (+0 defined-type instances)\n"}
+
+
+def test_expected_run2_event_only_is_green(lab):
+    agent_runs(lab, {"rc": 2, "stdout": APT_EVENT + APPLIED}, {"rc": 2, "stdout": APT_EVENT + APPLIED})
+    lab.world["ssh"].insert(0, PKG_COVERAGE)
+    proc = lab.run([SCRIPT, "puppet_infrastructure::packages_base"])
+    assert proc.returncode == 0, proc.stderr
+    assert "RUN2_EXPECTED_EVENTS: 1 from Exec[apt_update]" in proc.stdout
+    assert "GREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update])" in proc.stdout
+
+
+def test_an_unexpected_event_beside_an_expected_one_is_red(lab):
+    other = "Notice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[vim]/ensure: created\n"
+    agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 2, "stdout": APT_EVENT + other + APPLIED})
+    lab.world["ssh"].insert(0, PKG_COVERAGE)
+    proc = lab.run([SCRIPT, "puppet_infrastructure::packages_base"])
+    assert proc.returncode == 1 and "Package[vim]" in proc.stderr and "not idempotent" in proc.stderr
+
+
+def test_expected_events_do_not_excuse_a_failed_run2(lab):
+    agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 6, "stdout": APT_EVENT + "Error: boom\n"})
+    lab.world["ssh"].insert(0, PKG_COVERAGE)
+    proc = lab.run([SCRIPT, "puppet_infrastructure::packages_base"])
+    assert proc.returncode == 1
+
+
+def test_class_without_expected_events_still_fails_on_the_same_event(lab):
+    agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 2, "stdout": APT_EVENT + APPLIED})
+    lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "stdout":
+        "COVERAGE puppet_infrastructure::puppet_backup: 2 concrete resources (+1 defined-type instances)\n"})
+    proc = lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"])
+    assert proc.returncode == 1 and "Exec[apt_update]" in proc.stderr

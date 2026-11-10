@@ -177,6 +177,24 @@ def defect_entry(cls: str, path: Path | None = None) -> dict | None:
     return None
 
 
+def run2_justification_problems(cls: str, manifest: str) -> list[str]:
+    """HQ 2026-11-10 ruling 1: every plan expected_run2_events entry is justified in the class header, and a header
+    justification line exists only when the plan has entries."""
+    row = generator.parse_plan().get(cls)
+    expected = row.expected_run2_events if row else ()
+    lines = [l for l in header_block(manifest) if re.match(r"^#\s*Expected run-2 events:", l)]
+    if expected and not lines:
+        return [f"plan expected_run2_events {list(expected)} but no `# Expected run-2 events: <refs> — <why>` header line"]
+    missing = [ref for ref in expected if not any(ref in l for l in lines)]
+    if missing:
+        return [f"header justification does not name {missing}"]
+    if lines and not expected:
+        return ["header has an `Expected run-2 events` line but the plan lists none for the class"]
+    if lines and not any(re.search(r"\S\s+[—-]+\s+\S", l.split(":", 1)[1]) for l in lines):
+        return ["`Expected run-2 events` line gives no justification after the refs (`<refs> — <why>`)"]
+    return []
+
+
 def header_block(text: str) -> list[str]:
     lines = []
     for line in text.splitlines():
@@ -365,6 +383,8 @@ def run_checks(cls: str, harness: bool, fresh: bool) -> dict:
                 rec.append(f"upstream defect fix not authorized: registry status `{ruled['status']}`")
             else:
                 out["ruled_change"] = ruled["change"]
+    for problem in run2_justification_problems(cls, show("HEAD", f"manifests/{cls}.pp") or ""):
+        rec.append(problem)
     if any(l.split()[:1] == [cls] for l in (STATE / "blocked.txt").read_text().splitlines() if not l.startswith("#")):
         rec.append("class is listed in blocked.txt")
     order = (STATE / "migration_order.md").read_text()
@@ -440,12 +460,17 @@ def run_checks(cls: str, harness: bool, fresh: bool) -> dict:
                           "coverage": coverage, "revert": json.loads(revert.group(1)) if revert else None,
                           "log": str(log.relative_to(REPO))}
         tail = [l for l in text.splitlines() if l.startswith(("ERROR", "GREEN", "Run 2 events", "Notice:"))][-6:]
-        if proc.returncode != 0 or "GREEN: run 2 exited 0" not in text:
+        expected_run2 = re.search(r"^RUN2_EXPECTED_EVENTS: (\d+) from (.*) \(plan", text, re.M)
+        out["harness"]["run2_expected_events"] = expected_run2.group(0) if expected_run2 else None
+        green = "GREEN: run 2 exited 0" in text or "GREEN: run 2 events limited to the plan's expected_run2_events" in text
+        if proc.returncode != 0 or not green:
             c["idempotent"] = result("fail", tail)
         elif not run1 or int(run1.group(1)) == 0:
             c["idempotent"] = result("needs-justification", "GREEN, but run 1 after a revert applied 0 catalog events")
         else:
-            c["idempotent"] = result("ok", f"GREEN; run 1 {run1.group(1)} catalog events; {'; '.join(coverage)}")
+            allowed = (f"; run 2: {expected_run2.group(1)} event(s) only from expected_run2_events {expected_run2.group(2)} "
+                       "(judge the header justification)") if expected_run2 and expected_run2.group(1) != "0" else ""
+            c["idempotent"] = result("ok", f"GREEN; run 1 {run1.group(1)} catalog events{allowed}; {'; '.join(coverage)}")
     else:
         c["idempotent"] = result("skipped", "--no-harness")
     return out

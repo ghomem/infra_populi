@@ -64,6 +64,7 @@ class ClassRow:
     required_external: tuple[str, ...]
     owner_validated: str
     node_fixture: str = ""
+    expected_run2_events: tuple[str, ...] = ()
 
     @property
     def sort_key(self) -> tuple[int, int, int, str]:
@@ -152,6 +153,7 @@ def parse_plan() -> dict[str, ClassRow]:
         headers.index("owner_validated") if "owner_validated" in headers else None
     )
     node_fixture_index = headers.index("node_fixture") if "node_fixture" in headers else None
+    run2_index = headers.index("expected_run2_events") if "expected_run2_events" in headers else None
     rows: dict[str, ClassRow] = {}
 
     for line_number, line in enumerate(lines[header_index + 2 :], start=header_index + 3):
@@ -206,6 +208,11 @@ def parse_plan() -> dict[str, ClassRow]:
             fail(f"invalid node_fixture for {name}: {node_fixture!r}")
         if node_fixture and not (SCRIPT_DIR / "tools" / "tests" / "fixtures" / "node" / f"{node_fixture}.pp").is_file():
             fail(f"node_fixture for {name} does not exist: tools/tests/fixtures/node/{node_fixture}.pp")
+        run2_cell = cells[run2_index] if run2_index is not None else ""
+        expected_run2 = tuple(r.strip() for r in run2_cell.split(";") if r.strip())
+        for ref in expected_run2:
+            if not re.fullmatch(r"[A-Z][A-Za-z0-9_:]*\[[^\]\[]+\]", ref):
+                fail(f"invalid expected_run2_events entry for {name}: {ref!r} (want Type[title])")
         rows[name] = ClassRow(
             name=name,
             complexity=parse_int(cells[indexes["complexity"]], "complexity", name),
@@ -219,6 +226,7 @@ def parse_plan() -> dict[str, ClassRow]:
             required_external=required_external,
             owner_validated=owner_validated,
             node_fixture=node_fixture,
+            expected_run2_events=expected_run2,
         )
 
     if not rows:
@@ -711,6 +719,7 @@ def classify(class_name: str) -> None:
                 "required_external": row.required_external,
                 "owner_validated": row.owner_validated,
                 "node_fixture": row.node_fixture,
+                "expected_run2_events": list(row.expected_run2_events),
             }
         )
     )

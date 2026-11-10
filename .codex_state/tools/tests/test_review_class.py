@@ -166,3 +166,14 @@ def test_repo_registry_has_the_ruled_fixes():
                 "mariadb_server", "openvpn_server", "firewall_addon_hosting"):
         assert rc.defect_entry(cls)["status"].startswith(("ruled", "applied")), cls
     assert rc.defect_entry("linux_policies_user")["status"] == "ruled"
+
+
+def test_run2_justification_rules():
+    header = "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.\n# Module dependency: puppetlabs-apt 11.3.2.\n"
+    body = "class puppet_infrastructure::packages_base {\n}\n"
+    ok = header + "# Expected run-2 events: Exec[apt_update] — apt update frequency 'always' is upstream's choice\n" + body
+    assert rc.run2_justification_problems("packages_base", ok) == []
+    assert "no `# Expected run-2 events" in rc.run2_justification_problems("packages_base", header + body)[0]
+    bare = header + "# Expected run-2 events: Exec[apt_update]\n" + body
+    assert "gives no justification" in rc.run2_justification_problems("packages_base", bare)[0]
+    assert "plan lists none" in rc.run2_justification_problems("backup", ok.replace("packages_base", "backup"))[0]

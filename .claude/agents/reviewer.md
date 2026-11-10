@@ -42,6 +42,10 @@ Steps, all required:
    - A tracker marker with `mock-apply: <short>` means the harness applied the plan's synthetic node fixture
      (`.codex_state/tools/tests/fixtures/node/<name>.pp`, paths/users/commands of a service the lab lacks): judge the
      class as usual; the fixture is not part of the class and is not in DIFF A. Behaviour stays unverified.
+   - If `idempotent` says run 2 had events only from the plan's `expected_run2_events` (HQ 2026-11-10 ruling 1), verify
+     the header's `# Expected run-2 events: <refs> — <why>` justification INDEPENDENTLY against the code and the module
+     (e.g. read the module's class/defaults for the resource): the events must be caused by upstream's own design, not
+     by the migration. If the justification does not hold, faithful = fail.
    - DIFF B (the newest migrate commit itself) shows what the migration changed; `provenance` reports drift
      that predates it. For a RE-migration (the class has an earlier migrate commit) DIFF B replaces the earlier
      migrated content: that content is expected to differ from the baseline, and DIFF A carries the whole

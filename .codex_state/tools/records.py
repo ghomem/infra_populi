@@ -151,6 +151,10 @@ def cmd_header_check(cls: str) -> int:
         print(f"HEADER on manifests/{cls}.pp names {', '.join(unversioned)} without a version (x.y.z) — the reviewer "
               "reads every `author-module` in the header as a dependency claim", file=sys.stderr)
         return 1
+    problems = review_class.run2_justification_problems(cls, (REPO / f"manifests/{cls}.pp").read_text(encoding="utf-8"))
+    if problems:
+        print(f"HEADER on manifests/{cls}.pp: " + "; ".join(problems), file=sys.stderr)
+        return 1
     print(f"HEADER OK {cls}: " + " | ".join(line.strip() for line in added))
     return 0
 
