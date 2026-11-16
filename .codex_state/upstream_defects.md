@@ -82,10 +82,28 @@ the entry's `Ruled change` (plus ordinary Puppet 8 translations); anything else 
   (firewall, firewall_secure, firewall_secure_extra — no OUTPUT rule anywhere; `8140` appears in no manifest or
   template) permits NEW outbound to the master on 8140, and every production node is agent-mode (HQ ruling 3), so
   the class severs the agent from its master.
-- Ruled change (HQ production-facts ruling 3): add
+- Ruled change (HQ production-facts ruling 3; destination amended by the HQ NAT step review C, 2026-11-16): add
   `firewall { '152 OUTPUT PUPPET MASTER': chain => 'OUTPUT', proto => 'tcp', dport => '8140',
-  destination => $server_facts['serverip'], action => 'accept' }` (written with the firewall-8 `jump` translation like
-  the class's other rules). `$server_facts['serverip']` is the master's address as the compiling master sees it.
+  destination => $server_facts['servername'], jump => 'accept' }` (the firewall-8 `jump` translation, like the class's
+  other rules). puppetlabs-firewall 8.3.0 resolves a hostname destination ON THE AGENT
+  (`PuppetX::Firewall::Utility.host_to_ip`: `Resolv.each_address`, /etc/hosts then DNS) and compares the resolved /32
+  with the installed rule (`insync?` → `host_to_mask`), so the rule carries the address the node resolves for its
+  master's name.
+- Superseded wording: `destination => $server_facts['serverip']`. On a two-NIC master `serverip` is the master's
+  primary address, not the one the node uses: in the lab 10.0.2.15 (NIC1 NAT) while the node reaches the master at
+  192.168.56.10, so that rule would have let the class cut the agent off.
+- Limit: the rule follows the master's own FQDN (`servername`), resolved on the node. A node that reaches its master
+  under a different name whose address differs from the FQDN's (split DNS, an alias to another interface) is not
+  covered; the agent's `server` setting is not a fact. A name the node cannot resolve fails that resource loudly
+  ("Failed to resolve hostname"), never silently.
+- Idempotency proof (2026-11-16, lab-network-nat.md step 6, NIC1 NAT on both VMs): the class with the `action` →
+  `jump` translation and this rule, in the worktree only (not committed or recorded; the class waits for its
+  re-migration), `test_class.sh --revert-first puppet_infrastructure::firewall_addon_hosting` → GREEN (stamp code
+  b7cc55a8e16a at d31e872, node fresh). Run 2 reached the master through the class's own `OUTPUT` DROP policy with no
+  change events. The node's `iptables -S OUTPUT` shows
+  `-A OUTPUT -d 192.168.56.10/32 -p tcp -m tcp --dport 8140 -m comment --comment "152 OUTPUT PUPPET MASTER" -j ACCEPT`;
+  the master's `ipaddress` (= `serverip`) was 10.0.2.15. The manifest was restored and the node reverted. Seen in the
+  same run: "Unable to persist firewall rules" (no Class['firewall'] in the harness; hazard 14 at re-migration).
 - Status: ruled
 
 ## linux_policies_user
