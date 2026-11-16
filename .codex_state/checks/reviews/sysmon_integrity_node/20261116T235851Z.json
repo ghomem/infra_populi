@@ -1,0 +1,21 @@
+{
+ "class": "sysmon_integrity_node",
+ "at": "20261116T235851Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "check-script-carries-the-checklist (manifests/sysmon_integrity_node.pp:9-13): baseline declares ${bindir}/nagios-integrity.sh owner root mode 0755 from the nagios-integrity.sh.erb template; probe stats owner/mode of /opt/puppet-infrastructure/bin/nagios-integrity.sh (filesystem::bindir) and checks bash syntax, expect 'root 755' matches",
+  "check-script-carries-the-checklist (templates/sysmon/nagios-integrity.sh.erb:35): template emits <%= @checklist %> verbatim on its own line inside CHECKLIST; params fixture checklist is 'f9d861282c581aefc93a5475254cec31  /var/tmp/p8test-integrity.txt', so grep -c of exactly that line expecting 1 tests the declared rendering",
+  "check-ok-when-the-file-matches (templates/sysmon/nagios-integrity.sh.erb:54): with the listed file present, lines 42-51 run md5sum -c on the item and exit CRITICAL on mismatch, else line 54-55 print 'OK: exit code 0' and exit 0; md5 of 'p8test integrity fixture\\n' is f9d861282c581aefc93a5475254cec31 (verified locally), so the action (install of that content, fully declared in mutates) makes the read-only effect (running the plugin) produce exactly the expected 'OK: exit code 0'/rc=0; on the clean node the plugin is absent so the effect fails as a negative control should"
+ ],
+ "review_s": 78.9,
+ "check_file_sha256": "95c43f091edad79caee8073b1ce8292cc479acff766756f29a751c142e8dda48",
+ "reviewer_result": "20261116T235733Z-reviewer",
+ "author_result": "20261116T235616Z-author",
+ "findings": []
+}
