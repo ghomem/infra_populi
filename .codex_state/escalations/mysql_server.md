@@ -28,8 +28,10 @@ data binding in production Hiera.**
    (provider-derived defaults in `mysql::params` beyond the service name); the harness run after the change shows it.
 2. **Data binding** `mysql::server::service_name: 'mysql'` in production Hiera, next to the module upgrade. The class
    stays byte-identical, but every MySQL node then depends on that key; the lab would carry the same key as a fixture.
-3. **Pin puppetlabs-mysql below the change.** Not available: the releases before the Ubuntu 20.04 → MariaDB default do
-   not support Puppet 8 / OpenVox.
+3. **Pin puppetlabs-mysql below the change.** Not available (checked on the Forge and the tagged sources): the
+   Ubuntu ≥ 20.04 → MariaDB default arrived in 13.0.0 (10.10.0–12.0.0 have none), and Puppet 8 support only in
+   14.0.0 (11.0.0–13.0.0 declare `puppet >= 6 < 8`; 14.0.0–16.x `>= 7 < 9`; 17.x `>= 8 < 9`). Every Puppet-8 release
+   carries the default.
 
 Recommendation: 1. It keeps the behaviour inside the class that owns it, it is a one-parameter change, and
 mariadb_server (same upstream merge) is unaffected because it wants the MariaDB default.
