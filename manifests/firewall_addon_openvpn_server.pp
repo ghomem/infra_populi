@@ -1,3 +1,5 @@
+# Puppet 8 migration: preserve bridge forwarding, NAT and IPv4 forwarding; rename firewall action to jump.
+# Module dependencies: puppetlabs-firewall 8.3.0; thias-sysctl 1.0.8.
 ### Purpose ########
 # This class provides necessary firewall configurations for openvpn servers
 
@@ -14,9 +16,9 @@ class puppet_infrastructure::firewall_addon_openvpn_server (
 
     # specific firewall rules to comunication between bridge interface and the exterior
     #
-    firewall { '202 allow flow from br0 exterior':      chain => 'FORWARD', iniface => $lan_bridge_iface, outiface => $wan_iface,        proto => 'all', action => 'accept' }
-    firewall { '203 allow flow from exterior into br0': chain => 'FORWARD', iniface => $wan_iface,        outiface => $lan_bridge_iface, proto => 'all', action => 'accept', state => ['RELATED', 'ESTABLISHED'], }
-    firewall { '204 allow flow loopback on br0':        chain => 'FORWARD', iniface => $lan_bridge_iface, outiface => $lan_bridge_iface, proto => 'all', action => 'accept' }
+    firewall { '202 allow flow from br0 exterior':      chain => 'FORWARD', iniface => $lan_bridge_iface, outiface => $wan_iface,        proto => 'all', jump => 'accept' }
+    firewall { '203 allow flow from exterior into br0': chain => 'FORWARD', iniface => $wan_iface,        outiface => $lan_bridge_iface, proto => 'all', jump => 'accept', state => ['RELATED', 'ESTABLISHED'], }
+    firewall { '204 allow flow loopback on br0':        chain => 'FORWARD', iniface => $lan_bridge_iface, outiface => $lan_bridge_iface, proto => 'all', jump => 'accept' }
 
     firewall {'205 performing nat': table => 'nat', chain => 'POSTROUTING', outiface => $wan_iface, proto => 'all', jump => 'MASQUERADE' }
 
