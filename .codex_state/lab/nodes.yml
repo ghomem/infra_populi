@@ -1,0 +1,74 @@
+# Lab node inventory (HQ 2026-11-16 item 2) — the single source for which VM an engine tool acts on.
+# Harness, revert, reviewer, pregate, compile-only and the Phase 3 runner take their node from here: the node a plan
+# row names (`node` column: a kind below), else `default`. Read through .codex_state/tools/nodes.py, never parsed
+# elsewhere. Advisor-maintained.
+#
+# Per kind:
+#   status             active (brought up: baseline snapshot taken and verified) | planned (bring-up pending)
+#   vm                 VirtualBox VM name. New lab VMs are named p8lab-* (lab_vm.sh guards them); `ubuntu` keeps
+#                      the original ubuntu24-puppet8-Node and its revert_node.sh rules (HQ 2026-11-16 item 3)
+#   alias              ssh alias on the laptop (host-only address, HostKeyAlias = alias)
+#   certname           Puppet certname; the master's node file is manifests/nodes/<certname>.pp
+#   hostname           what `hostname` prints on the node after a restore
+#   hostonly_ip        static address on vboxnet0 (laptop 192.168.56.1, master 192.168.56.10)
+#   baseline_snapshot  the offline snapshot every revert restores (required when active)
+#   os_family          Facter os.family: Debian | RedHat
+#   os                 human label
+#   capabilities       what the node can exercise (server, desktop, kde, gnome, rhel-subscription, second-node)
+default: ubuntu
+nodes:
+  ubuntu:
+    status: active
+    vm: ubuntu24-puppet8-Node
+    alias: puppet8node
+    certname: puppet8node
+    hostname: puppet8node
+    hostonly_ip: 192.168.56.20
+    baseline_snapshot: P8NODE_BASELINE_GREEN_v3
+    os_family: Debian
+    os: Ubuntu 24.04 server
+    capabilities: [server]
+  rhel9:
+    status: planned
+    vm: p8lab-rhel9
+    alias: p8lab-rhel9
+    certname: p8lab-rhel9
+    hostname: p8lab-rhel9
+    hostonly_ip: 192.168.56.21
+    baseline_snapshot: null
+    os_family: RedHat
+    os: RHEL 9 (registered; BaseOS + AppStream)
+    capabilities: [server, rhel-subscription]
+  kubuntu:
+    status: planned
+    vm: p8lab-kubuntu
+    alias: p8lab-kubuntu
+    certname: p8lab-kubuntu
+    hostname: p8lab-kubuntu
+    hostonly_ip: 192.168.56.22
+    baseline_snapshot: null
+    os_family: Debian
+    os: Kubuntu desktop (KDE)
+    capabilities: [desktop, kde]
+  gnome:
+    status: planned
+    vm: p8lab-gnome
+    alias: p8lab-gnome
+    certname: p8lab-gnome
+    hostname: p8lab-gnome
+    hostonly_ip: 192.168.56.23
+    baseline_snapshot: null
+    os_family: Debian
+    os: Ubuntu desktop (GNOME)
+    capabilities: [desktop, gnome]
+  ubuntu2:
+    status: planned
+    vm: p8lab-ubuntu2
+    alias: p8lab-ubuntu2
+    certname: p8lab-ubuntu2
+    hostname: p8lab-ubuntu2
+    hostonly_ip: 192.168.56.24
+    baseline_snapshot: null
+    os_family: Debian
+    os: Ubuntu 24.04 server (second node)
+    capabilities: [server, second-node]
