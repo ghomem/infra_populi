@@ -1,0 +1,21 @@
+{
+ "class": "user_base",
+ "at": "20261116T135043Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "no-ssh-key-pushed-when-ignored (user_base.pp:93-102): ssh_authorized_key is declared only if $ignorekey == false; fixture sets ignorekey true and user{} has purge_ssh_keys => true (l.72), so no authorized_keys content is expected; probe checks the user exists and authorized_keys is absent/empty -> supported",
+  "user-and-own-primary-group (user_base.pp:25-31): mygrouplist defaults to [] so $myprimary = $title; user{} gid => $myprimary (l.66), so the primary group resolves to p8testuser as the probe expects -> supported",
+  "user-and-own-primary-group (user_base.pp:8-15): myhome defaults to '' so $myhomedir = /home/${myusername} = /home/p8testuser, passed as home (l.68); probe expects /home/p8testuser in the passwd entry -> supported"
+ ],
+ "review_s": 76.1,
+ "check_file_sha256": "67ee7d7d38af19f34164f4a6a5b767f6eda343fcbfdf37c88069a26766c1b57f",
+ "reviewer_result": "20261116T134927Z-reviewer",
+ "author_result": "20261116T134801Z-author",
+ "findings": []
+}

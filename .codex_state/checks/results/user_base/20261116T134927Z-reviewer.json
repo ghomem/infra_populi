@@ -1,0 +1,110 @@
+{
+ "class": "user_base",
+ "role": "reviewer",
+ "at": "20261116T134927Z",
+ "runner": "4d45395",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "67ee7d7d38af19f34164f4a6a5b767f6eda343fcbfdf37c88069a26766c1b57f",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "user-and-own-primary-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "|||\nprimary group: \n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "no-supplementary-groups",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "id: 'p8testuser': no such user\n",
+   "ok": true
+  },
+  {
+   "id": "home-created-and-owned",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/home/p8testuser': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "password-hash-set",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "no-ssh-key-pushed-when-ignored",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "no such user\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "aster.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794837016'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::User_base[p8testuser]/Group[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.40 seconds\u001b[0m\nRUN1_EVENTS: 2 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794837028'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.07 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::user_base: 2 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::User_base[p8testuser]\n  Group[p8testuser]\n  User[p8testuser]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP user_base e0f0b704643d\n"
+ },
+ "applied": [
+  {
+   "id": "user-and-own-primary-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser|P8 Test User|/home/p8testuser|/bin/bash\nprimary group: p8testuser\n",
+   "stderr": ""
+  },
+  {
+   "id": "no-supplementary-groups",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser\n",
+   "stderr": ""
+  },
+  {
+   "id": "home-created-and-owned",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser p8testuser directory\n",
+   "stderr": ""
+  },
+  {
+   "id": "password-hash-set",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "$6$p8testsalt\n",
+   "stderr": ""
+  },
+  {
+   "id": "no-ssh-key-pushed-when-ignored",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "no-authorized-keys\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.4,
+ "duration_s": 62.3
+}
