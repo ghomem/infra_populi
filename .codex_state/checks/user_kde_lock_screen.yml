@@ -1,0 +1,20 @@
+# Phase 3 for puppet_infrastructure::user_kde_lock_screen (define; harness title p8testuser): DEFERRED.
+# The define runs configure_lock_screen.sh as the user, guarded by the same script's --check mode. Upstream's script
+# exits 0 at once when the user is not logged in (before --check is even read), and otherwise drives kreadconfig5 /
+# kwriteconfig5 and qdbus on the user's KDE session bus. On the lab node the user never has a session, so the exec's
+# unless always succeeds and nothing of the behaviour (kscreenlockerrc Autolock/LockOnResume/Timeout/LockGrace,
+# the screenlocker reconfiguration over D-Bus) can be observed. It needs a KDE desktop with the user logged in.
+class: user_kde_lock_screen
+baseline: release-0.9.10 (cf477c6)
+authoring:
+  minutes: 1.5
+  notes: "Wall clock 2026-11-16T13:48:40Z to 13:50:09Z (script read against the baseline, deferral written + validated outside the worktree while a review ran)."
+deferred:
+  needs: desktop
+  why: >-
+    the script acts only for a logged-in user and talks to that user's KDE session (kreadconfig5/kwriteconfig5,
+    qdbus on /run/user/<uid>/bus); the lab node has no desktop session, so the exec is always skipped
+derived_from:
+  - {path: manifests/user_kde_lock_screen.pp, lines: "14-19", text: "unless  => \"${bindir}/configure_lock_screen.sh ${screenlock_timeout_minutes} ${screenlock_grace_seconds} --check\","}
+  - {path: files/user_kde_lock_screen/configure_lock_screen.sh, lines: "14-21", text: "logger -p local1.notice -t $SYSLOG_TAG \"User ${USERNAME} not loged in, skipping screenlock settings update\""}
+  - {path: files/user_kde_lock_screen/configure_lock_screen.sh, lines: "31-37", text: "export DBUS_SESSION_BUS_ADDRESS=\"unix:path=/run/user/${UID}/bus\""}
