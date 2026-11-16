@@ -1,0 +1,176 @@
+{
+ "class": "nginx_static_domain",
+ "role": "author",
+ "at": "20261116T114355Z",
+ "runner": "646acad",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "02ce11963479bb688e8e843eb6fb2cca6b9658ff39a20edacf363b1dcd34f6a6",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "nginx-config-valid",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "bash: line 1: nginx: command not found\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "http-redirects-to-https-same-host",
+   "control": "negative",
+   "rc": 7,
+   "passed": false,
+   "stdout": "000 \n",
+   "stderr": "curl: (7) Failed to connect to 127.0.0.1 port 80 after 0 ms: Couldn't connect to server\n",
+   "ok": true
+  },
+  {
+   "id": "https-serves-www-root",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "no file in www_root\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "https-no-directory-listing",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "status 000\n0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "served-certificate-is-the-bundle",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Could not read certificate from <stdin>\nUnable to load certificate\nCould not open file or uri for loading certificate from /etc/ssl/certs/p8test.nginx.bundle.crt\n407798AE4B730000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n407798AE4B730000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/ssl/certs/p8test.nginx.bundle.crt)\nUnable to load certificate\n",
+   "ok": true
+  },
+  {
+   "id": "https-name-verifies",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "tls12-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "tls13-refused\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "server-cipher-order-and-dh-group",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "ecdh-curve-prime256v1",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "  Concat_file[/etc/nginx/sites-available/static_main_redirector_p8test.example.com.conf]\n  Concat::Fragment[static_main_redirector_p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[static_main_redirector_p8test.example.com-header]\n  Concat_fragment[static_main_redirector_p8test.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/static_https_www_redirector_p8test.example.com.conf]\n  Concat_fragment[static_https_www_redirector_p8test.example.com-ssl-header]\n  Concat_fragment[static_https_www_redirector_p8test.example.com-ssl-footer]\n  Concat_file[/etc/nginx/sites-available/static_http_p8test.example.com.conf]\n  Concat_fragment[static_http_p8test.example.com-header]\n  Concat_fragment[static_http_p8test.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/static_https_p8test.example.com.conf]\n  Concat::Fragment[static_https_p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\n  Concat_fragment[static_https_p8test.example.com-ssl-header]\n  Concat_fragment[static_https_p8test.example.com-ssl-footer]\n  Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]\n  Concat_fragment[first_certificate_p8test]\n  Concat_fragment[intermediate_certificates_p8test]\n  Concat_fragment[static_main_redirector_p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[static_https_p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP nginx_static_domain fcab8b9b6b47\n"
+ },
+ "applied": [
+  {
+   "id": "nginx-config-valid",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\n",
+   "stderr": ""
+  },
+  {
+   "id": "http-redirects-to-https-same-host",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "301 https://p8test.example.com/p8/phase3?q=1\n",
+   "stderr": ""
+  },
+  {
+   "id": "https-serves-www-root",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "same-content\n",
+   "stderr": ""
+  },
+  {
+   "id": "https-no-directory-listing",
+   "control": "negative",
+   "rc": 1,
+   "passed": true,
+   "stdout": "status 403\n0\n",
+   "stderr": ""
+  },
+  {
+   "id": "served-certificate-is-the-bundle",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "served-cert-is-bundle\n",
+   "stderr": ""
+  },
+  {
+   "id": "https-name-verifies",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Verification: OK\n",
+   "stderr": ""
+  },
+  {
+   "id": "tls12-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "New, TLSv1.2, Cipher is\ntls13-refused\n",
+   "stderr": ""
+  },
+  {
+   "id": "server-cipher-order-and-dh-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Server Temp Key: DH, 2048 bits\nNew, TLSv1.2, Cipher is DHE-RSA-AES128-GCM-SHA256\n",
+   "stderr": ""
+  },
+  {
+   "id": "ecdh-curve-prime256v1",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Server Temp Key: ECDH, prime256v1, 256 bits\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS"
+}
