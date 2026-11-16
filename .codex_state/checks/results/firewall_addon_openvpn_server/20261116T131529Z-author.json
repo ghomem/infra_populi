@@ -1,0 +1,110 @@
+{
+ "class": "firewall_addon_openvpn_server",
+ "role": "author",
+ "at": "20261116T131529Z",
+ "runner": "bcc1a12",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "4590f649493e6fea42912173e6d175b0fc6f9452301525bce4ef71e68d6b2a79",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "forward-bridge-to-wan",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "forward-wan-to-bridge-established-only",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "forward-bridge-loopback",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "nat-masquerade-on-wan",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "ipv4-forwarding-on-and-persistent",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /etc/sysctl.d/net.ipv4.ip_forward.conf: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "sctl.conf-net.ipv4.ip_forward]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 12.13 seconds\u001b[0m\nRUN1_EVENTS: 6 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794835001'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.67 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::firewall_addon_openvpn_server: 11 concrete resources (+0 defined-type instances)\n  Firewall[202 allow flow from br0 exterior]\n  Firewall[203 allow flow from exterior into br0]\n  Firewall[204 allow flow loopback on br0]\n  Firewall[205 performing nat]\n  Sysctl[net.ipv4.ip_forward]\n  File[/etc/sysctl.d]\n  File[/etc/sysctl.d/99-sysctl.conf]\n  File[/etc/sysctl.d/net.ipv4.ip_forward.conf]\n  Exec[sysctl-net.ipv4.ip_forward]\n  Exec[update-sysctl.conf-net.ipv4.ip_forward]\n  Exec[enforce-sysctl-value-net.ipv4.ip_forward]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP firewall_addon_openvpn_server e30b584de09d\n"
+ },
+ "applied": [
+  {
+   "id": "forward-bridge-to-wan",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A FORWARD -i p8test1 -o p8test0 -m comment --comment \"202 allow flow from br0 exterior\" -j ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "forward-wan-to-bridge-established-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A FORWARD -i p8test0 -o p8test1 -m state --state RELATED,ESTABLISHED -m comment --comment \"203 allow flow from exterior into br0\" -j ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "forward-bridge-loopback",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A FORWARD -i p8test1 -o p8test1 -m comment --comment \"204 allow flow loopback on br0\" -j ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "nat-masquerade-on-wan",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A POSTROUTING -o p8test0 -m comment --comment \"205 performing nat\" -j MASQUERADE\n",
+   "stderr": ""
+  },
+  {
+   "id": "ipv4-forwarding-on-and-persistent",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nnet.ipv4.ip_forward = 1\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.4,
+ "duration_s": 74.8
+}

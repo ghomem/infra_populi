@@ -1,0 +1,54 @@
+# Phase 3 checks for puppet_infrastructure::firewall_addon_openvpn_server (class; params fixture).
+# Fixture: lan_bridge_iface p8test1 (production default br0), wan_iface p8test0 — interfaces that do not exist on the
+# node, so the rules are installed but carry no traffic. client_isolation (default true) is not used by the code.
+# Required external (plan): class firewall (puppetlabs-firewall 8.3.0). The probes read the installed iptables rules
+# and the forwarding sysctl (direct state reads). Real VPN-bridge forwarding needs the bridge and a second host and is
+# not tested here.
+class: firewall_addon_openvpn_server
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.4
+  notes: "Wall clock 2026-11-16T13:13:57Z to 13:14:23Z (written + validated outside the worktree while the Phase 1 review ran)."
+checks:
+  - id: forward-bridge-to-wan
+    what: FORWARD accepts traffic from the LAN bridge interface out of the WAN interface (rule 202)
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_openvpn_server.pp, lines: "17", text: "firewall { '202 allow flow from br0 exterior':      chain => 'FORWARD', iniface => $lan_bridge_iface, outiface => $wan_iface,        proto => 'all', action => 'accept' }"}
+    probe: iptables -S FORWARD | grep -F -- '--comment "202 allow flow from br0 exterior"'
+    expect: {rc: 0, stdout: "^-A FORWARD (?=.*-i p8test1 )(?=.*-o p8test0 )(?!.*-p )(?!.*--state).*-j ACCEPT$"}
+
+  - id: forward-wan-to-bridge-established-only
+    what: FORWARD accepts traffic from the WAN into the bridge only for RELATED,ESTABLISHED connections (rule 203)
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_openvpn_server.pp, lines: "18", text: "state => ['RELATED', 'ESTABLISHED'],"}
+    probe: iptables -S FORWARD | grep -F -- '--comment "203 allow flow from exterior into br0"'
+    expect: {rc: 0, stdout: "^-A FORWARD (?=.*-i p8test0 )(?=.*-o p8test1 )(?=.*--state RELATED,ESTABLISHED ).*-j ACCEPT$"}
+
+  - id: forward-bridge-loopback
+    what: FORWARD accepts traffic that enters and leaves on the LAN bridge (rule 204)
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_openvpn_server.pp, lines: "19", text: "firewall { '204 allow flow loopback on br0':        chain => 'FORWARD', iniface => $lan_bridge_iface, outiface => $lan_bridge_iface"}
+    probe: iptables -S FORWARD | grep -F -- '--comment "204 allow flow loopback on br0"'
+    expect: {rc: 0, stdout: "^-A FORWARD (?=.*-i p8test1 )(?=.*-o p8test1 )(?!.*--state).*-j ACCEPT$"}
+
+  - id: nat-masquerade-on-wan
+    what: NAT POSTROUTING masquerades everything leaving the WAN interface (rule 205)
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_openvpn_server.pp, lines: "21", text: "firewall {'205 performing nat': table => 'nat', chain => 'POSTROUTING', outiface => $wan_iface, proto => 'all', jump => 'MASQUERADE' }"}
+    probe: iptables -t nat -S POSTROUTING | grep -F -- '--comment "205 performing nat"'
+    expect: {rc: 0, stdout: "^-A POSTROUTING (?=.*-o p8test0 )(?!.*-p ).*-j MASQUERADE$"}
+
+  - id: ipv4-forwarding-on-and-persistent
+    what: IPv4 forwarding is on now and persisted in /etc/sysctl.d (thias-sysctl writes <key>.conf)
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_openvpn_server.pp, lines: "23-25", text: "sysctl   { 'net.ipv4.ip_forward': value => '1'  }"}
+    probe: |
+      sysctl -n net.ipv4.ip_forward
+      cat /etc/sysctl.d/net.ipv4.ip_forward.conf
+    expect: {rc: 0, stdout: "\\A1\\nnet\\.ipv4\\.ip_forward = 1\\n\\Z"}
