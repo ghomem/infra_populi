@@ -1,0 +1,21 @@
+{
+ "class": "hashman_web",
+ "at": "20261116T205004Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "frontend-proxies-the-domain-over-tls: hashman_web.pp:186-188 declare nginx_frontend for domain $address (lab Hiera puppet.example.com) with frontend_sslprefix and backend 127.0.0.1:8080; HTTPS GET / for that name returning the Flask index title (httpserver.py.erb TITLE, index.html '<title>{{ strtitle }}</title>') tests exactly that proxying. Mismatch varies only the path to static/styles/custom.css, which the baseline ships with no 'title' (grep count 0), so it must change the verdict without breaking the command; a read-only probe with a wrong name (wrong.example.com) returned '404 Not Found', so the name is discriminating too",
+  "hashman-service-on-8080 (hashman_web.pp:176-179): service 'hashman' ensure running, enable true, provider systemd -> probe 'systemctl is-enabled/is-active' expecting enabled/active matches",
+  "hashman-service-on-8080 (hashman.service.erb:7): ExecStart gunicorn --bind 0.0.0.0:8080 -> ss listener 0.0.0.0:8080 is what the unit produces"
+ ],
+ "review_s": 250.7,
+ "check_file_sha256": "be5da2e0b675e8de92d41db4c609b8ab1036f1390954bb8f76302a2319340aa7",
+ "reviewer_result": "20261116T204554Z-reviewer",
+ "author_result": "20261116T204309Z-author",
+ "findings": []
+}
