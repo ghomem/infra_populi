@@ -1344,3 +1344,24 @@ The pre-commit hook runs the full suite, not the fast subset, when the commit st
 `.codex_state/tools/` (the tools and their tests) or `.claude/settings*.json`. A staged batch report still runs it
 too; other commits keep the fast subset. Cause: the lab_vm.sh commit (516b455) landed while the full suite was red
 (a stale rules digest), because only the fast subset gated it.
+
+## 2026-11-16 — Lab NIC1 → VirtualBox NAT (lab-network-nat.md, HQ step review A–J)
+- **What changed:** NIC1 of the master and the node is VirtualBox NAT with `natdnshostresolver1 on`, so the VMs'
+  internet and DNS go through the laptop's current uplink and never the home LAN. Each VM's enp0s3 is 10.0.2.15
+  (gateway 10.0.2.2); the master's DNS is the NAT proxy 10.0.2.3; the node keeps its static public resolvers
+  (1.1.1.1, 8.8.8.8; HQ). Lab control is unchanged (host-only vboxnet0).
+- **Node baseline P8NODE_BASELINE_GREEN_v4** (798dd0e5…): v3 + NIC1 NAT + package lists refreshed through NAT, one
+  clean boot, no agent run (state token unchanged). The node went to NAT from a manual restore of v3, never through a
+  bridged revert (HQ A); the snapshot take was Salatiel's (HQ H). revert_node.sh asserts after every restore: the
+  default route is via 10.0.2.2 on the interface holding 10.0.2.15/24, and no address is on 192.168.77.0/24.
+- **Facts (HQ B):** networking.hostname, fqdn and domain did not move with the uplink. Node: puppet8node /
+  puppet8node.lan / lan (from a static `domain lan` line in the snapshot's /etc/resolv.conf). Master: puppet8master /
+  puppet8master.example.com / example.com (its own-name /etc/hosts line). `networking.ip` is 10.0.2.15 on both, as
+  expected.
+- **Classes reading the VM's own address or server facts (step 0, HQ C):** none. `network_static`'s `$ipaddress` is a
+  class parameter, not the fact; nothing uses `server_facts` or `serverip`.
+- **firewall_addon_hosting's ruled fix (HQ C):** the master rule's destination is `$server_facts['servername']`,
+  resolved on the agent by puppetlabs-firewall 8.3.0, instead of `serverip` (the master's primary address, 10.0.2.15
+  on NAT, not the 192.168.56.10 the node uses). Proof and limit in upstream_defects.md.
+- **New lab VMs (HQ G):** every `p8lab-*` VM gets NIC1 NAT with the host resolver, and NIC2 host-only vboxnet0.
+- **Non-A DNS (HQ D):** MX and TXT queries resolve through the NAT proxy on the master.

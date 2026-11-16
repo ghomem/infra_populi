@@ -43,7 +43,7 @@ the rest are read from the manifest, its templates and the plan.
     sees it (`ssh puppet8node 'echo $SSH_CLIENT'`: the static host-only 192.168.56.1 since the 2026-11-10 lab-network
     change; still re-check before dispatch).
 13. Runtime-baseline drift of the node itself (apt lists, timers): the revert refreshes apt lists; anything
-    else a class depends on that is not in P8NODE_BASELINE_GREEN_v3 is a fixture to declare, not to assume.
+    else a class depends on that is not in P8NODE_BASELINE_GREEN_v4 is a fixture to declare, not to assume.
 14. Module resources without the module's base class: the class uses a Puppetfile module's defines/native types
     (or `Exec['apt_update']`) but never declares that module's class, and the plan has no required_external for it.
     Production declares the base elsewhere; the harness needs `required_external=<module>` (advisor). pregate reports

@@ -21,9 +21,11 @@ the tracked `.codex_state/rules/CODEX_RUNBOOK.md`.
   ruby, Puppet 8 packages or gems on it, and never run `puppet` there. Puppet-side checks (parser
   validate, puppet-lint, compiles) run on puppet8master over ssh.
 - Lab: OpenVox. Master `puppet8master` (192.168.56.10), node `puppet8node` (192.168.56.20), on the host-only
-  network vboxnet0 (laptop 192.168.56.1, the harness's SSH source); NIC1 of both VMs stays bridged to Wi-Fi for
-  internet. rsync aliases `puppet8master-rsync`/`puppet8node-rsync`; every lab alias has `HostKeyAlias`. Node is
-  Ubuntu 24.04, netplan-only. Lab network: escalations/lab-network-static.md.
+  network vboxnet0 (laptop 192.168.56.1, the harness's SSH source); NIC1 of every lab VM is VirtualBox NAT
+  (`natdnshostresolver1 on`): internet and DNS through the laptop's current uplink, never the home LAN (10.0.2.15 is
+  each VM's `networking.ip`). rsync aliases `puppet8master-rsync`/`puppet8node-rsync`; every lab alias has
+  `HostKeyAlias`. Node is Ubuntu 24.04, netplan-only. Lab network: escalations/lab-network-static.md,
+  escalations/lab-network-nat.md.
 - State (tracked): `.codex_state/migration_plan.md` (scores, internal_deps, resource_type,
   required_base, required_external), `migration_order.md` (git-derived, REGENERATED never edited),
   `migrated_classes.txt`, `blocked.txt`, `candidates/`, `DESIGN_DECISIONS.md`.
@@ -64,13 +66,14 @@ the tracked `.codex_state/rules/CODEX_RUNBOOK.md`.
   `puppet module list` and treat `invalid` as FAILURE; after adding a module with custom types run
   `puppet generate types --environment production` and restart puppetserver. `r10k --force` purges
   `puppet_infrastructure` — the next harness run re-deploys it.
-- Node lifecycle: revert node to `P8NODE_BASELINE_GREEN_v3` before EVERY class (`revert_node.sh`).
+- Node lifecycle: revert node to `P8NODE_BASELINE_GREEN_v4` before EVERY class (`revert_node.sh`).
   NEVER restore the master or hard-power it off. The ONLY master shutdown is `.codex_state/tools/snapshot_master.sh
   <P8MASTER_NAME>` (HQ VM-operations ruling: take-only offline snapshot via ACPI with timeout; refuses during any
   harness/Codex/reviewer run; restarts and verifies puppetserver + 8140; records name+UUID in
   `.codex_state/lab/master_snapshots.jsonl`). Codex may start a stopped VM only. New lab VMs (`p8lab-*` only) go
   through `.codex_state/tools/lab_vm.sh` (clone / modify / start / stop / snapshot take|restore; a clone's source is
-  never modified; no start below 4 GB free; no delete — deleting a VM or a baseline snapshot stays Salatiel's). Raw
+  never modified; no start below 4 GB free; no delete — deleting a VM or a baseline snapshot stays Salatiel's; NIC1 NAT
+  like the others, HQ NAT review G). Raw
   mutating VBoxManage is denied. Lab nodes: `.codex_state/lab/nodes.yml` (nodes.py; plan column `node`).
 - Git: commit only when GREEN and idempotent; message `P8: migrate puppet_infrastructure::<class>`;
   never commit params, tooling scratch, or a class that is not GREEN. `.bak` files are never committed.
