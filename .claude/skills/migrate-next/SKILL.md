@@ -12,6 +12,12 @@ and 8140 listening. Regenerate the order file. Create `.codex_state/logs/` if mi
 `python3 .codex_state/tools/node_inventory.py --show` must find the clean-node inventory (else `--refresh`, ~1 min:
 it reverts the node) — pregate's dynamic prerequisite probe needs it.
 
+BATCHES (HQ 2026-11-16 item 6, from the resume after the NAT change): batch size 10. When a batch ends with no
+reviewer FAIL and no open stop condition, the next batch may start without HQ (write its report first). A class that
+cannot go GREEN on its node (it needs another OS, a desktop, a second node, ...) is blocked with its EXACT need
+(category 5, naming the node kind that would lift it, nodes.yml) and appended to the one tail list
+`.codex_state/tail_list.md`; the loop continues with the next class.
+
 FOR EACH CLASS:
 1. PICK: the order file's `Next class:` — the RE-MIGRATION QUEUE's `first` entries (HQ order; a done class
    being re-migrated: hazard 8 baseline-sync first if it drifted, then its path as usual), then the next PENDING
