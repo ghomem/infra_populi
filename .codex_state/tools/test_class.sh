@@ -40,6 +40,7 @@ RECORDS_TOOL="${LOCAL_REPO}/.codex_state/tools/records.py"
 # connection; firewall_secure rate-limits NEW SSH connections). scp keeps its own ssh path.
 PATH="${LOCAL_REPO}/.codex_state/tools/sshmux:${PATH}"
 METRICS_TOOL="${LOCAL_REPO}/.codex_state/tools/metrics.py"
+LAB_LOCK_TOOL="${LOCAL_REPO}/.codex_state/tools/lab_lock.sh"
 
 # GREEN v2 (ruling 2 / step 1.1): every agent run has an outer timeout; run 2 must exit 0.
 AGENT_TIMEOUT_SECONDS="${AGENT_TIMEOUT_SECONDS:-600}"
@@ -615,8 +616,24 @@ render_fixture_block() {
 }
 
 
+# One lab run at a time (lab_lock.sh): every mode but --render-only writes the master's node file or runs the node.
+take_lab_lock() {
+  [[ -z "${P8_LAB_LOCKED:-}" ]] || return 0  # a parent (phase3 run, a caller holding the lock) already holds it
+  local holder
+  holder="$("$LAB_LOCK_TOOL" take "$$" "test_class.sh $*" 2>&1)" ||
+    die "another lab run holds the lab lock (${holder}); refusing to run concurrently: it would rewrite the master's node file or the node under it"
+  export P8_LAB_LOCKED=1
+  LAB_LOCK_HELD=1
+  trap release_lab_lock EXIT
+}
+
+release_lab_lock() {
+  if [[ "${LAB_LOCK_HELD:-0}" == 1 ]]; then "$LAB_LOCK_TOOL" release "$$" || true; fi
+}
+
 main() {
   need_cmd python3
+  [[ "${1:-}" == "--render-only" ]] || take_lab_lock "$@"
 
   if [[ "${1:-}" == "--compile-only" ]]; then
     shift
@@ -683,7 +700,7 @@ main() {
   HARNESS_START="${EPOCHREALTIME}"
   HARNESS_REVERT_FIRST="$revert_first"
   HARNESS_CLASSES=("${classes[@]}")
-  trap 'harness_metrics_event $?' EXIT
+  trap 'rc=$?; harness_metrics_event "$rc"; release_lab_lock' EXIT
 
   mkdir -p "$PARAMS_DIR"
 

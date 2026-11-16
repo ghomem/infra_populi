@@ -45,6 +45,7 @@ readonly POWEROFF_TIMEOUT_SECONDS=30
 readonly SSH_TIMEOUT_SECONDS=120
 readonly POLL_INTERVAL_SECONDS=2
 readonly APT_UPDATE_TIMEOUT_SECONDS=180
+readonly ROUTE_TIMEOUT_SECONDS="${ROUTE_TIMEOUT_SECONDS:-60}"
 readonly LAPTOP_HOSTONLY_IP="192.168.56.1"
 readonly NODE_HOSTONLY_IP="192.168.56.20"
 readonly MASTER_HOSTONLY_IP="192.168.56.10"
@@ -76,6 +77,14 @@ if [[ "${1:-}" == "--node-state" ]]; then
   exit
 fi
 [[ $# -eq 0 ]] || fail "Usage: $0 [--node-state]"
+
+# One lab run at a time (lab_lock.sh); a harness or phase3 run that calls this revert already holds the lock.
+if [[ -z "${P8_LAB_LOCKED:-}" ]]; then
+  if ! lock_holder="$("${TOOLS_DIR}/lab_lock.sh" take "$$" "revert_node.sh" 2>&1)"; then
+    fail "another lab run holds the lab lock (${lock_holder}); not reverting the node under it."
+  fi
+  trap '"${TOOLS_DIR}/lab_lock.sh" release "$$" || true' EXIT
+fi
 
 ms_to_s() { printf '%d.%03d' "$(($1 / 1000))" "$(($1 % 1000))"; }
 
@@ -240,10 +249,21 @@ node_hostname="${node_hostname//$'\n'/}"
 
 # The snapshot's apt lists are frozen at snapshot time and the apt timers are off (ruling 5), so
 # superseded package versions 404 on the mirrors. Refresh synchronously, before any harness run.
+# Internet must be real, not assumed (2026-11-16): a missing DHCPv4 lease on NIC1 left the node IPv6-only with no
+# default route, and apt-get update still exited 0 on its fetch failures, so the revert reported SUCCESS.
+route_deadline=$((SECONDS + ROUTE_TIMEOUT_SECONDS))
+until ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" 'ip -4 route show default' 2>/dev/null | grep -q '^default '; do
+  ((SECONDS < route_deadline)) ||
+    fail "The node has no IPv4 default route after ${ROUTE_TIMEOUT_SECONDS}s (no DHCPv4 lease on NIC1?): no internet for apt."
+  sleep "$POLL_INTERVAL_SECONDS"
+done
 printf 'Refreshing apt package lists on the node...\n'
 # shellcheck disable=SC2029  # the timeout is a local constant
-ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" "sudo -n timeout ${APT_UPDATE_TIMEOUT_SECONDS} apt-get -q update" >/dev/null ||
+apt_out="$(ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" "sudo -n timeout ${APT_UPDATE_TIMEOUT_SECONDS} apt-get -q update" 2>&1)" ||
   fail "apt-get update failed on node '$NODE_SSH_ALIAS' (mirror unreachable?)."
+if fetch_errors="$(grep -E '^E: |Temporary failure resolving|Failed to fetch|Could not resolve|Unable to connect' <<<"$apt_out")"; then
+  fail "apt-get update reported fetch failures on node '$NODE_SSH_ALIAS' (no internet or DNS): ${fetch_errors%%$'\n'*}"
+fi
 t_apt="$(now_ms)"
 
 require_master_running

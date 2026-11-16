@@ -121,6 +121,8 @@ class FakeLab:
                 {"match": r"puppet8node hostname$", "stdout": "puppet8node\n"},
                 # revert_node.sh --node-state: boot ID, last_run_summary sha256 (HQ batch-3 acceptance item 1)
                 {"match": r"random/boot_id", "stdout": BOOT_ID + "\nabsent\n"},
+                # revert_node.sh's internet check before the apt refresh (2026-11-16)
+                {"match": r"ip -4 route show default", "stdout": "default via 192.168.77.1 dev enp0s3 proto dhcp\n"},
                 # revert_node.sh's post-restore host-only asserts (lab-network plan step 9)
                 {"match": r"SSH_CONNECTION", "stdout": "192.168.56.1 51234 192.168.56.20 22\n"},
                 {"match": r"ip -br addr show enp0s8", "stdout": "enp0s8           UP             192.168.56.20/24\n"},
@@ -145,6 +147,7 @@ class FakeLab:
             "P8_METRICS_DIR": str(self.root / "metrics"),
             "P8_SSH_CONTROL_DIR": str(self.root / "ssh-cm"),
             "P8_REVERT_RECORD": str(self.root / "node_revert.json"),
+            "P8_LAB_LOCK": str(self.root / "lab.lock"),
         })
         env.update(kw.pop("env", {}))
         return subprocess.run(argv, capture_output=True, text=True, env=env, timeout=60,
@@ -173,6 +176,8 @@ def isolated_logs(tmp_path, monkeypatch):
     monkeypatch.setenv("P8_METRICS_DIR", str(tmp_path / "iso_metrics"))
     monkeypatch.setenv("P8_RUNS_FILE", str(tmp_path / "iso_runs" / "metrics.jsonl"))
     monkeypatch.setenv("P8_REVERT_RECORD", str(tmp_path / "iso_reverts" / "node_revert.json"))
+    monkeypatch.setenv("P8_LAB_LOCK", str(tmp_path / "iso_lock" / "lab.lock"))
+    monkeypatch.delenv("P8_LAB_LOCKED", raising=False)
 
 
 

@@ -447,6 +447,21 @@ def cmd_run(cls: str, role: str) -> int:
     if "deferred" in data:
         print(f"DEFERRED {cls}: needs {data['deferred']['needs']}; nothing to run", file=sys.stderr)
         return 2
+    # One lab run at a time (lab_lock.sh), held across the revert, both probe phases and the apply.
+    lock = subprocess.run([str(TOOLS / "lab_lock.sh"), "take", str(os.getpid()), f"phase3.py run {cls} {role}"],
+                          capture_output=True, text=True)
+    if lock.returncode != 0:
+        record["problems"].append(f"another lab run holds the lab lock: {lock.stderr.strip()}")
+        print(f"REFUSED: another lab run holds the lab lock ({lock.stderr.strip()})", file=sys.stderr)
+        return finish("ENVIRONMENT_FAILED", 3)
+    os.environ["P8_LAB_LOCKED"] = "1"
+    try:
+        return run_locked(cls, data, record, finish)
+    finally:
+        subprocess.run([str(TOOLS / "lab_lock.sh"), "release", str(os.getpid())], capture_output=True)
+
+
+def run_locked(cls: str, data: dict, record: dict, finish) -> int:
     revert = os.environ.get("P8_PHASE3_REVERT") or str(TOOLS / "revert_node.sh")
     print("==> Reverting the node (clean phase runs on the baseline)")
     if subprocess.run([revert], env=node_env()).returncode != 0:

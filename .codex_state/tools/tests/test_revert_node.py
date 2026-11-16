@@ -139,3 +139,23 @@ def test_node_inventory_reads_the_snapshot_name_from_revert_node():
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     assert mod.SNAPSHOT == "P8NODE_BASELINE_GREEN_v3"
+
+
+# 2026-11-16: no IPv4 default route, or apt fetch failures, fail the revert (it reported SUCCESS on a node with no
+# internet: no DHCPv4 lease on NIC1, and apt-get update exits 0 on fetch failures).
+def test_no_ipv4_default_route_fails_the_revert_before_apt(lab):
+    lab.world["ssh"].insert(0, {"match": r"ip -4 route show default", "stdout": ""})
+    proc = lab.run([SCRIPT], env={"ROUTE_TIMEOUT_SECONDS": "0"})
+    assert proc.returncode == 1 and "no IPv4 default route" in proc.stderr
+    assert not any("apt-get" in " ".join(c) for c in lab.calls("ssh"))
+    assert not (lab.root / "node_revert.json").exists()
+
+
+@pytest.mark.parametrize("line", ["W: Failed to fetch http://archive.ubuntu.com/ubuntu/dists/noble/InRelease",
+                                  "Err:1 http://archive.ubuntu.com noble InRelease\n  Temporary failure resolving 'archive.ubuntu.com'",
+                                  "E: Some index files failed to download."])
+def test_apt_fetch_failures_fail_the_revert_even_with_exit_0(lab, line):
+    lab.world["ssh"].insert(0, {"match": r"apt-get -q update", "stdout": f"Hit:1 x\n{line}\n", "rc": 0})
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 1 and "apt-get update reported fetch failures" in proc.stderr
+    assert not (lab.root / "node_revert.json").exists()

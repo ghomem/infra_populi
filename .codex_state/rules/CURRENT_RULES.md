@@ -2,7 +2,11 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-77 entries; 6 marked superseded (in whole or part); newest first.
+78 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-16 — batch 4: one lab run at a time; a revert proves internet
+- 1. **Lab lock.** I ran classify_path's compile-only for the next class while the reviewer's harness was applying, and
+- 2. **A revert proves internet.** The node once got no DHCPv4 lease on the bridged Wi-Fi (IPv6 only, no default route).
 
 ## 2026-11-16 — HQ: Phase 3 in the loop from batch 4; behaviour state; backfill between batches
 - (no numbered/Rule/Decision lines; read the entry)

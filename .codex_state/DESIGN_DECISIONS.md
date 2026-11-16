@@ -1251,3 +1251,23 @@ After the Phase 1 reviewer PASS (skill step 5b), the advisor writes the class's 
 - **Retention (HQ):** node v2 and master v3 stay through batch 4, then Salatiel deletes both. After the batch 4
   report, the advisor deletes its own lab-network backups (`~/.ssh/config.pre-p8net-*`,
   `~/.ssh/known_hosts.pre-p8net-step1a`, the master's `/etc/hosts.pre-p8net*`). 8 new tests.
+
+## 2026-11-16 — batch 4: one lab run at a time; a revert proves internet
+Two engine gaps surfaced by gnome_lock_screen's first Phase 3 review (FAIL, environment, 8f78d87).
+1. **Lab lock.** I ran classify_path's compile-only for the next class while the reviewer's harness was applying, and
+   it rewrote the master's node file mid-run.
+   - `lab_lock.sh take|release|holder` holds a pid line in a lock file, read and written under a short flock on a
+     mutex, so no descriptor is left open for a lingering ssh ControlMaster or VBoxSVC to inherit. A dead holder is
+     replaced.
+   - test_class.sh (every mode but --render-only), revert_node.sh and phase3.py run take it and refuse at once while
+     another live run holds it. P8_LAB_LOCKED=1 passes it to their children: the nested revert, and the harness
+     inside a phase3 run.
+   - Advisor rule: while any run holds the lab, run nothing that writes the master's node file or touches the node,
+     and write new check sets outside the worktree (the reviewer's `git` check requires a clean worktree).
+2. **A revert proves internet.** The node once got no DHCPv4 lease on the bridged Wi-Fi (IPv6 only, no default route).
+   apt-get update exited 0 on its fetch failures, so the revert reported SUCCESS and the reviewer's apply then could
+   not install dconf-cli. revert_node.sh now waits up to 60 s for an IPv4 default route and fails without one, and
+   fails on apt fetch or resolve errors. The intermittent lease loss is itself a home-LAN dependency (NAT plan, open
+   for review).
+
+9 + 3 tests; a real revert passes and leaves no lock behind.

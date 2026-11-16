@@ -465,3 +465,16 @@ def test_a_failed_review_is_the_state(p3):
     run_both(p3, applied_for_reviewer=FAIL)
     p3.run("verdict", CLS, "--derived", "ok", "--evidence", "e")
     assert state_of(p3, CLS)[1:3] == ["review-failed", "reproduced"]
+
+
+def test_a_run_is_refused_while_another_lab_run_holds_the_lock(p3, lab):
+    import subprocess
+    holder = subprocess.Popen(["sleep", "60"])
+    try:
+        assert lab.run([str(TOOLS / "lab_lock.sh"), "take", str(holder.pid), "reviewer harness"]).returncode == 0
+        p3.write(check_set(check("conf", "probe-conf")))
+        proc = p3.run("run", CLS)
+        assert proc.returncode == 3 and "another lab run holds the lab lock" in proc.stderr
+        assert lab.calls("ssh") == [] and not p3.log.exists()  # no revert, no probe, no apply
+    finally:
+        holder.kill()
