@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import os
 import re
 import subprocess
 import sys
@@ -65,6 +66,7 @@ class ClassRow:
     owner_validated: str
     node_fixture: str = ""
     expected_run2_events: tuple[str, ...] = ()
+    node: str = ""  # lab node kind (.codex_state/lab/nodes.yml); empty = the inventory's default
 
     @property
     def sort_key(self) -> tuple[int, int, int, str]:
@@ -119,6 +121,15 @@ def parse_int(value: str, column: str, class_name: str) -> int:
         fail(f"invalid integer in {column} for {class_name}: {value!r}")
 
 
+def lab_node_kinds() -> set[str]:
+    """Kinds of the lab node inventory (.codex_state/lab/nodes.yml), for the plan's `node` column."""
+    path = Path(os.environ.get("P8_NODES") or SCRIPT_DIR / "lab" / "nodes.yml")
+    if not path.is_file():
+        return set()
+    import yaml  # noqa: PLC0415
+    return set((yaml.safe_load(path.read_text()) or {}).get("nodes", {}))
+
+
 def parse_plan() -> dict[str, ClassRow]:
     if not PLAN_PATH.exists():
         fail(f"plan file not found: {PLAN_PATH}")
@@ -154,6 +165,8 @@ def parse_plan() -> dict[str, ClassRow]:
     )
     node_fixture_index = headers.index("node_fixture") if "node_fixture" in headers else None
     run2_index = headers.index("expected_run2_events") if "expected_run2_events" in headers else None
+    node_index = headers.index("node") if "node" in headers else None
+    node_kinds = lab_node_kinds() if node_index is not None else set()
     rows: dict[str, ClassRow] = {}
 
     for line_number, line in enumerate(lines[header_index + 2 :], start=header_index + 3):
@@ -213,6 +226,9 @@ def parse_plan() -> dict[str, ClassRow]:
         for ref in expected_run2:
             if not re.fullmatch(r"[A-Z][A-Za-z0-9_:]*\[[^\]\[]+\]", ref):
                 fail(f"invalid expected_run2_events entry for {name}: {ref!r} (want Type[title])")
+        node = cells[node_index] if node_index is not None else ""
+        if node and node not in node_kinds:
+            fail(f"node for {name} is not a kind in .codex_state/lab/nodes.yml: {node!r}")
         rows[name] = ClassRow(
             name=name,
             complexity=parse_int(cells[indexes["complexity"]], "complexity", name),
@@ -227,6 +243,7 @@ def parse_plan() -> dict[str, ClassRow]:
             owner_validated=owner_validated,
             node_fixture=node_fixture,
             expected_run2_events=expected_run2,
+            node=node,
         )
 
     if not rows:
@@ -728,6 +745,7 @@ def classify(class_name: str) -> None:
                 "owner_validated": row.owner_validated,
                 "node_fixture": row.node_fixture,
                 "expected_run2_events": list(row.expected_run2_events),
+                "node": row.node,
             }
         )
     )

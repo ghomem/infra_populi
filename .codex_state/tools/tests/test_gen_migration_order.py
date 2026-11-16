@@ -214,3 +214,21 @@ def test_repo_desktop_closure_sorts_above_the_three_node_tier(gen):
     prod = gen.read_prod_nodes()
     assert prod["gnome_lock_screen"] == 20 and prod["firewall_secure"] == 78
     assert prod["gnome_lock_screen"] > prod["openvpn_server"] == 3
+
+
+def test_plan_node_column_names_a_lab_node_kind(gen, tmp_path, monkeypatch):
+    """HQ 2026-11-16 item 2: a plan row may name the node kind it is tested on; empty = the inventory default."""
+    rows = gen.parse_plan()
+    assert all(r.node in ("",) or r.node in gen.lab_node_kinds() for r in rows.values())
+    text = gen.PLAN_PATH.read_text()
+    lines = text.splitlines(keepends=True)
+    i = next(i for i, l in enumerate(lines) if l.startswith("| `puppet_infrastructure::gnome_lock_screen` |"))
+    lines[i] = lines[i].rstrip("\n")[:-1] + "kubuntu|\n"
+    plan = tmp_path / "plan.md"
+    plan.write_text("".join(lines))
+    monkeypatch.setattr(gen, "PLAN_PATH", plan)
+    assert gen.parse_plan()["gnome_lock_screen"].node == "kubuntu"
+    lines[i] = lines[i].replace("kubuntu|", "solaris|")
+    plan.write_text("".join(lines))
+    with pytest.raises(SystemExit):
+        gen.parse_plan()
