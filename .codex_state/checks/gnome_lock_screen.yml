@@ -1,0 +1,65 @@
+# Phase 3 checks for puppet_infrastructure::gnome_lock_screen (class, parameter defaults: no params file).
+# Defaults: screenlock_timeout_minutes 5 -> idle-delay 300 s, screenlock_grace_seconds 0. The class installs dconf-cli,
+# writes the system dconf profile, keyfile and locks, and refreshes `dconf update`, which compiles /etc/dconf/db/local.
+# The node has no GNOME session: the probes read the COMPILED system database with `dconf read` (it reads the database
+# files directly), which proves the refresh-only `dconf update` ran. That the desktop really locks after 5 minutes needs
+# a desktop session and is not tested here.
+class: gnome_lock_screen
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 0.3
+  notes: "Wall clock 2026-11-16T12:46:14Z to 12:46:32Z (written + validated), while the Phase 1 review ran."
+checks:
+  - id: dconf-cli-installed
+    what: the dconf-cli package is installed
+    control: negative
+    derived_from:
+      - {path: manifests/gnome_lock_screen.pp, lines: "11-13", text: "package { 'dconf-cli':"}
+    probe: dpkg-query -W -f='${Status}\n' dconf-cli 2>&1
+    expect: {rc: 0, stdout: "\\Ainstall ok installed\\n\\Z"}
+
+  - id: profile-uses-system-db-local
+    what: the dconf profile `user` stacks the user db over the system db `local`, 0644 root:root
+    control: negative
+    derived_from:
+      - {path: manifests/gnome_lock_screen.pp, lines: "38-45", text: "content => \"user-db:user\\nsystem-db:local\\n\","}
+    probe: |
+      stat -c '%a %U %G' /etc/dconf/profile/user
+      cat /etc/dconf/profile/user
+    expect: {rc: 0, stdout: "\\A644 root root\\nuser-db:user\\nsystem-db:local\\n\\Z"}
+
+  - id: keyfile-and-locks-rendered
+    what: the keyfile sets idle-delay 300, lock-enabled true, lock-delay 0, and the locks file locks exactly those three keys
+    control: negative
+    derived_from:
+      - {path: manifests/gnome_lock_screen.pp, lines: "5-9", text: "$screenlock_timeout_seconds = $screenlock_timeout_minutes * 60"}
+      - {path: manifests/gnome_lock_screen.pp, lines: "63-75", text: "idle-delay=uint32 ${screenlock_timeout_seconds}"}
+      - {path: manifests/gnome_lock_screen.pp, lines: "80-89", text: "/org/gnome/desktop/screensaver/lock-delay"}
+    probe: |
+      cat /etc/dconf/db/local.d/00-screenlock
+      echo ---
+      cat /etc/dconf/db/local.d/locks/00-screenlock
+    expect:
+      rc: 0
+      stdout: "\\A\\[org/gnome/desktop/session\\]\\nidle-delay=uint32 300\\n\\n\\[org/gnome/desktop/screensaver\\]\\nlock-enabled=true\\nlock-delay=uint32 0\\n---\\n/org/gnome/desktop/session/idle-delay\\n/org/gnome/desktop/screensaver/lock-enabled\\n/org/gnome/desktop/screensaver/lock-delay\\n\\Z"
+
+  - id: compiled-db-serves-the-policy
+    what: the compiled system database answers the three keys with the class's values (dconf update ran)
+    control: negative
+    derived_from:
+      - {path: manifests/gnome_lock_screen.pp, lines: "94-98", text: "command     => '/usr/bin/dconf update',"}
+      - {path: manifests/gnome_lock_screen.pp, lines: "63-78", text: "notify  => Exec['dconf_update_screenlock'],"}
+    probe: |
+      for k in /org/gnome/desktop/session/idle-delay /org/gnome/desktop/screensaver/lock-enabled /org/gnome/desktop/screensaver/lock-delay; do
+        DCONF_PROFILE=user /usr/bin/dconf read "$k"
+      done
+    mismatch:
+      varies: >-
+        the dconf profile: a profile name that does not exist has no system-db:local line, so the values cannot come
+        from the compiled system database and the three reads must not return the class's values
+      probe: |
+        for k in /org/gnome/desktop/session/idle-delay /org/gnome/desktop/screensaver/lock-enabled /org/gnome/desktop/screensaver/lock-delay; do
+          DCONF_PROFILE=p8-phase3-absent-profile /usr/bin/dconf read "$k"
+        done
+    expect: {rc: 0, stdout: "\\Auint32 300\\ntrue\\nuint32 0\\n\\Z"}
