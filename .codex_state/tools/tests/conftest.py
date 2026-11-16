@@ -79,7 +79,7 @@ if name == "VBoxManage":
         save()
     elif args[:1] == ["snapshot"] and args[2] == "showvminfo":
         snap = next((x for x in vms[args[1]].get("snapshots", []) if x["name"] == args[3]), None)
-        if snap is None:
+        if snap is None or "--machinereadable" in args:  # VirtualBox 7.2: `snapshot showvminfo` has no --machinereadable
             sys.exit(1)
         print(f'SnapshotUUID="{snap["uuid"]}"')
     sys.exit(0)

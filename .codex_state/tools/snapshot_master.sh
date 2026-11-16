@@ -99,8 +99,10 @@ done
 [[ "$status" == "active running" ]] || refuse "snapshot ${NAME} taken, but puppetserver/8140 not healthy: '${status}'"
 
 # 7. record name + UUID
-uuid="$(VBoxManage snapshot "$MASTER_VM" showvminfo "$NAME" --machinereadable 2>/dev/null | sed -n 's/^CurrentSnapshotUUID="\(.*\)"$/\1/p;s/^SnapshotUUID="\(.*\)"$/\1/p' | head -1)"
-[[ -n "$uuid" ]] || uuid="$(VBoxManage snapshot "$MASTER_VM" list --machinereadable | grep -A1 -x "SnapshotName[-0-9]*=\"${NAME}\"" | sed -n 's/^SnapshotUUID[-0-9]*="\(.*\)"$/\1/p')"
+# From the snapshot list only: `snapshot showvminfo --machinereadable` exits 1 on VirtualBox 7.2, and under pipefail
+# that ended the script silently after the take, with no record (P8MASTER_BASELINE_GREEN_v5, 2026-11-16).
+uuid="$(VBoxManage snapshot "$MASTER_VM" list --machinereadable | grep -A1 -x "SnapshotName[-0-9]*=\"${NAME}\"" | sed -n 's/^SnapshotUUID[-0-9]*="\(.*\)"$/\1/p')" || uuid=""
+[[ -n "$uuid" ]] || refuse "snapshot ${NAME} taken and the master is back, but its UUID could not be read; record it by hand from 'VBoxManage snapshot ${MASTER_VM} list'"
 mkdir -p "$(dirname "$RECORD")"
 python3 -c 'import json,sys; print(json.dumps(dict(zip(["name","uuid","description","taken_at"], sys.argv[1:]))))' \
   "$NAME" "$uuid" "$desc" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >>"$RECORD"

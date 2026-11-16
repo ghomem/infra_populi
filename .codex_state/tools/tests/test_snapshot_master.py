@@ -78,6 +78,9 @@ def test_happy_path_takes_offline_restarts_verifies_and_records(clone, lab):
     (rec,) = [json.loads(l) for l in clone.rec.read_text().splitlines()]
     assert rec["name"] == "P8MASTER_BASELINE_GREEN_v4" and rec["uuid"] == "uuid-2"
     assert "8140 running" in proc.stdout
+    # the UUID comes from the snapshot list: `snapshot showvminfo --machinereadable` exits 1 on VirtualBox 7.2 and,
+    # under pipefail, ended the script silently with no record (v5)
+    assert not any(c[1] == "snapshot" and c[3] == "showvminfo" for c in calls)
 
 
 @pytest.mark.parametrize("name", ["v4", "P8MASTER_", "P8MASTER_a-b", "P8NODE_BASELINE_GREEN_v3", "P8MASTER_X; rm"])
