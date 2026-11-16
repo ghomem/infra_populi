@@ -1,0 +1,21 @@
+{
+ "class": "sysmon_integrity_master",
+ "at": "20261116T235137Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "checklist-written-as-puppet-variable: templates/sysmon/checklist-integrity.sh.erb:9-18 loops md5sum over FILELIST, joins with ':' and writes $integrity_checklist='...' to $OUTDIR/$OUTFILE; the action runs exactly that installed script, the read-only effect recomputes md5sum of the fixture filelist (/etc/hostname /etc/os-release) independently and compares the written 97_integrity.pp content, so it judges the action's result, not its output. mutates covers the file write (the install -d is a no-op on this node: the agent package ships the manifests dir, so 'absent on an agent node' overstates but under-declares nothing)",
+  "checklist-script-rendered: templates/sysmon/checklist-integrity.sh.erb:3-5 render OUTDIR/OUTFILE/FILELIST from @outdir/@outfile/@filelist; expect FILELIST=\"/etc/hostname /etc/os-release\" matches the params fixture; root 0755 matches the baseline file resource (mode 0755, owner root)",
+  "checklist-script-rendered: manifests/sysmon_integrity_master.pp:6-8 set $outdir = lookup('puppet::manifdir') (master Hiera common.yaml: %{hiera('puppet::basedir')}/code/environments/production/manifests, hence the /+ in the regex) and $outfile = '97_integrity.pp'; expect OUTDIR/OUTFILE lines match those values"
+ ],
+ "review_s": 79.8,
+ "check_file_sha256": "3f3f0e0c73549f4cb3d444e5e8fb3bbca6334a1f94b5ea65cfddd504d6571178",
+ "reviewer_result": "20261116T235018Z-reviewer",
+ "author_result": "20261116T234902Z-author",
+ "findings": []
+}
