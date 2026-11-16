@@ -218,6 +218,7 @@ def rhel_lab(lab):
         {"match": r"SSH_CONNECTION", "stdout": "192.168.56.1 51234 192.168.56.21 22\n"},
         {"match": r"ip -br addr", "stdout": "enp0s8           UP             192.168.56.21/24\n"},
         {"match": r"p8lab-rhel9 hostname$", "stdout": "p8lab-rhel9\n"},
+        {"match": r"repo-override --list", "stdout": "This system does not have any content overrides applied to it.\n"},
     ]
 
 
@@ -247,3 +248,28 @@ def test_a_planned_or_unknown_node_acts_on_no_vm(lab):
         proc = lab.run([SCRIPT, "--node", kind])
         assert proc.returncode == 1 and "No usable node in the lab inventory" in proc.stderr
     assert lab.calls("VBoxManage") == []
+
+
+# HQ 2026-11-16 item 5: an enabled repository is a content override kept on the subscription server; it survived a
+# snapshot restore on p8lab-rhel9, so every RedHat revert clears the overrides and asserts none remain, before dnf.
+def test_a_redhat_revert_clears_content_overrides_before_dnf(lab, tmp_path):
+    rhel_lab(lab)
+    proc = lab.run([SCRIPT, "--node", "rhel9"], env={"P8_NODES": rhel_inventory(tmp_path)})
+    assert proc.returncode == 0, proc.stderr
+    lines = [" ".join(c[1:]) for c in lab.calls("ssh")]
+    first = lambda pat: next(i for i, l in enumerate(lines) if pat in l)  # noqa: E731
+    assert first("subscription-manager identity") < first("repo-override --remove-all") \
+        < first("repo-override --list") < first("dnf -q makecache")
+
+
+@pytest.mark.parametrize("rule, message", [
+    ({"match": r"repo-override --remove-all", "rc": 1, "stdout": ""}, "Could not clear the content overrides"),
+    ({"match": r"repo-override --list", "stdout": "Repository: codeready-builder-for-rhel-9-x86_64-rpms\n  enabled: 1\n"},
+     "still has content overrides after clearing: Repository: codeready-builder"),
+])
+def test_content_overrides_that_cannot_be_cleared_fail_the_revert(lab, tmp_path, rule, message):
+    rhel_lab(lab)
+    lab.world["ssh"].insert(0, rule)
+    proc = lab.run([SCRIPT, "--node", "rhel9"], env={"P8_NODES": rhel_inventory(tmp_path)})
+    assert proc.returncode == 1 and message in proc.stderr
+    assert not any("dnf" in " ".join(c) for c in lab.calls("ssh"))

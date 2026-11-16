@@ -12,8 +12,9 @@
 # Its VM must be ubuntu24-puppet8-Node or a p8lab-* VM, never the master. Default node: ubuntu24-puppet8-Node,
 # snapshot P8NODE_BASELINE_GREEN_v4 (v3 — GRUB_RECORDFAIL_TIMEOUT=2, apt timers off, NIC2 host-only vboxnet0,
 # enp0s8 192.168.56.20/24, hosts master -> 192.168.56.10 — plus NIC1 VirtualBox NAT with natdnshostresolver1 on).
-# After every restore: Debian refreshes apt lists; RedHat must show a valid subscription (HQ 2026-11-16 item 5) and
-# refreshes the dnf metadata.
+# After every restore: Debian refreshes apt lists; RedHat must show a valid subscription (HQ 2026-11-16 item 5), has
+# its content overrides cleared (they live on the subscription server and survive a restore) and refreshes the dnf
+# metadata.
 #
 # Host-specific assumptions:
 #   master VM     Ubuntu24-puppet8-Master  (may start; never restore/power off/reset)
@@ -293,6 +294,14 @@ if [[ "$NODE_OS_FAMILY" == "RedHat" ]]; then
   # A RHEL node must be registered after every restore (HQ 2026-11-16 item 5): no valid subscription, no packages.
   ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" 'sudo -n subscription-manager identity' >/dev/null 2>&1 ||
     fail "The restored RHEL node '$NODE_SSH_ALIAS' is not registered (subscription-manager identity failed)."
+  # Content overrides (an enabled repository) live on the subscription server, not in the snapshot: one made after
+  # the baseline was enabled again right after a restore (p8lab-rhel9 bring-up, 2026-11-16). Clear them after every
+  # restore (HQ 2026-11-16 item 5) and assert none remain.
+  ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" 'sudo -n subscription-manager repo-override --remove-all' >/dev/null 2>&1 ||
+    fail "Could not clear the content overrides (enabled repositories) of RHEL node '$NODE_SSH_ALIAS'."
+  overrides="$(ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" 'sudo -n subscription-manager repo-override --list' 2>&1)" || overrides=""
+  grep -q 'does not have any content overrides' <<<"$overrides" ||
+    fail "RHEL node '$NODE_SSH_ALIAS' still has content overrides after clearing: ${overrides%%$'\n'*}"
   printf 'Refreshing dnf metadata on the node...\n'
   # shellcheck disable=SC2029  # the timeout is a local constant
   ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" "sudo -n timeout ${DNF_TIMEOUT_SECONDS} dnf -q makecache" >/dev/null 2>&1 ||
