@@ -1,0 +1,21 @@
+{
+ "class": "sysmon_backup",
+ "at": "20261116T192107Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "backup-script-installed: sysmon_backup.pp:13 declares puppet_infrastructure::backup 'sysmon' with bindir=lookup('filesystem::bindir') (/opt/puppet-infrastructure/bin); backup.pp:14 names the file ${bindir}/backup-${title}.sh, so stat on /opt/puppet-infrastructure/bin/backup-sysmon.sh is the right path",
+  "script-carries-the-sysmon-keys: sysmon_backup.pp:10 compression = lookup(sysmon::compression, default true); with no such Hiera key the define gets true and backup.sh.erb:15 renders COMPRESSION=true, as expected; the other expected lines follow erb:4-7 from the sysmon::basedir/address/backdir/backdays fixture",
+  "backup-script-installed: backup.pp:15-17 declare mode '0755', owner 'root', group 'root' on the script; stat '%U %G %a' expecting 'root root 755' tests exactly that"
+ ],
+ "review_s": 65.0,
+ "check_file_sha256": "9e7ff520150d6f73eaf6635a24a0b1d0b34128d63321434a07e161c7bf3162ee",
+ "reviewer_result": "20261116T192002Z-reviewer",
+ "author_result": "20261116T191858Z-author",
+ "findings": []
+}
