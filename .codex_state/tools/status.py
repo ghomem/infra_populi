@@ -97,16 +97,24 @@ def main() -> None:
     states = {name: verification_state(name, migrations[name], flagged) for name in sorted(done)}
     verified = [name for name, (state, _) in states.items() if state == VERIFIED]
     print(f"Done split: {len(verified)} {VERIFIED} / {len(done) - len(verified)} {PENDING_RECONCILIATION}")
+    import phase3  # noqa: PLC0415  (tools dir; Phase 3 behaviour state, HQ 2026-11-16)
+    behaviour = {name: phase3.behaviour_state(name)["state"] for name in sorted(done)}
+    counts: dict[str, int] = {}
+    for b in behaviour.values():
+        counts[b] = counts.get(b, 0) + 1
+    print("Behaviour (Phase 3, separate from the Phase 1 record): "
+          + " / ".join(f"{counts[k]} {k}" for k in sorted(counts)) + f" (of {len(done)} done)")
 
     print("\nDone classes by verification state (derived from .codex_state/reviews/)")
     print_table(
-        ("class", "state", "tracker marker", "latest v2 verdict"),
+        ("class", "state", "tracker marker", "latest v2 verdict", "behaviour"),
         [
             (
                 f"{generator.PREFIX}{name}",
                 state,
                 marker(tracker.get(name)),
                 "PASS" if state == VERIFIED else failing_checks(verdict),
+                behaviour[name],
             )
             for name, (state, verdict) in sorted(states.items(), key=lambda item: (item[1][0] != VERIFIED, item[0]))
         ],

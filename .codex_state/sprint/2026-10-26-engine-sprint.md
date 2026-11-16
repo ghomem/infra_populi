@@ -122,3 +122,4 @@ band commits from now on stash unrelated work first.
 | b4-B4 Phase 3 mismatch controls (HQ 2026-11-16 item 1) | done | this commit | mandatory for tool-verdict probes (detected), must fail after apply or the set is INVALID; pilots updated (ssh 3, nginx 8); 16 tests |
 | b4-doc documentation list: rsnapshot restore path (HQ 2026-11-16 item 4) | done | this commit | rules/documentation_list.md (single source) |
 | b4-NAT NIC1 bridged -> NAT plan (HQ 2026-11-16 item 5) | stopped for HQ review | this commit | escalations/lab-network-nat.md: natdnshostresolver1 on; node trial first; [HUMAN] modifyvm steps; node v4 (NAT in machine config), master v5 after hotspot acceptance (1 revert, 1 compile, 1 fixture) |
+| b4-pre6 Phase 3 in the loop: behaviour state, deferrals, skill step 5b (HQ 2026-11-16 item 2) | done | this commit | phase3.py state (derived); deferred sets; duration_s/review_s; status.py behaviour column (3 pass / 42 none); CLAUDE.md; 8 tests |

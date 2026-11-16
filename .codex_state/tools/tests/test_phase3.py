@@ -395,3 +395,73 @@ def test_no_mismatch_run_when_the_check_itself_fails(p3, lab):
     record, _ = p3.result()
     assert record["applied"][0]["mismatch"] == {"varies": MM["varies"], "not_run": "the check itself failed"}
     assert len(lab.calls("ssh")) == 2  # clean + applied probe; no mismatch call
+
+
+# HQ 2026-11-16 item 2: behaviour state (derived) and deferrals.
+DEFERRED = {"class": CLS, "baseline": "release-0.9.10 (cf477c6)", "authoring": {"minutes": 2},
+            "deferred": {"needs": "second-node", "why": "the cron pushes to a remote backup host that the lab lacks"},
+            "derived_from": [REF_CRON]}
+
+
+def state_of(p3, *classes):
+    proc = p3.run("state", *classes)
+    assert proc.returncode == 0, proc.stderr
+    row = next(l for l in proc.stdout.splitlines() if l.startswith(f"| {CLS} |"))
+    return [c.strip() for c in row.strip("|").split("|")]
+
+
+def test_a_deferral_validates_runs_nothing_and_is_the_state(p3, lab):
+    p3.write(dict(DEFERRED))
+    proc = p3.run("validate", CLS)
+    assert proc.returncode == 0 and "DEFERRED (needs second-node)" in proc.stdout
+    assert p3.run("run", CLS).returncode == 2 and lab.calls("ssh") == [] and not p3.log.exists()
+    assert state_of(p3, CLS)[1:3] == ["deferred", "second-node"]
+
+
+@pytest.mark.parametrize("mutate, message", [
+    (lambda d: d["deferred"].update(needs="patience"), "deferred needs `needs`"),
+    (lambda d: d["deferred"].update(why="short"), "a `why` of at least 20 characters"),
+    (lambda d: d.update(derived_from=[]), "cites the baseline lines"),
+    (lambda d: d.update(checks=[check("conf", "probe-conf")]), "a deferred set has no checks"),
+])
+def test_bad_deferrals_are_refused(p3, mutate, message):
+    data = copy.deepcopy(DEFERRED)
+    mutate(data)
+    p3.write(data)
+    proc = p3.run("validate", CLS)
+    assert proc.returncode == 2 and message in proc.stderr, proc.stderr
+
+
+def test_state_moves_from_none_to_unreviewed_to_pass_to_stale(p3):
+    assert state_of(p3, CLS)[1] == "none"
+    run_both(p3)
+    assert state_of(p3, CLS)[1] == "unreviewed"
+    record, _ = p3.result()
+    assert record["duration_s"] >= 0 and record["authoring_minutes"] == 5
+    assert p3.run("verdict", CLS, "--derived", "ok", "--evidence", "e").returncode == 0
+    (review,) = (p3.dir / "reviews" / CLS).glob("*.json")
+    assert json.loads(review.read_text())["review_s"] is not None
+    row = state_of(p3, CLS)
+    assert row[1] == "pass" and row[3] == "5 min"
+    data = yaml.safe_load((p3.dir / f"{CLS}.yml").read_text())
+    data["checks"][0]["what"] = "edited after the review"
+    p3.write(data)
+    assert state_of(p3, CLS)[1:3] == ["stale", "the check file changed after its review"]
+
+
+def test_a_reproduced_finding_is_the_state_and_flags_a_missing_escalation(p3):
+    run_both(p3, applied_for_reviewer=FAIL)  # the reviewer reproduces nothing yet: author passed, reviewer failed
+    p3.probe_rule("probe-conf", FAIL, FAIL)  # both runs see the failure now
+    p3.run("run", CLS)
+    p3.probe_rule("probe-conf", FAIL, FAIL)
+    p3.run("run", CLS, "--role", "reviewer")
+    proc = p3.run("verdict", CLS, "--derived", "ok", "--evidence", "finding conf: x")
+    assert proc.returncode == 0 and "write .codex_state/escalations/backup_rsnapshot.behaviour.md" in proc.stdout
+    row = state_of(p3, CLS)
+    assert row[1] == "finding" and row[2] == "conf — NO ESCALATION FILE"
+
+
+def test_a_failed_review_is_the_state(p3):
+    run_both(p3, applied_for_reviewer=FAIL)
+    p3.run("verdict", CLS, "--derived", "ok", "--evidence", "e")
+    assert state_of(p3, CLS)[1:3] == ["review-failed", "reproduced"]

@@ -1233,3 +1233,21 @@ same `expect`.
 - **Pilots updated:** ssh_secure (3 mismatches; password-auth-off reduced to its state read) and nginx_static_domain
   (8 mismatches, never varying the Host header: each port has a single server).
 - **Re-runs:** both are re-run and re-reviewed because their check files changed. 16 new runner tests.
+
+## 2026-11-16 — HQ: Phase 3 in the loop from batch 4; behaviour state; backfill between batches
+After the Phase 1 reviewer PASS (skill step 5b), the advisor writes the class's check set from the baseline.
+- **Running it:** validate, run, reviewer `--phase3`; results and reviews are committed.
+- **Deferral:** a class that cannot be tested in this lab declares `deferred: {needs: second-node|browser|rhel|desktop,
+  why}` with derived_from lines showing why; `run` refuses it.
+- **Behaviour state:** pass / finding / deferred (plus none, unreviewed, stale, review-failed, invalid), DERIVED by
+  `phase3.py state` from the check, result and review files (P2; no separate record file). It is shown in status.py
+  beside the Phase 1 state.
+  - stale = the check file changed after its review.
+  - finding = the reviewer reproduced a failing check. It must have `escalations/<class>.behaviour.md` (flagged if
+    missing) and never blocks the Phase 1 record.
+- **Batch report:** a Behaviour section with the state table, authoring minutes, author/reviewer run times
+  (`duration_s` in results, new) and review time (`review_s` in verdicts, new).
+- **Backfill of the 45 done classes:** between batches, node_base closure first, then nginx/ssl.
+- **Retention (HQ):** node v2 and master v3 stay through batch 4, then Salatiel deletes both. After the batch 4
+  report, the advisor deletes its own lab-network backups (`~/.ssh/config.pre-p8net-*`,
+  `~/.ssh/known_hosts.pre-p8net-step1a`, the master's `/etc/hosts.pre-p8net*`). 8 new tests.

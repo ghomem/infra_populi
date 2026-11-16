@@ -160,4 +160,11 @@ Behaviour checks per class in `.codex_state/checks/<class>.yml` (advisor-authore
 - Reviewer: `reviewer` with `<class> --phase3` re-runs the checks, spot-checks derived_from (`spot`) and persists a
   verdict (`verdict`) in `checks/reviews/<class>/`.
 - Phase 1 metrics are not touched: harness events go to `logs/phase3-metrics`.
-- Pilots: backup_rsnapshot, ssh_secure, nginx_static_domain. They run after the lab-network change, as its canary.
+- Pilots: backup_rsnapshot, ssh_secure, nginx_static_domain (run 2026-11-16, all pass).
+- Mismatch controls (HQ 2026-11-16): a probe that takes a tool's verdict on a name/user/key/cipher/vhost needs a
+  `mismatch` (one value deliberately wrong) that must FAIL after apply, or the set is INVALID.
+- In the loop from batch 4 (skill step 5b): after the reviewer PASS, write and run the class's check set, or declare
+  a `deferred` one (needs a second node, browser, RHEL or desktop). The behaviour state (pass / finding / deferred) is
+  separate from the Phase 1 record: `phase3.py state`, and a status.py column. A finding becomes
+  `escalations/<class>.behaviour.md` and does not block Phase 1. The 45 done classes are backfilled between batches:
+  node_base closure first, then nginx/ssl.

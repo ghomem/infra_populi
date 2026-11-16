@@ -56,6 +56,24 @@ FOR EACH CLASS:
      (Any ad-hoc `codex exec` keeps the mandatory `timeout -k 30 900 ... </dev/null`.) If it is faithfulness (reimplementation) or non-idempotency: back
      the migration out with a corrective commit (never force-push), preserve the manifest as
      `candidates/<class>.partial.pp` or `.reimplemented.pp` with a header, block with evidence, escalate.
+5b. BEHAVIOUR (Phase 3 in the loop, HQ 2026-11-16) — after the reviewer PASS, before METRICS. It never blocks or
+   changes the Phase 1 record, and the budget counts Phase 1 PASSes only.
+   - Author `.codex_state/checks/<class>.yml` from the BASELINE (CLAUDE.md "Phase 3 checks"):
+     - every check with its derived_from lines;
+     - negative controls;
+     - a `mismatch` control wherever a probe hands a name/user/key/cipher/vhost to a tool and takes its verdict;
+     - opt-in `mutates` + `effect` for an exercise.
+   - Or write a `deferred: {needs: second-node|browser|rhel|desktop, why}` file, with derived_from lines showing why.
+   - Measure the authoring time (wall clock, start → validated) into `authoring.minutes`.
+   - `phase3.py validate <class>`, then `phase3.py run <class>`. Commit the results:
+     `P8: phase3: <class> run N results — <outcome>`.
+   - An AUTHORING ERROR (the probe or expectation is wrong while the behaviour matches the baseline) is corrected in
+     the check file with a dated note and re-run; the failed run's results stay. Never bend an expectation to observed
+     behaviour that contradicts the baseline: that is a FINDING.
+   - Spawn `reviewer` with "<class> --phase3" and nothing else; commit `P8: phase3: record review <class>`.
+   - A FINDING (the reviewer reproduced it) → write `.codex_state/escalations/<class>.behaviour.md` with the evidence
+     (result file, probe output, baseline lines) and continue. `phase3.py state <class>` shows pass / finding /
+     deferred.
 6. BLOCKED by Codex: Codex reports `BLOCKED: category <N> — ...` + evidence (it cannot write blocked.txt: advisor-only,
    enforced under CODEX_RUN=1 and by the wrapper's audit — `AUTHORITY_VIOLATION`/exit 5 means it tried; review and
    revert the change, note it in the batch report). Write the blocked.txt entry yourself with category + evidence.
@@ -84,6 +102,9 @@ FOR EACH CLASS:
 END OF RUN: the batch report's table is `python3 .codex_state/tools/metrics.py batch-report <class>...` (wall =
 dispatch→verdict, phases prep/pregate/harness/codex/record/review/wait, expected run-2 events listed own vs inherited —
 never implied), plus `metrics.py summary` (medians/rates per path). The node_base-style composite compiles go in too.
+A `## Behaviour (Phase 3)` section: `python3 .codex_state/tools/phase3.py state <class>...` (pass / finding / deferred,
+with authoring minutes and run/review times derived from the check, result and review files), every finding's escalation
+file, and every authoring correction.
 A `## Skipped tests` section names every test the full suite skipped, with its reason (the pre-commit hook prints them
 as `TESTS: skipped <module>::<test> — <reason>` and refuses a batch report that misses one).
 Revert the node to baseline. Confirm `git status` clean and pushed. Print a summary table:

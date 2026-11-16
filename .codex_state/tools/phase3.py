@@ -14,10 +14,20 @@ derived from the pinned baseline, probed on the node only, with negative control
   phase3.py spot <class> [--n N] [--seed S]
                                  reviewer: N random derived_from references (default 3), each printed with the
                                  baseline lines read fresh from the upstream pin, beside the check's probe/expect.
+  phase3.py state [<class> ...]  behaviour state per class (HQ 2026-11-16), DERIVED from the check, result and
+                                 review files: pass | finding | deferred (<needs>) | none (no check file) |
+                                 unreviewed | stale (check file changed after its review) | review-failed | invalid;
+                                 with authoring minutes and the author-run / reviewer-run / review times. A finding
+                                 without .codex_state/escalations/<class>.behaviour.md is flagged.
   phase3.py verdict <class> --derived ok|fail --evidence TEXT [--evidence ...]
                                  reviewer: compares its latest run with the latest author run (same validity, same
                                  per-check outcome on both phases) and persists .codex_state/checks/reviews/<class>/
                                  <UTC>.json. PASS = both runs valid + reproduced + derived ok.
+
+A class that cannot be tested on this lab declares a DEFERRAL instead of checks (HQ 2026-11-16):
+  class / baseline / authoring as below, plus
+  deferred: {needs: second-node|browser|rhel|desktop, why: <one or two sentences>}
+  derived_from: [<baseline references showing why, as for a check>]
 
 Check file .codex_state/checks/<class>.yml:
   class: <short name>             # = the file name
@@ -64,6 +74,7 @@ import random
 import re
 import subprocess
 import sys
+import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -173,6 +184,7 @@ def tool_verdict(probe: str) -> str | None:
     return next((why for pat, why in TOOL_VERDICT if pat.search(probe)), None)
 
 
+DEFER_NEEDS = ("second-node", "browser", "rhel", "desktop")
 HOST_RULES = 3  # FORBIDDEN[:3] keep probes on the node and away from Puppet; the rest keep them read-only
 
 
@@ -192,6 +204,21 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
         problems.append(f"class {data.get('class')!r} != file name {cls!r}")
     if data.get("baseline") != label(base):
         problems.append(f"baseline {data.get('baseline')!r} != the class's baseline {label(base)!r}")
+    minutes = (data.get("authoring") or {}).get("minutes")
+    if not isinstance(minutes, (int, float)) or minutes <= 0:
+        problems.append("authoring.minutes (authoring time, minutes) is required")
+    if "deferred" in data:
+        d = data["deferred"]
+        if not isinstance(d, dict) or d.get("needs") not in DEFER_NEEDS or len(str(d.get("why", "")).strip()) < 20:
+            problems.append(f"deferred needs `needs` ({'|'.join(DEFER_NEEDS)}) and a `why` of at least 20 characters")
+        if "checks" in data:
+            problems.append("a deferred set has no checks")
+        refs = data.get("derived_from")
+        if not isinstance(refs, list) or not refs:
+            problems.append("a deferral cites the baseline lines that make it necessary (derived_from)")
+        else:
+            problems += [p for p, _ in (resolve_ref(r, base) for r in refs) if p]
+        return problems, data, raw
     if data.get("fixture") not in ("params", "defaults"):
         problems.append("fixture must be `params` or `defaults`")
     params = PARAMS_DIR / f"puppet_infrastructure::{cls}.json"
@@ -199,9 +226,6 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
         problems.append(f"fixture: params but {params} is missing")
     if data.get("fixture") == "defaults" and params.is_file():
         problems.append(f"fixture: defaults but {params} exists (the harness would apply it)")
-    minutes = (data.get("authoring") or {}).get("minutes")
-    if not isinstance(minutes, (int, float)) or minutes <= 0:
-        problems.append("authoring.minutes (authoring time, minutes) is required")
     checks = data.get("checks")
     if not isinstance(checks, list) or not checks:
         return problems + ["no checks"], data, raw
@@ -282,6 +306,9 @@ def cmd_validate(cls: str) -> int:
         print(f"INVALID {cls}: {p}", file=sys.stderr)
     if problems:
         return 2
+    if "deferred" in data:
+        print(f"VALID {cls}: DEFERRED (needs {data['deferred']['needs']}): {data['deferred']['why']}")
+        return 0
     neg = sum(1 for c in data["checks"] if c["control"] == "negative")
     mut = sum(1 for c in data["checks"] if "mutates" in c)
     mism = sum(1 for c in data["checks"] if "mismatch" in c)
@@ -402,8 +429,12 @@ def cmd_run(cls: str, role: str) -> int:
               "check_file_sha256": hashlib.sha256(raw).hexdigest(), "valid": not problems, "problems": problems,
               "clean": [], "apply": None, "applied": [], "findings": [], "not_run": [], "outcome": None}
 
+    t0 = time.monotonic()
+    record["authoring_minutes"] = (data.get("authoring") or {}).get("minutes")
+
     def finish(outcome: str, rc: int) -> int:
         record["outcome"] = outcome
+        record["duration_s"] = round(time.monotonic() - t0, 1)
         stem = write_outputs(cls, record)
         shown = stem.relative_to(REPO) if stem.is_relative_to(REPO) else stem
         print(f"PHASE3 {outcome} {cls}: {shown}.json (+ .xml)")
@@ -413,6 +444,9 @@ def cmd_run(cls: str, role: str) -> int:
         for p in problems:
             print(f"INVALID {cls}: {p}", file=sys.stderr)
         return finish("INVALID_SET", 2)
+    if "deferred" in data:
+        print(f"DEFERRED {cls}: needs {data['deferred']['needs']}; nothing to run", file=sys.stderr)
+        return 2
     revert = os.environ.get("P8_PHASE3_REVERT") or str(TOOLS / "revert_node.sh")
     print("==> Reverting the node (clean phase runs on the baseline)")
     if subprocess.run([revert], env=node_env()).returncode != 0:
@@ -542,7 +576,10 @@ def cmd_verdict(cls: str, derived: str, evidence: list[str]) -> int:
     checks["reproduced"] = "ok" if same else "fail"
     checks["derived_from"] = derived
     verdict = "PASS" if all(v == "ok" for v in checks.values()) else "FAIL"
+    started = dt.datetime.strptime(mine["at"], "%Y%m%dT%H%M%SZ").replace(tzinfo=dt.timezone.utc) if mine else None
+    review_s = round((dt.datetime.now(dt.timezone.utc) - started).total_seconds(), 1) if started else None
     record = {"class": cls, "at": now(), "verdict": verdict, "checks": checks, "evidence": evidence,
+              "review_s": review_s, "check_file_sha256": mine and mine["check_file_sha256"],
               "reviewer_result": mine and f"{mine['at']}-reviewer", "author_result": theirs and f"{theirs['at']}-author",
               "findings": (mine or {}).get("findings", [])}
     out = phase3_dir() / "reviews" / cls
@@ -553,7 +590,65 @@ def cmd_verdict(cls: str, derived: str, evidence: list[str]) -> int:
     for e in evidence:
         print(f"evidence {e}")
     print(f"persisted {path.relative_to(REPO) if path.is_relative_to(REPO) else path}")
+    if verdict == "PASS" and record["findings"]:
+        print(f"FINDINGS reproduced: write .codex_state/escalations/{cls}.behaviour.md with the evidence")
     return 0 if verdict == "PASS" else 1
+
+
+# ------------------------------------------------------------------ behaviour state (derived)
+
+def latest_review(cls: str) -> dict | None:
+    files = sorted((phase3_dir() / "reviews" / cls).glob("*.json"))
+    return json.loads(files[-1].read_text()) if files else None
+
+
+def behaviour_state(cls: str) -> dict:
+    """Derived (P2) from .codex_state/checks: the check file, the latest results and the latest phase-3 review."""
+    row = {"class": cls, "state": "none", "detail": "", "authoring_min": None, "author_run_s": None,
+           "reviewer_run_s": None, "review_s": None}
+    if not (phase3_dir() / f"{cls}.yml").is_file():
+        return row
+    problems, data, raw = validate(cls)
+    row["authoring_min"] = (data.get("authoring") or {}).get("minutes")
+    if problems:
+        return {**row, "state": "invalid", "detail": problems[0]}
+    if "deferred" in data:
+        return {**row, "state": "deferred", "detail": data["deferred"]["needs"]}
+    author, reviewer, review = latest(cls, "author"), latest(cls, "reviewer"), latest_review(cls)
+    row["author_run_s"] = (author or {}).get("duration_s")
+    row["reviewer_run_s"] = (reviewer or {}).get("duration_s")
+    row["review_s"] = (review or {}).get("review_s")
+    if not review:
+        return {**row, "state": "unreviewed", "detail": (author or {}).get("outcome") or "not run"}
+    sha = hashlib.sha256(raw).hexdigest()
+    reviewed_sha = review.get("check_file_sha256") or (reviewer or {}).get("check_file_sha256")
+    if reviewed_sha != sha:
+        return {**row, "state": "stale", "detail": "the check file changed after its review"}
+    if review["verdict"] != "PASS":
+        failed = ", ".join(k for k, v in review["checks"].items() if v != "ok")
+        return {**row, "state": "review-failed", "detail": failed}
+    if review.get("findings"):
+        esc = REPO / ".codex_state" / "escalations" / f"{cls}.behaviour.md"
+        detail = ", ".join(review["findings"]) + ("" if esc.is_file() else " — NO ESCALATION FILE")
+        return {**row, "state": "finding", "detail": detail}
+    return {**row, "state": "pass"}
+
+
+def cmd_state(classes: list[str]) -> int:
+    if not classes:
+        classes = sorted(p.stem for p in phase3_dir().glob("*.yml"))
+    rows = [behaviour_state(c) for c in classes]
+    m = lambda v, unit: "–" if v is None else f"{v:g}{unit}"  # noqa: E731
+    print("| class | behaviour | detail | authoring | author run | reviewer run | review |")
+    print("|---|---|---|---:|---:|---:|---:|")
+    for r in rows:
+        print(f"| {r['class']} | {r['state']} | {r['detail']} | {m(r['authoring_min'], ' min')} | "
+              f"{m(r['author_run_s'], ' s')} | {m(r['reviewer_run_s'], ' s')} | {m(r['review_s'], ' s')} |")
+    counts: dict[str, int] = {}
+    for r in rows:
+        counts[r["state"]] = counts.get(r["state"], 0) + 1
+    print("\n" + ", ".join(f"{n} {k}" for k, n in sorted(counts.items())))
+    return 0
 
 
 def main(argv: list[str]) -> int:
@@ -568,6 +663,8 @@ def main(argv: list[str]) -> int:
         return cmd_run(short(argv[1]), role)
     if len(argv) >= 2 and argv[0] == "spot":
         return cmd_spot(short(argv[1]), int(opt("--n", "3")), int(opt("--seed")) if "--seed" in argv else None)
+    if argv[:1] == ["state"]:
+        return cmd_state([short(c) for c in argv[1:]])
     if len(argv) >= 2 and argv[0] == "verdict":
         evidence = [argv[i + 1] for i, a in enumerate(argv[:-1]) if a == "--evidence"]
         return cmd_verdict(short(argv[1]), opt("--derived", ""), evidence)
