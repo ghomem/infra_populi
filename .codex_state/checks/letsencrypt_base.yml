@@ -11,6 +11,8 @@ baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
   minutes: 0.4
+  corrections:
+    - "2026-11-16, after run 20261116T194330Z (authoring error, behaviour as the baseline): dpkg-query lists packages alphabetically, not in argument order; expect reordered."
   notes: "Wall clock 19:42:17Z to 19:42:42Z 2026-11-16, outside the worktree while the Phase 1 review ran (puppet-letsencrypt 13.4.0 renew.pp read on the master)."
 checks:
   - id: dns-plugin-installed
@@ -20,7 +22,7 @@ checks:
       - {path: manifests/letsencrypt_base.pp, lines: "16", text: "$package_name     = 'python3-certbot-dns-digitalocean'"}
       - {path: manifests/letsencrypt_base.pp, lines: "63", text: "class { 'letsencrypt':"}
     probe: dpkg-query -W -f '${Package} ${Status}\n' python3-certbot-dns-digitalocean certbot
-    expect: {rc: 0, stdout: "\\Apython3-certbot-dns-digitalocean install ok installed\\ncertbot install ok installed\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Acertbot install ok installed\\npython3-certbot-dns-digitalocean install ok installed\\n\\Z"}
 
   - id: dns-credentials-file-private
     what: the credentials file holds the provider's token property with the given token, root-only (0600)
