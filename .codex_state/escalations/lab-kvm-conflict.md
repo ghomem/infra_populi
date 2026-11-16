@@ -52,3 +52,19 @@ the master's recovery are both outside the engine's authority.**
 - Health checks: the master's puppetserver and 8140; the CA still holds the p8lab-rhel9 cert and node file (re-sign
   and re-add them if the master is restored to v5); the Hiera fixture (re-run `master_fixtures.sh hiera`).
 - One revert of each node, then batch 6 resumes at extra_packages_el.
+
+## Resolution (2026-11-16 21:50–22:00 UTC)
+- **Trigger** (Salatiel): his VPN was on, so the laptop's production agent reached its master and applied the
+  virtualization class.
+- **Incus stopped** (Salatiel: `systemctl stop incus.service incus.socket`). `modprobe -r kvm_intel` refused (refcount
+  1), but no process held `/dev/kvm` (`fuser`/`lsof` empty) and `kvm.enable_virt_at_load = N`. So VT-x is only taken
+  while a KVM VM exists: Incus's first-start VM-support probe took it at 21:36:57, long enough to crash both
+  VirtualBox VMs.
+- **VT-x proven free:** p8lab-rhel9 started through lab_vm.sh, booted and answered SSH, then was stopped.
+- **Master** (Salatiel): power-off from `gurumeditation`, start; no restore.
+  - Health after boot: puppetserver active, 8140 `running`, enp0s8 .10, NIC1 NAT.
+  - Nothing lost: CA certs for puppet8node and p8lab-rhel9, both node files, the Hiera fixture, `puppet module list`
+    with no invalid module, root fs mounted.
+- **Node:** revert to v4 SUCCESS; compile-only OK.
+- **Standing caution:** with the VPN on, the laptop's production agent can start Incus again; lab work runs with the
+  VPN off, or pauses.
