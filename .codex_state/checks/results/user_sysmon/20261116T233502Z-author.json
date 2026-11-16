@@ -1,0 +1,60 @@
+{
+ "class": "user_sysmon",
+ "role": "author",
+ "at": "20261116T233502Z",
+ "runner": "6d90d01",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "c2d08e67e7d724d900cae8b7b02ae972f51061efefac86d94ebce7fc7bc4159d",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "thruk-htpasswd-entry",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/thruk/htpasswd: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "naemon-contact-file",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/naemon/conf.d/contacts/p8testuser.cfg': No such file or directory\nsed: can't read /etc/naemon/conf.d/contacts/p8testuser.cfg: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "onf.d/contacts]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::User_sysmon[p8testuser]/Htpasswd[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::User_sysmon[p8testuser]/File[/etc/naemon/conf.d/contacts/p8testuser.cfg]/ensure: defined content as '{sha256}e909aa2847e967771625849b59f9043eb37ef86d8249d145f86c1e129035cb3a'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.17 seconds\u001b[0m\nRUN1_EVENTS: 8 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794872151'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::user_sysmon: 2 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::User_sysmon[p8testuser]\n  Htpasswd[p8testuser]\n  File[/etc/naemon/conf.d/contacts/p8testuser.cfg]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP user_sysmon 02b22e312a14\n"
+ },
+ "applied": [
+  {
+   "id": "thruk-htpasswd-entry",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser:$6$p8fixture\n",
+   "stderr": ""
+  },
+  {
+   "id": "naemon-contact-file",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "naemon naemon 664\ndefine contact {\nuse generic-contact\ncontact_name p8testuser\nalias Puppet 8 Test User\nemail root@localhost\ncontactgroups [\"admins\"]\n}\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.2,
+ "node": "ubuntu",
+ "duration_s": 50.4
+}

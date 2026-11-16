@@ -1,0 +1,33 @@
+# Phase 3 checks for puppet_infrastructure::user_sysmon (define; harness title p8testuser; MOCK-APPLY: node fixture
+# sysmon_server supplies the naemon user/group and /etc/thruk, /etc/naemon/conf.d/contacts). Fixture (params, never
+# committed): myname "Puppet 8 Test User", a fake SHA-512 hash (salt p8fixture), myemail root@localhost,
+# mygrouplist [admins].
+# NOT shown (mock-apply): Thruk accepting the login, Naemon loading the contact.
+# Note: the template renders the group list with Ruby's Array#to_s (`["admins"]`), as at the baseline.
+class: user_sysmon
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.2
+  notes: "Wall clock 23:33:50Z to 23:34:05Z 2026-11-16, outside the worktree while the Phase 1 review ran."
+checks:
+  - id: thruk-htpasswd-entry
+    what: the user's crypt hash is written for Thruk in /etc/thruk/htpasswd as <user>:<hash>
+    control: negative
+    derived_from:
+      - {path: manifests/user_sysmon.pp, lines: "11-12", text: "htpasswd { $myusername : cryptpasswd => $myhash, target => $htpasswd_file }"}
+    probe: |
+      grep -E '^p8testuser:' /etc/thruk/htpasswd | cut -d'$' -f1-3
+    expect: {rc: 0, stdout: "\\Ap8testuser:\\$6\\$p8fixture\\n\\Z"}
+
+  - id: naemon-contact-file
+    what: the Naemon contact for the user (naemon:naemon 0664) names the user, alias, email and contact groups
+    control: negative
+    derived_from:
+      - {path: manifests/user_sysmon.pp, lines: "14-18", text: "content => template('puppet_infrastructure/users/sysmon_contact.erb'),"}
+      - {path: templates/users/sysmon_contact.erb, lines: "1-7", text: "contact_name                  <%= @myusername %>"}
+    probe: |
+      f=/etc/naemon/conf.d/contacts/p8testuser.cfg
+      stat -c '%U %G %a' "$f"
+      sed -E 's/^\s+//; s/\s+/ /' "$f"
+    expect: {rc: 0, stdout: "\\Anaemon naemon 664\\ndefine contact \\{\\nuse generic-contact\\ncontact_name p8testuser\\nalias Puppet 8 Test User\\nemail root@localhost\\ncontactgroups \\[\"admins\"\\]\\n\\}\\n\\Z"}
