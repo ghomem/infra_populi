@@ -1,7 +1,8 @@
 # Lab network: host-only static IPs — plan for HQ review (2026-11-10)
 
 **Status: STEP REVIEW APPROVED by HQ with amendments A–E (2026-11-10, folded in below, listed in §6). Steps 0–7
-PASSED (execution log below); step 8 (canary) next.**
+PASSED (execution log below). Step 8 item 1 FAILED on an invalid review mode (escalations/lab-network-canary.md);
+HQ 2026-11-16 chose option 1 (no rollback): step 8 re-runs in the normal mode.**
 
 Step 0 log (2026-11-10 16:58:33Z), all PASS:
 - worktree clean; no engine run; node snapshot v2 and master snapshot v3 exist; puppetserver active; vboxnet0
@@ -324,10 +325,17 @@ Rollback: restore the four params values; `git revert` the commit.
 
 ### Step 8 — canary (advisor; §5, HQ-chosen; lab.env `NODE_NET=hostonly`)
 In this order; each item must pass before the next:
-1. firewall_secure — reviewer `firewall_secure --fresh` (revert-first harness; default-drop with the harness-source ACL
-   192.168.56.1, agent→master 8140 over host-only). Verdict committed as usual.
-2. rsyslog_client — reviewer `rsyslog_client --fresh` (its `host` resource pins puppet8master.example.com to the step-7
-   fixture address 192.168.56.10; the agent must still reach the master after the pin).
+1. firewall_secure — reviewer `firewall_secure`, in the normal re-verification mode (amended 2026-11-16: `--fresh`
+   is only for the review right after a migration and is now a usage error here; see escalations/lab-network-canary.md).
+   The check uses the revert-first harness: default-drop with the harness-source ACL 192.168.56.1, agent→master 8140
+   over host-only. Verdict committed as usual.
+2. rsyslog_client — reviewer `rsyslog_client`, normal mode. Its `host` resource pins puppet8master.example.com to the
+   step-7 fixture address 192.168.56.10; the agent must still reach the master after the pin.
+
+Each of the two verdicts must show `harness.revert_first: true` and `harness.node_fresh: true` (recorded since
+95a2212). If either is missing or false, STOP and report to HQ.
+- After item 1's PASS: confirm that `status.py` shows 45 verified, and report the derived state between the FAIL and
+  the PASS.
 3. The three Phase 3 pilots — `phase3.py run <class>` then reviewer `<class> --phase3`, for backup_rsnapshot, ssh_secure,
    nginx_static_domain (escalations/phase3-pilots.md).
 
@@ -358,8 +366,18 @@ is a pilot result, not a canary failure.
      - The post-restore check asserts enp0s8 = .20 and `$SSH_CONNECTION`.
      - Tests + shellcheck, own commit.
   7. Verify: two consecutive real reverts, then `test_class.sh --revert-first --fixture guarded_exec` GREEN.
-- **Master:** `.codex_state/tools/snapshot_master.sh P8MASTER_BASELINE_GREEN_v4` (take-only, ACPI, restarts and
-  verifies puppetserver + 8140, records the name and UUID). It also captures the pki v2 fixture state.
+- **Master:** `.codex_state/tools/snapshot_master.sh P8MASTER_BASELINE_GREEN_v4 --note "<below>"` (take-only, ACPI,
+  restarts and verifies puppetserver + 8140, records the name and UUID; `--note` since b4-A11).
+  - The snapshot description (`--note`) names what it captures beyond v3: enp0s8 192.168.56.10/24 (netplan
+    60-p8-hostonly.yaml); `/etc/hosts` with the node → 192.168.56.20 (step 5) AND the master's own name
+    puppet8master.example.com → 192.168.56.10 (the step-7 sweep fix); and the pki v2 fixture state.
+  - After the script has restarted the master (added 2026-11-16, HQ item 6), assert over `ho`:
+    ```bash
+    ho puppet8master 192.168.56.10 'ip -br addr show enp0s8 | grep -q " 192.168.56.10/24"'
+    ho puppet8master 192.168.56.10 'set -- $(getent hosts puppet8master.example.com); test "$1" = 192.168.56.10'
+    ho puppet8master 192.168.56.10 'set -- $(getent hosts puppet8node.example.com); test "$1" = 192.168.56.20'
+    ```
+    Any failure = STOP and report.
 - **Rollback:**
   - Node: `git revert` the step-9 commit (back to v2 + the lab.env overlay).
   - Master: v4 is only an added snapshot; nothing to undo.

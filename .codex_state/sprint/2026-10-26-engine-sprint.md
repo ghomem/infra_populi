@@ -114,3 +114,4 @@ band commits from now on stash unrelated work first.
 | b4-A8 network step 8 canary item 1 | STOPPED for HQ | this commit | reviewer firewall_secure --fresh FAIL on git only (--fresh = right after a migration; migrate commit under 92 later commits); harness GREEN on hostonly (path asserts, NODE_FRESH yes, run 2 clean); escalations/lab-network-canary.md |
 | b4-A9 reviewer: --fresh misuse = usage error (HQ 2026-11-16 item 1) | done | this commit | refused before any run, no draft, verdict blocked by a refusal marker; real check firewall_secure --fresh exits 2 with no revert; 6 tests |
 | b4-A10 reviewer verdicts show revert_first + node_fresh (HQ 2026-11-16 item 3) | done | this commit | harness block gains both; idempotent fails unless both hold; 1 test |
+| b4-A11 plan step 8 normal mode + step 9 master asserts; snapshot_master.sh --note (HQ 2026-11-16 items 3, 6) | done | this commit | --note appended to the description (one line, <=600); 4 tests |

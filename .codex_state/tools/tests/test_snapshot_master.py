@@ -155,3 +155,18 @@ def test_settings_allow_read_only_vboxmanage_and_keep_destructive_verbs_denied()
     for entry in ("Bash(VBoxManage unregistervm *)", "Bash(VBoxManage modifyvm *)",
                   f"Bash(VBoxManage controlvm {MASTER} poweroff*)", f"Bash(VBoxManage snapshot {MASTER} take*)"):
         assert entry in deny, entry
+
+
+def test_note_is_appended_to_the_description(clone, lab):
+    """HQ 2026-11-16 item 6: the snapshot description names what it captures (e.g. the master's hosts fixes)."""
+    proc = clone.run("P8MASTER_BASELINE_GREEN_v4", "--note", "enp0s8 192.168.56.10; hosts own name -> .10")
+    assert proc.returncode == 0, proc.stderr
+    assert lab.state()["vms"][MASTER]["last_description"].endswith("; note: enp0s8 192.168.56.10; hosts own name -> .10")
+
+
+@pytest.mark.parametrize("args, message", [(["--note"], "--note needs a text"), (["--note", "a\nb"], "one line"),
+                                           (["--bogus"], "unknown argument")])
+def test_bad_note_or_argument_is_refused_before_anything(clone, lab, args, message):
+    proc = clone.run("P8MASTER_BASELINE_GREEN_v4", *args)
+    assert proc.returncode == 1 and message in proc.stderr
+    assert_nothing_done_to_the_master(lab)

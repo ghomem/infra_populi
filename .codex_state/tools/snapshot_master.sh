@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------------
 # TRACKED TOOLING (HQ VM-operations ruling, 2026-10-27). TAKE-ONLY offline snapshot of the lab master.
 #
-#   snapshot_master.sh <NAME> [--dry-run]
+#   snapshot_master.sh <NAME> [--note "<what this snapshot captures beyond the last one>"] [--dry-run]
 #
 # Refuses (nothing touched) when: NAME is malformed or already exists; a harness / Codex / reviewer / composite
 # run is in progress; the master is not running; the repo's Puppetfile export differs from the master's.
@@ -29,8 +29,16 @@ refuse() { echo "SNAPSHOT REFUSED: $*" >&2; exit 1; }
 vm_state() { VBoxManage showvminfo "$MASTER_VM" --machinereadable | sed -n 's/^VMState="\(.*\)"$/\1/p'; }
 
 [[ $# -ge 1 ]] || { sed -n '4,16p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
-NAME="$1"; DRY=0
-[[ "${2:-}" == "--dry-run" ]] && DRY=1
+NAME="$1"; DRY=0; NOTE=""
+shift
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run) DRY=1; shift ;;
+    --note) NOTE="${2:-}"; [[ -n "$NOTE" ]] || refuse "--note needs a text"; shift 2 ;;
+    *) refuse "unknown argument '$1'" ;;
+  esac
+done
+[[ "$NOTE" != *$'\n'* && ${#NOTE} -le 600 ]] || refuse "--note must be one line of at most 600 characters"
 [[ "$NAME" =~ ^P8MASTER_[A-Za-z0-9_]+$ ]] || refuse "name '${NAME}' must match P8MASTER_[A-Za-z0-9_]+"
 
 # 1. nothing of the engine is running
@@ -54,7 +62,7 @@ mods="$(timeout 120 ssh -T "$MASTER_HOST" 'sudo -n /opt/puppetlabs/bin/puppet mo
   refuse "could not read the master's module list"
 mods_sha="$(printf '%s\n' "$mods" | sha256sum | cut -c1-12)"
 nmods="$(grep -c '── ' <<<"$mods" || true)"
-desc="infra_populi lab master; repo ${head}; baseline ${base}; Puppetfile sha256 ${pf_sha}; module list sha256 ${mods_sha} (${nmods} modules); taken offline by snapshot_master.sh $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+desc="infra_populi lab master; repo ${head}; baseline ${base}; Puppetfile sha256 ${pf_sha}; module list sha256 ${mods_sha} (${nmods} modules); taken offline by snapshot_master.sh $(date -u +%Y-%m-%dT%H:%M:%SZ)${NOTE:+; note: ${NOTE}}"
 echo "DESCRIPTION: ${desc}"
 [[ $DRY -eq 0 ]] || { echo "DRY RUN: no shutdown, no snapshot"; exit 0; }
 
