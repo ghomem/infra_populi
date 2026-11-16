@@ -11,6 +11,8 @@ baseline: release-0.9.10 (cf477c6)
 fixture: defaults
 authoring:
   minutes: 0.8
+  corrections:
+    - "2026-11-16, after run 20261116T200848Z (authoring error, behaviour as the baseline): the probe merged stderr, whose first line is Python 3.12's DeprecationWarning for `import crypt` (pp_auth.py:10); the usage line is on stdout. The warning is a forward note: crypt is removed in Python 3.13, so the CLI needs work on a distribution shipping it (batch-5 report)."
   notes: "Wall clock 20:07:19Z to 20:08:04Z 2026-11-16, outside the worktree while the Phase 1 review ran (CLI, config and interface templates read)."
 checks:
   - id: config-rendered-from-hiera
@@ -54,5 +56,5 @@ checks:
       - {path: templates/hashman/libhashman/interface.py.erb, lines: "445-447", text: "print('Usage: ' + basename + ' auth          USER PASSWORD')"}
     probe: |
       stat -c '%U %a' /opt/puppet-infrastructure/bin/pp_auth.sh
-      /opt/puppet-infrastructure/bin/pp_auth.sh 2>&1 | head -1
+      /opt/puppet-infrastructure/bin/pp_auth.sh 2>/dev/null | head -1
     expect: {rc: 0, stdout: "\\Aroot 755\\nUsage: pp_auth\\.py auth +USER PASSWORD\\n\\Z"}
