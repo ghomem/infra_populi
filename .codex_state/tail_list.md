@@ -11,3 +11,4 @@ append-only (a lifted class gets a dated `lifted:` note, never a deletion).
 | hashman_base | its mock-apply lifted: a master-role node (a node that is a Puppet server, whose code tree holds the user database) | master-role node (no nodes.yml kind yet; HQ batch-5 ruling 6) | 2026-11-16 | PASS mock-apply (node_fixture puppetserver_code_tree), not blocked |
 | hashman_web | its mock-apply lifted: a master-role node (code tree + the site's logo files) | master-role node (no nodes.yml kind yet; HQ batch-5 ruling 6) | 2026-11-16 | PASS mock-apply (node_fixture hashman_master_standin), not blocked |
 | mysql_server | lifted: 2026-11-16 (HQ batch-5 ruling 2: service_name => 'mysql', a module-compatibility change; class_rulings.txt) | — | — | unblocked |
+| user_desktop_sudoer | groups lpadmin and sambashare (desktop packages), absent on the Ubuntu server node | kubuntu (or gnome) | 2026-11-16 | blocked.txt category 5; `getent group lpadmin sambashare` empty on puppet8node |
