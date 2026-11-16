@@ -1,0 +1,69 @@
+{
+ "class": "sysmon_integrity_master",
+ "role": "author",
+ "at": "20261116T234902Z",
+ "runner": "7818e1d",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "3f3f0e0c73549f4cb3d444e5e8fb3bbca6334a1f94b5ea65cfddd504d6571178",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "checklist-script-rendered",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/checklist-integrity.sh': No such file or directory\nbash: /opt/puppet-infrastructure/bin/checklist-integrity.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "checklist-written-as-puppet-variable",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /etc/puppetlabs/code/environments/production/manifests/97_integrity.pp: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": " content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_integrity_master/File[/opt/puppet-infrastructure/bin/checklist-integrity.sh]/ensure: defined content as '{sha256}8264e49a87038f1f08af721a16256b4aea9409e84dee7d8f829072ca44642f32'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.11 seconds\u001b[0m\nRUN1_EVENTS: 8 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794872991'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::sysmon_integrity_master: 1 concrete resources (+0 defined-type instances)\n  File[/opt/puppet-infrastructure/bin/checklist-integrity.sh]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP sysmon_integrity_master 4c09c529ab79\n"
+ },
+ "applied": [
+  {
+   "id": "checklist-script-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\nOUTDIR=\"/etc/puppetlabs//code/environments/production/manifests\"\nOUTFILE=\"97_integrity.pp\"\nFILELIST=\"/etc/hostname /etc/os-release\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "checklist-written-as-puppet-variable",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "checklist-matches\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the master-side manifests directory /etc/puppetlabs/code/environments/production/manifests (absent on an agent node) and runs the checklist script once, which writes 97_integrity.pp there",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.1,
+ "node": "ubuntu",
+ "duration_s": 50.3
+}

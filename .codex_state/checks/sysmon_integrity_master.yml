@@ -1,0 +1,39 @@
+# Phase 3 checks for puppet_infrastructure::sysmon_integrity_master (class; required_base filesystem_base). It installs
+# a checklist script that, when run on the Puppet master, writes `$integrity_checklist` (md5 sums of filelist) into the
+# master's manifests directory (puppet::manifdir) as 97_integrity.pp. Fixture (params, never committed): filelist
+# "/etc/hostname /etc/os-release". outdir comes from the lab Hiera (puppet::manifdir; it renders with a doubled slash).
+class: sysmon_integrity_master
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.1
+  notes: "Wall clock 23:47:51Z to 23:47:51Z 2026-11-16, outside the worktree while the Phase 1 review ran."
+checks:
+  - id: checklist-script-rendered
+    what: the checklist script (root 0755) carries the output directory (puppet::manifdir), the output file and the file list
+    control: negative
+    derived_from:
+      - {path: manifests/sysmon_integrity_master.pp, lines: "6-8", text: "$outfile  = '97_integrity.pp'"}
+      - {path: templates/sysmon/checklist-integrity.sh.erb, lines: "3-5", text: "FILELIST=\"<%= @filelist %>\""}
+    probe: |
+      f=/opt/puppet-infrastructure/bin/checklist-integrity.sh
+      stat -c '%U %a' "$f"; bash -n "$f" && grep -E '^(OUTDIR|OUTFILE|FILELIST)=' "$f"
+    expect: {rc: 0, stdout: "\\Aroot 755\\nOUTDIR=\"/etc/puppetlabs/+code/environments/production/manifests\"\\nOUTFILE=\"97_integrity\\.pp\"\\nFILELIST=\"/etc/hostname /etc/os-release\"\\n\\Z"}
+
+  - id: checklist-written-as-puppet-variable
+    what: >-
+      the exercise: run once, the script writes 97_integrity.pp holding $integrity_checklist = the md5sum lines of the
+      listed files, joined by ':'
+    control: negative
+    derived_from:
+      - {path: templates/sysmon/checklist-integrity.sh.erb, lines: "9-18", text: "echo \"\\$integrity_checklist='$CHECKLIST'\" > $OUTDIR/$OUTFILE"}
+    mutates: >-
+      creates the master-side manifests directory /etc/puppetlabs/code/environments/production/manifests (absent on an
+      agent node) and runs the checklist script once, which writes 97_integrity.pp there
+    probe: |
+      install -d /etc/puppetlabs/code/environments/production/manifests
+      /opt/puppet-infrastructure/bin/checklist-integrity.sh
+    effect: |
+      want="\$integrity_checklist='$(md5sum /etc/hostname):$(md5sum /etc/os-release)'"
+      test "$(cat /etc/puppetlabs/code/environments/production/manifests/97_integrity.pp)" = "$want" && echo checklist-matches
+    expect: {rc: 0, stdout: "\\Achecklist-matches\\n\\Z"}
