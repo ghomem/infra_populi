@@ -190,7 +190,8 @@ def test_repo_node_fixtures_exist_for_the_planned_classes(gen):
     rows = gen.parse_plan()
     assert rows["user_sysmon"].node_fixture == "sysmon_server"
     assert rows["user_samba"].node_fixture == "samba_dc_standin"
-    assert sum(1 for r in rows.values() if r.node_fixture) == 2
+    assert rows["hashman_base"].node_fixture == "puppetserver_code_tree"  # batch 5: the class runs on the master
+    assert sum(1 for r in rows.values() if r.node_fixture) == 3
 
 
 def test_expected_run2_events_parse(gen):
