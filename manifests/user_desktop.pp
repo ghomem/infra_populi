@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none of its own (flatten is a Puppet core function); through puppet_infrastructure::user_base: puppetlabs-stdlib 9.7.0, puppetlabs-sshkeys_core 2.5.0 (vendored).
 ### Purpose ########
 # This defined type defines a desktop user
 
