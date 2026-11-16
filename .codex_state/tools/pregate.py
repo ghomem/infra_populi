@@ -379,9 +379,28 @@ def merged_usr(path: str, node_paths: dict[str, str]) -> str:
     return path
 
 
+def norm_path(path: str) -> str:
+    """The path Puppet's File type manages: repeated slashes collapsed and no trailing slash. Hiera interpolation can
+    produce `/etc/puppetlabs//code/...` (hashman_base, batch 5), which the inventory lists with single slashes."""
+    path = re.sub(r"/{2,}", "/", path)
+    return path.rstrip("/") or "/"
+
+
+def node_fixture_paths(cls: str, hiera: dict, repo: Path = REPO) -> set[str]:
+    """Paths declared by the plan's node_fixture for `cls`: the harness applies that fixture before the class (HQ
+    2026-10-27 ruling 7), so they exist when the class runs (mock-apply)."""
+    import gen_migration_order as gen  # noqa: PLC0415
+    row = gen.parse_plan().get(cls)
+    name = getattr(row, "node_fixture", "") if row is not None else ""
+    f = repo / ".codex_state" / "tools" / "tests" / "fixtures" / "node" / f"{name}.pp"
+    if not name or not f.is_file():
+        return set()
+    return path_items(f.read_text(encoding="utf-8"), hiera)[0]
+
+
 def prerequisite_findings(cls: str, node_paths: dict[str, str], hiera: dict, repo: Path = REPO) -> list[str]:
     """Paths the class needs that do not exist on the clean node and that no class of its required_base closure
-    (including itself) declares — the sysmon_base / filesystem_lib64 shape (hazard 4)."""
+    (including itself), nor its plan node_fixture, declares — the sysmon_base / filesystem_lib64 shape (hazard 4)."""
     declared: set[str] = set()
     providers = closure_providers(cls, repo)
     needed: list[tuple[str, str]] = []
@@ -393,6 +412,8 @@ def prerequisite_findings(cls: str, node_paths: dict[str, str], hiera: dict, rep
         declared |= d
         if c == cls:
             needed = n
+    declared = {norm_path(d) for d in declared | node_fixture_paths(cls, hiera, repo)}
+    needed = [(norm_path(path), why) for path, why in needed]
     missing: dict[str, list[str]] = {}
     provided = [prefix for prefix, provider in provided_paths(repo) if provider in providers]
     for path, why in needed:

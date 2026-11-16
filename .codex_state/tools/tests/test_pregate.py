@@ -303,7 +303,8 @@ def probe_repo(tmp_path, monkeypatch, manifests, plan):
     (repo / ".codex_state" / "rules").mkdir(parents=True)
     for name, text in manifests.items():
         (repo / "manifests" / f"{name}.pp").write_text(text)
-    rows = {n: type("R", (), {"required_base": tuple(b), "required_external": tuple(e)})() for n, (b, e) in plan.items()}
+    rows = {n: type("R", (), {"required_base": tuple(b), "required_external": tuple(e), "node_fixture": fx})()
+            for n, (b, e, *rest) in plan.items() for fx in [rest[0] if rest else ""]}
     import gen_migration_order
     monkeypatch.setattr(gen_migration_order, "parse_plan", lambda: rows)
     return repo
@@ -347,6 +348,33 @@ def test_probe_honours_provided_paths_for_a_declared_provider(tmp_path, monkeypa
     (repo / ".codex_state/rules/provided_paths.txt").write_text("/etc/nginx nginx — evidence\n")
     assert pregate.prerequisite_findings("n", NODE, {}, repo) == []
 
+
+
+# batch 5 (hashman_base): the plan's node_fixture provides paths (mock-apply, ruling 7), and Hiera-interpolated paths
+# with repeated slashes compare as Puppet manages them.
+HASHMAN = ("class h {\n  $dbdir = lookup('hashman::dbdir')\n  file { $dbdir: ensure => directory }\n}\n")
+CODE_TREE = "file { '/etc/puppetlabs/code/environments/production/manifests': ensure => directory }\n"
+HIERA_DB = {"puppet::basedir": "/etc/puppetlabs/", "hashman::dbdir":
+            "%{lookup('puppet::basedir')}/code/environments/production/manifests/01_hashman/"}
+NODE_AGENT = {**NODE, "/etc/puppetlabs": "d", "/etc/puppetlabs/code": "d", "/etc/puppetlabs/code/environments": "d",
+              "/etc/puppetlabs/code/environments/production": "d"}
+
+
+def test_probe_counts_the_plan_node_fixture_and_normalises_slashes(tmp_path, monkeypatch):
+    repo = probe_repo(tmp_path, monkeypatch, {"h": HASHMAN}, {"h": ([], [])})
+    got = pregate.prerequisite_findings("h", NODE_AGENT, HIERA_DB, repo)
+    assert len(got) == 1 and got[0].startswith("/etc/puppetlabs/code/environments/production/manifests (needed by")
+    repo = probe_repo(tmp_path / "2", monkeypatch, {"h": HASHMAN}, {"h": ([], [], "code_tree")})
+    fixtures = repo / ".codex_state/tools/tests/fixtures/node"
+    fixtures.mkdir(parents=True)
+    assert pregate.prerequisite_findings("h", NODE_AGENT, HIERA_DB, repo)  # named, but no fixture file: still a finding
+    (fixtures / "code_tree.pp").write_text(CODE_TREE)
+    assert pregate.prerequisite_findings("h", NODE_AGENT, HIERA_DB, repo) == []
+
+
+def test_norm_path_matches_puppets_file_path():
+    assert pregate.norm_path("/etc/puppetlabs//code/x/") == "/etc/puppetlabs/code/x"
+    assert pregate.norm_path("/") == "/" and pregate.norm_path("//") == "/"
 
 def test_hazard14_is_satisfied_by_a_base_class_of_the_required_base_closure(tmp_path, monkeypatch):
     # nginx_frontend_domain shape: nginx::resource::* in a define whose required_base (nginx_base) declares class nginx
