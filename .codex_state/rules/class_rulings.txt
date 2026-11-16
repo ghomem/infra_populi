@@ -1,3 +1,4 @@
 # HQ rulings that name a specific change in one class (single source; orientation.py prints a class's lines to Codex
 # as facts). Advisor-maintained, append-only per ruling. Format: <class> <the ruled change> — <DESIGN_DECISIONS ref>
 nginx_frontend_domain line 247 `port => $element_split[1] + 0` becomes `port => Integer($element_split[1])`: a syntax fix (Puppet 8 strict mode rejects arithmetic on a String), not a behaviour change — DESIGN_DECISIONS 2026-10-27 HQ checkpoint-1 ruling 8
+user_base exec "${ecryptdir}/wrapped-passphrase" (user_base.pp:128-133) gains exactly one line, `unless  => "sh -c \"base64 -d < ${ecryptdir}/wrapped-passphrase.b64 | cmp -s - ${ecryptdir}/wrapped-passphrase\""`; nothing else in the exec or the File changes; record with `record_green.sh user_base --defect "exec guarded by its post-condition"` — upstream_defects.md user_base (ruled; HQ ck1 ruling 2 + production-facts ruling 2; escalations/user_base-exec-guard.md)
