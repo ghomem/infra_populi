@@ -1,0 +1,95 @@
+{
+ "schema": 1,
+ "class": "user_base",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-16T13:47:37Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "431f08fba908",
+ "migrate_subject": "P8: migrate puppet_infrastructure::user_base",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 431f08fba908; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `user_base Done [from: release-0.9.10; upstream defect fixed: exec guarded by its post-condition]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-stdlib', '9.7.0'), ('puppetlabs-sshkeys_core', '2.5.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 2 catalog events; COVERAGE puppet_infrastructure::user_base: 2 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-2): 2-line migration header comment only (purpose + puppetlabs-stdlib 9.7.0, puppetlabs-sshkeys_core 2.5.0), no baseline comment removed",
+   "DIFF A hunk 2 (exec ${ecryptdir}/wrapped-passphrase, baseline user_base.pp:128-133): only added line is unless => \"sh -c \\\"base64 -d < ${ecryptdir}/wrapped-passphrase.b64 | cmp -s - ${ecryptdir}/wrapped-passphrase\\\"\", character-identical to the ruled user_base entry in upstream_defects.md (Status: ruled); command, user, path, require and the file's notify are unchanged; no other non-translation hunk",
+   "DIFF B equals DIFF A (first migration from baseline content; provenance ok)"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 3,
+  "removed": 0,
+  "non_comment_changes": 1,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: user/group/SSH key management; wrapped-passphrase exec guarded by its post-condition.",
+  "# Module dependencies: puppetlabs-stdlib 9.7.0; puppetlabs-sshkeys_core 2.5.0 (vendored)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 2,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::user_base: 2 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "snapshot": "P8NODE_BASELINE_GREEN_v3",
+   "total_s": 25.838,
+   "master_check_s": 0.576,
+   "poweroff_s": 1.168,
+   "restore_s": 0.506,
+   "boot_to_ssh_s": 17.954,
+   "apt_update_s": 4.954,
+   "verify_s": 0.68
+  },
+  "log": ".codex_state/logs/reviews/user_base.20261116T134626Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
