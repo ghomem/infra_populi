@@ -1,0 +1,84 @@
+{
+ "class": "ssl_nginx",
+ "role": "author",
+ "at": "20261116T232156Z",
+ "runner": "d0c9199",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "1e881a32c6eebaaacdd0891f5306dfcdac79cc8187c8d853a0dbbebb593d7363",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "private-key-installed-root-only",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/ssl/private/p8test.key': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "nginx-bundle-cert-then-intermediate",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/ssl/certs/p8test.nginx.bundle.crt': No such file or directory\ngrep: /etc/ssl/certs/p8test.nginx.bundle.crt: No such file or directory\nCould not open file or uri for loading certificate from /etc/ssl/certs/p8test.nginx.bundle.crt\n4067367D03760000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n4067367D03760000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/ssl/certs/p8test.nginx.bundle.crt)\nUnable to load certificate\n",
+   "ok": true
+  },
+  {
+   "id": "bundle-certificate-matches-the-key",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "missing files\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "rt]: Scheduling refresh of Service[nginx]\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Triggered 'refresh' from 3 events\u001b[0m\n\u001b[mNotice: Applied catalog in 10.63 seconds\u001b[0m\nRUN1_EVENTS: 12 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794871372'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.66 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::ssl_nginx: 5 concrete resources (+3 defined-type instances)\n  Puppet_infrastructure::Ssl_base[puppet_infrastructure::ssl_base_nginx]\n  File[/etc/ssl/private/p8test.key]\n  Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]\n  Concat::Fragment[first_certificate_p8test]\n  Concat::Fragment[intermediate_certificates_p8test]\n  Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]\n  Concat_fragment[first_certificate_p8test]\n  Concat_fragment[intermediate_certificates_p8test]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP ssl_nginx e858dede5229\n"
+ },
+ "applied": [
+  {
+   "id": "private-key-installed-root-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 600\n",
+   "stderr": ""
+  },
+  {
+   "id": "nginx-bundle-cert-then-intermediate",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 644\n2\nsubject=CN=p8test.invalid,O=p8test lab fixture (THROWAWAY\\, not a real CA)\n",
+   "stderr": ""
+  },
+  {
+   "id": "bundle-certificate-matches-the-key",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "key-matches-certificate\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the key: the node's own Puppet agent key is a different key, so the same comparison against it must fail",
+    "rc": 1,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.1,
+ "node": "ubuntu",
+ "duration_s": 59.6
+}
