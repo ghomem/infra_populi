@@ -1,0 +1,20 @@
+{
+ "class": "backup_rsnapshot",
+ "at": "20261116T113635Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "conf-syntax: derived from the whole template (sha 7000d5569e7c) plus manifest line 14's -c config; configtest on the rendered file checks that the template is a valid rsnapshot config, and 'Syntax OK' with rc 0 is what a valid rendering produces",
+  "cron-daily-2300: manifest lines 13-19 declare cron command '/usr/bin/rsnapshot -c ${myconffile} daily' with user/hour/minute; the line-3 defaults (root, '23', '0') plus title backup_rsnapshot give exactly '0 23 * * * /usr/bin/rsnapshot -c /etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf daily' in root's crontab",
+  "daily-plan: manifest line 14 runs 'rsnapshot ... daily'; running -t daily (test mode, read-only) prints the rsync that daily would run. Under the fixture (basedir /etc, backdir /opt/puppet-infrastructure/backup, prefix etc), template lines 4/12/14 give cmd_rsync /usr/bin/rsync, source /etc and destination daily.0/./etc, which matches the regex",
+  "daily-backup-executes (mutates): the action is the exact cron command from line 14. mutates declares daily.0, the lockfile and logger. snapshot_root comes from filesystem_base backdir in the required base. The effect is a read-only find+cmp of daily.0/.../etc/hostname against /etc/hostname, so it checks the snapshot's result, not rsnapshot's own output"
+ ],
+ "reviewer_result": "20261116T113446Z-reviewer",
+ "author_result": "20261116T113256Z-author",
+ "findings": []
+}
