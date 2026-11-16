@@ -1,0 +1,21 @@
+{
+ "class": "gnome_lock_screen",
+ "at": "20261116T130700Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "compiled-db-serves-the-policy @94-98: exec dconf_update_screenlock runs '/usr/bin/dconf update' (refreshonly, notified by both files), which compiles /etc/dconf/db/local; reading the three keys via DCONF_PROFILE=user (profile 'user-db:user/system-db:local', lines 38-45) returning 300/true/0 is the effect of that run; the mismatch varies only the profile name to a nonexistent one, which removes system-db:local, so the values must change - valid control",
+  "keyfile-and-locks-rendered @5-9: defaults minutes=5 (x60 -> 300) and grace=0 give idle-delay=uint32 300 and lock-delay=uint32 0 in the keyfile heredoc (lines 68-75, margin-stripped, trailing newline); the expected locks text matches lines 85-89 exactly",
+  "compiled-db-serves-the-policy @63-78: the keyfile declares idle-delay=uint32 ${screenlock_timeout_seconds}, lock-enabled=true, lock-delay=uint32 ${screenlock_grace_seconds} and notifies Exec['dconf_update_screenlock']; dconf read prints GVariant text 'uint32 300', 'true', 'uint32 0' for those values under defaults - expect matches"
+ ],
+ "review_s": 92.9,
+ "check_file_sha256": "d3863faebf722ded2a925c3e3d19a2cbd321c4dd84c0dba03e3cd494f5d9d1f7",
+ "reviewer_result": "20261116T130528Z-reviewer",
+ "author_result": "20261116T124736Z-author",
+ "findings": []
+}

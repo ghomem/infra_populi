@@ -1,0 +1,100 @@
+{
+ "class": "gnome_lock_screen",
+ "role": "reviewer",
+ "at": "20261116T130528Z",
+ "runner": "e703489",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "d3863faebf722ded2a925c3e3d19a2cbd321c4dd84c0dba03e3cd494f5d9d1f7",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "dconf-cli-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "dpkg-query: no packages found matching dconf-cli\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "profile-uses-system-db-local",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/dconf/profile/user': No such file or directory\ncat: /etc/dconf/profile/user: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "keyfile-and-locks-rendered",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "---\n",
+   "stderr": "cat: /etc/dconf/db/local.d/00-screenlock: No such file or directory\ncat: /etc/dconf/db/local.d/locks/00-screenlock: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "compiled-db-serves-the-policy",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 2: /usr/bin/dconf: No such file or directory\nbash: line 2: /usr/bin/dconf: No such file or directory\nbash: line 2: /usr/bin/dconf: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "l.d/locks/00-screenlock]: Scheduling refresh of Exec[dconf_update_screenlock]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/Exec[dconf_update_screenlock]: Triggered 'refresh' from 2 events\u001b[0m\n\u001b[mNotice: Applied catalog in 10.34 seconds\u001b[0m\nRUN1_EVENTS: 7 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794834401'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.40 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::gnome_lock_screen: 10 concrete resources (+0 defined-type instances)\n  Package[dconf-cli]\n  File[/etc/dconf]\n  File[/etc/dconf/profile]\n  File[/etc/dconf/db]\n  File[/etc/dconf/profile/user]\n  File[/etc/dconf/db/local.d]\n  File[/etc/dconf/db/local.d/locks]\n  File[/etc/dconf/db/local.d/00-screenlock]\n  File[/etc/dconf/db/local.d/locks/00-screenlock]\n  Exec[dconf_update_screenlock]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP gnome_lock_screen 97d8491cedd8\n"
+ },
+ "applied": [
+  {
+   "id": "dconf-cli-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "profile-uses-system-db-local",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "644 root root\nuser-db:user\nsystem-db:local\n",
+   "stderr": ""
+  },
+  {
+   "id": "keyfile-and-locks-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "[org/gnome/desktop/session]\nidle-delay=uint32 300\n\n[org/gnome/desktop/screensaver]\nlock-enabled=true\nlock-delay=uint32 0\n---\n/org/gnome/desktop/session/idle-delay\n/org/gnome/desktop/screensaver/lock-enabled\n/org/gnome/desktop/screensaver/lock-delay\n",
+   "stderr": ""
+  },
+  {
+   "id": "compiled-db-serves-the-policy",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "uint32 300\ntrue\nuint32 0\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the dconf profile: a profile name that does not exist has no system-db:local line, so the values cannot come from the compiled system database and the three reads must not return the class's values",
+    "rc": 0,
+    "passed": false,
+    "stdout": "",
+    "stderr": "\n(/usr/bin/dconf:1767): dconf-WARNING **: 13:06:43.446: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n\n(/usr/bin/dconf:1768): dconf-WARNING **: 13:06:43.451: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n\n(/usr/bin/dconf:1769): dconf-WARNING **: 13:06:43.457: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n"
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.3,
+ "duration_s": 75.3
+}
