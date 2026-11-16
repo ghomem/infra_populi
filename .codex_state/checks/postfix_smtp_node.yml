@@ -1,0 +1,87 @@
+# Phase 3 checks for puppet_infrastructure::postfix_smtp_node (class, no parameters; values from the lab master's Hiera).
+# Lab Hiera: relayhost mailserver.mycompany.com, relayport 587, myorigin mycompany.com (common.yaml), relayuser
+# p8test-relay and a fake relaypass (p8test_fixtures.yaml); mynetworks, mydestination, message_size_limit and
+# root_email_alias take their lookup defaults (127.0.0.0/8, the hostname, 10240000, ''). Ubuntu: libsasl2-modules,
+# CA file /etc/ssl/certs/ca-certificates.crt. No probe sends mail: the fixture relayhost is a real-world domain, and a
+# probe must never contact another host. The relay password is never printed.
+class: postfix_smtp_node
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 1.4
+  notes: "Wall clock 2026-11-16T13:26:46Z to 13:27:53Z (templates read, written, clean-node inventory consulted for the invariant and the aliases control, validated; one YAML quoting error caught by the validator) outside the worktree while the Phase 1 review ran. Corrected 2026-11-16 after run 20261116T133127Z (FINDINGS on
+    postfix-config-sane): AUTHORING ERROR: the claim of the check is rc 0 of `postfix check`; the expectation wrongly demanded no other
+    output, and postfix 3.8 warns 'using backwards-compatible default settings' because the baseline main.cf sets no
+    compatibility_level (upstream configuration, an observation, not a defect). 0.3 min. The Phase 1 pregate flagged @domain in main.cf: a false positive (a comment line, not ERB)."
+checks:
+  - id: effective-relay-config
+    what: postfix's effective configuration is the template rendered from Hiera and the lookup defaults
+    control: negative
+    derived_from:
+      - {path: manifests/postfix_smtp_node.pp, lines: "6-14", text: "default_value => '10240000' })"}
+      - {path: templates/postfix_smtp_node/main.cf, lines: "11-12", text: "myhostname = <%= @hostname %>"}
+      - {path: templates/postfix_smtp_node/main.cf, lines: "34-40", text: "mynetworks = <%= @mynetworks %>"}
+      - {path: templates/postfix_smtp_node/main.cf, lines: "44-54", text: "relayhost = <%= @relayhost %>:<%= @relayport %>"}
+      - {path: manifests/postfix_smtp_node.pp, lines: "29-32", text: "$smtp_tls_CAfile = '/etc/ssl/certs/ca-certificates.crt'"}
+    probe: postconf -h myhostname myorigin mydestination relayhost mynetworks message_size_limit smtp_sasl_auth_enable smtp_sasl_password_maps smtp_tls_CAfile inet_protocols
+    expect:
+      rc: 0
+      stdout: "\\Apuppet8node\\nmycompany\\.com\\npuppet8node, localhost\\.localdomain, , localhost\\nmailserver\\.mycompany\\.com:587\\n127\\.0\\.0\\.0/8\\n10240000\\nyes\\nhash:/etc/postfix/sasl_passwd\\n/etc/ssl/certs/ca-certificates\\.crt\\nipv4\\n\\Z"
+
+  - id: postfix-config-sane
+    what: postfix's own consistency check passes on the installed configuration (postfix check)
+    control: negative
+    derived_from:
+      - {path: manifests/postfix_smtp_node.pp, lines: "42-49", text: "content   => template('puppet_infrastructure/postfix_smtp_node/main.cf'),"}
+    probe: postfix check 2>&1 && echo postfix-check-ok
+    expect: {rc: 0, stdout: "^postfix-check-ok\\n\\Z"}
+
+  - id: sasl-map-compiled-for-the-relayhost
+    what: the SASL password map is compiled (postmap ran) with the relayhost's user, and the source file is 0640 root:root
+    control: negative
+    derived_from:
+      - {path: templates/postfix_smtp_node/sasl_passwd, lines: "1", text: "<%= @relayhost %> <%= @relayuser %>:<%= @relaypass %>"}
+      - {path: manifests/postfix_smtp_node.pp, lines: "51-66", text: "command     => 'postmap /etc/postfix/sasl_passwd',"}
+    probe: |
+      stat -c '%a %U %G' /etc/postfix/sasl_passwd
+      postmap -q mailserver.mycompany.com hash:/etc/postfix/sasl_passwd | cut -d: -f1
+    mismatch:
+      varies: >-
+        the looked-up relay host (relay.p8test.invalid): the map holds only the configured relayhost, so the lookup must
+        return no user
+      probe: |
+        stat -c '%a %U %G' /etc/postfix/sasl_passwd
+        postmap -q relay.p8test.invalid hash:/etc/postfix/sasl_passwd | cut -d: -f1
+    expect: {rc: 0, stdout: "\\A640 root root\\np8test-relay\\n\\Z"}
+
+  - id: postfix-running-and-enabled
+    what: the postfix service runs and starts at boot
+    control: negative
+    derived_from:
+      - {path: manifests/postfix_smtp_node.pp, lines: "68-72", text: "ensure    => running,"}
+    probe: |
+      systemctl is-active postfix
+      systemctl is-enabled postfix
+    expect: {rc: 0, stdout: "\\Aactive\\nenabled\\n\\Z"}
+
+  - id: sasl-plain-module-installed
+    what: the Debian-family SASL module package (libsasl2-modules) is installed
+    control: invariant
+    why_invariant: >-
+      libsasl2-modules is already installed on the clean Ubuntu 24.04 node (a dependency of the base system); the check
+      guards that the class keeps it, it cannot discriminate before/after
+    derived_from:
+      - {path: manifests/postfix_smtp_node.pp, lines: "29-40", text: "$cyrus_sasl_package = 'libsasl2-modules'"}
+    probe: dpkg-query -W -f='${Status}\n' libsasl2-modules 2>&1
+    expect: {rc: 0, stdout: "\\Ainstall ok installed\\n\\Z"}
+
+  - id: root-alias-rendered-from-default
+    what: "with root_email_alias at its default '' the aliases file gets the line 'root: ' (empty target) and is compiled"
+    control: negative
+    derived_from:
+      - {path: manifests/postfix_smtp_node.pp, lines: "14", text: "$root_email_alias = lookup({ name => \"${clientcert}::postfix_smtp_node::root_email_alias\", default_value => '' })"}
+      - {path: templates/postfix_smtp_node/aliases, lines: "2-4", text: "root: <%=@root_email_alias%>"}
+    probe: |
+      grep -n '^root:' /etc/aliases
+      test -f /etc/aliases.db && echo aliases-db-present
+    expect: {rc: 0, stdout: "\\A[0-9]+:root: \\naliases-db-present\\n\\Z"}
