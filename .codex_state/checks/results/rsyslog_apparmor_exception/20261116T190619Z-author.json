@@ -1,0 +1,103 @@
+{
+ "class": "rsyslog_apparmor_exception",
+ "role": "author",
+ "at": "20261116T190619Z",
+ "runner": "303d2dd",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "cf7f8eb2a90e49e9eb5a58c563321e6fc46d729409072ddbd6884704e060da69",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "local-exception-file",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "root root 644\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "profile-compiles-with-the-exception",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "rsyslogd-confined-and-running",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\nrsyslogd (enforce)\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "confined-rsyslogd-writes-to-logs-dir",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /srv/p8test-logs/p8test.log: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "ad_rsyslog_apparmor]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_apparmor_exception/Exec[reload_rsyslog_apparmor]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Rsyslog_apparmor_exception/Exec[reload_rsyslog_apparmor]: Scheduling refresh of Service[rsyslog]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 2 events\u001b[0m\n\u001b[mNotice: Applied catalog in 7.12 seconds\u001b[0m\nRUN1_EVENTS: 6 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794856030'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.39 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::rsyslog_apparmor_exception: 2 concrete resources (+0 defined-type instances)\n  File[/etc/apparmor.d/local/usr.sbin.rsyslogd]\n  Exec[reload_rsyslog_apparmor]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP rsyslog_apparmor_exception 44080ea07734\n"
+ },
+ "applied": [
+  {
+   "id": "local-exception-file",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 644\n/srv/p8test-logs/ rw,\n/srv/p8test-logs/** rwk,\n",
+   "stderr": ""
+  },
+  {
+   "id": "profile-compiles-with-the-exception",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/srv/p8test-logs/ rw,\n/srv/p8test-logs/** rwk,\n",
+   "stderr": ""
+  },
+  {
+   "id": "rsyslogd-confined-and-running",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\nrsyslogd (enforce)\n",
+   "stderr": ""
+  },
+  {
+   "id": "confined-rsyslogd-writes-to-logs-dir",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates /srv/p8test-logs (owner syslog, rsyslogd's runtime user), adds /etc/rsyslog.d/99-p8test.conf routing the tag p8test to /srv/p8test-logs/p8test.log, restarts rsyslog, sends one message with logger -t p8test",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.8,
+ "node": "ubuntu",
+ "duration_s": 56.0
+}
