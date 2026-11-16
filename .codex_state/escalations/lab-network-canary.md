@@ -37,3 +37,11 @@ commits". It is the post-migration mode the loop uses right after record_green.
 2. Accept this verdict as the network evidence for item 1 (every network-relevant check ok) and continue with item 2
    in the non-fresh mode.
 3. Treat it as a canary failure and roll back steps 7 → 1. Not recommended: nothing points at the network.
+
+## HQ decision (2026-11-16): option 1, no rollback
+1. Reviewer fix: `--fresh` on a class whose migrate commit is not HEAD is a usage error (cbc64df).
+2. Verdict 27b6cdf stays. Note: `reviews/firewall_secure/20261110T171621Z.note.md` (cause = invalid mode, not the
+   class).
+3. Step 8 amended: firewall_secure and rsyslog_client are re-checked in the normal mode. Each verdict must show
+   revert-first and node fresh = yes.
+4. Item 1 is re-run, then rsyslog_client, then the three pilots.
