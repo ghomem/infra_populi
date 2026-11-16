@@ -1,0 +1,63 @@
+# Phase 3 checks for puppet_infrastructure::sysmon_backup (class; required_base filesystem_base).
+# Fixture: the master's Hiera lab fixtures (master_fixtures.sh): sysmon::basedir /var/tmp/p8test-sysmon/,
+# sysmon::address sysmon.p8test.invalid, sysmon::backdir %{filesystem::backdir}/sysmon
+# (= /opt/puppet-infrastructure/backup/sysmon), sysmon::backdays 10; no sysmon::compression key (default true);
+# filesystem::bindir /opt/puppet-infrastructure/bin. The class instantiates puppet_infrastructure::backup 'sysmon'.
+class: sysmon_backup
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 0.3
+  notes: "Wall clock 19:12:16Z to 19:12:35Z 2026-11-16, outside the worktree while another review ran; the master's Hiera fixtures and filesystem_base read for the exercise's prerequisites."
+checks:
+  - id: backup-script-installed
+    what: the sysmon backup script is installed in bindir as backup-sysmon.sh, root:root 0755
+    control: negative
+    derived_from:
+      - {path: manifests/sysmon_backup.pp, lines: "13", text: "puppet_infrastructure::backup { $mysystype: basedir => $mybasedir, prefix => $myprefix, backdir => $mybackdir, ndays => $myndays, bindir => $mybindir, compression => $compression }"}
+      - {path: manifests/backup.pp, lines: "15-16", text: "mode    => '0755',"}
+    probe: stat -c '%U %G %a' /opt/puppet-infrastructure/bin/backup-sysmon.sh
+    expect: {rc: 0, stdout: "\\Aroot root 755\\n\\Z"}
+
+  - id: script-carries-the-sysmon-keys
+    what: the script backs up sysmon::basedir under the prefix sysmon::address into sysmon::backdir, keeping sysmon::backdays copies, compressed by default
+    control: negative
+    derived_from:
+      - {path: manifests/sysmon_backup.pp, lines: "6-9", text: "$mybasedir = lookup(\"${mysystype}::basedir\")"}
+      - {path: manifests/sysmon_backup.pp, lines: "10", text: "$compression = lookup( { 'name' => \"${mysystype}::compression\", 'default_value' => true } )"}
+      - {path: templates/backup/backup.sh.erb, lines: "4-7", text: "FILETARGETDIRS=<%= @basedir %>"}
+      - {path: templates/backup/backup.sh.erb, lines: "15", text: "COMPRESSION=<%= @compression %>"}
+    probe: grep -E '^(FILETARGETDIRS|FILEPREFIX|BACKDIR|NC|COMPRESSION)=' /opt/puppet-infrastructure/bin/backup-sysmon.sh
+    expect: {rc: 0, stdout: "\\AFILETARGETDIRS=/var/tmp/p8test-sysmon/\\nFILEPREFIX=sysmon\\.p8test\\.invalid\\nBACKDIR=/opt/puppet-infrastructure/backup/sysmon\\nNC=10\\nCOMPRESSION=true\\n\\Z"}
+
+  - id: nightly-cron
+    what: root's crontab runs the script at 23:00 every day (backup's defaults), named cron_sysmon_backup
+    control: negative
+    derived_from:
+      - {path: manifests/backup.pp, lines: "5-8", text: "$hour = '23',"}
+      - {path: manifests/backup.pp, lines: "22-23", text: "command   => \"${bindir}/backup-${title}.sh\","}
+    probe: |
+      crontab -l -u root 2>/dev/null | grep -A1 -x '# Puppet Name: cron_sysmon_backup'
+    expect: {rc: 0, stdout: "\\A# Puppet Name: cron_sysmon_backup\\n0 23 \\* \\* \\* /opt/puppet-infrastructure/bin/backup-sysmon\\.sh\\n\\Z"}
+
+  - id: backup-runs-and-archives-basedir
+    what: >-
+      the exercise: run once, the script writes one compressed archive named <address>-<date>.tar.gz in backdir that
+      holds basedir's content
+    control: negative
+    derived_from:
+      - {path: manifests/sysmon_backup.pp, lines: "2", text: "# This class provides sysmon backups"}
+      - {path: templates/backup/backup.sh.erb, lines: "31", text: "tar $EXCLUDELINE -cv${COMPRESSION_FLAG}f $BACKDIR/$FILEPREFIX-`date +%Y-%b-%d-%Hh%Mm`.tar.gz $FILETARGETDIRS"}
+    mutates: >-
+      creates the fixture source /var/tmp/p8test-sysmon/ with one file p8test.txt and the backup directory
+      /opt/puppet-infrastructure/backup/sysmon (neither the class nor filesystem_base creates them), then runs
+      backup-sysmon.sh once as root
+    probe: |
+      install -d /var/tmp/p8test-sysmon /opt/puppet-infrastructure/backup/sysmon
+      echo p8test-sysmon-content > /var/tmp/p8test-sysmon/p8test.txt
+      /opt/puppet-infrastructure/bin/backup-sysmon.sh >/dev/null 2>&1
+    effect: |
+      set -- /opt/puppet-infrastructure/backup/sysmon/sysmon.p8test.invalid-*.tar.gz
+      test "$#" -eq 1 -a -f "$1" || { echo "archives: $*"; exit 1; }
+      tar -tzf "$1" | grep -x 'var/tmp/p8test-sysmon/p8test.txt'
+    expect: {rc: 0, stdout: "\\Avar/tmp/p8test-sysmon/p8test\\.txt\\n\\Z"}
