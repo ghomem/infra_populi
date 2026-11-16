@@ -1,0 +1,19 @@
+{
+ "class": "ssh_secure",
+ "at": "20261116T123144Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "allow-groups: line 41 joins the othergroups lookup (default '' with no Hiera key on the lab master) with ' ssh_in', and line 79 renders AllowGroups \"sudo naemon  ssh_in\" (admin_group sudo on Debian, lines 20-23); sshd -T tokenised by awk gives exactly sudo/naemon/ssh_in",
+  "host-keys-in-order: line 58 passes $host_keys (default line 9: ed25519, ecdsa, rsa in that order) as HostKey; probe reads sshd -T hostkey lines and expects exactly those three paths in that order",
+  "ciphers-exact: line 60 sets Ciphers => $ciphers (default line 11: aes256-gcm,aes128-gcm,aes256-ctr,aes192-ctr,aes128-ctr); probe reads the effective sshd -T ciphers line and expects exactly that list in order"
+ ],
+ "reviewer_result": "20261116T123019Z-reviewer",
+ "author_result": "20261116T122626Z-author",
+ "findings": []
+}
