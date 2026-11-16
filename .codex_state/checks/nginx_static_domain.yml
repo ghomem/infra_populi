@@ -8,14 +8,19 @@ class: nginx_static_domain
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
-  minutes: 2.0
+  minutes: 3.0
   notes: >-
     Wall clock 2026-11-10T16:00:52Z (class-specific: nginx_base DH size) to 16:02:11Z (validated). validate caught
     one authoring error: nginx_base.pp:38 was the LOCAL line (the 2-line migration header shifts it); the baseline
     line is 36. One probe rewritten before validation so that it writes no file (curl -o /tmp → captured output).
     Fixture certificate: throwaway p8test PKI (RSA 2048). Since pki v2 (HQ 2026-11-10, master_fixtures.sh) its SAN
     names p8test.example.com, so https-name-verifies (added 16:21:30Z-16:22:16Z, ~0.7 min with the bundle lookup) checks the name; served-certificate-is-
-    the-bundle keeps the fingerprint comparison.
+    the-bundle keeps the fingerprint comparison. Corrected 2026-11-16 after pilot run 1 (20261116T114053Z-author,
+    FINDINGS on https-name-verifies): AUTHORING ERROR, not a finding — OpenSSL 3 prints `Verify return code` indented
+    inside the SSL-Session block, the probe anchored it at column 0 and saw nothing; a manual run of the same handshake
+    verified. Testing the fix against a WRONG hostname showed that OpenSSL 3.0.13 prints `Verify return code: 0 (ok)`
+    even for an aborted handshake (empty session), so that line cannot discriminate; the probe now reads the
+    top-level `Verification: OK` / `Verification error: hostname mismatch` line (both cases tested on the node). 1 min.
 checks:
   - id: nginx-config-valid
     what: the nginx configuration the define produces passes `nginx -t`
@@ -83,8 +88,8 @@ checks:
       - {path: manifests/nginx_static_domain.pp, lines: "298-300", text: "server_name               => [$server_name, ],"}
       - {path: manifests/ssl_base.pp, lines: "115-118", text: "source => $intermediate_cert_source,"}
     probe: |
-      openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -verify_hostname p8test.example.com -CAfile /etc/ssl/certs/p8test.nginx.bundle.crt -verify_return_error </dev/null 2>&1 | grep -oE '^Verify return code: .*$'
-    expect: {rc: 0, stdout: "\\AVerify return code: 0 \\(ok\\)\\n\\Z"}
+      openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -verify_hostname p8test.example.com -CAfile /etc/ssl/certs/p8test.nginx.bundle.crt -verify_return_error </dev/null 2>&1 | grep -E '^Verification( error)?:'
+    expect: {rc: 0, stdout: "\\AVerification: OK\\n\\Z"}
 
   - id: tls12-only
     what: TLS 1.2 is accepted and TLS 1.3 refused (ssl_protocols = base prefix ['TLSv1.2'], no additions)
