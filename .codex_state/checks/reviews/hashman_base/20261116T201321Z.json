@@ -1,0 +1,21 @@
+{
+ "class": "hashman_base",
+ "at": "20261116T201321Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "python-dependencies-installed: manifests/hashman_base.pp:171 declares package {[python3-cracklib, python3-setproctitle, python3-openssl, python3-rsa, python3-prettytable]: ensure => present}; dpkg-query over exactly those five names, sorted, expecting 'install ok installed' for each tests that declaration",
+  "cli-wrapper-starts-the-cli: templates/hashman/pp_auth.sh.erb:4 renders '<%= @localdir %>/hashman/common/pp_auth.py \"$@\"' (localdir /opt/puppet-infrastructure, matching hashmandir /opt/puppet-infrastructure/hashman where manifest:73-79 places pp_auth.py); the wrapper itself is manifest:154-160 root 0755 at ${localdir}/bin/pp_auth.sh, so stat 'root 755' plus running it with no args exercises the rendered wrapper -> pp_auth.py",
+  "cli-wrapper-starts-the-cli: templates/hashman/libhashman/interface.py.erb:445-447 print_usage prints 'Usage: ' + basename(argv[0]) + ' auth          USER PASSWORD'; pp_auth.py.erb:78-81 calls print_usage() when nargs < 2 after all imports (crack, setproctitle, prettytable, libhashman.*) load, and print_usage ends in exit(E_ERR) before any db/lock access (read-only); basename is pp_auth.py, so first stdout line 'Usage: pp_auth.py auth +USER PASSWORD' is what the code produces; rc 0 is head's (pipeline), expectation rests on stdout"
+ ],
+ "review_s": 97.7,
+ "check_file_sha256": "b87bba276ae3bf7446017ef043bccfade5f8a11fe89b07da25d109b5edb9949f",
+ "reviewer_result": "20261116T201144Z-reviewer",
+ "author_result": "20261116T201019Z-author",
+ "findings": []
+}
