@@ -1308,3 +1308,19 @@ as the recommended fix. openvpn_server is prepared and waits.
   - codex_migrate_class: reverts the class's node.
   - phase3.py: probes and reverts the class's node; a probe may name no lab node.
 - **Steps:** n1 2417aca, n2 4714217, n3 b3ed59f, n4 69ca59b, n5 (this commit). 26 new tests.
+
+## 2026-11-16 — HQ item 3: lab_vm.sh, the guarded script for new lab VMs
+`lab_vm.sh` acts only on VMs named `p8lab-*`, like snapshot_master.sh does for the master. Every refusal changes
+nothing, and every refusal path is tested (22 tests).
+- **clone** a source VM into a new p8lab-* VM:
+  - the source must be powered off, or cloned from one of its named snapshots;
+  - its configuration and snapshot list are fingerprinted before and after, and a difference is an error;
+  - the master is never a source.
+- **modify:** powered-off only; a `--name` must stay p8lab-*.
+- **start:** refused if MemAvailable minus the VM's memory would leave under 4096 MB.
+- **stop:** ACPI with a timeout, or `--hard`.
+- **snapshot take|restore:** offline only.
+- **No delete verb:** deleting a VM or a baseline snapshot stays Salatiel's.
+- **Settings:** allow the script; deny raw clonevm, createvm, startvm, controlvm, storageattach, and snapshot
+  take/restore/delete/edit on any VM, beside the existing modifyvm and unregistervm denies. The master and
+  ubuntu24-puppet8-Node keep their rules.

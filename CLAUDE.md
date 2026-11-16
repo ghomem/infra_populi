@@ -68,7 +68,10 @@ the tracked `.codex_state/rules/CODEX_RUNBOOK.md`.
   NEVER restore the master or hard-power it off. The ONLY master shutdown is `.codex_state/tools/snapshot_master.sh
   <P8MASTER_NAME>` (HQ VM-operations ruling: take-only offline snapshot via ACPI with timeout; refuses during any
   harness/Codex/reviewer run; restarts and verifies puppetserver + 8140; records name+UUID in
-  `.codex_state/lab/master_snapshots.jsonl`). Codex may start a stopped VM only.
+  `.codex_state/lab/master_snapshots.jsonl`). Codex may start a stopped VM only. New lab VMs (`p8lab-*` only) go
+  through `.codex_state/tools/lab_vm.sh` (clone / modify / start / stop / snapshot take|restore; a clone's source is
+  never modified; no start below 4 GB free; no delete — deleting a VM or a baseline snapshot stays Salatiel's). Raw
+  mutating VBoxManage is denied. Lab nodes: `.codex_state/lab/nodes.yml` (nodes.py; plan column `node`).
 - Git: commit only when GREEN and idempotent; message `P8: migrate puppet_infrastructure::<class>`;
   never commit params, tooling scratch, or a class that is not GREEN. `.bak` files are never committed.
 

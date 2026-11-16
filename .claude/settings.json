@@ -32,7 +32,8 @@
       "Bash(timeout *)",
       "Bash(sleep *)",
       "WebSearch",
-      "WebFetch"
+      "WebFetch",
+      "Bash(.codex_state/tools/lab_vm.sh *)"
     ],
     "deny": [
       "Bash(git push --force*)",
@@ -53,7 +54,16 @@
       "Bash(VBoxManage modifyvm *)",
       "Bash(VBoxManage controlvm Ubuntu24-puppet8-Master poweroff*)",
       "Bash(VBoxManage controlvm Ubuntu24-puppet8-Master acpipowerbutton*)",
-      "Bash(rm -rf *)"
+      "Bash(rm -rf *)",
+      "Bash(VBoxManage clonevm *)",
+      "Bash(VBoxManage createvm *)",
+      "Bash(VBoxManage startvm *)",
+      "Bash(VBoxManage controlvm *)",
+      "Bash(VBoxManage storageattach *)",
+      "Bash(VBoxManage snapshot * take*)",
+      "Bash(VBoxManage snapshot * restore*)",
+      "Bash(VBoxManage snapshot * delete*)",
+      "Bash(VBoxManage snapshot * edit*)"
     ]
   }
 }

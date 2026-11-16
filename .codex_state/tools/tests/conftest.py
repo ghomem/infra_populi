@@ -39,6 +39,9 @@ if name == "VBoxManage":
             sys.exit(1)
         print(f'VMState="{vm["state"]}"')
         print(f'CurrentSnapshotName="{vm.get("snapshot", "")}"')
+        print(f'memory={vm.get("memory", 2048)}')
+        for key, value in sorted(vm.get("config", {}).items()):
+            print(f'{key}="{value}"')
     elif args[:1] == ["controlvm"] and args[2] == "poweroff":
         vms[args[1]]["state"] = "poweroff"; save()
     elif args[:1] == ["snapshot"] and args[2] == "restore":
@@ -61,6 +64,18 @@ if name == "VBoxManage":
             print("take while running", file=sys.stderr); sys.exit(1)
         vm.setdefault("snapshots", []).append({"name": args[3], "uuid": f"uuid-{len(vm['snapshots']) + 1}"})
         vm["last_description"] = args[args.index("--description") + 1] if "--description" in args else ""
+        save()
+    elif args[:1] == ["clonevm"]:
+        src = vms[args[1]]
+        name = args[args.index("--name") + 1]
+        vms[name] = {"state": "poweroff", "snapshots": [], "memory": src.get("memory", 2048),
+                     "config": dict(src.get("config", {}))}
+        save()
+    elif args[:1] == ["modifyvm"]:
+        vm = vms[args[1]]
+        opts = args[2:]
+        for i in range(0, len(opts) - 1, 2):
+            vm.setdefault("config", {})[opts[i].lstrip("-")] = opts[i + 1]
         save()
     elif args[:1] == ["snapshot"] and args[2] == "showvminfo":
         snap = next((x for x in vms[args[1]].get("snapshots", []) if x["name"] == args[3]), None)
