@@ -1,0 +1,21 @@
+{
+ "class": "user_lock",
+ "at": "20261116T230618Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "user-entry-locked-by-hashman @ templates/hashman/libhashman/config.py.erb:58: LOCKPREFIX = '!' is the prefix lockpw() (dbutils.py.erb:804) prepends to the existing entry, so the locked line must read '!$6$p8testsalt$p8testfixturehash' for the fixture-seeded hash; probe greps that line in DBFILE_USER = DBDIR/hashes.pp (config.py.erb:29, dbdir from hashman_base lookup('hashman::dbdir'))",
+  "user-entry-locked-by-hashman @ manifests/user_lock.pp:11-14: the exec runs ${hashmandir}/common/pp_auth.py lock <title> for title p8testuser; lockpw writes via setpw raw -> setent, which keeps the '$<user>_pwd_hash = ' left side and rewrites the quoted value, matching the expected line format",
+  "exactly-one-entry @ templates/hashman/libhashman/dbutils.py.erb:804-807: lockpw returns setpw(username, pwentry, True, ...); setpw (557ff) finds the existing index via getpw(username, True) and calls setent(), which replaces alllines[index] in place (676-691) instead of addent()'s append, so exactly one p8testuser line is expected (fixture seeds one, only if absent)"
+ ],
+ "review_s": 107.4,
+ "check_file_sha256": "2ddaea72fdb93efc02a9777c082dd139d727879bfeea8e627a8f21cf5a96c205",
+ "reviewer_result": "20261116T230431Z-reviewer",
+ "author_result": "20261116T230258Z-author",
+ "findings": []
+}
