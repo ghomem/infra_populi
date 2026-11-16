@@ -10,14 +10,17 @@
 # The NODE comes from the lab node inventory (.codex_state/lab/nodes.yml via nodes.py, HQ 2026-11-16 item 2):
 #   revert_node.sh [--node KIND] [--node-state]    (else P8_NODE, else the inventory default `ubuntu`)
 # Its VM must be ubuntu24-puppet8-Node or a p8lab-* VM, never the master. Default node: ubuntu24-puppet8-Node,
-# snapshot P8NODE_BASELINE_GREEN_v3 (v2 — GRUB_RECORDFAIL_TIMEOUT=2, apt timers off, NIC2 host-only vboxnet0 — plus
-# enp0s8 192.168.56.20/24 and hosts master -> 192.168.56.10). After every restore: Debian refreshes apt lists;
-# RedHat must show a valid subscription (HQ 2026-11-16 item 5) and refreshes the dnf metadata.
+# snapshot P8NODE_BASELINE_GREEN_v4 (v3 — GRUB_RECORDFAIL_TIMEOUT=2, apt timers off, NIC2 host-only vboxnet0,
+# enp0s8 192.168.56.20/24, hosts master -> 192.168.56.10 — plus NIC1 VirtualBox NAT with natdnshostresolver1 on).
+# After every restore: Debian refreshes apt lists; RedHat must show a valid subscription (HQ 2026-11-16 item 5) and
+# refreshes the dnf metadata.
 #
 # Host-specific assumptions:
 #   master VM     Ubuntu24-puppet8-Master  (may start; never restore/power off/reset)
 #   SSH aliases   the node's alias (nodes.yml), puppet8master (host-only 192.168.56.10)
-#   Wi-Fi bridge  host interface wlo1 (NIC1: internet only; the engine reaches the node over host-only)
+#   NIC1          VirtualBox NAT (internet and DNS through the laptop's current uplink; the engine reaches the node
+#                 over host-only). lab-network-nat.md: the default route must be via 10.0.2.2 on the interface holding
+#                 10.0.2.15/24, and no address may be on the home LAN 192.168.77.0/24.
 #   master check  puppet8master.example.com:8140, opened from the node
 # Parameterizing these via environment variables is a known future improvement.
 #
@@ -47,6 +50,9 @@ readonly APT_UPDATE_TIMEOUT_SECONDS=180
 readonly ROUTE_TIMEOUT_SECONDS="${ROUTE_TIMEOUT_SECONDS:-60}"
 readonly LAPTOP_HOSTONLY_IP="192.168.56.1"
 readonly MASTER_HOSTONLY_IP="192.168.56.10"
+readonly NAT_GATEWAY="10.0.2.2"
+readonly NAT_ADDRESS="10.0.2.15/24"
+readonly HOME_LAN_PREFIX="192.168.77."
 readonly DNF_TIMEOUT_SECONDS=300
 # HQ 2026-11-10 ruling 2: ssh through the ControlMaster shim (see sshmux/ssh).
 TOOLS_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
@@ -267,11 +273,22 @@ node_hostname="${node_hostname//$'\n'/}"
 # Internet must be real, not assumed (2026-11-16): a missing DHCPv4 lease on NIC1 left the node IPv6-only with no
 # default route, and apt-get update still exited 0 on its fetch failures, so the revert reported SUCCESS.
 route_deadline=$((SECONDS + ROUTE_TIMEOUT_SECONDS))
-until ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" 'ip -4 route show default' 2>/dev/null | grep -q '^default '; do
+until default_route="$(ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" 'ip -4 route show default' 2>/dev/null | grep -m1 '^default ')"; do
   ((SECONDS < route_deadline)) ||
     fail "The node has no IPv4 default route after ${ROUTE_TIMEOUT_SECONDS}s (no DHCPv4 lease on NIC1?): no internet for apt."
   sleep "$POLL_INTERVAL_SECONDS"
 done
+# NIC1 is VirtualBox NAT (lab-network-nat.md step 5): internet never through the home LAN.
+read -r _ _ route_via _ route_dev _ <<<"$default_route"
+[[ "$route_via" == "$NAT_GATEWAY" && -n "$route_dev" ]] ||
+  fail "The node's default route is '${default_route}', expected via ${NAT_GATEWAY} (NIC1 NAT; wrong snapshot or NIC1 not NAT?)."
+node_addrs="$(ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" 'ip -4 -br addr' 2>/dev/null)" ||
+  fail "Node '$NODE_SSH_ALIAS' stopped responding during the NAT check."
+awk -v dev="$route_dev" -v want="$NAT_ADDRESS" '$1 == dev { for (i = 3; i <= NF; i++) if ($i == want) ok = 1 } END { exit !ok }' <<<"$node_addrs" ||
+  fail "The node's default-route interface ${route_dev} does not hold ${NAT_ADDRESS} (NIC1 not NAT?)."
+if grep -qF " ${HOME_LAN_PREFIX}" <<<"$node_addrs"; then
+  fail "The node holds an address on the home LAN (${HOME_LAN_PREFIX}x): NIC1 must be NAT."
+fi
 if [[ "$NODE_OS_FAMILY" == "RedHat" ]]; then
   # A RHEL node must be registered after every restore (HQ 2026-11-16 item 5): no valid subscription, no packages.
   ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" 'sudo -n subscription-manager identity' >/dev/null 2>&1 ||

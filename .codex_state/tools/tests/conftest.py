@@ -128,7 +128,7 @@ class FakeLab:
             path.chmod(0o755)
         self.world = {
             "vms": {
-                "ubuntu24-puppet8-Node": {"state": "running", "snapshot": "P8NODE_BASELINE_GREEN_v3"},
+                "ubuntu24-puppet8-Node": {"state": "running", "snapshot": "P8NODE_BASELINE_GREEN_v4"},
                 "Ubuntu24-puppet8-Master": {"state": "running", "snapshot": "P8MASTER_BASELINE_GREEN"},
             },
             "ssh": [
@@ -137,7 +137,12 @@ class FakeLab:
                 # revert_node.sh --node-state: boot ID, last_run_summary sha256 (HQ batch-3 acceptance item 1)
                 {"match": r"random/boot_id", "stdout": BOOT_ID + "\nabsent\n"},
                 # revert_node.sh's internet check before the apt refresh (2026-11-16)
-                {"match": r"ip -4 route show default", "stdout": "default via 192.168.77.1 dev enp0s3 proto dhcp\n"},
+                {"match": r"ip -4 route show default",
+                 "stdout": "default via 10.0.2.2 dev enp0s3 proto dhcp src 10.0.2.15 metric 100\n"},
+                # revert_node.sh's NIC1 NAT asserts (lab-network-nat.md step 5)
+                {"match": r"ip -4 -br addr",
+                 "stdout": "lo               UNKNOWN        127.0.0.1/8\nenp0s3           UP             10.0.2.15/24\n"
+                           "enp0s8           UP             192.168.56.20/24\n"},
                 # revert_node.sh's post-restore host-only asserts (lab-network plan step 9)
                 {"match": r"SSH_CONNECTION", "stdout": "192.168.56.1 51234 192.168.56.20 22\n"},
                 {"match": r"ip -br addr", "stdout": "enp0s8           UP             192.168.56.20/24\n"},

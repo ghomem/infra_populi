@@ -20,13 +20,13 @@ def test_running_node_is_hard_powered_off_and_restored_to_v2(lab):
     vbox = lab.calls("VBoxManage")
     assert ["VBoxManage", "controlvm", NODE, "poweroff"] in vbox
     assert not any("acpipowerbutton" in c for c in vbox)
-    assert ["VBoxManage", "snapshot", NODE, "restore", "P8NODE_BASELINE_GREEN_v3"] in vbox
+    assert ["VBoxManage", "snapshot", NODE, "restore", "P8NODE_BASELINE_GREEN_v4"] in vbox
     assert vbox.index(["VBoxManage", "controlvm", NODE, "poweroff"]) < \
-        vbox.index(["VBoxManage", "snapshot", NODE, "restore", "P8NODE_BASELINE_GREEN_v3"])
+        vbox.index(["VBoxManage", "snapshot", NODE, "restore", "P8NODE_BASELINE_GREEN_v4"])
     last = proc.stdout.strip().splitlines()[-1]
     assert last.startswith("REVERT_METRICS ")
     metrics = json.loads(last.split(" ", 1)[1])
-    assert metrics["snapshot"] == "P8NODE_BASELINE_GREEN_v3"
+    assert metrics["snapshot"] == "P8NODE_BASELINE_GREEN_v4"
     assert {"total_s", "poweroff_s", "restore_s", "boot_to_ssh_s", "apt_update_s"} <= metrics.keys()
     ssh = [" ".join(c) for c in lab.calls("ssh")]
     apt = next(i for i, c in enumerate(ssh) if "apt-get -q update" in c)
@@ -61,7 +61,7 @@ def test_restore_to_wrong_snapshot_fails_before_boot(lab):
     lab.world["restore_ignores_name"] = True
     proc = lab.run([SCRIPT])
     assert proc.returncode == 1
-    assert "expected 'P8NODE_BASELINE_GREEN_v3'" in proc.stderr
+    assert "expected 'P8NODE_BASELINE_GREEN_v4'" in proc.stderr
     assert ["VBoxManage", "startvm", NODE, "--type", "headless"] not in lab.calls("VBoxManage")
 
 
@@ -83,7 +83,7 @@ def test_every_revert_marks_the_node_state_token_and_node_state_touches_no_vm(la
     proc = lab.run([SCRIPT])
     assert proc.returncode == 0, proc.stderr
     record = json.loads((lab.root / "node_revert.json").read_text())
-    assert record["snapshot"] == "P8NODE_BASELINE_GREEN_v3" and record["last_run"] == "absent"
+    assert record["snapshot"] == "P8NODE_BASELINE_GREEN_v4" and record["last_run"] == "absent"
     assert "REVERT_NODE_STATE boot " + record["boot_id"] in proc.stdout
     token_read = next(i for i, c in enumerate(lab.calls()) if c[0] == "ssh" and "random/boot_id" in " ".join(c))
     assert token_read > max(i for i, c in enumerate(lab.calls()) if c[0] == "ssh" and "/dev/tcp/" in " ".join(c))
@@ -139,7 +139,7 @@ def test_node_inventory_cache_is_keyed_by_the_nodes_baseline_snapshot(monkeypatc
     spec = importlib.util.spec_from_file_location("node_inventory_t", TOOLS / "node_inventory.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    assert mod.cache_path().name == "P8NODE_BASELINE_GREEN_v3.paths.gz"  # the default node, from nodes.yml
+    assert mod.cache_path().name == "P8NODE_BASELINE_GREEN_v4.paths.gz"  # the default node, from nodes.yml
 
 
 # 2026-11-16: no IPv4 default route, or apt fetch failures, fail the revert (it reported SUCCESS on a node with no
@@ -151,6 +151,35 @@ def test_no_ipv4_default_route_fails_the_revert_before_apt(lab):
     assert not any("apt-get" in " ".join(c) for c in lab.calls("ssh"))
     assert not (lab.root / "node_revert.json").exists()
 
+
+
+# lab-network-nat.md step 5: NIC1 is VirtualBox NAT; a bridged NIC1 (home LAN) or a missing NAT address fails the
+# revert before apt and records no state token.
+@pytest.mark.parametrize("rule, message", [
+    ({"match": r"ip -4 route show default", "stdout": "default via 192.168.77.1 dev enp0s3 proto dhcp\n"},
+     "expected via 10.0.2.2"),
+    ({"match": r"ip -4 -br addr", "stdout": "enp0s3           UP             10.0.2.16/24\n"},
+     "interface enp0s3 does not hold 10.0.2.15/24"),
+    ({"match": r"ip -4 -br addr",
+      "stdout": "enp0s3           UP             10.0.2.15/24\nenp0s9           UP             192.168.77.185/24\n"},
+     "holds an address on the home LAN"),
+])
+def test_nic1_must_be_nat_or_the_revert_fails_before_apt(lab, rule, message):
+    lab.world["ssh"].insert(0, rule)
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 1 and message in proc.stderr
+    assert not any("apt-get" in " ".join(c) for c in lab.calls("ssh"))
+    assert not (lab.root / "node_revert.json").exists()
+
+
+def test_the_nat_asserts_pass_on_the_default_stub_and_follow_the_route_interface(lab):
+    lab.world["ssh"][:0] = [
+        {"match": r"ip -4 route show default", "stdout": "default via 10.0.2.2 dev ens3 proto dhcp\n"},
+        {"match": r"ip -4 -br addr", "stdout": "ens3             UP             10.0.2.15/24\n"
+                                                "enp0s8           UP             192.168.56.20/24\n"},
+    ]
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 0, proc.stderr
 
 @pytest.mark.parametrize("line", ["W: Failed to fetch http://archive.ubuntu.com/ubuntu/dists/noble/InRelease",
                                   "Err:1 http://archive.ubuntu.com noble InRelease\n  Temporary failure resolving 'archive.ubuntu.com'",
