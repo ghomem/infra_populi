@@ -7,12 +7,16 @@ class: ssh_secure
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
 authoring:
-  minutes: 1.4
+  minutes: 3.4
   notes: >-
     Wall clock 2026-11-10T15:59:21Z (class-specific: Hiera othergroups lookup on the master, moduli hash) to
     16:00:44Z (validated; includes a runner fix — the ssh-command rule matched the path /etc/ssh/moduli). Not
     checkable, recorded as an authoring finding: `Protocol 2` and `UsePrivilegeSeparation yes` (lines 57, 77) are
     deprecated and ignored by OpenSSH >= 7.5 (the node runs 9.6p1), so they have no behaviour to test.
+    Mismatch controls (HQ 2026-11-16), 12:18Z-12:26Z shared with nginx_static_domain (~2 min here): kex, cipher and
+    mac negotiation offer the class's own algorithm, which must negotiate. password-auth-off lost its wire part
+    (`ssh … nobody@127.0.0.1`): no input value changes the server's verdict, so no mismatch can discriminate it, and
+    the effective-config read (sshd -T, a direct state read) stays as the evidence.
 checks:
   - id: kex-only-dh-gex-sha256
     what: the effective KexAlgorithms is exactly diffie-hellman-group-exchange-sha256
@@ -29,6 +33,11 @@ checks:
     derived_from:
       - {path: manifests/ssh_secure.pp, lines: "10", text: "diffie-hellman-group-exchange-sha256"}
     probe: ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o KexAlgorithms=curve25519-sha256 nobody@127.0.0.1 true 2>&1
+    mismatch:
+      varies: >-
+        the offered KEX: the class's own diffie-hellman-group-exchange-sha256 must negotiate (reaching authentication), so the expectation of 'no matching key exchange method' must fail
+      probe: |
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o KexAlgorithms=diffie-hellman-group-exchange-sha256 nobody@127.0.0.1 true 2>&1
     expect: {rc: 255, stdout: "no matching key exchange method found"}
 
   - id: ciphers-exact
@@ -46,6 +55,11 @@ checks:
     derived_from:
       - {path: manifests/ssh_secure.pp, lines: "11", text: "aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr"}
     probe: ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Ciphers=chacha20-poly1305@openssh.com nobody@127.0.0.1 true 2>&1
+    mismatch:
+      varies: >-
+        the offered cipher: the class's own aes256-gcm@openssh.com must negotiate, so 'no matching cipher found' must not appear
+      probe: |
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Ciphers=aes256-gcm@openssh.com nobody@127.0.0.1 true 2>&1
     expect: {rc: 255, stdout: "no matching cipher found"}
 
   - id: macs-exact
@@ -63,19 +77,22 @@ checks:
     derived_from:
       - {path: manifests/ssh_secure.pp, lines: "12", text: "hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256"}
     probe: ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Ciphers=aes256-ctr -o MACs=umac-64-etm@openssh.com nobody@127.0.0.1 true 2>&1
+    mismatch:
+      varies: >-
+        the offered MAC: the class's own hmac-sha2-256 (with aes256-ctr) must negotiate, so 'no matching MAC found' must not appear
+      probe: |
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Ciphers=aes256-ctr -o MACs=hmac-sha2-256 nobody@127.0.0.1 true 2>&1
     expect: {rc: 255, stdout: "no matching MAC found"}
 
   - id: password-auth-off
-    what: password authentication is disabled — effective setting `no`, and the server offers only publickey
+    what: password authentication is disabled — the effective setting sshd enforces is `no`
     control: negative
     derived_from:
       - {path: manifests/ssh_secure.pp, lines: "6", text: "Boolean $password_authentication = false,"}
       - {path: manifests/ssh_secure.pp, lines: "43-47", text: "$my_password_authentication = 'no'"}
       - {path: manifests/ssh_secure.pp, lines: "66", text: "'PasswordAuthentication'  => $my_password_authentication ,"}
-    probe: |
-      sshd -T 2>/dev/null | grep -E '^passwordauthentication '
-      ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no nobody@127.0.0.1 true 2>&1 | grep -o 'Permission denied ([a-z,-]*)'
-    expect: {rc: 0, stdout: "\\Apasswordauthentication no\\nPermission denied \\(publickey\\)\\n\\Z"}
+    probe: sshd -T 2>/dev/null | grep -E '^passwordauthentication '
+    expect: {rc: 0, stdout: "\\Apasswordauthentication no\\n\\Z"}
 
   - id: root-login-off
     what: the effective PermitRootLogin is `no`

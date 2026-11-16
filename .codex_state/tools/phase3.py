@@ -37,6 +37,11 @@ Check file .codex_state/checks/<class>.yml:
       # opt-in MUTATING check (HQ 2026-11-10): `probe` is an action that changes the node; the evidence is its effect
       mutates: <what the action changes on the node, declared>
       effect: <read-only shell; `expect` is matched against ITS output, never the action's>
+      # MISMATCH control (HQ 2026-11-16): the same probe with ONE value deliberately wrong; it must FAIL `expect` on the
+      # applied node, or the check does not discriminate and the set is INVALID. Mandatory for a probe that hands a
+      # name, user, key, cipher or vhost to a tool and takes the tool's verdict (TLS, logins, HTTP by host); optional
+      # for direct state reads.
+      mismatch: {varies: <which value is wrong and why the verdict must change>, probe: <read-only shell>}
 
 Probe rules (validate): the node is the only host — no other host name or address, no ssh/scp/sftp/rsync except to
 the node itself (127.0.0.1/localhost), never Puppet (agent/apply/resource); read-only — no service or package state
@@ -153,6 +158,21 @@ def resolve_ref(ref: dict, base: baseline.Baseline) -> tuple[str | None, str]:
     return None, text
 
 
+# Probes that take a tool's verdict on a value they hand it (HQ 2026-11-16): a mismatch control is mandatory.
+TOOL_VERDICT = [
+    (re.compile(r"\bopenssl\s+s_client\b"), "openssl s_client (TLS verdict)"),
+    (re.compile(r"\bcurl\b[^\n]*(-H\s*['\"]?Host:|--resolve\b)"), "curl by host (HTTP verdict for a vhost)"),
+    (re.compile(r"(^|[\s;&|(])ssh\s[^\n]*(\S+@\S+|-o\s*(Ciphers|KexAlgorithms|MACs|HostKeyAlgorithms|"
+                r"PubkeyAuthentication|PasswordAuthentication|PreferredAuthentications)=)"), "ssh login/negotiation"),
+    (re.compile(r"\b(su|runuser)\s+-|\bsudo\s+-u\s"), "a login as another user"),
+    (re.compile(r"\b(mysql|psql|smbclient|ldapsearch)\b[^\n]*\s-[uUD]\s*\S"), "a client login with a user"),
+]
+
+
+def tool_verdict(probe: str) -> str | None:
+    return next((why for pat, why in TOOL_VERDICT if pat.search(probe)), None)
+
+
 HOST_RULES = 3  # FORBIDDEN[:3] keep probes on the node and away from Puppet; the rest keep them read-only
 
 
@@ -222,6 +242,25 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
                                 "on the clean node)")
         elif "effect" in c:
             problems.append(f"{where}: `effect` without `mutates` (declare the change to opt in)")
+        mm = c.get("mismatch")
+        verdict_of = tool_verdict(c["probe"]) if isinstance(c.get("probe"), str) and not mutating else None
+        if mm is None and verdict_of:
+            problems.append(f"{where}: the probe takes a tool's verdict ({verdict_of}); a `mismatch` control is "
+                            "mandatory (HQ 2026-11-16)")
+        if mm is not None:
+            if mutating:
+                problems.append(f"{where}: a mutating check takes no mismatch control (its evidence is the effect)")
+            elif not isinstance(mm, dict) or set(mm) != {"varies", "probe"}:
+                problems.append(f"{where}: mismatch takes exactly `varies` and `probe`")
+            else:
+                if not isinstance(mm["varies"], str) or len(mm["varies"].strip()) < 10:
+                    problems.append(f"{where}: mismatch.varies must say which value is wrong and why")
+                if not isinstance(mm["probe"], str) or not mm["probe"].strip():
+                    problems.append(f"{where}: mismatch.probe is required")
+                else:
+                    if mm["probe"].strip() == str(c.get("probe", "")).strip():
+                        problems.append(f"{where}: mismatch.probe is identical to the probe")
+                    problems += [f"{where}: mismatch {p}" for p in probe_problems(mm["probe"])]
         exp = c.get("expect") or {}
         if not isinstance(exp, dict) or not set(exp) <= {"rc", "stdout", "stdout_not"}:
             problems.append(f"{where}: expect takes rc, stdout, stdout_not")
@@ -245,7 +284,8 @@ def cmd_validate(cls: str) -> int:
         return 2
     neg = sum(1 for c in data["checks"] if c["control"] == "negative")
     mut = sum(1 for c in data["checks"] if "mutates" in c)
-    print(f"VALID {cls}: {len(data['checks'])} checks ({neg} negative controls, {mut} mutating), "
+    mism = sum(1 for c in data["checks"] if "mismatch" in c)
+    print(f"VALID {cls}: {len(data['checks'])} checks ({neg} negative controls, {mut} mutating, {mism} mismatch), "
           f"{sum(len(c['derived_from']) for c in data['checks'])} baseline references at {data['baseline']}")
     return 0
 
@@ -267,6 +307,29 @@ def on_node(script: str) -> tuple[int, str, str]:
         return 124, "", f"probe timed out after {PROBE_TIMEOUT}s"
 
 
+def meets(check: dict, rc: int, out: str) -> bool:
+    exp = check.get("expect") or {}
+    passed = rc == exp.get("rc", 0)
+    if passed and "stdout" in exp:
+        passed = re.search(exp["stdout"], out, re.M) is not None
+    if passed and "stdout_not" in exp:
+        passed = re.search(exp["stdout_not"], out, re.M) is None
+    return passed
+
+
+def run_mismatch(check: dict, row: dict) -> None:
+    """After a passing check: the deliberately wrong variant must NOT meet the same expectation."""
+    mm = check.get("mismatch")
+    if not mm:
+        return
+    if not row["passed"]:
+        row["mismatch"] = {"varies": mm["varies"], "not_run": "the check itself failed"}
+        return
+    rc, out, err = on_node(mm["probe"])
+    row["mismatch"] = {"varies": mm["varies"], "rc": rc, "passed": meets(check, rc, out),
+                       "stdout": out[-1000:], "stderr": err[-500:]}
+
+
 def run_probe(check: dict, act: bool = False) -> dict:
     """Read-only checks run `probe`. A mutating check runs its `effect` only — preceded by the action when `act`."""
     action = None
@@ -274,12 +337,7 @@ def run_probe(check: dict, act: bool = False) -> dict:
         arc, aout, aerr = on_node(check["probe"])
         action = {"mutates": check["mutates"], "rc": arc, "stdout": aout[-1000:], "stderr": aerr[-500:]}
     rc, out, err = on_node(check["effect"] if "mutates" in check else check["probe"])
-    exp = check.get("expect") or {}
-    passed = rc == exp.get("rc", 0)
-    if passed and "stdout" in exp:
-        passed = re.search(exp["stdout"], out, re.M) is not None
-    if passed and "stdout_not" in exp:
-        passed = re.search(exp["stdout_not"], out, re.M) is None
+    passed = meets(check, rc, out)
     row = {"id": check["id"], "control": check["control"], "rc": rc, "passed": passed,
            "stdout": out[-2000:], "stderr": err[-1000:]}
     if "mutates" in check:
@@ -311,6 +369,16 @@ def junit(cls: str, record: dict) -> bytes:
             if not ok:
                 bad += 1
                 ET.SubElement(case, "failure", message=msg).text = f"rc {r['rc']}\n{r['stdout']}\n{r['stderr']}"
+            mm = r.get("mismatch") if phase == "applied" else None
+            if mm:
+                mcase = ET.SubElement(suite, "testcase", classname=f"phase3.{cls}.applied", name=f"{r['id']}.mismatch")
+                suite.set("tests", str(int(suite.get("tests")) + 1))
+                if mm.get("not_run"):
+                    ET.SubElement(mcase, "skipped", message=mm["not_run"])
+                elif mm["passed"]:
+                    bad += 1
+                    ET.SubElement(mcase, "failure", message=f"mismatch control passed ({mm['varies']}): the check "
+                                  "does not discriminate").text = f"rc {mm['rc']}\n{mm['stdout']}"
         suite.set("failures", str(bad))
         if phase == "applied" and not rows:
             ET.SubElement(suite, "testcase", classname=f"phase3.{cls}.applied", name="not-run").append(
@@ -378,8 +446,24 @@ def cmd_run(cls: str, role: str) -> int:
     mutating = [c for c in data["checks"] if "mutates" in c]
     for check in readonly:
         r = run_probe(check)
+        run_mismatch(check, r)
         record["applied"].append(r)
-        print(f"  {'pass' if r['passed'] else 'FAIL'} {check['id']}")
+        mm = r.get("mismatch") or {}
+        note = ""
+        if mm:
+            state = "not run" if mm.get("not_run") else "PASSED: does not discriminate" if mm["passed"] \
+                else "failed as required"
+            note = f"; mismatch {state}"
+        print(f"  {'pass' if r['passed'] else 'FAIL'} {check['id']}{note}")
+    weak = [r["id"] for r in record["applied"] if (r.get("mismatch") or {}).get("passed")]
+    if weak:
+        record["valid"] = False
+        record["problems"].append(f"mismatch controls passed (checks do not discriminate): {', '.join(weak)}")
+        for check in mutating:
+            record["applied"].append({"id": check["id"], "control": check["control"], "mutating": True,
+                                      "passed": False, "not_run": "not run: the set is invalid", "rc": None,
+                                      "stdout": "", "stderr": ""})
+        return finish("INVALID_SET", 2)
     gate = [r["id"] for r in record["applied"] if not r["passed"]]
     for check in mutating:
         if gate:
@@ -426,6 +510,9 @@ def cmd_spot(cls: str, n: int, seed: int | None) -> int:
                   "\n".join(f"  $ {l}" for l in c["effect"].strip().splitlines()))
         else:
             print("probe:\n" + "\n".join(f"  $ {l}" for l in c["probe"].strip().splitlines()))
+        if "mismatch" in c:
+            print(f"MISMATCH control (must FAIL the same expect) — varies: {c['mismatch']['varies']}\n" +
+                  "\n".join(f"  $ {l}" for l in c["mismatch"]["probe"].strip().splitlines()))
         print(f"expect: {json.dumps(c.get('expect') or {'rc': 0})}")
     print("\nJudge each: does the probe + expect test what these baseline lines declare, under the fixture?")
     return 0
@@ -438,7 +525,8 @@ def latest(cls: str, role: str) -> dict | None:
 
 def outcomes(record: dict) -> dict:
     return {"valid": record["valid"], "clean": {r["id"]: r["passed"] for r in record["clean"]},
-            "applied": {r["id"]: r["passed"] for r in record["applied"]}}
+            "applied": {r["id"]: r["passed"] for r in record["applied"]},
+            "mismatch": {r["id"]: r["mismatch"].get("passed") for r in record["applied"] if r.get("mismatch")}}
 
 
 def cmd_verdict(cls: str, derived: str, evidence: list[str]) -> int:

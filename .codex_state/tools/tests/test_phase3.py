@@ -85,7 +85,7 @@ def test_a_set_bound_to_the_baseline_validates(p3):
                                             "sha256": "01f903391abe367b549ae37822983bd3d5a8dd3d6465523f3b5f14729573b8b0"}])))
     proc = p3.run("validate", CLS)
     assert proc.returncode == 0, proc.stderr
-    assert "VALID backup_rsnapshot: 2 checks (1 negative controls, 0 mutating), 2 baseline references at release-0.9.10" in proc.stdout
+    assert "VALID backup_rsnapshot: 2 checks (1 negative controls, 0 mutating, 0 mismatch), 2 baseline references at release-0.9.10" in proc.stdout
 
 
 @pytest.mark.parametrize("mutate, message", [
@@ -128,7 +128,7 @@ def test_probes_test_the_node_only_and_change_nothing(p3, probe, why):
 
 
 @pytest.mark.parametrize("probe", ["sshd -T 2>&1 | grep -i kex", "test -f /x >/dev/null 2>&1",
-                                   "ssh -o BatchMode=yes nobody@127.0.0.1 true 2>&1", "dpkg-query -W rsnapshot",
+                                   "dpkg-query -W rsnapshot",
                                    "sha256sum /etc/ssh/moduli | cut -d' ' -f1"])
 def test_read_only_node_probes_are_allowed(p3, probe):
     p3.write(check_set(check("conf", probe)))
@@ -265,7 +265,7 @@ def test_a_mutating_check_validates_with_a_declared_change_and_a_read_only_effec
     p3.write(check_set(check("conf", "probe-conf"), mutating()))
     proc = p3.run("validate", CLS)
     assert proc.returncode == 0, proc.stderr
-    assert "(2 negative controls, 1 mutating)" in proc.stdout
+    assert "(2 negative controls, 1 mutating, 0 mismatch)" in proc.stdout
 
 
 @pytest.mark.parametrize("bad, message", [
@@ -313,6 +313,85 @@ def test_a_failed_read_only_check_skips_every_mutating_action(p3, lab):
     assert proc.returncode == 1 and "SKIP backup-runs (mutating; not run: read-only checks failed (conf))" in proc.stdout
     record, xml = p3.result()
     assert record["findings"] == ["conf"] and record["not_run"] == ["backup-runs"]
-    assert not any("act-backup" in " ".join(c) for c in lab.calls("ssh"))
     assert len(lab.calls("ssh")) == 3  # 2 clean (probe + effect) + 1 applied read-only; the action never sent
     assert any(s.get("message", "").startswith("not run: read-only checks failed") for s in xml.iter("skipped"))
+
+
+
+# HQ 2026-11-16: mismatch controls — the same probe with one value wrong must FAIL on the applied node.
+MM = {"varies": "the hostname: wrong.example.org must fail verification", "probe": "probe-wrong"}
+
+
+@pytest.mark.parametrize("probe", [
+    "openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com </dev/null",
+    "curl -s -H 'Host: p8test.example.com' http://127.0.0.1/",
+    "curl -sk --resolve p8test.example.com:443:127.0.0.1 https://p8test.example.com/",
+    "ssh -o BatchMode=yes nobody@127.0.0.1 true 2>&1",
+    "ssh -o BatchMode=yes -o Ciphers=aes256-ctr localhost true",
+    "sudo -u www-data cat /x",
+])
+def test_a_tool_verdict_probe_without_a_mismatch_is_refused(p3, probe):
+    p3.write(check_set(check("conf", probe)))
+    proc = p3.run("validate", CLS)
+    assert proc.returncode == 2 and "a `mismatch` control is mandatory" in proc.stderr, proc.stderr
+    p3.write(check_set(check("conf", probe, mismatch=dict(MM))))
+    assert p3.run("validate", CLS).returncode == 0
+
+
+@pytest.mark.parametrize("probe", ["sshd -T 2>/dev/null | grep -E '^kexalgorithms '", "getent group ssh_in",
+                                   "crontab -l -u root", "nginx -t 2>&1"])
+def test_a_direct_state_read_needs_no_mismatch(p3, probe):
+    p3.write(check_set(check("conf", probe)))
+    assert p3.run("validate", CLS).returncode == 0
+
+
+@pytest.mark.parametrize("mm, message", [
+    ({"varies": "x", "probe": "p"}, "mismatch.varies must say which value is wrong"),
+    ({"varies": "the hostname is wrong", "probe": "probe-conf"}, "mismatch.probe is identical to the probe"),
+    ({"varies": "the hostname is wrong", "probe": "rm -f /x"}, "mismatch probe changes files or accounts"),
+    ({"varies": "the hostname is wrong"}, "mismatch takes exactly `varies` and `probe`"),
+])
+def test_bad_mismatch_controls_are_refused(p3, mm, message):
+    p3.write(check_set(check("conf", "probe-conf", mismatch=mm)))
+    proc = p3.run("validate", CLS)
+    assert proc.returncode == 2 and message in proc.stderr, proc.stderr
+
+
+def test_a_mismatch_that_fails_as_required_keeps_the_set_valid(p3, lab):
+    p3.write(check_set(check("conf", "probe-conf", mismatch=dict(MM)), mutating()))
+    p3.probe_rule("probe-conf", FAIL, OK)
+    lab.world["ssh"].insert(0, {"match": "probe-wrong", "stdout": "", "rc": 1})
+    lab.world["ssh"].insert(0, {"match": "act-backup", "stdout": "", "rc": 0})
+    p3.probe_rule("eff-backup", FAIL, OK)
+    proc = p3.run("run", CLS)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    record, xml = p3.result()
+    assert record["applied"][0]["mismatch"]["passed"] is False and "mismatch failed as required" in proc.stdout
+    assert any(c.get("name") == "conf.mismatch" for c in xml.iter("testcase"))
+    # probes travel on stdin, so count calls: clean 2 (probe, effect) + applied 4 (probe, mismatch, action, effect)
+    assert len(lab.calls("ssh")) == 6
+
+
+def test_a_mismatch_that_passes_invalidates_the_set_and_skips_mutating_actions(p3, lab):
+    p3.write(check_set(check("conf", "probe-conf", mismatch=dict(MM)), mutating()))
+    p3.probe_rule("probe-conf", FAIL, OK)
+    lab.world["ssh"].insert(0, {"match": "probe-wrong", "stdout": "ok\n", "rc": 0})  # same verdict for a wrong value
+    lab.world["ssh"].insert(0, {"match": "act-backup", "stdout": "", "rc": 0})
+    p3.probe_rule("eff-backup", FAIL, OK)
+    proc = p3.run("run", CLS)
+    assert proc.returncode == 2 and "PHASE3 INVALID_SET" in proc.stdout
+    record, xml = p3.result()
+    assert record["valid"] is False and "do not discriminate): conf" in record["problems"][-1]
+    assert record["applied"][1]["not_run"] == "not run: the set is invalid"
+    assert len(lab.calls("ssh")) == 4  # clean 2 + applied probe and mismatch; the action and its effect never ran
+    assert any("does not discriminate" in f.get("message", "") for f in xml.iter("failure"))
+
+
+def test_no_mismatch_run_when_the_check_itself_fails(p3, lab):
+    p3.write(check_set(check("conf", "probe-conf", mismatch=dict(MM))))
+    p3.probe_rule("probe-conf", FAIL, FAIL)
+    proc = p3.run("run", CLS)
+    assert proc.returncode == 1
+    record, _ = p3.result()
+    assert record["applied"][0]["mismatch"] == {"varies": MM["varies"], "not_run": "the check itself failed"}
+    assert len(lab.calls("ssh")) == 2  # clean + applied probe; no mismatch call

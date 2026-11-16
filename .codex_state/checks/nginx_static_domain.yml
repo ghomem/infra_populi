@@ -8,7 +8,7 @@ class: nginx_static_domain
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
-  minutes: 3.0
+  minutes: 9.0
   notes: >-
     Wall clock 2026-11-10T16:00:52Z (class-specific: nginx_base DH size) to 16:02:11Z (validated). validate caught
     one authoring error: nginx_base.pp:38 was the LOCAL line (the 2-line migration header shifts it); the baseline
@@ -21,6 +21,10 @@ authoring:
     verified. Testing the fix against a WRONG hostname showed that OpenSSL 3.0.13 prints `Verify return code: 0 (ok)`
     even for an aborted handshake (empty session), so that line cannot discriminate; the probe now reads the
     top-level `Verification: OK` / `Verification error: hostname mismatch` line (both cases tested on the node). 1 min.
+    Mismatch controls (HQ 2026-11-16), 12:18Z-12:26Z (~6 min here), one per tool-verdict check. The Host header is
+    never the varied value: each port has exactly one server, so nginx's default-server rule answers any Host the same
+    way and a Host mismatch could not discriminate. Varied instead: the path, the compared file or certificate, the
+    verified hostname, the requested protocol, the offered suites, and the offered curve.
 checks:
   - id: nginx-config-valid
     what: the nginx configuration the define produces passes `nginx -t`
@@ -38,6 +42,11 @@ checks:
       - {path: manifests/nginx_static_domain.pp, lines: "252-261", text: "'return' => $redirect_string"}
     probe: |
       curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' -H 'Host: p8test.example.com' 'http://127.0.0.1/p8/phase3?q=1'
+    mismatch:
+      varies: >-
+        the request path (/p8/other): the redirect must carry the requested URI, so the expectation for /p8/phase3?q=1 must fail. The Host is not varied: the redirector is the only port-80 server, so by nginx's default-server rule it answers any Host
+      probe: |
+        curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' -H 'Host: p8test.example.com' 'http://127.0.0.1/p8/other'
     expect: {rc: 0, stdout: "\\A301 https://p8test\\.example\\.com/p8/phase3\\?q=1\\n\\Z"}
 
   - id: https-serves-www-root
@@ -52,6 +61,15 @@ checks:
       a=$(curl -sk --resolve p8test.example.com:443:127.0.0.1 "https://p8test.example.com/$f" | sha256sum)
       b=$(sha256sum < "/var/www/html/$f")
       test "$a" = "$b" && echo same-content
+    mismatch:
+      varies: >-
+        the local file compared (/etc/hostname instead of the served file): the byte comparison must fail
+      probe: |
+        f=$(find /var/www/html -maxdepth 1 -type f -printf '%f\n' 2>/dev/null | sort | head -1)
+        test -n "$f" || { echo "no file in www_root"; exit 1; }
+        a=$(curl -sk --resolve p8test.example.com:443:127.0.0.1 "https://p8test.example.com/$f" | sha256sum)
+        b=$(sha256sum < /etc/hostname)
+        test "$a" = "$b" && echo same-content
     expect: {rc: 0, stdout: "^same-content$"}
 
   - id: https-no-directory-listing
@@ -65,6 +83,13 @@ checks:
       out=$(curl -sk --resolve p8test.example.com:443:127.0.0.1 -w '\nstatus %{http_code}' https://p8test.example.com/)
       printf '%s\n' "$out" | tail -1
       printf '%s\n' "$out" | grep -c 'Index of /'
+    mismatch:
+      varies: >-
+        the path (/p8-phase3-absent/): a 404 must not satisfy the 200|403 expectation for the document root
+      probe: |
+        out=$(curl -sk --resolve p8test.example.com:443:127.0.0.1 -w '\nstatus %{http_code}' https://p8test.example.com/p8-phase3-absent/)
+        printf '%s\n' "$out" | tail -1
+        printf '%s\n' "$out" | grep -c 'Index of /'
     expect: {rc: 1, stdout: "\\Astatus (200|403)\\n0\\n\\Z"}
 
   - id: served-certificate-is-the-bundle
@@ -77,6 +102,13 @@ checks:
       a=$(openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com </dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256)
       b=$(openssl x509 -in /etc/ssl/certs/p8test.nginx.bundle.crt -noout -fingerprint -sha256)
       test -n "$a" && test "$a" = "$b" && echo served-cert-is-bundle
+    mismatch:
+      varies: >-
+        the certificate compared (the first certificate of the system CA bundle instead of the p8test bundle): the fingerprints must differ
+      probe: |
+        a=$(openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com </dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256)
+        b=$(openssl x509 -in /etc/ssl/certs/ca-certificates.crt -noout -fingerprint -sha256)
+        test -n "$a" && test "$a" = "$b" && echo served-cert-is-bundle
     expect: {rc: 0, stdout: "^served-cert-is-bundle$"}
 
   - id: https-name-verifies
@@ -89,6 +121,11 @@ checks:
       - {path: manifests/ssl_base.pp, lines: "115-118", text: "source => $intermediate_cert_source,"}
     probe: |
       openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -verify_hostname p8test.example.com -CAfile /etc/ssl/certs/p8test.nginx.bundle.crt -verify_return_error </dev/null 2>&1 | grep -E '^Verification( error)?:'
+    mismatch:
+      varies: >-
+        the hostname verified (wrong.example.org): verification must report 'hostname mismatch'
+      probe: |
+        openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -verify_hostname wrong.example.org -CAfile /etc/ssl/certs/p8test.nginx.bundle.crt -verify_return_error </dev/null 2>&1 | grep -E '^Verification( error)?:'
     expect: {rc: 0, stdout: "\\AVerification: OK\\n\\Z"}
 
   - id: tls12-only
@@ -101,6 +138,12 @@ checks:
     probe: |
       openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -tls1_2 </dev/null 2>&1 | grep -oE '^New, TLSv1\.2, Cipher is'
       if openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -tls1_3 </dev/null >/dev/null 2>&1; then echo tls13-accepted; else echo tls13-refused; fi
+    mismatch:
+      varies: >-
+        the protocol asked for first (-tls1_3 instead of -tls1_2): no TLS 1.2 session line may appear
+      probe: |
+        openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -tls1_3 </dev/null 2>&1 | grep -oE '^New, TLSv1\.2, Cipher is'
+        if openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -tls1_3 </dev/null >/dev/null 2>&1; then echo tls13-accepted; else echo tls13-refused; fi
     expect: {rc: 0, stdout: "\\ANew, TLSv1\\.2, Cipher is\\ntls13-refused\\n\\Z"}
 
   - id: server-cipher-order-and-dh-group
@@ -113,6 +156,11 @@ checks:
       - {path: manifests/nginx_base.pp, lines: "36", text: "$dh_params_bits = 2048,"}
     probe: |
       openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -tls1_2 -cipher 'ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-GCM-SHA256' </dev/null 2>&1 | grep -oE '^(New, TLSv1\.2, Cipher is \S+|Server Temp Key: [^,]+, [0-9]+ bits)$'
+    mismatch:
+      varies: >-
+        the offered suites (only ECDHE-RSA-AES128-GCM-SHA256): without DHE on offer neither the DHE cipher nor the DH temp key may appear
+      probe: |
+        openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -tls1_2 -cipher 'ECDHE-RSA-AES128-GCM-SHA256' </dev/null 2>&1 | grep -oE '^(New, TLSv1\.2, Cipher is \S+|Server Temp Key: [^,]+, [0-9]+ bits)$'
     expect: {rc: 0, stdout: "\\AServer Temp Key: DH, 2048 bits\\nNew, TLSv1\\.2, Cipher is DHE-RSA-AES128-GCM-SHA256\\n\\Z"}
 
   - id: ecdh-curve-prime256v1
@@ -123,4 +171,9 @@ checks:
       - {path: manifests/nginx_static_domain.pp, lines: "314-316", text: "'ssl_ecdh_curve' => $base_ssl_ecdh_curve,"}
     probe: |
       openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -tls1_2 -cipher 'ECDHE-RSA-AES128-GCM-SHA256' </dev/null 2>&1 | grep -oE '^Server Temp Key: .*$'
+    mismatch:
+      varies: >-
+        the offered curve (only secp384r1): the server allows prime256v1 only, so no prime256v1 temp key may appear
+      probe: |
+        openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com -tls1_2 -cipher 'ECDHE-RSA-AES128-GCM-SHA256' -curves secp384r1 </dev/null 2>&1 | grep -oE '^Server Temp Key: .*$'
     expect: {rc: 0, stdout: "\\AServer Temp Key: ECDH, prime256v1, 256 bits\\n\\Z"}

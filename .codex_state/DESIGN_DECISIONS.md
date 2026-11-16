@@ -1215,3 +1215,21 @@ Leftover backups, kept until HQ says otherwise:
 - `/etc/hosts.pre-p8net` and `/etc/hosts.pre-p8net-step7` on the master.
 
 Next, per HQ: a separate NIC1 → NAT plan.
+
+## 2026-11-16 — HQ: mismatch controls in Phase 3 checks
+A check may carry `mismatch: {varies, probe}`: the same probe with one value deliberately wrong, judged against the
+same `expect`.
+- **Mandatory** where the probe hands a name, user, key, cipher or vhost to a tool and takes its verdict. Validation
+  detects this: openssl s_client; curl with a Host header or `--resolve`; ssh with user@host or a
+  Ciphers/KexAlgorithms/MACs/HostKeyAlgorithms/authentication option; su/runuser/`sudo -u`; mysql/psql/smbclient/
+  ldapsearch with a user. Such a probe without a mismatch is refused.
+- **Optional** for direct state reads.
+- **When it runs:** after apply, for each passing check, and it must FAIL. If one passes, the check does not
+  discriminate: the set is INVALID, exit 2, and mutating actions are not run. A failed check does not run its
+  mismatch. It is never run on the clean node.
+- **Reporting:** results and JUnit carry `<id>.mismatch`. The verdict's `reproduced` compares mismatch outcomes too.
+  reviewer.md: a mismatch that only breaks the command is a derivation failure.
+- **Cause:** pilot finding 9, OpenSSL 3's `Verify return code: 0 (ok)` on a failed hostname check.
+- **Pilots updated:** ssh_secure (3 mismatches; password-auth-off reduced to its state read) and nginx_static_domain
+  (8 mismatches, never varying the Host header: each port has a single server).
+- **Re-runs:** both are re-run and re-reviewed because their check files changed. 16 new runner tests.
