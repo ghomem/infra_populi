@@ -48,8 +48,9 @@ def test_fixture_values_are_obviously_fake():
     hiera = remotes()[3]
     values = [l.split(": ", 1)[1] for l in hiera.split("<<'YAML'", 1)[1].split("YAML\n", 1)[0].splitlines()
               if "::" in l and not l.startswith("#")]
-    assert len(values) == 6
-    assert all("p8test" in v or "lookup(" in v or v.strip().strip("'").isdigit() for v in values), values
+    assert len(values) == 7
+    stock = {"'/etc/puppetlabs/puppet/ssl'"}  # the OpenVox default ssldir: a stock path, neither fake nor a secret
+    assert all("p8test" in v or "lookup(" in v or v.strip().strip("'").isdigit() or v in stock for v in values), values
     pki = remotes()[2]
     assert "THROWAWAY" in pki and "CN=p8test throwaway CA" in pki and "CN=p8test.invalid" in pki
     assert "ca.key" not in pki.split("put()")[1]  # the CA key is never installed
@@ -84,3 +85,9 @@ def test_every_remote_script_parses():
     for body in remotes():
         proc = subprocess.run(["bash", "-n"], input=body, capture_output=True, text=True)
         assert proc.returncode == 0, proc.stderr
+
+
+def test_hiera_fixture_carries_the_rsyslog_base_ssldir_for_an_included_rsyslog_base():
+    # rsyslog_server includes rsyslog_base without parameters (2026-11-16, batch 5): the lab binds the ssldir by Hiera
+    hiera = next(r for r in remotes() if "p8test_fixtures.yaml" in r)
+    assert "\npuppet_infrastructure::rsyslog_base::ssldir_override: '/etc/puppetlabs/puppet/ssl'\n" in hiera

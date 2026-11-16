@@ -17,7 +17,8 @@
 #          star.example.com (the lab Hiera's example hashman::sslprefix). The CA key is discarded.
 #   hiera  lab fixture keys the manifests look up and the lab Hiera lacks, in data/p8test_fixtures.yaml, as
 #          a hierarchy level AFTER Common (it can never override an existing key).
-# Every value is obviously fake (p8test, .invalid, example.com); nothing is production-derived.
+# Every value is obviously fake (p8test, .invalid, example.com) or a stock OpenVox path (the default ssldir);
+# nothing is production-derived.
 #
 # Never restores, powers off or resets the master; never touches passwd_common.
 # After a section reports CHANGED for the first time, HQ takes a new master snapshot.
@@ -128,6 +129,9 @@ sysmon::backdir: "%{lookup('filesystem::backdir')}/sysmon"
 sysmon::backdays: '10'
 puppet8node::postfix_smtp_node::relayuser: 'p8test-relay'
 puppet8node::postfix_smtp_node::relaypass: 'p8test-not-a-secret'
+# rsyslog_server does `include puppet_infrastructure::rsyslog_base`, whose default ssldir is the pre-AIO
+# /var/lib/puppet/ssl; the lab's agents keep theirs at the OpenVox default (rsyslog_client passes the same value).
+puppet_infrastructure::rsyslog_base::ssldir_override: '/etc/puppetlabs/puppet/ssl'
 YAML
 )"
 if [[ "$(cat "$data" 2>/dev/null)" != "$want" ]]; then
