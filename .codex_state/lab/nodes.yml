@@ -29,15 +29,15 @@ nodes:
     os: Ubuntu 24.04 server
     capabilities: [server]
   rhel9:
-    status: planned
+    status: active
     vm: p8lab-rhel9
     alias: p8lab-rhel9
     certname: p8lab-rhel9
     hostname: p8lab-rhel9
     hostonly_ip: 192.168.56.21
-    baseline_snapshot: null
+    baseline_snapshot: P8LAB_RHEL9_BASELINE_v1
     os_family: RedHat
-    os: RHEL 9 (registered; BaseOS + AppStream)
+    os: RHEL 9.5 (registered; BaseOS + AppStream)
     capabilities: [server, rhel-subscription]
   kubuntu:
     status: planned

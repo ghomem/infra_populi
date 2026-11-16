@@ -1385,3 +1385,26 @@ too; other commits keep the fast subset. Cause: the lab_vm.sh commit (516b455) l
   the current machine's adapter 0, never a snapshot's.
 - **Real VMs:** all three VMs (p8lab-rhel9, set through lab_vm.sh modify; the master and the node, set by hand in the
   NAT plan) satisfy the check.
+
+## 2026-11-16 — Node bring-up: p8lab-rhel9 (HQ 2026-11-16 items 4–5)
+- **VM:** p8lab-rhel9 (cloned by Salatiel from RHEL9's clean snapshot, registered).
+- **Lab network, via lab_vm.sh:** NIC1 NAT with the host resolver; NIC2 vboxnet0 static 192.168.56.21/24 (NetworkManager
+  `p8-hostonly`, never-default); /etc/hosts master → 192.168.56.10; hostname p8lab-rhel9.
+- **Key and sudo:** Salatiel's one command, over a temporary NAT port forward bound to 127.0.0.1:2221 that was removed
+  before the snapshot; he accepted the host key by fingerprint.
+- **Domain pinned (as for HQ NAT review B):** NAT's DHCP passes the laptop's current domain, so NIC1 ignores DHCP DNS,
+  with DNS 10.0.2.3 set explicitly (still the NAT proxy, so it follows the uplink live) and search `lan`. Domain `lan`,
+  fqdn p8lab-rhel9.lan, matching the Ubuntu node's domain.
+- **Agent:** openvox-agent 8.24.2-1.el9 (the lab's version) from openvox8-release, service disabled. Puppet.conf as on
+  puppet8node: server puppet8master.example.com, certname p8lab-rhel9, node_name cert.
+- **Cert:** CSR public key compared on both ends before signing, signed on the master, bootstrap verified.
+- **Master:** node file `nodes/p8lab-rhel9.pp` (include passwd_common plus the CODEX markers, as puppet8node's). No
+  per-node Hiera is needed (the hierarchy has no node level).
+- **Baseline P8LAB_RHEL9_BASELINE_v1** (472b026a…): offline via lab_vm.sh; no agent run before it.
+- **Repositories (item 5):** an enabled repository DOES survive a snapshot revert. It is a content override kept on the
+  subscription server: CodeReady Builder was enabled again right after restoring a baseline taken before it was
+  enabled. revert_node.sh therefore clears the overrides after every RedHat restore and fails unless none remain
+  (e5da727); the registration is asserted after every restore too.
+- **Verified:** two real reverts SUCCESS (33.8 s each); `--revert-first --fixture guarded_exec` GREEN (NODE_FRESH yes);
+  native RedHat compile OK; clean-node inventory taken (49,499 paths).
+- **Activated:** nodes.yml rhel9 → active.

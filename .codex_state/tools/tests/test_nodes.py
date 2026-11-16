@@ -34,11 +34,11 @@ def test_the_tracked_inventory_is_valid():
     (lambda d: d["nodes"]["rhel9"].update(hostonly_ip="10.0.2.15"), "must be a free address on vboxnet0"),
     (lambda d: d["nodes"]["rhel9"].update(vm="rhel9-clone"), "must be named p8lab-*"),
     (lambda d: d["nodes"]["rhel9"].update(vm="Ubuntu24-puppet8-Master"), "the master VM is never a node"),
-    (lambda d: d["nodes"]["rhel9"].update(status="active"), "an active node needs its baseline_snapshot"),
+    (lambda d: d["nodes"]["gnome"].update(status="active"), "an active node needs its baseline_snapshot"),
     (lambda d: d["nodes"]["rhel9"].update(os_family="Suse"), "os_family must be Debian|RedHat"),
     (lambda d: d["nodes"]["rhel9"].update(capabilities=["telepathy"]), "capabilities must be a non-empty subset"),
     (lambda d: d["nodes"]["rhel9"].pop("certname"), "missing certname"),
-    (lambda d: d.update(default="rhel9"), "the default node must be active"),
+    (lambda d: d.update(default="gnome"), "the default node must be active"),
     (lambda d: d["nodes"]["gnome"].update(alias="p8lab-kubuntu"), "alias 'p8lab-kubuntu' is also node"),
 ])
 def test_invalid_inventories_are_refused(tmp_path, mutate, message):
