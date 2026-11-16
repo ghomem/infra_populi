@@ -8,6 +8,7 @@ authoring:
   minutes: 0.3
   corrections:
     - "2026-11-16, after run 20261116T231132Z (INVALID_SET, authoring): with both files absent the two pipelines hashed empty input and matched, so the negative control passed on the clean node; the probes now require the files first."
+    - "2026-11-16, after run 20261116T231214Z (authoring): the fixture certificate's subject is CN=p8test.invalid plus an O= part; the expectation now allows the O= part."
   notes: "Wall clock 23:10:03Z to 23:10:21Z 2026-11-16, outside the worktree while the Phase 1 review ran."
 checks:
   - id: private-key-installed-root-only
@@ -31,7 +32,7 @@ checks:
       stat -c '%U %a' "$f"
       grep -c 'BEGIN CERTIFICATE' "$f"
       openssl x509 -noout -subject -nameopt RFC2253 -in "$f"
-    expect: {rc: 0, stdout: "\\Aroot 644\\n2\\nsubject=CN=p8test\\.invalid\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Aroot 644\\n2\\nsubject=CN=p8test\\.invalid,O=[^\\n]*\\n\\Z"}
 
   - id: bundle-certificate-matches-the-key
     what: the bundle's first certificate and the installed private key are a pair (same public key)
