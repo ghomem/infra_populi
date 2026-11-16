@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: puppet-letsencrypt 13.4.0 (with puppetlabs-inifile 6.5.0, puppet-epel 6.0.0, puppetlabs-stdlib 9.7.0); puppetlabs-cron_core 1.3.0 (vendored with Puppet 8.24.2).
 class puppet_infrastructure::letsencrypt_base (
   String $email,
   String $dns_creds_file              = "${lookup('filesystem::etcdir')}/dns-creds.ini",
