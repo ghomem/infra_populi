@@ -1,0 +1,21 @@
+{
+ "class": "postfix_smtp_node",
+ "at": "20261116T133910Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "sasl-plain-module-installed: manifests/postfix_smtp_node.pp:29-40 sets $cyrus_sasl_package = 'libsasl2-modules' in the default (non-RedHat) osfamily branch and declares package { 'cyrus_sasl_package': ensure => installed }; on Ubuntu 24.04 the dpkg-query 'install ok installed' probe tests exactly that; invariant is plausible (the package is present on the clean node, confirmed by the clean-phase pass)",
+  "sasl-map-compiled-for-the-relayhost (manifests/postfix_smtp_node.pp:51-66): file /etc/postfix/sasl_passwd mode 0640 owner/group root notifies exec postmap_sasl ('postmap /etc/postfix/sasl_passwd'); stat '640 root root' plus a successful postmap -q on the hash map test both; the mismatch varies only the looked-up key (relay.p8test.invalid, absent from a map holding just the relayhost), which must drop the user line",
+  "sasl-map-compiled-for-the-relayhost (templates/postfix_smtp_node/sasl_passwd:1): the line '<%= @relayhost %> <%= @relayuser %>:<%= @relaypass %>' with lab Hiera relayhost 'mailserver.mycompany.com' (common.yaml:38) and relayuser 'p8test-relay' (p8test_fixtures.yaml:7, puppet8node::) means postmap -q mailserver.mycompany.com returns 'p8test-relay:<pass>', cut -d: -f1 gives 'p8test-relay' without printing the password"
+ ],
+ "review_s": 115.8,
+ "check_file_sha256": "f938ecc3faea49f43fd2e157e2d237c61b5ccfe71d1e82479ffddb3b374b7066",
+ "reviewer_result": "20261116T133715Z-reviewer",
+ "author_result": "20261116T133524Z-author",
+ "findings": []
+}
