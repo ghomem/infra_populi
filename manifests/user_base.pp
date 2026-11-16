@@ -1,3 +1,5 @@
+# Puppet 8 migration: user/group/SSH key management; wrapped-passphrase exec guarded by its post-condition.
+# Module dependencies: puppetlabs-stdlib 9.7.0; puppetlabs-sshkeys_core 2.5.0 (vendored).
 ### Purpose ########
 # This defined type provides a wrapper with added features for a system user
 # It is a base defined type for other classes to use.
@@ -127,6 +129,7 @@ define puppet_infrastructure::user_base( $myname = 'Dummy Dummier', $myhash = ''
 
     exec { "${ecryptdir}/wrapped-passphrase":
     command => "cat ${ecryptdir}/wrapped-passphrase.b64 |base64 -d > ${ecryptdir}/wrapped-passphrase",
+    unless  => "sh -c \"base64 -d < ${ecryptdir}/wrapped-passphrase.b64 | cmp -s - ${ecryptdir}/wrapped-passphrase\"",
     user    => $myusername,
     path    => [ '/usr/local/bin/', '/bin/', '/usr/bin/' ],
     require => File[ "${ecryptdir}/wrapped-passphrase.b64" ],
