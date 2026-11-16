@@ -1,0 +1,86 @@
+{
+ "class": "sysmon_fs_health",
+ "role": "reviewer",
+ "at": "20261116T234322Z",
+ "runner": "69ca72a",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "60ec1d9cfeb73ccfed96c23c0b683cf2919f297262e189ac9422fc6a422f543f",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "check-script-rendered",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh': No such file or directory\nbash: /opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "nagios-may-run-it-through-sudo",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "sudoers-valid\n",
+   "stderr": "grep: /etc/sudoers.d/10_nagios_fs_health_sysmon_fs_health: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "check-reports-ok-on-a-healthy-tree",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 1: /opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "rastructure::Sysmon_fs_health[sysmon_fs_health]/Sudo::Conf[nagios_fs_health_sysmon_fs_health]/Exec[sudo-syntax-check for file /etc/sudoers.d/10_nagios_fs_health_sysmon_fs_health]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.47 seconds\u001b[0m\nRUN1_EVENTS: 10 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794872654'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.37 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::sysmon_fs_health: 3 concrete resources (+2 defined-type instances)\n  Puppet_infrastructure::Sysmon_fs_health[sysmon_fs_health]\n  Sudo::Conf[nagios_fs_health_sysmon_fs_health]\n  File[/opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh]\n  File[10_nagios_fs_health_sysmon_fs_health]\n  Exec[sudo-syntax-check for file /etc/sudoers.d/10_nagios_fs_health_sysmon_fs_health]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP sysmon_fs_health d0c218396901\n"
+ },
+ "applied": [
+  {
+   "id": "check-script-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\nBASEDIR=\"/var/tmp/p8test-fs-health\"\nSIZE_THRESHOLD=\"8\"\nNFILES=\"3\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "nagios-may-run-it-through-sudo",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nagios ALL=NOPASSWD:/opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh\nsudoers-valid\n",
+   "stderr": ""
+  },
+  {
+   "id": "check-reports-ok-on-a-healthy-tree",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK: exit code 0 \nrc=0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates /var/tmp/p8test-fs-health with five 4 KB files of random data (20 KB, above the 8 KB threshold), then runs the check script once as root (it only reads the tree)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.3,
+ "node": "ubuntu",
+ "duration_s": 53.3
+}

@@ -1,0 +1,23 @@
+{
+ "class": "sysmon_fs_health",
+ "at": "20261116T234437Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "check-script-rendered @ templates/sysmon/check-fs-health.sh.erb:8-10: the template renders BASEDIR/SIZE_THRESHOLD/NFILES from @basedir/@size_threshold/@nfiles; the params fixture (/var/tmp/p8test-fs-health, 8, 3) gives exactly the expected quoted values, and cut -d' ' -f1 strips the trailing comments",
+  "check-script-rendered @ manifests/sysmon_fs_health.pp:8: scriptname = check-fs-health-<title>.sh, with harness title sysmon_fs_health and bindir /opt/puppet-infrastructure/bin (lab Hiera filesystem::bindir) gives the probed path",
+  "check-script-rendered @ manifests/sysmon_fs_health.pp:13-16: mode 0755 owner root from template() is what stat '%U %a' = 'root 755' and the rendered-variable grep test; bash -n is a syntax check that adds no claim beyond a rendered script",
+  "nagios-may-run-it-through-sudo (whole file read): line 10 sudo::conf priority 10 content 'nagios ALL=NOPASSWD:${bindir}/${scriptname}' matches the expected /etc/sudoers.d/10_nagios_fs_health_<volname> line; visudo -c is read-only",
+  "check-reports-ok-on-a-healthy-tree (mutating): mutates declares everything the action changes (dir + five 4 KB files, 24 KB du > 8 KB threshold, erb:43-51); the read-only effect runs the rendered script (du/find/md5sum only), and erb:96-97 with RC=0 and empty OUTPUT gives 'OK: exit code 0 ' exit 0, matching expect; the effect is the script's verdict on the tree, not the action's own output; no probe reaches another host"
+ ],
+ "review_s": 76.0,
+ "check_file_sha256": "60ec1d9cfeb73ccfed96c23c0b683cf2919f297262e189ac9422fc6a422f543f",
+ "reviewer_result": "20261116T234322Z-reviewer",
+ "author_result": "20261116T234209Z-author",
+ "findings": []
+}
