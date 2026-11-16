@@ -399,7 +399,8 @@ def test_no_mismatch_run_when_the_check_itself_fails(p3, lab):
 
 # HQ 2026-11-16 item 2: behaviour state (derived) and deferrals.
 DEFERRED = {"class": CLS, "baseline": "release-0.9.10 (cf477c6)", "authoring": {"minutes": 2},
-            "deferred": {"needs": "second-node", "why": "the cron pushes to a remote backup host that the lab lacks"},
+            "deferred": {"needs": "second-node", "why": "the cron pushes to a remote backup host that the lab lacks",
+                         "lifted_by": "ubuntu2"},
             "derived_from": [REF_CRON]}
 
 
@@ -413,9 +414,9 @@ def state_of(p3, *classes):
 def test_a_deferral_validates_runs_nothing_and_is_the_state(p3, lab):
     p3.write(dict(DEFERRED))
     proc = p3.run("validate", CLS)
-    assert proc.returncode == 0 and "DEFERRED (needs second-node)" in proc.stdout
+    assert proc.returncode == 0 and "DEFERRED (needs second-node, lifted by ubuntu2)" in proc.stdout
     assert p3.run("run", CLS).returncode == 2 and lab.calls("ssh") == [] and not p3.log.exists()
-    assert state_of(p3, CLS)[1:3] == ["deferred", "second-node"]
+    assert state_of(p3, CLS)[1] == "unreviewed"  # a deferral counts only once the reviewer judged it
 
 
 @pytest.mark.parametrize("mutate, message", [
@@ -505,3 +506,48 @@ def test_probes_may_not_name_any_lab_node():
     spec.loader.exec_module(mod)
     assert any("another lab host" in p for p in mod.probe_problems("ssh p8lab-rhel9 true"))
     assert any("another lab host" in p for p in mod.probe_problems("ping -c1 puppet8node"))
+
+
+
+# HQ 2026-11-16 item 7: deferrals name the node kind that lifts them and are judged by the reviewer; `uncovered` notes.
+@pytest.mark.parametrize("mutate, message", [
+    (lambda d: d["deferred"].pop("lifted_by"), "lifted_by None is not a node kind"),
+    (lambda d: d["deferred"].update(lifted_by="solaris"), "lifted_by 'solaris' is not a node kind"),
+    (lambda d: d["deferred"].update(needs="desktop", lifted_by="ubuntu2"), "lacks the capability 'desktop'"),
+    (lambda d: d["deferred"].update(needs="rhel", lifted_by="kubuntu"), "lacks the capability 'rhel-subscription'"),
+])
+def test_a_deferral_must_name_a_node_kind_that_lifts_it(p3, mutate, message):
+    data = copy.deepcopy(DEFERRED)
+    mutate(data)
+    p3.write(data)
+    proc = p3.run("validate", CLS)
+    assert proc.returncode == 2 and message in proc.stderr, proc.stderr
+
+
+def test_the_reviewer_judges_a_deferral_and_only_then_it_counts(p3):
+    p3.write(dict(DEFERRED))
+    spot = p3.run("spot", CLS)
+    assert "DEFERRAL — needs second-node, lifted by node kind ubuntu2" in spot.stdout
+    assert '  |     command => "/usr/bin/rsnapshot -c ${myconffile} daily",' in spot.stdout  # baseline lines, fresh
+    proc = p3.run("verdict", CLS, "--derived", "ok", "--evidence", "lines 13-19: cron needs a remote host")
+    assert proc.returncode == 0 and proc.stdout.startswith("VERDICT PASS")
+    assert state_of(p3, CLS)[1:3] == ["deferred", "second-node, lifted by ubuntu2"]
+    data = copy.deepcopy(DEFERRED)
+    data["deferred"]["why"] += " (edited)"
+    p3.write(data)
+    assert state_of(p3, CLS)[1] == "unreviewed"
+    p3.run("verdict", CLS, "--derived", "fail", "--evidence", "the reason does not follow from the lines")
+    assert state_of(p3, CLS)[1:3] == ["review-failed", "deferral rejected"]
+
+
+@pytest.mark.parametrize("uncovered, message", [
+    ([{"what": "x", "why": "short", "lifted_by": "kubuntu"}], "uncovered[0] takes what, why"),
+    ([{"what": "x", "why": "a long enough reason for the note", "lifted_by": "solaris"}], "is not a node kind"),
+])
+def test_uncovered_notes_are_validated(p3, uncovered, message):
+    p3.write(check_set(check("conf", "probe-conf"), uncovered=uncovered))
+    proc = p3.run("validate", CLS)
+    assert proc.returncode == 2 and message in proc.stderr
+    p3.write(check_set(check("conf", "probe-conf"),
+                       uncovered=[{"what": "x", "why": "a long enough reason for the note", "lifted_by": "kubuntu"}]))
+    assert p3.run("validate", CLS).returncode == 0

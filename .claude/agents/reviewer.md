@@ -89,3 +89,12 @@ read `.codex_state/checks/results/<class>/*-author.*`: the verdict tool compares
    are both valid, they agree on every check in both phases, and derivation is ok; findings do not fail the review
    (they are Phase 3 results, triaged by the advisor).
 4. Report EXACTLY the verdict command's output and nothing else.
+
+A DEFERRED set (`deferred:` instead of checks; `phase3.py validate` prints `DEFERRED`) has nothing to run: skip step 1.
+Run `spot`. It prints the stated reason, the node kind named in `lifted_by`, and every cited baseline line. Judge both
+of these:
+- do those lines really make the behaviour impossible to observe on this lab's default node, as stated?
+- would the named node kind (`.codex_state/lab/nodes.yml`) lift it?
+
+Then record `verdict <class> --derived ok|fail --evidence "<reference: why>"`. A set's `uncovered` notes are part of
+the file. Judge that each states honestly what the checks do not cover.

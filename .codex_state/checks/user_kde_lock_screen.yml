@@ -14,6 +14,7 @@ deferred:
   why: >-
     the script acts only for a logged-in user and talks to that user's KDE session (kreadconfig5/kwriteconfig5,
     qdbus on /run/user/<uid>/bus); the lab node has no desktop session, so the exec is always skipped
+  lifted_by: kubuntu
 derived_from:
   - {path: manifests/user_kde_lock_screen.pp, lines: "14-19", text: "unless  => \"${bindir}/configure_lock_screen.sh ${screenlock_timeout_minutes} ${screenlock_grace_seconds} --check\","}
   - {path: files/user_kde_lock_screen/configure_lock_screen.sh, lines: "14-21", text: "logger -p local1.notice -t $SYSLOG_TAG \"User ${USERNAME} not loged in, skipping screenlock settings update\""}

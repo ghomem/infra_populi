@@ -26,8 +26,13 @@ derived from the pinned baseline, probed on the node only, with negative control
 
 A class that cannot be tested on this lab declares a DEFERRAL instead of checks (HQ 2026-11-16):
   class / baseline / authoring as below, plus
-  deferred: {needs: second-node|browser|rhel|desktop, why: <one or two sentences>}
+  deferred: {needs: second-node|browser|rhel|desktop, why: <one or two sentences>, lifted_by: <node kind>}
   derived_from: [<baseline references showing why, as for a check>]
+The reviewer judges a deferral too (`--phase3`: `spot` prints the cited lines beside the reason, `verdict` records
+it); it counts as `deferred` only once that review passed (HQ 2026-11-16 item 7b). `lifted_by` names a kind of
+.codex_state/lab/nodes.yml with the needed capability (desktop/browser -> desktop, rhel -> a RedHat node,
+second-node -> second-node). Any set may also list what it does NOT cover (item 7a):
+  uncovered: [{what: <behaviour>, why: <why not here>, lifted_by: <node kind>}]
 
 Check file .codex_state/checks/<class>.yml:
   class: <short name>             # = the file name
@@ -190,6 +195,18 @@ def tool_verdict(probe: str) -> str | None:
 
 
 DEFER_NEEDS = ("second-node", "browser", "rhel", "desktop")
+NEED_CAPABILITY = {"desktop": "desktop", "browser": "desktop", "second-node": "second-node", "rhel": "rhel-subscription"}
+
+
+def lifting_problems(kind, need: str | None, where: str) -> list[str]:
+    """A node kind that lifts a deferral or an uncovered note must exist and (for a need) have its capability."""
+    import nodes  # noqa: PLC0415
+    inventory = nodes.load()["nodes"]
+    if kind not in inventory:
+        return [f"{where}: lifted_by {kind!r} is not a node kind of nodes.yml ({', '.join(inventory)})"]
+    if need and NEED_CAPABILITY[need] not in inventory[kind]["capabilities"]:
+        return [f"{where}: node {kind} lacks the capability {NEED_CAPABILITY[need]!r} that `{need}` needs"]
+    return []
 HOST_RULES = 3  # FORBIDDEN[:3] keep probes on the node and away from Puppet; the rest keep them read-only
 
 
@@ -212,12 +229,19 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
     minutes = (data.get("authoring") or {}).get("minutes")
     if not isinstance(minutes, (int, float)) or minutes <= 0:
         problems.append("authoring.minutes (authoring time, minutes) is required")
+    for i, u in enumerate(data.get("uncovered") or []):
+        if not isinstance(u, dict) or set(u) != {"what", "why", "lifted_by"} or len(str(u.get("why", ""))) < 20:
+            problems.append(f"uncovered[{i}] takes what, why (>= 20 characters) and lifted_by")
+        else:
+            problems += lifting_problems(u["lifted_by"], None, f"uncovered[{i}]")
     if "deferred" in data:
         d = data["deferred"]
         if not isinstance(d, dict) or d.get("needs") not in DEFER_NEEDS or len(str(d.get("why", "")).strip()) < 20:
             problems.append(f"deferred needs `needs` ({'|'.join(DEFER_NEEDS)}) and a `why` of at least 20 characters")
         if "checks" in data:
             problems.append("a deferred set has no checks")
+        if isinstance(d, dict) and d.get("needs") in DEFER_NEEDS:
+            problems += lifting_problems(d.get("lifted_by"), d["needs"], "deferred")
         refs = data.get("derived_from")
         if not isinstance(refs, list) or not refs:
             problems.append("a deferral cites the baseline lines that make it necessary (derived_from)")
@@ -312,7 +336,8 @@ def cmd_validate(cls: str) -> int:
     if problems:
         return 2
     if "deferred" in data:
-        print(f"VALID {cls}: DEFERRED (needs {data['deferred']['needs']}): {data['deferred']['why']}")
+        print(f"VALID {cls}: DEFERRED (needs {data['deferred']['needs']}, lifted by {data['deferred']['lifted_by']}): "
+              f"{data['deferred']['why']}")
         return 0
     neg = sum(1 for c in data["checks"] if c["control"] == "negative")
     mut = sum(1 for c in data["checks"] if "mutates" in c)
@@ -553,6 +578,17 @@ def cmd_spot(cls: str, n: int, seed: int | None) -> int:
         print(f"INVALID {cls}: the set does not validate; spot-check nothing", file=sys.stderr)
         return 2
     base = baseline.for_class(cls)
+    if "deferred" in data:
+        d = data["deferred"]
+        print(f"SPOT {cls}: DEFERRAL — needs {d['needs']}, lifted by node kind {d['lifted_by']}, baseline {label(base)}")
+        print(f"stated reason: {d['why']}")
+        for r in data["derived_from"]:
+            _, text = resolve_ref(r, base)
+            print(f"\nreference: {r['path']}" + (f":{r['lines']}" if "lines" in r else " (whole file)"))
+            print("\n".join(f"  | {l}" for l in text.splitlines()))
+        print("\nJudge: do these baseline lines make the behaviour impossible to observe on this lab's node, as stated,"
+              " and would the named node kind lift it?")
+        return 0
     refs = [(c, r) for c in data["checks"] for r in c["derived_from"]]
     seed = seed if seed is not None else random.SystemRandom().randrange(1 << 30)
     picked = random.Random(seed).sample(refs, min(n, len(refs)))
@@ -594,6 +630,23 @@ def outcomes(record: dict) -> dict:
 def cmd_verdict(cls: str, derived: str, evidence: list[str]) -> int:
     if derived not in ("ok", "fail") or not evidence:
         raise SystemExit("ERROR: verdict needs --derived ok|fail and at least one --evidence")
+    problems, data, raw = validate(cls)
+    if "deferred" in data:  # no runs to reproduce: the reviewer judges the stated reason against the cited lines
+        checks = {"deferral_valid": "fail" if problems else "ok", "derived_from": derived}
+        verdict = "PASS" if all(v == "ok" for v in checks.values()) else "FAIL"
+        record = {"class": cls, "at": now(), "verdict": verdict, "deferral": True, "checks": checks,
+                  "evidence": evidence, "check_file_sha256": hashlib.sha256(raw).hexdigest(), "findings": [],
+                  "review_s": None}
+        out = phase3_dir() / "reviews" / cls
+        out.mkdir(parents=True, exist_ok=True)
+        path = out / f"{record['at']}.json"
+        path.write_text(json.dumps(record, indent=1) + "\n")
+        print(f"VERDICT {verdict}\nclass {cls}\ndeferral {data['deferred']['needs']} (lifted by "
+              f"{data['deferred']['lifted_by']})\nchecks {json.dumps(checks)}")
+        for e in evidence:
+            print(f"evidence {e}")
+        print(f"persisted {path.relative_to(REPO) if path.is_relative_to(REPO) else path}")
+        return 0 if verdict == "PASS" else 1
     mine, theirs = latest(cls, "reviewer"), latest(cls, "author")
     checks = {}
     checks["reviewer_run"] = "ok" if mine and mine["valid"] and mine["outcome"] in ("ALL_PASS", "FINDINGS") else "fail"
@@ -641,7 +694,13 @@ def behaviour_state(cls: str) -> dict:
     if problems:
         return {**row, "state": "invalid", "detail": problems[0]}
     if "deferred" in data:
-        return {**row, "state": "deferred", "detail": data["deferred"]["needs"]}
+        review = latest_review(cls)
+        d = data["deferred"]
+        if not review or review.get("check_file_sha256") != hashlib.sha256(raw).hexdigest():
+            return {**row, "state": "unreviewed", "detail": f"deferral ({d['needs']}) not yet judged by the reviewer"}
+        if review["verdict"] != "PASS":
+            return {**row, "state": "review-failed", "detail": "deferral rejected"}
+        return {**row, "state": "deferred", "detail": f"{d['needs']}, lifted by {d['lifted_by']}"}
     author, reviewer, review = latest(cls, "author"), latest(cls, "reviewer"), latest_review(cls)
     row["author_run_s"] = (author or {}).get("duration_s")
     row["reviewer_run_s"] = (reviewer or {}).get("duration_s")

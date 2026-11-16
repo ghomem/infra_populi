@@ -9,6 +9,15 @@ fixture: params
 authoring:
   minutes: 0.4
   notes: "Wall clock 2026-11-16T13:46:28Z to 13:46:55Z (written + validated outside the worktree while the Phase 1 review ran; one YAML error caught by the validator)."
+uncovered:
+  - what: >-
+      the ecryptfs branch (user_base.pp:108-135) with the HQ-ruled exec guard: wrapped-passphrase written from the
+      .b64 file, the guard skipping the exec when the decoded file already matches, and the repair of an out-of-band
+      change
+    why: >-
+      the fixture user has no ecryptfs home (myppsigs/myppwrapped empty), and the lab node has no ecryptfs setup to
+      create /home/.ecryptfs/<user>/.ecryptfs; HQ 2026-11-16 item 7a: exercise it with an ecryptfs fixture user
+    lifted_by: kubuntu
 checks:
   - id: user-and-own-primary-group
     what: the user exists with its own same-named primary group, the comment, /home/<title> and /bin/bash

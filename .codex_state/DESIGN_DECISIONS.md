@@ -1324,3 +1324,17 @@ nothing, and every refusal path is tested (22 tests).
 - **Settings:** allow the script; deny raw clonevm, createvm, startvm, controlvm, storageattach, and snapshot
   take/restore/delete/edit on any VM, beside the existing modifyvm and unregistervm denies. The master and
   ubuntu24-puppet8-Node keep their rules.
+
+## 2026-11-16 — HQ item 7: deferrals reviewed and lifted by a named node kind; `uncovered` notes
+- **Deferrals:** every deferral names `lifted_by: <node kind>`. The kind must exist in nodes.yml and have the needed
+  capability: desktop/browser → desktop, rhel → rhel-subscription, second-node → second-node.
+- **Reviewing a deferral:** the reviewer judges it with `phase3.py spot` (the reason and the cited lines read fresh)
+  and `verdict` (a deferral record: deferral_valid + derived_from). Its state is `deferred` only after a PASS on the
+  current file; otherwise `unreviewed` or `review-failed`.
+- **`uncovered` notes:** any check set may list `uncovered: [{what, why, lifted_by}]`.
+- **Applied to the two existing sets:**
+  - user_kde_lock_screen is lifted by `kubuntu`;
+  - user_base notes its ecryptfs branch with the ruled guard as uncovered, lifted by `kubuntu` (an ecryptfs fixture
+    user once a desktop node exists, item 7a). Its check file changed, so its state is `stale` until its Phase 3 set
+    is re-run when the Ubuntu node has internet again.
+- **Phase 5 backlog item 4:** postfix compatibility_level (item 7c).
