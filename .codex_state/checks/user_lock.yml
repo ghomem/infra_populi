@@ -1,0 +1,34 @@
+# Phase 3 checks for puppet_infrastructure::user_lock (define; harness title p8testuser; required_base hashman_base;
+# MOCK-APPLY: node fixture hashman_lock_standin seeds one fake hashman entry for p8testuser before the lock). Migrated
+# with the ruled upstream-defect fix: the lock exec is guarded by its post-condition (upstream_defects.md user_lock).
+# What a node can show: hashman's own `pp_auth.py lock` marked the user's password entry locked (LOCKPREFIX '!'), in
+# hashman's line format. NOT shown: a locked user refused by pp_auth/the web interface on a master (mock-apply; the
+# fixture hash is not a real password).
+class: user_lock
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.1
+  notes: "Wall clock 23:01:20Z to 23:01:20Z 2026-11-16, outside the worktree while the Phase 1 review ran."
+checks:
+  - id: user-entry-locked-by-hashman
+    what: >-
+      the user's password entry in hashman's database carries the lock prefix '!' (written by `pp_auth.py lock`, so
+      the line is in hashman's own `$<user>_pwd_hash = '<value>'` format)
+    control: negative
+    derived_from:
+      - {path: manifests/user_lock.pp, lines: "11-14", text: "command => \"${hashmandir}/common/pp_auth.py lock ${myuser} DUMMYARG; exit 0\","}
+      - {path: templates/hashman/libhashman/config.py.erb, lines: "58", text: "LOCKPREFIX = '!'"}
+    probe: |
+      grep -E '^[$]p8testuser_pwd_hash' /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp
+    expect: {rc: 0, stdout: "\\A\\$p8testuser_pwd_hash = '!\\$6\\$p8testsalt\\$p8testfixturehash'\\n\\Z"}
+
+  - id: exactly-one-entry
+    what: locking rewrites the user's entry in place (one line for the user, no duplicate appended)
+    control: negative
+    derived_from:
+      - {path: manifests/user_lock.pp, lines: "11-14", text: "command => \"${hashmandir}/common/pp_auth.py lock ${myuser} DUMMYARG; exit 0\","}
+      - {path: templates/hashman/libhashman/dbutils.py.erb, lines: "804-807", text: "return setpw(username, pwentry, True, '', smbhashentry)"}
+    probe: |
+      grep -cE '^[$]p8testuser_pwd_hash' /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp
+    expect: {rc: 0, stdout: "\\A1\\n\\Z"}

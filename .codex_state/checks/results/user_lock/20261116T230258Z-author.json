@@ -1,0 +1,60 @@
+{
+ "class": "user_lock",
+ "role": "author",
+ "at": "20261116T230258Z",
+ "runner": "85d2349",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "2ddaea72fdb93efc02a9777c082dd139d727879bfeea8e627a8f21cf5a96c205",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "user-entry-locked-by-hashman",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "exactly-one-entry",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "nfrastructure::Hashman_base/Package[python3-rsa]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/Package[python3-prettytable]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Exec[p8test seed p8testuser into the hashman database]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::User_lock[p8testuser]/Exec[user_lock_p8testuser]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 19.54 seconds\u001b[0m\nRUN1_EVENTS: 41 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794870247'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.45 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::user_lock: 1 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::User_lock[p8testuser]\n  Exec[user_lock_p8testuser]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP user_lock 415d5f5ac796\n"
+ },
+ "applied": [
+  {
+   "id": "user-entry-locked-by-hashman",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "$p8testuser_pwd_hash = '!$6$p8testsalt$p8testfixturehash'\n",
+   "stderr": ""
+  },
+  {
+   "id": "exactly-one-entry",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.1,
+ "node": "ubuntu",
+ "duration_s": 70.5
+}
