@@ -1,0 +1,22 @@
+{
+ "class": "rsyslog_server",
+ "at": "20261116T193852Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "self-forward-config-absent: manifests/rsyslog_server.pp:41-42 declare file /etc/rsyslog.d/40-forward-self.conf ensure => absent; probe tests non-existence; invariant plausible (stock Ubuntu 24.04 node has no such file; /etc/rsyslog.d holds only 20-ufw, 21-cloudinit, 50-default, plus the class's 30-listener and tls)",
+  "listener-config-rendered: listener_simple.conf.epp:12-14 render port/maxSessions/notifyOnConnectionClose; under defaults (port 6514, max_sessions 2000, notify false -> 'off') the expect port=\"6514\", maxSessions=\"2000\", notifyOnConnectionClose=\"off\" is what the template produces; cert/key lines 7-8 with certname puppet8node and the constant(value=\"/var/log/hosts/\") occurring twice (template lines 19 and 27) also match",
+  "retention-script-and-cron: manifests/rsyslog_server.pp:103-107 declare cron rsyslog_hosts_retention_cleanup, user root, command ${bindir}/rsyslog-hosts-retention.sh, hour/minute from retention_hour 3 / retention_minute 17 (lines 12-13); expect '17 3 * * * /opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh' in root's crontab, plus root 0755 file (lines 91-97) and ROOT_DIR/ACTIVE_DAYS/RETENTION_DAYS 7/7 (retention template 4-6) match",
+  "whole file: mismatch on tls-listener-presents-the-node-certificate varies only -verify_hostname (p8test-wrong.invalid), a change that must flip openssl's verdict; mutating remote-message-lands-in-the-host-tree declares both effects, verified read-only on the node: the marker is only in /var/log/hosts/p8testremote/p8test.log and /var/log/syslog (stock 50-default *.*), the effect is a grep of the dynaFile target, not the action's output; logrotate timer and rotation-rule expects match override.epp 3-5 and rsyslog-hosts.logrotate.epp 2-7 under defaults; no findings in the reviewer run (ALL_PASS)"
+ ],
+ "review_s": 106.1,
+ "check_file_sha256": "03b9a96a874488f156a8c3371a503375e1008232bf627fac6f351b33d22d500f",
+ "reviewer_result": "20261116T193706Z-reviewer",
+ "author_result": "20261116T193538Z-author",
+ "findings": []
+}
