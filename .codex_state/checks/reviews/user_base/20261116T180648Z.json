@@ -1,0 +1,22 @@
+{
+ "class": "user_base",
+ "at": "20261116T180648Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "no-supplementary-groups: user_base.pp:63-66 sets groups => $mygrouplist and gid => $myprimary; the fixture leaves mygrouplist [] so line 25-26 makes $myprimary = $title, and 'id -nG p8testuser' == 'p8testuser' alone is exactly what those lines produce",
+  "user-and-own-primary-group: user_base.pp:63-74 declares gid $myprimary (= title, lines 25-26), comment $myname ('P8 Test User' in params), home $myhomedir (/home/p8testuser via lines 8-10, myhome default ''), shell $user_shell (default /bin/bash); the getent passwd/group probe and expect match each attribute",
+  "no-ssh-key-pushed-when-ignored: user_base.pp:63-73 sets purge_ssh_keys => true and lines 94-102 declare ssh_authorized_key only when ignorekey == false; params set ignorekey true, so no key is written and ~/.ssh/authorized_keys must be absent or empty; the probe also fails if the user is missing, so the clean-node negative is meaningful",
+  "file-wide: 5 negative controls, no invariants/mutating/mismatch probes; all probes are read-only node-local getent/id/stat/test; the uncovered note honestly states the ecryptfs branch (lines 108-135) is not exercised (myppsigs/myppwrapped empty) and kubuntu is a planned desktop node in nodes.yml"
+ ],
+ "review_s": 64.9,
+ "check_file_sha256": "5622706150ce2dd610f83d3d714913b1bb770f0e6675aee987207de99c8c4a9d",
+ "reviewer_result": "20261116T180544Z-reviewer",
+ "author_result": "20261116T180418Z-author",
+ "findings": []
+}
