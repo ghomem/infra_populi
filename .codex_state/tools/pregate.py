@@ -141,6 +141,15 @@ def declared_classes(manifest: str) -> set[str]:
     return names
 
 
+def declared_packages(manifest: str) -> set[str]:
+    """Titles of `package { 'x': }` / `package { ['x', 'y']: }` resources (literal titles only)."""
+    code = strip_comments(manifest)
+    names: set[str] = set()
+    for title in re.findall(r"package\s*\{\s*(\[[^\]]*\]|'[^']+'|\"[^\"]+\")\s*:", code):
+        names.update(re.findall(r"['\"]([^'\"$]+)['\"]", title))
+    return names
+
+
 def exec_blocks(manifest: str) -> list[tuple[str, str, bool]]:
     """(title, body, os_guarded) of every exec resource, by brace matching.
 
@@ -332,13 +341,16 @@ def base_closure(cls: str) -> list[str]:
 
 def closure_providers(cls: str, repo: Path = REPO) -> set[str]:
     """Module/base classes the harness brings in with `cls`: every class declared by a manifest of its required_base
-    closure (itself included) plus the closure's required_external entries."""
+    closure (itself included) plus the closure's required_external entries, and `package:<name>` for every package
+    those manifests install (provided_paths.txt may name a package as the provider, 2026-11-16)."""
     import gen_migration_order as gen  # noqa: PLC0415
     rows, providers = gen.parse_plan(), set()
     for c in base_closure(cls):
         f = repo / f"manifests/{c}.pp"
         if f.is_file():
-            providers |= {x.lstrip(":") for x in declared_classes(f.read_text(encoding="utf-8"))}
+            text = f.read_text(encoding="utf-8")
+            providers |= {x.lstrip(":") for x in declared_classes(text)}
+            providers |= {f"package:{x}" for x in declared_packages(text)}
         providers |= {x.lstrip(":") for x in (rows[c].required_external if c in rows else ())}
     return providers
 

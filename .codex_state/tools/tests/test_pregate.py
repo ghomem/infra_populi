@@ -360,3 +360,13 @@ def test_hazard14_is_satisfied_by_a_base_class_of_the_required_base_closure(tmp_
         fd, inv, tuple(pregate.closure_providers("f", repo))) == []
     repo = probe_repo(tmp_path / "2", monkeypatch, {"f": fd, "b": nb}, {"f": ([], []), "b": ([], [])})
     assert pregate.module_base_findings(fd, inv, tuple(pregate.closure_providers("f", repo)))  # no base: still a finding
+
+
+def test_a_package_the_class_installs_provides_its_paths(tmp_path, monkeypatch):
+    """2026-11-16 (gnome_lock_screen): /usr/bin/dconf comes from the dconf-cli package the class itself declares."""
+    import pregate
+    text = "class x { package { 'dconf-cli': ensure => installed }\n package { ['a', \"b\"]: }\n package { $p: } }"
+    assert pregate.declared_packages(text) == {"dconf-cli", "a", "b"}
+    assert "package:dconf-cli" in pregate.closure_providers("gnome_lock_screen")
+    lines = dict(pregate.provided_paths())
+    assert lines["/usr/bin/dconf"] == "package:dconf-cli"
