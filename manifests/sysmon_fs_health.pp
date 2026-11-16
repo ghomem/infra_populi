@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependency: saz-sudo 9.0.2 (sudo::conf).
 ### Purpose ########
 # This class provides a nagios plugin that can be used trigger and monitor puppet runs, cpu, memory and zimbra
 define puppet_infrastructure::sysmon_fs_health ( $basedir, $size_threshold, $nfiles ) {
