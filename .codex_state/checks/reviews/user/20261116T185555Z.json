@@ -1,0 +1,21 @@
+{
+ "class": "user",
+ "at": "20261116T185555Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "password-hash-set: user_base.pp:71 'password => $myhash' sets the shadow hash; the fixture myhash is $6$p8testsalt$... (no '!'), so the probe's algorithm+salt prefix '$6$p8testsalt' is exactly what the line produces",
+  "the-given-key-is-pushed (96-99): ssh_authorized_key '${myusername}@puppet' with user/type/key => $sshkey; ignorekey is not passable by user.pp:8 so the default false (line 94) applies, fixture key is non-empty and hash unlocked so $sshkey = $mykey (line 58); one 'ssh-rsa <fixture RSA body> p8testuser@puppet' line is what the resource writes",
+  "the-given-key-is-pushed (98): type => 'ssh-rsa' is asserted by the expect's leading 'ssh-rsa ' and the RSA body prefix AAAAB3NzaC1yc2EAAAADAQAB, which also excludes the userlocked/emptykey placeholders"
+ ],
+ "review_s": 59.7,
+ "check_file_sha256": "0b2a2642eb921ef17a70711904fd753d043e0be56171baae3ab7fce94f7417eb",
+ "reviewer_result": "20261116T185456Z-reviewer",
+ "author_result": "20261116T185350Z-author",
+ "findings": []
+}
