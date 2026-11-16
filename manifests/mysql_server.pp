@@ -1,3 +1,5 @@
+# Puppet 8 migration: select service_name 'mysql' (DESIGN_DECISIONS 2026-11-16 HQ batch-5 ruling 2).
+# Module dependency: puppetlabs-mysql 17.3.0.
 # Install and configure a MySQL server using the Ubuntu packages.
 #
 # Firewall access to TCP/3306 is intentionally managed by the node declaration.
@@ -47,6 +49,7 @@ class puppet_infrastructure::mysql_server (
   class { '::mysql::server':
     package_name            => "mysql-server-${version}",
     package_ensure          => 'present',
+    service_name            => 'mysql',
     root_password           => $root_pw,
     remove_default_accounts => true,
     manage_config_file      => false,
