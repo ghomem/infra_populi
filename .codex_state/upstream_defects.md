@@ -104,7 +104,7 @@ the entry's `Ruled change` (plus ordinary Puppet 8 translations); anything else 
   `-A OUTPUT -d 192.168.56.10/32 -p tcp -m tcp --dport 8140 -m comment --comment "152 OUTPUT PUPPET MASTER" -j ACCEPT`;
   the master's `ipaddress` (= `serverip`) was 10.0.2.15. The manifest was restored and the node reverted. Seen in the
   same run: "Unable to persist firewall rules" (no Class['firewall'] in the harness; hazard 14 at re-migration).
-- Status: ruled
+- Status: applied bd0529a (reviewer v2 PASS 2026-11-16)
 
 ## linux_policies_user
 - Short: exec runs only under the policy script's own login check (no effect without a session)
