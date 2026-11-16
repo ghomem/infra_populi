@@ -1,0 +1,22 @@
+{
+ "class": "rsyslog_apparmor_exception",
+ "at": "20261116T190858Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "local-exception-file: baseline lines 6-10 declare File[/etc/apparmor.d/local/usr.sbin.rsyslogd] ensure file root:root 0644 and line 11 its content \"${logs_dir}/ rw,\\n${logs_dir}/** rwk,\\n\"; with the params fixture logs_dir=/srv/p8test-logs the expected stat 'root root 644' plus exactly those two lines is what the code produces",
+  "profile-compiles-with-the-exception: line 16 reloads /etc/apparmor.d/usr.sbin.rsyslogd with apparmor_parser -r; the probe preprocesses that same profile (apparmor_parser -p, includes expanded) and expects the two rules from line 11 with the fixture path, i.e. that the reloaded profile carries the exception via its local include; read-only",
+  "confined-rsyslogd-writes-to-logs-dir: line 11 grants rw on logs_dir and rwk below it to the rsyslogd profile; the fixture dir /srv/p8test-logs lies outside the stock profile's /var/log/** grant, so a confined rsyslogd (invariant check: enforce mode) writing a logger marker there shows the exception's effect; mutates declares everything the action does (dir, 99-p8test.conf, restart, logger), the effect greps the file rsyslogd wrote (the action's result, not its output); the baseline runs no command itself, the action exercises the custom-log-path consumer line 1 describes. Note: on the clean node the effect fails because the file is absent, not because of a denial (runner design: effect only)",
+  "check file read whole: rsyslogd-confined-and-running's why_invariant is plausible (stock node runs rsyslogd under its enforcing profile, reviewer clean run confirmed 'active / rsyslogd (enforce)'); no probe reaches another host; only the opted-in mutating check changes the node; no mismatch control needed (no probe takes a tool's verdict on a name/user/key/cipher/vhost). Reviewer run ALL_PASS, no findings"
+ ],
+ "review_s": 82.7,
+ "check_file_sha256": "cf7f8eb2a90e49e9eb5a58c563321e6fc46d729409072ddbd6884704e060da69",
+ "reviewer_result": "20261116T190736Z-reviewer",
+ "author_result": "20261116T190619Z-author",
+ "findings": []
+}
