@@ -8,6 +8,8 @@ baseline: release-0.9.10 (cf477c6)
 fixture: defaults
 authoring:
   minutes: 0.8
+  corrections:
+    - "2026-11-16, after run 20261116T193021Z (two authoring errors, behaviour as the baseline): systemctl show prints properties alphabetically (expect reordered); the rotation probe read seven lines for six expected (head -6)."
   notes: "Wall clock 19:28:58Z to 19:29:45Z 2026-11-16, outside the worktree while the Phase 1 review ran (four templates read; the node's timer state read)."
 checks:
   - id: listener-config-rendered
@@ -61,7 +63,7 @@ checks:
       - {path: templates/rsyslog/logrotate.timer.override.epp, lines: "3-5", text: "AccuracySec=1min"}
     probe: |
       systemctl show logrotate.timer -p DropInPaths -p AccuracyUSec -p ActiveState
-    expect: {rc: 0, stdout: "\\AActiveState=active\\nAccuracyUSec=1min\\nDropInPaths=/etc/systemd/system/logrotate\\.timer\\.d/override\\.conf\\n\\Z"}
+    expect: {rc: 0, stdout: "\\AAccuracyUSec=1min\\nActiveState=active\\nDropInPaths=/etc/systemd/system/logrotate\\.timer\\.d/override\\.conf\\n\\Z"}
 
   - id: host-logs-rotation-rule
     what: logrotate rotates the per-host logs daily, keeping all, uncompressed, date-suffixed
@@ -70,7 +72,7 @@ checks:
       - {path: manifests/rsyslog_server.pp, lines: "79", text: "file { '/etc/logrotate.d/rsyslog-hosts':"}
       - {path: templates/rsyslog/rsyslog-hosts.logrotate.epp, lines: "2-7", text: "<%= $log_root %>/hosts/*/*.log <%= $log_root %>/hosts/*/.log {"}
     probe: |
-      logrotate -d /etc/logrotate.d/rsyslog-hosts >/dev/null 2>&1 && head -7 /etc/logrotate.d/rsyslog-hosts | sed 's/^\s*//'
+      logrotate -d /etc/logrotate.d/rsyslog-hosts >/dev/null 2>&1 && head -6 /etc/logrotate.d/rsyslog-hosts | sed 's/^\s*//'
     expect: {rc: 0, stdout: "\\A/var/log/hosts/\\*/\\*\\.log /var/log/hosts/\\*/\\.log \\{\\ndaily\\nrotate -1\\nnocompress\\ndateext\\ndateformat -%Y%m%d\\n\\Z"}
 
   - id: retention-script-and-cron
