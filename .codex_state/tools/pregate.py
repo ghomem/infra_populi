@@ -365,6 +365,20 @@ def provided_paths(repo: Path = REPO) -> list[tuple[str, str]]:
     return out
 
 
+MERGED_USR = {"/bin": "/usr/bin", "/sbin": "/usr/sbin", "/lib": "/usr/lib", "/lib64": "/usr/lib64",
+              "/lib32": "/usr/lib32", "/libx32": "/usr/libx32"}
+
+
+def merged_usr(path: str, node_paths: dict[str, str]) -> str:
+    """The path the clean node actually stores it under: Ubuntu 24.04 merges /usr, so /bin etc. are symlinks and the
+    inventory (find -xdev, no link traversal) lists /usr/bin/bash, never /bin/bash (openvpn_server, batch 4)."""
+    top, sep, rest = path[1:].partition("/")
+    link = "/" + top
+    if sep and link in MERGED_USR and node_paths.get(link) == "l":
+        return f"{MERGED_USR[link]}/{rest}"
+    return path
+
+
 def prerequisite_findings(cls: str, node_paths: dict[str, str], hiera: dict, repo: Path = REPO) -> list[str]:
     """Paths the class needs that do not exist on the clean node and that no class of its required_base closure
     (including itself) declares — the sysmon_base / filesystem_lib64 shape (hazard 4)."""
@@ -382,7 +396,8 @@ def prerequisite_findings(cls: str, node_paths: dict[str, str], hiera: dict, rep
     missing: dict[str, list[str]] = {}
     provided = [prefix for prefix, provider in provided_paths(repo) if provider in providers]
     for path, why in needed:
-        if path in node_paths or any(path == d or path.startswith(d + "/") for d in declared):
+        path_on_node = merged_usr(path, node_paths)
+        if path_on_node in node_paths or any(path == d or path.startswith(d + "/") for d in declared):
             continue
         if any(path == pre or path.startswith(pre + "/") for pre in provided):
             continue

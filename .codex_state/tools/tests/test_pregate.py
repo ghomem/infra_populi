@@ -380,3 +380,13 @@ def test_template_legacy_facts_count_only_inside_erb_tags():
     pregate.scan_template("t.erb", text, set(), rep)
     found = " ".join(d for _, check, d in rep.lines if check == "template-legacy-fact")
     assert "@hostname" in found and "@fqdn" in found and "@domain" not in found
+
+
+def test_merged_usr_paths_are_checked_where_the_node_stores_them():
+    """batch 4 (openvpn_server): /bin is a symlink to usr/bin on Ubuntu 24.04; the inventory lists /usr/bin/bash."""
+    import pregate
+    inv = {"/bin": "l", "/usr/bin/bash": "f", "/sbin": "d"}
+    assert pregate.merged_usr("/bin/bash", inv) == "/usr/bin/bash"
+    assert pregate.merged_usr("/sbin/x", inv) == "/sbin/x"  # a real directory here: no mapping
+    assert pregate.merged_usr("/etc/hosts", inv) == "/etc/hosts"
+    assert pregate.merged_usr("/bin", inv) == "/bin"
