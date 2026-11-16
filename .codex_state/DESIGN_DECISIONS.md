@@ -1193,3 +1193,25 @@ is HEAD, or followed by nothing but record_green's own record/regenerate commits
   puppet8master.example.com → .10; puppet8node.example.com → .20; puppetserver active and 8140 running;
   node→master:8140.
 - **v3 is kept** until HQ rules on deletion.
+
+## 2026-11-16 — lab network project complete (step 10)
+With the laptop's Wi-Fi off (`wlo1` down, no default route), every lab path held over host-only:
+- SSH to both VMs, with the path asserted (192.168.56.1 → .10 / .20);
+- node → master:8140;
+- a compile on the master.
+
+When Wi-Fi came back, the laptop's DHCP address had changed (.203 → .200). That would have broken the old
+harness-source ACL fixtures, and no longer matters. The `-wifi` fallback aliases are removed (backup
+`~/.ssh/config.pre-p8net-step10`).
+
+Final lab facts:
+- master 192.168.56.10 and node 192.168.56.20 on vboxnet0; laptop 192.168.56.1;
+- NIC1 bridged for internet only;
+- baselines P8NODE_BASELINE_GREEN_v3 / P8MASTER_BASELINE_GREEN_v4;
+- v2 / v3 kept until HQ rules on deletion.
+
+Leftover backups, kept until HQ says otherwise:
+- `~/.ssh/config.pre-p8net-step{1a,6,10}` and `~/.ssh/known_hosts.pre-p8net-step1a`;
+- `/etc/hosts.pre-p8net` and `/etc/hosts.pre-p8net-step7` on the master.
+
+Next, per HQ: a separate NIC1 → NAT plan.

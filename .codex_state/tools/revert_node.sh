@@ -14,7 +14,7 @@
 #                 NIC2 host-only vboxnet0 (sprint 3.1) — plus enp0s8 192.168.56.20/24 and hosts master ->
 #                 192.168.56.10, escalations/lab-network-static.md step 9);
 #                 its apt lists are refreshed after every restore (apt-get update)
-#   SSH aliases   puppet8node, puppet8master (host-only 192.168.56.20 / .10), puppet8node-wifi (bridged fallback)
+#   SSH aliases   puppet8node, puppet8master (host-only 192.168.56.20 / .10)
 #   Wi-Fi bridge  host interface wlo1 (NIC1: internet only; the engine reaches the node over host-only)
 #   master check  puppet8master.example.com:8140, opened from the node
 # Parameterizing these via environment variables is a known future improvement.
