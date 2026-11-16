@@ -1,0 +1,97 @@
+{
+ "schema": 1,
+ "class": "firewall_addon_hosting",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-16T21:06:40Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "bd0529af378d",
+ "migrate_subject": "P8: migrate puppet_infrastructure::firewall_addon_hosting",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit bd0529af378d; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `firewall_addon_hosting Done [from: release-0.9.10; upstream defect fixed: OUTPUT accept for the master on 8140]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-firewall', '8.3.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 6 catalog events; COVERAGE puppet_infrastructure::firewall_addon_hosting: 5 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A @@-1: 2-line migration header only (purpose + puppetlabs-firewall 8.3.0); all baseline Purpose/Warnings/Dependencies comments kept",
+   "DIFF A rules 149/150/151: action => 'accept' -> jump => 'accept' (puppetlabs-firewall 8 rename); titles, chain, state, proto, dport unchanged; firewallchain OUTPUT:filter:IPv4 purge/policy drop untouched",
+   "DIFF A +152: firewall '152 OUTPUT PUPPET MASTER' chain OUTPUT, proto tcp, dport '8140', destination $server_facts['servername'], jump accept matches character-for-character the ruled change in upstream_defects.md (firewall_addon_hosting, Status: ruled); no other non-translation hunk"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 6,
+  "removed": 3,
+  "non_comment_changes": 7,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest; action renamed to jump and HQ-ruled master OUTPUT rule.",
+  "# Module dependency: puppetlabs-firewall 8.3.0."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 6,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::firewall_addon_hosting: 5 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 29.064,
+   "master_check_s": 0.565,
+   "poweroff_s": 1.353,
+   "restore_s": 0.478,
+   "boot_to_ssh_s": 18.315,
+   "apt_update_s": 7.738,
+   "verify_s": 0.615,
+   "nic1_rx_bytes": 2102797
+  },
+  "log": ".codex_state/logs/reviews/firewall_addon_hosting.20261116T210016Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
