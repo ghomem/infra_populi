@@ -46,6 +46,9 @@ STDLIB4_REMOVED = re.compile(
     r"sprintf_hash|size)\s*\("
 )
 OS_EXEC = re.compile(r"\b(dnf|yum|rpm|subscription-manager|zypper|apt-get|dpkg|snap)\b")
+# The OS family whose nodes run each command (hazard 5 is moot when the plan routes the class to such a node).
+OS_EXEC_FAMILY = {"dnf": "RedHat", "yum": "RedHat", "rpm": "RedHat", "subscription-manager": "RedHat",
+                  "apt-get": "Debian", "dpkg": "Debian", "snap": "Debian", "zypper": "Suse"}
 OS_GUARD = re.compile(r"\$facts\[['\"]os['\"]\]|\$::osfamily|\$osfamily|\$::operatingsystem|os\.family")
 EXEC_GUARDS = re.compile(r"(?<![\w$])(unless|onlyif|creates|refreshonly)\s*=>")
 LEGACY_FACT_NAMES = (
@@ -432,8 +435,22 @@ def prerequisite_findings(cls: str, node_paths: dict[str, str], hiera: dict, rep
     return out
 
 
+def routed_node(cls: str) -> tuple[str, str] | None:
+    """(kind, os_family) when the plan's `node` column routes the class to a lab node explicitly, else None."""
+    import nodes  # noqa: PLC0415
+    try:
+        import gen_migration_order as gen  # noqa: PLC0415
+        row = gen.parse_plan().get(cls)
+        if row is None or not getattr(row, "node", ""):
+            return None
+        node = nodes.select(nodes.load(), cls=cls)
+    except SystemExit:
+        return None
+    return node["kind"], node["os_family"]
+
+
 def scan_hazards(manifest: str, inventory: dict | None, report: Report,
-                 required_external: tuple[str, ...] = ()) -> None:
+                 required_external: tuple[str, ...] = (), routed: tuple[str, str] | None = None) -> None:
     code = strip_comments(manifest)
     # 1. external custom types / classes from modules that are not installed
     if inventory is not None:
@@ -456,8 +473,13 @@ def scan_hazards(manifest: str, inventory: dict | None, report: Report,
         command = re.search(r"command\s*=>\s*([^\n]+)", body)
         text = (command.group(1) if command else title) + " " + title
         if OS_EXEC.search(text):
+            families = {OS_EXEC_FAMILY[m] for m in OS_EXEC.findall(text)}
             if guarded:
                 report.add("INFO", "hazard5-os-exec", f"exec {title} runs an OS-specific command inside an OS conditional")
+            elif routed and families == {routed[1]}:
+                # HQ batch-5 ruling 5 (extra_packages_el): the plan routes the class to a node of that OS family
+                report.add("INFO", "hazard5-os-exec", f"exec {title} runs {routed[1]} commands; the plan routes the class "
+                           f"to the {routed[0]} node ({routed[1]})")
             else:
                 report.add("FINDING", "hazard5-os-exec", f"exec {title} runs an OS-specific command with no enclosing OS conditional")
         if not EXEC_GUARDS.search(body):
@@ -691,7 +713,7 @@ def pregate_class(cls: str) -> Report:
                           and baseline.git_show(base.upstream, base.commit, p) == local[p])
     apply_remote(results, report, report_inherited=True, identical_to_baseline=identical)
     # hazard 14 is satisfied by a base class the required_base closure declares (nginx_base -> class nginx) too
-    scan_hazards(manifest, inventory, report, tuple(sorted(closure_providers(cls))))
+    scan_hazards(manifest, inventory, report, tuple(sorted(closure_providers(cls))), routed_node(cls))
     # HQ 2026-11-11 ruling 4: dynamic prerequisite probe against the clean-node inventory
     import node_inventory  # noqa: PLC0415
     node_paths = node_inventory.load(cls=cls)  # the class's node (plan `node`, else the default)

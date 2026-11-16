@@ -418,3 +418,20 @@ def test_merged_usr_paths_are_checked_where_the_node_stores_them():
     assert pregate.merged_usr("/sbin/x", inv) == "/sbin/x"  # a real directory here: no mapping
     assert pregate.merged_usr("/etc/hosts", inv) == "/etc/hosts"
     assert pregate.merged_usr("/bin", inv) == "/bin"
+
+
+
+# HQ batch-5 ruling 5 (extra_packages_el): an OS-specific exec is moot for hazard 5 when the plan routes the class to a
+# node of that OS family; any other family, or no explicit routing, stays a finding.
+EL = ("class e {\n  exec { 'install-epel-release':\n    command => \"sudo dnf install -y x.rpm\",\n"
+      "    unless  => 'rpm -q epel-release',\n  }\n}\n")
+
+
+@pytest.mark.parametrize("routed, level", [(None, "FINDING"), (("rhel9", "RedHat"), "INFO"), (("ubuntu", "Debian"), "FINDING")])
+def test_hazard5_is_info_only_when_routed_to_the_commands_os_family(routed, level):
+    r = pregate.Report("e")
+    pregate.scan_hazards(EL, None, r, (), routed)
+    got = [i for i in r.lines if i[1] == "hazard5-os-exec"]
+    assert got and all(i[0] == level for i in got), got
+    if level == "INFO":
+        assert "routes the class to the rhel9 node (RedHat)" in got[0][2]
