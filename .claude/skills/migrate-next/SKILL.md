@@ -56,6 +56,10 @@ FOR EACH CLASS:
      (Any ad-hoc `codex exec` keeps the mandatory `timeout -k 30 900 ... </dev/null`.) If it is faithfulness (reimplementation) or non-idempotency: back
      the migration out with a corrective commit (never force-push), preserve the manifest as
      `candidates/<class>.partial.pp` or `.reimplemented.pp` with a header, block with evidence, escalate.
+CONCURRENCY (2026-11-16): one lab run at a time (`lab_lock.sh`; the tools refuse a second one). While a reviewer, a
+harness, a phase3 run or Codex holds the lab: run no compile-only / classify_path / harness / revert, and keep the
+worktree clean (write a new check set outside the repo and move it in after the verdict). Read-only reading and
+pregate are fine.
 5b. BEHAVIOUR (Phase 3 in the loop, HQ 2026-11-16) — after the reviewer PASS, before METRICS. It never blocks or
    changes the Phase 1 record, and the budget counts Phase 1 PASSes only.
    - Author `.codex_state/checks/<class>.yml` from the BASELINE (CLAUDE.md "Phase 3 checks"):
