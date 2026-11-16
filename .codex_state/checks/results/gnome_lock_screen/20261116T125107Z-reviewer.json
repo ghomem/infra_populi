@@ -1,0 +1,60 @@
+{
+ "class": "gnome_lock_screen",
+ "role": "reviewer",
+ "at": "20261116T125107Z",
+ "runner": "6940432",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "d3863faebf722ded2a925c3e3d19a2cbd321c4dd84c0dba03e3cd494f5d9d1f7",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "dconf-cli-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "dpkg-query: no packages found matching dconf-cli\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "profile-uses-system-db-local",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/dconf/profile/user': No such file or directory\ncat: /etc/dconf/profile/user: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "keyfile-and-locks-rendered",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "---\n",
+   "stderr": "cat: /etc/dconf/db/local.d/00-screenlock: No such file or directory\ncat: /etc/dconf/db/local.d/locks/00-screenlock: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "compiled-db-serves-the-policy",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 2: /usr/bin/dconf: No such file or directory\nbash: line 2: /usr/bin/dconf: No such file or directory\nbash: line 2: /usr/bin/dconf: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 1,
+  "green": false,
+  "node_fresh": true,
+  "tail": "ile[/etc/dconf/db/local.d/locks]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/00-screenlock]/ensure: defined content as '{sha256}b1a1beab78d81990d9028281c5411b9f1bc49ff6668e9e56d9fdaa7b642d0a7d'\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/00-screenlock]: Scheduling refresh of Exec[dconf_update_screenlock]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/locks/00-screenlock]/ensure: defined content as '{sha256}a1ed860133c34d6e48c963801bfb25ccb446d45805c8c1445434941ea534dfd6'\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/locks/00-screenlock]: Scheduling refresh of Exec[dconf_update_screenlock]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/Exec[dconf_update_screenlock]: Dependency Package[dconf-cli] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/Exec[dconf_update_screenlock]: Skipping because of failed dependencies\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/Exec[dconf_update_screenlock]: Unscheduling all events on Exec[dconf_update_screenlock]\u001b[0m\n\u001b[0;32mInfo: Class[Puppet_infrastructure::Gnome_lock_screen]: Unscheduling all events on Class[Puppet_infrastructure::Gnome_lock_screen]\u001b[0m\n\u001b[mNotice: Applied catalog in 8.35 seconds\u001b[0m\nERROR: Agent run 1 failed (exit 6).\n"
+ },
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "authoring_minutes": 0.3,
+ "duration_s": 65.2
+}

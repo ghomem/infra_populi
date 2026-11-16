@@ -1,0 +1,60 @@
+{
+ "class": "gnome_lock_screen",
+ "role": "reviewer",
+ "at": "20261116T124911Z",
+ "runner": "dc470e0",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "d3863faebf722ded2a925c3e3d19a2cbd321c4dd84c0dba03e3cd494f5d9d1f7",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "dconf-cli-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "dpkg-query: no packages found matching dconf-cli\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "profile-uses-system-db-local",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/dconf/profile/user': No such file or directory\ncat: /etc/dconf/profile/user: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "keyfile-and-locks-rendered",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "---\n",
+   "stderr": "cat: /etc/dconf/db/local.d/00-screenlock: No such file or directory\ncat: /etc/dconf/db/local.d/locks/00-screenlock: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "compiled-db-serves-the-policy",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 2: /usr/bin/dconf: No such file or directory\nbash: line 2: /usr/bin/dconf: No such file or directory\nbash: line 2: /usr/bin/dconf: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 1,
+  "green": false,
+  "node_fresh": true,
+  "tail": "29874daec2dc2da350619575fb0f8abf64c1085f5c65'\u001b[0m\n\u001b[mNotice: /File[/opt/puppetlabs/puppet/cache/lib/puppet_x/voxpupuli]/ensure: created\u001b[0m\n\u001b[mNotice: /File[/opt/puppetlabs/puppet/cache/lib/puppet_x/voxpupuli/utils.rb]/ensure: defined content as '{sha256}6e3830391407b20e709e112fd5f9698ba82b6d79a61f37ea4c11271504331c09'\u001b[0m\n\u001b[mNotice: /File[/opt/puppetlabs/puppet/cache/lib/puppetx]/ensure: created\u001b[0m\n\u001b[mNotice: /File[/opt/puppetlabs/puppet/cache/lib/puppetx/filemapper.rb]/ensure: defined content as '{sha256}5f7ce1fe623c1cc1c40488b516e1d7cda925a468f561d8650f57ed62d8e0b4a0'\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[1;31mError: Could not retrieve catalog from remote server: Error 500 on SERVER: Server Error: no parameter named 'action' (file: /etc/puppetlabs/code/environments/production/modules/puppet_infrastructure/manifests/firewall_addon_openvpn_server.pp, line: 17) on Firewall[202 allow flow from br0 exterior] (file: /etc/puppetlabs/code/environments/production/modules/puppet_infrastructure/manifests/firewall_addon_openvpn_server.pp, line: 17) (file: /etc/puppetlabs/code/environments/production/modules/puppet_infrastructure/manifests/firewall_addon_openvpn_server.pp, line: 17) on node puppet8node\u001b[0m\n\u001b[1;33mWarning: Not using cache on failed catalog\u001b[0m\n\u001b[1;31mError: Could not retrieve catalog; skipping run\u001b[0m\nERROR: Agent run 1 failed (exit 1).\n"
+ },
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "authoring_minutes": 0.3,
+ "duration_s": 55.3
+}

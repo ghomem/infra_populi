@@ -1,0 +1,23 @@
+{
+ "class": "gnome_lock_screen",
+ "at": "20261116T125240Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "fail",
+  "author_run": "ok",
+  "reproduced": "fail",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "compiled-db-serves-the-policy: baseline 94-98 declares refreshonly exec '/usr/bin/dconf update' (notified by both files, 63-92); reading the three keys through DCONF_PROFILE=user (profile 'user-db:user/system-db:local', line 44) from the compiled db with defaults 5*60=300, lock-enabled=true, grace 0 tests exactly that; the mismatch changes only the profile name to a nonexistent one (dconf then has no system-db:local), which must change the answer",
+  "keyfile-and-locks-rendered (80-89): locks heredoc /L lists exactly idle-delay, lock-enabled, lock-delay, each newline-terminated; the probe cats the file after '---' and the expect anchors exactly those three lines",
+  "keyfile-and-locks-rendered (63-75): heredoc renders [org/gnome/desktop/session] idle-delay=uint32 300 (line 9: 5*60 default), blank line, [org/gnome/desktop/screensaver] lock-enabled=true, lock-delay=uint32 0 (default grace 0), trailing newline kept; expect matches that render exactly",
+  "check file: all 4 checks are negative controls, no invariants, no mutates, no probe reaches another host or changes the node",
+  "reviewer run not valid for comparison (environmental, not a check result): run 20261116T124911Z APPLY_FAILED because the master node file was overwritten at 12:50:04 by a concurrent writer (firewall_addon_openvpn_server) during the apply; rerun 20261116T125107Z APPLY_FAILED with Package[dconf-cli] failing \u2014 the node cannot resolve DNS (getent ao.archive.ubuntu.com fails; revert's apt update reported 'Temporary failure resolving'), so dconf-cli is uninstallable. Re-run the review once the node has egress and the lab is not shared."
+ ],
+ "review_s": 94.0,
+ "check_file_sha256": "d3863faebf722ded2a925c3e3d19a2cbd321c4dd84c0dba03e3cd494f5d9d1f7",
+ "reviewer_result": "20261116T125107Z-reviewer",
+ "author_result": "20261116T124736Z-author",
+ "findings": []
+}
