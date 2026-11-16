@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none (core file/package resources only).
 ### Purpose ########
 # This class provides a Puppet based user directory and CLI management interface called Hashman
 
