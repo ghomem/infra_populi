@@ -1,0 +1,18 @@
+{
+ "class": "user_kde_lock_screen",
+ "at": "20261116T150816Z",
+ "verdict": "PASS",
+ "deferral": true,
+ "checks": {
+  "deferral_valid": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "deferral manifests/user_kde_lock_screen.pp:14-19: the define's only resource is the exec, run as the title user (harness p8testuser) and guarded by the same script with --check; the deployed script file belongs to user_kde_lock_screen_common, not this define",
+  "deferral files/user_kde_lock_screen/configure_lock_screen.sh:14-21: when whoami is not in who's output the script logs 'not loged in' and exits 0 before --check (line 41) is read, so on the server node (no session for p8testuser) unless always succeeds and the exec never runs; the stated reason holds",
+  "deferral files/user_kde_lock_screen/configure_lock_screen.sh:31-37 (+42-45, 62-105): the actual behaviour is kreadconfig5/kwriteconfig5 on ~/.config/kscreenlockerrc (Autolock, LockOnResume, Timeout, LockGrace) and qdbus org.kde.screensaver over /run/user/<uid>/bus, which needs a KDE session of the logged-in user; lifted_by kubuntu exists in nodes.yml with capabilities [desktop, kde], which can provide that"
+ ],
+ "check_file_sha256": "652166a840539514a7053b37446410db8162622ef10e55fd190bce0fd07239ec",
+ "findings": [],
+ "review_s": null
+}
