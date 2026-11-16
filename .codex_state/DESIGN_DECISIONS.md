@@ -1375,3 +1375,13 @@ too; other commits keep the fast subset. Cause: the lab_vm.sh commit (516b455) l
   column "NIC1 rx MB reverts / harness"; records from before this change show –.
 - **Purpose:** the data for HQ's package-cache decision before the 23rd. These are metrics only: an unreadable counter
   is null and never fails a revert or a run.
+
+## 2026-11-16 — HQ NAT review G: a p8lab VM starts only on the lab network
+- **The guard:** `lab_vm.sh start` refuses, and changes nothing, unless the VM has:
+  - NIC1 VirtualBox NAT with the host resolver (`natdnshostresolver1 on`);
+  - NIC2 host-only on vboxnet0.
+- **The fix it names:** the refusal prints the `lab_vm.sh modify` command that sets the lab network.
+- **Where the host-resolver flag is read:** `showvminfo` does not print it, so it comes from the VM's `.vbox` file:
+  the current machine's adapter 0, never a snapshot's.
+- **Real VMs:** all three VMs (p8lab-rhel9, set through lab_vm.sh modify; the master and the node, set by hand in the
+  NAT plan) satisfy the check.

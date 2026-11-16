@@ -13,13 +13,37 @@ SCRIPT = str(TOOLS / "lab_vm.sh")
 MASTER, NODE = "Ubuntu24-puppet8-Master", "ubuntu24-puppet8-Node"
 
 
+# The .vbox shape VirtualBox 7.2 writes: the current machine's adapter 0 holds the NAT DNS flags; a snapshot's
+# hardware (nested under Snapshot) never counts.
+VBOX = """<?xml version="1.0"?>
+<VirtualBox xmlns="http://www.virtualbox.org/" version="1.19-linux">
+  <Machine name="{name}">
+    <Snapshot name="old"><Hardware><Network><Adapter slot="0"><NAT>{snap_dns}</NAT></Adapter></Network></Hardware></Snapshot>
+    <Hardware><Network>
+      <Adapter slot="0" enabled="true" type="82540EM"><NAT localhost-reachable="true">{dns}</NAT></Adapter>
+      <Adapter slot="1" enabled="true" type="82540EM"><HostOnlyInterface name="vboxnet0"/></Adapter>
+    </Network></Hardware>
+  </Machine>
+</VirtualBox>
+"""
+RESOLVER_ON = '<DNS use-host-resolver="true"/>'
+
+
+def vbox_file(tmp_path, name, dns=RESOLVER_ON, snap_dns=""):
+    path = tmp_path / f"{name}.vbox"
+    path.write_text(VBOX.format(name=name, dns=dns, snap_dns=snap_dns))
+    return path
+
+
 @pytest.fixture
 def vms(lab, tmp_path):
     lab.world["vms"].update({
         "RHEL9": {"state": "poweroff", "memory": 4096, "snapshots": [{"name": "clean", "uuid": "u-c"}],
                   "config": {"ostype": "RedHat_64"}},
         "kubuntu-desktop": {"state": "running", "memory": 4096, "snapshots": [{"name": "fresh", "uuid": "u-f"}]},
-        "p8lab-rhel9": {"state": "poweroff", "memory": 4096, "snapshots": [{"name": "P8LAB_BASE", "uuid": "u-b"}]},
+        "p8lab-rhel9": {"state": "poweroff", "memory": 4096, "snapshots": [{"name": "P8LAB_BASE", "uuid": "u-b"}],
+                        "config": {"nic1": "nat", "nic2": "hostonly", "hostonlyadapter2": "vboxnet0",
+                                   "CfgFile": str(vbox_file(tmp_path, "p8lab-rhel9"))}},
         "p8lab-busy": {"state": "running", "memory": 2048, "snapshots": []},
     })
     meminfo = tmp_path / "meminfo"
@@ -94,6 +118,25 @@ def test_start_keeps_four_gigabytes_free(vms):
     assert proc.returncode == 0 and "4096 MB left free" in proc.stdout
     assert vms.mutating()[0][1:3] == ["startvm", "p8lab-rhel9"]
 
+
+
+# HQ NAT review G: a p8lab VM starts only on the lab network (NIC1 NAT + host resolver, NIC2 host-only vboxnet0).
+@pytest.mark.parametrize("change, text", [
+    ({"nic1": "bridged"}, "NIC1 is not NAT"),
+    ({"nic2": "none"}, "NIC2 is not host-only on vboxnet0"),
+    ({"hostonlyadapter2": "vboxnet1"}, "NIC2 is not host-only on vboxnet0"),
+    ({"dns": ""}, "does not use the host resolver"),
+    ({"dns": "", "snap_dns": RESOLVER_ON}, "does not use the host resolver"),  # only a snapshot has it: not enough
+    ({"CfgFile": "/nonexistent/p8lab-rhel9.vbox"}, "unreadable"),
+])
+def test_start_requires_the_lab_network(vms, lab, tmp_path, change, text):
+    config = lab.world["vms"]["p8lab-rhel9"]["config"]
+    if "dns" in change:
+        config["CfgFile"] = str(vbox_file(tmp_path, "p8lab-rhel9", dns=change.pop("dns"),
+                                          snap_dns=change.pop("snap_dns", "")))
+    config.update(change)
+    assert refused(vms.run("start", "p8lab-rhel9"), text)
+    assert vms.mutating() == []
 
 def test_stop_acpi_then_hard(vms, lab):
     lab.world["acpi_works"] = False

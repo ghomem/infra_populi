@@ -10,7 +10,8 @@
 #       after. Never the master as a source.
 #   lab_vm.sh modify <p8lab-name> <modifyvm options...>   powered-off VM only; a --name must stay p8lab-*
 #   lab_vm.sh start <p8lab-name>     headless; refused if it would leave under 4 GB free on the laptop
-#                                    (MemAvailable minus the VM's memory)
+#                                    (MemAvailable minus the VM's memory), or unless the VM has the lab network:
+#                                    NIC1 NAT with the host resolver, NIC2 host-only vboxnet0 (HQ NAT review G)
 #   lab_vm.sh stop <p8lab-name> [--hard]   ACPI with a timeout (default), or a hard poweroff
 #   lab_vm.sh snapshot <p8lab-name> take <NAME> [--description TEXT]   powered-off VM only (offline snapshots)
 #   lab_vm.sh snapshot <p8lab-name> restore <NAME>                      powered-off VM only
@@ -42,6 +43,23 @@ fingerprint() {
 target() {
   lab_name "$1" || refuse "'$1' is not a p8lab-* VM; lab_vm.sh acts on p8lab-* VMs only"
   vm_exists "$1" || refuse "no VM named '$1'"
+}
+# HQ NAT review G: every lab VM runs on the lab network, NIC1 VirtualBox NAT with the host resolver
+# (natdnshostresolver1 on) and NIC2 host-only on vboxnet0. showvminfo does not print the host-resolver flag, so it is
+# read from the VM's .vbox file: the current machine's adapter 0, not a snapshot's. Prints what is wrong.
+lab_network_problem() {
+  local info cfg
+  info="$(VBoxManage showvminfo "$1" --machinereadable)"
+  grep -qx 'nic1="nat"' <<<"$info" || { echo "NIC1 is not NAT"; return 0; }
+  { grep -qx 'nic2="hostonly"' <<<"$info" && grep -qx 'hostonlyadapter2="vboxnet0"' <<<"$info"; } ||
+    { echo "NIC2 is not host-only on vboxnet0"; return 0; }
+  cfg="$(sed -n 's/^CfgFile="\(.*\)"$/\1/p' <<<"$info")"
+  python3 - "$cfg" <<'PY' 2>/dev/null || echo "NIC1 NAT does not use the host resolver (natdnshostresolver1 on), or ${cfg:-the .vbox file} is unreadable"
+import sys
+import xml.etree.ElementTree as ET
+dns = ET.parse(sys.argv[1]).getroot().find("./{*}Machine/{*}Hardware/{*}Network/{*}Adapter[@slot='0']/{*}NAT/{*}DNS")
+sys.exit(0 if dns is not None and dns.get("use-host-resolver") == "true" else 1)
+PY
 }
 powered_off() { [[ "$(vm_state "$1")" == "poweroff" || "$(vm_state "$1")" == "aborted" ]]; }
 
@@ -86,6 +104,8 @@ case "$verb" in
     name="$1"
     target "$name"
     [[ "$(vm_state "$name")" != "running" ]] || { echo "LAB_VM ${name} already running"; exit 0; }
+    problem="$(lab_network_problem "$name")"
+    [[ -z "$problem" ]] || refuse "'$name' does not have the lab network: ${problem}. Set it with: lab_vm.sh modify ${name} --nic1 nat --natdnshostresolver1 on --nic2 hostonly --hostonlyadapter2 vboxnet0"
     avail_kb="$(awk '/^MemAvailable:/ {print $2}' "$MEMINFO")"
     [[ "$avail_kb" =~ ^[0-9]+$ ]] || refuse "cannot read MemAvailable from ${MEMINFO}"
     vm_mb="$(vm_memory_mb "$name")"
