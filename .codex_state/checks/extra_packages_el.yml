@@ -1,0 +1,40 @@
+# Phase 3 checks for puppet_infrastructure::extra_packages_el (class; routed to the rhel9 node: RHEL 9.5, registered,
+# BaseOS + AppStream enabled at the baseline, CodeReady Builder available but off, no content overrides).
+# Fixture: none. The revert clears content overrides after every restore (an enabled repository survives a snapshot
+# restore on the subscription server), so the clean node starts with CRB off.
+class: extra_packages_el
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 0.1
+  notes: "Wall clock 22:03:55Z to 22:04:03Z 2026-11-16, outside the worktree while the Phase 1 review ran."
+checks:
+  - id: epel-release-installed
+    what: the EPEL release package for the node's major version is installed and its repository is enabled
+    control: negative
+    derived_from:
+      - {path: manifests/extra_packages_el.pp, lines: "6-10", text: "command => \"sudo dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${os_major_version}.noarch.rpm\","}
+    probe: |
+      rpm -q --qf '%{NAME} %{VERSION}\n' epel-release
+      dnf -q repolist --enabled epel | tail -n +2 | awk '{print $1}'
+    expect: {rc: 0, stdout: "\\Aepel-release 9\\nepel\\n\\Z"}
+
+  - id: codeready-builder-enabled
+    what: CodeReady Builder for the node's major version and architecture is enabled through subscription-manager
+    control: negative
+    derived_from:
+      - {path: manifests/extra_packages_el.pp, lines: "13-16", text: "command => \"sudo subscription-manager repos --enable \\\"codeready-builder-for-rhel-${os_major_version}-${os_architecture}-rpms\\\"\","}
+    probe: |
+      subscription-manager repos --list-enabled | grep -o 'codeready-builder-for-rhel-[0-9]*-[a-z0-9_]*-rpms'
+      dnf -q repolist --enabled | awk '{print $1}' | grep -x 'codeready-builder-for-rhel-9-x86_64-rpms'
+    expect: {rc: 0, stdout: "\\Acodeready-builder-for-rhel-9-x86_64-rpms\\ncodeready-builder-for-rhel-9-x86_64-rpms\\n\\Z"}
+
+  - id: baseos-appstream-still-enabled
+    what: the class adds repositories and removes none (BaseOS and AppStream stay enabled)
+    control: invariant
+    why_invariant: the registered baseline enables BaseOS and AppStream; the class only enables more
+    derived_from:
+      - {path: manifests/extra_packages_el.pp, lines: "13-16", text: "unless  => \"subscription-manager repos --list-enabled | grep -q 'codeready-builder-for-rhel-${os_major_version}-${os_architecture}-rpms'\","}
+    probe: |
+      subscription-manager repos --list-enabled | grep -oE 'rhel-9-for-x86_64-(baseos|appstream)-rpms' | sort
+    expect: {rc: 0, stdout: "\\Arhel-9-for-x86_64-appstream-rpms\\nrhel-9-for-x86_64-baseos-rpms\\n\\Z"}
