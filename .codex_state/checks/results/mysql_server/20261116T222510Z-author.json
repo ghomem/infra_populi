@@ -1,0 +1,94 @@
+{
+ "class": "mysql_server",
+ "role": "author",
+ "at": "20261116T222510Z",
+ "runner": "5a1309d",
+ "baseline": "874f854 (874f854)",
+ "check_file_sha256": "2ad54fb34f0363e5770fc246cb1bcd72a2bbee5a593be1fe6dd4cd2aa56f8564",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "mysql-not-mariadb-installed-and-running",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "0\ninactive\nnot-found\n",
+   "stderr": "dpkg-query: no packages found matching mysql-server-8.0\n",
+   "ok": true
+  },
+  {
+   "id": "server-reports-mysql-from-the-managed-config",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 1: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "managed-config-file-rendered",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/mysql/mysql.conf.d/zz-puppet-infrastructure.cnf': No such file or directory\ngrep: /etc/mysql/mysql.conf.d/zz-puppet-infrastructure.cnf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "apparmor-allows-datadir-and-tls",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/apparmor.d/local/usr.sbin.mysqld: No such file or directory\ncat: /proc/0/attr/current: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "le.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794868011'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.72 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::mysql_server: 35 concrete resources (+0 defined-type instances)\n  File[/etc/apparmor.d/local]\n  File[/etc/apparmor.d/local/usr.sbin.mysqld]\n  File[/etc/mysql/conf.d]\n  File[/etc/mysql]\n  Exec[datadir-managed_dir-mkdir]\n  Exec[datadir-managed_dir-chmod]\n  Package[mysql-server]\n  File[datadir-managed_dir]\n  File[/var/log/mysql/error.log]\n  File[/var/log/mysql]\n  Mysql_datadir[/srv/mysql]\n  Service[mysqld]\n  Exec[wait_for_mysql_socket_to_open]\n  Exec[remove install pass]\n  Mysql_user[root@localhost]\n  File[/root/.my.cnf]\n  Mysql_user[root@127.0.0.1]\n  Mysql_user[root@::1]\n  Mysql_user[@localhost]\n  Mysql_user[@%]\n  Mysql_user[root@localhost.localdomain]\n  Mysql_user[@localhost.localdomain]\n  Mysql_user[root@puppet8node.lan]\n  Mysql_user[@puppet8node.lan]\n  Mysql_user[root@puppet8node]\n  Mysql_user[@puppet8node]\n  Mysql_database[test]\n  Anchor[mysql::server::start]\n  Anchor[mysql::server::end]\n  File[/etc/mysql/ssl]\n  File[/etc/mysql/ssl/p8test-chain.pem]\n  File[/etc/mysql/ssl/p8test.pem]\n  File[/etc/mysql/ssl/p8test-key.pem]\n  Exec[reload mysql apparmor profile]\n  File[/etc/mysql/mysql.conf.d/zz-puppet-infrastructure.cnf]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP mysql_server 94b36f72d4b8\n"
+ },
+ "applied": [
+  {
+   "id": "mysql-not-mariadb-installed-and-running",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "mysql-server-8.0 install ok installed\n0\nactive\nenabled\n",
+   "stderr": ""
+  },
+  {
+   "id": "server-reports-mysql-from-the-managed-config",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "8.0.46-0ubuntu0.24.04.5\t(Ubuntu)\t/srv/mysql/\t/etc/mysql/ssl/p8test-chain.pem\t/etc/mysql/ssl/p8test.pem\t/etc/mysql/ssl/p8test-key.pem\t1\t0.0.0.0\n",
+   "stderr": ""
+  },
+  {
+   "id": "managed-config-file-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 644\ndatadir = /srv/mysql\nssl-ca = /etc/mysql/ssl/p8test-chain.pem\nssl-cert = /etc/mysql/ssl/p8test.pem\nssl-key = /etc/mysql/ssl/p8test-key.pem\nrequire_secure_transport = ON\n",
+   "stderr": ""
+  },
+  {
+   "id": "apparmor-allows-datadir-and-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/srv/mysql/ r,\n/srv/mysql/** rwk,\n/etc/mysql/ssl/p8test-chain.pem r,\n/etc/mysql/ssl/p8test.pem r,\n/etc/mysql/ssl/p8test-key.pem r,\n/usr/sbin/mysqld (enforce)\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.5,
+ "node": "ubuntu",
+ "duration_s": 103.8
+}
