@@ -1,0 +1,21 @@
+{
+ "class": "ssl_postfix",
+ "at": "20261116T231644Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "private-key-installed-root-only: ssl_postfix.pp:5-9 passes sslprefix p8test as myprefix with letsencrypt_certificate false, so ssl_base.pp:77-78 gives key_file /etc/ssl/private/p8test.key and ssl_base.pp:85-91 sets mode 0600 with owner/group defaulting to root; the stat probe expecting 'root root 600' tests exactly that",
+  "postfix-bundle-cert-then-intermediate: ssl_base.pp:79-81 gives bundle_file /etc/ssl/certs/p8test.postfix.bundle.crt from p8test.crt (fragment order 01) then p8test.intermediate.crt (order 02), and the concat at 100-107 sets mode 0644 with owner root; the probe checks root 644, two certificates, and a first-certificate subject of CN=p8test.invalid (the fixture's server cert), so it tests the declared file, mode and order",
+  "bundle-certificate-matches-the-key: ssl_base.pp:77-81 sources the key from <prefix>.key and the bundle's first cert from <prefix>.crt, so with the fixture's matching pair the installed key and the bundle's first cert share a public key. The probe requires both files to exist (so empty input cannot match) and compares the public-key hashes. The mismatch swaps in only the key (the node's own Puppet agent private key, a real and different key that exists on the reverted node) and keeps the certificate, so the verdict must change; it failed after apply as required. All probes are read-only and local; there are no invariants or mutates"
+ ],
+ "review_s": 90.5,
+ "check_file_sha256": "d243311831c925118980b54ff45c4d9fb83300e30dfdad400fee05d861dadf67",
+ "reviewer_result": "20261116T231514Z-reviewer",
+ "author_result": "20261116T231348Z-author",
+ "findings": []
+}
