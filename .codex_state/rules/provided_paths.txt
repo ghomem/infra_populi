@@ -5,3 +5,4 @@
 # Format: <absolute path prefix> <provider class | package:<name>> — <evidence>
 /etc/nginx nginx — puppet-nginx 8.4.0 class nginx installs the nginx package (Ubuntu: /etc/nginx/conf.d, sites-enabled)
 /usr/bin/dconf package:dconf-cli — Ubuntu's dconf-cli package ships /usr/bin/dconf (gnome_lock_screen installs it and its exec requires Package['dconf-cli']; batch 4)
+/etc/postfix package:postfix — Ubuntu's postfix package creates /etc/postfix (postfix_smtp_node installs it; its files subscribe to Package['postfix']; batch 4)
