@@ -1,0 +1,21 @@
+{
+ "class": "sync",
+ "at": "20261116T190201Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "bandwidth-limit-converted (sync.sh.erb:24): baseline line RSYNCOPTS=\"-av --partial --delete${BWLIMIT_OPT}\" is matched literally by the expect's RSYNCOPTS line; rendered verbatim by ERB",
+  "script-carries-the-parameters (sync.sh.erb:13-16): REMOTEUSER/LOCALDIR/REMOTEDIR/SUFFIX render @remoteuser/@localdir/@remotedir/@suffix; expect values p8testuser, /var/tmp/p8test-sync, /srv/p8test, -p8test match the params fixture exactly",
+  "bandwidth-limit-converted (sync.sh.erb:17): BWLIMIT_OPT renders @bwlimit_opt, which sync.pp:17-24 sets to ' --bwlimit=' + sprintf('%.2f', 10*1e6/(8*1048576)) + 'm' = ' --bwlimit=1.19m' for fixture bwlimit_mbitps=10 (computed independently)"
+ ],
+ "review_s": 60.1,
+ "check_file_sha256": "d92717c9b9b9f752a2af5884e0e4d35feac6ec6158998ba9f37aefdbfbc50975",
+ "reviewer_result": "20261116T190101Z-reviewer",
+ "author_result": "20261116T185953Z-author",
+ "findings": []
+}
