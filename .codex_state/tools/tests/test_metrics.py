@@ -211,3 +211,23 @@ def test_tracked_history_is_zero_human_and_fully_attributed():
             b = backfill[(r["class"], r["attempt"])]
             assert b["human"] == 0 and b["basis"]
             assert b["advisor"] >= r.get("human_interventions", 0)
+
+
+# HQ NAT review F: bytes received on the node's NIC1 per revert and per harness run, folded per class.
+def test_nic1_bytes_fold_per_revert_and_harness_and_show_in_the_batch_report(env, capsys):
+    metrics.add_event("k", "revert", {"total_s": 17.0, "nic1_rx_bytes": 2_500_000})
+    metrics.add_event("k", "harness", {"rc": 0, "duration_s": 40, "nic1_rx_bytes": 41_000_000})
+    metrics.add_event("k", "revert", {"total_s": 18.0, "nic1_rx_bytes": 2_500_000})
+    metrics.add_event("k", "review", {"verdict": "PASS", "check_s": 5})
+    metrics.main(["close", "k", "--outcome", "PASS", "--path", "syntax-work", "--no-commit"])
+    (record,) = metrics.read_jsonl(metrics.runs_path())
+    assert record["nic1_rx_bytes"] == {"reverts": [2_500_000, 2_500_000], "harness": [41_000_000]}
+    metrics.main(["batch-report", "k"])
+    out = capsys.readouterr().out
+    assert "NIC1 rx MB reverts / harness" in out and "| 5.0 / 41.0 |" in out
+
+
+def test_rx_text_marks_unreadable_counters_and_older_records():
+    assert metrics.rx_text({"nic1_rx_bytes": {"reverts": [1_000_000, None], "harness": [3_000_000]}}) == "? / 3.0"
+    assert metrics.rx_text({"nic1_rx_bytes": {"reverts": [], "harness": []}}) == "? / ?"
+    assert metrics.rx_text({}) == "–"  # records before HQ NAT review F

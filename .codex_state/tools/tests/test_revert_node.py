@@ -181,6 +181,17 @@ def test_the_nat_asserts_pass_on_the_default_stub_and_follow_the_route_interface
     proc = lab.run([SCRIPT])
     assert proc.returncode == 0, proc.stderr
 
+
+# HQ NAT review F: REVERT_METRICS carries the bytes NIC1 received since the restore's boot, read on the default-route
+# interface; an unreadable counter is null and never fails the revert.
+@pytest.mark.parametrize("stdout, value", [("123456789\n", "123456789"), ("", "null")])
+def test_revert_metrics_carry_nic1_bytes_from_the_route_interface(lab, stdout, value):
+    lab.world["ssh"].insert(0, {"match": r"statistics/rx_bytes", "stdout": stdout})
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 0, proc.stderr
+    assert f'"nic1_rx_bytes":{value}}}' in proc.stdout.strip().splitlines()[-1]
+    assert any("cat /sys/class/net/enp0s3/statistics/rx_bytes" in " ".join(c) for c in lab.calls("ssh"))
+
 @pytest.mark.parametrize("line", ["W: Failed to fetch http://archive.ubuntu.com/ubuntu/dists/noble/InRelease",
                                   "Err:1 http://archive.ubuntu.com noble InRelease\n  Temporary failure resolving 'archive.ubuntu.com'",
                                   "E: Some index files failed to download."])

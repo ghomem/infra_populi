@@ -258,6 +258,10 @@ def fold(cls: str, events: list[dict], records: list[dict], outcome: str, path: 
         "executor": (" ".join(str(usage[-1].get(k)) for k in ("cli_version", "model", "effort"))
                      if usage and usage[-1].get("model") else None),
         "reverts": len(reverts), "revert_s": [r.get("total_s") for r in reverts],
+        # HQ NAT review F: bytes received on the node's NIC1, per revert (boot + package refresh) and per harness run
+        # (its agent runs); None where a counter was unreadable
+        "nic1_rx_bytes": {"reverts": [r.get("nic1_rx_bytes") for r in reverts],
+                          "harness": [h.get("nic1_rx_bytes") for h in harness]},
         "harness_runs": len(harness), "harness_green": sum(1 for h in harness if h.get("rc") == 0),
         "harness": [{k: h.get(k) for k in ("rc", "revert_first", "run1_events", "duration_s", "reason")} for h in harness],
         "agent_runs": [a for h in harness for a in h.get("agent_runs", [])],
@@ -346,6 +350,15 @@ def intervention_text(records: list[dict]) -> str:
     return ", ".join(out)
 
 
+def rx_text(record: dict) -> str:
+    """HQ NAT review F: NIC1 bytes as `sum of reverts / sum of harness runs` in MB; – for records before it existed."""
+    rx = record.get("nic1_rx_bytes")
+    if not rx:
+        return "–"
+    mb = lambda xs: "?" if not xs or any(x is None for x in xs) else f"{sum(xs) / 1e6:.1f}"  # noqa: E731
+    return f"{mb(rx['reverts'])} / {mb(rx['harness'])}"
+
+
 def run2_text(record: dict) -> str:
     seen = [r for r in record.get("run2_expected", []) if r]
     if not seen:
@@ -362,9 +375,9 @@ def cmd_batch_report(classes: list[str]) -> int:
     rows, missing = [], [c for c in classes if c not in latest]
     m = lambda v: "–" if v is None else (f"{v / 60:.1f} min" if v >= 60 else f"{v:.0f} s")  # noqa: E731
     print("| class | path | wall (dispatch→verdict) | prep | pregate | harness | codex | record | review | wait | "
-          "Codex runs (s, uncached tok, calls) | reverts (median s) | interventions codex/advisor/human | reviewer | "
-          "expected run-2 events |")
-    print("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|---|---|")
+          "Codex runs (s, uncached tok, calls) | reverts (median s) | NIC1 rx MB reverts / harness | "
+          "interventions codex/advisor/human | reviewer | expected run-2 events |")
+    print("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|---|---|---|")
     for c in classes:
         if c not in latest:
             continue
@@ -377,7 +390,7 @@ def cmd_batch_report(classes: list[str]) -> int:
         rows.append(r)
         print(f"| {c} | {r.get('path')} | {m(ph.get('wall_s'))} | {m(ph.get('prep_s'))} | {m(ph.get('pregate_s'))} | "
               f"{m(ph.get('harness_s'))} | {m(ph.get('codex_s'))} | {m(ph.get('record_s'))} | {m(ph.get('review_s'))} | "
-              f"{m(ph.get('wait_s'))} | {codex} | {len(rs)} ({median(rs)}) | "
+              f"{m(ph.get('wait_s'))} | {codex} | {len(rs)} ({median(rs)}) | {rx_text(r)} | "
               f"{'/'.join('?' if v is None else str(v) for v in interventions(r).values())} | "
               f"{reviews[-1]['verdict'] if reviews else '–'} | {run2_text(r)} |")
     greens = [r for r in rows if r["outcome"] in ("GREEN", "PASS")]

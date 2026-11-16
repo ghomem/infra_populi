@@ -1365,3 +1365,13 @@ too; other commits keep the fast subset. Cause: the lab_vm.sh commit (516b455) l
   on NAT, not the 192.168.56.10 the node uses). Proof and limit in upstream_defects.md.
 - **New lab VMs (HQ G):** every `p8lab-*` VM gets NIC1 NAT with the host resolver, and NIC2 host-only vboxnet0.
 - **Non-A DNS (HQ D):** MX and TXT queries resolve through the NAT proxy on the master.
+
+## 2026-11-16 — HQ NAT review F: bytes received on the node's NIC1, per revert and per class
+- **revert_node.sh** adds `nic1_rx_bytes` to REVERT_METRICS: the default-route interface's `rx_bytes` at the end of the
+  revert, so the boot and the package refresh after a restore.
+- **test_class.sh** adds `nic1_rx_bytes` to the harness event: the counter's change from just before agent run 1 to
+  the end of the harness, so what the agent runs downloaded. A counter that went down (a reboot) gives null.
+- **metrics.py close** folds both lists into the record, `nic1_rx_bytes: {reverts, harness}`. The batch report has a
+  column "NIC1 rx MB reverts / harness"; records from before this change show –.
+- **Purpose:** the data for HQ's package-cache decision before the 23rd. These are metrics only: an unreadable counter
+  is null and never fails a revert or a run.

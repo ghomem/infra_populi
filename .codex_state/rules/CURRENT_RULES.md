@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-84 entries; 6 marked superseded (in whole or part); newest first.
+85 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-16 — HQ NAT review F: bytes received on the node's NIC1, per revert and per class
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-16 — Lab NIC1 → VirtualBox NAT (lab-network-nat.md, HQ step review A–J)
 - (no numbered/Rule/Decision lines; read the entry)

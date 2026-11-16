@@ -188,6 +188,26 @@ def test_harness_writes_revert_and_harness_metrics_events_on_green_and_red(lab):
     assert last["kind"] == "harness" and last["data"]["rc"] == 1 and "Agent run 1 failed" in last["data"]["reason"]
 
 
+
+# HQ NAT review F: the revert reports the bytes its boot and package refresh received on NIC1; the harness the bytes
+# its agent runs received (counter delta); a counter that went down (a reboot) gives no figure.
+def test_revert_and_harness_events_carry_nic1_bytes(lab):
+    import json
+    agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 0, "stdout": APPLIED})
+    lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "stdout":
+        "COVERAGE puppet_infrastructure::puppet_backup: 2 concrete resources (+1 defined-type instances)\n"})
+    lab.world["ssh"].insert(0, {"match": r"statistics/rx_bytes", "outputs": [
+        {"stdout": "50000000\n"}, {"stdout": "50000000\n"}, {"stdout": "80000000\n"}]})  # revert, harness start, end
+    assert lab.run([SCRIPT, "--revert-first", "puppet_infrastructure::puppet_backup"]).returncode == 0
+    events = [json.loads(l) for l in (lab.root / "metrics" / "events.jsonl").read_text().splitlines()]
+    assert events[0]["kind"] == "revert" and events[0]["data"]["nic1_rx_bytes"] == 50_000_000
+    assert events[1]["kind"] == "harness" and events[1]["data"]["nic1_rx_bytes"] == 30_000_000
+    agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 0, "stdout": APPLIED})
+    lab.world["ssh"][0] = {"match": r"statistics/rx_bytes", "outputs": [{"stdout": "90000000\n"}, {"stdout": "1000\n"}]}
+    lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"])  # the counter went down between start and end
+    last = json.loads((lab.root / "metrics" / "events.jsonl").read_text().splitlines()[-1])
+    assert last["kind"] == "harness" and last["data"]["nic1_rx_bytes"] is None
+
 def test_fixture_runs_write_no_metrics(lab):
     agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 0, "stdout": APPLIED})
     assert harness(lab).returncode == 0

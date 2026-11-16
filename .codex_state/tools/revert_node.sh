@@ -319,13 +319,19 @@ fi
 
 t_end="$(now_ms)"
 
+# Bytes received on NIC1 since this restore's boot: the boot and the package refresh (HQ NAT review F: the data for a
+# package-cache decision). Metrics only: an unreadable counter is null, never a failure.
+# shellcheck disable=SC2029  # route_dev was read from the node above
+nic1_rx="$(ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" "cat /sys/class/net/${route_dev}/statistics/rx_bytes" 2>/dev/null)" || nic1_rx=""
+[[ "$nic1_rx" =~ ^[0-9]+$ ]] || nic1_rx="null"
+
 node_state_token | python3 "${TOOLS_DIR}/records.py" revert-mark "$NODE_SNAPSHOT" --node "$NODE_KIND" ||
   fail "Could not read or record the node's state token after the revert."
 
 printf 'SUCCESS: node %q restored to %q; host-only path, SSH, hostname, and %s:%s connectivity verified.\n' \
   "$NODE_VM" "$NODE_SNAPSHOT" "$MASTER_SERVICE_HOST" "$MASTER_SERVICE_PORT"
-printf 'REVERT_METRICS {"node":"%s","snapshot":"%s","total_s":%s,"master_check_s":%s,"poweroff_s":%s,"restore_s":%s,"boot_to_ssh_s":%s,"apt_update_s":%s,"verify_s":%s}\n' \
+printf 'REVERT_METRICS {"node":"%s","snapshot":"%s","total_s":%s,"master_check_s":%s,"poweroff_s":%s,"restore_s":%s,"boot_to_ssh_s":%s,"apt_update_s":%s,"verify_s":%s,"nic1_rx_bytes":%s}\n' \
   "$NODE_KIND" "$NODE_SNAPSHOT" \
   "$(ms_to_s $((t_end - t_start)))" "$(ms_to_s $((t_master - t_start)))" "$(ms_to_s $((t_off - t_master)))" \
   "$(ms_to_s $((t_restore - t_off)))" "$(ms_to_s $((t_ssh - t_restore)))" \
-  "$(ms_to_s $((t_apt - t_ssh)))" "$(ms_to_s $((t_end - t_apt)))"
+  "$(ms_to_s $((t_apt - t_ssh)))" "$(ms_to_s $((t_end - t_apt)))" "$nic1_rx"

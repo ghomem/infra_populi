@@ -527,14 +527,27 @@ agent_run_summary() {
     python3 "$METRICS_TOOL" agent-summary 2>/dev/null)" && HARNESS_AGENT_RUNS+=("$summary") || true
 }
 
+# Bytes received on the node's NIC1 (the default-route interface) since its boot; empty when unreadable. The harness
+# records the delta across its agent runs per class (HQ NAT review F: the data for a package-cache decision).
+node_nic1_rx() {
+  local rx
+  # shellcheck disable=SC2016  # expanded on the node
+  rx="$(timeout 30 ssh "$NODE_HOST" 'dev="$(ip -4 route show default | awk "{print \$5; exit}")"; cat "/sys/class/net/${dev}/statistics/rx_bytes"' 2>/dev/null)" || rx=""
+  [[ "$rx" =~ ^[0-9]+$ ]] && printf '%s' "$rx"
+  return 0
+}
+
 harness_metrics_event() {
-  local rc="$1" cls json
+  local rc="$1" cls json rx_end=""
   [[ ${#HARNESS_CLASSES[@]} -gt 0 && -z "${FIXTURE_NAME:-}" ]] || return 0
+  [[ -z "${HARNESS_RX_START:-}" ]] || rx_end="$(node_nic1_rx)"
   json="$(P8_RUN2_SOURCES="$(printf '%s\n' "${EXPECTED_RUN2_SOURCES[@]-}")" P8_RUN2_HITS="${EXPECTED_RUN2_HITS:-}" python3 - "$rc" \
       "$HARNESS_REVERT_FIRST" "${HARNESS_RUN1_EVENTS:-null}" "${HARNESS_START/,/.}" "${EPOCHREALTIME/,/.}" \
-      "$HARNESS_REASON" "${HARNESS_AGENT_RUNS[@]}" <<'PY' 2>/dev/null
+      "$HARNESS_REASON" "${HARNESS_RX_START:-}" "$rx_end" "${HARNESS_AGENT_RUNS[@]}" <<'PY' 2>/dev/null
 import json, os, sys
-rc, rf, r1, t0, t1, reason, *runs = sys.argv[1:]
+rc, rf, r1, t0, t1, reason, rx0, rx1, *runs = sys.argv[1:]
+# a counter that went down means the node rebooted in between: no figure rather than a wrong one
+rx = int(rx1) - int(rx0) if rx0.isdigit() and rx1.isdigit() and int(rx1) >= int(rx0) else None
 own, inherited = [], {}
 for src in filter(None, os.environ.get("P8_RUN2_SOURCES", "").splitlines()):  # one per line: refs contain spaces
     kind, _, rest = src.partition(":")
@@ -545,7 +558,7 @@ for src in filter(None, os.environ.get("P8_RUN2_SOURCES", "").splitlines()):  # 
         inherited.setdefault(cls, []).append(ref)
 hits = os.environ.get("P8_RUN2_HITS", "")
 print(json.dumps({"rc": int(rc), "revert_first": rf == "1", "run1_events": None if r1 in ("", "null") else int(r1),
-                  "duration_s": round(float(t1) - float(t0), 1), "reason": reason or None,
+                  "duration_s": round(float(t1) - float(t0), 1), "reason": reason or None, "nic1_rx_bytes": rx,
                   "run2_expected": ({"hits": int(hits) if hits else 0, "own": own, "inherited": inherited}
                                     if own or inherited else None),
                   "agent_runs": [json.loads(r) for r in runs]}))
@@ -783,6 +796,7 @@ main() {
     echo "NODE_FRESH: no (${stale_reason}); record_green.sh will refuse this run's GREEN — use --revert-first" >&2
   fi
 
+  HARNESS_RX_START="$(node_nic1_rx)"
   echo "==> Running puppet agent (run 1 may change; run 2 must exit 0 with no events; timeout ${AGENT_TIMEOUT_SECONDS}s each)"
   local out1 out2 rc1 rc2 offending run1_events
 
