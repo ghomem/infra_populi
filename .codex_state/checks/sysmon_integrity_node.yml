@@ -1,0 +1,35 @@
+# Phase 3 checks for puppet_infrastructure::sysmon_integrity_node (class; required_base filesystem_base). It installs
+# a Nagios check that verifies `md5sum` lines from its checklist parameter (the master's $integrity_checklist, joined by
+# ':') against the files present on the node. Fixture (params, never committed): checklist = one line for a fixture
+# file, "<md5 of 'p8test integrity fixture\n'>  /var/tmp/p8test-integrity.txt".
+class: sysmon_integrity_node
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.1
+  notes: "Wall clock 23:50:26Z to 23:50:26Z 2026-11-16, outside the worktree while another review ran."
+checks:
+  - id: check-script-carries-the-checklist
+    what: the Nagios integrity check (root 0755) embeds the checklist parameter
+    control: negative
+    derived_from:
+      - {path: manifests/sysmon_integrity_node.pp, lines: "9-13", text: "content => template('puppet_infrastructure/sysmon/nagios-integrity.sh.erb'),"}
+      - {path: templates/sysmon/nagios-integrity.sh.erb, lines: "35", text: "<%= @checklist %>"}
+    probe: |
+      f=/opt/puppet-infrastructure/bin/nagios-integrity.sh
+      stat -c '%U %a' "$f"; bash -n "$f" && grep -c '^f9d861282c581aefc93a5475254cec31  /var/tmp/p8test-integrity\.txt$' "$f"
+    expect: {rc: 0, stdout: "\\Aroot 755\\n1\\n\\Z"}
+
+  - id: check-ok-when-the-file-matches
+    what: >-
+      the exercise: with the listed file present and unchanged, the check verifies its checksum and reports OK (exit 0)
+    control: negative
+    derived_from:
+      - {path: templates/sysmon/nagios-integrity.sh.erb, lines: "46", text: "echo $ITEM | md5sum -c --status -"}
+      - {path: templates/sysmon/nagios-integrity.sh.erb, lines: "54", text: "echo \"OK: exit code $RC_OK\""}
+    mutates: creates /var/tmp/p8test-integrity.txt with the fixture content the checklist line was computed from
+    probe: |
+      printf 'p8test integrity fixture\n' | install -m 0644 /dev/stdin /var/tmp/p8test-integrity.txt
+    effect: |
+      /opt/puppet-infrastructure/bin/nagios-integrity.sh; echo "rc=$?"
+    expect: {rc: 0, stdout: "\\AOK: exit code 0\\nrc=0\\n\\Z"}
