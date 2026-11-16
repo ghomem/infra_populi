@@ -177,3 +177,53 @@ def test_run2_justification_rules():
     bare = header + "# Expected run-2 events: Exec[apt_update]\n" + body
     assert "gives no justification" in rc.run2_justification_problems("packages_base", bare)[0]
     assert "plan lists none" in rc.run2_justification_problems("backup", ok.replace("packages_base", "backup"))[0]
+
+
+# HQ 2026-11-16: --fresh on a class whose migrate commit is not HEAD (bar record_green's own record commits) is a usage
+# error — refused before any check or harness run, no draft, and no verdict can be recorded from an older draft.
+def fake_history(monkeypatch, later):
+    monkeypatch.setattr(rc, "migrate_commit", lambda cls: ("c0ffee" * 6 + "abcd", f"P8: migrate puppet_infrastructure::{cls}"))
+    monkeypatch.setattr(rc, "git", lambda *a, **k: "".join(f"{s}\n" for s in later))
+
+
+@pytest.mark.parametrize("later", [[], ["P8: regenerate migration order after x"],
+                                   ["P8: record review x", "P8: regenerate migration order after x"]])
+def test_fresh_is_valid_right_after_a_migration(monkeypatch, later):
+    fake_history(monkeypatch, later)
+    assert rc.fresh_usage_error("x") is None
+
+
+@pytest.mark.parametrize("later", [["P8: engine: b4-A7 — network steps"], ["P8: record x"] * 4])
+def test_fresh_on_a_long_recorded_class_is_a_usage_error(monkeypatch, later):
+    fake_history(monkeypatch, later)
+    assert "is not HEAD" in rc.fresh_usage_error("x") and "Re-run without --fresh" in rc.fresh_usage_error("x")
+
+
+def test_refused_fresh_check_runs_nothing_writes_no_draft_and_blocks_the_verdict(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(rc, "DRAFTS", tmp_path)
+    old = tmp_path / "x.20261110T000000Z.draft.json"  # a draft from an earlier, valid check
+    old.write_text(json.dumps({"class": "x", "baseline": "b", "checks": {}, "diffs": {}}))
+    fake_history(monkeypatch, ["P8: engine: something later"])
+
+    def boom(*a, **k):
+        raise AssertionError("run_checks must not run (no harness, no node revert)")
+    monkeypatch.setattr(rc, "run_checks", boom)
+    assert rc.main(["check", "x", "--fresh"]) == 2
+    assert "USAGE ERROR: --fresh on x" in capsys.readouterr().err
+    assert sorted(p.name for p in tmp_path.glob("*.draft.json")) == [old.name]  # no new draft
+    import os
+    os.utime(old, (old.stat().st_mtime - 60,) * 2)
+    with pytest.raises(SystemExit, match="was refused"):
+        rc.cmd_verdict(["x", "--faithful", "ok", "--evidence", "e"])
+    assert not (tmp_path.parent / "reviews").exists()
+
+
+def test_a_new_valid_check_clears_the_refusal(tmp_path, monkeypatch):
+    import os
+    monkeypatch.setattr(rc, "DRAFTS", tmp_path)
+    refused = tmp_path / "x.refused"
+    refused.write_text("t --fresh on x: ...\n")
+    os.utime(refused, (refused.stat().st_mtime - 60,) * 2)
+    newer = tmp_path / "x.20261116T000000Z.draft.json"
+    newer.write_text("{}")
+    assert rc.latest_draft("x") == newer

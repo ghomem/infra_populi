@@ -1150,3 +1150,15 @@ Steps executed so far (escalations/lab-network-static.md):
 - **Documents:** CLAUDE.md Facts, hazards.md item 12 and the revert_node.sh header follow.
 - **Next:** the canary (step 8), then the snapshot refresh (step 9) and the Wi-Fi-off proof (step 10). The `-wifi`
   aliases stay until step 10 passes.
+
+## 2026-11-16 — HQ: a misused `--fresh` is a usage error, not a verdict
+`review_class.py check <class> --fresh` is the post-migration mode. It is valid only while the class's migrate commit
+is HEAD, or followed by nothing but record_green's own record/regenerate commits (at most 3).
+- **Anything else is refused before any check or harness run** (so no node revert happens) with `USAGE ERROR … Re-run
+  without --fresh`, exit 2, and no draft.
+- **No verdict from an older draft:** a `<class>.refused` marker makes `verdict` refuse until a new valid `check`
+  writes a newer draft.
+- **reviewer.md:** on a USAGE ERROR, record no verdict and report the line.
+- **Cause:** the 2026-11-10 canary verdict for firewall_secure (FAIL on `git` only, 27b6cdf), where the mode, not the
+  class, was invalid. Proven on the real repo: `check firewall_secure --fresh` now exits 2 and the node is not
+  reverted. 6 tests.

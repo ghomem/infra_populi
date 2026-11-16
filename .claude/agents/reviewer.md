@@ -20,6 +20,8 @@ the check output names the baseline it used).
 
 Steps, all required:
 1. Run `python3 .codex_state/tools/review_class.py check <class>` (append `--fresh` if you were given it).
+   If it exits 2 with `USAGE ERROR` (e.g. `--fresh` on a class whose migrate commit is no longer HEAD), stop: record
+   no verdict and report exactly that one line.
    It reverts the node, runs the harness (`--revert-first`, gate v2, coverage) and prints the mechanical
    checks plus two diffs. It takes a few minutes; let it finish.
 2. Judge FAITHFULNESS from the diffs yourself:

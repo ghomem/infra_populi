@@ -5,7 +5,9 @@ prints commit authors or commit bodies (rule 9: the reviewer does not learn who 
 
   review_class.py check <class> [--no-harness] [--fresh]
       Mechanical checks + the two diffs. Writes a draft to .codex_state/logs/reviews/ (untracked).
-      --fresh: the migrate commit must be at HEAD or under at most 3 record/regenerate commits.
+      --fresh: the post-migration mode. Valid only while the migrate commit is HEAD or followed by nothing but the
+      record/regenerate commits record_green makes (at most 3); anything else is a USAGE ERROR (HQ 2026-11-16):
+      exit 2 before any check or harness run, no draft, and `verdict` refuses until a new `check` runs.
   review_class.py verdict <class> --faithful ok|fail --evidence TEXT [--evidence TEXT ...]
                                   [--justify-run1 TEXT]
       Combines the latest draft with the reviewer's faithfulness judgement and writes the persisted
@@ -288,7 +290,19 @@ def expanded_classes(cls: str) -> list[str]:
 
 # ----------------------------------------------------------------------------- checks
 
-def run_checks(cls: str, harness: bool, fresh: bool) -> dict:
+def fresh_usage_error(cls: str) -> str | None:
+    found = migrate_commit(cls)
+    if not found:
+        return f"--fresh on {cls}: no `P8: migrate puppet_infrastructure::{cls}` commit"
+    later = git("log", "--format=%s", f"{found[0]}..HEAD").splitlines()
+    if len(later) > 3 or any(not s.startswith(RECORD_SUBJECTS) for s in later):
+        return (f"--fresh on {cls}: its migrate commit {found[0][:12]} is not HEAD ({len(later)} later commits, "
+                f"latest {later[:3]}); --fresh is only for the review right after a migration. "
+                f"Re-run without --fresh to re-verify a recorded class")
+    return None
+
+
+def run_checks(cls: str, harness: bool) -> dict:
     base = baseline.for_class(cls)
     out: dict = {"class": cls, "baseline": f"{base.name} ({base.commit[:7]})", "checks": {}, "diffs": {}}
     c = out["checks"]
@@ -310,8 +324,6 @@ def run_checks(cls: str, harness: bool, fresh: bool) -> dict:
     if head != origin:
         problems.append("HEAD != origin/main")
     later = [s for s in git("log", "--format=%s", f"{commit}..HEAD").splitlines()]
-    if fresh and (len(later) > 3 or any(not s.startswith(RECORD_SUBJECTS) for s in later)):
-        problems.append(f"--fresh: migrate commit is under {len(later)} later commits: {later[:5]}")
     out["commits_since_migrate"] = len(later)
     c["git"] = result("fail" if problems else "ok", problems or f"migrate commit {commit[:12]}; {len(later)} commits since")
 
@@ -491,6 +503,10 @@ def latest_draft(cls: str) -> Path:
     drafts = sorted(DRAFTS.glob(f"{cls}.*.draft.json"))
     if not drafts:
         raise SystemExit(f"ERROR: no draft for {cls}; run `check` first")
+    refused = DRAFTS / f"{cls}.refused"
+    if refused.exists() and refused.stat().st_mtime >= drafts[-1].stat().st_mtime:
+        raise SystemExit(f"ERROR: the last `check` of {cls} was refused ({refused.read_text().strip()}); "
+                         "no verdict is recorded — run `check` again in a valid mode")
     return drafts[-1]
 
 
@@ -507,8 +523,15 @@ def decide(checks: dict, faithful: str, justify_run1: str | None) -> str:
 
 def cmd_check(argv: list[str]) -> int:
     cls = argv[0]
+    if "--fresh" in argv:
+        error = fresh_usage_error(cls)
+        if error:
+            DRAFTS.mkdir(parents=True, exist_ok=True)
+            (DRAFTS / f"{cls}.refused").write_text(f"{dt.datetime.now(dt.timezone.utc):%Y-%m-%dT%H:%M:%SZ} {error}\n")
+            print(f"USAGE ERROR: {error}", file=sys.stderr)
+            return 2
     started = dt.datetime.now(dt.timezone.utc)
-    data = run_checks(cls, harness="--no-harness" not in argv, fresh="--fresh" in argv)
+    data = run_checks(cls, harness="--no-harness" not in argv)
     data["check_s"] = round((dt.datetime.now(dt.timezone.utc) - started).total_seconds(), 1)
     data["checked_at"] = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     DRAFTS.mkdir(parents=True, exist_ok=True)
