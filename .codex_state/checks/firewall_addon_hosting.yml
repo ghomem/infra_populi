@@ -1,0 +1,53 @@
+# Phase 3 checks for puppet_infrastructure::firewall_addon_hosting (class; required_external firewall; re-migrated
+# 2026-11-16 with the ruled upstream-defect fix: OUTPUT accept for the master on 8140, destination
+# $server_facts['servername'] resolved on the agent). Fixture: none (no parameters).
+# The ruled rule is not baseline text, so its checks cite the baseline lines it complements (the OUTPUT drop policy
+# that would otherwise cut the agent) and the ruled change is named in each `what`.
+class: firewall_addon_hosting
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 0.4
+  notes: "Wall clock 21:00:40Z to 21:01:02Z 2026-11-16, outside the worktree while the Phase 1 review ran; three validator objections fixed."
+checks:
+  - id: output-policy-drop
+    what: the OUTPUT chain's policy is DROP (the class overrides the firewall class's default)
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_hosting.pp, lines: "13-14", text: "firewallchain { 'OUTPUT:filter:IPv4':  ensure => present, purge => true, policy => drop }"}
+    probe: iptables -S OUTPUT | head -1
+    expect: {rc: 0, stdout: "\\A-P OUTPUT DROP\\n\\Z"}
+
+  - id: related-established-dns-ntp-accepted
+    what: OUTPUT accepts RELATED/ESTABLISHED, DNS (udp/53) and NTP (udp/123)
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_hosting.pp, lines: "15", text: "firewall { '149 OUTPUT ACCEPT RELATED ESTABLISHED': chain => 'OUTPUT', state => [ 'RELATED', 'ESTABLISHED'] , action => 'accept' }"}
+      - {path: manifests/firewall_addon_hosting.pp, lines: "18-19", text: "firewall { '150 OUTPUT DNS': chain => 'OUTPUT', proto => 'udp', dport => '53' ,  action => 'accept' }"}
+    probe: |
+      iptables -S OUTPUT | grep -E -- '--comment "(149|150|151) ' | sed -E 's/ -m comment --comment "[^"]*"//'
+    expect: {rc: 0, stdout: "\\A-A OUTPUT -p tcp -m state --state RELATED,ESTABLISHED -j ACCEPT\\n-A OUTPUT -p udp -m udp --dport 53 -j ACCEPT\\n-A OUTPUT -p udp -m udp --dport 123 -j ACCEPT\\n\\Z"}
+
+  - id: master-rule-follows-the-nodes-resolution
+    what: >-
+      the ruled rule 152 accepts tcp/8140 to exactly the address the node resolves for the server it is configured to
+      use (servername resolved on the agent, not the master's serverip)
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_hosting.pp, lines: "13-14", text: "# override the default OUTPUT from the firewall class - can't touch this!"}
+    probe: |
+      s=$(awk -F' *= *' '$1 == "server" {print $2; exit}' /etc/puppetlabs/puppet/puppet.conf)
+      ip=$(getent ahostsv4 "$s" | awk 'NR==1 {print $1}')
+      iptables -S OUTPUT | grep -- '--comment "152 OUTPUT PUPPET MASTER"' | grep -q -- "-d $ip/32 -p tcp -m tcp --dport 8140" && echo "152 accepts tcp/8140 to the server's address ($ip)"
+    expect: {rc: 0, stdout: "\\A152 accepts tcp/8140 to the server's address \\(\\d+\\.\\d+\\.\\d+\\.\\d+\\)\\n\\Z"}
+
+  - id: new-outbound-tcp-dropped
+    what: >-
+      a new outbound TCP connection outside the accepted set is dropped; loopback traffic crosses OUTPUT, so a connect
+      to the node's own sshd on 127.0.0.1:22 shows it without leaving the node
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_hosting.pp, lines: "13-14", text: "firewallchain { 'OUTPUT:filter:IPv4':  ensure => present, purge => true, policy => drop }"}
+    probe: |
+      python3 -c 'import socket; socket.create_connection(("127.0.0.1", 22), 4)' 2>/dev/null && echo open || echo blocked
+    expect: {rc: 0, stdout: "\\Ablocked\\n\\Z"}

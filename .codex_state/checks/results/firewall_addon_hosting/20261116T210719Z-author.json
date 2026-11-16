@@ -1,0 +1,94 @@
+{
+ "class": "firewall_addon_hosting",
+ "role": "author",
+ "at": "20261116T210719Z",
+ "runner": "bf4d068",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "843f2ef63acb19a9d6f82a60d503d3de488038f8b6553918c7386f54ae3a1929",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "output-policy-drop",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "-P OUTPUT ACCEPT\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "related-established-dns-ntp-accepted",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "master-rule-follows-the-nodes-resolution",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "new-outbound-tcp-dropped",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "open\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "nation=>\"192.168.56.10/32\", :proto=>\"tcp\", :dport=>\"8140\", :jump=>\"ACCEPT\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\"}\u001b[0m\n\u001b[mNotice: firewall[152 OUTPUT PUPPET MASTER]: Creating: Ensuring changes to '152 OUTPUT PUPPET MASTER' persist\u001b[0m\n\u001b[mNotice: firewall[152 OUTPUT PUPPET MASTER]: Creating: Finished in 0.093481 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 11.73 seconds\u001b[0m\nRUN1_EVENTS: 6 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794863615'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.80 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::firewall_addon_hosting: 5 concrete resources (+0 defined-type instances)\n  Firewallchain[OUTPUT:filter:IPv4]\n  Firewall[149 OUTPUT ACCEPT RELATED ESTABLISHED]\n  Firewall[150 OUTPUT DNS]\n  Firewall[151 OUTPUT NTP]\n  Firewall[152 OUTPUT PUPPET MASTER]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP firewall_addon_hosting b7cc55a8e16a\n"
+ },
+ "applied": [
+  {
+   "id": "output-policy-drop",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P OUTPUT DROP\n",
+   "stderr": ""
+  },
+  {
+   "id": "related-established-dns-ntp-accepted",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A OUTPUT -p tcp -m state --state RELATED,ESTABLISHED -j ACCEPT\n-A OUTPUT -p udp -m udp --dport 53 -j ACCEPT\n-A OUTPUT -p udp -m udp --dport 123 -j ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "master-rule-follows-the-nodes-resolution",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "152 accepts tcp/8140 to the server's address (192.168.56.10)\n",
+   "stderr": ""
+  },
+  {
+   "id": "new-outbound-tcp-dropped",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "blocked\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.4,
+ "node": "ubuntu",
+ "duration_s": 382.2
+}
