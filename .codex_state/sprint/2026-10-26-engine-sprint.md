@@ -121,3 +121,4 @@ band commits from now on stash unrelated work first.
 | b4-A15 network step 10 PASS (Wi-Fi off); -wifi aliases removed; project complete | done | this commit | wlo1 DOWN + no default route: ssh both VMs (path asserted), node->master 8140, compile-only all PASS; laptop DHCP changed .203->.200 on return |
 | b4-B4 Phase 3 mismatch controls (HQ 2026-11-16 item 1) | done | this commit | mandatory for tool-verdict probes (detected), must fail after apply or the set is INVALID; pilots updated (ssh 3, nginx 8); 16 tests |
 | b4-doc documentation list: rsnapshot restore path (HQ 2026-11-16 item 4) | done | this commit | rules/documentation_list.md (single source) |
+| b4-NAT NIC1 bridged -> NAT plan (HQ 2026-11-16 item 5) | stopped for HQ review | this commit | escalations/lab-network-nat.md: natdnshostresolver1 on; node trial first; [HUMAN] modifyvm steps; node v4 (NAT in machine config), master v5 after hotspot acceptance (1 revert, 1 compile, 1 fixture) |
