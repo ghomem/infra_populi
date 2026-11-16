@@ -191,7 +191,7 @@ def test_repo_node_fixtures_exist_for_the_planned_classes(gen):
     assert rows["user_sysmon"].node_fixture == "sysmon_server"
     assert rows["user_samba"].node_fixture == "samba_dc_standin"
     assert rows["hashman_base"].node_fixture == "puppetserver_code_tree"  # batch 5: the class runs on the master
-    assert rows["hashman_web"].node_fixture == "puppetserver_code_tree"  # requires Class[hashman_base]
+    assert rows["hashman_web"].node_fixture == "hashman_master_standin"  # code tree + the site logo files
     assert sum(1 for r in rows.values() if r.node_fixture) == 4
 
 
@@ -200,7 +200,7 @@ def test_expected_run2_events_parse(gen):
     assert rows["packages_base"].expected_run2_events == ("Exec[apt_update]",)
     # every entry is a reviewed, justified exception (HQ 2026-11-10 ruling 1): keep this set explicit
     assert {n for n, r in rows.items() if r.expected_run2_events} == {"packages_base", "node_base", "nginx_frontend_domain",
-                                                                      "nginx_frontend"}
+                                                                      "nginx_frontend", "hashman_web"}
     assert rows["node_base"].expected_run2_events == ("Exec[apt_update]",)
 
 
