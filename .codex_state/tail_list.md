@@ -6,3 +6,4 @@ append-only (a lifted class gets a dated `lifted:` note, never a deletion).
 
 | class | needs | lifted by (node kind) | blocked since | evidence |
 |---|---|---|---|---|
+| openvpn_server | puppetserver must load puppet-filemapper's `puppetx/filemapper` (a ruby-load-path entry or server-libdir pluginsync on the master) | none: a master ruling, not a node (escalations/openvpn_server.md) | 2026-11-16 | blocked.txt category 1; puppetserver.log 18:43:54Z |
