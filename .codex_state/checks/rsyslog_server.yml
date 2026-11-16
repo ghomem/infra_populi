@@ -9,6 +9,7 @@ fixture: defaults
 authoring:
   minutes: 0.8
   corrections:
+    - "2026-11-16, after the FAIL review 20261116T193506Z (authoring, no finding): mutates names the /var/log/syslog line the exercise also writes; the timer check asserts the 00:00 calendar its description states (it equals the stock daily time, so the drop-in and 1 min accuracy remain the negative evidence)."
     - "2026-11-16, after run 20261116T193021Z (two authoring errors, behaviour as the baseline): systemctl show prints properties alphabetically (expect reordered); the rotation probe read seven lines for six expected (head -6)."
   notes: "Wall clock 19:28:58Z to 19:29:45Z 2026-11-16, outside the worktree while the Phase 1 review ran (four templates read; the node's timer state read)."
 checks:
@@ -63,7 +64,8 @@ checks:
       - {path: templates/rsyslog/logrotate.timer.override.epp, lines: "3-5", text: "AccuracySec=1min"}
     probe: |
       systemctl show logrotate.timer -p DropInPaths -p AccuracyUSec -p ActiveState
-    expect: {rc: 0, stdout: "\\AAccuracyUSec=1min\\nActiveState=active\\nDropInPaths=/etc/systemd/system/logrotate\\.timer\\.d/override\\.conf\\n\\Z"}
+      systemctl show logrotate.timer -p TimersCalendar | grep -oE 'OnCalendar=[^;]*[0-9]'
+    expect: {rc: 0, stdout: "\\AAccuracyUSec=1min\\nActiveState=active\\nDropInPaths=/etc/systemd/system/logrotate\\.timer\\.d/override\\.conf\\nOnCalendar=\\*-\\*-\\* 00:00:00\\n\\Z"}
 
   - id: host-logs-rotation-rule
     what: logrotate rotates the per-host logs daily, keeping all, uncompressed, date-suffixed
@@ -100,7 +102,9 @@ checks:
       - {path: templates/rsyslog/listener_simple.conf.epp, lines: "34-35", text: "action(type=\"omfile\" dynaFile=\"remote\" createDirs=\"on\")"}
     mutates: >-
       sends one RFC3164 line (host p8testremote, tag p8test) to 127.0.0.1:6514 over TLS with the node's own Puppet
-      certificate as the client certificate; rsyslogd creates /var/log/hosts/p8testremote/p8test.log
+      certificate as the client certificate; rsyslogd creates /var/log/hosts/p8testremote/p8test.log and, through the
+      stock /etc/rsyslog.d/50-default.conf (the listener's rules do not stop the message), appends the same line to
+      /var/log/syslog
     probe: |
       c=$(basename /etc/rsyslog.d/tls/*.key .key)
       { printf '<14>Nov 16 19:00:00 p8testremote p8test: p8test-remote-marker\n'; sleep 2; } | timeout 15 openssl s_client -quiet -connect 127.0.0.1:6514 -CAfile /etc/rsyslog.d/tls/ca.pem -cert "/etc/rsyslog.d/tls/$c.pem" -key "/etc/rsyslog.d/tls/$c.key" >/dev/null 2>&1; sleep 2
