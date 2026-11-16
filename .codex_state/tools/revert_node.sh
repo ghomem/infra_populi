@@ -7,14 +7,16 @@
 # Tracking this safety-critical lifecycle tool keeps that boundary and its
 # host assumptions reviewable. See DESIGN_DECISIONS.md.
 #
-# NOT host-portable as-is. Host-specific assumptions:
-#   node VM       ubuntu24-puppet8-Node
+# The NODE comes from the lab node inventory (.codex_state/lab/nodes.yml via nodes.py, HQ 2026-11-16 item 2):
+#   revert_node.sh [--node KIND] [--node-state]    (else P8_NODE, else the inventory default `ubuntu`)
+# Its VM must be ubuntu24-puppet8-Node or a p8lab-* VM, never the master. Default node: ubuntu24-puppet8-Node,
+# snapshot P8NODE_BASELINE_GREEN_v3 (v2 — GRUB_RECORDFAIL_TIMEOUT=2, apt timers off, NIC2 host-only vboxnet0 — plus
+# enp0s8 192.168.56.20/24 and hosts master -> 192.168.56.10). After every restore: Debian refreshes apt lists;
+# RedHat must show a valid subscription (HQ 2026-11-16 item 5) and refreshes the dnf metadata.
+#
+# Host-specific assumptions:
 #   master VM     Ubuntu24-puppet8-Master  (may start; never restore/power off/reset)
-#   node snapshot P8NODE_BASELINE_GREEN_v3 (offline, 2026-11-16: v2 — GRUB_RECORDFAIL_TIMEOUT=2, apt timers off,
-#                 NIC2 host-only vboxnet0 (sprint 3.1) — plus enp0s8 192.168.56.20/24 and hosts master ->
-#                 192.168.56.10, escalations/lab-network-static.md step 9);
-#                 its apt lists are refreshed after every restore (apt-get update)
-#   SSH aliases   puppet8node, puppet8master (host-only 192.168.56.20 / .10)
+#   SSH aliases   the node's alias (nodes.yml), puppet8master (host-only 192.168.56.10)
 #   Wi-Fi bridge  host interface wlo1 (NIC1: internet only; the engine reaches the node over host-only)
 #   master check  puppet8master.example.com:8140, opened from the node
 # Parameterizing these via environment variables is a known future improvement.
@@ -24,7 +26,7 @@
 # nothing. The master is never powered off, reset or restored by this script.
 # Last line on success: REVERT_METRICS {json} with phase timings (step 3.4).
 # Host-only path (lab-network plan, HQ step review A): after every restore the revert fails unless a fresh (-S none)
-# SSH to puppet8node comes from 192.168.56.1 to 192.168.56.20, enp0s8 holds 192.168.56.20/24 and the node resolves
+# SSH to the node comes from 192.168.56.1 to its hostonly_ip, the node holds that address and it resolves
 # puppet8master.example.com to 192.168.56.10.
 # Every successful revert marks the node's state token (kernel boot ID + hash of the agent's
 # last_run_summary) through records.py revert-mark; record_green.sh accepts a GREEN only if its harness
@@ -34,10 +36,7 @@
 
 set -euo pipefail
 
-readonly NODE_VM="ubuntu24-puppet8-Node"
 readonly MASTER_VM="Ubuntu24-puppet8-Master"
-readonly NODE_SNAPSHOT="P8NODE_BASELINE_GREEN_v3"
-readonly NODE_SSH_ALIAS="puppet8node"
 readonly MASTER_SSH_ALIAS="puppet8master"
 readonly MASTER_SERVICE_HOST="puppet8master.example.com"
 readonly MASTER_SERVICE_PORT="8140"
@@ -47,8 +46,8 @@ readonly POLL_INTERVAL_SECONDS=2
 readonly APT_UPDATE_TIMEOUT_SECONDS=180
 readonly ROUTE_TIMEOUT_SECONDS="${ROUTE_TIMEOUT_SECONDS:-60}"
 readonly LAPTOP_HOSTONLY_IP="192.168.56.1"
-readonly NODE_HOSTONLY_IP="192.168.56.20"
 readonly MASTER_HOSTONLY_IP="192.168.56.10"
+readonly DNF_TIMEOUT_SECONDS=300
 # HQ 2026-11-10 ruling 2: ssh through the ControlMaster shim (see sshmux/ssh).
 TOOLS_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 PATH="${TOOLS_DIR}/sshmux:${PATH}"
@@ -72,11 +71,27 @@ node_state_token() {
     'cat /proc/sys/kernel/random/boot_id; { sudo -n sha256sum /opt/puppetlabs/puppet/public/last_run_summary.yaml 2>/dev/null || echo absent; } | cut -d" " -f1'
 }
 
-if [[ "${1:-}" == "--node-state" ]]; then
+node_kind="" state_only=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --node) node_kind="${2:-}"; [[ -n "$node_kind" ]] || fail "--node needs a kind"; shift 2 ;;
+    --node-state) state_only=1; shift ;;
+    *) fail "Usage: $0 [--node KIND] [--node-state]" ;;
+  esac
+done
+node_env="$(python3 "${TOOLS_DIR}/nodes.py" env ${node_kind:+--node "$node_kind"})" ||
+  fail "No usable node in the lab inventory (kind: ${node_kind:-default}); no VM action was attempted."
+eval "$node_env"
+NODE_SSH_ALIAS="$NODE_ALIAS"
+[[ "$NODE_VM" != "$MASTER_VM" ]] || fail "The inventory names the master VM as a node; refusing."
+[[ "$NODE_VM" == "ubuntu24-puppet8-Node" || "$NODE_VM" =~ ^p8lab-[a-z0-9-]+$ ]] ||
+  fail "Node VM '$NODE_VM' is neither ubuntu24-puppet8-Node nor a p8lab-* VM; refusing."
+readonly NODE_KIND NODE_VM NODE_SNAPSHOT NODE_SSH_ALIAS NODE_HOSTONLY_IP NODE_HOSTNAME NODE_OS_FAMILY
+
+if [[ $state_only -eq 1 ]]; then
   node_state_token
   exit
 fi
-[[ $# -eq 0 ]] || fail "Usage: $0 [--node-state]"
 
 # One lab run at a time (lab_lock.sh); a harness or phase3 run that calls this revert already holds the lock.
 if [[ -z "${P8_LAB_LOCKED:-}" ]]; then
@@ -231,8 +246,8 @@ connection="$(ssh "${SSH_OPTIONS[@]}" -S none "$NODE_SSH_ALIAS" 'echo $SSH_CONNE
 read -r conn_src _ conn_dst _ <<<"$connection"
 [[ "$conn_src" == "$LAPTOP_HOSTONLY_IP" && "$conn_dst" == "$NODE_HOSTONLY_IP" ]] ||
   fail "Path check failed: SSH_CONNECTION '${connection}', expected ${LAPTOP_HOSTONLY_IP} -> ${NODE_HOSTONLY_IP}."
-ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" 'ip -br addr show enp0s8' 2>/dev/null | grep -q " ${NODE_HOSTONLY_IP}/24" ||
-  fail "The restored node's enp0s8 does not hold ${NODE_HOSTONLY_IP}/24 (wrong snapshot?)."
+ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" 'ip -br addr' 2>/dev/null | grep -q " ${NODE_HOSTONLY_IP}/24" ||
+  fail "The restored node does not hold ${NODE_HOSTONLY_IP}/24 on any interface (wrong snapshot?)."
 # shellcheck disable=SC2029  # the host name is a local constant
 resolved="$(ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" "getent hosts ${MASTER_SERVICE_HOST}")" || resolved=""
 [[ "${resolved%% *}" == "$MASTER_HOSTONLY_IP" ]] ||
@@ -244,8 +259,8 @@ if ! node_hostname="$(ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" hostname)"; then
 fi
 node_hostname="${node_hostname//$'\r'/}"
 node_hostname="${node_hostname//$'\n'/}"
-[[ "$node_hostname" == "puppet8node" ]] ||
-  fail "Node hostname verification failed: expected 'puppet8node', got '$node_hostname'."
+[[ "$node_hostname" == "$NODE_HOSTNAME" ]] ||
+  fail "Node hostname verification failed: expected '$NODE_HOSTNAME', got '$node_hostname'."
 
 # The snapshot's apt lists are frozen at snapshot time and the apt timers are off (ruling 5), so
 # superseded package versions 404 on the mirrors. Refresh synchronously, before any harness run.
@@ -257,12 +272,22 @@ until ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" 'ip -4 route show default' 2>/de
     fail "The node has no IPv4 default route after ${ROUTE_TIMEOUT_SECONDS}s (no DHCPv4 lease on NIC1?): no internet for apt."
   sleep "$POLL_INTERVAL_SECONDS"
 done
-printf 'Refreshing apt package lists on the node...\n'
-# shellcheck disable=SC2029  # the timeout is a local constant
-apt_out="$(ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" "sudo -n timeout ${APT_UPDATE_TIMEOUT_SECONDS} apt-get -q update" 2>&1)" ||
-  fail "apt-get update failed on node '$NODE_SSH_ALIAS' (mirror unreachable?)."
-if fetch_errors="$(grep -E '^E: |Temporary failure resolving|Failed to fetch|Could not resolve|Unable to connect' <<<"$apt_out")"; then
-  fail "apt-get update reported fetch failures on node '$NODE_SSH_ALIAS' (no internet or DNS): ${fetch_errors%%$'\n'*}"
+if [[ "$NODE_OS_FAMILY" == "RedHat" ]]; then
+  # A RHEL node must be registered after every restore (HQ 2026-11-16 item 5): no valid subscription, no packages.
+  ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" 'sudo -n subscription-manager identity' >/dev/null 2>&1 ||
+    fail "The restored RHEL node '$NODE_SSH_ALIAS' is not registered (subscription-manager identity failed)."
+  printf 'Refreshing dnf metadata on the node...\n'
+  # shellcheck disable=SC2029  # the timeout is a local constant
+  ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" "sudo -n timeout ${DNF_TIMEOUT_SECONDS} dnf -q makecache" >/dev/null 2>&1 ||
+    fail "dnf makecache failed on node '$NODE_SSH_ALIAS' (no internet, DNS or repositories)."
+else
+  printf 'Refreshing apt package lists on the node...\n'
+  # shellcheck disable=SC2029  # the timeout is a local constant
+  apt_out="$(ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" "sudo -n timeout ${APT_UPDATE_TIMEOUT_SECONDS} apt-get -q update" 2>&1)" ||
+    fail "apt-get update failed on node '$NODE_SSH_ALIAS' (mirror unreachable?)."
+  if fetch_errors="$(grep -E '^E: |Temporary failure resolving|Failed to fetch|Could not resolve|Unable to connect' <<<"$apt_out")"; then
+    fail "apt-get update reported fetch failures on node '$NODE_SSH_ALIAS' (no internet or DNS): ${fetch_errors%%$'\n'*}"
+  fi
 fi
 t_apt="$(now_ms)"
 
@@ -277,13 +302,13 @@ fi
 
 t_end="$(now_ms)"
 
-node_state_token | python3 "${TOOLS_DIR}/records.py" revert-mark "$NODE_SNAPSHOT" ||
+node_state_token | python3 "${TOOLS_DIR}/records.py" revert-mark "$NODE_SNAPSHOT" --node "$NODE_KIND" ||
   fail "Could not read or record the node's state token after the revert."
 
 printf 'SUCCESS: node %q restored to %q; host-only path, SSH, hostname, and %s:%s connectivity verified.\n' \
   "$NODE_VM" "$NODE_SNAPSHOT" "$MASTER_SERVICE_HOST" "$MASTER_SERVICE_PORT"
-printf 'REVERT_METRICS {"snapshot":"%s","total_s":%s,"master_check_s":%s,"poweroff_s":%s,"restore_s":%s,"boot_to_ssh_s":%s,"apt_update_s":%s,"verify_s":%s}\n' \
-  "$NODE_SNAPSHOT" \
+printf 'REVERT_METRICS {"node":"%s","snapshot":"%s","total_s":%s,"master_check_s":%s,"poweroff_s":%s,"restore_s":%s,"boot_to_ssh_s":%s,"apt_update_s":%s,"verify_s":%s}\n' \
+  "$NODE_KIND" "$NODE_SNAPSHOT" \
   "$(ms_to_s $((t_end - t_start)))" "$(ms_to_s $((t_master - t_start)))" "$(ms_to_s $((t_off - t_master)))" \
   "$(ms_to_s $((t_restore - t_off)))" "$(ms_to_s $((t_ssh - t_restore)))" \
   "$(ms_to_s $((t_apt - t_ssh)))" "$(ms_to_s $((t_end - t_apt)))"

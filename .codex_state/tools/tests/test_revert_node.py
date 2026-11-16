@@ -112,7 +112,7 @@ def test_every_revert_proves_the_host_only_path_before_anything_else(lab):
     first = lambda pat: next(i for i, l in enumerate(lines) if pat in l)  # noqa: E731
     path = first("SSH_CONNECTION")
     assert "-S none" in lines[path] and "puppet8node echo" in lines[path]
-    assert path < first("ip -br addr show enp0s8") < first("getent hosts") < first("puppet8node hostname") \
+    assert path < first("ip -br addr") < first("getent hosts") < first("puppet8node hostname") \
         < first("apt-get -q update") < first("/dev/tcp/") < first("random/boot_id")
     assert not any("-wifi" in l or "netplan" in l for l in lines)  # no overlay any more: v3 carries it
     assert master_actions(lab) == [] and "host-only path" in proc.stdout
@@ -121,8 +121,8 @@ def test_every_revert_proves_the_host_only_path_before_anything_else(lab):
 @pytest.mark.parametrize("rule, message", [
     ({"match": r"SSH_CONNECTION", "stdout": "192.168.77.203 51234 192.168.77.185 22\n"},
      "Path check failed: SSH_CONNECTION '192.168.77.203 51234 192.168.77.185 22'"),
-    ({"match": r"ip -br addr show enp0s8", "stdout": "enp0s8           DOWN\n"},
-     "enp0s8 does not hold 192.168.56.20/24 (wrong snapshot?)"),
+    ({"match": r"ip -br addr", "stdout": "enp0s8           DOWN\n"},
+     "does not hold 192.168.56.20/24 on any interface (wrong snapshot?)"),
     ({"match": r"getent hosts", "stdout": "192.168.77.166   puppet8master.example.com\n"},
      "resolves puppet8master.example.com to '192.168.77.166', expected 192.168.56.10"),
 ])
@@ -133,12 +133,13 @@ def test_a_wrong_path_after_the_restore_fails_closed_and_records_no_revert(lab, 
     assert not (lab.root / "node_revert.json").exists()  # no state token: the harness will call the node stale
 
 
-def test_node_inventory_reads_the_snapshot_name_from_revert_node():
+def test_node_inventory_cache_is_keyed_by_the_nodes_baseline_snapshot(monkeypatch):
     import importlib.util
+    monkeypatch.delenv("P8_NODE_INVENTORY", raising=False)
     spec = importlib.util.spec_from_file_location("node_inventory_t", TOOLS / "node_inventory.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    assert mod.SNAPSHOT == "P8NODE_BASELINE_GREEN_v3"
+    assert mod.cache_path().name == "P8NODE_BASELINE_GREEN_v3.paths.gz"  # the default node, from nodes.yml
 
 
 # 2026-11-16: no IPv4 default route, or apt fetch failures, fail the revert (it reported SUCCESS on a node with no
@@ -159,3 +160,50 @@ def test_apt_fetch_failures_fail_the_revert_even_with_exit_0(lab, line):
     proc = lab.run([SCRIPT])
     assert proc.returncode == 1 and "apt-get update reported fetch failures" in proc.stderr
     assert not (lab.root / "node_revert.json").exists()
+
+
+# HQ 2026-11-16 item 2: the node comes from the lab inventory (nodes.yml); RedHat nodes are registration-checked.
+def rhel_inventory(tmp_path):
+    import yaml
+    data = yaml.safe_load((TOOLS.parent / "lab" / "nodes.yml").read_text())
+    data["nodes"]["rhel9"].update(status="active", baseline_snapshot="P8LAB_RHEL9_BASELINE_v1")
+    path = tmp_path / "nodes.yml"
+    path.write_text(yaml.safe_dump(data))
+    return str(path)
+
+
+def rhel_lab(lab):
+    lab.world["vms"]["p8lab-rhel9"] = {"state": "running", "snapshot": "P8LAB_RHEL9_BASELINE_v1"}
+    lab.world["ssh"][:0] = [
+        {"match": r"SSH_CONNECTION", "stdout": "192.168.56.1 51234 192.168.56.21 22\n"},
+        {"match": r"ip -br addr", "stdout": "enp0s8           UP             192.168.56.21/24\n"},
+        {"match": r"p8lab-rhel9 hostname$", "stdout": "p8lab-rhel9\n"},
+    ]
+
+
+def test_the_node_kind_selects_vm_snapshot_and_alias_and_redhat_checks_registration(lab, tmp_path):
+    rhel_lab(lab)
+    proc = lab.run([SCRIPT, "--node", "rhel9"], env={"P8_NODES": rhel_inventory(tmp_path)})
+    assert proc.returncode == 0, proc.stderr
+    assert ["VBoxManage", "snapshot", "p8lab-rhel9", "restore", "P8LAB_RHEL9_BASELINE_v1"] in lab.calls("VBoxManage")
+    assert not any(NODE in c for c in lab.calls("VBoxManage"))  # the Ubuntu node is untouched
+    ssh = [" ".join(c[1:]) for c in lab.calls("ssh")]
+    assert any("p8lab-rhel9 sudo -n subscription-manager identity" in l for l in ssh)
+    assert any("dnf -q makecache" in l for l in ssh) and not any("apt-get" in l for l in ssh)
+    assert '"node":"rhel9"' in proc.stdout.strip().splitlines()[-1]
+    assert master_actions(lab) == []
+
+
+def test_an_unregistered_rhel_node_fails_the_revert(lab, tmp_path):
+    rhel_lab(lab)
+    lab.world["ssh"].insert(0, {"match": r"subscription-manager identity", "rc": 1, "stdout": ""})
+    proc = lab.run([SCRIPT, "--node", "rhel9"], env={"P8_NODES": rhel_inventory(tmp_path)})
+    assert proc.returncode == 1 and "is not registered" in proc.stderr
+    assert not (lab.root / "node_revert.json").exists()
+
+
+def test_a_planned_or_unknown_node_acts_on_no_vm(lab):
+    for kind in ("rhel9", "nope"):
+        proc = lab.run([SCRIPT, "--node", kind])
+        assert proc.returncode == 1 and "No usable node in the lab inventory" in proc.stderr
+    assert lab.calls("VBoxManage") == []

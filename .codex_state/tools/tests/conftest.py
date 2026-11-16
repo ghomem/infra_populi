@@ -125,7 +125,7 @@ class FakeLab:
                 {"match": r"ip -4 route show default", "stdout": "default via 192.168.77.1 dev enp0s3 proto dhcp\n"},
                 # revert_node.sh's post-restore host-only asserts (lab-network plan step 9)
                 {"match": r"SSH_CONNECTION", "stdout": "192.168.56.1 51234 192.168.56.20 22\n"},
-                {"match": r"ip -br addr show enp0s8", "stdout": "enp0s8           UP             192.168.56.20/24\n"},
+                {"match": r"ip -br addr", "stdout": "enp0s8           UP             192.168.56.20/24\n"},
                 {"match": r"getent hosts puppet8master\.example\.com",
                  "stdout": "192.168.56.10   puppet8master.example.com puppet8master\n"},
             ],

@@ -673,7 +673,7 @@ def pregate_class(cls: str) -> Report:
     scan_hazards(manifest, inventory, report, tuple(sorted(closure_providers(cls))))
     # HQ 2026-11-11 ruling 4: dynamic prerequisite probe against the clean-node inventory
     import node_inventory  # noqa: PLC0415
-    node_paths = node_inventory.load()
+    node_paths = node_inventory.load(cls=cls)  # the class's node (plan `node`, else the default)
     if node_paths is None:
         report.add("INFO", "hazard4-prereq", "no clean-node inventory: run .codex_state/tools/node_inventory.py --refresh")
     elif inventory is not None:

@@ -7,10 +7,10 @@
       ignored, so adding the header after GREEN keeps the stamp valid; any code change voids it).
       --fresh-boot: the run started on the boot of the latest revert with no agent run since (fresh-check).
   records.py verify-stamp <class>       exit 0 if a GREEN stamp matches the current code, else 1.
-  records.py revert-mark <snapshot>     revert_node.sh, after every revert: reads the node's state token
+  records.py revert-mark <snapshot> [--node KIND]   revert_node.sh, after every revert: reads the node's state token
                                         (boot ID line, last_run_summary sha256 line) on stdin and writes it
                                         as the latest revert (.codex_state/logs/node_revert.json, untracked).
-  records.py fresh-check                the harness, before run 1: token on stdin; exit 0 and print the boot
+  records.py fresh-check [--node KIND]  the harness, before run 1: token on stdin; exit 0 and print the boot
                                         ID if it equals the latest revert's token, else 1 with the reason.
   records.py verify-fresh <class>       record_green.sh: exit 0 if the class's GREEN stamp started on the
                                         boot of the LATEST revert with no agent run in between, else 1.
@@ -63,8 +63,19 @@ def green_dir() -> Path:
     return Path(os.environ.get("P8_GREEN_DIR") or REPO / ".codex_state" / "logs" / "green")
 
 
-def revert_record() -> Path:
-    return Path(os.environ.get("P8_REVERT_RECORD") or REPO / ".codex_state" / "logs" / "node_revert.json")
+DEFAULT_NODE = "ubuntu"  # the original node keeps its record file name (node_revert.json)
+
+
+def revert_record(node: str = DEFAULT_NODE) -> Path:
+    """The latest revert of one lab node (HQ 2026-11-16 item 2: one record per node kind)."""
+    if os.environ.get("P8_REVERT_RECORD"):
+        return Path(os.environ["P8_REVERT_RECORD"])
+    name = "node_revert.json" if node == DEFAULT_NODE else f"node_revert.{node}.json"
+    return REPO / ".codex_state" / "logs" / name
+
+
+def node_opt(argv: list[str]) -> str:
+    return argv[argv.index("--node") + 1] if "--node" in argv else DEFAULT_NODE
 
 
 def read_token(text: str) -> dict:
@@ -75,23 +86,24 @@ def read_token(text: str) -> dict:
     return {"boot_id": lines[0], "last_run": lines[1]}
 
 
-def latest_revert() -> dict | None:
-    path = revert_record()
+def latest_revert(node: str = DEFAULT_NODE) -> dict | None:
+    path = revert_record(node)
     return json.loads(path.read_text()) if path.is_file() else None
 
 
-def cmd_revert_mark(snapshot: str) -> int:
+def cmd_revert_mark(snapshot: str, node: str = DEFAULT_NODE) -> int:
     token = read_token(sys.stdin.read())
-    record = {"snapshot": snapshot, **token, "at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
-    revert_record().parent.mkdir(parents=True, exist_ok=True)
-    revert_record().write_text(json.dumps(record) + "\n")
+    record = {"node": node, "snapshot": snapshot, **token,
+              "at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
+    revert_record(node).parent.mkdir(parents=True, exist_ok=True)
+    revert_record(node).write_text(json.dumps(record) + "\n")
     print(f"REVERT_NODE_STATE boot {token['boot_id']} last_run {token['last_run'][:12]}")
     return 0
 
 
-def cmd_fresh_check() -> int:
+def cmd_fresh_check(node: str = DEFAULT_NODE) -> int:
     token = read_token(sys.stdin.read())
-    latest = latest_revert()
+    latest = latest_revert(node)
     if latest is None:
         print("no revert recorded on this laptop", file=sys.stderr)
         return 1
@@ -110,7 +122,7 @@ def cmd_verify_fresh(cls: str) -> int:
     path = green_dir() / f"{cls}.json"
     stamp = json.loads(path.read_text()) if path.is_file() else {}
     revert = stamp.get("revert") or {}
-    latest = latest_revert()
+    latest = latest_revert(stamp.get("node") or DEFAULT_NODE)
     if not revert.get("fresh"):
         print(f"STALE NODE for {cls}: the GREEN run at {stamp.get('at')} did not start on a freshly reverted node "
               f"({revert.get('reason') or 'no revert state in the stamp'})", file=sys.stderr)
@@ -169,13 +181,14 @@ def cmd_stamp(argv: list[str]) -> int:
     fresh_boot = opts[opts.index("--fresh-boot") + 1] if "--fresh-boot" in opts else ""
     stale = opts[opts.index("--stale-reason") + 1] if "--stale-reason" in opts else "fresh-check not run"
     revert = {"fresh": True, "boot_id": fresh_boot} if fresh_boot else {"fresh": False, "reason": stale}
+    node = node_opt(opts)
     names = [short_name(c) for c in classes]
     green_dir().mkdir(parents=True, exist_ok=True)
     for cls in names:
         sha, files = code_hash(cls)
         record = {"class": cls, "at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                   "code_sha256": sha, "files": files, "targets": names, "revert_first": revert_first,
-                  "run1_events": int(run1), "head": head(), "revert": revert,
+                  "run1_events": int(run1), "head": head(), "node": node, "revert": revert,
                   "coverage": [l for l in coverage.splitlines() if l.startswith("COVERAGE ")]}
         (green_dir() / f"{cls}.json").write_text(json.dumps(record, indent=1) + "\n")
         print(f"GREEN_STAMP {cls} {sha[:12]}")
@@ -275,10 +288,10 @@ def cmd_header_modules(cls: str) -> int:
 def main(argv: list[str]) -> int:
     if argv[:1] == ["stamp"]:
         return cmd_stamp(argv[1:])
-    if len(argv) == 2 and argv[0] == "revert-mark":
-        return cmd_revert_mark(argv[1])
-    if argv == ["fresh-check"]:
-        return cmd_fresh_check()
+    if len(argv) in (2, 4) and argv[0] == "revert-mark":
+        return cmd_revert_mark(argv[1], node_opt(argv))
+    if argv[:1] == ["fresh-check"] and len(argv) in (1, 3):
+        return cmd_fresh_check(node_opt(argv))
     if len(argv) >= 2 and argv[0] in ("verify-stamp", "verify-fresh", "header-check", "tracker-set", "class-files",
                                          "header-modules", "code-unchanged"):
         cls = short_name(argv[1])
