@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependency: puppetlabs-cron_core 1.3.0 (vendored with Puppet 8.24.2).
 ### Purpose ########
 # This class implements a simple multi host remote to local daily synchronization
 define puppet_infrastructure::sync ( $localdir, $remotedir, $localuser, $remoteuser, $hour, $minute, $hostlist, $suffix = '', Integer[0] $bwlimit_mbitps = 0, )  {
