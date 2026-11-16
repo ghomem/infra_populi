@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.backup_rsnapshot"><testsuite name="phase3.backup_rsnapshot.clean" tests="6" failures="0"><testcase classname="phase3.backup_rsnapshot.clean" name="conf-file-mode" /><testcase classname="phase3.backup_rsnapshot.clean" name="conf-rendered-values" /><testcase classname="phase3.backup_rsnapshot.clean" name="conf-syntax" /><testcase classname="phase3.backup_rsnapshot.clean" name="daily-plan" /><testcase classname="phase3.backup_rsnapshot.clean" name="cron-daily-2300" /><testcase classname="phase3.backup_rsnapshot.clean" name="daily-backup-executes" /></testsuite><testsuite name="phase3.backup_rsnapshot.applied" tests="6" failures="1"><testcase classname="phase3.backup_rsnapshot.applied" name="conf-file-mode" /><testcase classname="phase3.backup_rsnapshot.applied" name="conf-rendered-values" /><testcase classname="phase3.backup_rsnapshot.applied" name="conf-syntax" /><testcase classname="phase3.backup_rsnapshot.applied" name="daily-plan"><failure message="check failed after the class was applied (finding)">rc 0
+echo 2035 &gt; /tmp/rsnapshot_backup_rsnapshot.pid 
+mkdir -m 0755 -p /opt/puppet-infrastructure/backup/daily.0/ 
+/usr/bin/rsync -a --delete --numeric-ids --relative --delete-excluded /etc/ /opt/puppet-infrastructure/backup/daily.0//etc 
+touch /opt/puppet-infrastructure/backup/daily.0/ 
+
+</failure></testcase><testcase classname="phase3.backup_rsnapshot.applied" name="cron-daily-2300" /><testcase classname="phase3.backup_rsnapshot.applied" name="daily-backup-executes"><skipped message="not run: read-only checks failed (daily-plan)" /></testcase></testsuite></testsuites>
