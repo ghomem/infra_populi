@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -54,6 +55,21 @@ def compile_only(cls: str) -> tuple[str, str]:
     return ("fail" if "COMPILE FAILED" in text or "no concrete resources" in text else "error"), first
 
 
+def params_dir() -> Path:
+    return Path(os.environ.get("P8_PARAMS_DIR") or Path.home() / ".config" / "infra_populi" / "params")
+
+
+def missing_define_params(cls: str) -> str | None:
+    """Hazard 10 (batch 4, user_kde_lock_screen): a define needs its params file for the harness even when every
+    parameter has a default; compile-only renders it without one, so it passed here and the harness refused it."""
+    import gen_migration_order as gen  # noqa: PLC0415
+    row = gen.parse_plan().get(cls)
+    path = params_dir() / f"puppet_infrastructure::{cls}.json"
+    if row is not None and row.resource_type == "define" and not path.is_file():
+        return f"hazard 10: define params fixture missing ({path}); the harness cannot render the define without it"
+    return None
+
+
 # Baseline-inherited lint that Puppet 8 accepts (the compile-only step still proves it): Codex is told to leave it
 # (CODEX_RUNBOOK §2.3), so it never routes a baseline-identical class to syntax-work on its own.
 COSMETIC_INHERITED = ("lint:parameter_order",)
@@ -75,6 +91,9 @@ def decide(cls: str) -> tuple[int, str, list[str]]:
         return 4, "context-gap", reasons  # a plan required_external (advisor), not syntax work
     if reasons:
         return 1, "syntax-work", reasons
+    missing = missing_define_params(cls)
+    if missing:  # hazard 10: the harness renders a define only from its params file (compile-only uses defaults)
+        return 4, "context-gap", [missing]
     status, line = compile_only(cls)
     if status == "error":
         return 2, "ERROR", [f"compile-only could not run: {line}"]

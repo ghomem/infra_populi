@@ -114,3 +114,13 @@ def test_inherited_lint_of_another_kind_or_a_new_one_is_still_syntax_work(world)
     world["compile"] = ("fail", "Error: no parameter named 'action'")
     world["report"] = report(("FINDING", "lint:parameter_order", "manifests/x.pp:25: x (also in baseline)"))
     assert cp.decide("x")[:2] == (1, "syntax-work")  # the compile still decides
+
+
+def test_a_define_without_its_params_file_is_a_context_gap(tmp_path, monkeypatch):
+    """hazard 10 (batch 4, user_kde_lock_screen): compile-only renders a define with defaults, the harness does not."""
+    import classify_path as cp
+    monkeypatch.setenv("P8_PARAMS_DIR", str(tmp_path))
+    assert "define params fixture missing" in cp.missing_define_params("user_kde_lock_screen")
+    (tmp_path / "puppet_infrastructure::user_kde_lock_screen.json").write_text("{}\n")
+    assert cp.missing_define_params("user_kde_lock_screen") is None
+    assert cp.missing_define_params("gnome_lock_screen") is None  # a class needs no params file
