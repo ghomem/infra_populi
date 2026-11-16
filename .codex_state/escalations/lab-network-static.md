@@ -2,7 +2,7 @@
 
 **Status: STEP REVIEW APPROVED by HQ with amendments A–E (2026-11-10, folded in below, listed in §6). Steps 0–7
 PASSED (execution log below). Step 8 item 1 FAILED on an invalid review mode (escalations/lab-network-canary.md);
-HQ 2026-11-16 chose option 1 (no rollback): step 8 re-runs in the normal mode.**
+HQ 2026-11-16 chose option 1 (no rollback). Step 8 re-run in the normal mode: PASSED. Step 9 next.**
 
 Step 0 log (2026-11-10 16:58:33Z), all PASS:
 - worktree clean; no engine run; node snapshot v2 and master snapshot v3 exist; puppetserver active; vboxnet0
@@ -28,6 +28,7 @@ is-enabled` over ssh; `revert_node.sh --node-state`.
 | 5 | PASS | `/etc/hosts.pre-p8net` holds the original line; getent puppet8node.example.com ASSERT .20. My first run read `PIPESTATUS` in zsh (empty, cosmetic); the edit was not re-run, so the backup is intact. |
 | 6 | PASS (b33167c) | `~/.ssh/config.pre-p8net-step6`. Pre-switch: `ho` .10/.20. Sockets closed before the edit. `ssh -G` asserts PASS. lab.env → hostonly. The gate caught stub tests that followed the live setting; they are pinned to bridged now. Verify: both aliases' SSH_CONNECTION from .1, the first real hostonly revert SUCCESS (token = snapshot's), compile-only OK. |
 | 7 | PASS | params: firewall_secure/_extra `acl` and node_base `ssh_acl` → 192.168.56.1, rsyslog_client `target_ip` → 192.168.56.10 (network_static gateway stays). Node SSH_CLIENT 192.168.56.1 = params. Sweep below. |
+| 8 | PASS 2026-11-16 | Item 1 first ran with `--fresh` (FAIL on `git` only, 27b6cdf; escalations/lab-network-canary.md; `--fresh` misuse is now a usage error, cbc64df). Normal mode: firewall_secure PASS (a9b066c) and rsyslog_client PASS (3e91978), both with `revert_first` true and `node_fresh` true; status.py back to 45 verified. Pilots: backup_rsnapshot, ssh_secure and nginx_static_domain all ALL_PASS and reproduced by the reviewer (escalations/phase3-pilots.md); two first runs had probe authoring errors, not network or behaviour failures. |
 
 Step 7 sweep of the master (file names only; passwd directory pruned), triage:
 - `/etc/hosts.pre-p8net`: the step 5 backup. Expected.
