@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.letsencrypt_base"><testsuite name="phase3.letsencrypt_base.clean" tests="5" failures="0"><testcase classname="phase3.letsencrypt_base.clean" name="dns-plugin-installed" /><testcase classname="phase3.letsencrypt_base.clean" name="dns-credentials-file-private" /><testcase classname="phase3.letsencrypt_base.clean" name="renew-cron-with-nginx-reload-hook" /><testcase classname="phase3.letsencrypt_base.clean" name="deploy-script-rendered" /><testcase classname="phase3.letsencrypt_base.clean" name="deploy-cron" /></testsuite><testsuite name="phase3.letsencrypt_base.applied" tests="5" failures="1"><testcase classname="phase3.letsencrypt_base.applied" name="dns-plugin-installed"><failure message="check failed after the class was applied (finding)">rc 0
+certbot install ok installed
+python3-certbot-dns-digitalocean install ok installed
+
+</failure></testcase><testcase classname="phase3.letsencrypt_base.applied" name="dns-credentials-file-private" /><testcase classname="phase3.letsencrypt_base.applied" name="renew-cron-with-nginx-reload-hook" /><testcase classname="phase3.letsencrypt_base.applied" name="deploy-script-rendered" /><testcase classname="phase3.letsencrypt_base.applied" name="deploy-cron" /></testsuite></testsuites>
