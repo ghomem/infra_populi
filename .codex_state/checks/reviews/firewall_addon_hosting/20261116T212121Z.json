@@ -1,0 +1,21 @@
+{
+ "class": "firewall_addon_hosting",
+ "at": "20261116T212121Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "related-established-dns-ntp-accepted: baseline lines 15 and 18-19 declare OUTPUT accept for state RELATED,ESTABLISHED (firewall default proto tcp, hence '-p tcp -m state'), udp/53 and udp/123; the expected iptables -S lines 149/150/151 are exactly what those resources render",
+  "new-outbound-tcp-dropped: baseline lines 13-14 set OUTPUT purge => true, policy => drop with only 149-151 (plus ruled 152 to the master) accepting; a NEW tcp SYN to 127.0.0.1:22 matches none, crosses OUTPUT on loopback and is dropped -> 'blocked'; on the clean node sshd answers ('open'), so the negative control is sound and the probe stays on the node",
+  "master-rule-follows-the-nodes-resolution: the cited line 13-14 comment/DROP policy does not itself declare rule 152; the probe tests the HQ-ruled change in upstream_defects.md (firewall_addon_hosting: '152 OUTPUT PUPPET MASTER', tcp/8140, destination $server_facts['servername'] resolved on the agent, jump accept), which matches the current manifest verbatim and which the check's what names as ruled; it complements the cited DROP policy. The probe resolves the node's puppet.conf server (puppet8master.example.com, via /etc/hosts -> 192.168.56.10, no other host reached) rather than the master's servername fact; these coincide in the lab, and a divergence would surface as a finding on exactly the agent-to-master path the ruling protects"
+ ],
+ "review_s": 439.0,
+ "check_file_sha256": "843f2ef63acb19a9d6f82a60d503d3de488038f8b6553918c7386f54ae3a1929",
+ "reviewer_result": "20261116T211403Z-reviewer",
+ "author_result": "20261116T210719Z-author",
+ "findings": []
+}
