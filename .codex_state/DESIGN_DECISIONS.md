@@ -1271,3 +1271,20 @@ Two engine gaps surfaced by gnome_lock_screen's first Phase 3 review (FAIL, envi
    for review).
 
 9 + 3 tests; a real revert passes and leaves no lock behind.
+
+## 2026-11-16 — batch 4: engine decisions; stopped on the bridged-Wi-Fi DHCPv4 loss
+1. **Packages as path providers.** pregate's prerequisite probe counts a package the required_base closure installs as
+   a provider (`provided_paths.txt` `package:<name>`, de8ef3a). A class that installs a package and runs its binary is
+   no longer a context gap.
+2. **Template facts only inside ERB tags** (bda7bbf): plain text is never a fact lookup.
+3. **A define needs its params file** (641eced): classify_path reports a missing one as context-gap (hazards.md 10).
+   The harness never renders a define from defaults, whatever compile-only does.
+4. **Merged /usr** (72abaf0): the probe looks up `/bin/...`, `/sbin/...`, `/lib*/...` under `/usr` when the clean-node
+   inventory shows the top directory as a symlink.
+5. **One lab run at a time; a revert proves internet** (1a24f54; see its own entry). A `REVERT_FAILED` from the
+   internet check stops the run like any other.
+6. **Phase 3 deferrals are not reviewer-checked yet** (their state comes from the validated file). Proposed to HQ:
+   `--phase3` on a deferred set.
+
+Batch 4 stopped at 5/7 on the second DHCPv4 loss of the day: `escalations/lab-dhcp-bridged-wifi.md`, with the NAT plan
+as the recommended fix. openvpn_server is prepared and waits.

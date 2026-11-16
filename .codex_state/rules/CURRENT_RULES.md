@@ -2,7 +2,15 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-78 entries; 6 marked superseded (in whole or part); newest first.
+79 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-16 — batch 4: engine decisions; stopped on the bridged-Wi-Fi DHCPv4 loss
+- 1. **Packages as path providers.** pregate's prerequisite probe counts a package the required_base closure installs as
+- 2. **Template facts only inside ERB tags** (bda7bbf): plain text is never a fact lookup.
+- 3. **A define needs its params file** (641eced): classify_path reports a missing one as context-gap (hazards.md 10).
+- 4. **Merged /usr** (72abaf0): the probe looks up `/bin/...`, `/sbin/...`, `/lib*/...` under `/usr` when the clean-node
+- 5. **One lab run at a time; a revert proves internet** (1a24f54; see its own entry). A `REVERT_FAILED` from the
+- 6. **Phase 3 deferrals are not reviewer-checked yet** (their state comes from the validated file). Proposed to HQ:
 
 ## 2026-11-16 — batch 4: one lab run at a time; a revert proves internet
 - 1. **Lab lock.** I ran classify_path's compile-only for the next class while the reviewer's harness was applying, and
