@@ -227,3 +227,15 @@ def test_a_new_valid_check_clears_the_refusal(tmp_path, monkeypatch):
     newer = tmp_path / "x.20261116T000000Z.draft.json"
     newer.write_text("{}")
     assert rc.latest_draft("x") == newer
+
+
+def test_every_verdict_shows_revert_first_and_node_fresh():
+    text = ("NODE_FRESH: yes (boot 985deef4 of the latest revert, no agent run since)\n"
+            "RUN1_EVENTS: 27 catalog, 164 pluginsync (rc 2; node reverted first)\nGREEN: run 2 exited 0\n")
+    assert rc.fresh_node_facts(text) == {"revert_first": True, "node_fresh": True}
+    stale = text.replace("NODE_FRESH: yes (boot", "NODE_FRESH: no (an agent run happened").replace(
+        "node reverted first", "node NOT reverted first")
+    assert rc.fresh_node_facts(stale) == {"revert_first": False, "node_fresh": False}
+    src = (TOOLS / "review_class.py").read_text()
+    assert '"--revert-first", f"puppet_infrastructure::{cls}"' in src  # the reviewer always reverts first
+    assert "GREEN, but not on a freshly reverted node" in src

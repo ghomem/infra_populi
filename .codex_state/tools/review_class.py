@@ -302,6 +302,13 @@ def fresh_usage_error(cls: str) -> str | None:
     return None
 
 
+def fresh_node_facts(text: str) -> dict:
+    """From the harness output: did run 1 follow its own revert, and was the node still on that revert's boot with
+    no agent run since (NODE_FRESH, record_green's rule)? Both are shown in every verdict (HQ 2026-11-16)."""
+    return {"revert_first": bool(re.search(r"^RUN1_EVENTS: .*node reverted first", text, re.M)),
+            "node_fresh": bool(re.search(r"^NODE_FRESH: yes", text, re.M))}
+
+
 def run_checks(cls: str, harness: bool) -> dict:
     base = baseline.for_class(cls)
     out: dict = {"class": cls, "baseline": f"{base.name} ({base.commit[:7]})", "checks": {}, "diffs": {}}
@@ -470,13 +477,16 @@ def run_checks(cls: str, harness: bool) -> dict:
         revert = re.search(r"^REVERT_METRICS (.*)$", text, re.M)
         out["harness"] = {"rc": proc.returncode, "run1_catalog_events": int(run1.group(1)) if run1 else None,
                           "coverage": coverage, "revert": json.loads(revert.group(1)) if revert else None,
-                          "log": str(log.relative_to(REPO))}
+                          "log": str(log.relative_to(REPO)), **fresh_node_facts(text)}
         tail = [l for l in text.splitlines() if l.startswith(("ERROR", "GREEN", "Run 2 events", "Notice:"))][-6:]
         expected_run2 = re.search(r"^RUN2_EXPECTED_EVENTS: (\d+) from (.*) \(plan", text, re.M)
         out["harness"]["run2_expected_events"] = expected_run2.group(0) if expected_run2 else None
         green = "GREEN: run 2 exited 0" in text or "GREEN: run 2 events limited to the plan's expected_run2_events" in text
         if proc.returncode != 0 or not green:
             c["idempotent"] = result("fail", tail)
+        elif not (out["harness"]["revert_first"] and out["harness"]["node_fresh"]):
+            c["idempotent"] = result("fail", f"GREEN, but not on a freshly reverted node (revert_first="
+                                             f"{out['harness']['revert_first']}, node_fresh={out['harness']['node_fresh']})")
         elif not run1 or int(run1.group(1)) == 0:
             c["idempotent"] = result("needs-justification", "GREEN, but run 1 after a revert applied 0 catalog events")
         else:
