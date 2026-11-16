@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none.
 # Enforce GNOME screen lock policy using system dconf settings.
 #
 # This is intended for Ubuntu/GNOME desktops.
