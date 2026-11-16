@@ -1,0 +1,62 @@
+# Phase 3 checks for puppet_infrastructure::sync (define; harness title `sync`, so the tag is "sync").
+# Fixture (params, never committed): localdir /var/tmp/p8test-sync, remotedir /srv/p8test, localuser root (cron needs
+# an account the clean node has), remoteuser p8testuser, hour 3, minute 17, hostlist p8test.example.invalid:22,
+# suffix -p8test, bwlimit_mbitps 10 (the conversion branch: 10 Mbit/s = 1.19 MiB/s). bindir comes from Hiera
+# filesystem::bindir = /opt/puppet-infrastructure/bin (required_base filesystem_base).
+# Not exercised: running the script (it would rsync over ssh to the fixture host; probes stay on the node).
+class: sync
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.4
+  notes: "Wall clock 18:58:44Z to 18:59:09Z 2026-11-16, outside the worktree while the Phase 1 review ran."
+checks:
+  - id: script-installed-root-0755
+    what: the per-tag sync script is installed in bindir, root:root, mode 0755
+    control: negative
+    derived_from:
+      - {path: manifests/sync.pp, lines: "33-35", text: "mode    => '0755',"}
+      - {path: manifests/sync.pp, lines: "34", text: "owner   => 'root',"}
+    probe: stat -c '%U %G %a' /opt/puppet-infrastructure/bin/sync-sync.sh
+    expect: {rc: 0, stdout: "\\Aroot root 755\\n\\Z"}
+
+  - id: script-carries-the-parameters
+    what: the template renders the host list, remote user, local and remote directories and the suffix
+    control: negative
+    derived_from:
+      - {path: templates/backup/sync.sh.erb, lines: "9", text: "HOSTS=\"<%= @hostlist %>\""}
+      - {path: templates/backup/sync.sh.erb, lines: "13-16", text: "REMOTEUSER=\"<%= @remoteuser %>\""}
+      - {path: manifests/sync.pp, lines: "36", text: "content => template('puppet_infrastructure/backup/sync.sh.erb'),"}
+    probe: grep -E '^(HOSTS|REMOTEUSER|LOCALDIR|REMOTEDIR|SUFFIX)=' /opt/puppet-infrastructure/bin/sync-sync.sh
+    expect: {rc: 0, stdout: "\\AHOSTS=\"p8test\\.example\\.invalid:22\"\\nREMOTEUSER=\"p8testuser\"\\nLOCALDIR=\"/var/tmp/p8test-sync\"\\nREMOTEDIR=\"/srv/p8test\"\\nSUFFIX=\"-p8test\"\\n\\Z"}
+
+  - id: bandwidth-limit-converted
+    what: a 10 Mbit/s limit becomes rsync's --bwlimit=1.19m (megabit to MiB, two decimals) in the rsync options
+    control: negative
+    derived_from:
+      - {path: manifests/sync.pp, lines: "19", text: "$bwlimit_mbyteps_float = $bwlimit_mbitps_float*1000.0*1000.0/(8.0*1024.0*1024.0)"}
+      - {path: manifests/sync.pp, lines: "21", text: "$bwlimit_mbyteps_str = sprintf('%.2f', $bwlimit_mbyteps_float)"}
+      - {path: manifests/sync.pp, lines: "24", text: "$bwlimit_opt = \" --bwlimit=${bwlimit_mbyteps_str}m\""}
+      - {path: templates/backup/sync.sh.erb, lines: "17", text: "BWLIMIT_OPT=\"<%= @bwlimit_opt %>\""}
+      - {path: templates/backup/sync.sh.erb, lines: "24", text: "RSYNCOPTS=\"-av --partial --delete${BWLIMIT_OPT}\""}
+    probe: grep -E '^(BWLIMIT_OPT|RSYNCOPTS)=' /opt/puppet-infrastructure/bin/sync-sync.sh
+    expect: {rc: 0, stdout: "\\ABWLIMIT_OPT=\" --bwlimit=1\\.19m\"\\nRSYNCOPTS=\"-av --partial --delete\\$\\{BWLIMIT_OPT\\}\"\\n\\Z"}
+
+  - id: script-is-valid-bash
+    what: the rendered script parses as bash
+    control: negative
+    derived_from:
+      - {path: manifests/sync.pp, lines: "36", text: "content => template('puppet_infrastructure/backup/sync.sh.erb'),"}
+    probe: bash -n /opt/puppet-infrastructure/bin/sync-sync.sh && echo parses
+    expect: {rc: 0, stdout: "\\Aparses\\n\\Z"}
+
+  - id: daily-cron-for-the-local-user
+    what: the local user's crontab runs the script daily at hour:minute, named cron_sync_<tag>
+    control: negative
+    derived_from:
+      - {path: manifests/sync.pp, lines: "40-43", text: "command => \"${bindir}/sync-${mytag}.sh\","}
+      - {path: manifests/sync.pp, lines: "41", text: "user    => $localuser,"}
+      - {path: manifests/sync.pp, lines: "42-43", text: "hour    => $hour,"}
+    probe: |
+      crontab -l -u root 2>/dev/null | grep -A1 -x '# Puppet Name: cron_sync_sync'
+    expect: {rc: 0, stdout: "\\A# Puppet Name: cron_sync_sync\\n17 3 \\* \\* \\* /opt/puppet-infrastructure/bin/sync-sync\\.sh\\n\\Z"}

@@ -1,0 +1,111 @@
+{
+ "class": "sync",
+ "role": "author",
+ "at": "20261116T185953Z",
+ "runner": "0475d42",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "d92717c9b9b9f752a2af5884e0e4d35feac6ec6158998ba9f37aefdbfbc50975",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "script-installed-root-0755",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/sync-sync.sh': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "script-carries-the-parameters",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /opt/puppet-infrastructure/bin/sync-sync.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "bandwidth-limit-converted",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /opt/puppet-infrastructure/bin/sync-sync.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "script-is-valid-bash",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: /opt/puppet-infrastructure/bin/sync-sync.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "daily-cron-for-the-local-user",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "ure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Sync[sync]/File[/opt/puppet-infrastructure/bin/sync-sync.sh]/ensure: defined content as '{sha256}73c84c41729429934fc2534a818ac1349d4b3768e16f6dc32b1c0d840c432e8d'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Sync[sync]/Cron[cron_sync_sync]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.13 seconds\u001b[0m\nRUN1_EVENTS: 9 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794855639'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.12 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::sync: 2 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::Sync[sync]\n  File[/opt/puppet-infrastructure/bin/sync-sync.sh]\n  Cron[cron_sync_sync]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP sync 9c86f0629a04\n"
+ },
+ "applied": [
+  {
+   "id": "script-installed-root-0755",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "script-carries-the-parameters",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "HOSTS=\"p8test.example.invalid:22\"\nREMOTEUSER=\"p8testuser\"\nLOCALDIR=\"/var/tmp/p8test-sync\"\nREMOTEDIR=\"/srv/p8test\"\nSUFFIX=\"-p8test\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "bandwidth-limit-converted",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "BWLIMIT_OPT=\" --bwlimit=1.19m\"\nRSYNCOPTS=\"-av --partial --delete${BWLIMIT_OPT}\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "script-is-valid-bash",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "parses\n",
+   "stderr": ""
+  },
+  {
+   "id": "daily-cron-for-the-local-user",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "# Puppet Name: cron_sync_sync\n17 3 * * * /opt/puppet-infrastructure/bin/sync-sync.sh\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.4,
+ "node": "ubuntu",
+ "duration_s": 48.2
+}
