@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none (core exec resources only; RedHat-family nodes: validated on the rhel9 lab node).
 class puppet_infrastructure::extra_packages_el {
 
   $os_major_version = $facts['os']['release']['major']
