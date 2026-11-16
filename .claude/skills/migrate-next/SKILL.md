@@ -12,8 +12,11 @@ and 8140 listening. Regenerate the order file. Create `.codex_state/logs/` if mi
 `python3 .codex_state/tools/node_inventory.py --show` must find the clean-node inventory (else `--refresh`, ~1 min:
 it reverts the node) — pregate's dynamic prerequisite probe needs it.
 
-BATCHES (HQ 2026-11-16 item 6, from the resume after the NAT change): batch size 10. When a batch ends with no
-reviewer FAIL and no open stop condition, the next batch may start without HQ (write its report first). A class that
+BATCHES (HQ 2026-11-16 item 6, from the resume after the NAT change): batch size 10. Start rule (HQ batch-5 ruling 3):
+the next batch may start without HQ (write its report first) unless the batch had a Phase 1 reviewer FAIL, a Phase 3
+behaviour FINDING, three or more Phase 3 authoring FAILs (each corrected and re-reviewed PASS; the report lists them
+all), or an open stop condition. A Phase 3 authoring FAIL corrected and re-reviewed PASS does not stop it alone. A
+class that
 cannot go GREEN on its node (it needs another OS, a desktop, a second node, ...) is blocked with its EXACT need
 (category 5, naming the node kind that would lift it, nodes.yml) and appended to the one tail list
 `.codex_state/tail_list.md`; the loop continues with the next class.

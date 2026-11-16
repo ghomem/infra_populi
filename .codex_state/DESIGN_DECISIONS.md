@@ -1440,3 +1440,26 @@ too; other commits keep the fast subset. Cause: the lab_vm.sh commit (516b455) l
   - `mutates` must declare every effect, including stock routing (the rsyslog_server Phase 3 review FAIL);
   - the validator forbids lab host names, `puppet` invocations and `>` in probes, so probes read the certname from
     the node and avoid literal redirects.
+
+## 2026-11-16 — HQ batch-5 rulings (start rule, tail list, snapshot exercise, mysql, rhel9)
+- **Start rule (ruling 3):** the next batch may start without HQ unless the batch had any of:
+  - a Phase 1 reviewer FAIL;
+  - a Phase 3 behaviour finding;
+  - three or more Phase 3 authoring FAILs.
+
+  A Phase 3 authoring FAIL that was corrected and re-reviewed PASS doesn't stop it alone, but the report lists every
+  one. Skill BATCHES updated.
+- **Tail list (ruling 6):** hashman_base and hashman_web are listed as lifted by a master-role node (not blocked; PASS
+  mock-apply).
+- **mysql_server (ruling 2):** a module-compatibility change (like the firewall-8 renames), not an upstream defect.
+  Before dispatch, every puppetlabs-mysql default that differs between the MySQL and MariaDB flavours on Ubuntu 24.04
+  is listed and the class sets each one it needs; this goes in class_rulings.txt and the header. Its Phase 3 must show
+  a MySQL (not MariaDB) server running from the managed config.
+- **extra_packages_el (ruling 5):** unblocked and routed to rhel9 (plan `node` column), the first class on the new
+  node; its run is reported in detail.
+- **openvpn_server (ruling 1):** stays blocked until Salatiel's production check; network_vpn waits with it.
+- **Master snapshot (ruling 4):** taken with the node set, no later than 2026-11-17 evening. Before that,
+  snapshot_master.sh's full path (take → restart → health check → record) is exercised against a disposable p8lab
+  VM.
+- **Batch reports (ruling 7):** add the projected download for re-verifying all done classes, from the per-class byte
+  counts.

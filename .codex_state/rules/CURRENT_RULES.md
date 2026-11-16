@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-88 entries; 6 marked superseded (in whole or part); newest first.
+89 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-16 — HQ batch-5 rulings (start rule, tail list, snapshot exercise, mysql, rhel9)
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-16 — Batch 5 engine decisions (first batch on NIC1 NAT)
 - (no numbered/Rule/Decision lines; read the entry)
