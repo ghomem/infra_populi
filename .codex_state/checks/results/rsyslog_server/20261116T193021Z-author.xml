@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.rsyslog_server"><testsuite name="phase3.rsyslog_server.clean" tests="7" failures="0"><testcase classname="phase3.rsyslog_server.clean" name="listener-config-rendered" /><testcase classname="phase3.rsyslog_server.clean" name="tls-listener-presents-the-node-certificate" /><testcase classname="phase3.rsyslog_server.clean" name="self-forward-config-absent" /><testcase classname="phase3.rsyslog_server.clean" name="logrotate-timer-override-active" /><testcase classname="phase3.rsyslog_server.clean" name="host-logs-rotation-rule" /><testcase classname="phase3.rsyslog_server.clean" name="retention-script-and-cron" /><testcase classname="phase3.rsyslog_server.clean" name="remote-message-lands-in-the-host-tree" /></testsuite><testsuite name="phase3.rsyslog_server.applied" tests="8" failures="2"><testcase classname="phase3.rsyslog_server.applied" name="listener-config-rendered" /><testcase classname="phase3.rsyslog_server.applied" name="tls-listener-presents-the-node-certificate" /><testcase classname="phase3.rsyslog_server.applied" name="tls-listener-presents-the-node-certificate.mismatch" /><testcase classname="phase3.rsyslog_server.applied" name="self-forward-config-absent" /><testcase classname="phase3.rsyslog_server.applied" name="logrotate-timer-override-active"><failure message="check failed after the class was applied (finding)">rc 0
+AccuracyUSec=1min
+ActiveState=active
+DropInPaths=/etc/systemd/system/logrotate.timer.d/override.conf
+
+</failure></testcase><testcase classname="phase3.rsyslog_server.applied" name="host-logs-rotation-rule"><failure message="check failed after the class was applied (finding)">rc 0
+/var/log/hosts/*/*.log /var/log/hosts/*/.log {
+daily
+rotate -1
+nocompress
+dateext
+dateformat -%Y%m%d
+missingok
+
+</failure></testcase><testcase classname="phase3.rsyslog_server.applied" name="retention-script-and-cron" /><testcase classname="phase3.rsyslog_server.applied" name="remote-message-lands-in-the-host-tree"><skipped message="not run: read-only checks failed (logrotate-timer-override-active, host-logs-rotation-rule)" /></testcase></testsuite></testsuites>

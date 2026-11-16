@@ -1,0 +1,107 @@
+# Phase 3 checks for puppet_infrastructure::rsyslog_server (class; required_base filesystem_base; it includes
+# rsyslog_base itself). Fixture: class defaults (port 6514, log_root /var/log, active/retention 7 days, rotation 00:00,
+# retention 03:17, max_sessions 2000, notify_on_connection_close false); the lab Hiera binds rsyslog_base's ssldir to
+# /etc/puppetlabs/puppet/ssl (master_fixtures.sh). The node's own Puppet certificate (CN/SAN puppet8node) is the
+# listener's certificate.
+class: rsyslog_server
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 0.8
+  notes: "Wall clock 19:28:58Z to 19:29:45Z 2026-11-16, outside the worktree while the Phase 1 review ran (four templates read; the node's timer state read)."
+checks:
+  - id: listener-config-rendered
+    what: the TLS listener config names the node's own certificate files, the port, the session limit and the host-based tree
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_server.pp, lines: "25", text: "file { '/etc/rsyslog.d/30-listener.conf':"}
+      - {path: templates/rsyslog/listener_simple.conf.epp, lines: "7-8", text: "DefaultNetstreamDriverCertFile=\"/etc/rsyslog.d/tls/<%= $certname %>.pem\""}
+      - {path: templates/rsyslog/listener_simple.conf.epp, lines: "12-14", text: "port=\"<%= $port %>\""}
+      - {path: templates/rsyslog/listener_simple.conf.epp, lines: "19", text: "constant(value=\"<%= $log_root %>/hosts/\")"}
+    probe: |
+      grep -E 'DefaultNetstreamDriver(Cert|Key)File|^\s+(port|maxSessions|notifyOnConnectionClose)=|constant\(value="/var/log/hosts/"\)' /etc/rsyslog.d/30-listener.conf | sed 's/^\s*//'
+    expect: {rc: 0, stdout: "\\ADefaultNetstreamDriverCertFile=\"/etc/rsyslog\\.d/tls/puppet8node\\.pem\"\\nDefaultNetstreamDriverKeyFile=\"/etc/rsyslog\\.d/tls/puppet8node\\.key\"\\nport=\"6514\"\\nmaxSessions=\"2000\"\\nnotifyOnConnectionClose=\"off\"\\nconstant\\(value=\"/var/log/hosts/\"\\)\\nconstant\\(value=\"/var/log/hosts/\"\\)\\n\\Z"}
+
+  - id: tls-listener-presents-the-node-certificate
+    what: rsyslogd listens on 6514 with TLS, presenting a certificate that verifies against the Puppet CA for the node's name
+    control: negative
+    derived_from:
+      - {path: templates/rsyslog/listener_simple.conf.epp, lines: "5-8", text: "DefaultNetstreamDriver=\"gtls\""}
+      - {path: templates/rsyslog/listener_simple.conf.epp, lines: "15", text: "streamdriver.mode=\"1\""}
+      - {path: manifests/rsyslog_server.pp, lines: "21", text: "$certname = $trusted['certname']"}
+    probe: |
+      c=$(basename /etc/rsyslog.d/tls/*.key .key)   # the node's certname (the class names its files after it)
+      echo | timeout 15 openssl s_client -connect 127.0.0.1:6514 -CAfile /etc/rsyslog.d/tls/ca.pem -verify_return_error -verify_hostname "$c" -cert "/etc/rsyslog.d/tls/$c.pem" -key "/etc/rsyslog.d/tls/$c.key" 2>&1 | grep -oE 'Verify return code: [0-9]+ \([^)]*\)' | head -1
+    mismatch:
+      varies: >-
+        the name: the same handshake verified for p8test-wrong.invalid must fail, so the pass above is the certificate's
+        name and chain, not a tool that always says ok
+      probe: |
+        c=$(basename /etc/rsyslog.d/tls/*.key .key)
+        echo | timeout 15 openssl s_client -connect 127.0.0.1:6514 -CAfile /etc/rsyslog.d/tls/ca.pem -verify_return_error -verify_hostname p8test-wrong.invalid -cert "/etc/rsyslog.d/tls/$c.pem" -key "/etc/rsyslog.d/tls/$c.key" 2>&1 | grep -oE 'Verify return code: [0-9]+ \([^)]*\)' | head -1
+    expect: {rc: 0, stdout: "\\AVerify return code: 0 \\(ok\\)\\n\\Z"}
+
+  - id: self-forward-config-absent
+    what: the old self-forward config is absent
+    control: invariant
+    why_invariant: the stock node has no /etc/rsyslog.d/40-forward-self.conf; the class keeps it absent
+    derived_from:
+      - {path: manifests/rsyslog_server.pp, lines: "41-42", text: "ensure => absent,"}
+    probe: test ! -e /etc/rsyslog.d/40-forward-self.conf && echo absent
+    expect: {rc: 0, stdout: "\\Aabsent\\n\\Z"}
+
+  - id: logrotate-timer-override-active
+    what: >-
+      systemd runs logrotate.timer with the override (daily at rotation_hour:rotation_minute, accuracy 1 min): the
+      daemon-reload and timer restart took effect (the stock timer's accuracy is 1 h)
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_server.pp, lines: "54", text: "file { '/etc/systemd/system/logrotate.timer.d/override.conf':"}
+      - {path: manifests/rsyslog_server.pp, lines: "68", text: "command     => '/bin/systemctl daemon-reload',"}
+      - {path: templates/rsyslog/logrotate.timer.override.epp, lines: "3-5", text: "AccuracySec=1min"}
+    probe: |
+      systemctl show logrotate.timer -p DropInPaths -p AccuracyUSec -p ActiveState
+    expect: {rc: 0, stdout: "\\AActiveState=active\\nAccuracyUSec=1min\\nDropInPaths=/etc/systemd/system/logrotate\\.timer\\.d/override\\.conf\\n\\Z"}
+
+  - id: host-logs-rotation-rule
+    what: logrotate rotates the per-host logs daily, keeping all, uncompressed, date-suffixed
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_server.pp, lines: "79", text: "file { '/etc/logrotate.d/rsyslog-hosts':"}
+      - {path: templates/rsyslog/rsyslog-hosts.logrotate.epp, lines: "2-7", text: "<%= $log_root %>/hosts/*/*.log <%= $log_root %>/hosts/*/.log {"}
+    probe: |
+      logrotate -d /etc/logrotate.d/rsyslog-hosts >/dev/null 2>&1 && head -7 /etc/logrotate.d/rsyslog-hosts | sed 's/^\s*//'
+    expect: {rc: 0, stdout: "\\A/var/log/hosts/\\*/\\*\\.log /var/log/hosts/\\*/\\.log \\{\\ndaily\\nrotate -1\\nnocompress\\ndateext\\ndateformat -%Y%m%d\\n\\Z"}
+
+  - id: retention-script-and-cron
+    what: the retention script (root 0755, the 7/7-day defaults, valid bash) runs from root's crontab at 03:17
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_server.pp, lines: "91-97", text: "file { \"${bindir}/rsyslog-hosts-retention.sh\":"}
+      - {path: templates/rsyslog/rsyslog-hosts-retention.sh.epp, lines: "4-6", text: "ROOT_DIR=\"<%= $log_root %>/hosts\""}
+      - {path: manifests/rsyslog_server.pp, lines: "103-107", text: "cron { 'rsyslog_hosts_retention_cleanup':"}
+      - {path: manifests/rsyslog_server.pp, lines: "12-13", text: "Integer[0, 23] $retention_hour      = 3,"}
+    probe: |
+      f=/opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh
+      stat -c '%U %a' "$f"; bash -n "$f" && grep -E '^(ROOT_DIR|ACTIVE_DAYS|RETENTION_DAYS)=' "$f"
+      crontab -l -u root 2>/dev/null | grep -A1 -x '# Puppet Name: rsyslog_hosts_retention_cleanup' | tail -1
+    expect: {rc: 0, stdout: "\\Aroot 755\\nROOT_DIR=\"/var/log/hosts\"\\nACTIVE_DAYS=7\\nRETENTION_DAYS=7\\n17 3 \\* \\* \\* /opt/puppet-infrastructure/bin/rsyslog-hosts-retention\\.sh\\n\\Z"}
+
+  - id: remote-message-lands-in-the-host-tree
+    what: >-
+      the exercise: a syslog message sent over TLS to the listener, from a client presenting a CA-signed certificate,
+      is written to <log_root>/hosts/<hostname>/<programname>.log
+    control: negative
+    derived_from:
+      - {path: templates/rsyslog/listener_simple.conf.epp, lines: "16", text: "streamdriver.authMode=\"x509/certvalid\"   # accept any cert signed by CA"}
+      - {path: templates/rsyslog/listener_simple.conf.epp, lines: "18-23", text: "property(name=\"programname\" securePath=\"replace\")"}
+      - {path: templates/rsyslog/listener_simple.conf.epp, lines: "34-35", text: "action(type=\"omfile\" dynaFile=\"remote\" createDirs=\"on\")"}
+    mutates: >-
+      sends one RFC3164 line (host p8testremote, tag p8test) to 127.0.0.1:6514 over TLS with the node's own Puppet
+      certificate as the client certificate; rsyslogd creates /var/log/hosts/p8testremote/p8test.log
+    probe: |
+      c=$(basename /etc/rsyslog.d/tls/*.key .key)
+      { printf '<14>Nov 16 19:00:00 p8testremote p8test: p8test-remote-marker\n'; sleep 2; } | timeout 15 openssl s_client -quiet -connect 127.0.0.1:6514 -CAfile /etc/rsyslog.d/tls/ca.pem -cert "/etc/rsyslog.d/tls/$c.pem" -key "/etc/rsyslog.d/tls/$c.key" >/dev/null 2>&1; sleep 2
+    effect: |
+      grep -c 'p8test-remote-marker' /var/log/hosts/p8testremote/p8test.log
+    expect: {rc: 0, stdout: "\\A1\\n\\Z"}
