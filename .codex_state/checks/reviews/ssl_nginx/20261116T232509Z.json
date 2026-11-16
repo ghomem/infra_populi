@@ -1,0 +1,21 @@
+{
+ "class": "ssl_nginx",
+ "at": "20261116T232509Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "private-key-installed-root-only @ ssl_base.pp:85-91: file { $key_file: mode '0600', owner $owner, group $group } with owner/group defaulting to root (ssl_base.pp:47,50; ssl_nginx passes neither) -> stat 'root root 600' is exactly what the lines declare",
+  "private-key-installed-root-only @ ssl_nginx.pp:8-11: ssl_nginx declares ssl_base with myprefix => $sslprefix (fixture sslprefix p8test), letsencrypt default false -> the key path probed is /etc/ssl/private/p8test.key",
+  "private-key-installed-root-only @ ssl_base.pp:77-78: non-letsencrypt branch sets $key_file = \"${ssl_private_dir}/${myprefix}.key\", default (Debian) ssl_private_dir /etc/ssl/private -> /etc/ssl/private/p8test.key on the Ubuntu node, matching the probe path"
+ ],
+ "review_s": 111.5,
+ "check_file_sha256": "1e881a32c6eebaaacdd0891f5306dfcdac79cc8187c8d853a0dbbebb593d7363",
+ "reviewer_result": "20261116T232318Z-reviewer",
+ "author_result": "20261116T232156Z-author",
+ "findings": []
+}
