@@ -1408,3 +1408,35 @@ too; other commits keep the fast subset. Cause: the lab_vm.sh commit (516b455) l
 - **Verified:** two real reverts SUCCESS (33.8 s each); `--revert-first --fixture guarded_exec` GREEN (NODE_FRESH yes);
   native RedHat compile OK; clean-node inventory taken (49,499 paths).
 - **Activated:** nodes.yml rhel9 → active.
+
+## 2026-11-16 — Batch 5 engine decisions (first batch on NIC1 NAT)
+- **puppetserver vs the CLI compiler for module Ruby (openvpn_server, category 1):** compile-only and classify_path use
+  `puppet catalog compile`, which puts module lib dirs on Ruby's load path. puppetserver's JRuby does not. A
+  relationship on a `network_config` resource makes puppetserver load the type's Ruby, and its
+  `require 'puppetx/filemapper'` fails. So a compile-only OK does not prove a module's Ruby loads on the server; the
+  harness run does. Ruling requested (escalations/openvpn_server.md).
+- **Dependency defaults that moved (mysql_server, category 1):** the Puppet 8 line of puppetlabs-mysql (14+) defaults
+  Ubuntu ≥ 20.04 to MariaDB. A class relying on the module default for its service now manages the wrong service.
+  Ruling requested (escalations/mysql_server.md); the upstream_defects entry is pending HQ.
+- **Ruling-7 node fixtures beyond services:** hashman_base and hashman_web run on the Puppet master (the user
+  database lives in its code tree). Fixtures `puppetserver_code_tree` and `hashman_master_standin` (adding the lab
+  Hiera's example logo files) supply what an agent node lacks; their GREENs are mock-apply. Applying them to the lab
+  master is ruled out: it would write the database into the master's live site manifests.
+- **pregate hazard 4:** the plan's node_fixture counts as a path provider, and paths are compared as Puppet manages
+  them (repeated slashes from Hiera interpolation collapsed). Cases: adb74d6, provided_paths `/etc/mysql`
+  (mysql::server's package).
+- **Master Hiera fixture for an included class:** `puppet_infrastructure::rsyslog_base::ssldir_override` binds the
+  OpenVox ssldir where a class does a bare `include` of rsyslog_base (rsyslog_server). It is a stock path, the one
+  named exception to "obviously fake" in master_fixtures.sh.
+- **review_class.py reads class files as bytes:** binary files (hashman_web's PNGs) are compared exactly, and a
+  binary change counts as a code change (ad12459). The crash produced no verdict. The re-verify ran without `--fresh`
+  because the fix commit followed the migrate commit (the reviewer refused `--fresh` as designed).
+- **firewall_addon_hosting re-migrated** with the amended ruled fix (destination `$server_facts['servername']`): a
+  class_rulings line carries the exact change to the executor; upstream_defects entry applied (bd0529a).
+- **Phase 3 authoring lessons** (all corrected with dated notes; failed runs kept):
+  - output ordering (`systemctl show` and `dpkg-query` sort their output);
+  - line counts;
+  - stderr merged into a parsed probe;
+  - `mutates` must declare every effect, including stock routing (the rsyslog_server Phase 3 review FAIL);
+  - the validator forbids lab host names, `puppet` invocations and `>` in probes, so probes read the certname from
+    the node and avoid literal redirects.
