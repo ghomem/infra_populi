@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none.
 ### Purpose ########
 # This defined type updates the screen locker settings for a specific user
 
