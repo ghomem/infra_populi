@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none (core file resource only).
 ### Purpose ########
 # This class provides a nagios plugin that can be used trigger and monitor integrity checks
 class puppet_infrastructure::sysmon_integrity_node ( $checklist = '' ) {
