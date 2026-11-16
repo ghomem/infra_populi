@@ -1288,3 +1288,23 @@ Two engine gaps surfaced by gnome_lock_screen's first Phase 3 review (FAIL, envi
 
 Batch 4 stopped at 5/7 on the second DHCPv4 loss of the day: `escalations/lab-dhcp-bridged-wifi.md`, with the NAT plan
 as the recommended fix. openvpn_server is prepared and waits.
+
+## 2026-11-16 — HQ item 2: node selection from a tracked inventory
+`.codex_state/lab/nodes.yml` (advisor-only) is the single source for the lab nodes. `nodes.py` is its only reader.
+- **Per kind:** status, vm, alias, certname, hostname, hostonly_ip, baseline_snapshot, os_family, os, capabilities.
+- **The kinds:** `ubuntu` is the current node, active and the default. `rhel9`, `kubuntu`, `gnome` and `ubuntu2` are
+  planned p8lab-* VMs on host-only .21-.24, refused by the engine until brought up.
+- **Selection:** `--node KIND`, else the plan row's new `node` column, else `P8_NODE`, else the default.
+- **Who follows it:**
+  - revert_node.sh: VM, snapshot, alias, address and hostname. Only ubuntu24-puppet8-Node or p8lab-* VMs, never the
+    master. RedHat nodes assert a valid subscription and refresh dnf.
+  - records.py: one latest-revert record per node; the stamps carry the node.
+  - node_inventory.py: a cache per node.
+  - pregate: the class's node.
+  - test_class.sh in every mode: the alias; the master's node file `nodes/<certname>.pp`; the catalog, facts and
+    compile certname; revert, fresh-check and stamp; per-node params `params/<kind>/<class>.json` before the shared
+    fixture; compile-only on a RedHat node uses its own facts (`native`) and refuses `--facts debian`.
+  - review_class.py: the node identities and the params of the class's node.
+  - codex_migrate_class: reverts the class's node.
+  - phase3.py: probes and reverts the class's node; a probe may name no lab node.
+- **Steps:** n1 2417aca, n2 4714217, n3 b3ed59f, n4 69ca59b, n5 (this commit). 26 new tests.

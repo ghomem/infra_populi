@@ -103,7 +103,8 @@ def test_wrapper_audit_is_quiet_for_record_files_and_reports_uncommitted_edits(w
 
 
 def test_wrapper_audit_ignores_advisor_edits_that_predate_the_run(wrapper_clone, lab):
-    (wrapper_clone / ".codex_state/migration_plan.md").write_text("advisor's work in progress\n")
+    plan = wrapper_clone / ".codex_state/migration_plan.md"
+    plan.write_text(plan.read_text() + "\nadvisor's work in progress\n")  # an uncommitted edit; the plan still parses
     stub_codex(lab, "exit 0")
     proc = lab.run([str(wrapper_clone / ".codex_state/tools/codex_migrate_class"), "puppet_infrastructure::dns_client"],
                    cwd=wrapper_clone)

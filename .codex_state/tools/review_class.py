@@ -250,13 +250,20 @@ def modules_used(manifest: str, inv: dict) -> set[str]:
     return used
 
 
-def node_identities() -> tuple[set[str], set[str]]:
-    """(real NIC names, human accounts) on the node — values a fixture must never use."""
-    proc = subprocess.run(["timeout", "30", "ssh", "puppet8node",
+def node_kind(cls: str) -> str:
+    import nodes  # noqa: PLC0415
+    return nodes.select(nodes.load(), cls=cls)["kind"]
+
+
+def node_identities(cls: str) -> tuple[set[str], set[str]]:
+    """(real NIC names, human accounts) on the class's lab node (nodes.yml) — values a fixture must never use."""
+    import nodes  # noqa: PLC0415
+    alias = nodes.select(nodes.load(), cls=cls)["alias"]
+    proc = subprocess.run(["timeout", "30", "ssh", alias,
                            "ls /sys/class/net; echo ---; getent passwd | awk -F: '$3>=1000 && $3<65534 {print $1}'"],
                           capture_output=True, text=True, stdin=subprocess.DEVNULL)
     if proc.returncode != 0:
-        raise RuntimeError("cannot read NICs/accounts from puppet8node")
+        raise RuntimeError(f"cannot read NICs/accounts from {alias}")
     nics, _, users = proc.stdout.partition("---")
     return ({n for n in nics.split() if n != "lo"},
             {u for u in users.split() if not u.startswith("p8test")})
@@ -450,12 +457,14 @@ def run_checks(cls: str, harness: bool) -> dict:
 
     # fixtures
     try:
-        nics, users = node_identities()
+        nics, users = node_identities(cls)
         fx = []
         for name, data in expanded_classes(cls):
             if data["title"] and data["title"] in nics | users:
                 fx.append(f"{name}: plan title {data['title']!r} is a real node identity")
-            pfile = PARAMS_DIR / f"puppet_infrastructure::{name}.json"
+            # the node's own fixture (params/<kind>/) wins, as in the harness; else the shared one
+            kind_file = PARAMS_DIR / node_kind(cls) / f"puppet_infrastructure::{name}.json"
+            pfile = kind_file if kind_file.is_file() else PARAMS_DIR / f"puppet_infrastructure::{name}.json"
             if pfile.is_file():
                 for key, val in json_strings(json.loads(pfile.read_text())):
                     if val in nics | users:

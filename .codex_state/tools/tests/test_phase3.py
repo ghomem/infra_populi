@@ -495,3 +495,13 @@ def test_a_failed_revert_records_its_reason(p3, tmp_path):
     assert proc.returncode == 3
     record, _ = p3.result()
     assert record["problems"] == ["node revert failed: ERROR: The node has no IPv4 default route after 60s"]
+
+
+def test_probes_may_not_name_any_lab_node():
+    """HQ 2026-11-16 item 2: the runner targets the class's own node; naming another lab VM is refused."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("phase3_nodes_t", TOOLS / "phase3.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert any("another lab host" in p for p in mod.probe_problems("ssh p8lab-rhel9 true"))
+    assert any("another lab host" in p for p in mod.probe_problems("ping -c1 puppet8node"))

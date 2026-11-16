@@ -86,12 +86,13 @@ REPO = TOOLS.parents[1]
 sys.path.insert(0, str(TOOLS))
 import baseline  # noqa: E402
 
-NODE = "puppet8node"
+NODE = "puppet8node"  # set per run to the class's lab node alias (nodes.yml; HQ 2026-11-16 item 2)
 PROBE_TIMEOUT = 120
 PARAMS_DIR = Path(os.environ.get("P8_PARAMS_DIR") or Path.home() / ".config" / "infra_populi" / "params")
 SLUG = re.compile(r"[a-z0-9][a-z0-9-]{1,62}")
 FORBIDDEN = [
-    (re.compile(r"puppet8master|puppet8node|example\.com:8140|\b192\.168\.\d+\.\d+"), "names another lab host"),
+    (re.compile(r"puppet8master|puppet8node|p8lab-[a-z0-9-]+|example\.com:8140|\b192\.168\.\d+\.\d+"),
+     "names another lab host"),
     (re.compile(r"\b(scp|sftp|rsync)\s"), "copies to/from another host"),
     (re.compile(r"\bpuppet\s+(agent|apply|resource)\b|/opt/puppetlabs/bin/puppet\b"), "runs Puppet (changes the node)"),
     (re.compile(r"\bsystemctl\s+(start|stop|restart|reload|enable|disable|mask|unmask|kill)\b"), "changes a service"),
@@ -459,6 +460,10 @@ def cmd_run(cls: str, role: str) -> int:
         print(f"REFUSED: another lab run holds the lab lock ({lock.stderr.strip()})", file=sys.stderr)
         return finish("ENVIRONMENT_FAILED", 3)
     os.environ["P8_LAB_LOCKED"] = "1"
+    global NODE
+    import nodes  # noqa: PLC0415
+    node = nodes.select(nodes.load(), cls=cls)
+    NODE, record["node"] = node["alias"], node["kind"]
     try:
         return run_locked(cls, data, record, finish)
     finally:
@@ -468,7 +473,7 @@ def cmd_run(cls: str, role: str) -> int:
 def run_locked(cls: str, data: dict, record: dict, finish) -> int:
     revert = os.environ.get("P8_PHASE3_REVERT") or str(TOOLS / "revert_node.sh")
     print("==> Reverting the node (clean phase runs on the baseline)")
-    rv = subprocess.run([revert], env=node_env(), capture_output=True, text=True)
+    rv = subprocess.run([revert, "--node", record["node"]], env=node_env(), capture_output=True, text=True)
     print(rv.stdout, end="")
     print(rv.stderr, end="", file=sys.stderr)
     if rv.returncode != 0:

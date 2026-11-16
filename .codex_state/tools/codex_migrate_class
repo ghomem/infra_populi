@@ -8,7 +8,7 @@
 #
 # NOT host-portable as-is. Host-specific assumptions:
 #   repo path    /home/salatiel/work/infra_populi
-#   SSH aliases  puppet8master, puppet8master-rsync, puppet8node
+#   SSH aliases  puppet8master, puppet8master-rsync, the class's node alias (nodes.yml)
 #   master paths /etc/puppetlabs/code/environments/production/...
 #   params dir   ~/.config/infra_populi/params  (UNTRACKED: environment-specific
 #                values, deliberately not versioned - see the tooling-tracking
@@ -38,7 +38,10 @@ CODEX_TIMEOUT_SECONDS="${CODEX_TIMEOUT_SECONDS:-1800}"
 METRICS=(python3 .codex_state/tools/metrics.py)
 
 # Revert first (step 1.2): Codex's first harness run must start from the clean baseline.
-revert_out="$(.codex_state/tools/revert_node.sh)" || { echo "$revert_out"; echo "REVERT_FAILED: node not restored; Codex not started" >&2; exit 3; }
+# The class's lab node (plan `node`, else the default; HQ 2026-11-16 item 2).
+NODE_KIND="$(python3 .codex_state/tools/nodes.py get --class "$SHORT" kind)" ||
+  { echo "REVERT_FAILED: no usable lab node for ${SHORT}; Codex not started" >&2; exit 3; }
+revert_out="$(.codex_state/tools/revert_node.sh --node "$NODE_KIND")" || { echo "$revert_out"; echo "REVERT_FAILED: node not restored; Codex not started" >&2; exit 3; }
 echo "$revert_out"
 # Step 3.4: per-attempt metrics events (untracked until `metrics.py close`).
 revert_json="$(sed -n 's/^REVERT_METRICS //p' <<<"$revert_out" | tail -1)"

@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-79 entries; 6 marked superseded (in whole or part); newest first.
+80 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-16 — HQ item 2: node selection from a tracked inventory
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-16 — batch 4: engine decisions; stopped on the bridged-Wi-Fi DHCPv4 loss
 - 1. **Packages as path providers.** pregate's prerequisite probe counts a package the required_base closure installs as
