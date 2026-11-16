@@ -1,0 +1,21 @@
+{
+ "class": "user_desktop",
+ "at": "20261116T223707Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "lock-screen-script-installed (user_desktop.pp:11): the define declares user_kde_lock_screen for the title, which includes user_kde_lock_screen_common; under the master Hiera filesystem::bindir resolves to /opt/puppet-infrastructure/bin, so the probe tests the file that line brings in",
+  "lock-screen-script-installed (user_kde_lock_screen_common.pp:8-12): the file is declared ${bindir}/configure_lock_screen.sh, owner root, mode 0755; the expect 'root 755' tests exactly that owner and mode (group root is not probed, which is a subset and not a false claim)",
+  "the-given-key-is-pushed (user_desktop.pp:7): ignorekey defaults to false and the fixture does not set it, so user_base.pp:94-100 declares ssh_authorized_key 'p8testuser@puppet', type ssh-rsa, key = mykey (the fixture hash has no '!' and mykey is non-empty, starting AAAAB3NzaC1yc2EAAAADAQAB, 372 chars); with purge_ssh_keys true exactly one line is expected"
+ ],
+ "review_s": 81.2,
+ "check_file_sha256": "4fffa832ec54703526a4409e908e19f9af6d45f2e8292d3a6995d3a46a3968f6",
+ "reviewer_result": "20261116T223546Z-reviewer",
+ "author_result": "20261116T223438Z-author",
+ "findings": []
+}
