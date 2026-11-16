@@ -1,0 +1,60 @@
+# Phase 3 checks for puppet_infrastructure::user_sudoer (define; harness title p8testuser, the user-identity fixture).
+# The wrapper appends the admin group to the group list (sudo; wheel on RedHat) and passes everything to user_base.
+# Fixture (params, never committed): myname "P8 Test User", a fake SHA-512 hash with salt p8testsalt, mykey = the
+# body of a throwaway RSA public key (private half discarded); defaults otherwise (ignorekey false: the key is pushed).
+# Node: ubuntu (Debian branch). The RedHat branch (wheel) is not exercised here.
+class: user_sudoer
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.3
+  notes: "Wall clock 19:07:46Z to 19:08:06Z 2026-11-16, outside the worktree while another review ran."
+uncovered:
+  - what: the RedHat branch (user_sudoer.pp:8-9), the admin group `wheel`
+    why: the Phase 3 run uses the plan's node (ubuntu, Debian branch)
+    lifted_by: rhel9
+checks:
+  - id: user-with-own-primary-group
+    what: the user exists with its own same-named primary group (sudo first in the list keeps the default primary)
+    control: negative
+    derived_from:
+      - {path: manifests/user_sudoer.pp, lines: "14", text: "mygrouplist => $grouplist,"}
+      - {path: manifests/user_base.pp, lines: "25-26", text: "if ( $mygrouplist == [] or $mygrouplist[0] == 'sudo' or $mygrouplist[0] == 'wheel' ){"}
+    probe: |
+      IFS=: read -r name _ uid gid gecos home shell < <(getent passwd p8testuser)
+      echo "$name|$gecos|$home|$shell"
+      echo "primary group: $(getent group "$gid" | cut -d: -f1)"
+    expect: {rc: 0, stdout: "\\Ap8testuser\\|P8 Test User\\|/home/p8testuser\\|/bin/bash\\nprimary group: p8testuser\\n\\Z"}
+
+  - id: member-of-sudo
+    what: on Debian the user's groups are its own and sudo, nothing else
+    control: negative
+    derived_from:
+      - {path: manifests/user_sudoer.pp, lines: "10-11", text: "$grouplist = flatten( [ $mygrouplist, [ 'sudo' ] ] )"}
+    probe: id -nG p8testuser | tr ' ' '\n' | sort | tr '\n' ' '
+    expect: {rc: 0, stdout: "\\Ap8testuser sudo \\Z"}
+
+  - id: sudo-grants-all
+    what: through the sudo group the node's sudoers grants the user every command (sudo's own verdict)
+    control: negative
+    derived_from:
+      - {path: manifests/user_sudoer.pp, lines: "2", text: "# This class defines a sudoer user"}
+      - {path: manifests/user_sudoer.pp, lines: "10-11", text: "$grouplist = flatten( [ $mygrouplist, [ 'sudo' ] ] )"}
+    probe: |
+      sudo -l -U p8testuser | grep -E '^\s+\(ALL : ALL\) ALL$'
+    mismatch:
+      varies: >-
+        the user: `nobody` is in no admin group, so sudo must not list the ALL rule for it
+      probe: |
+        sudo -l -U nobody | grep -E '^\s+\(ALL : ALL\) ALL$'
+    expect: {rc: 0, stdout: "\\A\\s+\\(ALL : ALL\\) ALL\\n\\Z"}
+
+  - id: the-given-key-is-pushed
+    what: the key is pushed (ignorekey defaults to false), one ssh-rsa line with comment <title>@puppet
+    control: negative
+    derived_from:
+      - {path: manifests/user_sudoer.pp, lines: "6", text: "$ignorekey = false"}
+      - {path: manifests/user_base.pp, lines: "96-99", text: "ssh_authorized_key { \"${myusername}@puppet\" :"}
+    probe: |
+      grep -v '^#' /home/p8testuser/.ssh/authorized_keys | grep -v '^$'
+    expect: {rc: 0, stdout: "\\Assh-rsa AAAAB3NzaC1yc2EAAAADAQAB[A-Za-z0-9+/=]{200,} p8testuser@puppet\\n\\Z"}
