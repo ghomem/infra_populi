@@ -192,7 +192,8 @@ def test_repo_node_fixtures_exist_for_the_planned_classes(gen):
     assert rows["user_samba"].node_fixture == "samba_dc_standin"
     assert rows["hashman_base"].node_fixture == "puppetserver_code_tree"  # batch 5: the class runs on the master
     assert rows["hashman_web"].node_fixture == "hashman_master_standin"  # code tree + the site logo files
-    assert sum(1 for r in rows.values() if r.node_fixture) == 4
+    assert rows["user_lock"].node_fixture == "hashman_lock_standin"  # code tree + one fake hashman user entry
+    assert sum(1 for r in rows.values() if r.node_fixture) == 5
 
 
 def test_expected_run2_events_parse(gen):
