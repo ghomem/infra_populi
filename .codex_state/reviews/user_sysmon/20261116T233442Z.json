@@ -1,0 +1,95 @@
+{
+ "schema": 1,
+ "class": "user_sysmon",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-16T23:34:42Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "48f1fa48a6bc",
+ "migrate_subject": "P8: migrate puppet_infrastructure::user_sysmon",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 48f1fa48a6bc; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `user_sysmon Done [from: release-0.9.10; mock-apply: sysmon server stand-in (naemon user, thruk/naemon dirs)]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('citrin-htpasswd', '1.0.3')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 8 catalog events; COVERAGE puppet_infrastructure::user_sysmon: 2 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added lines: 'release-0.9.10 manifest validated unchanged' + citrin-htpasswd 1.0.3 dependency); 0 non-comment changes; DIFF B identical; mock-apply fixture sysmon_server not part of the class, behaviour unverified"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependency: citrin-htpasswd 1.0.3 (the htpasswd type)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 8,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::user_sysmon: 2 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 20.606,
+   "master_check_s": 0.28,
+   "poweroff_s": 0.813,
+   "restore_s": 0.246,
+   "boot_to_ssh_s": 13.4,
+   "apt_update_s": 5.551,
+   "verify_s": 0.316,
+   "nic1_rx_bytes": 3724891
+  },
+  "log": ".codex_state/logs/reviews/user_sysmon.20261116T233352Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
