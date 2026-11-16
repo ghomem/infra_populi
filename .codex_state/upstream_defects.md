@@ -50,9 +50,11 @@ the entry's `Ruled change` (plus ordinary Puppet 8 translations); anything else 
 - Post-condition: the user's entry in hashman's DB `${dbdir}/hashes.pp` (`$<user>_pwd_hash = '<value>'`,
   SUFFIX_USER `_pwd_hash`, SEPARATOR `=`) has a value starting with LOCKPREFIX `!` (libhashman/config.py.erb:38,57,58).
 - Ruled change: add `$hashmandb = lookup('hashman::dbdir')` and
-  `unless => "grep -Eq \"^[[:space:]]*\\\$${myuser}_pwd_hash[[:space:]]*=[[:space:]]*'!\" ${hashmandb}/hashes.pp"`.
+  `unless => "/bin/grep -Eq \"^[[:space:]]*\\\$${myuser}_pwd_hash[[:space:]]*=[[:space:]]*'!\" ${hashmandb}/hashes.pp"`.
   When the user is locked the command would change nothing (E_OK); when not locked or absent it runs as today.
   Verify the exact quoting against a locked p8testuser entry when the class is migrated (needs hashman_base).
+  Amended 2026-11-16 (batch 6, advisor): `grep` qualified as `/bin/grep` — the exec has no `path`, and Puppet
+  refuses an unqualified guard command (run 1: "'grep' is not qualified and no path was specified").
 - Status: ruled
 
 ## mariadb_server (the 0.9.10 mysql_server exec, moved by upstream 874f854)
