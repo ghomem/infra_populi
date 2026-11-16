@@ -59,7 +59,7 @@ the entry's `Ruled change` (plus ordinary Puppet 8 translations); anything else 
   renders as `\$`, which `sh -c` (Puppet's exec runs the guard through the shell) turns into a bare `$`, an end
   anchor in `grep -E`: the guard never matched (Codex run 2: run 2 re-locked). Proven on the node under `sh -c`:
   locked entry -> match (skip), unlocked -> no match (run).
-- Status: ruled
+- Status: applied a795d98 (reviewer v2 PASS 2026-11-16; mock-apply)
 
 ## mariadb_server (the 0.9.10 mysql_server exec, moved by upstream 874f854)
 - Short: certificate generation guarded by its post-condition
