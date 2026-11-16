@@ -478,3 +478,9 @@ def test_a_run_is_refused_while_another_lab_run_holds_the_lock(p3, lab):
         assert lab.calls("ssh") == [] and not p3.log.exists()  # no revert, no probe, no apply
     finally:
         holder.kill()
+
+
+def test_malformed_yaml_is_invalid_not_a_crash(p3):
+    (p3.dir / f"{CLS}.yml").write_text("class: backup_rsnapshot\nchecks:\n  - what: the line `root: ` breaks yaml\n")
+    proc = p3.run("validate", CLS)
+    assert proc.returncode != 0 and "is not valid YAML" in proc.stderr and "Traceback" not in proc.stderr

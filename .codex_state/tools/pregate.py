@@ -441,7 +441,10 @@ def scan_template(path: str, text: str, manifest_vars: set[str], report: Report)
     """template() is ERB whatever the file is called; epp() templates end in .epp."""
     hits: dict[str, int] = {}
     if not path.endswith(".epp"):
-        for m in ERB_LEGACY.finditer(text):
+        # only Ruby code counts: the contents of <% … %> tags (plain text such as a comment line naming
+        # someone@domain.pt is not a fact lookup; postfix_smtp_node main.cf, batch 4)
+        code = "\n".join(re.findall(r"<%(?!%)(.*?)%>", text, re.S))
+        for m in ERB_LEGACY.finditer(code):
             name = next(g for g in m.groups() if g)
             if m.group(1) and name in manifest_vars:
                 continue  # @name is a class variable, not a fact

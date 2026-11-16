@@ -130,7 +130,11 @@ def load_set(cls: str) -> tuple[dict, bytes]:
     if not path.is_file():
         raise SystemExit(f"ERROR: no check file {path}")
     raw = path.read_bytes()
-    data = yaml.safe_load(raw)
+    try:
+        data = yaml.safe_load(raw)
+    except yaml.YAMLError as err:  # a malformed set is INVALID, not a crash (batch 4)
+        raise SystemExit(f"INVALID {cls}: {path.name} is not valid YAML: {str(err).splitlines()[0]} "
+                         f"({' '.join(str(err).split())[-80:]})") from None
     if not isinstance(data, dict):
         raise SystemExit(f"ERROR: {path} is not a YAML mapping")
     return data, raw

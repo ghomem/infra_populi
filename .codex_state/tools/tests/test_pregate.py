@@ -370,3 +370,13 @@ def test_a_package_the_class_installs_provides_its_paths(tmp_path, monkeypatch):
     assert "package:dconf-cli" in pregate.closure_providers("gnome_lock_screen")
     lines = dict(pregate.provided_paths())
     assert lines["/usr/bin/dconf"] == "package:dconf-cli"
+
+
+def test_template_legacy_facts_count_only_inside_erb_tags():
+    """batch 4: postfix_smtp_node main.cf has `someone@domain.pt` on a plain comment line — not a fact lookup."""
+    import pregate
+    rep = pregate.Report("t")
+    text = "# mail -aFrom:someone@domain.pt\nmyhostname = <%= @hostname %>\n<% if @fqdn -%>x<% end %>\n"
+    pregate.scan_template("t.erb", text, set(), rep)
+    found = " ".join(d for _, check, d in rep.lines if check == "template-legacy-fact")
+    assert "@hostname" in found and "@fqdn" in found and "@domain" not in found
