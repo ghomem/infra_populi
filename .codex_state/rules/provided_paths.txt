@@ -8,3 +8,4 @@
 /etc/postfix package:postfix — Ubuntu's postfix package creates /etc/postfix (postfix_smtp_node installs it; its files subscribe to Package['postfix']; batch 4)
 /etc/openvpn openvpn — puppet-openvpn 12.0.0 install.pp declares ${etc_directory}/openvpn and .../openvpn/keys (openvpn_server declares class openvpn; batch 4)
 /usr/lib/x86_64-linux-gnu/openvpn openvpn — puppet-openvpn installs the openvpn package, which ships plugins/openvpn-plugin-auth-pam.so (Ubuntu multiarch path; batch 4)
+/etc/mysql mysql::server — puppetlabs-mysql 17.3.0 mysql::server::install installs Package['mysql-server'] (mysql_server passes package_name mysql-server-<version>); Ubuntu's mysql-server/mysql-common create /etc/mysql and /etc/mysql/mysql.conf.d, and mysql_server's files there require Package['mysql-server'] (batch 5)
