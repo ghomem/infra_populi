@@ -1,0 +1,50 @@
+# Phase 3 checks for puppet_infrastructure::ssl_postfix (class; required_base postfix_smtp_node, which declares the
+# Service['postfix'] ssl_base notifies). Fixture (params, never committed): sslprefix p8test (the lab master's fixture
+# PKI, CN p8test.invalid), letsencrypt_certificate false. The class hands ssl_base the service postfix.
+class: ssl_postfix
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.3
+  notes: "Wall clock 23:10:03Z to 23:10:21Z 2026-11-16, outside the worktree while the Phase 1 review ran."
+checks:
+  - id: private-key-installed-root-only
+    what: the prefix's private key is installed as /etc/ssl/private/<prefix>.key, root:root 0600
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_postfix.pp, lines: "5-9", text: "myservice               => 'postfix',"}
+      - {path: manifests/ssl_base.pp, lines: "77-78", text: "$key_file                 = \"${ssl_private_dir}/${myprefix}.key\""}
+      - {path: manifests/ssl_base.pp, lines: "85-91", text: "mode   => '0600',"}
+    probe: stat -c '%U %G %a' /etc/ssl/private/p8test.key
+    expect: {rc: 0, stdout: "\\Aroot root 600\\n\\Z"}
+
+  - id: postfix-bundle-cert-then-intermediate
+    what: the postfix bundle (<prefix>.postfix.bundle.crt, 0644) holds the server certificate first, then the intermediate
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "79-81", text: "$bundle_file              = \"${ssl_certs_dir}/${myprefix}.${myservice}.bundle.crt\""}
+      - {path: manifests/ssl_base.pp, lines: "100-107", text: "concat { $bundle_file:"}
+    probe: |
+      f=/etc/ssl/certs/p8test.postfix.bundle.crt
+      stat -c '%U %a' "$f"
+      grep -c 'BEGIN CERTIFICATE' "$f"
+      openssl x509 -noout -subject -nameopt RFC2253 -in "$f"
+    expect: {rc: 0, stdout: "\\Aroot 644\\n2\\nsubject=CN=p8test\\.invalid\\n\\Z"}
+
+  - id: bundle-certificate-matches-the-key
+    what: the bundle's first certificate and the installed private key are a pair (same public key)
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "77-81", text: "$first_cert_source        = \"puppet:///extra_files/ssl/${myprefix}.crt\""}
+    probe: |
+      a=$(openssl x509 -noout -pubkey -in /etc/ssl/certs/p8test.postfix.bundle.crt | sha256sum)
+      b=$(openssl pkey -pubout -in /etc/ssl/private/p8test.key | sha256sum)
+      test "$a" = "$b" && echo key-matches-certificate
+    mismatch:
+      varies: >-
+        the key: the node's own Puppet agent key is a different key, so the same comparison against it must fail
+      probe: |
+        a=$(openssl x509 -noout -pubkey -in /etc/ssl/certs/p8test.postfix.bundle.crt | sha256sum)
+        b=$(openssl pkey -pubout -in "$(ls /etc/puppetlabs/puppet/ssl/private_keys/*.pem | head -1)" | sha256sum)
+        test "$a" = "$b" && echo key-matches-certificate
+    expect: {rc: 0, stdout: "\\Akey-matches-certificate\\n\\Z"}

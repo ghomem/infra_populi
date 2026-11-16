@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.ssl_postfix"><testsuite name="phase3.ssl_postfix.clean" tests="3" failures="1"><testcase classname="phase3.ssl_postfix.clean" name="private-key-installed-root-only" /><testcase classname="phase3.ssl_postfix.clean" name="postfix-bundle-cert-then-intermediate" /><testcase classname="phase3.ssl_postfix.clean" name="bundle-certificate-matches-the-key"><failure message="negative control passed on the clean node">rc 0
+key-matches-certificate
+
+Could not open file or uri for loading certificate from /etc/ssl/certs/p8test.postfix.bundle.crt
+4047DF8AEF710000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file
+4047DF8AEF710000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/ssl/certs/p8test.postfix.bundle.crt)
+Unable to load certificate
+Could not open file or uri for loading key from /etc/ssl/private/p8test.key
+40E72171C8760000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file
+40E72171C8760000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/ssl/private/p8test.key)
+</failure></testcase></testsuite><testsuite name="phase3.ssl_postfix.applied" tests="0" failures="0"><testcase classname="phase3.ssl_postfix.applied" name="not-run"><skipped message="INVALID_SET" /></testcase></testsuite></testsuites>

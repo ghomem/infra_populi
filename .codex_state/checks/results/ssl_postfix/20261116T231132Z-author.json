@@ -1,0 +1,49 @@
+{
+ "class": "ssl_postfix",
+ "role": "author",
+ "at": "20261116T231132Z",
+ "runner": "82408c2",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "02abc63a869f694dcbe2e8aa2325bf577d0c262593ab631499db29d7cb2d3777",
+ "valid": false,
+ "problems": [
+  "controls did not hold on the clean node: bundle-certificate-matches-the-key"
+ ],
+ "clean": [
+  {
+   "id": "private-key-installed-root-only",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/ssl/private/p8test.key': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "postfix-bundle-cert-then-intermediate",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/ssl/certs/p8test.postfix.bundle.crt': No such file or directory\ngrep: /etc/ssl/certs/p8test.postfix.bundle.crt: No such file or directory\nCould not open file or uri for loading certificate from /etc/ssl/certs/p8test.postfix.bundle.crt\n40F70E26947A0000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n40F70E26947A0000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/ssl/certs/p8test.postfix.bundle.crt)\nUnable to load certificate\n",
+   "ok": true
+  },
+  {
+   "id": "bundle-certificate-matches-the-key",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "key-matches-certificate\n",
+   "stderr": "Could not open file or uri for loading certificate from /etc/ssl/certs/p8test.postfix.bundle.crt\n4047DF8AEF710000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n4047DF8AEF710000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/ssl/certs/p8test.postfix.bundle.crt)\nUnable to load certificate\nCould not open file or uri for loading key from /etc/ssl/private/p8test.key\n40E72171C8760000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n40E72171C8760000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/ssl/private/p8test.key)\n",
+   "ok": false
+  }
+ ],
+ "apply": null,
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "INVALID_SET",
+ "authoring_minutes": 0.3,
+ "node": "ubuntu",
+ "duration_s": 21.1
+}
