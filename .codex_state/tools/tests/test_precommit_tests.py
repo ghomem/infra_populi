@@ -1,5 +1,6 @@
 """HQ 2026-11-11 ruling 3: the pre-commit hook runs the fast subset on every commit and the full suite when a batch
-report is staged; no commit lands with a failing test."""
+report is staged, or (HQ 2026-11-16 NAT review I) when the engine's tools or the settings are staged; no commit lands
+with a failing test."""
 
 import os
 import shutil
@@ -56,19 +57,46 @@ def test_passing_fast_subset_lets_the_commit_through(repo):
     assert "TESTS: fast subset passed" in proc.stderr  # git relays hook output on stderr
 
 
+def seed(r, name, text):
+    """A test file committed without the hook, so a later commit stages only its own path."""
+    (r / ".codex_state/tools/tests" / name).write_text(text)
+    git(r, "add", "-A")
+    git(r, "commit", "-q", "-m", f"seed {name}", "--no-verify")
+
+
+def add_failing_slow_test(r):
+    seed(r, "test_slow.py", "import pytest\npytestmark = pytest.mark.slow\ndef test_slow_broken():\n    assert False\n")
+
+
 def test_a_failing_test_rejects_the_commit(repo):
-    (repo / ".codex_state/tools/tests/test_broken.py").write_text("def test_broken():\n    assert False\n")
+    seed(repo, "test_broken.py", "def test_broken():\n    assert False\n")
     proc = commit(repo, "notes.txt")
     assert proc.returncode != 0 and "TESTS: commit rejected — the fast subset failed" in proc.stderr
 
 
 def test_slow_tests_run_only_when_a_batch_report_is_staged(repo):
-    (repo / ".codex_state/tools/tests/test_slow.py").write_text(
-        "import pytest\npytestmark = pytest.mark.slow\ndef test_slow_broken():\n    assert False\n")
+    add_failing_slow_test(repo)
     assert commit(repo, "notes.txt").returncode == 0  # fast subset skips the slow failure
     proc = commit(repo, ".codex_state/escalations/batch-2026-11-11-3.md", "# report\n")
     assert proc.returncode != 0 and "full suite (batch report staged) failed" in proc.stderr
 
+
+
+
+@pytest.mark.parametrize("path", [".codex_state/tools/revert_node.sh", ".codex_state/tools/tests/test_x.py",
+                                  ".claude/settings.json"])
+def test_tools_or_settings_staged_run_the_full_suite(repo, path):
+    add_failing_slow_test(repo)
+    proc = commit(repo, path)
+    assert proc.returncode != 0 and "full suite (tools or settings staged) failed" in proc.stderr
+
+
+@pytest.mark.parametrize("path", [".codex_state/migration_plan.md", ".claude/agents/reviewer.md",
+                                  ".codex_state/toolsnotes.md"])
+def test_other_paths_keep_the_fast_subset(repo, path):
+    add_failing_slow_test(repo)
+    proc = commit(repo, path)
+    assert proc.returncode == 0 and "TESTS: fast subset passed" in proc.stderr, proc.stderr
 
 # HQ batch-3 acceptance item 4: skipped tests carry a reason, printed by the hook and named in a batch report.
 SKIPPED = ('import pytest\n'
@@ -77,21 +105,20 @@ SKIPPED = ('import pytest\n'
 
 
 def test_each_skipped_test_is_printed_with_its_reason(repo):
-    (repo / ".codex_state/tools/tests/test_lab.py").write_text(SKIPPED)
+    seed(repo, "test_lab.py", SKIPPED)
     proc = commit(repo, "notes.txt")
     assert proc.returncode == 0, proc.stderr
     assert "TESTS: skipped test_lab::test_needs_lab — needs the lab (set P8_LAB_TESTS=1)" in proc.stderr
 
 
 def test_a_skip_without_a_reason_rejects_the_commit(repo):
-    (repo / ".codex_state/tools/tests/test_bare.py").write_text(
-        "import pytest\n@pytest.mark.skip\ndef test_bare():\n    pass\n")
+    seed(repo, "test_bare.py", "import pytest\n@pytest.mark.skip\ndef test_bare():\n    pass\n")
     proc = commit(repo, "notes.txt")
     assert proc.returncode != 0 and "test_bare::test_bare is skipped without a reason" in proc.stderr
 
 
 def test_a_batch_report_must_name_every_skipped_test(repo):
-    (repo / ".codex_state/tools/tests/test_lab.py").write_text(SKIPPED)
+    seed(repo, "test_lab.py", SKIPPED)
     proc = commit(repo, ".codex_state/escalations/batch-2026-11-12-4.md", "# report\n")
     assert proc.returncode != 0 and "does not name these skipped tests" in proc.stderr
     assert "test_lab::test_needs_lab — needs the lab (set P8_LAB_TESTS=1)" in proc.stderr

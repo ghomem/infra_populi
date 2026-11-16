@@ -1338,3 +1338,9 @@ nothing, and every refusal path is tested (22 tests).
     user once a desktop node exists, item 7a). Its check file changed, so its state is `stale` until its Phase 3 set
     is re-run when the Ubuntu node has internet again.
 - **Phase 5 backlog item 4:** postfix compatibility_level (item 7c).
+
+## 2026-11-16 — HQ NAT review I: tool and settings commits run the full suite
+The pre-commit hook runs the full suite, not the fast subset, when the commit stages anything under
+`.codex_state/tools/` (the tools and their tests) or `.claude/settings*.json`. A staged batch report still runs it
+too; other commits keep the fast subset. Cause: the lab_vm.sh commit (516b455) landed while the full suite was red
+(a stale rules digest), because only the fast subset gated it.
