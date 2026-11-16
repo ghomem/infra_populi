@@ -1,0 +1,61 @@
+# Phase 3 checks for puppet_infrastructure::hashman_web (class; required_base hashman_base, nginx_base; MOCK-APPLY:
+# node_fixture hashman_master_standin supplies the master's code-tree directory and placeholder files at the lab
+# Hiera's example logo paths /path/to/logo.png and /path/to/logo-email.png).
+# Fixture: class defaults (letsencrypt_certificate false) and the lab Hiera (hashman::customname 'Hashman',
+# hashman::company 'My Company', hashman::address = puppet::address puppet.example.com, hashman::sslprefix
+# star.example.com, served by the master's fixture PKI).
+# What a node can show: the gunicorn service, the Flask app answering, nginx proxying the domain to it over TLS, the
+# logos copied from their Hiera sources. NOT shown: logins against a real user database on a master (mock-apply).
+class: hashman_web
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 9.6
+  notes: "Wall clock 20:29:43Z to 20:39:21Z 2026-11-16 (includes fixing the review tool's binary-file crash in between), outside the worktree."
+checks:
+  - id: hashman-service-on-8080
+    what: the hashman unit (gunicorn) is enabled and running, listening on 0.0.0.0:8080
+    control: negative
+    derived_from:
+      - {path: manifests/hashman_web.pp, lines: "176-179", text: "ensure   => running,"}
+      - {path: templates/hashman/hashman.service.erb, lines: "7", text: "ExecStart=/usr/bin/gunicorn --bind 0.0.0.0:8080 wsgi --access-logfile <%= @logdir %>/gunicorn-receiver-access.log --error-logfile <%= @logdir %>/gunicorneceiver-error.log"}
+    probe: |
+      systemctl is-enabled hashman; systemctl is-active hashman
+      ss -ltnH 'sport = :8080' | awk '{print $4}' | sort -u
+    expect: {rc: 0, stdout: "\\Aenabled\\nactive\\n0\\.0\\.0\\.0:8080\\n\\Z"}
+
+  - id: backend-serves-the-portal
+    what: the Flask app answers / with its index titled '<customname> @ <company>'
+    control: negative
+    derived_from:
+      - {path: templates/hashman/httpserver/httpserver.py.erb, lines: "27-28", text: "TITLE = '<%= @hashmancustomname %>' + ' @ ' + COMPANY"}
+      - {path: templates/hashman/httpserver/httpserver.py.erb, lines: "111-113", text: "return render_template('index.html', strtitle = TITLE, companywebsite = COMPANYWEBSITE, companyname = COMPANY)"}
+    probe: |
+      curl -sS --max-time 10 http://127.0.0.1:8080/ | grep -o 'title.[^<]*' | head -1
+    expect: {rc: 0, stdout: "\\Atitle>Hashman @ My Company\\n\\Z"}
+
+  - id: frontend-proxies-the-domain-over-tls
+    what: nginx serves the hashman address over HTTPS by proxying to the backend on 127.0.0.1:8080
+    control: negative
+    derived_from:
+      - {path: manifests/hashman_web.pp, lines: "186-188", text: "backend_hosts_and_ports    => ['127.0.0.1:8080', ],"}
+    probe: |
+      curl -sSk --max-time 10 --resolve puppet.example.com:443:127.0.0.1 https://puppet.example.com/ | grep -o 'title.[^<]*' | head -1
+    mismatch:
+      varies: >-
+        the path (/static/styles/custom.css, a stylesheet the backend serves without a title): the title must come from
+        the backend's index route, not from any page nginx might return for the name
+      probe: |
+        curl -sSk --max-time 10 --resolve puppet.example.com:443:127.0.0.1 https://puppet.example.com/static/styles/custom.css | grep -o 'title.[^<]*' | head -1
+    expect: {rc: 0, stdout: "\\Atitle>Hashman @ My Company\\n\\Z"}
+
+  - id: logos-copied-from-hiera-sources
+    what: with non-default hashman::companylogo(mail) the class copies the configured files (else branches)
+    control: negative
+    derived_from:
+      - {path: manifests/hashman_web.pp, lines: "117-123", text: "source  => \"${hashmancompanylogo}\","}
+      - {path: manifests/hashman_web.pp, lines: "138", text: "} else {"}
+    probe: |
+      d=/opt/puppet-infrastructure/hashman/httpserver/static/img
+      cmp /path/to/logo.png "$d/logo.png" && cmp /path/to/logo-email.png "$d/logo-email.png" && echo copied
+    expect: {rc: 0, stdout: "\\Acopied\\n\\Z"}

@@ -1,0 +1,101 @@
+{
+ "class": "hashman_web",
+ "role": "author",
+ "at": "20261116T204309Z",
+ "runner": "075d46c",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "be5da2e0b675e8de92d41db4c609b8ab1036f1390954bb8f76302a2319340aa7",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "hashman-service-on-8080",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "not-found\ninactive\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "backend-serves-the-portal",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "curl: (7) Failed to connect to 127.0.0.1 port 8080 after 0 ms: Couldn't connect to server\n",
+   "ok": true
+  },
+  {
+   "id": "frontend-proxies-the-domain-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "curl: (7) Failed to connect to puppet.example.com port 443 after 0 ms: Couldn't connect to server\n",
+   "ok": true
+  },
+  {
+   "id": "logos-copied-from-hiera-sources",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cmp: /path/to/logo.png: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "Concat::Fragment[http_puppet.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_puppet.example.com-header]\n  Concat_fragment[http_puppet.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/http_www.puppet.example.com.conf]\n  Concat::Fragment[http_www.puppet.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_www.puppet.example.com-header]\n  Concat_fragment[http_www.puppet.example.com-footer]\n  Concat_fragment[https_www.puppet.example.com-800-442437fd34f82e9def422b18d842a28c-ssl]\n  Concat_file[/etc/nginx/sites-available/https_puppet.example.com.conf]\n  Concat_fragment[https_puppet.example.com-header]\n  Concat_fragment[https_puppet.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/https_www.puppet.example.com.conf]\n  Concat_fragment[https_www.puppet.example.com-ssl-header]\n  Concat_fragment[https_www.puppet.example.com-ssl-footer]\n  Concat::Fragment[https_www.puppet.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\n  Concat_fragment[backend_puppet.example.com_upstream_member_127.0.0.1:8080 in puppet.example.com]\n  Concat_fragment[http_puppet.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_www.puppet.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[https_www.puppet.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\nGREEN: run 2 events limited to the plan's expected_run2_events (Notify[Generated Upstream members for *]) (gate v2).\nGREEN_STAMP hashman_web de26796c4c09\n"
+ },
+ "applied": [
+  {
+   "id": "hashman-service-on-8080",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "enabled\nactive\n0.0.0.0:8080\n",
+   "stderr": ""
+  },
+  {
+   "id": "backend-serves-the-portal",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "title>Hashman @ My Company\n",
+   "stderr": ""
+  },
+  {
+   "id": "frontend-proxies-the-domain-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "title>Hashman @ My Company\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the path (/static/styles/custom.css, a stylesheet the backend serves without a title): the title must come from the backend's index route, not from any page nginx might return for the name",
+    "rc": 0,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "logos-copied-from-hiera-sources",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "copied\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 9.6,
+ "node": "ubuntu",
+ "duration_s": 140.3
+}
