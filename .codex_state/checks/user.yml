@@ -1,0 +1,72 @@
+# Phase 3 checks for puppet_infrastructure::user (define; harness title p8testuser, the user-identity fixture).
+# The define is a thin wrapper: it passes its parameters to puppet_infrastructure::user_base and cannot pass
+# ignorekey, so user_base's default (ignorekey false) applies and the SSH key IS pushed.
+# Fixture (params, never committed): myname "P8 Test User", a fake SHA-512 hash with salt p8testsalt (only the
+# algorithm and salt are asserted), mykey = the body of a throwaway RSA public key generated for the fixture (private
+# half discarded); defaults: mygrouplist [], myhome '', myhomemode '', user_shell /bin/bash.
+class: user
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.7
+  notes: "Wall clock 18:52:30Z to 18:53:14Z 2026-11-16, written + validated outside the worktree while the Phase 1 review ran."
+checks:
+  - id: user-and-own-primary-group
+    what: the wrapped user exists with its own same-named primary group, the comment, /home/<title> and /bin/bash
+    control: negative
+    derived_from:
+      - {path: manifests/user.pp, lines: "8", text: "puppet_infrastructure::user_base { $title : myname => $myname, myhash => $myhash , mykey => $mykey, mygrouplist => $mygrouplist, myhome => $myhome, myhomemode => $myhomemode, user_shell => $user_shell }"}
+      - {path: manifests/user_base.pp, lines: "26", text: "$myprimary = $title"}
+    probe: |
+      IFS=: read -r name _ uid gid gecos home shell < <(getent passwd p8testuser)
+      echo "$name|$gecos|$home|$shell"
+      echo "primary group: $(getent group "$gid" | cut -d: -f1)"
+    expect: {rc: 0, stdout: "\\Ap8testuser\\|P8 Test User\\|/home/p8testuser\\|/bin/bash\\nprimary group: p8testuser\\n\\Z"}
+
+  - id: no-supplementary-groups
+    what: the wrapper's default empty group list leaves the user in its own group only
+    control: negative
+    derived_from:
+      - {path: manifests/user.pp, lines: "6", text: "$mygrouplist = [ ]"}
+      - {path: manifests/user_base.pp, lines: "65", text: "groups         => $mygrouplist ,"}
+    probe: id -nG p8testuser
+    expect: {rc: 0, stdout: "\\Ap8testuser\\n\\Z"}
+
+  - id: home-created-and-owned
+    what: the home directory is created (managehome) and owned by the user
+    control: negative
+    derived_from:
+      - {path: manifests/user_base.pp, lines: "69", text: "managehome     => true,"}
+    probe: stat -c '%U %G %F' /home/p8testuser
+    expect: {rc: 0, stdout: "\\Ap8testuser p8testuser directory\\n\\Z"}
+
+  - id: password-hash-set
+    what: the shadow entry carries the fixture's SHA-512 hash (asserted by algorithm and salt only)
+    control: negative
+    derived_from:
+      - {path: manifests/user_base.pp, lines: "71", text: "password       => $myhash,"}
+    probe: |
+      getent shadow p8testuser | cut -d: -f2 | cut -d'$' -f1-3
+    expect: {rc: 0, stdout: "\\A\\$6\\$p8testsalt\\n\\Z"}
+
+  - id: the-given-key-is-pushed
+    what: >-
+      the user's key is pushed (the wrapper cannot set ignorekey): exactly one authorized key, type ssh-rsa, comment
+      <title>@puppet, carrying the fixture key (an RSA public key body) and not a placeholder (userlocked/emptykey)
+    control: negative
+    derived_from:
+      - {path: manifests/user_base.pp, lines: "58", text: "$sshkey = $mykey"}
+      - {path: manifests/user_base.pp, lines: "94", text: "if ( $ignorekey == false ) {"}
+      - {path: manifests/user_base.pp, lines: "96-99", text: "ssh_authorized_key { \"${myusername}@puppet\" :"}
+      - {path: manifests/user_base.pp, lines: "98", text: "type => 'ssh-rsa',"}
+    probe: |
+      grep -v '^#' /home/p8testuser/.ssh/authorized_keys | grep -v '^$'
+    expect: {rc: 0, stdout: "\\Assh-rsa AAAAB3NzaC1yc2EAAAADAQAB[A-Za-z0-9+/=]{200,} p8testuser@puppet\\n\\Z"}
+
+  - id: key-file-owned-and-private
+    what: the pushed key file belongs to the user, and it and ~/.ssh are private (the ssh_authorized_key resource)
+    control: negative
+    derived_from:
+      - {path: manifests/user_base.pp, lines: "96-99", text: "user => $myusername,"}
+    probe: stat -c '%U %a %n' /home/p8testuser/.ssh /home/p8testuser/.ssh/authorized_keys
+    expect: {rc: 0, stdout: "\\Ap8testuser 700 /home/p8testuser/\\.ssh\\np8testuser 600 /home/p8testuser/\\.ssh/authorized_keys\\n\\Z"}
