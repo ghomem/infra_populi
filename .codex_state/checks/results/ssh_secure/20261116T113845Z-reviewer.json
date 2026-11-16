@@ -1,0 +1,261 @@
+{
+ "class": "ssh_secure",
+ "role": "reviewer",
+ "at": "20261116T113845Z",
+ "runner": "624c550",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "f2b109146d1fbeb54999dab18eada7235079f08e846738355ad0b944f79b538e",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "kex-only-dh-gex-sha256",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "kexalgorithms sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "kex-negotiation-refuses-curve25519",
+   "control": "negative",
+   "rc": 255,
+   "passed": false,
+   "stdout": "Warning: Permanently added '127.0.0.1' (ED25519) to the list of known hosts.\nnobody@127.0.0.1: Permission denied (publickey,password).\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "ciphers-exact",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "ciphers chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "cipher-negotiation-refuses-chacha20",
+   "control": "negative",
+   "rc": 255,
+   "passed": false,
+   "stdout": "Warning: Permanently added '127.0.0.1' (ED25519) to the list of known hosts.\nnobody@127.0.0.1: Permission denied (publickey,password).\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "macs-exact",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "macs umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "mac-negotiation-refuses-umac",
+   "control": "negative",
+   "rc": 255,
+   "passed": false,
+   "stdout": "Warning: Permanently added '127.0.0.1' (ED25519) to the list of known hosts.\nnobody@127.0.0.1: Permission denied (publickey,password).\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "password-auth-off",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "passwordauthentication yes\nPermission denied (publickey,password)\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "root-login-off",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "permitrootlogin without-password\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "client-alive",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "clientalivecountmax 3\nclientaliveinterval 0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "allow-groups",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "ssh-in-group",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "host-keys-in-order",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "hostkey /etc/ssh/ssh_host_rsa_key\nhostkey /etc/ssh/ssh_host_ecdsa_key\nhostkey /etc/ssh/ssh_host_ed25519_key\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "moduli-file",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "49f3a4235aa69de2dc3ba4abab128d81d63f9bf90751b0600c7649d1a95892f0\n644 root root\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "unchanged-hardening-defaults",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "hostbasedauthentication no\nignorerhosts yes\nlogingracetime 120\nloglevel INFO\npermitemptypasswords no\nport 22\nprintlastlog yes\npubkeyauthentication yes\nstrictmodes yes\nsyslogfacility AUTH\ntcpkeepalive yes\nx11displayoffset 10\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "uling refresh of Class[Ssh::Server::Service]\u001b[0m\n\u001b[0;32mInfo: Class[Ssh::Server::Service]: Scheduling refresh of Service[ssh]\u001b[0m\n\u001b[mNotice: /Stage[main]/Ssh::Server::Service/Service[ssh]/enable: enable changed 'false' to 'true'\u001b[0m\n\u001b[mNotice: /Stage[main]/Ssh::Server::Service/Service[ssh]: Triggered 'refresh' from 3 events\u001b[0m\n\u001b[mNotice: Applied catalog in 2.31 seconds\u001b[0m\nRUN1_EVENTS: 5 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794829215'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.72 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::ssh_secure: 7 concrete resources (+1 defined-type instances)\n  File[/etc/ssh/moduli]\n  Group[ssh_in]\n  Package[openssh-server]\n  Concat[/etc/ssh/sshd_config]\n  Concat::Fragment[global config]\n  Service[ssh]\n  Concat_file[/etc/ssh/sshd_config]\n  Concat_fragment[global config]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP ssh_secure b1d47e165cc4\n"
+ },
+ "applied": [
+  {
+   "id": "kex-only-dh-gex-sha256",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "kexalgorithms diffie-hellman-group-exchange-sha256\n",
+   "stderr": ""
+  },
+  {
+   "id": "kex-negotiation-refuses-curve25519",
+   "control": "negative",
+   "rc": 255,
+   "passed": true,
+   "stdout": "Unable to negotiate with 127.0.0.1 port 22: no matching key exchange method found. Their offer: diffie-hellman-group-exchange-sha256,ext-info-s,kex-strict-s-v00@openssh.com\n",
+   "stderr": ""
+  },
+  {
+   "id": "ciphers-exact",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ciphers aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr\n",
+   "stderr": ""
+  },
+  {
+   "id": "cipher-negotiation-refuses-chacha20",
+   "control": "negative",
+   "rc": 255,
+   "passed": true,
+   "stdout": "Unable to negotiate with 127.0.0.1 port 22: no matching cipher found. Their offer: aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr\n",
+   "stderr": ""
+  },
+  {
+   "id": "macs-exact",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "macs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256\n",
+   "stderr": ""
+  },
+  {
+   "id": "mac-negotiation-refuses-umac",
+   "control": "negative",
+   "rc": 255,
+   "passed": true,
+   "stdout": "Unable to negotiate with 127.0.0.1 port 22: no matching MAC found. Their offer: hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256\n",
+   "stderr": ""
+  },
+  {
+   "id": "password-auth-off",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "passwordauthentication no\nPermission denied (publickey)\n",
+   "stderr": ""
+  },
+  {
+   "id": "root-login-off",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "permitrootlogin no\n",
+   "stderr": ""
+  },
+  {
+   "id": "client-alive",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "clientalivecountmax 0\nclientaliveinterval 14400\n",
+   "stderr": ""
+  },
+  {
+   "id": "allow-groups",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "sudo\nnaemon\nssh_in\n",
+   "stderr": ""
+  },
+  {
+   "id": "ssh-in-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ssh_in:x:1001:\n",
+   "stderr": ""
+  },
+  {
+   "id": "host-keys-in-order",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "hostkey /etc/ssh/ssh_host_ed25519_key\nhostkey /etc/ssh/ssh_host_ecdsa_key\nhostkey /etc/ssh/ssh_host_rsa_key\n",
+   "stderr": ""
+  },
+  {
+   "id": "moduli-file",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "01f903391abe367b549ae37822983bd3d5a8dd3d6465523f3b5f14729573b8b0\n644 root root\n",
+   "stderr": ""
+  },
+  {
+   "id": "unchanged-hardening-defaults",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "hostbasedauthentication no\nignorerhosts yes\nlogingracetime 120\nloglevel INFO\npermitemptypasswords no\nport 22\nprintlastlog yes\npubkeyauthentication yes\nstrictmodes yes\nsyslogfacility AUTH\ntcpkeepalive yes\nx11displayoffset 10\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS"
+}

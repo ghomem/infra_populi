@@ -1,0 +1,19 @@
+{
+ "class": "ssh_secure",
+ "at": "20261116T114031Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "macs-exact: baseline line 12 defaults $macs to 'hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256' and line 61 passes it as ssh::server option MACs; under the defaults fixture sshd -T must print exactly that list in order, which the anchored expect requires",
+  "kex-only-dh-gex-sha256: baseline line 10 defaults $kex_algorithm to 'diffie-hellman-group-exchange-sha256', wired to KexAlgorithms at line 59; the probe reads the effective kexalgorithms from sshd -T and expects exactly that single value",
+  "ciphers-exact: baseline line 11 defaults $ciphers to 'aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr', wired to Ciphers at line 60; the probe's anchored expect matches that exact list in order from sshd -T"
+ ],
+ "reviewer_result": "20261116T113845Z-reviewer",
+ "author_result": "20261116T113657Z-author",
+ "findings": []
+}
