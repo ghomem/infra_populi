@@ -127,4 +127,4 @@ the entry's `Ruled change` (plus ordinary Puppet 8 translations); anything else 
   so the class manages a service that does not exist on a MySQL node ("Systemd start for mariadb failed!"). Under
   10.5.0 (production) Ubuntu defaulted to `mysql`.
 - Proposed change: `service_name => 'mysql'` in the `mysql::server` declaration (escalations/mysql_server.md option 1).
-- Status: pending HQ
+- Status: not a defect — HQ batch-5 ruling 2: a module-compatibility change (like the firewall-8 renames), recorded in rules/class_rulings.txt; no upstream-defect marker

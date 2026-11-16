@@ -1,14 +1,14 @@
 # Puppet Class Migration Order
 
-Generated: 2026-11-16 22:02:55 UTC
+Generated: 2026-11-16 22:15:29 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
 Precedence: git > migrated_classes.txt (canonical) > migration_order.md (advisory). The `[from: release-0.9.10]` annotation lives in migrated_classes.txt, not here.
 
-Status summary: 61 done / 1 owner_validated / 4 blocked / 2 gated / 0 needs verification / 24 pending / 92 total.
+Status summary: 61 done / 1 owner_validated / 3 blocked / 1 gated / 0 needs verification / 26 pending / 92 total.
 
-Next class: `puppet_infrastructure::user_desktop`
+Next class: `puppet_infrastructure::mysql_server`
 
 Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — dependencies first, then `prod` (production MACHINES: servers + 20 per desktop regex statement, from `.codex_state/diagnosis/fleet_class_usage.md`, composites propagated) descending, then cx/dep/p8 — then re-migrations marked `sink`. prod 0 = no production declaration: they stay in the queue, last (HQ 2026-10-27: migrate everything).
 
@@ -96,42 +96,42 @@ Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — de
 |---:|---|---|
 | 1 | `puppet_infrastructure::mount_shares_desktop` | — blocked: CATEGORY 3 (harness capability/context gap) and HAND-REPAIRING NODE STATE stop. Actual run-1 errors after the Puppet 8 master successfully compiled the catalog were "Could not set 'file' on ensure: No such file or directory" for the mount script at `manifests/mount_shares_desktop.pp` line 9 and the same missing-directory error for the unmount script at line 16. That run used the now-corrected unsafe real-account params override; the observed missing-parent failure mode remains valid, but its overridden path is not the intended fixture target. Traced chain: the harness classification supplies define title `p8testuser`; the corrected untracked params fixture now preserves `username` as `p8testuser`; `manifests/mount_shares_desktop.pp:7-8` derives `$desktop_dir` as `/home/${myusername}/Desktop`; the two `File` resources at lines 9 and 16 therefore consume `/home/p8testuser/Desktop` without declaring it. The prior node probe returned `desktop_exists_rc=1`, establishing that the clean baseline does not furnish a user Desktop even for its login account; the migration plan establishes `p8testuser` as deliberately synthetic and non-existent on the node, and a repository-wide search found no manifest or required base that owns any user `Desktop` directory. The specific missing prerequisite is `/home/p8testuser/Desktop`, not Puppet 8 syntax: the catalog compiles, then application fails. Creating the directory manually would violate the hand-repair stop; making this define create it would change release-0.9.8 behaviour and ownership responsibilities. Unblock with a faithful, repeatable desktop-node test context whose baseline already includes the target user's Desktop directory, or add a harness fixture capability that establishes the externally owned prerequisite without changing this target; then revert the node and rerun the unchanged define for two clean applications. |
 | 2 | `puppet_infrastructure::openvpn_nm_connection` | — blocked: CATEGORY 5 (environment mismatch — the define manages NetworkManager connections). Re-categorized 2026-10-27 (sprint 4.2): the former category-1 blocker (`Unknown function: 'fqdn_rand_uuid'`, openvpn_nm_connection.pp:29; the function exists nowhere, production master inspected 2026-09-30) has a RULED fix — fqdn_rand_uuid -> stdlib fqdn_uuid with the same seed, marker `upstream defect fixed` (HQ ck1 ruling 3; .codex_state/rules/upstream_defects.md), applied when the class is migrated. Remaining obstacle: the define notifies `exec { 'Reload Network Manager Connections: <title>': name => '/usr/bin/nmcli con reload', refreshonly }` (openvpn_nm_connection.pp:22-23); on puppet8node `command -v nmcli` = absent and NetworkManager is inactive (netplan server), so run 1 fails as soon as the connection file changes. Unblock: a NetworkManager desktop node (diagnosis C9). |
-| 3 | `puppet_infrastructure::mysql_server` | — blocked: CATEGORY 1 (dependency behaviour change; 2026-11-16, batch 5). Run 1 on a fresh node (NODE_FRESH yes): "Systemd start for mariadb failed!" at Service[mysqld] (Mysql::Server::Service). The class (identical to 874f854) installs package mysql-server-<version> but passes no service_name; puppetlabs-mysql 17.3.0 params.pp:155-171 defaults Ubuntu >= 20.04 to provider mariadb (service 'mariadb'), whereas 10.5.0 (production, 2026-09-30 inspection) params.pp:195-210 gives Ubuntu provider mysql (service 'mysql'). The MySQL 8.0 package's unit is mysql.service. Needs an HQ ruling (class change with the upstream-defect marker, or a production Hiera binding): escalations/mysql_server.md; upstream_defects.md entry pending HQ. |
-| 4 | `puppet_infrastructure::openvpn_server` | — blocked: CATEGORY 1 (dependency-incompatibility at module level; 2026-11-16, batch 5). puppetserver returns 500 for the catalog: validating the class's own `subscribe => Network_config[...]` relationships (baseline manifests/openvpn_server.pp) loads the Ruby type network_config (relationship_validator.rb:29 -> resource.rb:390), whose interfaces provider does `require 'puppetx/filemapper'` (puppet-network 2.2.1 interfaces.rb:1); that file is not on puppetserver's JRuby load path (ruby-load-path = vendor_ruby only; server libdir empty). Exact versions: puppet-network 2.2.1, puppet-filemapper 4.0.0, puppet-kmod 4.1.0, openvox-server 8.11.0; types generated, puppetserver restarted many times since. Control: network_dhcp (no relationship on network_config) GREEN through puppetserver the same day. Not fixed upstream (network 3.0.0 same require; filemapper 5.0.0 same path). The `puppet catalog compile` CLI compiles it (module libs on its load path). Duplicate-service fix preserved: candidates/openvpn_server.partial.pp. Needs a ruling on the master's load path: escalations/openvpn_server.md. |
+| 3 | `puppet_infrastructure::openvpn_server` | — blocked: CATEGORY 1 (dependency-incompatibility at module level; 2026-11-16, batch 5). puppetserver returns 500 for the catalog: validating the class's own `subscribe => Network_config[...]` relationships (baseline manifests/openvpn_server.pp) loads the Ruby type network_config (relationship_validator.rb:29 -> resource.rb:390), whose interfaces provider does `require 'puppetx/filemapper'` (puppet-network 2.2.1 interfaces.rb:1); that file is not on puppetserver's JRuby load path (ruby-load-path = vendor_ruby only; server libdir empty). Exact versions: puppet-network 2.2.1, puppet-filemapper 4.0.0, puppet-kmod 4.1.0, openvox-server 8.11.0; types generated, puppetserver restarted many times since. Control: network_dhcp (no relationship on network_config) GREEN through puppetserver the same day. Not fixed upstream (network 3.0.0 same require; filemapper 5.0.0 same path). The `puppet catalog compile` CLI compiles it (module libs on its load path). Duplicate-service fix preserved: candidates/openvpn_server.partial.pp. Needs a ruling on the master's load path: escalations/openvpn_server.md. |
 
 ## TRANSITIVELY GATED
 
-- `puppet_infrastructure::mysql_db` — gated by blocked `puppet_infrastructure::mysql_server`
 - `puppet_infrastructure::network_vpn` — gated by blocked `puppet_infrastructure::openvpn_server`
 
 ## PENDING QUEUE
 
 | # | class | prod | cx | dep | p8 | sc | internal_deps |
 |---:|---|---:|---:|---:|---:|---|---|
-| 1 | `puppet_infrastructure::user_desktop` | 0 | 2 | 5 | 3 | yes | user_base,user_kde_lock_screen |
-| 2 | `puppet_infrastructure::user_desktop_sudoer` | 0 | 2 | 5 | 3 | yes | user_base,user_kde_lock_screen |
-| 3 | `puppet_infrastructure::user_lock` | 0 | 2 | 5 | 3 | no | hashman_base |
-| 4 | `puppet_infrastructure::ssl_postfix` | 0 | 2 | 6 | 4 | no | ssl_base |
-| 5 | `puppet_infrastructure::ssl_nginx` | 0 | 2 | 7 | 4 | no | ssl_base |
-| 6 | `puppet_infrastructure::user_sysmon` | 0 | 3 | 4 | 4 | yes |  |
-| 7 | `puppet_infrastructure::sysmon_fs_health` | 0 | 3 | 4 | 5 | no | filesystem_base |
-| 8 | `puppet_infrastructure::sysmon_integrity_master` | 0 | 3 | 4 | 5 | no | filesystem_base |
-| 9 | `puppet_infrastructure::sysmon_integrity_node` | 0 | 3 | 4 | 5 | no | filesystem_base |
-| 10 | `puppet_infrastructure::sysmon_mysqldump_health` | 0 | 3 | 4 | 5 | no | filesystem_base |
-| 11 | `puppet_infrastructure::users_sudoers` | 0 | 3 | 5 | 6 | yes | user_sudoer |
-| 12 | `puppet_infrastructure::letsencrypt_certificate` | 0 | 3 | 6 | 4 | no | letsencrypt_base |
-| 13 | `puppet_infrastructure::user_samba` | 0 | 4 | 2 | 6 | no |  |
-| 14 | `puppet_infrastructure::nginx_proxy_smtp_auth_ppa` | 0 | 4 | 4 | 5 | no | filesystem_base |
-| 15 | `puppet_infrastructure::linux_policies_common` | 0 | 4 | 5 | 5 | no | filesystem_base |
-| 16 | `puppet_infrastructure::linux_policies_user` | 0 | 4 | 4 | 5 | no | linux_policies_common |
-| 17 | `puppet_infrastructure::hello_world_flask` | 0 | 5 | 4 | 5 | no | hello_world_flask_common,filesystem_base |
-| 18 | `puppet_infrastructure::nginx_static` | 0 | 5 | 7 | 5 | no | nginx_base,nginx_default_removal,nginx_static_domain |
-| 19 | `puppet_infrastructure::node_base_domain_desktop` | 0 | 6 | 9 | 5 | no | packages_base,ssh_secure,firewall_secure,firewall_ipv6_drop,filesystem_base_desktop,filesystem_apt |
-| 20 | `puppet_infrastructure::openvpn_domain` | 0 | 7 | 4 | 6 | yes |  |
-| 21 | `puppet_infrastructure::mariadb_server` | 0 | 8 | 4 | 6 | no | filesystem_base |
-| 22 | `puppet_infrastructure::postfix_smtp_base` | 0 | 8 | 6 | 6 | yes | ssl_postfix,postfix_smtp_base_config_file |
-| 23 | `puppet_infrastructure::nginx_frontend_mail` | 0 | 8 | 7 | 6 | no | ssl_nginx_domain,nginx_frontend_domain |
-| 24 | `puppet_infrastructure::node_base_desktop` | 0 | 8 | 10 | 5 | no | packages_base,ssh_secure,firewall_secure,firewall_ipv6_drop_policy,filesystem_base_desktop,filesystem_apt,rsyslog_client,user_kde_lock_screen |
+| 1 | `puppet_infrastructure::mysql_server` | 1 | 7 | 5 | 6 | no |  |
+| 2 | `puppet_infrastructure::user_desktop` | 0 | 2 | 5 | 3 | yes | user_base,user_kde_lock_screen |
+| 3 | `puppet_infrastructure::user_desktop_sudoer` | 0 | 2 | 5 | 3 | yes | user_base,user_kde_lock_screen |
+| 4 | `puppet_infrastructure::user_lock` | 0 | 2 | 5 | 3 | no | hashman_base |
+| 5 | `puppet_infrastructure::ssl_postfix` | 0 | 2 | 6 | 4 | no | ssl_base |
+| 6 | `puppet_infrastructure::ssl_nginx` | 0 | 2 | 7 | 4 | no | ssl_base |
+| 7 | `puppet_infrastructure::mysql_db` | 0 | 3 | 2 | 4 | no | mysql_server |
+| 8 | `puppet_infrastructure::user_sysmon` | 0 | 3 | 4 | 4 | yes |  |
+| 9 | `puppet_infrastructure::sysmon_fs_health` | 0 | 3 | 4 | 5 | no | filesystem_base |
+| 10 | `puppet_infrastructure::sysmon_integrity_master` | 0 | 3 | 4 | 5 | no | filesystem_base |
+| 11 | `puppet_infrastructure::sysmon_integrity_node` | 0 | 3 | 4 | 5 | no | filesystem_base |
+| 12 | `puppet_infrastructure::sysmon_mysqldump_health` | 0 | 3 | 4 | 5 | no | filesystem_base |
+| 13 | `puppet_infrastructure::users_sudoers` | 0 | 3 | 5 | 6 | yes | user_sudoer |
+| 14 | `puppet_infrastructure::letsencrypt_certificate` | 0 | 3 | 6 | 4 | no | letsencrypt_base |
+| 15 | `puppet_infrastructure::user_samba` | 0 | 4 | 2 | 6 | no |  |
+| 16 | `puppet_infrastructure::nginx_proxy_smtp_auth_ppa` | 0 | 4 | 4 | 5 | no | filesystem_base |
+| 17 | `puppet_infrastructure::linux_policies_common` | 0 | 4 | 5 | 5 | no | filesystem_base |
+| 18 | `puppet_infrastructure::linux_policies_user` | 0 | 4 | 4 | 5 | no | linux_policies_common |
+| 19 | `puppet_infrastructure::hello_world_flask` | 0 | 5 | 4 | 5 | no | hello_world_flask_common,filesystem_base |
+| 20 | `puppet_infrastructure::nginx_static` | 0 | 5 | 7 | 5 | no | nginx_base,nginx_default_removal,nginx_static_domain |
+| 21 | `puppet_infrastructure::node_base_domain_desktop` | 0 | 6 | 9 | 5 | no | packages_base,ssh_secure,firewall_secure,firewall_ipv6_drop,filesystem_base_desktop,filesystem_apt |
+| 22 | `puppet_infrastructure::openvpn_domain` | 0 | 7 | 4 | 6 | yes |  |
+| 23 | `puppet_infrastructure::mariadb_server` | 0 | 8 | 4 | 6 | no | filesystem_base |
+| 24 | `puppet_infrastructure::postfix_smtp_base` | 0 | 8 | 6 | 6 | yes | ssl_postfix,postfix_smtp_base_config_file |
+| 25 | `puppet_infrastructure::nginx_frontend_mail` | 0 | 8 | 7 | 6 | no | ssl_nginx_domain,nginx_frontend_domain |
+| 26 | `puppet_infrastructure::node_base_desktop` | 0 | 8 | 10 | 5 | no | packages_base,ssh_secure,firewall_secure,firewall_ipv6_drop_policy,filesystem_base_desktop,filesystem_apt,rsyslog_client,user_kde_lock_screen |
 
 ## UPSTREAM DEFECTS FIXED LOCALLY (tracker markers; list: .codex_state/upstream_defects.md)
 
