@@ -120,3 +120,4 @@ band commits from now on stash unrelated work first.
 | b4-A14 network step 9 master: v4 snapshot; snapshot_master.sh health check fixed | done | this commit | v4 UUID 0d267a84; first real run refused a healthy master (exact match on a trailing space); normalised + 5 tests; record appended after the fact; HQ item-6 asserts PASS |
 | b4-A15 network step 10 PASS (Wi-Fi off); -wifi aliases removed; project complete | done | this commit | wlo1 DOWN + no default route: ssh both VMs (path asserted), node->master 8140, compile-only all PASS; laptop DHCP changed .203->.200 on return |
 | b4-B4 Phase 3 mismatch controls (HQ 2026-11-16 item 1) | done | this commit | mandatory for tool-verdict probes (detected), must fail after apply or the set is INVALID; pilots updated (ssh 3, nginx 8); 16 tests |
+| b4-doc documentation list: rsnapshot restore path (HQ 2026-11-16 item 4) | done | this commit | rules/documentation_list.md (single source) |
