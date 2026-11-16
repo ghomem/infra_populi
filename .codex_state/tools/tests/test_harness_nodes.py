@@ -1,0 +1,68 @@
+"""test_class.sh takes its node from the lab inventory (HQ 2026-11-16 item 2): alias, master node file, certname,
+facts variant and per-node params follow the selected node."""
+
+import pytest
+import yaml
+
+from conftest import TOOLS
+
+pytestmark = pytest.mark.slow
+
+SCRIPT = str(TOOLS / "test_class.sh")
+
+
+@pytest.fixture
+def rhel(tmp_path, lab):
+    data = yaml.safe_load((TOOLS.parent / "lab" / "nodes.yml").read_text())
+    data["nodes"]["rhel9"].update(status="active", baseline_snapshot="P8LAB_RHEL9_BASELINE_v1")
+    path = tmp_path / "nodes.yml"
+    path.write_text(yaml.safe_dump(data))
+    return {"P8_NODES": str(path)}
+
+
+def ssh_lines(lab):
+    return [" ".join(c[1:]) for c in lab.calls("ssh")]
+
+
+def test_compile_only_on_a_redhat_node_uses_its_alias_node_file_and_native_facts(lab, rhel):
+    proc = lab.run([SCRIPT, "--node", "rhel9", "--compile-only", "puppet_infrastructure::dns_client"], env=rhel)
+    out = proc.stdout + proc.stderr
+    assert "==> Lab node: rhel9 (p8lab-rhel9, certname p8lab-rhel9, RedHat)" in out
+    assert "facts: native" in out
+    lines = ssh_lines(lab)
+    assert any("p8lab-rhel9 sudo -n /opt/puppetlabs/bin/puppet facts show" in l for l in lines)
+    assert any("manifests/nodes/p8lab-rhel9.pp" in l for l in lines)  # the CODEX block goes into the node's own file
+    assert not any("nodes/puppet8node.pp" in l for l in lines)
+    assert not any("puppet8node" in c for c in lab.calls("ssh"))  # no call targets the Ubuntu node
+
+
+def test_debian_facts_cannot_be_forced_onto_a_redhat_node(lab, rhel):
+    proc = lab.run([SCRIPT, "--node", "rhel9", "--compile-only", "--facts", "debian", "puppet_infrastructure::dns_client"],
+                   env=rhel)
+    assert proc.returncode == 1 and "cannot rewrite a RedHat node's facts" in proc.stderr
+
+
+def test_the_default_node_is_unchanged(lab):
+    proc = lab.run([SCRIPT, "--compile-only", "puppet_infrastructure::dns_client"])
+    assert "==> Lab node: ubuntu (puppet8node, certname puppet8node, Debian)" in proc.stdout
+    assert "facts: debian" in proc.stdout
+
+
+def test_a_planned_node_is_refused_before_anything_runs(lab):
+    proc = lab.run([SCRIPT, "--node", "kubuntu", "--revert-first", "puppet_infrastructure::dns_client"])
+    assert proc.returncode == 1 and "No usable lab node 'kubuntu'" in proc.stderr
+    assert lab.calls("VBoxManage") == [] and lab.calls("rsync") == []
+
+
+def test_a_node_kind_params_file_wins_over_the_shared_one(lab, rhel, tmp_path):
+    home = tmp_path / "home"
+    shared = home / ".config" / "infra_populi" / "params"
+    (shared / "rhel9").mkdir(parents=True)
+    cls = "puppet_infrastructure::backup_rsnapshot"
+    (shared / f"{cls}.json").write_text('{"basedir": "/etc", "prefix": "shared", "backdir": "/b", "ndays": 1}\n')
+    (shared / "rhel9" / f"{cls}.json").write_text('{"basedir": "/etc", "prefix": "rhelonly", "backdir": "/b", "ndays": 1}\n')
+    base = {"HOME": str(home), **rhel}
+    out = lab.run([SCRIPT, "--node", "rhel9", "--render-only", cls], env=base).stdout
+    assert "rhelonly" in out and "shared" not in out
+    out = lab.run([SCRIPT, "--render-only", cls], env={"HOME": str(home)}).stdout
+    assert "shared" in out and "rhelonly" not in out

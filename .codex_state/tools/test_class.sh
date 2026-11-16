@@ -8,7 +8,7 @@
 #
 # NOT host-portable as-is. Host-specific assumptions:
 #   repo path    /home/salatiel/work/infra_populi
-#   SSH aliases  puppet8master, puppet8master-rsync, puppet8node
+#   SSH aliases  puppet8master, puppet8master-rsync, the node's alias (nodes.yml; default puppet8node)
 #   master paths /etc/puppetlabs/code/environments/production/...
 #   params dir   ~/.config/infra_populi/params  (UNTRACKED: environment-specific
 #                values, deliberately not versioned - see the tooling-tracking
@@ -26,10 +26,18 @@ CLASSIFIER="${LOCAL_REPO}/.codex_state/gen_migration_order.py"
 
 MASTER_HOST="puppet8master"
 MASTER_RSYNC_HOST="puppet8master-rsync"
-NODE_HOST="puppet8node"
+# The node comes from the lab inventory (.codex_state/lab/nodes.yml, HQ 2026-11-16 item 2): --node KIND, else the
+# plan row's `node`, else the default. select_node sets NODE_HOST and MASTER_NODE_FILE (nodes/<certname>.pp).
+NODES_TOOL="${LOCAL_REPO}/.codex_state/tools/nodes.py"
+NODE_KIND_REQUEST=""
+NODE_HOST=""
+NODE_KIND=""
+NODE_CERTNAME=""
+NODE_OS_FAMILY=""
 
 MASTER_MODULE_DIR="/etc/puppetlabs/code/environments/production/modules/puppet_infrastructure"
-MASTER_NODE_FILE="/etc/puppetlabs/code/environments/production/manifests/nodes/puppet8node.pp"
+MASTER_NODES_DIR="/etc/puppetlabs/code/environments/production/manifests/nodes"
+MASTER_NODE_FILE=""
 
 PARAMS_DIR="${HOME}/.config/infra_populi/params"
 FIXTURE_DIR="${LOCAL_REPO}/.codex_state/tools/tests/fixtures"
@@ -54,8 +62,34 @@ die() { HARNESS_REASON="$*"; echo "ERROR: $*" >&2; exit 1; }
 need_cmd() { command -v "$1" >/dev/null 2>&1 || die "Missing command: $1"; }
 
 json_params_path_for_class() {
+  # A node kind may carry its own fixture (params/<kind>/<class>.json); else the shared one (params/<class>.json).
   local cls="$1"
-  echo "${PARAMS_DIR}/${cls}.json"
+  if [[ -n "$NODE_KIND" && -f "${PARAMS_DIR}/${NODE_KIND}/${cls}.json" ]]; then
+    echo "${PARAMS_DIR}/${NODE_KIND}/${cls}.json"
+  else
+    echo "${PARAMS_DIR}/${cls}.json"
+  fi
+}
+
+select_node() {
+  # select_node <target>...: the lab node these targets are tested on. All targets must name the same node.
+  local env first="" cls kind
+  if [[ -n "$NODE_KIND_REQUEST" ]]; then
+    env="$(python3 "$NODES_TOOL" env --node "$NODE_KIND_REQUEST")" || die "No usable lab node '${NODE_KIND_REQUEST}' (nodes.yml)."
+  else
+    if [[ $# -ge 1 && "$1" != fixture:* ]]; then first="${1#puppet_infrastructure::}"; fi
+    env="$(python3 "$NODES_TOOL" env ${first:+--class "$first"})" || die "No usable lab node for ${first:-the default} (nodes.yml)."
+    for cls in "$@"; do
+      [[ "$cls" != fixture:* ]] || continue
+      kind="$(python3 "$NODES_TOOL" get --class "${cls#puppet_infrastructure::}" kind)" || die "No usable lab node for ${cls}."
+      [[ "$kind" == "$(sed -n 's/^NODE_KIND=//p' <<<"$env")" ]] ||
+        die "The targets are tested on different lab nodes (${cls} on ${kind}); run them separately."
+    done
+  fi
+  eval "$env"
+  NODE_HOST="$NODE_ALIAS"
+  MASTER_NODE_FILE="${MASTER_NODES_DIR}/${NODE_CERTNAME}.pp"
+  echo "==> Lab node: ${NODE_KIND} (${NODE_HOST}, certname ${NODE_CERTNAME}, ${NODE_OS_FAMILY})"
 }
 
 classify_target() {
@@ -433,12 +467,12 @@ coverage_check() {
   local -a targets=()
   local cls report rc
   for cls in "$@"; do targets+=("puppet_infrastructure::${cls#puppet_infrastructure::}"); done
-  report="$(timeout 60 ssh "$NODE_HOST" "sudo -n python3 - ${targets[*]}" <<'PY'
+  report="$(timeout 60 ssh "$NODE_HOST" "sudo -n python3 - ${NODE_CERTNAME} ${targets[*]}" <<'PY'
 import json, sys
-catalog = "/opt/puppetlabs/puppet/cache/client_data/catalog/puppet8node.json"
+catalog = "/opt/puppetlabs/puppet/cache/client_data/catalog/%s.json" % sys.argv[1]
 resources = json.load(open(catalog))["resources"]
 empty = 0
-for target in sys.argv[1:]:
+for target in sys.argv[2:]:
     tag = target.lower()
     mine = [r for r in resources if tag in r.get("tags", []) and r["type"] not in ("Class", "Stage", "Node")]
     concrete = [r for r in mine if "::" not in r["type"]]
@@ -457,7 +491,7 @@ PY
 }
 
 compile_on_master() {
-  # Step 2.2: compile puppet8node's catalog on the master with live node facts (optionally rewritten
+  # Step 2.2: compile the node's catalog on the master with live node facts (optionally rewritten
   # to a RedHat family); the node is never touched beyond reading its facts. Prints only what
   # compile/filter.rb prints. Returns 0 ok, 3 empty target, 4 unparseable, 5 compile failed.
   local variant="$1"; shift
@@ -468,13 +502,13 @@ compile_on_master() {
   mkdir "$work/facts"
   facts_json="$(timeout 60 ssh "$NODE_HOST" "sudo -n /opt/puppetlabs/bin/puppet facts show --render-as json" 2>/dev/null)" ||
     { rm -r "$work"; die "Could not read facts from ${NODE_HOST} (is the node up?)"; }
-  python3 "$COMPILE_DIR/facts.py" "$variant" <<<"$facts_json" >"$work/facts/puppet8node.yaml" ||
+  python3 "$COMPILE_DIR/facts.py" "$variant" "$NODE_CERTNAME" <<<"$facts_json" >"$work/facts/${NODE_CERTNAME}.yaml" ||
     { rm -r "$work"; die "Could not build ${variant} facts"; }
   cp "$COMPILE_DIR/run.sh" "$COMPILE_DIR/filter.rb" "$work/"
   rc=0
   # shellcheck disable=SC2029  # target names expand locally by design
   tar -C "$work" -cf - . | timeout 180 ssh -T "$MASTER_HOST" \
-    "d=\$(mktemp -d /tmp/p8compile.XXXXXX) && tar -C \"\$d\" -xf - && bash \"\$d/run.sh\" \"\$d\" ${targets[*]}; rc=\$?; sudo -n rm -rf \"\$d\"; exit \$rc" || rc=$?
+    "d=\$(mktemp -d /tmp/p8compile.XXXXXX) && tar -C \"\$d\" -xf - && bash \"\$d/run.sh\" \"\$d\" ${NODE_CERTNAME} ${targets[*]}; rc=\$?; sudo -n rm -rf \"\$d\"; exit \$rc" || rc=$?
   rm -r "$work"
   return "$rc"
 }
@@ -633,11 +667,16 @@ release_lab_lock() {
 
 main() {
   need_cmd python3
+  if [[ "${1:-}" == "--node" ]]; then
+    NODE_KIND_REQUEST="${2:-}"
+    [[ -n "$NODE_KIND_REQUEST" ]] || die "--node needs a kind (nodes.yml)"
+    shift 2
+  fi
   [[ "${1:-}" == "--render-only" ]] || take_lab_lock "$@"
 
   if [[ "${1:-}" == "--compile-only" ]]; then
     shift
-    local variant="debian"
+    local variant=""
     while [[ $# -gt 0 ]]; do
       case "$1" in
         --facts) variant="${2:-}"; shift 2 ;;
@@ -646,10 +685,17 @@ main() {
         *) break ;;
       esac
     done
-    [[ "$variant" == "debian" || "$variant" == "redhat" ]] || die "--facts must be debian or redhat"
+    [[ -z "$variant" || "$variant" == "debian" || "$variant" == "redhat" || "$variant" == "native" ]] ||
+      die "--facts must be debian, redhat or native"
     export COMPILE_ONLY=1
     [[ $# -ge 1 ]] || die "Usage: $0 --compile-only [--facts debian|redhat] [--defaults] [--no-expand] <class1> [class2 ...]"
     need_cmd rsync; need_cmd ssh; need_cmd tar
+    select_node "$@"
+    if [[ -z "$variant" ]]; then
+      if [[ "$NODE_OS_FAMILY" == "RedHat" ]]; then variant="native"; else variant="debian"; fi
+    fi
+    [[ ! ( "$variant" == "debian" && "$NODE_OS_FAMILY" == "RedHat" ) ]] ||
+      die "--facts debian cannot rewrite a RedHat node's facts; use native"
     guard_owner_validated_targets "$@"
     # SKIP_DEPLOY=1: the caller already deployed this tree (composite runner, step 2.2).
     [[ "${SKIP_DEPLOY:-0}" == "1" ]] || deploy_repo_to_master
@@ -686,6 +732,7 @@ main() {
     [[ $revert_first -eq 0 ]] || die "--revert-first cannot be combined with --render-only"
     shift
     [[ $# -ge 1 ]] || die "Usage: $0 --render-only <class1> [class2 ...]"
+    select_node "$@"
     guard_owner_validated_targets "$@"
     render_managed_block "$@"
     exit 0
@@ -696,6 +743,7 @@ main() {
   need_cmd scp
 
   local classes=("$@")
+  select_node "${classes[@]}"
   [[ -n "${FIXTURE_NAME:-}" ]] || guard_owner_validated_targets "${classes[@]}"
   HARNESS_START="${EPOCHREALTIME}"
   HARNESS_REVERT_FIRST="$revert_first"
@@ -707,7 +755,7 @@ main() {
   if [[ $revert_first -eq 1 ]]; then
     echo "==> Reverting the node to its baseline first"
     local revert_out revert_json cls
-    revert_out="$("$REVERT_TOOL")" || { echo "$revert_out"; die "Node revert failed; not running the class on an unknown node state."; }
+    revert_out="$("$REVERT_TOOL" --node "$NODE_KIND")" || { echo "$revert_out"; die "Node revert failed; not running the class on an unknown node state."; }
     echo "$revert_out"
     revert_json="$(sed -n 's/^REVERT_METRICS //p' <<<"$revert_out" | tail -1)"
     if [[ -n "$revert_json" && -z "${FIXTURE_NAME:-}" ]]; then
@@ -721,9 +769,9 @@ main() {
   # HQ batch-3 acceptance, item 1: is the node still on the latest revert's boot with no agent run since?
   # Checked right before run 1 and carried in the GREEN stamp; record_green.sh refuses a stale one.
   local fresh_boot="" stale_reason="" token fresh_err
-  if token="$(timeout 30 "$REVERT_TOOL" --node-state 2>/dev/null)" && [[ -n "$token" ]]; then
+  if token="$(timeout 30 "$REVERT_TOOL" --node "$NODE_KIND" --node-state 2>/dev/null)" && [[ -n "$token" ]]; then
     fresh_err="$(mktemp)"
-    fresh_boot="$(python3 "$RECORDS_TOOL" fresh-check <<<"$token" 2>"$fresh_err")" ||
+    fresh_boot="$(python3 "$RECORDS_TOOL" fresh-check --node "$NODE_KIND" <<<"$token" 2>"$fresh_err")" ||
       { stale_reason="$(cat "$fresh_err")"; fresh_boot=""; }
     rm -f "$fresh_err"
   else
@@ -803,6 +851,7 @@ main() {
     local -a stamp_opts=(--run1-events "$run1_events" --coverage "${COVERAGE_REPORT:-}")
     [[ $revert_first -eq 1 ]] && stamp_opts+=(--revert-first)
     if [[ -n "$fresh_boot" ]]; then stamp_opts+=(--fresh-boot "$fresh_boot"); else stamp_opts+=(--stale-reason "$stale_reason"); fi
+    stamp_opts+=(--node "$NODE_KIND")
     python3 "$RECORDS_TOOL" stamp "${stamp_opts[@]}" -- "${classes[@]}" || die "Could not write the GREEN stamp."
   fi
 }

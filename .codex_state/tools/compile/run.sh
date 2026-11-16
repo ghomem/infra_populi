@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Runs ON puppet8master (step 2.2): compile puppet8node's catalog with the facts shipped alongside.
-# $1 = work dir holding facts/puppet8node.yaml and filter.rb; remaining args = target classes.
+# Runs ON puppet8master (step 2.2): compile a lab node's catalog with the facts shipped alongside.
+# $1 = work dir holding facts/<certname>.yaml and filter.rb; $2 = the node's certname; remaining args = target classes.
 set -u
-d="$1"; shift
+d="$1"; certname="$2"; shift 2
 # Redirects are written by the ssh user into its own temp dir on purpose.
 # shellcheck disable=SC2024
-sudo -n /opt/puppetlabs/bin/puppet catalog compile puppet8node \
+sudo -n /opt/puppetlabs/bin/puppet catalog compile "$certname" \
   --facts_terminus yaml --yamldir "$d" --render-as json >"$d/out" 2>"$d/err"
 rc=$?
 # Compiler messages only (Error/Warning lines and their indented continuation lines).

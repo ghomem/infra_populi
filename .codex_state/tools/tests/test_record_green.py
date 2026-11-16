@@ -160,7 +160,7 @@ def test_header_modules_feed_necessary_modules(clone):
 def test_harness_green_writes_the_stamp(lab, tmp_path):
     lab.world["ssh"].insert(0, {"match": r"agent -t", "outputs": [
         {"rc": 2, "stdout": "Notice: /Stage[main]/X/File[/a]/ensure: created\n"}, {"rc": 0, "stdout": ""}]})
-    lab.world["ssh"].insert(0, {"match": r"python3 - puppet_infrastructure::dns_client",
+    lab.world["ssh"].insert(0, {"match": r"python3 - puppet8node puppet_infrastructure::dns_client",
                                 "stdout": "COVERAGE puppet_infrastructure::dns_client: 1 concrete resources (+0 defined-type instances)\n"})
     green = tmp_path / "green"
     proc = lab.run([str(TOOLS / "test_class.sh"), "--revert-first", "dns_client"], env={"P8_GREEN_DIR": str(green)})
@@ -330,7 +330,7 @@ def test_a_stamp_without_revert_state_is_refused(clone, lab, tmp_path):
 def harness_rules(lab):
     lab.world["ssh"].insert(0, {"match": r"agent -t", "outputs": [
         {"rc": 2, "stdout": "Notice: /Stage[main]/X/File[/a]/ensure: created\n"}, {"rc": 0, "stdout": ""}]})
-    lab.world["ssh"].insert(0, {"match": r"python3 - puppet_infrastructure::dns_client",
+    lab.world["ssh"].insert(0, {"match": r"python3 - puppet8node puppet_infrastructure::dns_client",
                                 "stdout": "COVERAGE puppet_infrastructure::dns_client: 1 concrete resources (+0 defined-type instances)\n"})
 
 

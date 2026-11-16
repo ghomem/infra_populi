@@ -112,7 +112,7 @@ def test_pluginsync_is_not_counted_as_class_events(lab):
     assert "applied nothing" in proc.stderr
 
 
-COVERAGE_CALL = r"sudo -n python3 - puppet_infrastructure::puppet_backup$"
+COVERAGE_CALL = r"sudo -n python3 - puppet8node puppet_infrastructure::puppet_backup$"
 CLEAN = [{"rc": 2, "stdout": APPLIED}, {"rc": 0, "stdout": APPLIED}]
 
 
@@ -196,7 +196,7 @@ def test_fixture_runs_write_no_metrics(lab):
 
 # --- HQ 2026-11-10 ruling 1: plan expected_run2_events (packages_base: Exec[apt_update])
 APT_EVENT = "Notice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\n"
-PKG_COVERAGE = {"match": r"python3 - puppet_infrastructure::packages_base$", "stdout":
+PKG_COVERAGE = {"match": r"python3 - puppet8node puppet_infrastructure::packages_base$", "stdout":
                 "COVERAGE puppet_infrastructure::packages_base: 7 concrete resources (+0 defined-type instances)\n"}
 
 
@@ -236,7 +236,7 @@ def test_inherited_expected_run2_is_named_in_output_and_metrics(lab):
     import json
     # sysmon_base's required_base includes packages_base, whose plan entry is Exec[apt_update]
     agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 2, "stdout": APT_EVENT + APPLIED})
-    lab.world["ssh"].insert(0, {"match": r"python3 - puppet_infrastructure::sysmon_base$", "stdout":
+    lab.world["ssh"].insert(0, {"match": r"python3 - puppet8node puppet_infrastructure::sysmon_base$", "stdout":
                                 "COVERAGE puppet_infrastructure::sysmon_base: 13 concrete resources (+0 defined-type instances)\n"})
     proc = lab.run([SCRIPT, "puppet_infrastructure::sysmon_base"])
     assert proc.returncode == 0, proc.stderr
@@ -276,7 +276,7 @@ def test_expected_silent_event_with_a_glob_title_is_green(lab):
     (params / "puppet_infrastructure::nginx_frontend_domain.json").write_text('{"domain": "p8test.example.com"}')
     agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 2, "stdout": APPLIED})
     report(lab, DEBUG_NOTIFY + "\n")
-    lab.world["ssh"].insert(0, {"match": r"python3 - puppet_infrastructure::nginx_frontend_domain$", "stdout":
+    lab.world["ssh"].insert(0, {"match": r"python3 - puppet8node puppet_infrastructure::nginx_frontend_domain$", "stdout":
                                 "COVERAGE puppet_infrastructure::nginx_frontend_domain: 9 concrete resources (+3 defined-type instances)\n"})
     proc = lab.run([SCRIPT, "puppet_infrastructure::nginx_frontend_domain"], env={"HOME": str(lab.root / "home")})
     assert proc.returncode == 0, proc.stderr
