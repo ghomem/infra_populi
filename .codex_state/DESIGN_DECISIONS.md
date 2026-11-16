@@ -1177,3 +1177,19 @@ is HEAD, or followed by nothing but record_green's own record/regenerate commits
   v3 (146,320 paths).
 - **Verified:** two consecutive real reverts, then the `guarded_exec` fixture GREEN with NODE_FRESH yes.
 - **v2 is kept** until HQ rules on deletion.
+
+## 2026-11-16 — lab network step 9 (master): P8MASTER_BASELINE_GREEN_v4; snapshot_master.sh health check fixed
+- **The snapshot.** snapshot_master.sh's first real run took P8MASTER_BASELINE_GREEN_v4 (UUID
+  0d267a84-3ff8-4645-950c-6454b3b298f7). It shut the master down by ACPI in 5 s, took the snapshot offline and
+  restarted the master. The description names what changed since v3 via the new `--note`: enp0s8 192.168.56.10, the
+  hosts entries for the node (.20) and the master's own name (.10, the step-7 fix), and pki v2.
+- **The refusal.** The script then refused at its health check: it matched `active running ` exactly (with a trailing
+  space), which only a stub ending in a newline produces. The real `status/v1/simple` prints `running` with no
+  newline.
+- **Fix.** Whitespace-normalised comparison (also tolerating a TTY's `\r`); 5 tests with the real output shapes.
+- **Record.** Because of the refusal, the record line in `.codex_state/lab/master_snapshots.jsonl` was appended after
+  the fact from VBoxManage's own listing (name, UUID, description), marked `recorded: after the fact …`.
+- **HQ item 6 asserts** on the restarted master, all PASS over the path-asserted helper: enp0s8 = 192.168.56.10/24;
+  puppet8master.example.com → .10; puppet8node.example.com → .20; puppetserver active and 8140 running;
+  node→master:8140.
+- **v3 is kept** until HQ rules on deletion.

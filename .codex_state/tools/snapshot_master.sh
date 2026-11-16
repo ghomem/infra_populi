@@ -91,11 +91,12 @@ until timeout 10 ssh -o ConnectTimeout=5 -T "$MASTER_HOST" true 2>/dev/null; do
 done
 status=""
 for _ in $(seq 1 60); do
-  status="$(timeout 15 ssh -T "$MASTER_HOST" 'systemctl is-active puppetserver; curl -sk https://localhost:8140/status/v1/simple' 2>/dev/null | tr '\n' ' ')" || true
-  [[ "$status" == "active running " ]] && break
+  # whitespace-normalised: the real status endpoint prints no trailing newline, and a TTY adds \r (2026-11-16)
+  status="$(timeout 15 ssh -T "$MASTER_HOST" 'systemctl is-active puppetserver; curl -sk https://localhost:8140/status/v1/simple' 2>/dev/null | tr -s '\r\n' '  ' | sed 's/^ *//; s/ *$//')" || true
+  [[ "$status" == "active running" ]] && break
   sleep 5
 done
-[[ "$status" == "active running " ]] || refuse "snapshot ${NAME} taken, but puppetserver/8140 not healthy: '${status}'"
+[[ "$status" == "active running" ]] || refuse "snapshot ${NAME} taken, but puppetserver/8140 not healthy: '${status}'"
 
 # 7. record name + UUID
 uuid="$(VBoxManage snapshot "$MASTER_VM" showvminfo "$NAME" --machinereadable 2>/dev/null | sed -n 's/^CurrentSnapshotUUID="\(.*\)"$/\1/p;s/^SnapshotUUID="\(.*\)"$/\1/p' | head -1)"

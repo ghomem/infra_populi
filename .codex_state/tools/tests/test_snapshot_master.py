@@ -170,3 +170,17 @@ def test_bad_note_or_argument_is_refused_before_anything(clone, lab, args, messa
     proc = clone.run("P8MASTER_BASELINE_GREEN_v4", *args)
     assert proc.returncode == 1 and message in proc.stderr
     assert_nothing_done_to_the_master(lab)
+
+
+@pytest.mark.parametrize("answer, ok", [("active\nrunning", True),          # the real endpoint: no trailing newline
+                                        ("active\r\nrunning\r\n", True),    # a TTY-allocating alias
+                                        ("active\nrunning\n", True),
+                                        ("activating\nrunning", False), ("active\nstarting", False)])
+def test_health_check_reads_the_real_endpoint_output(clone, lab, answer, ok):
+    """First real run (2026-11-16, P8MASTER_BASELINE_GREEN_v4): curl's 'running' has no newline, so the old exact match
+    on 'active running ' refused a healthy master after taking the snapshot."""
+    lab.world["ssh"].insert(0, {"match": r"systemctl is-active puppetserver; curl", "stdout": answer})
+    proc = clone.run("P8MASTER_BASELINE_GREEN_v4")
+    assert (proc.returncode == 0) == ok, proc.stderr
+    if not ok:
+        assert "not healthy" in proc.stderr
