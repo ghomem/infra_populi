@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependency: puppetlabs-cron_core 1.3.0 (vendored with Puppet 8.24.2).
 # Configure a node as the central rsyslog listener.
 # Receives local and remote logs over TLS, stores them under a host-based tree,
 # and manages rotation and retention for those files.
