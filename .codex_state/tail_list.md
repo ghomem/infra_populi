@@ -12,3 +12,4 @@ append-only (a lifted class gets a dated `lifted:` note, never a deletion).
 | hashman_web | its mock-apply lifted: a master-role node (code tree + the site's logo files) | master-role node (no nodes.yml kind yet; HQ batch-5 ruling 6) | 2026-11-16 | PASS mock-apply (node_fixture hashman_master_standin), not blocked |
 | mysql_server | lifted: 2026-11-16 (HQ batch-5 ruling 2: service_name => 'mysql', a module-compatibility change; class_rulings.txt) | — | — | unblocked |
 | user_desktop_sudoer | groups lpadmin and sambashare (desktop packages), absent on the Ubuntu server node | kubuntu (or gnome) | 2026-11-16 | blocked.txt category 5; `getent group lpadmin sambashare` empty on puppet8node |
+| mysql_db | an HQ ruling: where the MySQL client package is set (puppetlabs-mysql 17's mariadb-client default removes the MySQL server) | none: a ruling, not a node (escalations/mysql_db.md) | 2026-11-16 | blocked.txt category 1; dpkg.log removals 23:28:30 |
