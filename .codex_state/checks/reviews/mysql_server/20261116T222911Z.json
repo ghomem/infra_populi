@@ -1,0 +1,21 @@
+{
+ "class": "mysql_server",
+ "at": "20261116T222911Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "server-reports-mysql-from-the-managed-config: manifests/mysql_server.pp:18-19 set data_dir = ${base_dir}/mysql (/srv/mysql under fixture base_dir /srv) and the config file in mysql.conf.d with a zz- prefix so it loads last; the probe reads @@datadir from the running server and expects /srv/mysql/ (mysqld reports datadir with a trailing slash)",
+  "server-reports-mysql-from-the-managed-config: templates/mysql/server.cnf.epp:5-11 declare bind-address 0.0.0.0, datadir, ssl-ca=chain, ssl-cert=cert, ssl-key=key, require_secure_transport ON; the expect matches exactly those values under the fixture (p8test-chain.pem, p8test.pem, p8test-key.pem under /etc/mysql/ssl, ON -> 1, 0.0.0.0) in @@ssl_ca/@@ssl_cert/@@ssl_key order",
+  "managed-config-file-rendered: templates/mysql/server.cnf.epp:6-10 render 'datadir = <data_dir>' and 'ssl-ca/ssl-cert/ssl-key = <file>' lines; the grep expects those lines in template order with the fixture values plus require_secure_transport = ON (line 11), and root 644 matches the file resource's owner root / mode 0644 at manifests/mysql_server.pp:109-113"
+ ],
+ "review_s": 117.9,
+ "check_file_sha256": "2ad54fb34f0363e5770fc246cb1bcd72a2bbee5a593be1fe6dd4cd2aa56f8564",
+ "reviewer_result": "20261116T222714Z-reviewer",
+ "author_result": "20261116T222510Z-author",
+ "findings": []
+}
