@@ -1,6 +1,6 @@
 # Lab network: NIC1 bridged → NAT — plan (2026-11-16)
 
-**Status: APPROVED WITH AMENDMENTS (HQ step review, 2026-11-16); amended here; executing with Salatiel present.**
+**Status: EXECUTED 2026-11-16 — acceptance PASSED (steps 0–9, with Salatiel present).**
 Execution results go in §8. The original plan (steps 0–6, reviewed by HQ) is in git history; the amendments are listed
 in §9.
 
@@ -241,8 +241,21 @@ Rollback: none needed (an added snapshot). Master v4 is kept until HQ rules.
 - **Fact changes (§2):** step 0 lists the classes affected before anything changes.
 
 ## 8. Execution record
+Lab lock held for the whole plan (holder `sleep`, 16:09:53Z → after step 9); every engine command ran with
+`P8_LAB_LOCKED=1` under it.
+
 | Step | Result | Evidence |
 |---|---|---|
+| 0 | PASS | Clean, no runs; `ho` .10/.20; both NIC1 bridged; Forge 200. Grep: no `server_facts`/`serverip`; only `network_static`'s `$ipaddress` (a class parameter, not the fact). Facts before — master puppet8master / puppet8master.example.com / example.com / 192.168.77.166; node puppet8node / puppet8node.lan / lan / 192.168.77.185 (`domain lan` is a static line in the snapshot's /etc/resolv.conf). v3 token last_run a78c35bc…. Home SSID recorded (SSID A). |
+| 1 | PASS [HUMAN] | Salatiel: node poweroff, restore v3, `--nic1 nat --natdnshostresolver1 on`, start. |
+| 2 | PASS | enp0s3 10.0.2.15/24 via 10.0.2.2; no 192.168.77.; DNS (public resolvers) and `apt-get update` through NAT; node → master:8140; master name → .10. Facts after: node hostname/fqdn/domain identical, ip 10.0.2.15. |
+| 3 | PASS | `--node-state`: new boot, last_run a78c35bc… = v3's (no agent run); clean poweroff. Salatiel took P8NODE_BASELINE_GREEN_v4 (798dd0e5-7c2f-487c-855d-d46b1056dda5) (HQ H). |
+| 4 | PASS [HUMAN] + advisor | Salatiel: master ACPI, NIC1 NAT, start. puppetserver active, 8140 running; enp0s3 10.0.2.15 via 10.0.2.2; DNS 10.0.2.3, no 192.168.77.; Forge 200; node name → .20; enp0s8 .10. HQ D: MX and TXT for gmail.com resolve through the NAT proxy. Facts: master identical, ip 10.0.2.15 (= serverip). The step's compile needs the node's facts and the node was powered off, so it ran after step 5's first revert (OK). |
+| 5 | PASS | d31e872: revert_node.sh NAT asserts, nodes.yml → v4. Two real reverts SUCCESS (17.1 s, 16.9 s; apt 2.4 s); compile-only dns_client OK; `--revert-first --fixture guarded_exec` GREEN. |
+| 6 | PASS | b9e8234: the ruled fix uses `$server_facts['servername']`, resolved on the agent. Worktree-only proof GREEN (stamp b7cc55a8e16a, node fresh): run 2 crossed the class's OUTPUT DROP; node rule `-d 192.168.56.10/32 --dport 8140 -j ACCEPT`; master serverip 10.0.2.15. Manifest restored, node reverted. |
+| 7 | PASS | e1d01ec: CLAUDE.md, hazards.md v4, DESIGN_DECISIONS entry. |
+| 8 | PASS [HUMAN] + advisor | Hotspot: SSID B ≠ SSID A; laptop 172.20.10.2/28, no 192.168.77. route; VMs kept running. Revert SUCCESS (18.1 s); compile OK; `--fixture guarded_exec` GREEN, NODE_FRESH yes; master DNS OK. Facts on the hotspot: hostname/fqdn/domain identical on both (third time). Back home (SSID A): master DNS OK, compile OK. |
+| 9 | PASS (record after the fact) | snapshot_master.sh took P8MASTER_BASELINE_GREEN_v5 (c5f0e44f-5777-41b5-9c27-1ace4cd27da4), restarted the master and passed its health check, then ended silently at the UUID lookup (VirtualBox 7.2 `snapshot showvminfo --machinereadable` exits 1, under pipefail). Fixed and recorded in 05fc7b4. Asserts after: enp0s8 .10, names .10/.20, puppetserver active, 8140 running, enp0s3 NAT, DNS 10.0.2.3. |
 
 ## 9. HQ step-review amendments (2026-11-16)
 - **A.** No step depends on a bridged revert: the node goes to NAT from a manual restore of v3 (step 1, [HUMAN]);
