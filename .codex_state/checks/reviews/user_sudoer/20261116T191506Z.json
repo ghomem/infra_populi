@@ -1,0 +1,21 @@
+{
+ "class": "user_sudoer",
+ "at": "20261116T191506Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "sudo-grants-all (user_sudoer.pp:10-11): on the non-RedHat branch grouplist = flatten([mygrouplist(default []), ['sudo']]) so the user joins sudo; sudo -l on the Ubuntu node then lists (ALL : ALL) ALL via the stock %sudo rule; mismatch varies only the user to nobody (no admin group), which must change sudo's verdict, and it failed after apply as required",
+  "user-with-own-primary-group (user_base.pp:25-26): with the fixture's default mygrouplist the passed list is ['sudo'], mygrouplist[0]=='sudo' so myprimary = title; probe expects primary group p8testuser, matching the code; comment/home/shell match fixture myname 'P8 Test User', default home /home/<title> and user_shell /bin/bash",
+  "user-with-own-primary-group (user_sudoer.pp:14): the wrapper passes title, myname, grouplist, user_shell etc. unchanged to user_base, whose user resource sets comment=>myname, home=>/home/title, shell=>user_shell, gid=>myprimary; the passwd fields and primary group the probe expects are exactly those values under the params fixture"
+ ],
+ "review_s": 63.7,
+ "check_file_sha256": "a70d1c1358f78e8e08dbd096bd43c0e6c215bc1d048577a5d97eabb75f7be3d7",
+ "reviewer_result": "20261116T191403Z-reviewer",
+ "author_result": "20261116T191258Z-author",
+ "findings": []
+}

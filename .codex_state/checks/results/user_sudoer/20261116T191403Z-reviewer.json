@@ -1,0 +1,101 @@
+{
+ "class": "user_sudoer",
+ "role": "reviewer",
+ "at": "20261116T191403Z",
+ "runner": "b5f1c27",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "a70d1c1358f78e8e08dbd096bd43c0e6c215bc1d048577a5d97eabb75f7be3d7",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "user-with-own-primary-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "|||\nprimary group: \n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "member-of-sudo",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "id: 'p8testuser': no such user\n",
+   "ok": true
+  },
+  {
+   "id": "sudo-grants-all",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "sudo: unknown user p8testuser\n",
+   "ok": true
+  },
+  {
+   "id": "the-given-key-is-pushed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /home/p8testuser/.ssh/authorized_keys: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "tice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::User_sudoer[p8testuser]/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::User_sudoer[p8testuser]/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.35 seconds\u001b[0m\nRUN1_EVENTS: 3 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794856491'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.05 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::user_sudoer: 3 concrete resources (+2 defined-type instances)\n  Puppet_infrastructure::User_sudoer[p8testuser]\n  Puppet_infrastructure::User_base[p8testuser]\n  Group[p8testuser]\n  User[p8testuser]\n  Ssh_authorized_key[p8testuser@puppet]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP user_sudoer 0c393d68241d\n"
+ },
+ "applied": [
+  {
+   "id": "user-with-own-primary-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser|P8 Test User|/home/p8testuser|/bin/bash\nprimary group: p8testuser\n",
+   "stderr": ""
+  },
+  {
+   "id": "member-of-sudo",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser sudo ",
+   "stderr": ""
+  },
+  {
+   "id": "sudo-grants-all",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "    (ALL : ALL) ALL\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the user: `nobody` is in no admin group, so sudo must not list the ALL rule for it",
+    "rc": 1,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-given-key-is-pushed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCoGojLzXfOYoMg/8rNwk5YRfAdbJN8B/0El5HE5BPDs/QenJaGNH0nH8cGCJF87/bgIRN0nFkO0MqizXNcfcWZjJ7S360u1yZgRhUj+s9y23bUHXcODSgEfHHx3MmICaoOzouoR64NNmqMnlhbBvkfnGzLQa/mAm+2QA+TlXWxkMpIeR1EuH2ko0e/hiAeqLpHGX2GlixkFJ8n9hQwPO+IfhHXuDvwpiJkQxRtyMJnJE9qoPArR27KYJ82Rd2h1b2JjXpqbPJhMfvH7rrXPapCrFO9gQ9jHtkqPG86kNfZ5DN0JBgibKEYqIhjA33JZUnP3liYsYRY4SeNPtTuN7zB p8testuser@puppet\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.3,
+ "node": "ubuntu",
+ "duration_s": 48.9
+}
