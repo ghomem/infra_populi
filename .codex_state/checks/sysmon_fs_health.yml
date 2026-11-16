@@ -1,0 +1,49 @@
+# Phase 3 checks for puppet_infrastructure::sysmon_fs_health (define; harness title sysmon_fs_health = the volume name;
+# required_base filesystem_base; required_external sudo). Fixture (params, never committed): basedir
+# /var/tmp/p8test-fs-health, size_threshold 8 (KB), nfiles 3. bindir = /opt/puppet-infrastructure/bin (lab Hiera).
+class: sysmon_fs_health
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.3
+  notes: "Wall clock 23:40:47Z to 23:41:06Z 2026-11-16, outside the worktree while the Phase 1 review ran."
+checks:
+  - id: check-script-rendered
+    what: the per-volume check script (root 0755) carries the base directory, the size threshold and the file count
+    control: negative
+    derived_from:
+      - {path: manifests/sysmon_fs_health.pp, lines: "8", text: "$scriptname = \"${prefix}-${volname}.sh\""}
+      - {path: manifests/sysmon_fs_health.pp, lines: "13-16", text: "content => template(\"puppet_infrastructure/sysmon/${prefix}.sh.erb\"),"}
+      - {path: templates/sysmon/check-fs-health.sh.erb, lines: "8-10", text: "SIZE_THRESHOLD=\"<%= @size_threshold %>\" # in KB, 4KB is an empty directory"}
+    probe: |
+      f=/opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh
+      stat -c '%U %a' "$f"; bash -n "$f" && grep -E '^(BASEDIR|SIZE_THRESHOLD|NFILES)=' "$f" | cut -d' ' -f1
+    expect: {rc: 0, stdout: "\\Aroot 755\\nBASEDIR=\"/var/tmp/p8test-fs-health\"\\nSIZE_THRESHOLD=\"8\"\\nNFILES=\"3\"\\n\\Z"}
+
+  - id: nagios-may-run-it-through-sudo
+    what: a sudoers drop-in (priority 10) lets nagios run exactly this script without a password, and sudoers stays valid
+    control: negative
+    derived_from:
+      - {path: manifests/sysmon_fs_health.pp, lines: "10", text: "sudo::conf { \"nagios_fs_health_${volname}\": priority => 10, content  => \"nagios ALL=NOPASSWD:${bindir}/${scriptname}\" }"}
+    probe: |
+      grep -h '^nagios ' /etc/sudoers.d/10_nagios_fs_health_sysmon_fs_health
+      visudo -c -q && echo sudoers-valid
+    expect: {rc: 0, stdout: "\\Anagios ALL=NOPASSWD:/opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health\\.sh\\nsudoers-valid\\n\\Z"}
+
+  - id: check-reports-ok-on-a-healthy-tree
+    what: >-
+      the exercise: on a readable tree above the size threshold the check lists the tree, reads N random files and
+      reports OK with exit 0
+    control: negative
+    derived_from:
+      - {path: templates/sysmon/check-fs-health.sh.erb, lines: "43-51", text: "if [ $MYSIZE -gt $SIZE_THRESHOLD ]; then"}
+      - {path: templates/sysmon/check-fs-health.sh.erb, lines: "96-97", text: "echo \"OK: exit code $RC $OUTPUT\""}
+    mutates: >-
+      creates /var/tmp/p8test-fs-health with five 4 KB files of random data (20 KB, above the 8 KB threshold), then runs
+      the check script once as root (it only reads the tree)
+    probe: |
+      install -d /var/tmp/p8test-fs-health
+      for i in 1 2 3 4 5; do head -c 4096 /dev/urandom | install -m 0644 /dev/stdin "/var/tmp/p8test-fs-health/f$i"; done
+    effect: |
+      /opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh; echo "rc=$?"
+    expect: {rc: 0, stdout: "\\AOK: exit code 0 \\nrc=0\\n\\Z"}
