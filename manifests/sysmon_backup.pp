@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none of its own; through puppet_infrastructure::backup: puppetlabs-cron_core 1.3.0 (vendored with Puppet 8.24.2).
 ### Purpose ########
 # This class provides sysmon backups
 class puppet_infrastructure::sysmon_backup {
