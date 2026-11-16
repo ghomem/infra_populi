@@ -1,0 +1,161 @@
+{
+ "class": "rsyslog_server",
+ "role": "reviewer",
+ "at": "20261116T193311Z",
+ "runner": "8e1d67f",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "d961b7d550f00b98d121d4245cbe276b4f7535c11216061b76b5da6a3369d0a5",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "listener-config-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/rsyslog.d/30-listener.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "tls-listener-presents-the-node-certificate",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "self-forward-config-absent",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "absent\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "logrotate-timer-override-active",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "AccuracyUSec=1h\nActiveState=active\nDropInPaths=\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "host-logs-rotation-rule",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "retention-script-and-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh': No such file or directory\nbash: /opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "remote-message-lands-in-the-host-tree",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /var/log/hosts/p8testremote/p8test.log: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": " (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794857646'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.59 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::rsyslog_server: 16 concrete resources (+0 defined-type instances)\n  Package[rsyslog]\n  Package[rsyslog-gnutls]\n  File[/etc/rsyslog.d/tls]\n  File[/etc/rsyslog.d/tls/ca.pem]\n  File[/etc/rsyslog.d/tls/puppet8node.pem]\n  File[/etc/rsyslog.d/tls/puppet8node.key]\n  Service[rsyslog]\n  File[/etc/rsyslog.d/30-listener.conf]\n  File[/etc/rsyslog.d/40-forward-self.conf]\n  File[/etc/systemd/system/logrotate.timer.d]\n  File[/etc/systemd/system/logrotate.timer.d/override.conf]\n  Exec[reload systemd for logrotate timer]\n  Exec[restart logrotate timer]\n  File[/etc/logrotate.d/rsyslog-hosts]\n  File[/opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh]\n  Cron[rsyslog_hosts_retention_cleanup]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP rsyslog_server 7dfc955b8a4e\n"
+ },
+ "applied": [
+  {
+   "id": "listener-config-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "DefaultNetstreamDriverCertFile=\"/etc/rsyslog.d/tls/puppet8node.pem\"\nDefaultNetstreamDriverKeyFile=\"/etc/rsyslog.d/tls/puppet8node.key\"\nport=\"6514\"\nmaxSessions=\"2000\"\nnotifyOnConnectionClose=\"off\"\nconstant(value=\"/var/log/hosts/\")\nconstant(value=\"/var/log/hosts/\")\n",
+   "stderr": ""
+  },
+  {
+   "id": "tls-listener-presents-the-node-certificate",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Verify return code: 0 (ok)\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the name: the same handshake verified for p8test-wrong.invalid must fail, so the pass above is the certificate's name and chain, not a tool that always says ok",
+    "rc": 0,
+    "passed": false,
+    "stdout": "Verify return code: 62 (hostname mismatch)\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "self-forward-config-absent",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "absent\n",
+   "stderr": ""
+  },
+  {
+   "id": "logrotate-timer-override-active",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "AccuracyUSec=1min\nActiveState=active\nDropInPaths=/etc/systemd/system/logrotate.timer.d/override.conf\n",
+   "stderr": ""
+  },
+  {
+   "id": "host-logs-rotation-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/var/log/hosts/*/*.log /var/log/hosts/*/.log {\ndaily\nrotate -1\nnocompress\ndateext\ndateformat -%Y%m%d\n",
+   "stderr": ""
+  },
+  {
+   "id": "retention-script-and-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\nROOT_DIR=\"/var/log/hosts\"\nACTIVE_DAYS=7\nRETENTION_DAYS=7\n17 3 * * * /opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "remote-message-lands-in-the-host-tree",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "sends one RFC3164 line (host p8testremote, tag p8test) to 127.0.0.1:6514 over TLS with the node's own Puppet certificate as the client certificate; rsyslogd creates /var/log/hosts/p8testremote/p8test.log",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.8,
+ "node": "ubuntu",
+ "duration_s": 74.3
+}

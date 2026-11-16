@@ -1,0 +1,21 @@
+{
+ "class": "rsyslog_server",
+ "at": "20261116T193506Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "fail"
+ },
+ "evidence": [
+  "tls-listener-presents-the-node-certificate (listener_simple.conf.epp:5-8): supports it. Lines 5-8 set the gtls driver, CA /etc/rsyslog.d/tls/ca.pem and cert/key /etc/rsyslog.d/tls/<certname>.pem|.key. The probe does a TLS handshake to 127.0.0.1:6514 against that CA, verifies the hostname as the certname taken from the key file name, and expects 'Verify return code: 0 (ok)'. The mismatch changes only -verify_hostname (p8test-wrong.invalid), so the verdict has to flip; it failed on the applied node as required.",
+  "remote-message-lands-in-the-host-tree (listener_simple.conf.epp:16): the reference supports the probe, but the mutates declaration is INCOMPLETE. Line 16 authMode=x509/certvalid accepts any CA-signed client cert, and the action presents the node's own Puppet cert. The read-only effect (grep -c of the marker in /var/log/hosts/p8testremote/p8test.log, per template lines 18-23/35) shows the result, not the action's output. However, the listener rules have no 'stop', so the stock /etc/rsyslog.d/50-default.conf (*.*;auth,authpriv.none -/var/log/syslog) also writes the message to /var/log/syslog. A read-only check after my run found '2026-11-16T19:00:00+00:00 p8testremote p8test: p8test-remote-marker' in /var/log/syslog. mutates names only /var/log/hosts/p8testremote/p8test.log, so it does not declare everything the action changes. Fix: add the /var/log/syslog line to mutates.",
+  "logrotate-timer-override-active (rsyslog_server.pp:68): supports it. Line 68 is the refreshonly daemon-reload notified by the override file (line 54), and it notifies the timer restart (line 74). systemctl show reports DropInPaths=/etc/systemd/system/logrotate.timer.d/override.conf only after the reload, AccuracyUSec=1min comes from logrotate.timer.override.epp:5, and ActiveState=active follows the restart. The clean node failed it (stock 1h accuracy, no drop-in). Note: OnCalendar (the 00:00 time in 'what') is not asserted."
+ ],
+ "review_s": 115.4,
+ "check_file_sha256": "d961b7d550f00b98d121d4245cbe276b4f7535c11216061b76b5da6a3369d0a5",
+ "reviewer_result": "20261116T193311Z-reviewer",
+ "author_result": "20261116T193143Z-author",
+ "findings": []
+}
