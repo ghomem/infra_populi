@@ -1,0 +1,21 @@
+{
+ "class": "user_sysmon",
+ "at": "20261116T233723Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "naemon-contact-file (manifests/user_sysmon.pp:14-18): baseline file resource declares /etc/naemon/conf.d/contacts/${myusername}.cfg mode 0664 owner/group naemon; probe stats that path for title p8testuser and expects 'naemon naemon 664' - matches",
+  "thruk-htpasswd-entry (manifests/user_sysmon.pp:11-12): htpasswd { $myusername: cryptpasswd => $myhash, target => '/etc/thruk/htpasswd' }; fixture myhash starts $6$p8fixture$, so the line p8testuser:$6$p8fixture$... cut to fields 1-3 gives the expected 'p8testuser:$6$p8fixture' - matches; read-only grep",
+  "naemon-contact-file (templates/users/sysmon_contact.erb:1-7): template renders define contact with use generic-contact, contact_name @myusername, alias @myname, email @myemail, contactgroups @mygrouplist; under fixture (Puppet 8 Test User, root@localhost, [admins]) and Ruby Array#to_s this gives contactgroups [\"admins\"]; the sed normalisation (strip leading ws, collapse first ws run) yields exactly the expected lines"
+ ],
+ "review_s": 66.2,
+ "check_file_sha256": "c2d08e67e7d724d900cae8b7b02ae972f51061efefac86d94ebce7fc7bc4159d",
+ "reviewer_result": "20261116T233617Z-reviewer",
+ "author_result": "20261116T233502Z-author",
+ "findings": []
+}
