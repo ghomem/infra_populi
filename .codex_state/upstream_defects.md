@@ -119,3 +119,12 @@ the entry's `Ruled change` (plus ordinary Puppet 8 translations); anything else 
 - Ruled change: add `onlyif => "who | awk '{print \$1}' | grep -q '^${username}\$'"` (path as needed); command, user,
   environment unchanged. With the user logged in it still runs every agent run (re-applying policies by design).
 - Status: ruled
+
+## mysql_server
+- Short: explicit MySQL service name (puppetlabs-mysql >= 11 defaults Ubuntu to MariaDB)
+- Defect: the class declares `mysql::server` with `package_name => "mysql-server-${version}"` and no `service_name`;
+  puppetlabs-mysql 17.3.0 (the Puppet 8 line) defaults Ubuntu >= 20.04 to the mariadb provider (service `mariadb`),
+  so the class manages a service that does not exist on a MySQL node ("Systemd start for mariadb failed!"). Under
+  10.5.0 (production) Ubuntu defaulted to `mysql`.
+- Proposed change: `service_name => 'mysql'` in the `mysql::server` declaration (escalations/mysql_server.md option 1).
+- Status: pending HQ
