@@ -69,9 +69,32 @@ def git(*args: str, check: bool = True) -> str:
                           check=check, stdin=subprocess.DEVNULL).stdout
 
 
-def show(ref: str, path: str) -> str | None:
-    proc = subprocess.run(["git", "-C", str(REPO), "show", f"{ref}:{path}"], capture_output=True, text=True)
+def show_bytes(ref: str, path: str) -> bytes | None:
+    proc = subprocess.run(["git", "-C", str(REPO), "show", f"{ref}:{path}"], capture_output=True)
     return proc.stdout if proc.returncode == 0 else None
+
+
+def as_text(data: bytes | None) -> str | None:
+    """The file as text, or None if it is binary (not UTF-8): class trees may hold images (hashman_web, batch 5)."""
+    try:
+        return None if data is None else data.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+
+
+def show(ref: str, path: str) -> str | None:
+    return as_text(show_bytes(ref, path))
+
+
+def is_binary(*blobs: bytes | None) -> bool:
+    return any(b is not None and as_text(b) is None for b in blobs)
+
+
+def change(a: bytes | None, b: bytes | None, path: str, label_a: str, label_b: str) -> str:
+    """A unified diff for text, one line for a binary file (compared byte for byte)."""
+    if is_binary(a, b):
+        return f"Binary file {path} differs ({label_a} -> {label_b}; {len(a or b'')} -> {len(b or b'')} bytes)\n"
+    return unified(as_text(a), as_text(b), path, label_a, label_b)
 
 
 def result(status: str, detail: str | list) -> dict:
@@ -358,19 +381,22 @@ def run_checks(cls: str, harness: bool) -> dict:
     pre_drift, migrate_diff, final_diff = [], [], []
     added_all, removed_all, removed_comments, changed_manifest = [], [], [], False
     for path in paths:
-        upstream = baseline.git_show(base.upstream, base.commit, path)
-        up = upstream.decode("utf-8", "replace") if upstream is not None else None
-        pre, mig, now = show(parent, path), show(commit, path), show("HEAD", path)
+        # byte comparisons: a binary class file (an image) is compared exactly, never through a lossy decode
+        up = baseline.git_show(base.upstream, base.commit, path)
+        pre, mig, now = show_bytes(parent, path), show_bytes(commit, path), show_bytes("HEAD", path)
         if pre != up:
             pre_drift.append(path)
         if pre != mig:
-            migrate_diff.append(unified(pre, mig, path, "pre-migrate", "migrate-commit"))
+            migrate_diff.append(change(pre, mig, path, "pre-migrate", "migrate-commit"))
         if now != up:
-            final_diff.append(unified(up, now, path, base.name, "HEAD"))
-            a, r = diff_lines(up, now)
-            added_all += a
-            removed_all += r
-            removed_comments += [f"{path}: {l.strip()}" for l in r if is_comment(l)]
+            final_diff.append(change(up, now, path, base.name, "HEAD"))
+            if is_binary(up, now):
+                added_all.append(f"<binary {path} changed>")  # counts as a code change, never a comment
+            else:
+                a, r = diff_lines(as_text(up), as_text(now))
+                added_all += a
+                removed_all += r
+                removed_comments += [f"{path}: {l.strip()}" for l in r if is_comment(l)]
             changed_manifest |= path.endswith(".pp")
     out["diffs"] = {"final_vs_baseline": "".join(final_diff) or "(identical to baseline)",
                     "migrate_commit": "".join(migrate_diff) or "(the migrate commit changed no class file)"}

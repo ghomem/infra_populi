@@ -239,3 +239,23 @@ def test_every_verdict_shows_revert_first_and_node_fresh():
     src = (TOOLS / "review_class.py").read_text()
     assert '"--revert-first", f"puppet_infrastructure::{cls}"' in src  # the reviewer always reverts first
     assert "GREEN, but not on a freshly reverted node" in src
+
+
+# batch 5 (hashman_web): class trees may hold images. The tool crashed decoding a PNG as UTF-8; binary files are now
+# compared byte for byte and reported in one line, and a binary change counts as a code change.
+PNG = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
+
+
+def test_binary_class_files_are_compared_as_bytes():
+    assert rc.as_text(PNG) is None and rc.as_text(b"class x {}\n") == "class x {}\n" and rc.as_text(None) is None
+    assert rc.is_binary(PNG, None) and not rc.is_binary(b"a\n", None)
+    line = rc.change(PNG, PNG + b"\x01", "files/x.png", "release-0.9.10", "HEAD")
+    assert line == "Binary file files/x.png differs (release-0.9.10 -> HEAD; 16 -> 17 bytes)\n"
+    assert rc.change(b"a\n", b"b\n", "manifests/x.pp", "A", "B").startswith("--- A:manifests/x.pp")
+
+
+def test_show_reads_a_binary_blob_without_crashing(monkeypatch):
+    class Proc:
+        returncode, stdout = 0, PNG
+    monkeypatch.setattr(rc.subprocess, "run", lambda *a, **k: Proc())
+    assert rc.show_bytes("HEAD", "files/x.png") == PNG and rc.show("HEAD", "files/x.png") is None
