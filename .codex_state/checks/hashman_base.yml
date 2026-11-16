@@ -1,0 +1,58 @@
+# Phase 3 checks for puppet_infrastructure::hashman_base (class; required_base filesystem_base; MOCK-APPLY: the plan's
+# node_fixture puppetserver_code_tree supplies the master's /etc/puppetlabs/code/environments/production/manifests).
+# Fixture: class defaults (debug_mode false) and the lab Hiera (hashman::company 'My Company', hashman::address via
+# puppet::address puppet.example.com, hashman::testenv 'False', no minpasswordlen/relaxpassword keys -> 6 / True,
+# hashman::dbdir = puppet::manifdir/01_hashman/, hashman::bindir = /opt/puppet-infrastructure/hashman).
+# What a node can show: the CLI and its library rendered from Hiera, the empty database files, the Python packages, and
+# that the CLI starts (imports load) under the node's Python. NOT shown: the database as Puppet code on a master, user
+# authentication flows (they need the master's Puppet run to consume the database) — mock-apply.
+class: hashman_base
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 0.8
+  notes: "Wall clock 20:07:19Z to 20:08:04Z 2026-11-16, outside the worktree while the Phase 1 review ran (CLI, config and interface templates read)."
+checks:
+  - id: config-rendered-from-hiera
+    what: the library config carries the database dir, company, URL, test-env and debug flags and the password defaults
+    control: negative
+    derived_from:
+      - {path: manifests/hashman_base.pp, lines: "20", text: "$url        = join ( [ 'https://' , lookup('hashman::address') ] )"}
+      - {path: manifests/hashman_base.pp, lines: "26-27", text: "$minpasswordlen = lookup({ name => 'hashman::minpasswordlen' , default_value => '6' })"}
+      - {path: templates/hashman/libhashman/config.py.erb, lines: "4-11", text: "DBDIR  = '<%= @dbdir %>'"}
+      - {path: templates/hashman/libhashman/config.py.erb, lines: "109-113", text: "MINPASSWORDLEN = <%= @minpasswordlen %>"}
+    probe: |
+      grep -E "^(DBDIR|MAIN_COMPANY|HASHMAN_URL|TESTENV|DEBUG_MODE|MINPASSWORDLEN|RELAXPASSWORD) *=" /opt/puppet-infrastructure/hashman/common/libhashman/config.py
+    expect: {rc: 0, stdout: "\\ADBDIR  = '/etc/puppetlabs/+code/environments/production/manifests/01_hashman/'\\nMAIN_COMPANY = 'My Company'\\nHASHMAN_URL = 'https://puppet\\.example\\.com'\\nTESTENV = False\\nDEBUG_MODE = False\\nMINPASSWORDLEN = 6\\nRELAXPASSWORD = True\\n\\Z"}
+
+  - id: empty-database-files
+    what: the seven database files exist, empty, 0644, in the master's manifests/01_hashman
+    control: negative
+    derived_from:
+      - {path: manifests/hashman_base.pp, lines: "47", text: "$dbfiles = [ \"${dbdir}/cnames.pp\" , \"${dbdir}/companies.pp\", \"${dbdir}/emails.pp\", \"${dbdir}/hashes.pp\", \"${dbdir}/keys.pp\", \"${dbdir}/ppsigs.pp\", \"${dbdir}/ppwrapped.pp\" ]"}
+      - {path: manifests/hashman_base.pp, lines: "163-167", text: "replace => 'no', # can't touch this!"}
+    probe: |
+      cd /etc/puppetlabs/code/environments/production/manifests/01_hashman && stat -c '%n %s %a' cnames.pp companies.pp emails.pp hashes.pp keys.pp ppsigs.pp ppwrapped.pp
+    expect: {rc: 0, stdout: "\\Acnames\\.pp 0 644\\ncompanies\\.pp 0 644\\nemails\\.pp 0 644\\nhashes\\.pp 0 644\\nkeys\\.pp 0 644\\nppsigs\\.pp 0 644\\nppwrapped\\.pp 0 644\\n\\Z"}
+
+  - id: python-dependencies-installed
+    what: the CLI's Python packages are installed
+    control: negative
+    derived_from:
+      - {path: manifests/hashman_base.pp, lines: "171", text: "package { [ 'python3-cracklib', 'python3-setproctitle', 'python3-openssl', 'python3-rsa', 'python3-prettytable' ]: ensure => present, }"}
+    probe: dpkg-query -W -f '${Package} ${Status}\n' python3-cracklib python3-setproctitle python3-openssl python3-rsa python3-prettytable | sort
+    expect: {rc: 0, stdout: "\\Apython3-cracklib install ok installed\\npython3-openssl install ok installed\\npython3-prettytable install ok installed\\npython3-rsa install ok installed\\npython3-setproctitle install ok installed\\n\\Z"}
+
+  - id: cli-wrapper-starts-the-cli
+    what: >-
+      the pp_auth.sh wrapper (root 0755) runs pp_auth.py, whose imports (cracklib, setproctitle, prettytable, the
+      rendered libhashman) load on the node's Python: with no arguments it prints its usage
+    control: negative
+    derived_from:
+      - {path: manifests/hashman_base.pp, lines: "153-158", text: "content => template('puppet_infrastructure/hashman/pp_auth.sh.erb'),"}
+      - {path: templates/hashman/pp_auth.sh.erb, lines: "4", text: "<%= @localdir %>/hashman/common/pp_auth.py \"$@\""}
+      - {path: templates/hashman/libhashman/interface.py.erb, lines: "445-447", text: "print('Usage: ' + basename + ' auth          USER PASSWORD')"}
+    probe: |
+      stat -c '%U %a' /opt/puppet-infrastructure/bin/pp_auth.sh
+      /opt/puppet-infrastructure/bin/pp_auth.sh 2>&1 | head -1
+    expect: {rc: 0, stdout: "\\Aroot 755\\nUsage: pp_auth\\.py auth +USER PASSWORD\\n\\Z"}

@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.hashman_base"><testsuite name="phase3.hashman_base.clean" tests="4" failures="0"><testcase classname="phase3.hashman_base.clean" name="config-rendered-from-hiera" /><testcase classname="phase3.hashman_base.clean" name="empty-database-files" /><testcase classname="phase3.hashman_base.clean" name="python-dependencies-installed" /><testcase classname="phase3.hashman_base.clean" name="cli-wrapper-starts-the-cli" /></testsuite><testsuite name="phase3.hashman_base.applied" tests="4" failures="1"><testcase classname="phase3.hashman_base.applied" name="config-rendered-from-hiera" /><testcase classname="phase3.hashman_base.applied" name="empty-database-files" /><testcase classname="phase3.hashman_base.applied" name="python-dependencies-installed" /><testcase classname="phase3.hashman_base.applied" name="cli-wrapper-starts-the-cli"><failure message="check failed after the class was applied (finding)">rc 0
+root 755
+/opt/puppet-infrastructure/hashman/common/pp_auth.py:10: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+
+</failure></testcase></testsuite></testsuites>
