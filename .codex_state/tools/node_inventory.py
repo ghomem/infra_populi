@@ -15,6 +15,7 @@ from __future__ import annotations
 import datetime as dt
 import gzip
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -22,7 +23,8 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 TOOLS = Path(__file__).resolve().parent
 REPO = TOOLS.parents[1]
-SNAPSHOT = "P8NODE_BASELINE_GREEN_v2"
+# single source: revert_node.sh's NODE_SNAPSHOT (the snapshot every revert restores)
+SNAPSHOT = re.search(r'^readonly NODE_SNAPSHOT="([^"]+)"', (TOOLS / "revert_node.sh").read_text(), re.M).group(1)
 NODE = "puppet8node"
 FIND = ("sudo -n find / -xdev \\( -path /proc -o -path /sys -o -path /run -o -path /tmp -o -path /var/tmp "
         "-o -path '/home/*/.cache' \\) -prune -o -printf '%y %p\\n'")

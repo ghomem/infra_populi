@@ -40,7 +40,7 @@ def test_wrapper_reverts_before_codex(lab):
     stub_codex(lab, f"touch {marker}")
     proc = lab.run([WRAPPER, "puppet_infrastructure::dns_client"])
     assert proc.returncode == 0, proc.stderr
-    assert ["VBoxManage", "snapshot", "ubuntu24-puppet8-Node", "restore", "P8NODE_BASELINE_GREEN_v2"] in lab.calls()
+    assert ["VBoxManage", "snapshot", "ubuntu24-puppet8-Node", "restore", "P8NODE_BASELINE_GREEN_v3"] in lab.calls()
     assert marker.exists()
 
 

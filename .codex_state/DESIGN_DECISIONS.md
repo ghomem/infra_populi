@@ -1162,3 +1162,18 @@ is HEAD, or followed by nothing but record_green's own record/regenerate commits
 - **Cause:** the 2026-11-10 canary verdict for firewall_secure (FAIL on `git` only, 27b6cdf), where the mode, not the
   class, was invalid. Proven on the real repo: `check firewall_secure --fresh` now exits 2 and the node is not
   reverted. 6 tests.
+
+## 2026-11-16 — lab network step 9 (node): P8NODE_BASELINE_GREEN_v3 is the baseline; overlay and lab.env removed
+- **The snapshot.** P8NODE_BASELINE_GREEN_v3 (UUID 00832142-4600-491e-a6a6-f11612254934) was taken offline after a
+  clean poweroff from v2 plus the host-only overlay: enp0s8 192.168.56.20/24 (netplan 60-p8-hostonly.yaml) and hosts
+  puppet8master.example.com → 192.168.56.10.
+- **No agent run in between (HQ D).** Only non-mutating checks ran between the overlay and the poweroff (ping, path
+  assert, node→master 8140, getent, default route via enp0s3), and the state token's last_run was still the snapshot's
+  (a78c35bc7dc9…).
+- **revert_node.sh** restores v3 and, after every restore, fails unless a fresh SSH (`-S none`) comes 192.168.56.1 →
+  .20, enp0s8 holds .20/24, and the node resolves the master to .10. The overlay mode and `.codex_state/lab/lab.env`
+  are gone (HQ C), and so is the tests' `P8_NODE_NET`.
+- **node_inventory.py** reads the snapshot name from revert_node.sh (P2: one source); the inventory was refreshed for
+  v3 (146,320 paths).
+- **Verified:** two consecutive real reverts, then the `guarded_exec` fixture GREEN with NODE_FRESH yes.
+- **v2 is kept** until HQ rules on deletion.

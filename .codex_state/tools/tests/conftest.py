@@ -113,7 +113,7 @@ class FakeLab:
             path.chmod(0o755)
         self.world = {
             "vms": {
-                "ubuntu24-puppet8-Node": {"state": "running", "snapshot": "P8NODE_BASELINE_GREEN_v2"},
+                "ubuntu24-puppet8-Node": {"state": "running", "snapshot": "P8NODE_BASELINE_GREEN_v3"},
                 "Ubuntu24-puppet8-Master": {"state": "running", "snapshot": "P8MASTER_BASELINE_GREEN"},
             },
             "ssh": [
@@ -121,6 +121,11 @@ class FakeLab:
                 {"match": r"puppet8node hostname$", "stdout": "puppet8node\n"},
                 # revert_node.sh --node-state: boot ID, last_run_summary sha256 (HQ batch-3 acceptance item 1)
                 {"match": r"random/boot_id", "stdout": BOOT_ID + "\nabsent\n"},
+                # revert_node.sh's post-restore host-only asserts (lab-network plan step 9)
+                {"match": r"SSH_CONNECTION", "stdout": "192.168.56.1 51234 192.168.56.20 22\n"},
+                {"match": r"ip -br addr show enp0s8", "stdout": "enp0s8           UP             192.168.56.20/24\n"},
+                {"match": r"getent hosts puppet8master\.example\.com",
+                 "stdout": "192.168.56.10   puppet8master.example.com puppet8master\n"},
             ],
         }
 
@@ -140,8 +145,6 @@ class FakeLab:
             "P8_METRICS_DIR": str(self.root / "metrics"),
             "P8_SSH_CONTROL_DIR": str(self.root / "ssh-cm"),
             "P8_REVERT_RECORD": str(self.root / "node_revert.json"),
-            # stub runs never follow the live lab's .codex_state/lab/lab.env; host-only tests override this
-            "P8_NODE_NET": "bridged",
         })
         env.update(kw.pop("env", {}))
         return subprocess.run(argv, capture_output=True, text=True, env=env, timeout=60,

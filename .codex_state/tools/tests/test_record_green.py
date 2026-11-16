@@ -23,7 +23,7 @@ SHA = "ab" * 32
 def mark_revert(lab, boot_id=BOOT_ID, last_run="absent"):
     """The latest revert as revert_node.sh records it (records.py revert-mark), at the lab's record path."""
     (lab.root / "node_revert.json").write_text(json.dumps(
-        {"snapshot": "P8NODE_BASELINE_GREEN_v2", "boot_id": boot_id, "last_run": last_run, "at": "2026-11-10T00:00:00Z"}))
+        {"snapshot": "P8NODE_BASELINE_GREEN_v3", "boot_id": boot_id, "last_run": last_run, "at": "2026-11-10T00:00:00Z"}))
 
 
 def stamp(lab, root, cls, env, fresh=True):
