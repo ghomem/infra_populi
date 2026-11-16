@@ -1,0 +1,19 @@
+{
+ "class": "nginx_static_domain",
+ "at": "20261116T123520Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "server-cipher-order-and-dh-group: baseline line 47 puts DHE-RSA-AES128-GCM-SHA256 first in base_ssl_ciphers_prefix and lines 94-95/311-313 set prefer_server_ciphers 'on' and ssl_dhparam /etc/nginx/dhparams.pem (nginx_base.pp:36 dh_params_bits=2048); offering ECDHE first then DHE, the server's order must pick DHE-RSA-AES128-GCM-SHA256 with a 2048-bit DH temp key - probe+expect test exactly that",
+  "http-redirects-to-https-same-host: lines 168-177 (redirect_to_https true, redirect_to_www false per params fixture) set redirect_string '301 https://${domain}$request_uri' used as 'return' in static_main_redirector (252-261); expect 301 to https://p8test.example.com/p8/phase3?q=1 is what the code produces for that request",
+  "ecdh-curve-prime256v1: line 49 defaults base_ssl_ecdh_curve to 'prime256v1' (not overridden by the fixture) and 314-316 append it as ssl_ecdh_curve on static_https; an ECDHE-RSA-AES128-GCM-SHA256 TLS1.2 handshake must report 'Server Temp Key: ECDH, prime256v1, 256 bits' - probe+expect match the declaration"
+ ],
+ "reviewer_result": "20261116T123314Z-reviewer",
+ "author_result": "20261116T122804Z-author",
+ "findings": []
+}
