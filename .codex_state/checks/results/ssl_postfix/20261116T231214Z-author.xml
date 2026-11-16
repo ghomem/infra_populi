@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.ssl_postfix"><testsuite name="phase3.ssl_postfix.clean" tests="3" failures="0"><testcase classname="phase3.ssl_postfix.clean" name="private-key-installed-root-only" /><testcase classname="phase3.ssl_postfix.clean" name="postfix-bundle-cert-then-intermediate" /><testcase classname="phase3.ssl_postfix.clean" name="bundle-certificate-matches-the-key" /></testsuite><testsuite name="phase3.ssl_postfix.applied" tests="4" failures="1"><testcase classname="phase3.ssl_postfix.applied" name="private-key-installed-root-only" /><testcase classname="phase3.ssl_postfix.applied" name="postfix-bundle-cert-then-intermediate"><failure message="check failed after the class was applied (finding)">rc 0
+root 644
+2
+subject=CN=p8test.invalid,O=p8test lab fixture (THROWAWAY\, not a real CA)
+
+</failure></testcase><testcase classname="phase3.ssl_postfix.applied" name="bundle-certificate-matches-the-key" /><testcase classname="phase3.ssl_postfix.applied" name="bundle-certificate-matches-the-key.mismatch" /></testsuite></testsuites>

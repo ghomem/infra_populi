@@ -6,6 +6,8 @@ baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
   minutes: 0.3
+  corrections:
+    - "2026-11-16, after run 20261116T231132Z (INVALID_SET, authoring): with both files absent the two pipelines hashed empty input and matched, so the negative control passed on the clean node; the probes now require the files first."
   notes: "Wall clock 23:10:03Z to 23:10:21Z 2026-11-16, outside the worktree while the Phase 1 review ran."
 checks:
   - id: private-key-installed-root-only
@@ -37,6 +39,7 @@ checks:
     derived_from:
       - {path: manifests/ssl_base.pp, lines: "77-81", text: "$first_cert_source        = \"puppet:///extra_files/ssl/${myprefix}.crt\""}
     probe: |
+      test -s /etc/ssl/certs/p8test.postfix.bundle.crt -a -s /etc/ssl/private/p8test.key || { echo "missing files"; exit 1; }
       a=$(openssl x509 -noout -pubkey -in /etc/ssl/certs/p8test.postfix.bundle.crt | sha256sum)
       b=$(openssl pkey -pubout -in /etc/ssl/private/p8test.key | sha256sum)
       test "$a" = "$b" && echo key-matches-certificate
@@ -44,6 +47,7 @@ checks:
       varies: >-
         the key: the node's own Puppet agent key is a different key, so the same comparison against it must fail
       probe: |
+        test -s /etc/ssl/certs/p8test.postfix.bundle.crt || { echo "missing bundle"; exit 1; }
         a=$(openssl x509 -noout -pubkey -in /etc/ssl/certs/p8test.postfix.bundle.crt | sha256sum)
         b=$(openssl pkey -pubout -in "$(ls /etc/puppetlabs/puppet/ssl/private_keys/*.pem | head -1)" | sha256sum)
         test "$a" = "$b" && echo key-matches-certificate
