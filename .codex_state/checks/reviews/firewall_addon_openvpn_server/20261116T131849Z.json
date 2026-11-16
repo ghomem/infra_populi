@@ -1,0 +1,21 @@
+{
+ "class": "firewall_addon_openvpn_server",
+ "at": "20261116T131849Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "forward-bridge-loopback: baseline line 19 declares firewall '204 allow flow loopback on br0' chain FORWARD iniface=outiface=$lan_bridge_iface (fixture p8test1), proto all, action accept, no state; probe greps the rule by its comment in iptables -S FORWARD and expects -i p8test1 -o p8test1, no --state, -j ACCEPT \u2014 exactly what the line declares",
+  "forward-bridge-to-wan: baseline line 17 declares '202 allow flow from br0 exterior' FORWARD iniface $lan_bridge_iface (p8test1) outiface $wan_iface (p8test0) proto all accept; expect -i p8test1 -o p8test0, no -p (proto all), no --state, -j ACCEPT matches the declaration under the params fixture",
+  "forward-wan-to-bridge-established-only: baseline line 18 declares '203 allow flow from exterior into br0' FORWARD iniface $wan_iface (p8test0) outiface $lan_bridge_iface (p8test1) accept with state [RELATED, ESTABLISHED]; expect -i p8test0 -o p8test1 --state RELATED,ESTABLISHED -j ACCEPT is what that rule renders to"
+ ],
+ "review_s": 90.4,
+ "check_file_sha256": "4590f649493e6fea42912173e6d175b0fc6f9452301525bce4ef71e68d6b2a79",
+ "reviewer_result": "20261116T131719Z-reviewer",
+ "author_result": "20261116T131529Z-author",
+ "findings": []
+}
