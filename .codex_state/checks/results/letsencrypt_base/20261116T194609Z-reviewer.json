@@ -1,0 +1,111 @@
+{
+ "class": "letsencrypt_base",
+ "role": "reviewer",
+ "at": "20261116T194609Z",
+ "runner": "61ed4e1",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "91017040587ee41469f84349ec48fa9ed7870abd89fcec8b1108741d4c81b614",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "dns-plugin-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "dpkg-query: no packages found matching python3-certbot-dns-digitalocean\ndpkg-query: no packages found matching certbot\n",
+   "ok": true
+  },
+  {
+   "id": "dns-credentials-file-private",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/etc/dns-creds.ini': No such file or directory\ncat: /opt/puppet-infrastructure/etc/dns-creds.ini: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "renew-cron-with-nginx-reload-hook",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "no crontab for root\ngrep: : No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "deploy-script-rendered",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/deploy_maintained_certificates.sh': No such file or directory\nbash: /opt/puppet-infrastructure/bin/deploy_maintained_certificates.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "deploy-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794858424'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.50 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::letsencrypt_base: 13 concrete resources (+1 defined-type instances)\n  Package[letsencrypt plugin]\n  File[/opt/puppet-infrastructure/etc/dns-creds.ini]\n  Package[letsencrypt]\n  File[/etc/letsencrypt]\n  File[/opt/puppetlabs/puppet/cache/letsencrypt]\n  Ini_setting[/etc/letsencrypt/cli.ini register-unsafely-without-email true]\n  Ini_setting[/etc/letsencrypt/cli.ini server https://acme-v02.api.letsencrypt.org/directory]\n  Ini_setting[/etc/letsencrypt/cli.ini email p8test@p8test.example.com]\n  File[letsencrypt-renewal-hooks-puppet]\n  Letsencrypt::Hook[renew-post]\n  Cron[letsencrypt-renew]\n  File[/opt/puppet-infrastructure/bin/deploy_maintained_certificates.sh]\n  Cron[deploy_maintained_certificates]\n  File[/etc/letsencrypt/renewal-hooks-puppet/renew-post.sh]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP letsencrypt_base 1d8a1ace8835\n"
+ },
+ "applied": [
+  {
+   "id": "dns-plugin-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "certbot install ok installed\npython3-certbot-dns-digitalocean install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "dns-credentials-file-private",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 600\ndns_digitalocean_token = p8test-not-a-secret\n",
+   "stderr": ""
+  },
+  {
+   "id": "renew-cron-with-nginx-reload-hook",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0 4 5,10,15,20,25 * * certbot renew -q --post-hook \"/etc/letsencrypt/renewal-hooks-puppet/renew-post.sh\"\nservice nginx reload\n",
+   "stderr": ""
+  },
+  {
+   "id": "deploy-script-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 700\nCERT_DIR=/etc/letsencrypt/live\nSSL_DIR=/etc/puppetlabs/puppet/extra_files/ssl\nDOMAINS=\"p8test.example.com\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "deploy-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0 5 5,10,15,20,25 * * /opt/puppet-infrastructure/bin/deploy_maintained_certificates.sh\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.4,
+ "node": "ubuntu",
+ "duration_s": 57.8
+}

@@ -1,0 +1,21 @@
+{
+ "class": "letsencrypt_base",
+ "at": "20261116T194723Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "deploy-script-rendered @ manifests/letsencrypt_base.pp:78-79: $certificatesdir='/etc/letsencrypt/live' and $ssldir='/etc/puppetlabs/puppet/extra_files/ssl' are exactly the CERT_DIR/SSL_DIR values the expect requires in the rendered script",
+  "dns-credentials-file-private @ manifests/letsencrypt_base.pp:55-56: file $dns_creds_file mode '600' (owner/group root on lines 57-58) supports 'root root 600'; with provider digitalocean (fixture) the template renders 'dns_digitalocean_token = p8test-not-a-secret' at default etcdir path",
+  "deploy-script-rendered @ templates/letsencrypt/deploy_maintained_certificates.sh.erb:3-5: CERT_DIR/SSL_DIR/DOMAINS lines render from @certificatesdir, @ssldir and join(['p8test.example.com'],' '), matching the three expected grep lines; mode '0700' owner root (manifest 83-86) supports 'root 700'"
+ ],
+ "review_s": 74.3,
+ "check_file_sha256": "91017040587ee41469f84349ec48fa9ed7870abd89fcec8b1108741d4c81b614",
+ "reviewer_result": "20261116T194609Z-reviewer",
+ "author_result": "20261116T194451Z-author",
+ "findings": []
+}
