@@ -484,3 +484,14 @@ def test_malformed_yaml_is_invalid_not_a_crash(p3):
     (p3.dir / f"{CLS}.yml").write_text("class: backup_rsnapshot\nchecks:\n  - what: the line `root: ` breaks yaml\n")
     proc = p3.run("validate", CLS)
     assert proc.returncode != 0 and "is not valid YAML" in proc.stderr and "Traceback" not in proc.stderr
+
+
+def test_a_failed_revert_records_its_reason(p3, tmp_path):
+    bad = tmp_path / "bad_revert.sh"
+    bad.write_text("#!/bin/sh\necho 'ERROR: The node has no IPv4 default route after 60s' >&2\nexit 1\n")
+    bad.chmod(0o755)
+    p3.write(check_set(check("conf", "probe-conf")))
+    proc = p3.run("run", CLS, P8_PHASE3_REVERT=str(bad))
+    assert proc.returncode == 3
+    record, _ = p3.result()
+    assert record["problems"] == ["node revert failed: ERROR: The node has no IPv4 default route after 60s"]

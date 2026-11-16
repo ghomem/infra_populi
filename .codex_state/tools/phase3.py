@@ -468,8 +468,12 @@ def cmd_run(cls: str, role: str) -> int:
 def run_locked(cls: str, data: dict, record: dict, finish) -> int:
     revert = os.environ.get("P8_PHASE3_REVERT") or str(TOOLS / "revert_node.sh")
     print("==> Reverting the node (clean phase runs on the baseline)")
-    if subprocess.run([revert], env=node_env()).returncode != 0:
-        record["problems"].append("node revert failed")
+    rv = subprocess.run([revert], env=node_env(), capture_output=True, text=True)
+    print(rv.stdout, end="")
+    print(rv.stderr, end="", file=sys.stderr)
+    if rv.returncode != 0:
+        err = [l for l in (rv.stderr or rv.stdout).splitlines() if l.strip()][-1:] or ["(no output)"]
+        record["problems"].append(f"node revert failed: {err[0]}")
         return finish("ENVIRONMENT_FAILED", 3)
     print("==> CLEAN phase: negative controls must fail, invariants must pass (mutating checks: effect only)")
     for check in data["checks"]:
