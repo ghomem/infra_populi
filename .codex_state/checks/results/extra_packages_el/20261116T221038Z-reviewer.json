@@ -1,0 +1,77 @@
+{
+ "class": "extra_packages_el",
+ "role": "reviewer",
+ "at": "20261116T221038Z",
+ "runner": "9d06d32",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "546dfc4d22b62d2ed80aad54fefa29b92100b189053c9882ae869da7d61e7dad",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "epel-release-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "package epel-release is not installed\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "codeready-builder-enabled",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "baseos-appstream-still-enabled",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rhel-9-for-x86_64-appstream-rpms\nrhel-9-for-x86_64-baseos-rpms\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "b516e1d7cda925a468f561d8650f57ed62d8e0b4a0'\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794867158'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Extra_packages_el/Exec[install-epel-release]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Extra_packages_el/Exec[enable-codeready-builder-repo]/returns: executed successfully\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 51.80 seconds\u001b[0m\nRUN1_EVENTS: 2 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794867214'\u001b[0m\n\u001b[mNotice: Applied catalog in 8.24 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::extra_packages_el: 2 concrete resources (+0 defined-type instances)\n  Exec[install-epel-release]\n  Exec[enable-codeready-builder-repo]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP extra_packages_el b960a947c89c\n"
+ },
+ "applied": [
+  {
+   "id": "epel-release-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "epel-release 9\nepel\n",
+   "stderr": ""
+  },
+  {
+   "id": "codeready-builder-enabled",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "codeready-builder-for-rhel-9-x86_64-rpms\ncodeready-builder-for-rhel-9-x86_64-rpms\n",
+   "stderr": ""
+  },
+  {
+   "id": "baseos-appstream-still-enabled",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rhel-9-for-x86_64-appstream-rpms\nrhel-9-for-x86_64-baseos-rpms\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.1,
+ "node": "rhel9",
+ "duration_s": 206.4
+}

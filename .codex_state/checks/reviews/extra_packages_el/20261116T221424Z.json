@@ -1,0 +1,21 @@
+{
+ "class": "extra_packages_el",
+ "at": "20261116T221424Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "codeready-builder-enabled: baseline lines 13-16 run 'subscription-manager repos --enable codeready-builder-for-rhel-${os_major_version}-${os_architecture}-rpms' with os.release.major/os.architecture facts (lines 3-4); on the RHEL 9.5 x86_64 node that is codeready-builder-for-rhel-9-x86_64-rpms, and the probe reads it back through the same 'subscription-manager repos --list-enabled' the upstream unless uses, plus dnf repolist; expect matches",
+  "epel-release-installed: baseline lines 6-10 install epel-release-latest-${os_major_version}.noarch.rpm guarded by 'rpm -q epel-release'; on major 9 that yields package epel-release version 9, whose repo file enables 'epel' by default; probe (rpm -q + dnf repolist --enabled epel) and expect test exactly that",
+  "baseos-appstream-still-enabled: lines 13-16 only ever pass --enable (no --disable, no repo purge anywhere in the class), so BaseOS/AppStream enabled on the registered baseline must stay enabled; why_invariant plausible and the clean run confirmed it; probe is read-only"
+ ],
+ "review_s": 226.6,
+ "check_file_sha256": "546dfc4d22b62d2ed80aad54fefa29b92100b189053c9882ae869da7d61e7dad",
+ "reviewer_result": "20261116T221038Z-reviewer",
+ "author_result": "20261116T220641Z-author",
+ "findings": []
+}
