@@ -1,8 +1,11 @@
+# Puppet 8 migration: preserve the Postfix relay configuration using structured hostname and OS facts.
+# Module dependencies: none.
 ### Purpose ########
 # Parametrized class for postfix to allow email sending from any non specialized node, by mean of a relayhost.
 class puppet_infrastructure::postfix_smtp_node (
   ) {
 
+  $hostname = $facts['networking']['hostname']
   $relayhost  = lookup('postfix_smtp_node::relayhost')
   $relayport  = lookup('postfix_smtp_node::relayport')
   $myorigin   = lookup( [ "${clientcert}::postfix_smtp_node::myorigin",  'postfix_smtp_node::myorigin'  ] )
@@ -21,7 +24,7 @@ class puppet_infrastructure::postfix_smtp_node (
   # The file for postfix to use with the "CA certificates of root CAs trusted"
   # (http://www.postfix.org/postconf.5.html#smtp_tls_CAfile)
   # is different when using CentOS
-  case $::osfamily {
+  case $facts['os']['family'] {
       'RedHat': {
         $smtp_tls_CAfile = '/etc/ssl/certs/ca-bundle.crt'
         $cyrus_sasl_package = 'cyrus-sasl-plain'
