@@ -1,0 +1,31 @@
+{
+ "class": "nginx_static_domain",
+ "at": "20261117T213605Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok"
+ },
+ "evidence": [
+  "ecdh-curve-prime256v1: baseline nginx_static_domain.pp:314-316 appends ssl_ecdh_curve => $base_ssl_ecdh_curve, default 'prime256v1' (line 49, not overridden by the params fixture); an ECDHE-RSA-AES128-GCM-SHA256 handshake must report 'Server Temp Key: ECDH, prime256v1, 256 bits'. Mismatch offers only secp384r1, the one value whose change must change the verdict (server allows prime256v1 only, so no prime256v1 key can appear)",
+  "https-name-verifies: baseline lines 168-172 set $server_name = $domain when redirect_to_https and !redirect_to_www (fixture: redirect_to_https true, redirect_to_www default false), and line 300 uses it as server_name; verifying p8test.example.com against the bundle CA must give 'Verification: OK'. Mismatch varies only -verify_hostname (wrong.example.org), which must give 'hostname mismatch'",
+  "server-cipher-order-and-dh-group: baseline lines 94-95 set ssl_prefer_server_ciphers 'on' and ssl_dhparam /etc/nginx/dhparams.pem (passed at 312-313); the line-47 cipher prefix lists DHE-RSA-AES128-GCM-SHA256 before ECDHE-RSA-AES128-GCM-SHA256 and nginx_base.pp:36 sets dh_params_bits 2048, so with the client offering ECDHE first the server picks DHE with a 2048-bit DH temp key. Mismatch drops DHE from the offer, which must remove both the DHE cipher and the DH key"
+ ],
+ "review_s": 169.4,
+ "check_file_sha256": "cfa75c3f90f58420dc205a485a64c5f541b15796d80cce6c019c19e4840e92e5",
+ "reviewer_result": "20261117T213316Z-reviewer",
+ "author_result": "20261117T213142Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "f13cf102-c2b0-4f05-8acc-3eb7b11b9e6d",
+   "boot_id_at_end": "f13cf102-c2b0-4f05-8acc-3eb7b11b9e6d",
+   "fresh": true
+  }
+ }
+}
