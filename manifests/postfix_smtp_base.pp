@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none of its own (core package/file/service/exec); through puppet_infrastructure::ssl_postfix and ssl_base: puppetlabs-concat 9.1.0.
 ### Purpose ########
 # Setup a SMTP server with SSL and configurable restrictions
 # - only certain IPs can use it
