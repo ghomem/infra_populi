@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none (core file resource only).
 ### Purpose ########
 # This class provides a nagios plugin that can be used trigger and monitor MYSQL db test restores
 define puppet_infrastructure::sysmon_mysqldump_health ( $mysqluser, $mysqlpassword, $dirs) {
