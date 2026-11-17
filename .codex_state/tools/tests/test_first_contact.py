@@ -108,3 +108,40 @@ def test_nothing_answering_the_keyscan_is_refused(fc, lab):
     (lab.bin / "ssh-keyscan").write_text("#!/usr/bin/env bash\nexit 0\n")
     proc = fc.run("p8lab-kubuntu")
     assert proc.returncode == 1 and "nothing answered ssh-keyscan at 192.168.56.102" in proc.stderr
+
+
+# --static: a clone of a lab node keeps that node's static host-only address and keys (p8lab-dc from puppet8node)
+@pytest.fixture
+def clone(lab, fc):
+    lab.world["vms"]["p8lab-dc"] = {"state": "running", "config": {
+        "nic2": "hostonly", "hostonlyadapter2": "vboxnet0", "macaddress2": "080027ABCDEF"}}
+    lab.world["vms"]["ubuntu24-puppet8-Node"]["state"] = "poweroff"
+    lab.world["ssh"].insert(0, {"match": r"cat /sys/class/net/\*/address",
+                                "stdout": "00:00:00:00:00:00\n08:00:27:aa:bb:cc\n08:00:27:ab:cd:ef\n"})
+    return fc
+
+
+def test_static_contact_proves_the_clone_by_pinned_key_and_its_own_mac(clone, lab):
+    proc = clone.run("p8lab-dc", "--static", "192.168.56.20")
+    assert proc.returncode == 0, proc.stderr
+    assert "static 192.168.56.20 (from puppet8node, whose VM is poweroff)" in proc.stdout
+    (call,) = [c for c in lab.calls("ssh") if "cat /sys/class/net/*/address" in c]
+    assert "StrictHostKeyChecking=yes" in call and "HostKeyAlias=puppet8node" in call and "salatiel@192.168.56.20" in call
+    assert clone.scanned() == []  # nothing is keyscanned or quoted: the key is the one pinned for the node
+
+
+def test_static_contact_refuses_while_the_nodes_vm_runs(clone, lab):
+    lab.world["vms"]["ubuntu24-puppet8-Node"]["state"] = "running"
+    proc = clone.run("p8lab-dc", "--static", "192.168.56.20")
+    assert proc.returncode == 1 and "power it off first" in proc.stderr and lab.calls("ssh") == []
+
+
+def test_static_contact_refuses_another_hosts_answer(clone, lab):
+    lab.world["ssh"][0]["stdout"] = "08:00:27:aa:bb:cc\n"
+    proc = clone.run("p8lab-dc", "--static", "192.168.56.20")
+    assert proc.returncode == 1 and "does not hold p8lab-dc's NIC2 MAC 08:00:27:ab:cd:ef" in proc.stderr
+
+
+def test_static_contact_needs_a_known_node_address(clone):
+    proc = clone.run("p8lab-dc", "--static", "192.168.56.99")
+    assert proc.returncode == 1 and "no node of nodes.yml has that host-only address" in proc.stderr

@@ -1724,3 +1724,17 @@ snapshot list, record.
 - **Tests:** 5. The fake lab now also logs what a tool sends on stdin, so the test can check the order: clean phase,
   apply, login, two runs, APPLIED.
 - **For HQ acceptance:** like the peer mode, this is a new capability of the behaviour runner.
+
+## 2026-11-17 — First contact with a clone of a lab node (p8lab-dc); the node can be powered off alone
+- **The problem:** p8lab-dc is cloned from puppet8node's baseline, as ubuntu2 was. A clone of the node boots with the
+  node's static host-only address (.20) and the node's host keys. It takes no DHCP lease, so first_contact.py's lease
+  path cannot find it. ubuntu2's bring-up used a NAT port forward instead, which ruling 9 now forbids.
+- **`revert_node.sh --power-off`** powers the node off and stops there: no restore and no start. The next revert brings
+  the node back. Lab lock and clock check as for a revert. 2 tests.
+- **`first_contact.py <vm> --static <address>`** is the forward-free first contact for such a clone. It refuses unless:
+  - nodes.yml gives <address> to a node whose VM is powered off, so nothing else can answer there;
+  - the VM answers there with that node's already-pinned host key (StrictHostKeyChecking, HostKeyAlias);
+  - an interface of the answering host holds the clone's own NIC2 MAC, read over that connection.
+
+  It keyscans nothing and quotes no fingerprint. The re-keying that follows reads the new key over the verified
+  session and matches it with a keyscan at the new address, as for kubuntu. 4 tests.

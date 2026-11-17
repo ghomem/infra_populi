@@ -36,6 +36,9 @@
 # last_run_summary) through records.py revert-mark; record_green.sh accepts a GREEN only if its harness
 # run started on that token (HQ batch-3 acceptance, item 1). `revert_node.sh --node-state` prints the token and
 # touches no VM.
+# `revert_node.sh [--node KIND] --power-off` powers the node off and stops there: no restore, no start (2026-11-17, for
+# a new VM cloned from the node, whose first boot takes the node's static host-only address). The next revert brings
+# the node back.
 # ---------------------------------------------------------------------------
 
 set -euo pipefail
@@ -78,12 +81,13 @@ node_state_token() {
     'cat /proc/sys/kernel/random/boot_id; { sudo -n sha256sum /opt/puppetlabs/puppet/public/last_run_summary.yaml 2>/dev/null || echo absent; } | cut -d" " -f1'
 }
 
-node_kind="" state_only=0
+node_kind="" state_only=0 power_off_only=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --node) node_kind="${2:-}"; [[ -n "$node_kind" ]] || fail "--node needs a kind"; shift 2 ;;
     --node-state) state_only=1; shift ;;
-    *) fail "Usage: $0 [--node KIND] [--node-state]" ;;
+    --power-off) power_off_only=1; shift ;;
+    *) fail "Usage: $0 [--node KIND] [--node-state | --power-off]" ;;
   esac
 done
 node_env="$(python3 "${TOOLS_DIR}/nodes.py" env ${node_kind:+--node "$node_kind"})" ||
@@ -216,6 +220,10 @@ case "$node_state" in
     ;;
 esac
 t_off="$(now_ms)"
+if [[ $power_off_only -eq 1 ]]; then
+  echo "POWERED_OFF node ${NODE_KIND} (${NODE_VM}); not restored or started (the next revert brings it back)"
+  exit 0
+fi
 
 printf 'Restoring node snapshot %q...\n' "$NODE_SNAPSHOT"
 VBoxManage snapshot "$NODE_VM" restore "$NODE_SNAPSHOT" ||

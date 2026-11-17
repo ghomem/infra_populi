@@ -273,3 +273,25 @@ def test_content_overrides_that_cannot_be_cleared_fail_the_revert(lab, tmp_path,
     proc = lab.run([SCRIPT, "--node", "rhel9"], env={"P8_NODES": rhel_inventory(tmp_path)})
     assert proc.returncode == 1 and message in proc.stderr
     assert not any("dnf" in " ".join(c) for c in lab.calls("ssh"))
+
+
+def test_power_off_stops_the_node_without_restoring_or_starting_it(lab):
+    # 2026-11-17: p8lab-dc, cloned from the node, takes the node's static host-only address on its first boot
+    proc = lab.run([SCRIPT, "--power-off"])
+    assert proc.returncode == 0 and "POWERED_OFF node ubuntu (ubuntu24-puppet8-Node)" in proc.stdout, proc.stderr
+    ops = [c[1:3] for c in lab.calls("VBoxManage") if c[1] in ("controlvm", "snapshot", "startvm")]
+    assert ops == [["controlvm", "ubuntu24-puppet8-Node"]]
+    assert lab.state()["vms"]["ubuntu24-puppet8-Node"]["state"] == "poweroff"
+    assert lab.state()["vms"]["Ubuntu24-puppet8-Master"]["state"] == "running"
+    assert not (lab.root / "node_revert.json").exists()  # no revert recorded
+
+
+def test_power_off_is_refused_while_another_run_holds_the_lock(lab):
+    import subprocess
+    holder = subprocess.Popen(["sleep", "60"])
+    try:
+        assert lab.run([str(TOOLS / "lab_lock.sh"), "take", str(holder.pid), "a run"]).returncode == 0
+        proc = lab.run([SCRIPT, "--power-off"])
+        assert proc.returncode == 1 and lab.calls("VBoxManage") == []
+    finally:
+        holder.kill()

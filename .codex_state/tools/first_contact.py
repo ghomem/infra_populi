@@ -7,6 +7,7 @@ first reached at the address VirtualBox's vboxnet0 DHCP server leased to THAT VM
 and no fingerprint taken through a forwarded port is ever quoted.
 
     first_contact.py <p8lab-vm> [--alias NAME] [--user USER] [--pin]
+    first_contact.py <p8lab-vm> --static <address>      (a clone of a lab node that kept its static host-only address)
 
 - Reads the VM's NIC2 (host-only, vboxnet0) MAC from VBoxManage and its acked lease from the vboxnet0 DHCP lease file.
 - Keyscans that address and prints each host key's fingerprint, for Salatiel to compare with the VM's console
@@ -15,6 +16,11 @@ and no fingerprint taken through a forwarded port is ever quoted.
 - --pin (only after the console comparison): writes the scanned keys to ~/.ssh/known_hosts under the alias, replacing
   that alias's earlier entries, after a backup known_hosts.pre-<vm>.
 - A NAT port forward on the VM is reported (FORWARD) with the command that removes it once the VM is powered off.
+
+--static (a VM cloned from a lab node boots with that node's static host-only address and keys, so it takes no lease):
+  refused unless nodes.yml gives <address> to a node whose VM is powered off (no other VM can answer there). The VM
+  must then answer at <address> with the host key already pinned for that node (StrictHostKeyChecking, HostKeyAlias)
+  and must hold its own NIC2 MAC on an interface (read over that connection), which proves the answer is this VM.
 
 Exit 0 done, 1 refused (not a running p8lab-* VM, no host-only NIC2, no acked lease, nothing answered the keyscan),
 2 usage. P8_VBOX_LEASES overrides the lease file and P8_KNOWN_HOSTS the known_hosts file (tests).
@@ -90,12 +96,40 @@ def pin(vm, alias, keys):
             f.write(f"{alias} {keytype} {blob}\n")
 
 
+def static_contact(vm: str, info: dict, mac: str, address: str, user: str) -> int:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import nodes  # noqa: PLC0415
+    owner = next((n for n in nodes.load()["nodes"].values() if n.get("hostonly_ip") == address), None)
+    if owner is None:
+        refuse(f"--static {address}: no node of nodes.yml has that host-only address")
+    state = vm_info(owner["vm"]).get("VMState")
+    if state not in ("poweroff", "aborted"):
+        refuse(f"--static {address}: its node's VM {owner['vm']} is {state}; power it off first "
+               f"(revert_node.sh --node <kind> --power-off) so only {vm} can answer there")
+    want = ":".join(mac.lower()[i:i + 2] for i in range(0, 12, 2))
+    proc = subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=yes", "-o", "ConnectTimeout=5",
+                           "-o", f"HostKeyAlias={owner['alias']}", "-o", "IdentitiesOnly=yes", "-i",
+                           str(Path(IDENTITY).expanduser()), f"{user}@{address}", "cat /sys/class/net/*/address"],
+                          capture_output=True, text=True, timeout=30)
+    if proc.returncode != 0:
+        refuse(f"--static {address}: no answer with the host key pinned for {owner['alias']} "
+               f"({proc.stderr.strip()[-200:]})")
+    if want not in proc.stdout.split():
+        refuse(f"--static {address}: the host that answered does not hold {vm}'s NIC2 MAC {want}")
+    print(f"FIRST_CONTACT {vm}: static {address} (from {owner['alias']}, whose VM is {state}) answered with "
+          f"{owner['alias']}'s pinned host key and holds {vm}'s NIC2 MAC {want}")
+    print(f"Next: give {vm} its own address, hostname, machine-id and host keys; pin the new key read over this "
+          f"session, then match it with a keyscan at the new address before use.")
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("vm")
     ap.add_argument("--alias")
     ap.add_argument("--user", default="salatiel")
     ap.add_argument("--pin", action="store_true")
+    ap.add_argument("--static", metavar="ADDRESS")
     args = ap.parse_args(argv)
     if not re.fullmatch(r"p8lab-[a-z0-9][a-z0-9-]{0,40}", args.vm):
         refuse(f"'{args.vm}' is not a p8lab-* VM")
@@ -108,6 +142,8 @@ def main(argv=None):
     mac = info.get("macaddress2", "")
     if not re.fullmatch(r"[0-9A-Fa-f]{12}", mac):
         refuse(f"cannot read the NIC2 MAC of '{args.vm}'")
+    if args.static:
+        return static_contact(args.vm, info, mac, args.static, args.user)
     address = leased_address(mac)
     if address is None:
         refuse(f"no acked vboxnet0 lease for '{args.vm}' (NIC2 MAC {mac}); the guest has not taken a DHCP address on "
