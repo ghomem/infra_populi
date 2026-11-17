@@ -1,0 +1,21 @@
+{
+ "class": "postfix_smtp_base",
+ "at": "20261117T024408Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "smtpd-on-the-configured-port-with-the-hostname: master.cf.erb:12 declares smtpd on <%=@postfix_port%> (fixture 587); together with main.cf.erb:75 myhostname = smtp_hostname and :10 smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu), the expected greeting '220 smtp.p8test.example.com ESMTP Postfix (Ubuntu)' read from 127.0.0.1:587 is exactly what the baseline would produce",
+  "sasl-user-authenticates-through-dovecot (postfix_smtp_base.pp:117-121): the manifest writes /etc/dovecot/users from sasl_users.erb and notifies dovecot; 10-auth.conf (baseline) includes auth-passwdfile.conf.ext, so doveadm auth test p8testuser with the fixture's {PLAIN}p8test-not-a-secret must succeed; the mismatch varies only the password, which must change the verdict",
+  "sasl-user-authenticates-through-dovecot (sasl_users.erb:3): the template renders name:password_hash per smtp_users entry, i.e. 'p8testuser:{PLAIN}p8test-not-a-secret' under the fixture, so the passdb lookup with that password must report 'auth succeeded'; the probe tests what this line declares"
+ ],
+ "review_s": 112.8,
+ "check_file_sha256": "0163efc5581738c434967989a54503bc04c1b185aae58ba99ee27cc378ba9a71",
+ "reviewer_result": "20261117T024216Z-reviewer",
+ "author_result": "20261117T024019Z-author",
+ "findings": []
+}
