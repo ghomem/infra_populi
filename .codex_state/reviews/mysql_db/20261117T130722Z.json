@@ -1,0 +1,96 @@
+{
+ "schema": 1,
+ "class": "mysql_db",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-17T13:07:22Z",
+ "baseline": "874f854 (874f854)",
+ "migrate_commit": "5576c8b72497",
+ "migrate_subject": "P8: migrate puppet_infrastructure::mysql_db",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 5576c8b72497; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `mysql_db Done [from: 874f854]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-mysql', '17.3.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 22 catalog events; COVERAGE puppet_infrastructure::mysql_db: 5 concrete resources (+3 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added lines: '874f854 manifest validated unchanged' + 'puppetlabs-mysql 17.3.0'); no non-comment change vs baseline 874f854 (diff_summary non_comment_changes=0, header_only=True)",
+   "DIFF B: migrate commit 5576c8b adds only the same 2-line header to manifests/mysql_db.pp; provenance ok (started from baseline content)"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: 874f854 manifest validated unchanged.",
+  "# Module dependencies: puppetlabs-mysql 17.3.0."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 22,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::mysql_db: 5 concrete resources (+3 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 22.096,
+   "master_check_s": 0.304,
+   "poweroff_s": 0.88,
+   "restore_s": 0.229,
+   "boot_to_ssh_s": 12.918,
+   "apt_update_s": 7.403,
+   "verify_s": 0.362,
+   "nic1_rx_bytes": 10405660
+  },
+  "log": ".codex_state/logs/reviews/mysql_db.20261117T130528Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "874f854 (874f854)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
