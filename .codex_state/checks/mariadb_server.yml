@@ -1,0 +1,112 @@
+# Phase 3 checks for puppet_infrastructure::mariadb_server (class; per-class baseline exception 874f854; migrated with
+# the ruled certificate-exec guard (upstream_defects.md mariadb_server) and the HQ batch-7 ruling-4 module-compatibility
+# change: the module's File['/var/log/mysql'] carries the class's mode and ordering through a collector override).
+# Fixture (params, never committed): a fake root password only, so no rw/ro users; generate_certificates default true.
+# Lab Hiera: db::organization 'p8test org', db::cname 'db.p8test.invalid', db::email 'p8test@p8test.invalid'.
+# Probes run as root, so the mysql client authenticates as root@localhost through /root/.my.cnf (puppetlabs-mysql).
+class: mariadb_server
+baseline: 874f854 (874f854)
+fixture: params
+authoring:
+  minutes: 0.8
+  notes: "Wall clock 12:26:38Z to 12:27:26Z 2026-11-17 (no lab run active; baseline 874f854 manifest and certificate template read)."
+uncovered:
+  - what: the rw/ro users authenticating with ed25519 hashes over TLS from another host (the class's users and grants)
+    why: the params fixture defines no rw_user/ro_user, and a remote client needs a second node on the lab network
+    lifted_by: ubuntu2
+checks:
+  - id: mariadb-server-installed-and-running
+    what: the MariaDB server package is installed and the running server reports itself as MariaDB
+    control: negative
+    derived_from:
+      - {path: manifests/mariadb_server.pp, lines: "159", text: "package_name            => 'mariadb-server',"}
+    probe: |
+      dpkg-query -W -f '${Package} ${Status}\n' mariadb-server
+      mysql -NB -e 'SELECT @@version' | grep -c MariaDB
+    expect: {rc: 0, stdout: "\\Amariadb-server install ok installed\\n1\\n\\Z"}
+
+  - id: server-runs-the-override-options
+    what: the server runs with the class's TLS files, required secure transport and bind address
+    control: negative
+    derived_from:
+      - {path: manifests/mariadb_server.pp, lines: "37", text: "$ssl_dir      = '/etc/mysql/certificates/'"}
+      - {path: manifests/mariadb_server.pp, lines: "49-53", text: "'require_secure_transport' => 'ON',"}
+    probe: |
+      mysql -NB -e 'SELECT @@ssl_ca, @@ssl_cert, @@ssl_key, @@require_secure_transport, @@bind_address'
+    expect: {rc: 0, stdout: "\\A/etc/mysql/certificates//ca\\.pem\\t/etc/mysql/certificates//server-cert\\.pem\\t/etc/mysql/certificates//server-key\\.pem\\t1\\t0\\.0\\.0\\.0\\n\\Z"}
+
+  - id: ed25519-plugin-active
+    what: the ed25519 authentication plugin is loaded and active
+    control: negative
+    derived_from:
+      - {path: manifests/mariadb_server.pp, lines: "44", text: "'plugin_load_add' => 'auth_ed25519',"}
+    probe: |
+      mysql -NB -e "SELECT PLUGIN_STATUS FROM information_schema.PLUGINS WHERE PLUGIN_NAME = 'ed25519'"
+    expect: {rc: 0, stdout: "\\AACTIVE\\n\\Z"}
+
+  - id: insecure-transport-refused
+    what: a TCP connection without TLS is refused because secure transport is required
+    control: negative
+    derived_from:
+      - {path: manifests/mariadb_server.pp, lines: "52", text: "'require_secure_transport' => 'ON',"}
+    probe: |
+      mysql --protocol=TCP -h 127.0.0.1 --skip-ssl -NB -e 'SELECT 1' 2>&1 | grep -c 'insecure transport'
+    mismatch:
+      varies: >-
+        only the transport (--ssl instead of --skip-ssl): with TLS the server must not answer with the insecure-transport
+        refusal, so the count must not be 1
+      probe: |
+        mysql --protocol=TCP -h 127.0.0.1 --ssl -NB -e 'SELECT 1' 2>&1 | grep -c 'insecure transport'
+    expect: {rc: 0, stdout: "\\A1\\n\\Z"}
+
+  - id: root-is-local-only-and-no-anonymous-user
+    what: after removing the default accounts, root exists only as root@localhost and there is no anonymous user
+    control: negative
+    derived_from:
+      - {path: manifests/mariadb_server.pp, lines: "161", text: "remove_default_accounts => true,"}
+    probe: |
+      mysql -NB -e "SELECT CONCAT(user, '@', host) FROM mysql.user WHERE user IN ('root', '') ORDER BY 1"
+    expect: {rc: 0, stdout: "\\Aroot@localhost\\n\\Z"}
+
+  - id: server-certificate-signed-by-the-generated-ca
+    what: the generated server certificate verifies against the generated CA
+    control: negative
+    derived_from:
+      - {path: templates/mariadb/deploy_self_signed_certificates.sh.erb, lines: "19", text: "mv ca.pem server-key.pem server-cert.pem <%= @ssl_dir %>"}
+      - {path: manifests/mariadb_server.pp, lines: "37", text: "$ssl_dir      = '/etc/mysql/certificates/'"}
+    probe: |
+      openssl verify -CAfile /etc/mysql/certificates/ca.pem /etc/mysql/certificates/server-cert.pem
+    mismatch:
+      varies: >-
+        only the CA file (the system CA bundle instead of the generated ca.pem): the self-signed chain must not verify
+      probe: |
+        openssl verify -CAfile /etc/ssl/certs/ca-certificates.crt /etc/mysql/certificates/server-cert.pem
+    expect: {rc: 0, stdout: "\\A/etc/mysql/certificates/server-cert\\.pem: OK\\n\\Z"}
+
+  - id: certificate-subject-from-hiera
+    what: the server certificate's subject carries the organization, common name and email from Hiera
+    control: negative
+    derived_from:
+      - {path: manifests/mariadb_server.pp, lines: "38-40", text: "$cname        = lookup('db::cname')"}
+      - {path: templates/mariadb/deploy_self_signed_certificates.sh.erb, lines: "4", text: "CERT_INFO=\"/C=PT/ST=Lisbon/L=Lisbon/O=<%= @organization %>/OU=IT/CN=<%= @cname %>/emailAddress=<%= @email %>\""}
+    probe: |
+      openssl x509 -in /etc/mysql/certificates/server-cert.pem -noout -subject
+    expect: {rc: 0, stdout: "\\Asubject=C = PT, ST = Lisbon, L = Lisbon, O = p8test org, OU = IT, CN = db\\.p8test\\.invalid, emailAddress = p8test@p8test\\.invalid\\n\\Z"}
+
+  - id: certificate-files-owner-and-mode
+    what: the three deployed files are root:root 0644
+    control: negative
+    derived_from:
+      - {path: templates/mariadb/deploy_self_signed_certificates.sh.erb, lines: "20-21", text: "chmod 644 <%= @ssl_dir %>*"}
+    probe: |
+      stat -c '%n %U %G %a' /etc/mysql/certificates/ca.pem /etc/mysql/certificates/server-cert.pem /etc/mysql/certificates/server-key.pem
+    expect: {rc: 0, stdout: "\\A/etc/mysql/certificates/ca\\.pem root root 644\\n/etc/mysql/certificates/server-cert\\.pem root root 644\\n/etc/mysql/certificates/server-key\\.pem root root 644\\n\\Z"}
+
+  - id: log-directory-attributes
+    what: /var/log/mysql is a directory owned by mysql:adm with mode 0755
+    control: negative
+    derived_from:
+      - {path: manifests/mariadb_server.pp, lines: "168-172", text: "group   => 'adm',"}
+    probe: |
+      stat -c '%F %U %G %a' /var/log/mysql
+    expect: {rc: 0, stdout: "\\Adirectory mysql adm 755\\n\\Z"}
