@@ -56,6 +56,9 @@ checks:
           grep -E '^(remote|ca|username|cipher|connection-type|dev-type) = ' | sort
     expect: {rc: 0, stdout: "\\Aca = /etc/p8test-vpn/ca\\.crt\\ncipher = AES-256-CBC\\nconnection-type = password\\ndev-type = tap\\nremote = 203\\.0\\.113\\.50\\nusername = p8testuser\\n\\Z"}
 
+  # 2026-11-17 authoring correction (run 1, 20261117T220444Z): `nmcli -g` escapes the ':' inside a value, so the
+  # permission prints as `user\:p8testuser`; the profile file holds `permissions=user:p8testuser:;` as the template
+  # renders it. The expectation now matches the escaped form; the behaviour is unchanged.
   - id: only-the-local-user-may-use-it
     what: the profile's permissions name the local user only
     control: negative
@@ -65,7 +68,7 @@ checks:
     mismatch:
       varies: the connection name (p8test-vpn-other), which no profile has
       probe: nmcli -g connection.permissions connection show p8test-vpn-other
-    expect: {rc: 0, stdout: "\\Auser:p8testuser\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Auser\\\\:p8testuser\\n\\Z"}
 
   - id: uuid-is-the-stable-version-5-uuid-of-the-name
     what: >-

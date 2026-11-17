@@ -1,0 +1,147 @@
+{
+ "class": "openvpn_nm_connection",
+ "role": "author",
+ "at": "20261117T220444Z",
+ "runner": "589c6c8",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "b895bddf42c51ced6a2f9260f92100a875c33b5e97c9d77db7bc34babda2f5b7",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "profile-file-root-only",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/NetworkManager/system-connections/p8test-vpn': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "networkmanager-loads-the-vpn-profile",
+   "control": "negative",
+   "rc": 10,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Error: p8test-vpn - no such connection profile.\n",
+   "ok": true
+  },
+  {
+   "id": "vpn-settings-from-the-parameters",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Error: p8test-vpn - no such connection profile.\n",
+   "ok": true
+  },
+  {
+   "id": "only-the-local-user-may-use-it",
+   "control": "negative",
+   "rc": 10,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Error: p8test-vpn - no such connection profile.\n",
+   "ok": true
+  },
+  {
+   "id": "uuid-is-the-stable-version-5-uuid-of-the-name",
+   "control": "negative",
+   "rc": 10,
+   "passed": false,
+   "stdout": "",
+   "stderr": "sed: can't read /etc/NetworkManager/system-connections/p8test-vpn: No such file or directory\nError: p8test-vpn - no such connection profile.\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "0a68e7065e16680a3a84f13512ad7eec'\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Main/Node[p8lab-gnome]/Puppet_infrastructure::Openvpn_nm_connection[p8test-vpn]/File[/etc/NetworkManager/system-connections/p8test-vpn]: Scheduling refresh of Exec[Reload Network Manager Connections: p8test-vpn]\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8lab-gnome]/Puppet_infrastructure::Openvpn_nm_connection[p8test-vpn]/Exec[Reload Network Manager Connections: p8test-vpn]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 0.56 seconds\u001b[0m\nRUN1_EVENTS: 3 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-gnome\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794953139'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::openvpn_nm_connection: 2 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::Openvpn_nm_connection[p8test-vpn]\n  Exec[Reload Network Manager Connections: p8test-vpn]\n  File[/etc/NetworkManager/system-connections/p8test-vpn]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP openvpn_nm_connection 30407a2cd6d5\n"
+ },
+ "applied": [
+  {
+   "id": "profile-file-root-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 600\n",
+   "stderr": ""
+  },
+  {
+   "id": "networkmanager-loads-the-vpn-profile",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test-vpn\nvpn\norg.freedesktop.NetworkManager.openvpn\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the connection name (p8test-vpn-other), which no profile has, so nmcli must refuse it",
+    "rc": 10,
+    "passed": false,
+    "stdout": "",
+    "stderr": "Error: p8test-vpn-other - no such connection profile.\n"
+   }
+  },
+  {
+   "id": "vpn-settings-from-the-parameters",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ca = /etc/p8test-vpn/ca.crt\ncipher = AES-256-CBC\nconnection-type = password\ndev-type = tap\nremote = 203.0.113.50\nusername = p8testuser\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the connection name (p8test-vpn-other), which no profile has, so no settings can be read",
+    "rc": 0,
+    "passed": false,
+    "stdout": "",
+    "stderr": "Error: p8test-vpn-other - no such connection profile.\n"
+   }
+  },
+  {
+   "id": "only-the-local-user-may-use-it",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "user\\:p8testuser\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the connection name (p8test-vpn-other), which no profile has",
+    "not_run": "the check itself failed"
+   }
+  },
+  {
+   "id": "uuid-is-the-stable-version-5-uuid-of-the-name",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "df2d3b4d-5aa3-564f-92d4-fd9bac9644f9\ndf2d3b4d-5aa3-564f-92d4-fd9bac9644f9\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the connection name (p8test-vpn-other), which no profile has, so NetworkManager reports no UUID",
+    "rc": 10,
+    "passed": false,
+    "stdout": "df2d3b4d-5aa3-564f-92d4-fd9bac9644f9\n",
+    "stderr": "Error: p8test-vpn-other - no such connection profile.\n"
+   }
+  }
+ ],
+ "findings": [
+  "only-the-local-user-may-use-it"
+ ],
+ "not_run": [],
+ "outcome": "FINDINGS",
+ "authoring_minutes": 0.7,
+ "node": "gnome",
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "boot_id": "4b08d3b9-dc77-442a-a97d-af02be55fde6",
+   "boot_id_at_end": "4b08d3b9-dc77-442a-a97d-af02be55fde6",
+   "fresh": true
+  }
+ },
+ "duration_s": 57.4
+}
