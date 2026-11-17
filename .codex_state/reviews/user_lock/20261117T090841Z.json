@@ -1,0 +1,118 @@
+{
+ "schema": 1,
+ "class": "user_lock",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-17T09:08:41Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "a795d9885fb2",
+ "migrate_subject": "P8: migrate puppet_infrastructure::user_lock",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit a795d9885fb2; 162 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `user_lock Done [from: release-0.9.10; upstream defect fixed: exec guarded by its post-condition; mock-apply: hashman user stand-in]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 41 catalog events; COVERAGE puppet_infrastructure::user_lock: 1 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-2): 2-line migration header comment only",
+   "DIFF A hunk 2: adds $hashmandb = lookup('hashman::dbdir') and unless => \"/bin/grep -Eq \\\"^[[:space:]]*[\\$]${myuser}_pwd_hash[[:space:]]*=[[:space:]]*'!\\\" ${hashmandb}/hashes.pp\" on exec user_lock_${myuser}: character-for-character the ruled change of upstream_defects.md ## user_lock (incl. both 2026-11-16 amendments /bin/grep and [\\$]); title, command, require and the upstream comment unchanged; nothing else differs from baseline cf477c6",
+   "DIFF B equals DIFF A (first migration from baseline content; provenance ok); all baseline comments preserved"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 4,
+  "removed": 0,
+  "non_comment_changes": 2,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: lock an existing Hashman user; skip when already locked.",
+  "# Module dependencies: none (core exec resource only)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 41,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::user_lock: 1 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 21.256,
+   "master_check_s": 0.244,
+   "poweroff_s": 0.76,
+   "restore_s": 0.209,
+   "boot_to_ssh_s": 12.524,
+   "apt_update_s": 7.206,
+   "verify_s": 0.313,
+   "nic1_rx_bytes": 7979420
+  },
+  "log": ".codex_state/logs/reviews/user_lock.20261117T090717Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "mock_apply": "hashman user stand-in (node fixture hashman_lock_standin: behaviour NOT verified)",
+ "node_fixture": {
+  "name": "hashman_lock_standin",
+  "header": [
+   "# MOCK-APPLY node fixture `hashman_lock_standin` (HQ 2026-10-27 ruling 7) for user_lock (harness title p8testuser).",
+   "# user_lock runs hashman's `pp_auth.py lock <user>` on the Puppet master (required_base hashman_base, whose database",
+   "# lives in the master's code tree). Its ruled guard (upstream_defects.md user_lock) reads the user's entry in",
+   "# hashes.pp, so the user must exist in hashman's database for the define to be idempotent. On a real master the user",
+   "# was created through hashman beforehand; here the fixture supplies ONE fake database entry for p8testuser (the fixture",
+   "# hash `$6$p8testsalt$...`, never a real user's), added by a seeding exec before user_lock's exec, only if absent",
+   "# (hashman_base declares hashes.pp itself with replace => no, so the fixture cannot declare the file).",
+   "# (2026-11-17, HQ ruling 2: the code-tree directory left this fixture; the agent package ships it.)",
+   "# Behaviour (a locked user refused by pp_auth/the web interface on a master) is NOT verified by a GREEN with it.",
+   "# Lifted by: a master-role node whose hashman database holds the user (no nodes.yml kind yet; HQ batch-5 ruling 6; HQ 2026-11-17 ruling 2)"
+  ],
+  "resources": [
+   "file[/usr/local/sbin/p8test-seed-hashman-user]",
+   "exec[p8test seed p8testuser into the hashman database]"
+  ],
+  "scope_evidence": "hashman_lock_standin: file /usr/local/sbin/p8test-seed-hashman-user (root 0755 script that appends one fake entry $p8testuser_pwd_hash = '$6$p8testsalt$p8testfixturehash' to hashman's hashes.pp only if absent) and exec 'p8test seed p8testuser into the hashman database' (runs it, guarded by unless grep for the entry, require the script + Class[hashman_base], before Exec[user_lock_p8testuser]). Both serve exactly the stated stand-in (one fake DB entry for the harness title p8testuser); neither declares nor alters any attribute of the class's exec user_lock_p8testuser or hashman_base's hashes.pp resource (only an ordering edge)"
+ }
+}
