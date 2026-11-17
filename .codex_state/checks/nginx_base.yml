@@ -1,0 +1,75 @@
+# Phase 3 checks for puppet_infrastructure::nginx_base (class; required_external apt for Exec['apt_update']). Fixture:
+# defaults (my_configs {}, ad_hoc_configs [], dh_params_bits 2048). Written for HQ batch-8 ruling 1: with puppet-nginx
+# 8.4.0 the baseline's own `nginx_cfg_prepend` include of /etc/nginx/modules-enabled is a second include beside the
+# module's (Debian `include_modules_enabled => true`), so the first dynamic module installed is loaded twice and nginx
+# refuses to start (escalations/nginx_base.md). The mutating check installs one dynamic module (libnginx-mod-stream,
+# Ubuntu 24.04) and judges the effect: exactly one include of the directory, `nginx -t` passes, the service runs.
+# Probes read the node's own files and nginx only.
+class: nginx_base
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 0.6
+  notes: "Wall clock 20:53:45Z to 20:54:18Z 2026-11-17, write to valid (no lab run active); the baseline manifest and puppet-nginx 8.4.0's nginx.conf.erb, config.pp and params.pp were read before the clock started."
+checks:
+  - id: nginx-config-valid
+    what: the nginx configuration the class produces passes `nginx -t`
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "101-105", text: "class { 'nginx':"}
+    probe: nginx -t 2>&1
+    expect: {rc: 0, stdout: "test is successful"}
+
+  - id: workers-auto-and-server-tokens-off
+    what: nginx.conf sets worker_processes auto and server_tokens off (the class's default configs)
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "82", text: "worker_processes  => 'auto',"}
+      - {path: manifests/nginx_base.pp, lines: "84", text: "server_tokens     => 'off',"}
+    probe: |
+      grep -c -E '^\s*worker_processes\s+auto;' /etc/nginx/nginx.conf
+      grep -c -E '^\s*server_tokens\s+off;' /etc/nginx/nginx.conf
+    expect: {rc: 0, stdout: "\\A1\\n1\\n\\Z"}
+
+  - id: log-formats-main-and-compact
+    what: nginx.conf defines the class's two log formats, main and compact
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "63-67", text: "$log_formats_main = {"}
+      - {path: manifests/nginx_base.pp, lines: "72-75", text: "$log_formats = merge("}
+    probe: |
+      grep -c -E '^\s*log_format\s+main\s' /etc/nginx/nginx.conf
+      grep -c -E '^\s*log_format\s+compact\s' /etc/nginx/nginx.conf
+    expect: {rc: 0, stdout: "\\A1\\n1\\n\\Z"}
+
+  - id: dh-group-2048-bits-not-world-readable
+    what: the custom DH group /etc/nginx/dhparams.pem has 2048 bits and mode u=rw,g=r,o=
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "36", text: "$dh_params_bits = 2048,"}
+      - {path: manifests/nginx_base.pp, lines: "140-143", text: "command => \"/usr/bin/openssl dhparam -out ${base_dh_params} ${dh_params_bits} && chmod u=rw,g=r,o= ${base_dh_params}\","}
+    probe: |
+      stat -c '%a' /etc/nginx/dhparams.pem
+      openssl dhparam -in /etc/nginx/dhparams.pem -noout -text | grep -o 'DH Parameters: ([0-9]* bit)'
+    expect: {rc: 0, stdout: "\\A640\\nDH Parameters: \\(2048 bit\\)\\n\\Z"}
+
+  - id: a-dynamic-module-is-loaded-once-and-nginx-runs
+    what: >-
+      with a dynamic module enabled, nginx.conf includes /etc/nginx/modules-enabled exactly once, `nginx -t` passes
+      and the service is running (the class includes the enabled modules; a second include loads each one twice)
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "86", text: "nginx_cfg_prepend => {'include' => '/etc/nginx/modules-enabled/*'},"}
+      - {path: manifests/nginx_base.pp, lines: "79-80", text: "package_name      => 'nginx',"}
+    mutates: >-
+      installs the Ubuntu dynamic-module package libnginx-mod-stream (it enables /etc/nginx/modules-enabled/50-mod-stream.conf)
+      and restarts nginx
+    probe: |
+      DEBIAN_FRONTEND=noninteractive apt-get -qq -y install libnginx-mod-stream >/dev/null 2>&1
+      systemctl restart nginx >/dev/null 2>&1 || true
+    effect: |
+      ls /etc/nginx/modules-enabled/ | grep -c 'mod-stream'
+      grep -c -E '^\s*include\s+/etc/nginx/modules-enabled/' /etc/nginx/nginx.conf
+      nginx -t 2>&1 | grep -c 'test is successful'
+      systemctl is-active nginx
+    expect: {rc: 0, stdout: "\\A1\\n1\\n1\\nactive\\n\\Z"}
