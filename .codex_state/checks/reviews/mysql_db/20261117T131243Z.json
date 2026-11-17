@@ -1,0 +1,22 @@
+{
+ "class": "mysql_db",
+ "at": "20261117T131243Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "mysql-server-survives-the-define: mysql_server.pp:48 package_name \"mysql-server-${version}\" with the mysql_server params fixture version 8.0 declares the mysql-server-8.0 package, and mysql_db.pp:17 declares mysql::db requiring that class; the probe checks mysql-server-8.0 (plus the mysql-client-8.0 of HQ 2026-11-17 ruling 1, as the what states) installed, no mariadb-server/client, and mysql active, which is what the define must leave in place",
+  "database-created-with-charset-and-collation: mysql_db.pp:18-22 sets dbname $db_name (fixture p8test_db), charset utf8mb3, collate utf8mb3_general_ci; the probe reads exactly those two values from information_schema.SCHEMATA for p8test_db and expects utf8mb3 / utf8mb3_general_ci",
+  "grants-on-the-database: mysql_db.pp:37 grants SELECT, SHOW VIEW to the ro user (line 24 ALL to rw), host '%' (lines 23/36), on $db_name; the probe takes SHOW GRANTS for p8test_rw@% and p8test_ro@% filtered to p8test_db and expects ALL PRIVILEGES and SELECT, SHOW VIEW on p8test_db.*, as MySQL 8 renders those grants",
+  "check file read whole: all 5 checks are negative controls (no invariants, so no why_invariant to judge); probes are read-only SQL/dpkg/systemctl against the node's local server, no other host, no mutates; the rw-user-logs-in-over-tls mismatch varies only the password (p8test-wrong-password vs fixture rw_pass), a value whose change must make the server refuse the login, and its probe changes exactly that value; no uncovered notes are declared"
+ ],
+ "review_s": 130.8,
+ "check_file_sha256": "d1078ea79831d434bc969a76f5eccf55367c28d5aba78730e134a3dcfd5e0044",
+ "reviewer_result": "20261117T131033Z-reviewer",
+ "author_result": "20261117T130822Z-author",
+ "findings": []
+}
