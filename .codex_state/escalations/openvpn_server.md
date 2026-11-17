@@ -110,3 +110,21 @@ is openvpn_server; network_vpn is worth checking when it comes up.
    - When the class is unblocked, classify_path will route it to context-gap. That needs either a per-class "standalone
      by production evidence" entry for hazard 14, or Codex's dispatch with the finding explained. I will propose the
      former with the ruling.
+
+## HQ 2026-11-17 ruling 1: required evidence (after the reviewer PASS 20261117T134324Z, on its applied node)
+Script: drift a file, run `puppet agent -t`, count the unit's "Initialization Sequence Completed" lines since the step.
+
+```
+config file: /etc/openvpn/server/puppet_infrastructure.conf
+STEP server-config: agent rc=2; unit starts since the step: 1; changed resources: 4; unit active
+    Notice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure.conf]/content: content changed (sha256 ...)
+    Notice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/Service[openvpn-server@puppet_infrastructure]: Triggered 'refresh' from 1 event
+STEP up-script: agent rc=2; unit starts since the step: 1; changed resources: 4; unit active
+    Notice: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/openvpn-up.sh]/content: content changed (sha256 ...)
+    Notice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/Service[openvpn-server@puppet_infrastructure]: Triggered 'refresh' from 1 event
+STEP clean-run: agent rc=0; unit starts since the step: 0; changed resources: 0; unit active
+```
+
+- A server-config change restarts the unit exactly once (1 start; the module's own `$lnotify`).
+- An up-script change restarts it (1 start; the retargeted :208 notify).
+- The next run is clean (exit 0, no change, no restart).
