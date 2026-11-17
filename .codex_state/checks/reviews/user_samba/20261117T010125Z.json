@@ -1,0 +1,21 @@
+{
+ "class": "user_samba",
+ "at": "20261117T010125Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "samba-hash-set-for-the-user (manifests/user_samba.pp:18): baseline runs set-user-samba-hash.sh ${first_name} ${last_name} ${mysmbhash}; the samba_dc_standin script resolves first/last to the stored user and writes arg 3 to hash.<user>, so hash.p8testuser holding exactly the params mysmbhash (IgBQADgA...AA==) is what line 18 produces under the params fixture; read-only local cat, absent on the clean node (negative ok)",
+  "user-created-with-split-name (manifests/user_samba.pp:11): baseline runs create-user.pl $username ${first_name} ${last_name} ${mysmbhash}; the stand-in records args 1-3, so the line 'p8testuser P8 Testuser' (title p8testuser) tests user/first/last as passed; the 4th arg (hash) is not claimed by this check's 'what'",
+  "user-created-with-split-name (manifests/user_samba.pp:6-8): split('P8 Testuser',' ') gives [P8, Testuser]; [0]=P8 and [-1]=Testuser, matching fields 2 and 3 of the expected store line; single line also reflects the pdbedit -Lw unless-guard holding on run 2"
+ ],
+ "review_s": 67.3,
+ "check_file_sha256": "7abc68f346c5c25e7d39d965a223e2de68bcfa074bd60ee4b24f3b66271f4826",
+ "reviewer_result": "20261117T010018Z-reviewer",
+ "author_result": "20261117T005906Z-author",
+ "findings": []
+}
