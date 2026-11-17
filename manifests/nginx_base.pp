@@ -1,4 +1,4 @@
-# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Puppet 8 migration: the module includes /etc/nginx/modules-enabled once (include_modules_enabled; nginx_base's own prepend dropped; DESIGN_DECISIONS 2026-11-17 HQ batch-8 ruling 1).
 # Module dependencies: puppet-nginx 8.4.0 (class nginx), puppetlabs-apt 11.3.2 (Exec['apt_update'] on Ubuntu).
 ### Purpose ########
 # Our base nginx class installs nginx and performs configurations common to all servers (aka vhosts)
