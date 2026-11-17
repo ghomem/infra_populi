@@ -13,7 +13,7 @@ from conftest import BOOT_ID, TOOLS
 pytestmark = pytest.mark.slow  # excluded from the per-commit fast subset (HQ 2026-11-11 ruling 3)
 
 REPO = TOOLS.parents[1]
-CLS = "sysmon_fs_health"  # pending, identical to the baseline, plain tracker line
+CLS = "sysmon_mysqldump_health"  # pending, identical to the baseline, plain tracker line (was sysmon_fs_health until batch 6 migrated it)
 HEADER = ("# Puppet 8 migration: release-0.9.10 manifest validated unchanged.\n"
           "# Module dependencies: none.\n")
 INVENTORY = "MODULE firewall env puppetlabs-firewall 8.3.0\n"
@@ -281,7 +281,7 @@ def test_updated_puppetfile_export_rides_with_the_class_commit(clone):
 def test_mock_apply_marker_is_required_exactly_with_a_node_fixture(clone):
     clone.stamp()
     clone.add_header()
-    proc = clone.run("--mock-apply", "not a fixture class", "--no-push")  # sysmon_fs_health has no node_fixture
+    proc = clone.run("--mock-apply", "not a fixture class", "--no-push")  # the sample class has no node_fixture
     assert proc.returncode == 1 and "--mock-apply is required exactly when" in proc.stderr
     import importlib.util, sys
     spec = importlib.util.spec_from_file_location("records_mock", TOOLS / "records.py")
