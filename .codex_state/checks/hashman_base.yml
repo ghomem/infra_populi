@@ -1,11 +1,12 @@
-# Phase 3 checks for puppet_infrastructure::hashman_base (class; required_base filesystem_base; MOCK-APPLY: the plan's
-# node_fixture puppetserver_code_tree supplies the master's /etc/puppetlabs/code/environments/production/manifests).
+# Phase 3 checks for puppet_infrastructure::hashman_base (class; required_base filesystem_base; a plain GREEN since
+# 2026-11-17, HQ ruling 2: the agent package ships /etc/puppetlabs/code/environments/production/manifests, so the former
+# node_fixture puppetserver_code_tree was dropped).
 # Fixture: class defaults (debug_mode false) and the lab Hiera (hashman::company 'My Company', hashman::address via
 # puppet::address puppet.example.com, hashman::testenv 'False', no minpasswordlen/relaxpassword keys -> 6 / True,
 # hashman::dbdir = puppet::manifdir/01_hashman/, hashman::bindir = /opt/puppet-infrastructure/hashman).
 # What a node can show: the CLI and its library rendered from Hiera, the empty database files, the Python packages, and
 # that the CLI starts (imports load) under the node's Python. NOT shown: the database as Puppet code on a master, user
-# authentication flows (they need the master's Puppet run to consume the database) — mock-apply.
+# authentication flows (they need the master's Puppet run to consume the database): the `uncovered` note below.
 class: hashman_base
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -14,6 +15,10 @@ authoring:
   corrections:
     - "2026-11-16, after run 20261116T200848Z (authoring error, behaviour as the baseline): the probe merged stderr, whose first line is Python 3.12's DeprecationWarning for `import crypt` (pp_auth.py:10); the usage line is on stdout. The warning is a forward note: crypt is removed in Python 3.13, so the CLI needs work on a distribution shipping it (batch-5 report)."
   notes: "Wall clock 20:07:19Z to 20:08:04Z 2026-11-16, outside the worktree while the Phase 1 review ran (CLI, config and interface templates read)."
+uncovered:
+  - what: the user database as Puppet code on a master (01_hashman/*.pp consumed by the master's own catalog) and the authentication flows built on it
+    why: the lab node is an agent; only a node that is also the Puppet server compiles its code tree into catalogs, and applying the class to the lab master would write into its live site manifests
+    lifted_by: puppetserver
 checks:
   - id: config-rendered-from-hiera
     what: the library config carries the database dir, company, URL, test-env and debug flags and the password defaults
