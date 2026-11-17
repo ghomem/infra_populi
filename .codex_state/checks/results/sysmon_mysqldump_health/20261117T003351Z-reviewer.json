@@ -1,0 +1,43 @@
+{
+ "class": "sysmon_mysqldump_health",
+ "role": "reviewer",
+ "at": "20261117T003351Z",
+ "runner": "7c78c08",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "c9b92339e2b46c04435e0b8077a47945bddc0f51b5280a359315ab793233d2e0",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "check-script-rendered",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/check-mysqldump-health.sh': No such file or directory\nbash: /opt/puppet-infrastructure/bin/check-mysqldump-health.sh: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "tructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Sysmon_mysqldump_health[sysmon_mysqldump_health]/File[/opt/puppet-infrastructure/bin/check-mysqldump-health.sh]/ensure: defined content as '{sha256}a33826908ea8bc1875b7cc3c4abde2a46bdedc419ff31881e8094e16974d29e2'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.10 seconds\u001b[0m\nRUN1_EVENTS: 8 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794875678'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.09 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::sysmon_mysqldump_health: 1 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::Sysmon_mysqldump_health[sysmon_mysqldump_health]\n  File[/opt/puppet-infrastructure/bin/check-mysqldump-health.sh]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP sysmon_mysqldump_health 04ef0da34936\n"
+ },
+ "applied": [
+  {
+   "id": "check-script-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\nMYSQLUSER=\"p8test_check\"\nMYSQLPWD=\"p8test-not-a-secret\"\nDIRS=\"/var/tmp/p8test-dumps\"\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.1,
+ "node": "ubuntu",
+ "duration_s": 49.0
+}

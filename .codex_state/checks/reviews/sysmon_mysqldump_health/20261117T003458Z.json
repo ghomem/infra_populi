@@ -1,0 +1,21 @@
+{
+ "class": "sysmon_mysqldump_health",
+ "at": "20261117T003458Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "check-script-rendered @ templates/sysmon/check-mysqldump-health.sh.erb:5-6: baseline renders MYSQLUSER=\"<%= @mysqluser %>\" and MYSQLPWD=\"<%= @mysqlpassword %>\"; with the params fixture (p8test_check / p8test-not-a-secret) the probe's grep of ^MYSQLUSER=/^MYSQLPWD= expects exactly those rendered lines",
+  "check-script-rendered @ manifests/sysmon_mysqldump_health.pp:8-15: baseline declares file ${bindir}/check-mysqldump-health.sh owner root, mode 0755, content from the template; bindir = lookup('filesystem::bindir') = /opt/puppet-infrastructure/bin, so stat '%U %a' = 'root 755' on that path and bash -n on the rendered bash script is a fair read-only check",
+  "check-script-rendered @ templates/sysmon/check-mysqldump-health.sh.erb:74: baseline renders DIRS=\"<%= @dirs %>\"; fixture dirs /var/tmp/p8test-dumps gives DIRS=\"/var/tmp/p8test-dumps\", matching the expect; the probe is read-only and local, no mismatch control needed (it greps rendered text, not a tool's verdict), and the header's 'not exercised' note honestly states that dump validation needs a MySQL server"
+ ],
+ "review_s": 67.2,
+ "check_file_sha256": "c9b92339e2b46c04435e0b8077a47945bddc0f51b5280a359315ab793233d2e0",
+ "reviewer_result": "20261117T003351Z-reviewer",
+ "author_result": "20261117T003238Z-author",
+ "findings": []
+}
