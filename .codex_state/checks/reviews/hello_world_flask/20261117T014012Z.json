@@ -1,0 +1,22 @@
+{
+ "class": "hello_world_flask",
+ "at": "20261117T014012Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "service-running-and-enabled: manifests/hello_world_flask.pp:29-30 set service_ensure='running' and service_enable=true for uninstall=false (the fixture default), applied by the service hello-world-flask-${title} at 76-81; systemctl is-active/is-enabled expecting active+enabled tests exactly that",
+  "unit-runs-gunicorn-in-the-app-dir (manifest:34): app_dir = ${localdir}/hello_world_flask/$title; master Hiera filesystem::localdir=/opt/puppet-infrastructure and title hello_world_flask give the expected WorkingDirectory=/opt/puppet-infrastructure/hello_world_flask/hello_world_flask; the ExecStart part matches template line 10 (non-RedHat branch, Ubuntu node) with fixture ip_address 127.0.0.1 and port 8080",
+  "unit-runs-gunicorn-in-the-app-dir (service.erb:13): WorkingDirectory=<%= @app_dir %> is rendered into /lib/systemd/system/hello-world-flask-${title}.service (manifest:66-71); grepping that file for the line with the app_dir value tests it directly",
+  "file review: app-serves-the-welcome-message matches the py.erb lines 10-15 h1 with fixture welcome_msg; the not-served-on-another-address invariant is plausible (nothing on 10.0.2.15:8080 on the clean node, bind 127.0.0.1 per service.erb:10) and the node's own NAT address is not another host; no probe mutates the node; run: clean phase valid (3 negatives failed, invariant passed), applied phase ALL_PASS, no findings"
+ ],
+ "review_s": 85.8,
+ "check_file_sha256": "6c6aa836144d97087d9f915baeb1df044307264b399ccbdbc0b9283930834b06",
+ "reviewer_result": "20261117T013847Z-reviewer",
+ "author_result": "20261117T013718Z-author",
+ "findings": []
+}
