@@ -85,7 +85,7 @@ class puppet_infrastructure::nginx_base (
     # disable 'emitting nginx version on error pages and in the “Server” response header field.'
     server_tokens     => 'off',
     log_format        => $log_formats,
-    nginx_cfg_prepend => {'include' => '/etc/nginx/modules-enabled/*'},
+    include_modules_enabled => true,
   }
 
   # Beware the merge function behavior:
