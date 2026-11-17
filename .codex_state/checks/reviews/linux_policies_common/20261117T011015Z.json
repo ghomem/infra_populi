@@ -1,0 +1,21 @@
+{
+ "class": "linux_policies_common",
+ "at": "20261117T011015Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "policies-tree-deployed (manifests/linux_policies_common.pp:22-23): baseline file{} with recurse => true and source puppet:///modules/puppet_infrastructure/linux-policies/ copies the module tree, which at cf477c6 is exactly COMMON/common (sha256 96142acf... verified fresh), TMP/.placeholder and USER/.placeholder; the probe checks those three under the deployed dir",
+  "policies-tree-deployed (manifests/linux_policies_common.pp:13-14): linux_policies_dir = lookup('filesystem::localdir')/linux-policies; lab Hiera data/common.yaml:42 sets filesystem::localdir to /opt/puppet-infrastructure, so the probed path /opt/puppet-infrastructure/linux-policies is what the code produces",
+  "runner-executes-the-users-policy (manifests/linux_policies_common.pp:33-37): the runner is declared root/root 0755 from execute_linux_policies_user.sh.erb, which (lines 6-13) runs USER/`whoami`.sh when executable; effect stat 'root 755' matches the declared owner/mode and the fixture USER/root.sh's marker file (written by the policy, not the action's output) proves the runner executed it when called as root; mutates declares the fixture script, the marker file, the run and the logger line, i.e. everything the action changes"
+ ],
+ "review_s": 72.0,
+ "check_file_sha256": "a2590432f73e3b82266e519fe03dbc7a859983f20306ffe5ed453b7d035352e0",
+ "reviewer_result": "20261117T010903Z-reviewer",
+ "author_result": "20261117T010748Z-author",
+ "findings": []
+}

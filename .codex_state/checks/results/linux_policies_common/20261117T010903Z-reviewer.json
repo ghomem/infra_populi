@@ -1,0 +1,86 @@
+{
+ "class": "linux_policies_common",
+ "role": "reviewer",
+ "at": "20261117T010903Z",
+ "runner": "79f32e9",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "a2590432f73e3b82266e519fe03dbc7a859983f20306ffe5ed453b7d035352e0",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "policies-tree-deployed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "sha256sum: /opt/puppet-infrastructure/linux-policies/COMMON/common: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "autostart-entry-runs-the-runner",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/xdg/autostart/linux-policies-user.desktop': No such file or directory\ngrep: /etc/xdg/autostart/linux-policies-user.desktop: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "runner-executes-the-users-policy",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/linux-policies/COMMON/execute_linux_policies_user.sh': No such file or directory\ncat: /var/tmp/p8test-policy-ran: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "64845d93668d757ba4a7e1eb7006334993520d0b05ecd05d1aee04933bb0f5'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Linux_policies_common/File[/opt/puppet-infrastructure/linux-policies/COMMON/execute_linux_policies_user.sh]/ensure: defined content as '{sha256}98607fb1cd703745efd4c0183ea028f5b375f79a52076f266ca0701a927aec33'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.31 seconds\u001b[0m\nRUN1_EVENTS: 16 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794877792'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.11 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::linux_policies_common: 3 concrete resources (+0 defined-type instances)\n  File[/opt/puppet-infrastructure/linux-policies]\n  File[/etc/xdg/autostart/linux-policies-user.desktop]\n  File[/opt/puppet-infrastructure/linux-policies/COMMON/execute_linux_policies_user.sh]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP linux_policies_common d6bbd7b031c4\n"
+ },
+ "applied": [
+  {
+   "id": "policies-tree-deployed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "96142acfd235e555756e309dfbd98e45a71024a675f6d1a47ae923d3334f147a\ntmp-and-user-present\n",
+   "stderr": ""
+  },
+  {
+   "id": "autostart-entry-runs-the-runner",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 644\nExec=/opt/puppet-infrastructure/linux-policies/COMMON/execute_linux_policies_user.sh autostart\n",
+   "stderr": ""
+  },
+  {
+   "id": "runner-executes-the-users-policy",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\np8test-policy-ran\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "adds USER/root.sh (0755) to the deployed tree, a fixture policy that writes /var/tmp/p8test-policy-ran, then runs the runner once as root with the argument p8test (it also logs one line to syslog)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.4,
+ "node": "ubuntu",
+ "duration_s": 51.0
+}
