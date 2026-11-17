@@ -48,7 +48,9 @@ Steps, all required:
      and none may change a resource the class under review declares or anything beyond that stated scope. For
      `puppet_agent_standin` that scope is the unit's start command only: the drop-in's `[Service]` section may hold
      only the `ExecStart=` reset and the replacement `ExecStart=`, beside the drop-in directory and the daemon-reload
-     that loads it. A fixture beyond its scope is faithful = fail; name the extra resource in the evidence.
+     that loads it. A fixture beyond its scope is faithful = fail; name the extra resource in the evidence. The check
+     output lists the fixture's resources (NODE FIXTURE), and the verdict then requires `--fixture-scope "<what each
+     fixture resource does and that it stays within the stated stand-in>"`; it is persisted with the verdict.
    - If `idempotent` says run 2 had events only from the plan's `expected_run2_events` (HQ 2026-11-10 ruling 1), verify
      the header's `# Expected run-2 events: <refs> — <why>` justification INDEPENDENTLY against the code and the module
      (e.g. read the module's class/defaults for the resource): the events must be caused by upstream's own design, not

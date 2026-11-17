@@ -9,9 +9,10 @@ prints commit authors or commit bodies (rule 9: the reviewer does not learn who 
       record/regenerate commits record_green makes (at most 3); anything else is a USAGE ERROR (HQ 2026-11-16):
       exit 2 before any check or harness run, no draft, and `verdict` refuses until a new `check` runs.
   review_class.py verdict <class> --faithful ok|fail --evidence TEXT [--evidence TEXT ...]
-                                  [--justify-run1 TEXT]
+                                  [--justify-run1 TEXT] [--fixture-scope TEXT]
       Combines the latest draft with the reviewer's faithfulness judgement and writes the persisted
       verdict .codex_state/reviews/<class>/<UTC>.json (tracked, append-only). Prints the report.
+      --fixture-scope is required when the class went GREEN on a mock-apply node fixture (HQ batch-7 ruling 2).
 
 Verdict PASS = every mechanical check ok AND faithful ok. Checks: git, scope, provenance, records,
 header_modules, comments_preserved, syntax, fixtures, idempotent.
@@ -426,6 +427,7 @@ def run_checks(cls: str, harness: bool) -> dict:
                            f"{entry.mock_apply or '(none)'}: a node-fixture GREEN must be labelled mock-apply and only then")
             elif fixture:
                 out["mock_apply"] = f"{entry.mock_apply} (node fixture {fixture}: behaviour NOT verified)"
+                out["node_fixture"] = node_fixture_summary(fixture)
         if entry is not None and entry.done and entry.from_ref == base.name and entry.defect_fixed:
             out["defect_fixed"] = entry.defect_fixed
             ruled = defect_entry(cls)
@@ -556,6 +558,19 @@ def latest_draft(cls: str) -> Path:
     return drafts[-1]
 
 
+NODE_FIXTURES = TOOLS / "tests" / "fixtures" / "node"
+
+
+def node_fixture_summary(name: str) -> dict:
+    """HQ batch-7 ruling 2: the reviewer confirms a mock-apply fixture stays within the stand-in its header states.
+    The fixture's header and every resource it declares (type and title), for that judgement."""
+    text = (NODE_FIXTURES / f"{name}.pp").read_text(encoding="utf-8")
+    header = [line for line in text.splitlines() if line.startswith("#")]
+    resources = [f"{m.group(1)}[{m.group(2)}]" for m in
+                 re.finditer(r"^\s*([a-z][\w:]*)\s*\{\s*['\"]([^'\"]+)['\"]\s*:", text, re.M)]
+    return {"name": name, "header": header, "resources": resources}
+
+
 def decide(checks: dict, faithful: str, justify_run1: str | None) -> str:
     for name in CHECKS:
         status = checks.get(name, {}).get("status")
@@ -593,6 +608,10 @@ def cmd_check(argv: list[str]) -> int:
     print(f"  diff_summary: {data.get('diff_summary')}")
     if data.get("mock_apply"):
         print(f"  MOCK-APPLY: {data['mock_apply']}")
+    if data.get("node_fixture"):
+        fx = data["node_fixture"]
+        print(f"  NODE FIXTURE {fx['name']} (read the file; the verdict needs --fixture-scope): resources "
+              + ", ".join(fx["resources"]))
     if data.get("ruled_change"):
         print(f"  RULED UPSTREAM-DEFECT CHANGE (tracker: {data.get('defect_fixed')}): {data['ruled_change']}")
     print("---- DIFF A: final content vs baseline (what the tracker marker claims) ----")
@@ -605,7 +624,7 @@ def cmd_check(argv: list[str]) -> int:
 
 def cmd_verdict(argv: list[str]) -> int:
     cls, rest = argv[0], argv[1:]
-    faithful, evidence, justify = None, [], None
+    faithful, evidence, justify, scope = None, [], None, None
     i = 0
     while i < len(rest):
         if rest[i] == "--faithful":
@@ -614,12 +633,18 @@ def cmd_verdict(argv: list[str]) -> int:
             evidence.append(rest[i + 1])
         elif rest[i] == "--justify-run1":
             justify = rest[i + 1]
+        elif rest[i] == "--fixture-scope":
+            scope = rest[i + 1]
         else:
             raise SystemExit(f"ERROR: unknown argument {rest[i]}")
         i += 2
     if faithful not in ("ok", "fail") or not evidence:
         raise SystemExit("ERROR: verdict needs --faithful ok|fail and at least one --evidence")
     draft = json.loads(latest_draft(cls).read_text())
+    if draft.get("node_fixture") and not scope:
+        raise SystemExit(f"ERROR: {cls} went GREEN on node fixture {draft['node_fixture']['name']} (mock-apply): the "
+                         "verdict needs --fixture-scope \"<what each fixture resource does and that it stays within the "
+                         "stand-in its header states>\" (HQ batch-7 ruling 2)")
     checks = draft["checks"]
     verdict = decide(checks, faithful, justify)
     record = {"schema": 1, "class": cls, "verdict": verdict, "reviewer": "reviewer-v2",
@@ -629,6 +654,9 @@ def cmd_verdict(argv: list[str]) -> int:
               "faithful": {"status": faithful, "evidence": evidence}, "justify_run1": justify,
               "diff_summary": draft.get("diff_summary"), "header": draft.get("header"),
               "harness": draft.get("harness"), "pregate_versions": draft.get("pregate_versions")}
+    if draft.get("node_fixture"):
+        record["mock_apply"] = draft.get("mock_apply")
+        record["node_fixture"] = {**draft["node_fixture"], "scope_evidence": scope}
     VERDICTS.joinpath(cls).mkdir(parents=True, exist_ok=True)
     path = VERDICTS / cls / f"{record['reviewed_at'].replace(':', '').replace('-', '')}.json"
     path.write_text(json.dumps(record, indent=1) + "\n")
@@ -644,6 +672,8 @@ def cmd_verdict(argv: list[str]) -> int:
             print(f"  {n}: {detail if isinstance(detail, str) else ' | '.join(map(str, detail or []))}"[:900])
     for e in evidence:
         print(f"  faithful: {e}"[:900])
+    if scope:
+        print(f"  fixture-scope: {scope}"[:900])
     print(f"persisted: {path.relative_to(REPO)}")
     # step 3.4: metrics event (the reviewer never reads .codex_state/runs/ or the event log)
     failed = [n for n in CHECKS if checks.get(n, {}).get("status") != "ok"] + ([] if faithful == "ok" else ["faithful"])

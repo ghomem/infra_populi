@@ -124,6 +124,45 @@ def test_verdict_requires_judgement_and_evidence(tmp_path, monkeypatch):
         rc.main(["verdict", "x", "--faithful", "ok"])
 
 
+
+# HQ batch-7 ruling 2: a mock-apply GREEN needs the reviewer's fixture-scope judgement, persisted in the verdict.
+def fixture_draft(tmp_path, monkeypatch):
+    drafts, verdicts = tmp_path / "drafts", tmp_path / "reviews"
+    drafts.mkdir()
+    monkeypatch.setattr(rc, "DRAFTS", drafts)
+    monkeypatch.setattr(rc, "VERDICTS", verdicts)
+    monkeypatch.setattr(rc, "REPO", tmp_path)
+    fixture = rc.node_fixture_summary("puppet_agent_standin")
+    (drafts / "x.20261117T000000Z.draft.json").write_text(json.dumps(
+        {"class": "x", "baseline": "release-0.9.10 (cf477c6)", "checks": all_ok(), "migrate_commit": "abc",
+         "mock_apply": "stand-in (node fixture puppet_agent_standin: behaviour NOT verified)", "node_fixture": fixture}))
+    return verdicts
+
+
+def test_node_fixture_summary_lists_every_resource():
+    fixture = rc.node_fixture_summary("puppet_agent_standin")
+    assert fixture["resources"] == ["file[/etc/systemd/system/puppet.service.d]",
+                                    "file[/etc/systemd/system/puppet.service.d/p8test-standin.conf]",
+                                    "exec[p8test puppet.service stand-in daemon-reload]"]
+    assert fixture["header"][0].startswith("# MOCK-APPLY node fixture `puppet_agent_standin`")
+
+
+def test_a_mock_apply_verdict_needs_fixture_scope(tmp_path, monkeypatch):
+    fixture_draft(tmp_path, monkeypatch)
+    with pytest.raises(SystemExit, match="--fixture-scope"):
+        rc.main(["verdict", "x", "--faithful", "ok", "--evidence", "DIFF A: header comment only"])
+
+
+def test_fixture_scope_is_persisted(tmp_path, monkeypatch, capsys):
+    verdicts = fixture_draft(tmp_path, monkeypatch)
+    assert rc.main(["verdict", "x", "--faithful", "ok", "--evidence", "DIFF A: header comment only",
+                    "--fixture-scope", "drop-in replaces ExecStart only"]) == 0
+    assert "fixture-scope: drop-in replaces ExecStart only" in capsys.readouterr().out
+    (saved,) = list((verdicts / "x").glob("*.json"))
+    record = json.loads(saved.read_text())
+    assert record["verdict"] == "PASS" and record["node_fixture"]["scope_evidence"] == "drop-in replaces ExecStart only"
+    assert record["node_fixture"]["name"] == "puppet_agent_standin" and record["mock_apply"]
+
 def test_tool_never_prints_commit_authors_or_bodies():
     source = (TOOLS / "review_class.py").read_text()
     assert "%an" not in source and "%ae" not in source and "%b" not in source
