@@ -1,3 +1,5 @@
+# Puppet 8 migration: the module owns openvpn-server@puppet_infrastructure (duplicate service dropped, notifies retargeted).
+# Module dependencies: puppet-network 2.2.1; puppet-openvpn 12.0.0; thias-sysctl 1.0.8.
 ### Purpose ########
 # Configure a server running ubuntu as a OpenVPN server
 # This configuration is based on our gateway's configuration
@@ -114,12 +116,6 @@ class puppet_infrastructure::openvpn_server (
                       },
     }
 
-    service { 'openvpn-server@puppet_infrastructure':
-        ensure   => 'running',
-        enable   => 'true',
-        provider => 'systemd',
-    }
-
     # security files for openvpn server 
     file {"${openvpn_keys_dir}/ca.crt":
         mode   => '0644',
@@ -183,7 +179,6 @@ class puppet_infrastructure::openvpn_server (
         require                  => [ File["${openvpn_keys_dir}/ca.crt"], File["${openvpn_keys_dir}/dh2048.pem"], File["${openvpn_keys_dir}/server.crt"], File["${openvpn_keys_dir}/server.key"] ],
         local                    => $local,
         custom_options           => { 'reneg-sec' => $reneg_sec, 'verify-client-cert' => 'none' },
-        notify                   => Service['openvpn-server@puppet_infrastructure'],
     }
 
     file { '/usr/lib/openvpn':
@@ -205,7 +200,7 @@ class puppet_infrastructure::openvpn_server (
         group   => 'root',
         source  => 'puppet:///modules/puppet_infrastructure/openvpn/openvpn-up.sh',
         require => Package[ 'openvpn' ],
-        notify  => Service['openvpn'],
+        notify  => Service['openvpn-server@puppet_infrastructure'],
     }
 
     sysctl  { 'net.ipv4.conf.br0.proxy_arp_pvlan': value => $proxy_arp  }
