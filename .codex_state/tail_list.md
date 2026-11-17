@@ -26,3 +26,4 @@ append-only (a lifted class gets a dated `lifted:` note, never a deletion).
 | mysql_db | lifted: 2026-11-17 (HQ ruling 1: mysql_server owns mysql::client with the MySQL package, re-migrated 8386aa9; ruling 4: MySQL-only by baseline design, the mariadb pairing dropped) | — | — | unblocked |
 | user_desktop_sudoer | lifted: 2026-11-17 (HQ ruling 6: runs on gnome now, the active desktop kind; its KDE lock-screen part and KDE checks wait for kubuntu) | gnome (active) | — | unblocked; plan node gnome |
 | user_desktop_sudoer | the sambashare group (Samba), present on Kubuntu, absent on Ubuntu GNOME: gnome run 1 failed `group 'sambashare' does not exist` (2026-11-17) | kubuntu (planned: waits for Salatiel's account) | 2026-11-17 | blocked.txt category 5 |
+| nginx_frontend_mail | an HQ ruling on nginx_base (modules-enabled included twice with puppet-nginx 8.4.0 once dynamic modules exist) | none: a ruling (escalations/nginx_base.md) | 2026-11-17 | blocked.txt category 1 |
