@@ -1,0 +1,118 @@
+{
+ "schema": 1,
+ "class": "openvpn_server",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-17T13:43:24Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "4af494abb131",
+ "migrate_subject": "P8: migrate puppet_infrastructure::openvpn_server",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 4af494abb131; 3 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `openvpn_server Done [from: release-0.9.10; upstream defect fixed: module owns the unit (duplicate service dropped, notifies retargeted); mock-apply: stand-in DHCP primary interface p8test0 (veth + netns dnsmasq)]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppet-network', '2.2.1'), ('puppet-openvpn', '12.0.0'), ('thias-sysctl', '1.0.8')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 28 catalog events; COVERAGE puppet_infrastructure::openvpn_server: 39 concrete resources (+2 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk 1 (:1-2): 2-line migration header comment only (purpose + puppet-network 2.2.1, puppet-openvpn 12.0.0, thias-sysctl 1.0.8, matched by header_modules)",
+   "DIFF A hunk 2 (baseline :117-121): removal of service { 'openvpn-server@puppet_infrastructure': ensure running, enable true, provider systemd } = ruled change (a); the module's openvpn::server (server.pp:519-526 on the master, systemd branch) declares the same title with ensure running, enable true, provider systemd, so the unit state is unchanged and the notifies at :129/:137/:145/:153 are kept verbatim",
+   "DIFF A hunk 3 (baseline :186): removal of notify => Service['openvpn-server@puppet_infrastructure'] on openvpn::server = ruled change (b); the define contains that service and notifies it itself via $lnotify (server.pp:271, :330, :486, :499)",
+   "DIFF A hunk 4 (baseline :208): File['/etc/openvpn/openvpn-up.sh'] notify Service['openvpn'] -> Service['openvpn-server@puppet_infrastructure'] = ruled change (c); nothing else in DIFF A, no comment removed, no reformatting; DIFF B identical to DIFF A (migration started from baseline content)"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 3,
+  "removed": 7,
+  "non_comment_changes": 8,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: the module owns openvpn-server@puppet_infrastructure (duplicate service dropped, notifies retargeted).",
+  "# Module dependencies: puppet-network 2.2.1; puppet-openvpn 12.0.0; thias-sysctl 1.0.8."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 28,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::openvpn_server: 39 concrete resources (+2 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 21.69,
+   "master_check_s": 0.649,
+   "poweroff_s": 0.82,
+   "restore_s": 0.224,
+   "boot_to_ssh_s": 12.845,
+   "apt_update_s": 6.833,
+   "verify_s": 0.319,
+   "nic1_rx_bytes": 10404116
+  },
+  "log": ".codex_state/logs/reviews/openvpn_server.20261117T134117Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "mock_apply": "stand-in DHCP primary interface p8test0 (veth + netns dnsmasq) (node fixture p8test_dhcp_primary: behaviour NOT verified)",
+ "node_fixture": {
+  "name": "p8test_dhcp_primary",
+  "header": [
+   "# MOCK-APPLY node fixture `p8test_dhcp_primary` (HQ 2026-10-27 ruling 7) for openvpn_server (and network_vpn). Production's",
+   "# VPN gateways hand the class their primary interface (network_dhcp iface = $::networking['primary'] = openvpn_server's",
+   "# $local_interface): the class rewrites /etc/network/interfaces for it, for lo:0 and for the bridge br0, and restarts",
+   "# ifupdown networking. The lab node's real NICs are never handed over (fixture rule), so this supplies a stand-in",
+   "# primary interface: p8test0, one end of a veth pair whose other end lives in the network namespace p8testdhcp, where",
+   "# dnsmasq answers DHCP with the single address 203.0.113.50 and no router option (the node's default route and DNS stay",
+   "# on NIC1, its SSH path on NIC2). The class then manages p8test0 exactly as production manages the primary interface.",
+   "# Behaviour of a real uplink (clients reaching the server over the primary interface) is NOT verified by a GREEN with it.",
+   "# Lifted by: a node whose primary interface the class may take over (a disposable gateway VM; no nodes.yml kind yet)"
+  ],
+  "resources": [
+   "package[dnsmasq-base]",
+   "exec[p8test stand-in primary interface p8test0 with a DHCP server in netns p8testdhcp]"
+  ],
+  "scope_evidence": "p8test_dhcp_primary: package[dnsmasq-base] installs the dnsmasq binary the stand-in needs; exec (guarded by unless 'ip link show p8test0', before Class[network_dhcp]) creates netns p8testdhcp, veth p8test0/p8test0p, and a netns-local dnsmasq serving the single DHCP address 203.0.113.50 with no router/DNS option; both only supply the stand-in primary interface p8test0 stated in the header, and neither declares or modifies any resource of openvpn_server or touches the node's real NICs"
+ }
+}
