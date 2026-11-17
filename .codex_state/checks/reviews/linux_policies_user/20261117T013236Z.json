@@ -1,0 +1,22 @@
+{
+ "class": "linux_policies_user",
+ "at": "20261117T013236Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "user-policy-script-composed @ manifests/linux_policies_user.pp:26: $policies_script = \"${linux_policies_dir}/USER/${username}.sh\" with localdir /opt/puppet-infrastructure and fixture username p8testuser gives exactly the probed path /opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh",
+  "user-policy-script-composed @ manifests/linux_policies_user.pp:46-51: one file_line per element of $policies (line => $policy) appended after the header template; fixture policies are the two 'true # p8test policy line N' strings, which the probe's tail -2 expects verbatim and in order",
+  "user-policy-script-composed @ manifests/linux_policies_user.pp:58-63: final file mode '0700', owner/group $username, source the tmp file (header '#!/bin/bash' + '. <dir>/COMMON/common' from puppet_header.sh.erb:1,4) \u2014 matches the expected 'p8testuser p8testuser 700', first line and grep count 1",
+  "script-skips-policies-without-a-session (mutating, read whole file): action runs USER/p8testuser.sh as the user, which is what execute_linux_policies_user.sh.erb runs; without a who session puppet_header.sh.erb:9-13 logs 'User p8testuser not loged in, skipping policies execution' under tag linuxint-policies and exits 0 before the policy lines; mutates (one journal line) is complete since COMMON/common only defines variables/functions; the effect reads the journal, not the action's stdout"
+ ],
+ "review_s": 85.5,
+ "check_file_sha256": "a7f79935c6132157fde877f0f41b45e9c6a5f84600cfd3cee68b4077b3b086b3",
+ "reviewer_result": "20261117T013111Z-reviewer",
+ "author_result": "20261117T012957Z-author",
+ "findings": []
+}
