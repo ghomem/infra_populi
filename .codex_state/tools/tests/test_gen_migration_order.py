@@ -236,7 +236,8 @@ def test_repo_node_fixtures_exist_for_the_planned_classes(gen):
     assert rows["letsencrypt_certificate"].node_fixture == "letsencrypt_cert_standin"  # stand-in live certificate
     assert rows["node_base_domain_desktop"].node_fixture == "puppet_agent_standin"  # Service['puppet'] without a daemon
     assert rows["openvpn_server"].node_fixture == "p8test_dhcp_primary"  # stand-in DHCP primary interface (veth + netns)
-    assert sum(1 for r in rows.values() if r.node_fixture) == 7
+    assert rows["network_vpn"].node_fixture == "p8test_dhcp_primary"  # declares openvpn_server: same stand-in
+    assert sum(1 for r in rows.values() if r.node_fixture) == 8
 
 
 def test_expected_run2_events_parse(gen):
