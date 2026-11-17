@@ -237,7 +237,8 @@ def test_repo_node_fixtures_exist_for_the_planned_classes(gen):
     assert rows["node_base_domain_desktop"].node_fixture == "puppet_agent_standin"  # Service['puppet'] without a daemon
     assert rows["openvpn_server"].node_fixture == "p8test_dhcp_primary"  # stand-in DHCP primary interface (veth + netns)
     assert rows["network_vpn"].node_fixture == "p8test_dhcp_primary"  # declares openvpn_server: same stand-in
-    assert sum(1 for r in rows.values() if r.node_fixture) == 8
+    assert rows["node_base_desktop"].node_fixture == "puppet_agent_standin"  # Service['puppet'] without a daemon
+    assert sum(1 for r in rows.values() if r.node_fixture) == 9
 
 
 def test_expected_run2_events_parse(gen):
@@ -246,7 +247,8 @@ def test_expected_run2_events_parse(gen):
     # every entry is a reviewed, justified exception (HQ 2026-11-10 ruling 1): keep this set explicit
     assert {n for n, r in rows.items() if r.expected_run2_events} == {"packages_base", "node_base", "nginx_frontend_domain",
                                                                       "nginx_frontend", "hashman_web", "linux_policies_user",
-                                                                      "node_base_domain_desktop", "mariadb_server"}
+                                                                      "node_base_domain_desktop", "mariadb_server",
+                                                                      "node_base_desktop"}
     assert rows["node_base"].expected_run2_events == ("Exec[apt_update]",)
     # HQ batch-7 ruling 1: each resource named exactly (the p8testuser fixture's titles), no glob
     tmp = "/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp"
