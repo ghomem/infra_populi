@@ -1,5 +1,6 @@
 """master_fixtures.sh: pinned, idempotent, never acts on the master VM itself."""
 
+import re
 from conftest import TOOLS
 
 SCRIPT = str(TOOLS / "master_fixtures.sh")
@@ -48,9 +49,11 @@ def test_fixture_values_are_obviously_fake():
     hiera = remotes()[3]
     values = [l.split(": ", 1)[1] for l in hiera.split("<<'YAML'", 1)[1].split("YAML\n", 1)[0].splitlines()
               if "::" in l and not l.startswith("#")]
-    assert len(values) == 10
+    assert len(values) == 9
     stock = {"'/etc/puppetlabs/puppet/ssl'"}  # the OpenVox default ssldir: a stock path, neither fake nor a secret
-    assert all("p8test" in v or "lookup(" in v or v.strip().strip("'").isdigit() or v in stock for v in values), values
+    doc_net = re.compile(r"'(192\.0\.2|198\.51\.100|203\.0\.113)\.\d+'")  # RFC 5737 documentation addresses
+    assert all("p8test" in v or "lookup(" in v or v.strip().strip("'").isdigit() or v in stock or doc_net.fullmatch(v)
+               for v in values), values
     pki = remotes()[2]
     assert "THROWAWAY" in pki and "CN=p8test throwaway CA" in pki and "CN=p8test.invalid" in pki
     assert "ca.key" not in pki.split("put()")[1]  # the CA key is never installed

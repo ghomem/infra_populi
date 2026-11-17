@@ -132,10 +132,11 @@ puppet8node::postfix_smtp_node::relaypass: 'p8test-not-a-secret'
 # rsyslog_server does `include puppet_infrastructure::rsyslog_base`, whose default ssldir is the pre-AIO
 # /var/lib/puppet/ssl; the lab's agents keep theirs at the OpenVox default (rsyslog_client passes the same value).
 puppet_infrastructure::rsyslog_base::ssldir_override: '/etc/puppetlabs/puppet/ssl'
-# mariadb_server (874f854) puts these in its self-signed certificates' subject (deploy_self_signed_certificates.sh).
-db::organization: 'p8test org'
-db::cname: 'db.p8test.invalid'
-db::email: 'p8test@p8test.invalid'
+# network_vpn declares openvpn_server without local/local_interface, so they come from here in the lab: the stand-in
+# DHCP primary interface of node fixture p8test_dhcp_primary (production: the primary interface and its address).
+# (The batch-7 db:: keys were removed 2026-11-17: common.yaml, first in the hierarchy, defines them; never effective.)
+puppet_infrastructure::openvpn_server::local_interface: 'p8test0'
+puppet_infrastructure::openvpn_server::local: '203.0.113.50'
 YAML
 )"
 if [[ "$(cat "$data" 2>/dev/null)" != "$want" ]]; then
