@@ -67,6 +67,7 @@ json_params_path_for_class() {
   # kind's own fixture (params/<kind>/<class>.json); else the shared one (params/<class>.json).
   local cls="$1" target
   for target in "${PARAMS_TARGETS[@]}"; do
+    target="puppet_infrastructure::${target#puppet_infrastructure::}"  # the command line may give the short name
     if [[ "$target" != "$cls" && -f "${PARAMS_DIR}/for/${target}/${cls}.json" ]]; then
       echo "${PARAMS_DIR}/for/${target}/${cls}.json"
       return

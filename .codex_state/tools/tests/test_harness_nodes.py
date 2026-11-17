@@ -78,7 +78,8 @@ def test_a_per_target_fixture_configures_a_base_class_only_for_that_target(lab, 
     (shared / "for" / target).mkdir(parents=True)
     (shared / f"{target}.json").write_text('{"myname": "P8 Test User"}\n')
     (shared / "for" / target / f"{base}.json").write_text('{"p8test_marker": "for-target"}\n')
-    out = lab.run([SCRIPT, "--render-only", target], env={"HOME": str(home)}).stdout
-    assert "for-target" in out and base in out
+    for given in (target, target.removeprefix("puppet_infrastructure::")):  # full or short name on the command line
+        out = lab.run([SCRIPT, "--render-only", given], env={"HOME": str(home)}).stdout
+        assert "for-target" in out and base in out, given
     out = lab.run([SCRIPT, "--render-only", base], env={"HOME": str(home)}).stdout
     assert "for-target" not in out  # the base applied on its own keeps its shared (here: no) fixture
