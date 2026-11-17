@@ -1,0 +1,51 @@
+# Phase 3 checks for puppet_infrastructure::hello_world_flask (define; harness title hello_world_flask). It deploys a
+# Flask app under <localdir>/hello_world_flask/<title> and runs it with gunicorn as the systemd service
+# hello-world-flask-<title>. Fixture (params, never committed): ip_address 127.0.0.1, port 8080, welcome_msg
+# "P8 test flask hello". Probes talk to the node's own addresses only.
+class: hello_world_flask
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.3
+  notes: "Wall clock 01:35:50Z to 01:36:10Z 2026-11-17, outside the worktree while the Phase 1 review ran."
+checks:
+  - id: service-running-and-enabled
+    what: the systemd service hello-world-flask-<title> is running and enabled
+    control: negative
+    derived_from:
+      - {path: manifests/hello_world_flask.pp, lines: "29-30", text: "$service_ensure = 'running'"}
+      - {path: manifests/hello_world_flask.pp, lines: "76-79", text: "service { \"hello-world-flask-${title}\":"}
+    probe: |
+      systemctl is-active hello-world-flask-hello_world_flask; systemctl is-enabled hello-world-flask-hello_world_flask
+    expect: {rc: 0, stdout: "\\Aactive\\nenabled\\n\\Z"}
+
+  - id: unit-runs-gunicorn-in-the-app-dir
+    what: the unit starts gunicorn bound to the configured address and port, in <localdir>/hello_world_flask/<title>
+    control: negative
+    derived_from:
+      - {path: templates/hello_world_flask/hello-world-flask.service.erb, lines: "10", text: "ExecStart=python3 -m gunicorn --bind <%= @ip_address %>:<%= @port %> wsgi:app"}
+      - {path: templates/hello_world_flask/hello-world-flask.service.erb, lines: "13", text: "WorkingDirectory=<%= @app_dir %>"}
+      - {path: manifests/hello_world_flask.pp, lines: "34", text: "$app_dir = \"${localdir}/hello_world_flask/$title\""}
+    probe: |
+      grep -E '^(ExecStart|WorkingDirectory)=' /lib/systemd/system/hello-world-flask-hello_world_flask.service
+    expect: {rc: 0, stdout: "\\AExecStart=python3 -m gunicorn --bind 127\\.0\\.0\\.1:8080 wsgi:app\\nWorkingDirectory=/opt/puppet-infrastructure/hello_world_flask/hello_world_flask\\n\\Z"}
+
+  - id: app-serves-the-welcome-message
+    what: an HTTP GET on the bound address returns the page with the configured welcome message as its heading
+    control: negative
+    derived_from:
+      - {path: manifests/hello_world_flask.pp, lines: "49", text: "content => template('puppet_infrastructure/hello_world_flask/hello_world_flask.py.erb'),"}
+      - {path: templates/hello_world_flask/hello_world_flask.py.erb, lines: "10-15", text: "<h1 style='color:blue'>%s</h1>"}
+    probe: |
+      curl -s --max-time 5 http://127.0.0.1:8080/ | grep -o "<h1 style='color:blue'.[^<]*</h1"
+    expect: {rc: 0, stdout: "\\A<h1 style='color:blue'>P8 test flask hello</h1\\n\\Z"}
+
+  - id: not-served-on-another-address
+    what: the app listens only on the configured address (127.0.0.1), not on the node's other address
+    control: invariant
+    why_invariant: nothing listens on port 8080 of 10.0.2.15 on the clean node, and the bind keeps it that way
+    derived_from:
+      - {path: templates/hello_world_flask/hello-world-flask.service.erb, lines: "10", text: "ExecStart=python3 -m gunicorn --bind <%= @ip_address %>:<%= @port %> wsgi:app"}
+    probe: |
+      curl -s -o /dev/null --max-time 5 http://10.0.2.15:8080/; echo "curl-rc=$?"
+    expect: {rc: 0, stdout: "\\Acurl-rc=7\\n\\Z"}
