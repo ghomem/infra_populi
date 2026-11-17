@@ -48,11 +48,11 @@ def test_capabilities_outside_the_known_set_are_refused(tmp_path, caps):
     (lambda d: d["nodes"]["rhel9"].update(hostonly_ip="10.0.2.15"), "must be a free address on vboxnet0"),
     (lambda d: d["nodes"]["rhel9"].update(vm="rhel9-clone"), "must be named p8lab-*"),
     (lambda d: d["nodes"]["rhel9"].update(vm="Ubuntu24-puppet8-Master"), "the master VM is never a node"),
-    (lambda d: d["nodes"]["gnome"].update(status="active"), "an active node needs its baseline_snapshot"),
+    (lambda d: d["nodes"]["dc"].update(status="active"), "an active node needs its baseline_snapshot"),
     (lambda d: d["nodes"]["rhel9"].update(os_family="Suse"), "os_family must be Debian|RedHat"),
     (lambda d: d["nodes"]["rhel9"].update(capabilities=["telepathy"]), "capabilities must be a non-empty subset"),
     (lambda d: d["nodes"]["rhel9"].pop("certname"), "missing certname"),
-    (lambda d: d.update(default="gnome"), "the default node must be active"),
+    (lambda d: d.update(default="dc"), "the default node must be active"),
     (lambda d: d["nodes"]["gnome"].update(alias="p8lab-kubuntu"), "alias 'p8lab-kubuntu' is also node"),
 ])
 def test_invalid_inventories_are_refused(tmp_path, mutate, message):
@@ -76,10 +76,10 @@ def test_selection_order_explicit_then_env_then_default(tmp_path):
 
 
 def test_a_planned_node_is_refused_unless_bring_up_asks(tmp_path):
-    proc = run(tmp_path, REAL, "env", "--node", "kubuntu")
+    proc = run(tmp_path, REAL, "env", "--node", "dc")
     assert proc.returncode != 0 and "is planned" in proc.stderr
-    proc = run(tmp_path, REAL, "env", "--node", "kubuntu", "--allow-planned")
-    assert proc.returncode == 0 and "NODE_VM=p8lab-kubuntu" in proc.stdout and "NODE_SNAPSHOT=''" in proc.stdout
+    proc = run(tmp_path, REAL, "env", "--node", "dc", "--allow-planned")
+    assert proc.returncode == 0 and "NODE_VM=p8lab-dc" in proc.stdout and "NODE_SNAPSHOT=''" in proc.stdout
 
 
 def test_env_is_shell_safe_and_complete(tmp_path):
