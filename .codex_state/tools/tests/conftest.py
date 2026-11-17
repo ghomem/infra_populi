@@ -126,6 +126,11 @@ class FakeLab:
             path = self.bin / name
             path.write_text(STUB)
             path.chmod(0o755)
+        # logind's systemd-inhibit (2026-11-17 sleep inhibitor): log the call, then run the command after the options
+        inhibit = self.bin / "systemd-inhibit"
+        inhibit.write_text('#!/usr/bin/env bash\nprintf "%s\\n" "$*" >> "$(dirname "$0")/../inhibit.log"\n'
+                           'while [[ "${1:-}" == --* ]]; do shift; done\nexec "$@"\n')
+        inhibit.chmod(0o755)
         self.world = {
             "vms": {
                 "ubuntu24-puppet8-Node": {"state": "running", "snapshot": "P8NODE_BASELINE_GREEN_v4"},
@@ -156,7 +161,7 @@ class FakeLab:
 
     def run(self, argv, **kw):
         self.save()
-        env = dict(os.environ)
+        env = {k: v for k, v in os.environ.items() if k != "P8_NO_SLEEP_INHIBIT"}  # its stub systemd-inhibit
         env.update({
             "PATH": f"{self.bin}:{env['PATH']}",
             "FAKE_WORLD": str(self.world_path),
@@ -198,6 +203,7 @@ def isolated_logs(tmp_path, monkeypatch):
     monkeypatch.setenv("P8_REVERT_RECORD", str(tmp_path / "iso_reverts" / "node_revert.json"))
     monkeypatch.setenv("P8_LAB_LOCK", str(tmp_path / "iso_lock" / "lab.lock"))
     monkeypatch.delenv("P8_LAB_LOCKED", raising=False)
+    monkeypatch.setenv("P8_NO_SLEEP_INHIBIT", "1")  # no real logind inhibitor from a test; FakeLab.run re-enables it
 
 
 

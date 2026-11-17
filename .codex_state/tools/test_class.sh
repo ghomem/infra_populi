@@ -674,12 +674,24 @@ take_lab_lock() {
   trap release_lab_lock EXIT
 }
 
+# A laptop suspend cuts a run mid-request (2026-11-17: linux_policies_user's run 2 hung 557 s and failed when KDE's
+# idle suspend paused the VMs). Every lab run holds a logind sleep/idle inhibitor for its lifetime where logind
+# offers one; a lid close still suspends (logind's LidSwitchIgnoreInhibited default). P8_NO_SLEEP_INHIBIT=1 skips it.
+inhibit_sleep() {
+  [[ -z "${P8_SLEEP_INHIBITED:-}" && -z "${P8_NO_SLEEP_INHIBIT:-}" ]] || return 0
+  command -v systemd-inhibit >/dev/null 2>&1 || return 0
+  systemd-inhibit --what=sleep:idle --who=infra_populi --why=probe true >/dev/null 2>&1 || return 0
+  export P8_SLEEP_INHIBITED=1
+  exec systemd-inhibit --what=sleep:idle --who=infra_populi --why="lab run: test_class.sh $*" "$0" "$@"
+}
+
 release_lab_lock() {
   if [[ "${LAB_LOCK_HELD:-0}" == 1 ]]; then "$LAB_LOCK_TOOL" release "$$" || true; fi
 }
 
 main() {
   need_cmd python3
+  [[ "${1:-}" == "--render-only" ]] || inhibit_sleep "$@"
   if [[ "${1:-}" == "--node" ]]; then
     NODE_KIND_REQUEST="${2:-}"
     [[ -n "$NODE_KIND_REQUEST" ]] || die "--node needs a kind (nodes.yml)"

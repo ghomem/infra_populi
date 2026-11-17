@@ -738,12 +738,29 @@ def cmd_state(classes: list[str]) -> int:
     return 0
 
 
+def inhibit_sleep(argv: list[str]) -> None:
+    """Hold a logind sleep/idle inhibitor for the run (a laptop suspend between probes breaks the run; as
+    test_class.sh, 2026-11-17). Re-executes under systemd-inhibit once, where logind offers one."""
+    if os.environ.get("P8_SLEEP_INHIBITED") or os.environ.get("P8_NO_SLEEP_INHIBIT"):
+        return
+    probe = ["systemd-inhibit", "--what=sleep:idle", "--who=infra_populi", "--why=probe", "true"]
+    try:
+        if subprocess.run(probe, capture_output=True).returncode != 0:
+            return
+    except FileNotFoundError:
+        return
+    os.environ["P8_SLEEP_INHIBITED"] = "1"
+    os.execvp("systemd-inhibit", ["systemd-inhibit", "--what=sleep:idle", "--who=infra_populi",
+                                  f"--why=lab run: phase3.py {' '.join(argv)}", sys.executable, __file__, *argv])
+
+
 def main(argv: list[str]) -> int:
     def opt(name, default=None):
         return argv[argv.index(name) + 1] if name in argv else default
     if len(argv) == 2 and argv[0] == "validate":
         return cmd_validate(short(argv[1]))
     if len(argv) >= 2 and argv[0] == "run":
+        inhibit_sleep(argv)
         role = opt("--role", "author")
         if role not in ("author", "reviewer"):
             raise SystemExit("ERROR: --role author|reviewer")
