@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-93 entries; 6 marked superseded (in whole or part); newest first.
+94 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-17 — Engine decisions while applying the HQ batch-7 rulings
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-17 — HQ batch-7 acceptance: batch 7 accepted (80 verified); rulings 1-8
 - 1. **linux_policies_user:** the File/File_line expected run-2 events are accepted on the apt_update basis (baseline

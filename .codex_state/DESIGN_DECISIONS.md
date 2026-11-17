@@ -1536,3 +1536,14 @@ snapshot list, record.
    - then the master snapshot;
    - then batch 8 with every reachable class.
    The mysql_db and hashman stand-in rulings follow once HQ has read the batch-6 report.
+
+## 2026-11-17 — Engine decisions while applying the HQ batch-7 rulings
+- **Fixture scope is a verdict field, not an instruction:** node_base_domain_desktop's first re-review passed with no
+  word on puppet_agent_standin. review_class.py now lists a mock-apply fixture's resources, and `verdict` refuses
+  without `--fixture-scope`, which is persisted (2dc81c3). The confirmed re-review: 20261117T071317Z.
+- **record_green.sh keeps ruled-defect markers:** a `--fix` without `--defect` had rewritten linux_policies_user's
+  marker away (f1d4625; restored by the next record). tracker-set now refuses unless `--defect` repeats it (b5df9e0).
+- **Header claims skip path segments:** `/opt/puppet-infrastructure/` in exact expected run-2 titles read as an
+  unversioned `puppet-infrastructure` dependency claim (aff6ba3).
+- **Lab runs block sleep:** KDE's idle suspend paused the VMs during a harness run 2, which hung 557 s and failed.
+  test_class.sh and `phase3.py run` hold a logind sleep/idle inhibitor (c36039a); a lid close still suspends.
