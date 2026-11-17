@@ -57,6 +57,12 @@ Check file .codex_state/checks/<class>.yml:
       # name, user, key, cipher or vhost to a tool and takes the tool's verdict (TLS, logins, HTTP by host); optional
       # for direct state reads.
       mismatch: {varies: <which value is wrong and why the verdict must change>, probe: <read-only shell>}
+      on: node | peer                # where the probe runs (default node); peer needs the set's `peer` block
+  peer: {kind: <nodes.yml kind with second-node>, why: <why the behaviour needs a second machine>, files: [<abs path>]}
+      # PEER node (HQ 2026-11-17 ruling 1, the VPN client): reverted with the node under the same lab lock, powered off
+      # after the run. Its probes keep every host rule except that they may name the class node's host-only address
+      # (nodes.yml), the only other host they reach. `files` are read from the node (empty in the clean phase) and
+      # handed to every peer probe under /run/p8test-from-node/<basename> (the runner writes them on the peer).
 
 Probe rules (validate): the node is the only host — no other host name or address, no ssh/scp/sftp/rsync except to
 the node itself (127.0.0.1/localhost), never Puppet (agent/apply/resource); read-only — no service or package state
@@ -92,6 +98,8 @@ sys.path.insert(0, str(TOOLS))
 import baseline  # noqa: E402
 
 NODE = "puppet8node"  # set per run to the class's lab node alias (nodes.yml; HQ 2026-11-16 item 2)
+PEER = None  # set per run to the peer node's alias when the set declares one (HQ 2026-11-17 ruling 1)
+PEER_FILES: dict[str, str] = {}  # node path -> base64 content, handed to peer probes
 PROBE_TIMEOUT = 120
 PARAMS_DIR = Path(os.environ.get("P8_PARAMS_DIR") or Path.home() / ".config" / "infra_populi" / "params")
 SLUG = re.compile(r"[a-z0-9][a-z0-9-]{1,62}")
@@ -210,12 +218,36 @@ def lifting_problems(kind, need: str | None, where: str) -> list[str]:
 HOST_RULES = 3  # FORBIDDEN[:3] keep probes on the node and away from Puppet; the rest keep them read-only
 
 
-def probe_problems(probe: str, mutating: bool = False) -> list[str]:
+def probe_problems(probe: str, mutating: bool = False, allow: str | None = None) -> list[str]:
+    """`allow`: the one other host a peer probe may name, the class node's host-only address."""
     rules = FORBIDDEN[:HOST_RULES] if mutating else FORBIDDEN
+    if allow:
+        probe = re.sub(rf"(?<![\d.]){re.escape(allow)}(?![\d.])", "<class-node>", probe)
     out = [f"probe {why}: {pat.pattern}" for pat, why in rules if pat.search(probe)]
     if LOCAL_SSH.search(probe) and not LOCAL_TARGET.search(probe):
         out.append("probe uses ssh to a host other than the node itself (127.0.0.1/localhost)")
     return out
+
+
+def peer_problems(cls: str, peer) -> tuple[list[str], str | None]:
+    """(problems, the class node's host-only address that peer probes may name)."""
+    import nodes  # noqa: PLC0415
+    inventory = nodes.load()["nodes"]
+    node_ip = nodes.select(nodes.load(), cls=cls)["hostonly_ip"]
+    if not isinstance(peer, dict) or not set(peer) <= {"kind", "why", "files"} or len(str(peer.get("why", ""))) < 20:
+        return ["peer takes kind, why (>= 20 characters) and optional files"], node_ip
+    out = []
+    kind = peer.get("kind")
+    if kind not in inventory:
+        out.append(f"peer: {kind!r} is not a node kind of nodes.yml")
+    elif inventory[kind]["hostonly_ip"] == node_ip:
+        out.append("peer: the peer is the class's own node")
+    elif "second-node" not in inventory[kind]["capabilities"]:
+        out.append(f"peer: node {kind} lacks the capability 'second-node'")
+    files = peer.get("files") or []
+    if not isinstance(files, list) or not all(isinstance(f, str) and re.fullmatch(r"/[\w./-]+", f) for f in files):
+        out.append("peer.files is a list of absolute paths on the node")
+    return out, node_ip
 
 
 def validate(cls: str) -> tuple[list[str], dict, bytes]:
@@ -255,6 +287,10 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
         problems.append(f"fixture: params but {params} is missing")
     if data.get("fixture") == "defaults" and params.is_file():
         problems.append(f"fixture: defaults but {params} exists (the harness would apply it)")
+    peer_ip = None
+    if "peer" in data:
+        found, peer_ip = peer_problems(cls, data["peer"])
+        problems += found
     checks = data.get("checks")
     if not isinstance(checks, list) or not checks:
         return problems + ["no checks"], data, raw
@@ -279,17 +315,25 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
         else:
             problems += [f"{where}: {p}" for p, _ in (resolve_ref(r, base) for r in refs) if p]
         mutating = "mutates" in c
+        on = c.get("on", "node")
+        allow = None
+        if on not in ("node", "peer"):
+            problems.append(f"{where}: on must be node|peer")
+        elif on == "peer":
+            if "peer" not in data:
+                problems.append(f"{where}: on: peer needs the set's `peer` block")
+            allow = peer_ip
         if not isinstance(c.get("probe"), str) or not c["probe"].strip():
             problems.append(f"{where}: probe is required")
         else:
-            problems += [f"{where}: {p}" for p in probe_problems(c["probe"], mutating)]
+            problems += [f"{where}: {p}" for p in probe_problems(c["probe"], mutating, allow)]
         if mutating:
             if not isinstance(c["mutates"], str) or len(c["mutates"].strip()) < 10:
                 problems.append(f"{where}: mutates must declare what the action changes")
             if not isinstance(c.get("effect"), str) or not c["effect"].strip():
                 problems.append(f"{where}: a mutating check needs a read-only `effect` probe (the evidence)")
             else:
-                problems += [f"{where}: effect {p}" for p in probe_problems(c["effect"])]
+                problems += [f"{where}: effect {p}" for p in probe_problems(c["effect"], False, allow)]
             if c.get("control") != "negative":
                 problems.append(f"{where}: a mutating check is a negative control (its effect must be absent "
                                 "on the clean node)")
@@ -313,7 +357,7 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
                 else:
                     if mm["probe"].strip() == str(c.get("probe", "")).strip():
                         problems.append(f"{where}: mismatch.probe is identical to the probe")
-                    problems += [f"{where}: mismatch {p}" for p in probe_problems(mm["probe"])]
+                    problems += [f"{where}: mismatch {p}" for p in probe_problems(mm["probe"], False, allow)]
         exp = c.get("expect") or {}
         if not isinstance(exp, dict) or not set(exp) <= {"rc", "stdout", "stdout_not"}:
             problems.append(f"{where}: expect takes rc, stdout, stdout_not")
@@ -364,6 +408,30 @@ def on_node(script: str) -> tuple[int, str, str]:
         return 124, "", f"probe timed out after {PROBE_TIMEOUT}s"
 
 
+def on_peer(script: str) -> tuple[int, str, str]:
+    """A peer probe: the node files are written under /run/p8test-from-node first (declared by peer.files)."""
+    pre = "".join(f"mkdir -p /run/p8test-from-node && printf '%s' '{b64}' | base64 -d "
+                  f"> /run/p8test-from-node/{Path(path).name}\n" for path, b64 in PEER_FILES.items())
+    try:
+        proc = subprocess.run(["ssh", "-o", "BatchMode=yes", PEER, "sudo -n bash -s"], input=pre + script,
+                              capture_output=True, text=True, timeout=PROBE_TIMEOUT, env=node_env())
+        return proc.returncode, proc.stdout, proc.stderr
+    except subprocess.TimeoutExpired:
+        return 124, "", f"probe timed out after {PROBE_TIMEOUT}s"
+
+
+def on_host(check: dict, script: str) -> tuple[int, str, str]:
+    return on_peer(script) if check.get("on") == "peer" else on_node(script)
+
+
+def fetch_node_files(paths: list[str]) -> None:
+    """Read the peer's files from the node (base64; empty when absent, as on the clean node)."""
+    PEER_FILES.clear()
+    for path in paths:
+        rc, out, _ = on_node(f"base64 -w0 {path} 2>/dev/null; true")
+        PEER_FILES[path] = out.strip() if rc == 0 else ""
+
+
 def meets(check: dict, rc: int, out: str) -> bool:
     exp = check.get("expect") or {}
     passed = rc == exp.get("rc", 0)
@@ -382,7 +450,7 @@ def run_mismatch(check: dict, row: dict) -> None:
     if not row["passed"]:
         row["mismatch"] = {"varies": mm["varies"], "not_run": "the check itself failed"}
         return
-    rc, out, err = on_node(mm["probe"])
+    rc, out, err = on_host(check, mm["probe"])
     row["mismatch"] = {"varies": mm["varies"], "rc": rc, "passed": meets(check, rc, out),
                        "stdout": out[-1000:], "stderr": err[-500:]}
 
@@ -391,12 +459,14 @@ def run_probe(check: dict, act: bool = False) -> dict:
     """Read-only checks run `probe`. A mutating check runs its `effect` only — preceded by the action when `act`."""
     action = None
     if "mutates" in check and act:
-        arc, aout, aerr = on_node(check["probe"])
+        arc, aout, aerr = on_host(check, check["probe"])
         action = {"mutates": check["mutates"], "rc": arc, "stdout": aout[-1000:], "stderr": aerr[-500:]}
-    rc, out, err = on_node(check["effect"] if "mutates" in check else check["probe"])
+    rc, out, err = on_host(check, check["effect"] if "mutates" in check else check["probe"])
     passed = meets(check, rc, out)
     row = {"id": check["id"], "control": check["control"], "rc": rc, "passed": passed,
            "stdout": out[-2000:], "stderr": err[-1000:]}
+    if check.get("on") == "peer":
+        row["on"] = "peer"
     if "mutates" in check:
         row["mutating"] = True
         row["action"] = action  # None in the clean phase: the action never runs before the class is applied
@@ -489,9 +559,20 @@ def cmd_run(cls: str, role: str) -> int:
     import nodes  # noqa: PLC0415
     node = nodes.select(nodes.load(), cls=cls)
     NODE, record["node"] = node["alias"], node["kind"]
+    global PEER
+    peer = None
+    if "peer" in data:
+        peer = {**nodes.load()["nodes"][data["peer"]["kind"]], "kind": data["peer"]["kind"]}
+        PEER, record["peer"] = peer["alias"], peer["kind"]
     try:
+        if peer and peer["status"] != "active":
+            record["problems"].append(f"peer node {peer['kind']} is {peer['status']}")
+            return finish("ENVIRONMENT_FAILED", 3)
         return run_locked(cls, data, record, finish)
     finally:
+        if peer:  # only the nodes a run needs stay powered on (HQ 2026-11-17 ruling 5)
+            labvm = os.environ.get("P8_PHASE3_LABVM") or str(TOOLS / "lab_vm.sh")
+            subprocess.run([labvm, "stop", peer["vm"]], capture_output=True, text=True)
         subprocess.run([str(TOOLS / "lab_lock.sh"), "release", str(os.getpid())], capture_output=True)
 
 
@@ -505,6 +586,15 @@ def run_locked(cls: str, data: dict, record: dict, finish) -> int:
         err = [l for l in (rv.stderr or rv.stdout).splitlines() if l.strip()][-1:] or ["(no output)"]
         record["problems"].append(f"node revert failed: {err[0]}")
         return finish("ENVIRONMENT_FAILED", 3)
+    if record.get("peer"):
+        print(f"==> Reverting the peer node {record['peer']}")
+        rv = subprocess.run([revert, "--node", record["peer"]], env=node_env(), capture_output=True, text=True)
+        print(rv.stdout, end="")
+        if rv.returncode != 0:
+            err = [l for l in (rv.stderr or rv.stdout).splitlines() if l.strip()][-1:] or ["(no output)"]
+            record["problems"].append(f"peer revert failed: {err[0]}")
+            return finish("ENVIRONMENT_FAILED", 3)
+        fetch_node_files(data["peer"].get("files") or [])
     print("==> CLEAN phase: negative controls must fail, invariants must pass (mutating checks: effect only)")
     for check in data["checks"]:
         r = run_probe(check)
@@ -528,6 +618,8 @@ def run_locked(cls: str, data: dict, record: dict, finish) -> int:
                        "tail": (proc.stdout + proc.stderr)[-1500:]}
     if not green:
         return finish("APPLY_FAILED", 3)
+    if record.get("peer"):
+        fetch_node_files(data["peer"].get("files") or [])
     print("==> APPLIED phase: every check must pass (read-only first; mutating only if all of those pass)")
     readonly = [c for c in data["checks"] if "mutates" not in c]
     mutating = [c for c in data["checks"] if "mutates" in c]

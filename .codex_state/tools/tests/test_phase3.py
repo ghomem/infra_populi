@@ -551,3 +551,57 @@ def test_uncovered_notes_are_validated(p3, uncovered, message):
     p3.write(check_set(check("conf", "probe-conf"),
                        uncovered=[{"what": "x", "why": "a long enough reason for the note", "lifted_by": "kubuntu"}]))
     assert p3.run("validate", CLS).returncode == 0
+
+
+# ------------------------------------------------------------------ peer node (HQ 2026-11-17 ruling 1: the VPN client)
+PEER = {"kind": "ubuntu2", "why": "the VPN client must be a second machine on the lab network", "files": ["/etc/x/ca.crt"]}
+
+
+def test_a_peer_set_validates_and_peer_probes_may_name_only_the_class_node(p3):
+    p3.write(check_set(check("conf", "probe-conf"),
+                       check("client", "ping -c1 192.168.56.20 && ls /run/p8test-from-node/ca.crt", on="peer"),
+                       peer=PEER))
+    assert p3.run("validate", CLS).returncode == 0
+    for probe, message in [("ping -c1 192.168.56.10", "names another lab host"),
+                           ("ssh p8lab-ubuntu2 true", "names another lab host")]:
+        p3.write(check_set(check("conf", "probe-conf"), check("client", probe, on="peer"), peer=PEER))
+        proc = p3.run("validate", CLS)
+        assert proc.returncode == 2 and message in proc.stderr, proc.stderr
+    p3.write(check_set(check("conf", "ping -c1 192.168.56.20")))  # a node probe still names no lab host
+    assert "names another lab host" in p3.run("validate", CLS).stderr
+
+
+@pytest.mark.parametrize("top, on, message", [
+    ({}, "peer", "on: peer needs the set's `peer` block"),
+    ({"peer": {**PEER, "kind": "gnome"}}, "peer", "lacks the capability 'second-node'"),
+    ({"peer": {**PEER, "kind": "ubuntu"}}, "peer", "the peer is the class's own node"),
+    ({"peer": {**PEER, "files": ["relative/path"]}}, "peer", "peer.files is a list of absolute paths"),
+    ({"peer": PEER}, "elsewhere", "on must be node|peer"),
+])
+def test_bad_peer_declarations_are_refused(p3, top, on, message):
+    p3.write(check_set(check("conf", "probe-conf"), check("client", "probe-client", on=on), **top))
+    proc = p3.run("validate", CLS)
+    assert proc.returncode == 2 and message in proc.stderr, proc.stderr
+
+
+def test_a_peer_run_reverts_both_nodes_hands_the_files_over_and_powers_the_peer_off(p3, lab, tmp_path):
+    labvm = tmp_path / "labvm.sh"
+    labvm.write_text("#!/bin/sh\necho \"labvm $*\" >> \"$(dirname \"$0\")/log\"\n")
+    labvm.chmod(0o755)
+    (tmp_path / "revert.sh").write_text("#!/bin/sh\necho \"reverted $*\" >> \"$(dirname \"$0\")/log\"\n")
+    p3.write(check_set(check("conf", "probe-conf"), check("client", "probe-client", on="peer"), peer=PEER))
+    p3.probe_rule("probe-conf", FAIL, OK)
+    p3.probe_rule("probe-client", FAIL, OK)
+    lab.world["ssh"].insert(0, {"match": "base64 -w0 /etc/x/ca.crt", "outputs": [{"rc": 0, "stdout": "\n"},
+                                                                                 {"rc": 0, "stdout": "Q0EK\n"}]})
+    proc = p3.run("run", CLS, P8_PHASE3_LABVM=str(labvm))
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    record, _ = p3.result()
+    assert record["outcome"] == "ALL_PASS" and record["peer"] == "ubuntu2"
+    assert [r.get("on") for r in record["applied"]] == [None, "peer"]
+    assert p3.log.read_text().splitlines() == ["reverted --node ubuntu", "reverted --node ubuntu2",
+                                               f"harness puppet_infrastructure::{CLS}", "labvm stop p8lab-ubuntu2"]
+    peer_calls = [c for c in lab.calls("ssh") if c[-2] == "p8lab-ubuntu2"]
+    assert len(peer_calls) == 2  # clean + applied
+    stdin = [c for c in lab.calls("ssh") if c[-2] == "p8lab-ubuntu2"]
+    assert all(c[-1] == "sudo -n bash -s" for c in stdin)
