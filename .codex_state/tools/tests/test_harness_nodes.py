@@ -66,3 +66,19 @@ def test_a_node_kind_params_file_wins_over_the_shared_one(lab, rhel, tmp_path):
     assert "rhelonly" in out and "shared" not in out
     out = lab.run([SCRIPT, "--render-only", cls], env={"HOME": str(home)}).stdout
     assert "shared" in out and "rhelonly" not in out
+
+
+
+def test_a_per_target_fixture_configures_a_base_class_only_for_that_target(lab, tmp_path):
+    # nginx_frontend_mail (2026-11-17): production enables nginx's mail module through nginx_base's my_configs on mail
+    # frontends; params/for/<target>/<base>.json applies that only when the base is applied for that target
+    home = tmp_path / "home"
+    shared = home / ".config" / "infra_populi" / "params"
+    target, base = "puppet_infrastructure::user_desktop", "puppet_infrastructure::filesystem_base"
+    (shared / "for" / target).mkdir(parents=True)
+    (shared / f"{target}.json").write_text('{"myname": "P8 Test User"}\n')
+    (shared / "for" / target / f"{base}.json").write_text('{"p8test_marker": "for-target"}\n')
+    out = lab.run([SCRIPT, "--render-only", target], env={"HOME": str(home)}).stdout
+    assert "for-target" in out and base in out
+    out = lab.run([SCRIPT, "--render-only", base], env={"HOME": str(home)}).stdout
+    assert "for-target" not in out  # the base applied on its own keeps its shared (here: no) fixture

@@ -495,9 +495,12 @@ def run_checks(cls: str, harness: bool) -> dict:
         for name, data in expanded_classes(cls):
             if data["title"] and data["title"] in nics | users:
                 fx.append(f"{name}: plan title {data['title']!r} is a real node identity")
-            # the node's own fixture (params/<kind>/) wins, as in the harness; else the shared one
+            # as in the harness: a per-target fixture for a base (params/for/<target>/), then the node's own
+            # (params/<kind>/), else the shared one
+            target_file = PARAMS_DIR / "for" / f"puppet_infrastructure::{cls}" / f"puppet_infrastructure::{name}.json"
             kind_file = PARAMS_DIR / node_kind(cls) / f"puppet_infrastructure::{name}.json"
-            pfile = kind_file if kind_file.is_file() else PARAMS_DIR / f"puppet_infrastructure::{name}.json"
+            pfile = (target_file if name != cls and target_file.is_file() else
+                     kind_file if kind_file.is_file() else PARAMS_DIR / f"puppet_infrastructure::{name}.json")
             if pfile.is_file():
                 for key, val in json_strings(json.loads(pfile.read_text())):
                     if val in nics | users:

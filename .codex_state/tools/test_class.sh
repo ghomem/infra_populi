@@ -62,8 +62,16 @@ die() { HARNESS_REASON="$*"; echo "ERROR: $*" >&2; exit 1; }
 need_cmd() { command -v "$1" >/dev/null 2>&1 || die "Missing command: $1"; }
 
 json_params_path_for_class() {
-  # A node kind may carry its own fixture (params/<kind>/<class>.json); else the shared one (params/<class>.json).
-  local cls="$1"
+  # A base class applied FOR a target may carry a per-target fixture (params/for/<target>/<class>.json: how production
+  # configures that base on such nodes, e.g. nginx_base's mail flag for nginx_frontend_mail, 2026-11-17); then a node
+  # kind's own fixture (params/<kind>/<class>.json); else the shared one (params/<class>.json).
+  local cls="$1" target
+  for target in "${PARAMS_TARGETS[@]}"; do
+    if [[ "$target" != "$cls" && -f "${PARAMS_DIR}/for/${target}/${cls}.json" ]]; then
+      echo "${PARAMS_DIR}/for/${target}/${cls}.json"
+      return
+    fi
+  done
   if [[ -n "$NODE_KIND" && -f "${PARAMS_DIR}/${NODE_KIND}/${cls}.json" ]]; then
     echo "${PARAMS_DIR}/${NODE_KIND}/${cls}.json"
   else
@@ -271,8 +279,11 @@ expand_one_class() {
   EXPANDED_CLASS_KINDS+=("$kind")
 }
 
+declare -a PARAMS_TARGETS=()
+
 expand_target_classes() {
   local target
+  PARAMS_TARGETS=("$@")
   EXPANDED_CLASSES=()
   EXPANDED_CLASS_KINDS=()
   EXPANSION_STATE=()
