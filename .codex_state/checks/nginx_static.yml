@@ -1,0 +1,75 @@
+# Phase 3 checks for puppet_infrastructure::nginx_static (class; required_base nginx_base). The wrapper includes
+# nginx_default_removal and declares nginx_static_domain { $domain: } with its own parameters. Fixture (params, never
+# committed): domain p8test.example.com, www_root /var/www/html; every other parameter at its default (ssl false,
+# redirects false, server_default_create true, redirect_default false).
+# Resulting servers (nginx_static_domain.pp at the baseline): static_http_<domain> (port 80, server_name <domain>,
+# www_root) and static_default_<domain> (port 80, default_server, return 404); no redirector, no HTTPS server.
+# Unlike nginx_static_domain's HTTPS fixture, port 80 here has two servers, so the Host header discriminates.
+# Probes talk to the node's own nginx on 127.0.0.1 only.
+class: nginx_static
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.6
+  notes: "Wall clock 01:44:55Z to 01:45:31Z 2026-11-17, outside the worktree while the Phase 1 review ran (server set derived from nginx_static_domain.pp 125-300)."
+checks:
+  - id: nginx-config-valid
+    what: the nginx configuration the wrapper produces passes `nginx -t`
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_static.pp, lines: "51-53", text: "puppet_infrastructure::nginx_static_domain { $domain:"}
+    probe: nginx -t 2>&1
+    expect: {rc: 0, stdout: "test is successful"}
+
+  - id: http-serves-www-root-for-the-domain
+    what: plain HTTP for the domain serves files from www_root byte for byte (ssl false, no redirect)
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_static.pp, lines: "53", text: "www_root                  => $www_root,"}
+      - {path: manifests/nginx_static_domain.pp, lines: "141-143", text: "$http_ensure  = 'present'"}
+      - {path: manifests/nginx_static_domain.pp, lines: "287-291", text: "nginx::resource::server { \"static_http_${domain}\":"}
+    probe: |
+      f=$(find /var/www/html -maxdepth 1 -type f -printf '%f\n' 2>/dev/null | sort | head -1)
+      test -n "$f" || { echo "no file in www_root"; exit 1; }
+      a=$(curl -s --max-time 5 -H 'Host: p8test.example.com' "http://127.0.0.1/$f" | sha256sum)
+      b=$(sha256sum < "/var/www/html/$f")
+      test "$a" = "$b" && echo same-content
+    mismatch:
+      varies: >-
+        the Host (p8test-other.example.com): that name has no server of its own, so the default server answers 404 and
+        the byte comparison must fail
+      probe: |
+        f=$(find /var/www/html -maxdepth 1 -type f -printf '%f\n' 2>/dev/null | sort | head -1)
+        test -n "$f" || { echo "no file in www_root"; exit 1; }
+        a=$(curl -s --max-time 5 -H 'Host: p8test-other.example.com' "http://127.0.0.1/$f" | sha256sum)
+        b=$(sha256sum < "/var/www/html/$f")
+        test "$a" = "$b" && echo same-content
+    expect: {rc: 0, stdout: "^same-content$"}
+
+  - id: other-hosts-get-404
+    what: the default server (server_default_create true, redirect_default false) answers any other Host with 404
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_static_domain.pp, lines: "148-149", text: "true    : { $server_default_ensure = 'present' }"}
+      - {path: manifests/nginx_static_domain.pp, lines: "207-212", text: "$default_str = '404'"}
+      - {path: manifests/nginx_static_domain.pp, lines: "236-245", text: "listen_options      => 'default_server',"}
+    probe: |
+      curl -s -o /dev/null --max-time 5 -w '%{http_code}\n' -H 'Host: p8test-other.example.com' http://127.0.0.1/p8/phase3
+    mismatch:
+      varies: >-
+        the Host (p8test.example.com, the domain's own server): it serves www_root, so the 404 expectation must fail
+        (the request path is the document root, which exists)
+      probe: |
+        curl -s -o /dev/null --max-time 5 -w '%{http_code}\n' -H 'Host: p8test.example.com' http://127.0.0.1/
+    expect: {rc: 0, stdout: "\\A404\\n\\Z"}
+
+  - id: package-default-site-removed
+    what: the distribution's default site is not enabled (nginx_default_removal)
+    control: invariant
+    why_invariant: the clean node has no nginx (no sites-enabled/default); after apply the class must have removed the one the package installs
+    derived_from:
+      - {path: manifests/nginx_static.pp, lines: "49", text: "include puppet_infrastructure::nginx_default_removal"}
+      - {path: manifests/nginx_default_removal.pp, lines: "3-4", text: "file { '/etc/nginx/sites-enabled/default':"}
+    probe: |
+      test -e /etc/nginx/sites-enabled/default && echo default-site-present || echo no-default-site
+    expect: {rc: 0, stdout: "\\Ano-default-site\\n\\Z"}
