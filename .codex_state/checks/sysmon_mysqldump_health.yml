@@ -1,0 +1,24 @@
+# Phase 3 checks for puppet_infrastructure::sysmon_mysqldump_health (define; harness title sysmon_mysqldump_health;
+# required_base filesystem_base). It installs a Nagios check that restores each mysqldump found under `dirs` into a
+# scratch database to prove the dumps load. Fixture (params, never committed): mysqluser p8test_check, a fake password,
+# dirs /var/tmp/p8test-dumps.
+# Not exercised: validating a dump (it needs a MySQL server the define does not provide). Observation, baseline
+# behaviour: the script embeds the MySQL password and is world-readable (0755).
+class: sysmon_mysqldump_health
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.1
+  notes: "Wall clock 00:31:28Z to 00:31:28Z 2026-11-17, outside the worktree while the Phase 1 review ran."
+checks:
+  - id: check-script-rendered
+    what: the check script (root 0755, valid bash) carries the MySQL user and password and the dump directories
+    control: negative
+    derived_from:
+      - {path: manifests/sysmon_mysqldump_health.pp, lines: "8-15", text: "content => template(\"puppet_infrastructure/sysmon/${script_prefix}.sh.erb\"),"}
+      - {path: templates/sysmon/check-mysqldump-health.sh.erb, lines: "5-6", text: "MYSQLUSER=\"<%= @mysqluser %>\""}
+      - {path: templates/sysmon/check-mysqldump-health.sh.erb, lines: "74", text: "DIRS=\"<%= @dirs %>\""}
+    probe: |
+      f=/opt/puppet-infrastructure/bin/check-mysqldump-health.sh
+      stat -c '%U %a' "$f"; bash -n "$f" && grep -E '^(MYSQLUSER|MYSQLPWD|DIRS)=' "$f"
+    expect: {rc: 0, stdout: "\\Aroot 755\\nMYSQLUSER=\"p8test_check\"\\nMYSQLPWD=\"p8test-not-a-secret\"\\nDIRS=\"/var/tmp/p8test-dumps\"\\n\\Z"}
