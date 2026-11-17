@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none directly; through puppet_infrastructure::nginx_static_domain: puppet-nginx 8.4.0 (nginx::resource::server).
 ### Purpose ########
 # Our nginx static class does two things:
 # - it installs nginx servers for the given domain (using our defined type
