@@ -485,3 +485,20 @@ def test_hazard14_standalone_reports_info_not_finding():
         pregate.scan_hazards(manifest, inv | {"types": set(), "defines": set()}, report, (), None, standalone)
         rows = [r for r in report.lines if r[1] == "hazard14-module-base"]
         assert len(rows) == 1 and rows[0][0] == level
+
+
+
+def test_resource_types_ignore_braces_inside_strings():
+    # nginx_frontend_mail (2026-11-17): raw_append lines like 'location /auth {' are strings, not resource declarations
+    manifest = ("class c {\n  nginx::resource::server { 'imap_auth_server':\n    raw_append => [\n"
+                "      'location /auth {',\n      \"proxy_pass ${x} {\",\n    ],\n  }\n  file { '/etc/x': }\n}\n")
+    found = pregate.resource_types(manifest)
+    assert {"nginx::resource::server", "file"} <= found and not {"auth", "location", "proxy_pass"} & found
+
+
+def test_a_hash_inside_a_string_is_not_a_comment():
+    # hashman_web: "... Allowed symbols are !?#$%..." inside a string; the file resources after it still count
+    manifest = ("class c {\n  $m = join(['symbols are !?#$%&*@', 'x'])\n  # it's a comment with a quote\n"
+                "  file { '/etc/x': }\n  package { 'p': }\n}\n")
+    found = pregate.resource_types(manifest)
+    assert {"file", "package"} <= found

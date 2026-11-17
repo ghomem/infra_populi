@@ -130,8 +130,18 @@ def local_vars(manifest: str) -> set[str]:
     return set(re.findall(r"\$([a-z_][a-z0-9_]*)\s*(?:=|,|\))", manifest))
 
 
+# Strings and comments in one left-to-right pass: a `#` inside a string is not a comment (hashman_web's
+# "Allowed symbols are !?#$%..."), and braces inside a string are not a resource (nginx_frontend_mail's raw_append
+# 'location /auth {', 2026-11-17). Strings are blanked to their quotes, comments dropped.
+TOKENS = re.compile(r"('(?:[^'\\]|\\.)*'|\"(?:[^\"\\]|\\.)*\")|#[^\n]*", re.S)
+
+
+def blank_strings(manifest: str) -> str:
+    return TOKENS.sub(lambda m: m.group(1)[0] * 2 if m.group(1) else "", manifest)
+
+
 def resource_types(manifest: str) -> set[str]:
-    code = strip_comments(manifest)
+    code = blank_strings(manifest)
     found = set(re.findall(r"(?<![\w:$.])([a-z][a-z0-9_]*(?:::[a-z][a-z0-9_]*)*)\s*\{\s*(?=['\"$\[]|[a-z])", code))
     return {t for t in found if t not in KEYWORDS}
 
