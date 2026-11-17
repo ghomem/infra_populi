@@ -1,0 +1,21 @@
+{
+ "class": "node_base_domain_desktop",
+ "at": "20261117T021630Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "ssh-hardened-but-password-login-allowed (node_base_domain_desktop.pp:10): baseline passes password_authentication => true to ssh_secure, which (ssh_secure.pp:43-47, 66) renders PasswordAuthentication yes; sshd -T expecting 'passwordauthentication yes' tests exactly that profile choice",
+  "ssh-hardened-but-password-login-allowed (ssh_secure.pp:59): KexAlgorithms => $kex_algorithm, default 'diffie-hellman-group-exchange-sha256' (ssh_secure.pp:10, profile does not override it); the probe expects that single KEX in sshd -T, the value the code produces under defaults",
+  "unattended-upgrades-kept (packages_base.pp:53-55): with unattended_upgrades => true (profile line 9) on Debian the code declares package unattended-upgrades ensure installed; dpkg-query expecting 'install ok installed' tests that; invariant is plausible since false would ensure absent and the clean node already has it"
+ ],
+ "review_s": 135.6,
+ "check_file_sha256": "8e5fc5bd1f6d0eee400d885e8ab5211920dfb6e3a566c4bf5d397b9e5113cc42",
+ "reviewer_result": "20261117T021415Z-reviewer",
+ "author_result": "20261117T021146Z-author",
+ "findings": []
+}
