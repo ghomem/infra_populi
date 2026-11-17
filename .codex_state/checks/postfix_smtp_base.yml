@@ -10,6 +10,8 @@ authoring:
   minutes: 0.5
   notes: "Wall clock 02:36:27Z to 02:36:57Z 2026-11-17, outside the worktree while the Phase 1 review ran; each tool verdict has a single-value mismatch."
 checks:
+  # 2026-11-17 authoring correction (run 1, 20261117T023815Z, FINDINGS): the probe called smtplib.SMTP.getwelcome(),
+  # which does not exist (AttributeError after a successful connect); the banner is now read from a plain socket.
   - id: smtpd-on-the-configured-port-with-the-hostname
     what: postfix's smtpd listens on postfix_port and greets with myhostname = smtp_hostname
     control: negative
@@ -18,8 +20,8 @@ checks:
       - {path: templates/postfix_smtp_base/main.cf.erb, lines: "75", text: "myhostname = <%=@smtp_hostname%>"}
       - {path: templates/postfix_smtp_base/main.cf.erb, lines: "10", text: "smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu)"}
     probe: |
-      python3 -c "import smtplib; s = smtplib.SMTP('127.0.0.1', 587, timeout=5); print(s.getwelcome().decode()); s.quit()"
-    expect: {rc: 0, stdout: "\\Asmtp\\.p8test\\.example\\.com ESMTP Postfix \\(Ubuntu\\)\\n\\Z"}
+      python3 -c "import socket; s = socket.create_connection(('127.0.0.1', 587), 5); print(s.recv(512).decode().strip()); s.close()"
+    expect: {rc: 0, stdout: "\\A220 smtp\\.p8test\\.example\\.com ESMTP Postfix \\(Ubuntu\\)\\n\\Z"}
 
   - id: starttls-presents-the-sslprefix-bundle
     what: STARTTLS on postfix_port presents the certificate at /etc/ssl/certs/<smtp_sslprefix>.postfix.bundle.crt

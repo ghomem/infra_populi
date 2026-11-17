@@ -1,0 +1,115 @@
+{
+ "class": "postfix_smtp_base",
+ "role": "author",
+ "at": "20261117T024019Z",
+ "runner": "75c2dc0",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "0163efc5581738c434967989a54503bc04c1b185aae58ba99ee27cc378ba9a71",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "smtpd-on-the-configured-port-with-the-hostname",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/usr/lib/python3.12/socket.py\", line 852, in create_connection\n    raise exceptions[0]\n  File \"/usr/lib/python3.12/socket.py\", line 837, in create_connection\n    sock.connect(sa)\nConnectionRefusedError: [Errno 111] Connection refused\n",
+   "ok": true
+  },
+  {
+   "id": "starttls-presents-the-sslprefix-bundle",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Could not read certificate from <stdin>\nUnable to load certificate\nCould not open file or uri for loading certificate from /etc/ssl/certs/p8test.postfix.bundle.crt\n4007593982780000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n4007593982780000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/ssl/certs/p8test.postfix.bundle.crt)\nUnable to load certificate\n",
+   "ok": true
+  },
+  {
+   "id": "sasl-user-authenticates-through-dovecot",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "client-access-map-allows-the-listed-ip",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 1: postmap: command not found\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "n version '1794883310'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.70 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::postfix_smtp_base: 22 concrete resources (+6 defined-type instances)\n  Puppet_infrastructure::Ssl_base[postfix ssl config]\n  Package[postfix]\n  Package[mailutils]\n  Package[dovecot-core]\n  File[/etc/dovecot/conf.d/10-master.conf]\n  File[/etc/dovecot/conf.d/10-auth.conf]\n  File[/etc/dovecot/users]\n  Service[dovecot]\n  Puppet_infrastructure::Postfix_smtp_base_config_file[/etc/postfix/client_access]\n  Puppet_infrastructure::Postfix_smtp_base_config_file[/etc/postfix/sender_access]\n  Puppet_infrastructure::Postfix_smtp_base_config_file[/etc/postfix/controlled_envelope_senders]\n  File[/etc/postfix/main.cf]\n  File[/etc/postfix/master.cf]\n  File[/etc/postfix/smtp_header_checks.regexp]\n  Service[postfix]\n  File[/etc/ssl/private/p8test.key]\n  Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]\n  Concat::Fragment[first_certificate_p8test]\n  Concat::Fragment[intermediate_certificates_p8test]\n  File[/etc/postfix/client_access]\n  Exec[hash /etc/postfix/client_access]\n  File[/etc/postfix/sender_access]\n  Exec[hash /etc/postfix/sender_access]\n  File[/etc/postfix/controlled_envelope_senders]\n  Exec[hash /etc/postfix/controlled_envelope_senders]\n  Concat_file[/etc/ssl/certs/p8test.postfix.bundle.crt]\n  Concat_fragment[first_certificate_p8test]\n  Concat_fragment[intermediate_certificates_p8test]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP postfix_smtp_base dbe9eb1ef990\n"
+ },
+ "applied": [
+  {
+   "id": "smtpd-on-the-configured-port-with-the-hostname",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "220 smtp.p8test.example.com ESMTP Postfix (Ubuntu)\n",
+   "stderr": ""
+  },
+  {
+   "id": "starttls-presents-the-sslprefix-bundle",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "served-cert-is-bundle\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "only the certificate compared (the first certificate of the system CA bundle instead of the p8test bundle): the fingerprints must differ",
+    "rc": 1,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "sasl-user-authenticates-through-dovecot",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "passdb: p8testuser auth succeeded\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "only the password (p8test-wrong-password): dovecot must refuse it, so the \"auth succeeded\" expectation must fail",
+    "rc": 0,
+    "passed": false,
+    "stdout": "passdb: p8testuser auth failed\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "client-access-map-allows-the-listed-ip",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "only the queried address (127.0.0.2, not in allowed_client_ips): the map has no entry, so OK must not come back",
+    "rc": 1,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.5,
+ "node": "ubuntu",
+ "duration_s": 95.2
+}
