@@ -3,21 +3,19 @@
 # list [<given>, <title>, cdrom, dip, plugdev, lp, lpadmin, sambashare, adm, sudo], passes everything to user_base and
 # declares user_kde_lock_screen for the user. Fixture (params, never committed): as user_desktop's: myname "P8 Test
 # User", a fake SHA-512 hash with salt p8testsalt, mykey = a throwaway RSA public key body; defaults otherwise.
-# Adapted from user_desktop's reviewed set, plus the sudo right the extra groups grant.
+# Adapted from user_desktop's reviewed set, plus the sudo right the extra groups grant. Since 2026-11-17 the set's
+# `session` block logs p8testuser in to Plasma after the apply, then two agent runs (Phase 3 desktop sessions), so
+# the KDE lock settings the wrapper declares (formerly an uncovered note) are checked too.
 class: user_desktop_sudoer
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
-  minutes: 0.4
-  notes: "Wall clock 22:31:06Z to 22:31:32Z 2026-11-17 (adapted from user_desktop's reviewed set, outside the worktree while the Phase 1 review ran)."
-uncovered:
-  - what: >-
-      the KDE lock-screen settings user_kde_lock_screen applies (configure_lock_screen.sh as the user: kscreenlockerrc
-      Autolock/LockOnResume/Timeout/LockGrace and the screenlocker reconfiguration over D-Bus)
-    why: >-
-      the script acts only for a logged-in user with a KDE session; kubuntu runs headless with no one logged in, so the
-      exec's guard succeeds and nothing is applied (user_kde_lock_screen's own Phase 3 is deferred for the same reason)
-    lifted_by: kubuntu
+  minutes: 0.5
+  notes: "Wall clock 22:31:06Z to 22:31:32Z 2026-11-17 (adapted from user_desktop's reviewed set, outside the worktree while the Phase 1 review ran); session revision 23:17:10Z, one scripted edit validated within the same minute (likewise)."
+session:
+  user: p8testuser
+  desktop: plasma
+  why: user_kde_lock_screen's exec applies the lock settings only on an agent run while the user is logged in
 checks:
   - id: user-with-own-primary-group
     what: the user exists with its own same-named primary group (the title is the first group of the built list)
@@ -70,3 +68,18 @@ checks:
       - {path: manifests/user_kde_lock_screen_common.pp, lines: "8-12", text: "source => 'puppet:///modules/puppet_infrastructure/user_kde_lock_screen/configure_lock_screen.sh',"}
     probe: stat -c '%U %a' /opt/puppet-infrastructure/bin/configure_lock_screen.sh
     expect: {rc: 0, stdout: "\\Aroot 755\\n\\Z"}
+
+  - id: kde-lock-settings-applied-in-the-session
+    what: >-
+      after an agent run with the user logged in, the wrapper's user_kde_lock_screen has set the user's kscreenlockerrc
+      [Daemon] Autolock and LockOnResume on, Timeout 5 and LockGrace 0 (the wrapper's defaults)
+    control: negative
+    derived_from:
+      - {path: manifests/user_desktop_sudoer.pp, lines: "7", text: "$screenlock_timeout_minutes = 5, $screenlock_grace_seconds = 0"}
+      - {path: manifests/user_desktop_sudoer.pp, lines: "12", text: "puppet_infrastructure::user_kde_lock_screen { $title : screenlock_timeout_minutes => $screenlock_timeout_minutes, screenlock_grace_seconds => $screenlock_grace_seconds }"}
+      - {path: files/user_kde_lock_screen/configure_lock_screen.sh, lines: "66-95", text: "--group Daemon --key Timeout ${LOCK_TIMEOUT}"}
+    probe: |
+      f=/home/p8testuser/.config/kscreenlockerrc
+      stat -c '%U' "$f"
+      sed -n '/^\[Daemon\]/,/^\[/p' "$f" | grep -E '^(Autolock|LockOnResume|Timeout|LockGrace)=' | sort
+    expect: {rc: 0, stdout: "\\Ap8testuser\\nAutolock=true\\nLockGrace=0\\nLockOnResume=true\\nTimeout=5\\n\\Z"}
