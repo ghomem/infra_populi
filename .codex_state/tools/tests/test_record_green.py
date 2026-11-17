@@ -4,6 +4,7 @@ went GREEN, the header is there and the worktree holds only the class; then trac
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -13,7 +14,7 @@ from conftest import BOOT_ID, TOOLS
 pytestmark = pytest.mark.slow  # excluded from the per-commit fast subset (HQ 2026-11-11 ruling 3)
 
 REPO = TOOLS.parents[1]
-CLS = "sysmon_mysqldump_health"  # pending, identical to the baseline, plain tracker line (was sysmon_fs_health until batch 6 migrated it)
+CLS = "sysmon_fs_health"  # a baseline define without a node_fixture; the clone fixture resets it to pending
 HEADER = ("# Puppet 8 migration: release-0.9.10 manifest validated unchanged.\n"
           "# Module dependencies: none.\n")
 INVENTORY = "MODULE firewall env puppetlabs-firewall 8.3.0\n"
@@ -50,9 +51,18 @@ def clone(tmp_path, lab):
         dst = work / src.relative_to(REPO)
         dst.write_bytes(src.read_bytes())
         dst.chmod(src.stat().st_mode)
+    # the sample class as a pending class: its baseline manifest and a plain tracker line, whatever the real repo's
+    # state (the test must not depend on which classes have been migrated since)
+    sys.path.insert(0, str(TOOLS))
+    import baseline  # noqa: PLC0415
+    base = baseline.for_class(CLS)
+    (work / f"manifests/{CLS}.pp").write_bytes(baseline.git_show(base.upstream, base.commit, f"manifests/{CLS}.pp"))
+    tracker = work / ".codex_state/migrated_classes.txt"
+    tracker.write_text("".join(CLS + "\n" if line.split()[:1] == [CLS] else line + "\n"
+                               for line in tracker.read_text().splitlines()))
     git(work, "add", "-A")
     if git(work, "status", "--porcelain"):
-        git(work, "commit", "-q", "-m", "test: overlay tools under test")
+        git(work, "commit", "-q", "-m", "test: overlay tools under test; sample class reset to pending")
         git(work, "push", "-q")
     (work / ".codex_state" / "necessary_modules.txt").write_text("puppetlabs-stdlib\n")
     lab.world["ssh"].insert(0, {"match": "bash -s", "stdout": INVENTORY})
