@@ -39,3 +39,43 @@ which is blocked on it (category 1). nginx_base's own GREEN and Phase 3 never sa
   - `nginx-core`: on 24.04 it is the package that brings the mail and stream modules.
 - **Documentation list, production cutover:** on Ubuntu 24.04, mail frontends need nginx_base's
   package_name nginx-core (or the libnginx-mod packages).
+
+---
+
+# Second puppet-nginx 8 incompatibility: the stream block's access_log has no format (2026-11-17, after ruling 1)
+
+**Status: needs an HQ ruling (a further module-compatibility change to nginx_base, beyond ruling 1).
+nginx_frontend_mail is blocked on it again (category 1). Ruling 1 is done: nginx_base was re-migrated (f02baf8,
+review PASS, Phase 3 ALL_PASS), and its 7 dependents were re-verified PASS.**
+
+## Evidence
+- **The run:** nginx_frontend_mail, revert-first harness, 2026-11-17 21:46Z (fresh node, nginx_base applied with
+  `my_configs => {mail => true, stream => true, package_name => 'nginx-core'}`).
+  - `Service[nginx]` restart failed: `[emerg] log format is not specified in /etc/nginx/nginx.conf:55`.
+  - The modules-enabled include is now single (line 8), so ruling 1 holds.
+- **The rendered stream block:**
+  `stream { include /etc/nginx/conf.stream.d/*.conf; include /etc/nginx/streams-enabled/*; access_log /var/log/nginx/stream-access.log; }`
+- **Where the line comes from:** puppet-nginx 8.4.0 templates/conf.d/nginx.conf.erb:419-421 always renders
+  `access_log <stream_access_log>[ <stream_custom_format_log>]`. Its defaults are `stream_access_log =
+  "${log_dir}/stream-access.log"` and `stream_custom_format_log = undef` (init.pp:260-261), so no format is rendered.
+- **Why nginx refuses it:** nginx's stream `access_log` needs a format name, and the stream module has no default
+  format (unlike http's `combined`). So `stream => true` with the module's defaults never starts.
+- **Upstream:** 8.4.0 is the latest release and the template on master is unchanged.
+- **What production renders:** production's puppet-nginx 0.15 (and 0.16) renders the stream block with the two
+  includes only, and no access_log (templates/conf.d/nginx.conf.erb:229-236 at v0.15.0). Stream access logging was
+  therefore off in production (nginx's stream default).
+
+## Options (HQ)
+1. **Recommended:** a module-compatibility change in nginx_base: add `stream_access_log => 'off'` to its default
+   configs.
+   - Stream nodes render `access_log off;`, which is what production does today: no stream access log.
+   - Nodes without `stream` render no stream block, so nothing changes for them.
+   - A node can still pass a path plus `stream_custom_format_log`/`stream_log_format` through my_configs.
+   - It would be a second re-migration of nginx_base, re-verified with its dependents as for ruling 1, plus a Phase 3
+     check that a stream node starts.
+2. Leave nginx_base alone, and at cutover put `stream_access_log => 'off'` (or a format) into every stream frontend's
+   my_configs.
+   - The lab fixture would carry the same value.
+   - The risk is a production frontend whose nginx refuses to start because the cutover note was missed.
+3. Report it upstream (voxpupuli/puppet-nginx) in any case. A fix there would let option 1 be dropped later
+   (Phase 5).
