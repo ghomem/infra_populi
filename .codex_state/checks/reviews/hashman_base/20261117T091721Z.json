@@ -1,0 +1,21 @@
+{
+ "class": "hashman_base",
+ "at": "20261117T091721Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "config-rendered-from-hiera (manifests/hashman_base.pp:20): $url = 'https://' + lookup('hashman::address'); lab Hiera hashman::address -> puppet::address 'puppet.example.com', so the template's HASHMAN_URL line renders 'https://puppet.example.com', exactly the expected line",
+  "empty-database-files (manifests/hashman_base.pp:47): $dbfiles lists the seven files cnames/companies/emails/hashes/keys/ppsigs/ppwrapped.pp under $dbdir (Hiera puppet::manifdir/01_hashman/ = /etc/puppetlabs/code/environments/production/manifests/01_hashman); with lines 163-167 (content '', mode 0644, replace no) the probe's stat of name/size 0/mode 644 for those seven tests what the code declares",
+  "config-rendered-from-hiera (templates/hashman/libhashman/config.py.erb:4-11): DBDIR/MAIN_COMPANY/HASHMAN_URL/TESTENV/DEBUG_MODE render @dbdir ('/etc/puppetlabs/' basedir gives the double slash the /+ allows, trailing slash kept), @company 'My Company', @url, @testenv 'False' (Hiera) and @debug_mode_activated 'False' (default debug_mode false); the grep omits MAIL_FROM/SUPPORT_TEAM, which the expectation does not claim; the uncovered note (database consumed by a master's catalog, lifted_by puppetserver, a planned master-role kind in nodes.yml) honestly states what the node cannot show"
+ ],
+ "review_s": 107.4,
+ "check_file_sha256": "f44e46e4218bb6aa3908b264237ab7cec6bb24938bcd45c760e5c0b215853356",
+ "reviewer_result": "20261117T091534Z-reviewer",
+ "author_result": "20261117T091402Z-author",
+ "findings": []
+}
