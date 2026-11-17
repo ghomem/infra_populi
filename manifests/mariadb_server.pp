@@ -1,3 +1,6 @@
+# Puppet 8 migration: guard certificate generation; preserve /var/log/mysql via the module's resource.
+# Module dependencies: puppetlabs-mysql 17.3.0; puppetlabs-stdlib 9.7.0.
+# Expected run-2 events: Notify[Produced configs: *] — the baseline debug notify reports the generated configuration on every run.
 # This class creates:
 #
 # 1. a working mariadb server
@@ -98,6 +101,7 @@ class puppet_infrastructure::mariadb_server (
 
     exec { "generate the ssl certificates, sign them and deploy them at $ssl_dir":
       command => "$bindir/deploy_self_signed_certificates.sh",
+      unless  => "/usr/bin/test -s ${ssl_dir}ca.pem -a -s ${ssl_dir}server-key.pem -a -s ${ssl_dir}server-cert.pem",
       require => File[ "$bindir/deploy_self_signed_certificates.sh" ]
     }
 
@@ -165,10 +169,7 @@ class puppet_infrastructure::mariadb_server (
     override_options        => $full_override_options,
   }
 
-  file { '/var/log/mysql':
-    ensure  => 'directory',
-    owner   => 'mysql',
-    group   => 'adm',
+  File <| title == '/var/log/mysql' |> {
     mode    => '0755',
     require => Package['mysql-server'],
   }
