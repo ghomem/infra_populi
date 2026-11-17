@@ -1,0 +1,86 @@
+# Phase 3 checks for puppet_infrastructure::openvpn_nm_connection (define, title p8test-vpn; node gnome, Ubuntu 24.04
+# GNOME with NetworkManager 1.46 and network-manager-openvpn; MOCK-APPLY: node fixture p8test_vpn_ca declares the CA file
+# the define requires, from the master's throwaway PKI). Fixture (params, never committed): vpn_username and
+# local_username p8testuser, remote 203.0.113.50 (RFC 5737), ca_crt /etc/p8test-vpn/ca.crt; cipher at its default.
+# Migrated with the ruled fix fqdn_rand_uuid -> stdlib fqdn_uuid (upstream_defects.md): the UUID is the RFC 4122
+# version-5 UUID of the connection name in the DNS namespace, df2d3b4d-5aa3-564f-92d4-fd9bac9644f9 for p8test-vpn.
+# Probes read the node's own NetworkManager (nmcli) and files only.
+class: openvpn_nm_connection
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.7
+  notes: "Wall clock 22:02:49Z to 22:03:29Z 2026-11-17 (draft to valid, outside the worktree while the Phase 1 review ran; the baseline define and template, stdlib's fqdn_uuid read before)."
+uncovered:
+  - what: connecting through the profile to an OpenVPN server
+    why: >-
+      the profile stores the password as agent-owned (password-flags=1), so a connection needs a desktop session's
+      secret agent and an OpenVPN server with the matching tap/password setup; the lab has neither session nor server
+      for it yet
+    lifted_by: ubuntu2
+checks:
+  - id: profile-file-root-only
+    what: the connection file is /etc/NetworkManager/system-connections/<connection_name>, root:root 0600
+    control: negative
+    derived_from:
+      - {path: manifests/openvpn_nm_connection.pp, lines: "31-34", text: "mode    => '0600',"}
+    probe: stat -c '%U %G %a' /etc/NetworkManager/system-connections/p8test-vpn
+    expect: {rc: 0, stdout: "\\Aroot root 600\\n\\Z"}
+
+  - id: networkmanager-loads-the-vpn-profile
+    what: NetworkManager has loaded the profile as an OpenVPN connection under the connection name
+    control: negative
+    derived_from:
+      - {path: manifests/openvpn_nm_connection.pp, lines: "22-25", text: "name        => '/usr/bin/nmcli con reload',"}
+      - {path: templates/openvpn/connection_file.erb, lines: "1-4", text: "id=<%= @connection_name %>"}
+      - {path: templates/openvpn/connection_file.erb, lines: "20", text: "service-type=org.freedesktop.NetworkManager.openvpn"}
+    probe: nmcli -g connection.id,connection.type,vpn.service-type connection show p8test-vpn
+    mismatch:
+      varies: the connection name (p8test-vpn-other), which no profile has, so nmcli must refuse it
+      probe: nmcli -g connection.id,connection.type,vpn.service-type connection show p8test-vpn-other
+    expect: {rc: 0, stdout: "\\Ap8test-vpn\\nvpn\\norg\\.freedesktop\\.NetworkManager\\.openvpn\\n\\Z"}
+
+  - id: vpn-settings-from-the-parameters
+    what: the loaded profile carries the remote, CA path, VPN username and cipher from the parameters, with password auth over a tap device
+    control: negative
+    derived_from:
+      - {path: manifests/openvpn_nm_connection.pp, lines: "12-16", text: "$remote, # server name or IP address"}
+      - {path: templates/openvpn/connection_file.erb, lines: "8-23", text: "connection-type=password"}
+    probe: |
+      nmcli -g vpn.data connection show p8test-vpn | tr ',' '\n' | sed 's/^ *//' |
+        grep -E '^(remote|ca|username|cipher|connection-type|dev-type) = ' | sort
+    mismatch:
+      varies: the connection name (p8test-vpn-other), which no profile has, so no settings can be read
+      probe: |
+        nmcli -g vpn.data connection show p8test-vpn-other | tr ',' '\n' | sed 's/^ *//' |
+          grep -E '^(remote|ca|username|cipher|connection-type|dev-type) = ' | sort
+    expect: {rc: 0, stdout: "\\Aca = /etc/p8test-vpn/ca\\.crt\\ncipher = AES-256-CBC\\nconnection-type = password\\ndev-type = tap\\nremote = 203\\.0\\.113\\.50\\nusername = p8testuser\\n\\Z"}
+
+  - id: only-the-local-user-may-use-it
+    what: the profile's permissions name the local user only
+    control: negative
+    derived_from:
+      - {path: templates/openvpn/connection_file.erb, lines: "5", text: "permissions=user:<%= @local_username %>:;"}
+    probe: nmcli -g connection.permissions connection show p8test-vpn
+    mismatch:
+      varies: the connection name (p8test-vpn-other), which no profile has
+      probe: nmcli -g connection.permissions connection show p8test-vpn-other
+    expect: {rc: 0, stdout: "\\Auser:p8testuser\\n\\Z"}
+
+  - id: uuid-is-the-stable-version-5-uuid-of-the-name
+    what: >-
+      the profile's UUID is the same in the file and in NetworkManager, and is fqdn_uuid of the connection name (the
+      ruled replacement of fqdn_rand_uuid with the same seed), so it is stable across runs and nodes
+    control: negative
+    derived_from:
+      - {path: manifests/openvpn_nm_connection.pp, lines: "29", text: "$uuid = fqdn_rand_uuid($connection_name)"}
+      - {path: templates/openvpn/connection_file.erb, lines: "3", text: "uuid=<%= @uuid %>"}
+    probe: |
+      sed -n 's/^uuid=//p' /etc/NetworkManager/system-connections/p8test-vpn
+      nmcli -g connection.uuid connection show p8test-vpn
+    mismatch:
+      varies: the connection name (p8test-vpn-other), which no profile has, so NetworkManager reports no UUID
+      probe: |
+        sed -n 's/^uuid=//p' /etc/NetworkManager/system-connections/p8test-vpn
+        nmcli -g connection.uuid connection show p8test-vpn-other
+    expect: {rc: 0, stdout: "\\Adf2d3b4d-5aa3-564f-92d4-fd9bac9644f9\\ndf2d3b4d-5aa3-564f-92d4-fd9bac9644f9\\n\\Z"}
