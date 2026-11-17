@@ -1,0 +1,99 @@
+{
+ "schema": 1,
+ "class": "linux_policies_user",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-17T23:12:44Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "407e8879c91a",
+ "migrate_subject": "P8: migrate puppet_infrastructure::linux_policies_user",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 407e8879c91a; 216 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `linux_policies_user Done [from: release-0.9.10; upstream defect fixed: policy exec guarded by the script login check]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-stdlib', '9.7.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 19 catalog events; run 2: 3 event(s) only from expected_run2_events File[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp] File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_0] File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_1] Exec[Execute linux policies for: p8testuser] [own: File[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp], File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_0], File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_1], Exec[Execute linux policies for: p8testuser]; inherited: none] (judge the header justification); COVERAGE puppet_infrastructure::linux_policies_user: 6 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-3): header comment only (purpose, puppetlabs-stdlib 9.7.0 dependency, expected run-2 events justification); no baseline comment removed",
+   "DIFF A hunk 2 (line 76): adds onlyif => \"/usr/bin/who | /usr/bin/awk '{print \\$1}' | /bin/grep -q '^${username}\\$'\" to Exec[Execute linux policies for: ${username}]; this is exactly the RULED upstream-defect change in upstream_defects.md (## linux_policies_user, Status: ruled; 'path as needed'); command, user, environment unchanged vs baseline lines 71-75. Predicate identical to baseline templates/linux-policies/puppet_header.sh.erb (who | awk '{print $1}' | grep -q \"^$USERNAME\\$\", USERNAME=whoami = the exec's user), which exits 0 when not logged in; only the wrapper/syslog lines are no longer written without a session. No other non-translation hunk",
+   "Run-2 events verified against baseline code: File[...TMP/p8testuser.sh.tmp] has content => template(puppet_header.sh.erb) while File_line[..._0/_1] append policy lines to the same path, so every run resets then re-appends (upstream design, loglevel debug comment acknowledges it); Tidy skips the Puppet-managed tmp file so it persists; baseline exec is unguarded so it runs every agent run, and with the ruled guard it still runs whenever p8testuser has a session (kubuntu node, Plasma session) - caused by upstream design, not the migration",
+   "DIFF B: the migrate commit added the header and the same onlyif line; the later change to the manifest (1 line) only extended the header's Expected run-2 events comment to name the Exec"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 4,
+  "removed": 0,
+  "non_comment_changes": 1,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: per-user Linux policies; exec uses the policy script's existing login check (HQ ruling).",
+  "# Module dependencies: puppetlabs-stdlib 9.7.0 (file_line).",
+  "# Expected run-2 events: File[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp]; File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_0]; File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_1] \u2014 upstream resets the temporary script to its header and re-appends policy lines on every run; tidy skips the managed file. Exec[Execute linux policies for: p8testuser] \u2014 while the user is logged in, upstream runs the policies on every agent run."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 19,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::linux_policies_user: 6 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "node": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "total_s": 31.002,
+   "master_check_s": 0.603,
+   "poweroff_s": 1.115,
+   "restore_s": 0.498,
+   "boot_to_ssh_s": 18.828,
+   "apt_update_s": 9.298,
+   "verify_s": 0.66,
+   "nic1_rx_bytes": 1825850
+  },
+  "log": ".codex_state/logs/reviews/linux_policies_user.20261117T231049Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": "RUN2_EXPECTED_EVENTS: 3 from File[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp] File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_0] File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_1] Exec[Execute linux policies for: p8testuser] [own: File[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp], File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_0], File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_1], Exec[Execute linux policies for: p8testuser]; inherited: none] (plan"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
