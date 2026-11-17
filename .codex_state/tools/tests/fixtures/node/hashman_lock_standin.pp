@@ -7,7 +7,7 @@
 # (hashman_base declares hashes.pp itself with replace => no, so the fixture cannot declare the file).
 # (2026-11-17, HQ ruling 2: the code-tree directory left this fixture; the agent package ships it.)
 # Behaviour (a locked user refused by pp_auth/the web interface on a master) is NOT verified by a GREEN with it.
-# Lifted by: a master-role node whose hashman database holds the user (no nodes.yml kind yet; HQ batch-5 ruling 6; HQ 2026-11-17 ruling 2)
+# Lifted by: a master-role node whose hashman database holds the user (the planned nodes.yml kind puppetserver; HQ batch-5 ruling 6; HQ 2026-11-17 ruling 2)
 file { '/usr/local/sbin/p8test-seed-hashman-user':
   ensure  => file,
   owner   => 'root',

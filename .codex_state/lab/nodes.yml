@@ -15,7 +15,7 @@
 #   os_family          Facter os.family: Debian | RedHat
 #   os                 human label
 #   capabilities       what the node can exercise (server, desktop, kde, gnome, rhel-subscription, second-node,
-#                      ad-dc)
+#                      ad-dc, puppet-server)
 default: ubuntu
 nodes:
   ubuntu:
@@ -85,3 +85,16 @@ nodes:
     os_family: Debian
     os: Ubuntu 24.04 server + Samba AD DC
     capabilities: [server, second-node, ad-dc]
+  puppetserver:
+    # A master-role node (HQ batch-5 ruling 6; named for hashman_base's `uncovered` note, HQ 2026-11-17 ruling 2):
+    # a Puppet server whose code tree holds hashman's user database. Placeholder: bring-up is not scheduled.
+    status: planned
+    vm: p8lab-puppetserver
+    alias: p8lab-puppetserver
+    certname: p8lab-puppetserver
+    hostname: p8lab-puppetserver
+    hostonly_ip: 192.168.56.26
+    baseline_snapshot: null
+    os_family: Debian
+    os: Ubuntu 24.04 server + openvox-server (a second Puppet server)
+    capabilities: [server, puppet-server]

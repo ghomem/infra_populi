@@ -4,7 +4,7 @@
 # local files the class copies from the node it runs on. Placeholder content stands in for the site's images.
 # (2026-11-17, HQ ruling 2: the code-tree directory left this fixture; the agent package ships it.)
 # Behaviour (the web interface, the logos rendered) is NOT verified by a GREEN with this fixture.
-# Lifted by: a master-role node with the site's logo files (no nodes.yml kind yet; HQ batch-5 ruling 6)
+# Lifted by: a master-role node with the site's logo files (the planned nodes.yml kind puppetserver; HQ batch-5 ruling 6)
 file { ['/path', '/path/to']:
   ensure => directory,
   owner  => 'root',

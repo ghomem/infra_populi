@@ -34,6 +34,12 @@ def test_the_domain_controller_kind_is_planned_with_its_capability():
     assert dc["vm"] == "p8lab-dc" and dc["status"] == "planned" and "ad-dc" in dc["capabilities"]
 
 
+
+def test_the_master_role_kind_is_planned_with_its_capability():
+    # HQ batch-5 ruling 6 / 2026-11-17 ruling 2: the master-role node that lifts the hashman notes; a placeholder
+    kind = REAL["nodes"]["puppetserver"]
+    assert kind["status"] == "planned" and kind["capabilities"] == ["server", "puppet-server"]
+
 @pytest.mark.parametrize("caps", [["ad-dc", "domain-controller"], []])
 def test_capabilities_outside_the_known_set_are_refused(tmp_path, caps):
     data = copy.deepcopy(REAL)
