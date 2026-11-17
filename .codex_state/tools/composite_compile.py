@@ -20,6 +20,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 TOOLS = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS.parent))
+sys.path.insert(0, str(TOOLS))  # nodes.py (the default node for composites)
 HARNESS = TOOLS / "test_class.sh"
 COMPOSITES = TOOLS / "compile" / "composites.txt"
 
@@ -48,8 +49,11 @@ def judge(expect: str, rc: int, output: str) -> tuple[bool, str]:
 def compile_only(classes: list[str], facts: str = "debian", defaults: bool = False, deploy: bool = False) -> tuple[int, str]:
     # Composites declare exactly what production declares (--no-expand): required_base is a test-node
     # projection and would add classes production never declares beside these.
-    argv = [str(HARNESS), "--compile-only", "--facts", facts] + (["--defaults"] if defaults else ["--no-expand"]) + \
-        [f"puppet_infrastructure::{c}" for c in classes]
+    # The facts are synthetic (--facts), so the lab node is only the compile's certname: always the inventory's
+    # default node, never each class's own (a composite may mix classes tested on different nodes, 2026-11-17).
+    import nodes  # noqa: PLC0415
+    argv = [str(HARNESS), "--node", nodes.load()["default"], "--compile-only", "--facts", facts] + \
+        (["--defaults"] if defaults else ["--no-expand"]) + [f"puppet_infrastructure::{c}" for c in classes]
     env = dict(os.environ, SKIP_DEPLOY="0" if deploy else "1")
     proc = subprocess.run(argv, capture_output=True, text=True, env=env, stdin=subprocess.DEVNULL, timeout=600)
     return proc.returncode, proc.stdout + proc.stderr

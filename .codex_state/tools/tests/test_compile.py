@@ -118,3 +118,18 @@ def test_filter_withholds_unparseable_input_on_the_master():
 def test_filter_empty_target_exit_code_on_the_master():
     proc = run_filter(json.dumps({"tags": [], "classes": [], "resources": []}), "puppet_infrastructure::a")
     assert proc.returncode == 3
+
+
+def test_composites_compile_on_the_default_node_whatever_the_classes_lab_nodes(monkeypatch):
+    # 2026-11-17: user_kde_lock_screen moved to kubuntu; the meaningful_desktop composite mixes it with default-node
+    # classes. The facts are synthetic, so the compile names the inventory's default node explicitly.
+    seen = {}
+
+    def fake_run(argv, **kw):
+        seen["argv"] = argv
+        return subprocess.CompletedProcess(argv, 0, "COMPILE OK\n", "")
+    monkeypatch.setattr(cc.subprocess, "run", fake_run)
+    cc.compile_only(["user_kde_lock_screen", "packages_base"], "debian")
+    argv = seen["argv"]
+    assert argv[1:3] == ["--node", "ubuntu"] and argv[3] == "--compile-only"
+    assert argv[-2:] == ["puppet_infrastructure::user_kde_lock_screen", "puppet_infrastructure::packages_base"]
