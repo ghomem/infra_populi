@@ -1,0 +1,60 @@
+{
+ "class": "user_samba",
+ "role": "author",
+ "at": "20261117T005906Z",
+ "runner": "b6e4053",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "7abc68f346c5c25e7d39d965a223e2de68bcfa074bd60ee4b24f3b66271f4826",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "user-created-with-split-name",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /var/tmp/p8test_samba_standin/users: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "samba-hash-set-for-the-user",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /var/tmp/p8test_samba_standin/hash.p8testuser: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "efined content as '{sha256}228a0275aa6dd182a0d0a275c09fdfc6a5f6d33392c0dc7936c8e5deae1f68dd'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::User_samba[p8testuser]/Exec[create zentyal user: p8testuser]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::User_samba[p8testuser]/Exec[set p8testuser samba hash]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 0.12 seconds\u001b[0m\nRUN1_EVENTS: 7 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794877190'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.05 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::user_samba: 2 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::User_samba[p8testuser]\n  Exec[create zentyal user: p8testuser]\n  Exec[set p8testuser samba hash]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP user_samba 41ee0fdbe964\n"
+ },
+ "applied": [
+  {
+   "id": "user-created-with-split-name",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser P8 Testuser\n",
+   "stderr": ""
+  },
+  {
+   "id": "samba-hash-set-for-the-user",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "IgBQADgAdABlAHMAdAB1AHMAZQByACEAMgAwADIANgAiAA==\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.2,
+ "node": "ubuntu",
+ "duration_s": 45.1
+}
