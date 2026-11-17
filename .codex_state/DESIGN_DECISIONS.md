@@ -1474,3 +1474,16 @@ snapshot list, record.
   `https://localhost:8140/status/v1/simple` = running. The health check's real command and parsing are exercised
   without a 2 GB puppetserver.
 - **Why:** both real runs failed after the take (v4 at the health check, v5 at the UUID lookup).
+
+## 2026-11-17 — linux_policies_user: first File/File_line expected run-2 events (batch 7; for HQ acceptance)
+- Evidence run of the unmodified baseline define (fresh node, log .codex_state/logs/linux_policies_user.*.log, run-2
+  report read on the node): run 2 changes `Exec[Execute linux policies for: p8testuser]` (no guard; ruled at checkpoint
+  2) AND `File[<localdir>/linux-policies/TMP/p8testuser.sh.tmp]` plus both `File_line[...sh.tmp_0/_1]`, at debug log
+  level. `tidy` skips a file the catalog manages, so the TMP file persists; each run File resets it to the header and
+  file_line re-appends the policy lines. Baseline comment linux_policies_user.pp:35-37 states the intent ("the agent
+  will report every time that this file changed because this file is generated dinamically").
+- So the ruled session guard alone cannot make the define GREEN. Applied the 2026-11-10 mechanism (plan
+  expected_run2_events + header justification, reviewer verifies): `File[*/linux-policies/TMP/*.sh.tmp];
+  File_line[*/linux-policies/TMP/*.sh.tmp_*]`, the same basis as Exec[apt_update] and Notify (upstream design that
+  reports a change every run). New resource kinds for the mechanism: listed in the batch-7 report for HQ acceptance.
+- class_rulings.txt gains the exact form of checkpoint-2 ruling 2's guard (absolute paths; no path parameter needed).
