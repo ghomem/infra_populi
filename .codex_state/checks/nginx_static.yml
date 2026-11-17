@@ -46,21 +46,29 @@ checks:
         test "$a" = "$b" && echo same-content
     expect: {rc: 0, stdout: "^same-content$"}
 
+  # 2026-11-17 authoring correction (Phase 3 review FAIL, 20261117T015005Z): run 1 asked for a MISSING path
+  # (/p8/phase3), which the domain's own server also answers 404, so the 404 was not attributable to the default
+  # server; its mismatch varied the Host AND the path, and claimed `/` serves content (it is 403: no index.html,
+  # autoindex off). Now both probes request the same EXISTING www_root file and only the Host varies.
   - id: other-hosts-get-404
-    what: the default server (server_default_create true, redirect_default false) answers any other Host with 404
+    what: the default server (server_default_create true, redirect_default false) answers any other Host with 404, even for a file that exists in www_root
     control: negative
     derived_from:
       - {path: manifests/nginx_static_domain.pp, lines: "148-149", text: "true    : { $server_default_ensure = 'present' }"}
       - {path: manifests/nginx_static_domain.pp, lines: "207-212", text: "$default_str = '404'"}
       - {path: manifests/nginx_static_domain.pp, lines: "236-245", text: "listen_options      => 'default_server',"}
     probe: |
-      curl -s -o /dev/null --max-time 5 -w '%{http_code}\n' -H 'Host: p8test-other.example.com' http://127.0.0.1/p8/phase3
+      f=$(find /var/www/html -maxdepth 1 -type f -printf '%f\n' 2>/dev/null | sort | head -1)
+      test -n "$f" || { echo "no file in www_root"; exit 1; }
+      curl -s -o /dev/null --max-time 5 -w '%{http_code}\n' -H 'Host: p8test-other.example.com' "http://127.0.0.1/$f"
     mismatch:
       varies: >-
-        the Host (p8test.example.com, the domain's own server): it serves www_root, so the 404 expectation must fail
-        (the request path is the document root, which exists)
+        only the Host (p8test.example.com, the domain's own server), same existing file: that server serves it (200),
+        so the 404 expectation must fail
       probe: |
-        curl -s -o /dev/null --max-time 5 -w '%{http_code}\n' -H 'Host: p8test.example.com' http://127.0.0.1/
+        f=$(find /var/www/html -maxdepth 1 -type f -printf '%f\n' 2>/dev/null | sort | head -1)
+        test -n "$f" || { echo "no file in www_root"; exit 1; }
+        curl -s -o /dev/null --max-time 5 -w '%{http_code}\n' -H 'Host: p8test.example.com' "http://127.0.0.1/$f"
     expect: {rc: 0, stdout: "\\A404\\n\\Z"}
 
   - id: package-default-site-removed
