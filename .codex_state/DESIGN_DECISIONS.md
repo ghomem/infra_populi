@@ -1608,3 +1608,29 @@ snapshot list, record.
   address (the probe host rule is unchanged).
 - **Batch-long sleep inhibitor:** the harness and phase3 runs already held one. Batch 8 also held one for its whole
   length, after the 09:20–11:57 suspend left the master's clock 2 h 26 min behind.
+
+## 2026-11-17 — HQ batch-8 ruling 4: lab clocks
+- **Why the master did not correct itself:**
+  - It has no VirtualBox guest time service. The kernel's vboxguest module is loaded, but VBoxService is not installed.
+  - systemd-timesyncd was its only clock discipline. Its poll interval had backed off to the 34 min 8 s maximum.
+  - A laptop suspend pauses the VM, and the guest's clock and its timers pause with it. After the 09:20–11:57 suspend the
+    master's next poll was still up to 34 min of guest time away. I restarted timesyncd 7 min after the resume.
+- **Reproduced on p8lab-ubuntu2.** I paused it for 300 s with a new `lab_vm.sh pause <p8lab-vm> <seconds>`, the same
+  thing a suspend does to a VM. Its clock came back exactly 300.0 s behind the laptop's, which is the master's failure
+  mode in small.
+- **Fix:** master_fixtures.sh has a `clock` section, a timesyncd drop-in `PollIntervalMinSec=32` / `PollIntervalMaxSec=64`
+  (idempotent; it restarts timesyncd only on change).
+  - On p8lab-ubuntu2 with the same drop-in: after the 300 s pause the clock stepped back to +0.2 s within 65 s.
+  - Applied to the master: CHANGED, then OK on the second run. Offset +0.08 s. NTP traffic stays negligible, one query a
+    minute.
+  - The p8lab nodes and puppet8node boot from offline snapshots for every run, so they start with the host's time.
+    Their check is below.
+- **The lab refuses skewed clocks:** clock_check.py reads `date -u +%s.%N` over ssh and compares it with the laptop
+  clock's midpoint around the call. Half the round trip counts in the host's favour. The limit is 5 s
+  (P8_CLOCK_MAX_SKEW).
+  - `lab_lock.sh take` refuses while the master is off, so no harness, revert or phase3 run starts.
+  - revert_node.sh fails when the restored node is off.
+  - test_class.sh refuses to run the agent on an off node; this covers a run without --revert-first.
+  - A clock that cannot be read is refused too.
+- **Tests:** 13 (clock_check, lock, revert, harness, the master fixture, lab_vm pause). The fake lab answers the clock
+  probe with the current time and leaves it out of the call log by default.

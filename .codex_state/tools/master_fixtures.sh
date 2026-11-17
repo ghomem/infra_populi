@@ -17,6 +17,10 @@
 #          star.example.com (the lab Hiera's example hashman::sslprefix). The CA key is discarded.
 #   hiera  lab fixture keys the manifests look up and the lab Hiera lacks, in data/p8test_fixtures.yaml, as
 #          a hierarchy level AFTER Common (it can never override an existing key).
+#   clock  (HQ 2026-11-17 batch-8 ruling 4) systemd-timesyncd polls every 32-64 s instead of backing off to 34 min.
+#          The master has no VirtualBox guest time service, and a laptop suspend pauses the VM with its clock: after
+#          the resume, the next poll was up to 34 min of guest time away, and the master ran 2 h 26 min behind until
+#          a manual timesyncd restart. With a 64 s ceiling it steps itself within about a minute of a resume.
 # Every value is obviously fake (p8test, .invalid, example.com) or a stock OpenVox path (the default ssldir);
 # nothing is production-derived.
 #
@@ -33,7 +37,7 @@ readonly AGENT_GEM="/opt/puppetlabs/puppet/bin/gem"
 readonly EXTRA_DIR="/etc/puppetlabs/code/p8test_extra_files"
 readonly ENV_DIR="/etc/puppetlabs/code/environments/production"
 
-usage() { echo "Usage: $0 [lint|extra_files|pki|hiera|all]" >&2; exit 2; }
+usage() { echo "Usage: $0 [lint|extra_files|pki|hiera|clock|all]" >&2; exit 2; }
 
 section_lint() {
   ssh -T "$MASTER_HOST" "sudo -n bash -s -- '$AGENT_GEM' '$PUPPET_LINT_VERSION'" <<'REMOTE'
@@ -155,11 +159,34 @@ if [[ -n "$changed" ]]; then echo "CHANGED hiera: ${changed} ($(grep -c '::' "$d
 REMOTE
 }
 
+section_clock() {
+  ssh -T "$MASTER_HOST" "sudo -n bash -s" <<'REMOTE'
+set -euo pipefail
+conf=/etc/systemd/timesyncd.conf.d/p8-lab.conf
+want="# Managed by infra_populi .codex_state/tools/master_fixtures.sh (section clock): poll often enough that a VM paused
+# by a laptop suspend steps its clock within about a minute of the resume (HQ 2026-11-17 batch-8 ruling 4).
+[Time]
+PollIntervalMinSec=32
+PollIntervalMaxSec=64"
+if [[ "$(cat "$conf" 2>/dev/null)" != "$want" ]]; then
+  install -d -m 0755 "$(dirname "$conf")"
+  printf '%s\n' "$want" | install -m 0644 /dev/stdin "$conf"
+  systemctl restart systemd-timesyncd
+  echo "CHANGED clock: ${conf} written, systemd-timesyncd restarted"
+else
+  echo "OK clock: ${conf} present"
+fi
+timedatectl show-timesync -p PollIntervalMaxUSec -p ServerName
+timedatectl show -p NTPSynchronized
+REMOTE
+}
+
 case "${1:-all}" in
   lint) section_lint ;;
   extra_files) section_extra_files ;;
   pki) section_pki ;;
   hiera) section_hiera ;;
-  all) section_lint; section_extra_files; section_pki; section_hiera ;;
+  clock) section_clock ;;
+  all) section_lint; section_extra_files; section_pki; section_hiera; section_clock ;;
   *) usage ;;
 esac

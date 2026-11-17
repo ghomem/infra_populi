@@ -49,8 +49,8 @@ def test_the_default_node_is_unchanged(lab):
 
 
 def test_a_planned_node_is_refused_before_anything_runs(lab):
-    proc = lab.run([SCRIPT, "--node", "kubuntu", "--revert-first", "puppet_infrastructure::dns_client"])
-    assert proc.returncode == 1 and "No usable lab node 'kubuntu'" in proc.stderr
+    proc = lab.run([SCRIPT, "--node", "dc", "--revert-first", "puppet_infrastructure::dns_client"])
+    assert proc.returncode == 1 and "No usable lab node 'dc'" in proc.stderr
     assert lab.calls("VBoxManage") == [] and lab.calls("rsync") == []
 
 

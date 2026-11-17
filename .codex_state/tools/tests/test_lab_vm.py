@@ -96,7 +96,7 @@ def test_clone_refusals_change_nothing(vms, args, text):
 @pytest.mark.parametrize("args", [
     ("modify", NODE, "--memory", "4096"), ("modify", MASTER, "--memory", "4096"), ("start", "RHEL9"),
     ("stop", NODE), ("stop", MASTER, "--hard"), ("snapshot", NODE, "take", "X"), ("snapshot", MASTER, "restore", "X"),
-    ("modify", "kubuntu-desktop", "--cpus", "2"),
+    ("modify", "kubuntu-desktop", "--cpus", "2"), ("pause", NODE, "60"), ("pause", MASTER, "60"),
 ])
 def test_non_lab_vms_are_refused_for_every_verb(vms, args):
     assert refused(vms.run(*args), "acts on p8lab-* VMs only")
@@ -143,6 +143,24 @@ def test_stop_acpi_then_hard(vms, lab):
     assert refused(vms.run("stop", "p8lab-busy"), "did not power off within")
     proc = vms.run("stop", "p8lab-busy", "--hard")
     assert proc.returncode == 0 and lab.state()["vms"]["p8lab-busy"]["state"] == "poweroff"
+
+
+def test_pause_pauses_a_running_lab_vm_then_resumes_it(vms, lab):
+    proc = vms.run("pause", "p8lab-busy", "120")
+    assert proc.returncode == 0 and "paused p8lab-busy for 120s and resumed it" in proc.stdout
+    ops = [c[1:4] for c in vms.mutating()]
+    assert ops == [["controlvm", "p8lab-busy", "pause"], ["controlvm", "p8lab-busy", "resume"]]
+    assert ["sleep", "120"] in lab.calls("sleep")
+
+
+@pytest.mark.parametrize("args,text", [
+    (("pause", "p8lab-rhel9", "60"), "pause a running VM only"),
+    (("pause", "p8lab-busy", "0"), "between 1 and 3600"),
+    (("pause", "p8lab-busy", "3601"), "between 1 and 3600"),
+])
+def test_pause_refusals_change_nothing(vms, args, text):
+    assert refused(vms.run(*args), text)
+    assert vms.mutating() == []
 
 
 def test_snapshots_offline_only_and_no_delete(vms, lab):

@@ -820,6 +820,8 @@ main() {
     echo "NODE_FRESH: no (${stale_reason}); record_green.sh will refuse this run's GREEN — use --revert-first" >&2
   fi
 
+  # HQ 2026-11-17 batch-8 ruling 4: the node's clock agrees with the laptop's (the master's is checked at lock time).
+  "${LOCAL_REPO}/.codex_state/tools/clock_check.py" "$NODE_HOST" || die "the node's clock is off the laptop's; not running the agent"
   HARNESS_RX_START="$(node_nic1_rx)"
   echo "==> Running puppet agent (run 1 may change; run 2 must exit 0 with no events; timeout ${AGENT_TIMEOUT_SECONDS}s each)"
   local out1 out2 rc1 rc2 offending run1_events

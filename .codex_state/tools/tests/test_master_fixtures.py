@@ -32,16 +32,16 @@ def remotes():
 
 
 def test_all_runs_every_section_in_order(lab):
-    for name in ("hiera", "pki", "extra_files", "lint"):
+    for name in ("clock", "hiera", "pki", "extra_files", "lint"):
         lab.world["ssh"].insert(0, {"match": rf"OK {name}\b|{name}", "stdout": f"OK {name}: stub\n"})
     proc = lab.run([SCRIPT, "all"])
     assert proc.returncode == 0, proc.stderr
-    assert len(lab.calls("ssh")) == 4
+    assert len(lab.calls("ssh")) == 5
     assert lab.calls("VBoxManage") == []  # never acts on the master VM
 
 
 def test_every_section_has_an_ok_branch_and_changed_report():
-    for name, body in zip(("lint", "extra_files", "pki", "hiera"), remotes()):
+    for name, body in zip(("lint", "extra_files", "pki", "hiera", "clock"), remotes(), strict=True):
         assert f"OK {name}" in body and f"CHANGED {name}" in body, name
 
 
@@ -94,3 +94,9 @@ def test_hiera_fixture_carries_the_rsyslog_base_ssldir_for_an_included_rsyslog_b
     # rsyslog_server includes rsyslog_base without parameters (2026-11-16, batch 5): the lab binds the ssldir by Hiera
     hiera = next(r for r in remotes() if "p8test_fixtures.yaml" in r)
     assert "\npuppet_infrastructure::rsyslog_base::ssldir_override: '/etc/puppetlabs/puppet/ssl'\n" in hiera
+
+
+def test_the_clock_section_caps_the_poll_interval_and_restarts_only_on_change():
+    clock = remotes()[4]
+    assert "PollIntervalMaxSec=64" in clock and "/etc/systemd/timesyncd.conf.d/" in clock
+    assert clock.index('!= "$want"') < clock.index("systemctl restart systemd-timesyncd") < clock.index("else")

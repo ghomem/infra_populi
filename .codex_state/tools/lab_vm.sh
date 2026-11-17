@@ -13,6 +13,8 @@
 #                                    (MemAvailable minus the VM's memory), or unless the VM has the lab network:
 #                                    NIC1 NAT with the host resolver, NIC2 host-only vboxnet0 (HQ NAT review G)
 #   lab_vm.sh stop <p8lab-name> [--hard]   ACPI with a timeout (default), or a hard poweroff
+#   lab_vm.sh pause <p8lab-name> <seconds>  pause a running VM for 1-3600 s, then resume it (resumed on any exit): what a
+#                                    laptop suspend does to a VM, for testing a guest's clock recovery (HQ 2026-11-17)
 #   lab_vm.sh snapshot <p8lab-name> take <NAME> [--description TEXT]   powered-off VM only (offline snapshots)
 #   lab_vm.sh snapshot <p8lab-name> restore <NAME>                      powered-off VM only
 #
@@ -27,7 +29,7 @@ readonly ACPI_TIMEOUT_SECONDS="${ACPI_TIMEOUT_SECONDS:-180}"
 MEMINFO="${P8_MEMINFO:-/proc/meminfo}"
 
 refuse() { echo "LAB_VM REFUSED: $*" >&2; exit 1; }
-usage() { sed -n '5,23p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
+usage() { sed -n '5,22p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
 
 lab_name() { [[ "$1" =~ ^p8lab-[a-z0-9][a-z0-9-]{0,40}$ ]]; }
 vm_exists() { VBoxManage showvminfo "$1" --machinereadable >/dev/null 2>&1; }
@@ -133,6 +135,19 @@ case "$verb" in
       done
     fi
     echo "LAB_VM stopped ${name}"
+    ;;
+  pause)
+    [[ $# -eq 2 && "$2" =~ ^[0-9]+$ ]] || usage
+    name="$1" seconds="$2"
+    target "$name"
+    ((seconds >= 1 && seconds <= 3600)) || refuse "pause between 1 and 3600 seconds (got ${seconds})"
+    [[ "$(vm_state "$name")" == "running" ]] || refuse "'$name' is $(vm_state "$name"); pause a running VM only"
+    VBoxManage controlvm "$name" pause || refuse "VBoxManage controlvm pause failed"
+    trap 'VBoxManage controlvm "$name" resume' EXIT
+    sleep "$seconds"
+    trap - EXIT
+    VBoxManage controlvm "$name" resume || { echo "LAB_VM ERROR: '$name' did not resume; resume it by hand" >&2; exit 3; }
+    echo "LAB_VM paused ${name} for ${seconds}s and resumed it"
     ;;
   snapshot)
     [[ $# -ge 3 ]] || usage

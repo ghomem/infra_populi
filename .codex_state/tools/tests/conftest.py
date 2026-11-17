@@ -96,6 +96,8 @@ if name in ("ssh", "scp", "rsync"):
     stdin = sys.stdin.read() if world.get("read_stdin") and not sys.stdin.isatty() else ""
     for rule in world.get(name, []):
         if re.search(rule["match"], line + "\n" + stdin, re.S):
+            if "clock" in rule:  # clock_check.py: this host's `date -u +%s.%N`, off by rule["clock"] seconds
+                import time; print(f"{time.time() + rule['clock']:.9f}"); sys.exit(0)
             seq = rule.get("outputs")
             if seq:  # successive calls consume successive outputs
                 idx = rule.setdefault("_i", 0)
@@ -153,6 +155,8 @@ class FakeLab:
                 {"match": r"ip -br addr", "stdout": "enp0s8           UP             192.168.56.20/24\n"},
                 {"match": r"getent hosts puppet8master\.example\.com",
                  "stdout": "192.168.56.10   puppet8master.example.com puppet8master\n"},
+                # clock_check.py (HQ 2026-11-17 batch-8 ruling 4): every host's clock agrees with the laptop's
+                {"match": r"date -u \+%s\.%N", "clock": 0},
             ],
         }
 
@@ -178,9 +182,12 @@ class FakeLab:
         return subprocess.run(argv, capture_output=True, text=True, env=env, timeout=60,
                               stdin=subprocess.DEVNULL, **kw)
 
-    def calls(self, name=None):
+    def calls(self, name=None, clock=False):
+        """What the tool under test asked the lab to do. clock_check.py's `date` probes (the lab lock's and the
+        revert's own clock check, HQ 2026-11-17 batch-8 ruling 4) are left out unless clock=True."""
         out = [json.loads(line) for line in self.calls_path.read_text().splitlines() if line]
-        return [c for c in out if name is None or c[0] == name]
+        return [c for c in out if (name is None or c[0] == name)
+                and (clock or not (c[0] == "ssh" and c[-1] == "date -u +%s.%N"))]
 
     def state(self):
         return json.loads(self.world_path.read_text())

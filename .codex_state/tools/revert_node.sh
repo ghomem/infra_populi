@@ -259,6 +259,9 @@ ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" 'ip -br addr' 2>/dev/null | grep -q " 
 resolved="$(ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" "getent hosts ${MASTER_SERVICE_HOST}")" || resolved=""
 [[ "${resolved%% *}" == "$MASTER_HOSTONLY_IP" ]] ||
   fail "The node resolves ${MASTER_SERVICE_HOST} to '${resolved%% *}', expected ${MASTER_HOSTONLY_IP}."
+# HQ 2026-11-17 batch-8 ruling 4: the node's clock agrees with the laptop's (a suspend can leave a VM behind).
+"${TOOLS_DIR}/clock_check.py" "$NODE_SSH_ALIAS" >/dev/null ||
+  fail "The node's clock is off the laptop's (CLOCK_SKEW above); not handing it to a run."
 t_ssh="$(now_ms)"
 
 if ! node_hostname="$(ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" hostname)"; then

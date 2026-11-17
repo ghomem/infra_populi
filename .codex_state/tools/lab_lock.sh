@@ -5,7 +5,8 @@
 # advisor compile-only for the next class rewrote the node file in the middle of a reviewer's harness apply.
 #
 #   lab_lock.sh take <owner-pid> <description...>   exit 0 = held by <owner-pid>; 1 = held by another live process
-#                                                    (its line on stderr). A holder that is no longer alive is replaced.
+#                                                    (its line on stderr), or a lab clock is off (below). A holder that
+#                                                    is no longer alive is replaced.
 #   lab_lock.sh release <owner-pid>                  drops the lock if <owner-pid> holds it
 #   lab_lock.sh holder                               prints the live holder's line, if any
 #
@@ -13,7 +14,10 @@
 # separate mutex: no file descriptor stays open in the holder, so long-lived children (an ssh ControlMaster, a VBoxSVC
 # started by VBoxManage) cannot keep the lock alive after the run. Callers export P8_LAB_LOCKED=1 so their children
 # (the revert inside a --revert-first harness, the harness inside a phase3 run) do not try to take it again.
-# P8_LAB_LOCK overrides the lock path (tests).
+# Clocks (HQ 2026-11-17 batch-8 ruling 4): `take` refuses while the master's clock is more than a few seconds off the
+# laptop's (clock_check.py; a laptop suspend left it 2 h 26 min behind). The node's clock is checked where the node is
+# up: revert_node.sh after its boot, test_class.sh before run 1.
+# P8_LAB_LOCK overrides the lock path, P8_CLOCK_HOSTS the hosts checked at take (tests).
 set -euo pipefail
 
 LOCK="${P8_LAB_LOCK:-${HOME}/.cache/infra_populi/lab.lock}"
@@ -32,6 +36,11 @@ case "${1:-}" in
       cat "$LOCK" >&2
       exit 1
     fi
+    read -ra clock_hosts <<<"${P8_CLOCK_HOSTS-puppet8master}"
+    if [[ ${#clock_hosts[@]} -gt 0 ]] && ! "$(dirname "$(readlink -f "$0")")/clock_check.py" "${clock_hosts[@]}" >/dev/null; then
+      echo "the lab's clocks disagree with the laptop's (above); not taking the lab lock" >&2
+      exit 1
+    fi
     printf '%s %s %s\n' "$pid" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >"$LOCK"
     ;;
   release)
@@ -44,7 +53,7 @@ case "${1:-}" in
     if alive; then cat "$LOCK"; fi
     ;;
   *)
-    sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//' >&2
+    sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//' >&2
     exit 2
     ;;
 esac
