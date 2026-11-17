@@ -255,7 +255,9 @@ def test_expected_run2_events_parse(gen):
     # HQ batch-7 ruling 1: each resource named exactly (the p8testuser fixture's titles), no glob
     tmp = "/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp"
     assert rows["linux_policies_user"].expected_run2_events == (f"File[{tmp}]", f"File_line[{tmp}_0]",
-                                                                f"File_line[{tmp}_1]")
+                                                                f"File_line[{tmp}_1]",
+                                                                # with a desktop session: the policies run every agent run
+                                                                "Exec[Execute linux policies for: p8testuser]")
 
 
 
