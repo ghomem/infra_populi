@@ -1,0 +1,31 @@
+{
+ "class": "openvpn_nm_connection",
+ "at": "20261117T220851Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok"
+ },
+ "evidence": [
+  "profile-file-root-only: baseline openvpn_nm_connection.pp:31-34 declares file /etc/NetworkManager/system-connections/${connection_name} with mode 0600, owner root, group root; stat on .../p8test-vpn expecting 'root root 600' tests exactly that for title p8test-vpn",
+  "vpn-settings-from-the-parameters: connection_file.erb:8-23 renders connection-type=password, dev-type=tap, remote=@remote, cipher=@cipher, username=@vpn_username, ca=@ca_crt; under the params fixture (remote 203.0.113.50, vpn_username p8testuser, ca_crt /etc/p8test-vpn/ca.crt, cipher at its .pp:15 default AES-256-CBC) the expected sorted vpn.data keys are exactly those values; mismatch varies only the connection name to one with no profile, which must change nmcli's verdict",
+  "uuid-is-the-stable-version-5-uuid-of-the-name: .pp:29 seeds the UUID with $connection_name; the ruled upstream_defects.md change replaces fqdn_rand_uuid with stdlib fqdn_uuid(same seed); I computed uuid5(NAMESPACE_DNS,'p8test-vpn') = df2d3b4d-5aa3-564f-92d4-fd9bac9644f9, the expected value for both the file's uuid= line (erb:3) and nmcli connection.uuid; mismatch changes only the nmcli connection name"
+ ],
+ "review_s": 65.1,
+ "check_file_sha256": "1249185ddbf4bc1dbac65108d7e9223c9505e5196dc58fa798d8f72eeadace3c",
+ "reviewer_result": "20261117T220746Z-reviewer",
+ "author_result": "20261117T220618Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "boot_id": "4ee79190-2048-45c0-8b5b-b5d17b94b74d",
+   "boot_id_at_end": "4ee79190-2048-45c0-8b5b-b5d17b94b74d",
+   "fresh": true
+  }
+ }
+}
