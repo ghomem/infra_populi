@@ -1,0 +1,31 @@
+{
+ "class": "nginx_base",
+ "at": "20261117T211114Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok"
+ },
+ "evidence": [
+  "a-dynamic-module-is-loaded-once-and-nginx-runs: baseline line 86 (nginx_cfg_prepend include '/etc/nginx/modules-enabled/*') declares that nginx.conf includes the enabled dynamic modules. Upstream's original module (puppet-nginx 0.13.0, line 42) had no include of its own, so the baseline produced exactly one include. The probe enables one module (libnginx-mod-stream) so that the include matters. The effect counts the enabled module file, then counts the include lines in nginx.conf (expects 1), then checks that nginx -t passes and that the service is active. mutates declares the action's whole change (package install + nginx restart). The action's own output goes to /dev/null, so the evidence is its result on disk and in the service. The action is a test stimulus for the include, not a command the line runs. That fits the header's batch-8 ruling-1 rationale.",
+  "dh-group-2048-bits-not-world-readable (line 36): $dh_params_bits = 2048 is the default under the defaults fixture. openssl dhparam -text reporting '(2048 bit)' tests exactly that value.",
+  "dh-group-2048-bits-not-world-readable (lines 140-143): the exec writes $base_dh_params=/etc/nginx/dhparams.pem with 'openssl dhparam -out ... 2048 && chmod u=rw,g=r,o=' (creates guard on the same path). stat '%a' == 640 is u=rw,g=r,o=, and the bit count is checked on that same file."
+ ],
+ "review_s": 124.7,
+ "check_file_sha256": "b8c763d14d9a153235eb262a368312084bfcb58d961c9b966cba46d8f1fd22bb",
+ "reviewer_result": "20261117T210910Z-reviewer",
+ "author_result": "20261117T210715Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "80b13757-9c66-4ad5-bd06-70185ce5ec1c",
+   "boot_id_at_end": "80b13757-9c66-4ad5-bd06-70185ce5ec1c",
+   "fresh": true
+  }
+ }
+}
