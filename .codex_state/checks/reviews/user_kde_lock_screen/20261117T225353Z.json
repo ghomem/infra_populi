@@ -1,0 +1,31 @@
+{
+ "class": "user_kde_lock_screen",
+ "at": "20261117T225353Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok"
+ },
+ "evidence": [
+  "applied-in-the-session-and-reloaded-live: configure_lock_screen.sh:102-105 logs 'KDE screensaver DBus service unavailable' only when qdbus configure fails after settings changed; with lines 15-17 (the 'User <u> loged in' note only when who lists the user) the probe's logged-in-run + zero fallback notes tests exactly that the session run applied and reloaded live",
+  "lock-settings-in-the-users-kscreenlockerrc (user_kde_lock_screen.pp:5-6): defaults timeout 5 / grace 0, params fixture is {} so the expected Timeout=5 and LockGrace=0 are what the code produces; Autolock/LockOnResume=true come from the script's kwriteconfig5 writes (lines 66-95)",
+  "lock-settings-in-the-users-kscreenlockerrc (user_kde_lock_screen.pp:14-18): exec runs configure_lock_screen.sh <timeout> <grace> as user => $title (p8testuser), so ~/.config/kscreenlockerrc is written by and owned by p8testuser with those values; probe checks owner and the four [Daemon] keys"
+ ],
+ "review_s": 125.2,
+ "check_file_sha256": "d5df56df1f2bee2d3a3b327768d7d4ecfb0b3fbfe6a1f81898362cf5f1781e02",
+ "reviewer_result": "20261117T225148Z-reviewer",
+ "author_result": "20261117T224947Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "9b907b3e-90a6-4f82-9d65-0c44790aa5df",
+   "boot_id_at_end": "9b907b3e-90a6-4f82-9d65-0c44790aa5df",
+   "fresh": true
+  }
+ }
+}
