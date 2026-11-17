@@ -1,0 +1,31 @@
+{
+ "class": "linux_policies_user",
+ "at": "20261117T231942Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok"
+ },
+ "evidence": [
+  "policies-run-on-an-agent-run-while-logged-in (manifests/linux_policies_user.pp:71-74): the baseline exec runs ${linux_policies_dir}/COMMON/execute_linux_policies_user.sh with caller 'puppet-agent' as $username (p8testuser); the runner template sets SYSLOG_TAG=linuxint-policies-${CALLER}, so the probe's tag linuxint-policies-puppet-agent and the 'Executing .../USER/p8testuser.sh' line are what an agent run of this exec produces; the second probe line (puppet_header.sh.erb:9-10 'User p8testuser loged in') is what the header logs with the session up (note: that line is also emitted by the autostart login run, so it is not agent-run-specific; the first line carries the agent-run claim)",
+  "user-policy-script-composed (manifests/linux_policies_user.pp:46-51): one file_line per element of $policies with line => $policy into the tmp file, copied to USER/p8testuser.sh (lines 26, 58-63: owner/group $username, mode 0700); with the params fixture's two policies 'true # p8test policy line N', the expected owner 'p8testuser p8testuser 700', header '#!/bin/bash' + '. /opt/puppet-infrastructure/linux-policies/COMMON/common' (puppet_header.sh.erb:1,4) and the two policy lines as the tail are what the code produces",
+  "policies-run-on-an-agent-run-while-logged-in (templates/linux-policies/execute_linux_policies_user.sh.erb:9-12): SYSLOG_TAG=\"linuxint-policies-${CALLER}\" and, when USER/<whoami>.sh is executable, logger -t ${SYSLOG_TAG} \"Executing ${LINUX_POLICIES_SCRIPT}\"; with CALLER=puppet-agent, whoami=p8testuser and localdir /opt/puppet-infrastructure the exact line the probe greps for (-x) is 'Executing /opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh' under tag linuxint-policies-puppet-agent; the expectation matches the baseline"
+ ],
+ "review_s": 166.6,
+ "check_file_sha256": "9825bdbf66d53a4356ac2b541cad5ca1cd687012e04070528676f70ff321464f",
+ "reviewer_result": "20261117T231656Z-reviewer",
+ "author_result": "20261117T231355Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "fe4dbe4d-eb8b-46e9-8891-222049f9248f",
+   "boot_id_at_end": "fe4dbe4d-eb8b-46e9-8891-222049f9248f",
+   "fresh": true
+  }
+ }
+}
