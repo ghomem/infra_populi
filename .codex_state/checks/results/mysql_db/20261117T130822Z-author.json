@@ -1,0 +1,118 @@
+{
+ "class": "mysql_db",
+ "role": "author",
+ "at": "20261117T130822Z",
+ "runner": "420e9fe",
+ "baseline": "874f854 (874f854)",
+ "check_file_sha256": "d1078ea79831d434bc969a76f5eccf55367c28d5aba78730e134a3dcfd5e0044",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "mysql-server-survives-the-define",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "0\ninactive\n",
+   "stderr": "dpkg-query: no packages found matching mysql-server-8.0\ndpkg-query: no packages found matching mysql-client-8.0\n",
+   "ok": true
+  },
+  {
+   "id": "database-created-with-charset-and-collation",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 1: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "users-from-any-host-require-tls",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 1: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "grants-on-the-database",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 1: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "rw-user-logs-in-over-tls",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "pet8node]/Puppet_infrastructure::Mysql_db[p8test_db]/Mysql::Db[p8test_db-ro]/Mysql_user[p8test_ro@%]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Mysql_db[p8test_db]/Mysql::Db[p8test_db-ro]/Mysql_grant[p8test_ro@%/p8test_db.*]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 55.65 seconds\u001b[0m\nRUN1_EVENTS: 22 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794921007'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.72 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::mysql_db: 5 concrete resources (+3 defined-type instances)\n  Puppet_infrastructure::Mysql_db[p8test_db]\n  Mysql::Db[p8test_db-rw]\n  Mysql::Db[p8test_db-ro]\n  Mysql_database[p8test_db]\n  Mysql_user[p8test_rw@%]\n  Mysql_grant[p8test_rw@%/p8test_db.*]\n  Mysql_user[p8test_ro@%]\n  Mysql_grant[p8test_ro@%/p8test_db.*]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP mysql_db db9564c9b7f3\n"
+ },
+ "applied": [
+  {
+   "id": "mysql-server-survives-the-define",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "mysql-client-8.0 install ok installed\nmysql-server-8.0 install ok installed\n0\nactive\n",
+   "stderr": ""
+  },
+  {
+   "id": "database-created-with-charset-and-collation",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "utf8mb3\tutf8mb3_general_ci\n",
+   "stderr": ""
+  },
+  {
+   "id": "users-from-any-host-require-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test_ro\t%\tANY\np8test_rw\t%\tANY\n",
+   "stderr": ""
+  },
+  {
+   "id": "grants-on-the-database",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "GRANT ALL PRIVILEGES ON `p8test_db`.* TO `p8test_rw`@`%`\nGRANT SELECT, SHOW VIEW ON `p8test_db`.* TO `p8test_ro`@`%`\n",
+   "stderr": ""
+  },
+  {
+   "id": "rw-user-logs-in-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test_rw@%\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "only the password (p8test-wrong-password): the server must refuse the login, so the user line must not come back",
+    "rc": 1,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 3,
+ "node": "ubuntu",
+ "duration_s": 108.2
+}
