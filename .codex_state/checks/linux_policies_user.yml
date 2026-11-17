@@ -1,0 +1,54 @@
+# Phase 3 checks for puppet_infrastructure::linux_policies_user (define; required_base filesystem_base,
+# linux_policies_common, user_base p8testuser). It composes <localdir>/linux-policies/USER/<username>.sh from the
+# puppet_header template plus one line per policy, and runs the policy runner as the user (ruled guard: only while the
+# user has a login session). Fixture (params, never committed): username p8testuser, policies two no-op `true` lines.
+class: linux_policies_user
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.4
+  notes: "Wall clock 01:25:46Z to 01:26:11Z 2026-11-17, outside the worktree while the Phase 1 review ran."
+uncovered:
+  - what: the exec applying the policies on an agent run while the user is logged in
+    why: the server node has no login session for p8testuser; the guard's quiet side is checked instead
+    lifted_by: kubuntu
+checks:
+  - id: user-policy-script-composed
+    what: USER/p8testuser.sh is owned by the user (0700) and holds the header, which sources COMMON/common, then the policy lines
+    control: negative
+    derived_from:
+      - {path: manifests/linux_policies_user.pp, lines: "26", text: "$policies_script = \"${linux_policies_dir}/USER/${username}.sh\""}
+      - {path: manifests/linux_policies_user.pp, lines: "46-51", text: "line      => $policy,"}
+      - {path: manifests/linux_policies_user.pp, lines: "58-63", text: "source    => $policies_script_tmp,"}
+      - {path: templates/linux-policies/puppet_header.sh.erb, lines: "4", text: ". <%= @linux_policies_dir %>/COMMON/common"}
+    probe: |
+      f=/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh
+      stat -c '%U %G %a' "$f"; head -1 "$f"
+      grep -c '^\. /opt/puppet-infrastructure/linux-policies/COMMON/common$' "$f"
+      tail -2 "$f"
+    expect: {rc: 0, stdout: "\\Ap8testuser p8testuser 700\\n#!/bin/bash\\n1\\ntrue # p8test policy line 1\\ntrue # p8test policy line 2\\n\\Z"}
+
+  - id: no-policy-run-without-a-session
+    what: with nobody logged in, the agent runs left no policy-runner trace (the exec runs only for a logged-in user)
+    control: invariant
+    why_invariant: the clean node has no linuxint-policies journal entries, and with no session the agent must not add any
+    derived_from:
+      - {path: manifests/linux_policies_user.pp, lines: "70", text: "#Execute the policies on agent run if the user is logged in"}
+      - {path: templates/linux-policies/puppet_header.sh.erb, lines: "8", text: "SYSLOG_TAG='linuxint-policies'"}
+    probe: |
+      journalctl -t linuxint-policies -o cat --no-pager | wc -l
+    expect: {rc: 0, stdout: "\\A0\\n\\Z"}
+
+  - id: script-skips-policies-without-a-session
+    what: >-
+      the exercise: run as the user outside a login session, the composed script logs that the user is not logged in
+      and stops before the policy lines
+    control: negative
+    derived_from:
+      - {path: templates/linux-policies/puppet_header.sh.erb, lines: "9-13", text: "logger -p local1.notice -t $SYSLOG_TAG \"User ${USERNAME} not loged in, skipping policies execution\""}
+    mutates: runs USER/p8testuser.sh once as p8testuser (runuser, no session); it writes one line to the journal
+    probe: |
+      runuser -u p8testuser -- /opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh
+    effect: |
+      journalctl -t linuxint-policies -o cat --no-pager | tail -1
+    expect: {rc: 0, stdout: "\\AUser p8testuser not loged in, skipping policies execution\\n\\Z"}
