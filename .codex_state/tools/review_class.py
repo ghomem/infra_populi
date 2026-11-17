@@ -281,11 +281,15 @@ def node_kind(cls: str) -> str:
 
 
 def node_identities(cls: str) -> tuple[set[str], set[str]]:
-    """(real NIC names, human accounts) on the class's lab node (nodes.yml) — values a fixture must never use."""
+    """(real NIC names, human accounts) on the class's lab node (nodes.yml) — values a fixture must never use.
+    A real NIC is a device-backed interface (/sys/class/net/<n>/device): veths, bridges, taps and dummies a class or a
+    node fixture creates are not (openvpn_server, 2026-11-17: the check ran before the harness's revert and read the
+    previous apply's p8test0 and br0 as real NICs)."""
     import nodes  # noqa: PLC0415
     alias = nodes.select(nodes.load(), cls=cls)["alias"]
     proc = subprocess.run(["timeout", "30", "ssh", alias,
-                           "ls /sys/class/net; echo ---; getent passwd | awk -F: '$3>=1000 && $3<65534 {print $1}'"],
+                           "for n in /sys/class/net/*; do [ -e \"$n/device\" ] && echo \"${n##*/}\"; done; echo ---; "
+                           "getent passwd | awk -F: '$3>=1000 && $3<65534 {print $1}'"],
                           capture_output=True, text=True, stdin=subprocess.DEVNULL)
     if proc.returncode != 0:
         raise RuntimeError(f"cannot read NICs/accounts from {alias}")

@@ -305,3 +305,18 @@ def test_show_reads_a_binary_blob_without_crashing(monkeypatch):
         returncode, stdout = 0, PNG
     monkeypatch.setattr(rc.subprocess, "run", lambda *a, **k: Proc())
     assert rc.show_bytes("HEAD", "files/x.png") == PNG and rc.show("HEAD", "files/x.png") is None
+
+
+
+def test_node_identities_count_device_backed_nics_only(monkeypatch):
+    # 2026-11-17 (openvpn_server): the fixture's veth p8test0 and the class's bridge br0 are not real NICs
+    calls = []
+
+    def fake_run(argv, **kw):
+        calls.append(argv)
+        return type("P", (), {"returncode": 0, "stdout": "enp0s3\nenp0s8\n---\nsalatiel\np8testuser\n"})()
+    import nodes
+    monkeypatch.setattr(nodes, "select", lambda inv, cls=None: {"alias": "puppet8node"})
+    monkeypatch.setattr(rc.subprocess, "run", fake_run)
+    assert rc.node_identities("openvpn_server") == ({"enp0s3", "enp0s8"}, {"salatiel"})
+    assert "/device" in calls[0][-1]
