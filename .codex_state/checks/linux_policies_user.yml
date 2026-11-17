@@ -2,21 +2,27 @@
 # linux_policies_common, user_base p8testuser). It composes <localdir>/linux-policies/USER/<username>.sh from the
 # puppet_header template plus one line per policy, and runs the policy runner as the user (ruled guard: only while the
 # user has a login session). Fixture (params, never committed): username p8testuser, policies two no-op `true` lines.
+# Node kubuntu since 2026-11-17: the set's `session` block logs p8testuser in to Plasma after the apply, then two agent
+# runs (Phase 3 desktop sessions); the policies then run on the agent run (the exec) and at the login (linux_policies_
+# common's XDG autostart entry, composed through required_base).
 class: linux_policies_user
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
-  minutes: 0.4
-  notes: "Wall clock 01:25:46Z to 01:26:11Z 2026-11-17, outside the worktree while the Phase 1 review ran."
-uncovered:
-  - what: the exec applying the policies on an agent run while the user is logged in
-    why: the server node has no login session for p8testuser; the guard's quiet side is checked instead
-    lifted_by: kubuntu
+  minutes: 0.8
+  notes: "Wall clock 01:25:46Z to 01:26:11Z 2026-11-17, outside the worktree while the Phase 1 review ran; session revision 23:10:40Z to 23:11:04Z 2026-11-17 (likewise)."
+session:
+  user: p8testuser
+  desktop: plasma
+  why: the exec runs the policies only on an agent run while the user is logged in, and the autostart entry at a login
 # 2026-11-17 authoring correction (Phase 3 review FAIL, 20261117T012929Z): removed `no-policy-run-without-a-session`.
 # It expected no linuxint-policies journal line after the agent runs, derived from the comment at manifest line 70;
 # the baseline exec (lines 71-75) is unguarded and its script logs "not loged in" on every run, so 0 lines comes from
 # the ruled guard (upstream_defects.md linux_policies_user), not from the baseline. Checks derive from the baseline only.
 checks:
+# 2026-11-17 (node kubuntu, desktop session): removed `script-skips-policies-without-a-session` (the guard's quiet side,
+# run as the user outside a session); with the session up `who` lists p8testuser, so it cannot hold. The two checks
+# below observe the session side, which the 2026-11-17 uncovered note named.
   - id: user-policy-script-composed
     what: USER/p8testuser.sh is owned by the user (0700) and holds the header, which sources COMMON/common, then the policy lines
     control: negative
@@ -32,16 +38,29 @@ checks:
       tail -2 "$f"
     expect: {rc: 0, stdout: "\\Ap8testuser p8testuser 700\\n#!/bin/bash\\n1\\ntrue # p8test policy line 1\\ntrue # p8test policy line 2\\n\\Z"}
 
-  - id: script-skips-policies-without-a-session
+  - id: policies-run-on-an-agent-run-while-logged-in
     what: >-
-      the exercise: run as the user outside a login session, the composed script logs that the user is not logged in
-      and stops before the policy lines
+      with the user logged in, an agent run runs the policies as the user through the runner (tag
+      linuxint-policies-puppet-agent), and the composed script finds the user logged in and executes them
     control: negative
     derived_from:
-      - {path: templates/linux-policies/puppet_header.sh.erb, lines: "9-13", text: "logger -p local1.notice -t $SYSLOG_TAG \"User ${USERNAME} not loged in, skipping policies execution\""}
-    mutates: runs USER/p8testuser.sh once as p8testuser (runuser, no session); it writes one line to the journal
+      - {path: manifests/linux_policies_user.pp, lines: "71-74", text: "command     => \"${policies_script_exec} puppet-agent\","}
+      - {path: templates/linux-policies/execute_linux_policies_user.sh.erb, lines: "9-12", text: "logger -p local1.notice -t ${SYSLOG_TAG} \"Executing ${LINUX_POLICIES_SCRIPT}\""}
+      - {path: templates/linux-policies/puppet_header.sh.erb, lines: "9-10", text: "logger -p local1.notice -t $SYSLOG_TAG \"User ${USERNAME} loged in, executing policies\""}
     probe: |
-      runuser -u p8testuser -- /opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh
-    effect: |
-      journalctl -t linuxint-policies -o cat --no-pager | tail -1
-    expect: {rc: 0, stdout: "\\AUser p8testuser not loged in, skipping policies execution\\n\\Z"}
+      journalctl -t linuxint-policies-puppet-agent -o cat --no-pager | grep -c -x 'Executing /opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh' | sed 's/^[1-9][0-9]*$/ran-on-agent-run/'
+      journalctl -t linuxint-policies -o cat --no-pager | grep -c -x 'User p8testuser loged in, executing policies' | sed 's/^[1-9][0-9]*$/logged-in/'
+    expect: {rc: 0, stdout: "\\Aran-on-agent-run\\nlogged-in\\n\\Z"}
+
+  - id: autostart-runs-the-policies-at-login
+    what: >-
+      at the user's Plasma login, the XDG autostart entry (linux_policies_common) runs the runner with caller
+      autostart, which executes the user's composed script
+    control: negative
+    derived_from:
+      - {path: templates/linux-policies/autostart.desktop.erb, lines: "1-7", text: "Exec=<%= @linux_policies_dir %>/COMMON/execute_linux_policies_user.sh autostart"}
+      - {path: manifests/linux_policies_common.pp, lines: "27-31", text: "file { \"/etc/xdg/autostart/linux-policies-user.desktop\":"}
+      - {path: templates/linux-policies/execute_linux_policies_user.sh.erb, lines: "9-12", text: "SYSLOG_TAG=\"linuxint-policies-${CALLER}\""}
+    probe: |
+      journalctl -t linuxint-policies-autostart -o cat --no-pager | grep -c -x 'Executing /opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh' | sed 's/^[1-9][0-9]*$/ran-at-login/'
+    expect: {rc: 0, stdout: "\\Aran-at-login\\n\\Z"}
