@@ -1,0 +1,96 @@
+{
+ "schema": 1,
+ "class": "user_samba",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-17T00:58:46Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "f688326960da",
+ "migrate_subject": "P8: migrate puppet_infrastructure::user_samba",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit f688326960da; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `user_samba Done [from: release-0.9.10; mock-apply: Samba/Zentyal stand-in (real Samba behaviour unverified)]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 7 catalog events; COVERAGE puppet_infrastructure::user_samba: 2 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A @@ -1,6 +1,9: two added lines are the migration header comment (purpose + 'Module dependencies: none')",
+   "DIFF A: added '$localdir = lookup('filesystem::localdir')' replaces the baseline's unassigned dynamic-scope $localdir (used in both exec path => \"${localdir}/bin:/usr/bin\"); baseline filesystem_base.pp assigns $localdir = lookup('filesystem::localdir'), so it is the matching Hiera key (hazard 7 standard fix); both exec resources, titles, commands, unless guards and require are byte-identical to baseline"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 3,
+  "removed": 0,
+  "non_comment_changes": 1,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: manage Zentyal/Samba users and password hashes.",
+  "# Module dependencies: none (uses Puppet built-in exec resources and core functions)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 7,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::user_samba: 2 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 20.049,
+   "master_check_s": 0.292,
+   "poweroff_s": 0.827,
+   "restore_s": 0.222,
+   "boot_to_ssh_s": 12.111,
+   "apt_update_s": 6.269,
+   "verify_s": 0.328,
+   "nic1_rx_bytes": 3725204
+  },
+  "log": ".codex_state/logs/reviews/user_samba.20261117T005749Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
