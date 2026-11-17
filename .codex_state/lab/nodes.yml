@@ -75,15 +75,15 @@ nodes:
     capabilities: [server, second-node]
   dc:
     # HQ batch-7 ruling 6: a Samba AD domain controller for openvpn_domain; brought up after kubuntu, gnome and ubuntu2
-    status: planned
+    status: active
     vm: p8lab-dc
     alias: p8lab-dc
     certname: p8lab-dc
     hostname: p8lab-dc
     hostonly_ip: 192.168.56.25
-    baseline_snapshot: null
+    baseline_snapshot: P8LAB_DC_BASELINE_v1
     os_family: Debian
-    os: Ubuntu 24.04 server + Samba AD DC
+    os: Ubuntu 24.04 server + Samba 4.19 AD DC (realm P8TEST.EXAMPLE, domain P8TEST)
     capabilities: [server, second-node, ad-dc]
   puppetserver:
     # A master-role node (HQ batch-5 ruling 6; named for hashman_base's `uncovered` note, HQ 2026-11-17 ruling 2):

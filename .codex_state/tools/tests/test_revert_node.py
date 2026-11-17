@@ -244,7 +244,7 @@ def test_an_unregistered_rhel_node_fails_the_revert(lab, tmp_path):
 
 
 def test_a_planned_or_unknown_node_acts_on_no_vm(lab):
-    for kind in ("dc", "nope"):
+    for kind in ("puppetserver", "nope"):
         proc = lab.run([SCRIPT, "--node", kind])
         assert proc.returncode == 1 and "No usable node in the lab inventory" in proc.stderr
     assert lab.calls("VBoxManage") == []
