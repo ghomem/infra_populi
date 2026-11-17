@@ -66,6 +66,14 @@ Check file .codex_state/checks/<class>.yml:
       # after the run. Its probes keep every host rule except that they may name the class node's host-only address
       # (nodes.yml), the only other host they reach. `files` are read from the node (empty in the clean phase) and
       # handed to every peer probe under /run/p8test-from-node/<basename> (the runner writes them on the peer).
+  session: {user: <p8test* account the applied class creates>, desktop: plasma, why: <why the behaviour needs a login>}
+      # DESKTOP SESSION (2026-11-17, HQ batch-8 ruling 5: the KDE checks on kubuntu): for behaviour that a class applies
+      # only while the user is logged in (an exec guarded by `who`, the user's session D-Bus). Needs a node with the
+      # `kde` capability. After the apply the runner logs the user in to Plasma (SDDM autologin drop-in, sddm
+      # restarted; up when `who` lists the user and plasmashell runs, within 120 s), then makes two agent runs as the
+      # harness does: the first may apply what needs the session, the second passes the harness's run-2 gate (exit 0
+      # with no change events, or only the plan's expected_run2_events), now with the user logged in. Both runs are recorded under `session`; then the APPLIED
+      # phase runs. The login and the agent runs are runner steps, never probes (probes keep the Puppet ban).
 
 Probe rules (validate): the node is the only host — no other host name or address, no ssh/scp/sftp/rsync except to
 the node itself (127.0.0.1/localhost), never Puppet (agent/apply/resource); read-only — no service or package state
@@ -98,6 +106,7 @@ sys.dont_write_bytecode = True
 TOOLS = Path(__file__).resolve().parent
 REPO = TOOLS.parents[1]
 sys.path.insert(0, str(TOOLS))
+sys.path.insert(1, str(TOOLS.parent))  # gen_migration_order (the plan) for the session run-2 gate
 import baseline  # noqa: E402
 
 NODE = "puppet8node"  # set per run to the class's lab node alias (nodes.yml; HQ 2026-11-16 item 2)
@@ -294,6 +303,8 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
     if "peer" in data:
         found, peer_ip = peer_problems(cls, data["peer"])
         problems += found
+    if "session" in data:
+        problems += session_problems(cls, data["session"])
     checks = data.get("checks")
     if not isinstance(checks, list) or not checks:
         return problems + ["no checks"], data, raw
@@ -412,13 +423,69 @@ def node_boot(kind: str) -> str | None:
     return lines[0] if proc.returncode == 0 and lines else None
 
 
-def on_node(script: str) -> tuple[int, str, str]:
+def on_node(script: str, timeout: int = 0) -> tuple[int, str, str]:
+    timeout = timeout or PROBE_TIMEOUT
     try:
         proc = subprocess.run(["ssh", "-o", "BatchMode=yes", NODE, "sudo -n bash -s"], input=script,
-                              capture_output=True, text=True, timeout=PROBE_TIMEOUT, env=node_env())
+                              capture_output=True, text=True, timeout=timeout, env=node_env())
         return proc.returncode, proc.stdout, proc.stderr
     except subprocess.TimeoutExpired:
-        return 124, "", f"probe timed out after {PROBE_TIMEOUT}s"
+        return 124, "", f"probe timed out after {timeout}s"
+
+
+SESSION_USER = re.compile(r"p8test[a-z0-9]*")
+SESSION_KEYS = {"user", "desktop", "why"}
+# Runner steps for a `session` set (never probes): the login, then one agent run as the harness makes it.
+SESSION_LOGIN = """set -e
+u={user}
+id "$u" >/dev/null
+install -d -m 0755 /etc/sddm.conf.d
+printf '[Autologin]\\nUser=%s\\nSession=plasma\\nRelogin=false\\n' "$u" > /etc/sddm.conf.d/zz-p8test-autologin.conf
+systemctl restart sddm
+for i in $(seq 120); do
+  if who | awk '{{print $1}}' | grep -qx "$u" && pgrep -u "$u" -x plasmashell >/dev/null; then echo SESSION_UP; exit 0; fi
+  sleep 1
+done
+echo SESSION_DOWN
+"""
+SESSION_AGENT = "timeout 900 /opt/puppetlabs/bin/puppet agent -t --detailed-exitcodes 2>&1; echo \"AGENT_RC=$?\"\n"
+AGENT_TIMEOUT = 960
+
+
+def session_problems(cls: str, session) -> list[str]:
+    import nodes  # noqa: PLC0415
+    if not isinstance(session, dict) or set(session) != SESSION_KEYS or len(str(session.get("why", ""))) < 20:
+        return ["session takes user, desktop and why (>= 20 characters)"]
+    out = []
+    if not SESSION_USER.fullmatch(str(session["user"])):
+        out.append("session.user must be a p8test* fixture account")
+    if session["desktop"] != "plasma":
+        out.append("session.desktop must be plasma (the only desktop session the runner starts)")
+    node = nodes.select(nodes.load(), cls=cls)
+    if "kde" not in node.get("capabilities", []):
+        out.append(f"session: the class's node {node['kind']} lacks the capability 'kde'")
+    return out
+
+
+def agent_run() -> dict:
+    """One agent run on the node: its exit code and the resources that reported changes."""
+    rc, out, err = on_node(SESSION_AGENT, timeout=AGENT_TIMEOUT)
+    m = re.search(r"AGENT_RC=(\d+)", out)
+    # catalog events only, as the harness counts them (pluginsync writes outside Stage[main])
+    events = [line.strip() for line in out.splitlines() if "Notice: /Stage[main]/" in line]
+    return {"rc": int(m.group(1)) if m else rc, "events": events, "tail": (out + err)[-1500:]}
+
+
+def session_run2_clean(cls: str, run: dict) -> bool:
+    """Run 2 with the session up passes the harness's gate: exit 0, or exit 2 whose every event is one of the class's
+    plan expected_run2_events (HQ 2026-11-10 ruling 1)."""
+    if run["rc"] == 0 and not run["events"]:
+        return True
+    import gen_migration_order as gen  # noqa: PLC0415
+    row = gen.parse_plan().get(cls)
+    expected = list(getattr(row, "expected_run2_events", None) or [])
+    return run["rc"] == 2 and bool(run["events"]) and bool(expected) and \
+        all(any(ref in line for ref in expected) for line in run["events"])
 
 
 def on_peer(script: str) -> tuple[int, str, str]:
@@ -642,6 +709,23 @@ def run_locked(cls: str, data: dict, record: dict, finish) -> int:
                        "tail": (proc.stdout + proc.stderr)[-1500:]}
     if not green:
         return finish("APPLY_FAILED", 3)
+    if "session" in data:
+        user = data["session"]["user"]
+        print(f"==> Logging {user} in to Plasma, then two agent runs with the session up")
+        rc, out, err = on_node(SESSION_LOGIN.format(user=user), timeout=180)
+        record["session"] = {"user": user, "up": "SESSION_UP" in out, "runs": []}
+        if not record["session"]["up"]:
+            record["problems"].append(f"the {user} session did not come up: {(out + err).strip()[-300:]}")
+            return finish("ENVIRONMENT_FAILED", 3)
+        for n in (1, 2):
+            run = agent_run()
+            record["session"]["runs"].append(run)
+            print(f"  session agent run {n}: rc {run['rc']}, {len(run['events'])} changed")
+        first, second = record["session"]["runs"]
+        if first["rc"] not in (0, 2) or not session_run2_clean(cls, second):
+            record["problems"].append(f"with {user} logged in, agent run 1 rc {first['rc']}, run 2 rc {second['rc']} "
+                                      f"with {len(second['events'])} changes: not applied cleanly and idempotently")
+            return finish("APPLY_FAILED", 3)
     if record.get("peer"):
         fetch_node_files(data["peer"].get("files") or [])
     print("==> APPLIED phase: every check must pass (read-only first; mutating only if all of those pass)")

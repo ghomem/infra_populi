@@ -94,6 +94,9 @@ if name == "pgrep":
 if name in ("ssh", "scp", "rsync"):
     line = " ".join(args)
     stdin = sys.stdin.read() if world.get("read_stdin") and not sys.stdin.isatty() else ""
+    if stdin:  # what the tool sent on stdin (runner scripts), in call order, for tests that check the sequence
+        with open(os.environ["FAKE_CALLS"] + ".stdin", "a") as f:
+            f.write(json.dumps([name, line, stdin]) + "\n")
     for rule in world.get(name, []):
         if re.search(rule["match"], line + "\n" + stdin, re.S):
             if "clock" in rule:  # clock_check.py: this host's `date -u +%s.%N`, off by rule["clock"] seconds

@@ -1698,3 +1698,29 @@ snapshot list, record.
      hashman_web, nginx_frontend, nginx_frontend_domain, nginx_static, nginx_static_domain (code), and ssl_nginx and
      ssl_nginx_domain (plan required_base).
   2. Migrate nginx_frontend_mail.
+
+## 2026-11-17 — Phase 3 desktop sessions on kubuntu (HQ batch-8 ruling 5: the KDE checks)
+- **Experiment on p8lab-kubuntu** (a clean revert, a throwaway account). An SDDM autologin drop-in plus a restart of
+  sddm brings up a real Plasma X11 session on seat0 in about 25 s:
+  - startplasma-x11, kwin_x11, ksmserver and plasmashell run;
+  - `who` lists the user on `:0`;
+  - `/run/user/<uid>/bus` answers `org.freedesktop.ScreenSaver.GetActive`, and `qdbus org.kde.screensaver /ScreenSaver
+    configure` returns 0.
+
+  The headless VM needs nothing more. 1.8 GB stays free.
+- **Why a runner step:** the KDE behaviours wait for "an agent run while the user is logged in":
+  - user_kde_lock_screen's exec, guarded by `who` in configure_lock_screen.sh;
+  - linux_policies_user's exec;
+  - linux_policies_common's autostart, which runs at a login.
+
+  The harness applies before any login, and probes may not run Puppet. So the login is a runner step, not a probe.
+- **Built:** a `session: {user, desktop: plasma, why}` block in phase3.py.
+  - The class's node must have the `kde` capability, and the user must be a p8test* fixture account.
+  - After the harness apply, the runner logs the user in (SDDM autologin drop-in, sddm restarted). The session is up
+    when `who` lists the user and plasmashell runs, within 120 s; otherwise the run is ENVIRONMENT_FAILED.
+  - Then the runner makes two agent runs, as the harness does. Run 1 may apply what needs the session. Run 2 must pass
+    the harness's run-2 gate (exit 0 and no events, or only the plan's expected_run2_events); otherwise APPLY_FAILED.
+  - Both runs are recorded under `session` in the result, and then the APPLIED phase runs.
+- **Tests:** 5. The fake lab now also logs what a tool sends on stdin, so the test can check the order: clean phase,
+  apply, login, two runs, APPLIED.
+- **For HQ acceptance:** like the peer mode, this is a new capability of the behaviour runner.

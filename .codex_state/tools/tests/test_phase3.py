@@ -647,3 +647,73 @@ def test_a_bare_yaml_on_key_cannot_select_the_peer(p3):
     assert yaml.safe_load((p3.dir / f"{CLS}.yml").read_text())["checks"][0].get(True) == "peer"
     proc = p3.run("validate", CLS)
     assert proc.returncode == 2 and "a key read as a boolean" in proc.stderr
+
+
+# ------------------------------------------------------------------ desktop session (2026-11-17, HQ batch-8 ruling 5)
+
+SESSION = {"user": "p8testuser", "desktop": "plasma", "why": "the exec applies only while the user is logged in"}
+KDE = {"P8_NODE": "kubuntu"}  # the real inventory: kubuntu is active with the kde capability
+
+
+def session_lab(p3, lab, login="SESSION_UP\n", runs=("Notice: /Stage[main]/X/Exec[configure p8testuser]/returns: "
+                                                     "executed successfully\nAGENT_RC=2\n", "AGENT_RC=0\n")):
+    p3.write(check_set(check("conf", "probe-conf"), session=SESSION))
+    p3.probe_rule("probe-conf", FAIL, OK)
+    lab.world["ssh"].insert(0, {"match": "zz-p8test-autologin", "stdout": login})
+    lab.world["ssh"].insert(0, {"match": r"puppet agent -t --detailed-exitcodes",
+                                "outputs": [{"rc": 0, "stdout": out} for out in runs]})
+
+
+def test_a_session_set_needs_a_kde_node_and_a_fixture_user(p3):
+    p3.write(check_set(check("conf", "probe-conf"), session=SESSION))
+    assert p3.run("validate", CLS, **KDE).returncode == 0
+    proc = p3.run("validate", CLS)  # the default node, ubuntu, has no kde
+    assert proc.returncode == 2 and "lacks the capability 'kde'" in proc.stderr
+    for bad, message in [({**SESSION, "user": "salatiel"}, "p8test* fixture account"),
+                         ({**SESSION, "desktop": "gnome"}, "must be plasma"),
+                         ({"user": "p8testuser"}, "session takes user, desktop and why")]:
+        p3.write(check_set(check("conf", "probe-conf"), session=bad))
+        proc = p3.run("validate", CLS, **KDE)
+        assert proc.returncode == 2 and message in proc.stderr, proc.stderr
+
+
+def test_a_session_run_logs_the_user_in_after_the_apply_then_makes_two_agent_runs(p3, lab):
+    session_lab(p3, lab)
+    proc = p3.run("run", CLS, **KDE)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    record, _ = p3.result()
+    s = record["session"]
+    assert s["user"] == "p8testuser" and s["up"] is True
+    assert [r["rc"] for r in s["runs"]] == [2, 0] and len(s["runs"][0]["events"]) == 1 and s["runs"][1]["events"] == []
+    sent = [json.loads(l) for l in (lab.calls_path.parent / "calls.jsonl.stdin").read_text().splitlines()]
+    login = next(i for i, s in enumerate(sent) if "zz-p8test-autologin" in s[2])
+    agents = [i for i, s in enumerate(sent) if "puppet agent -t --detailed-exitcodes" in s[2]]
+    probes = [i for i, s in enumerate(sent) if "probe-conf" in s[2]]
+    assert probes[0] < login < agents[0] < agents[1] < probes[-1] and len(agents) == 2  # clean, login, 2 runs, APPLIED
+    assert all(s[1].endswith("p8lab-kubuntu sudo -n bash -s") for s in sent if "zz-p8test" in s[2] or "puppet" in s[2])
+    assert p3.log.read_text().splitlines()[-1].startswith("harness ")  # the harness applied before the login
+
+
+def test_a_session_that_does_not_come_up_is_an_environment_failure(p3, lab):
+    session_lab(p3, lab, login="SESSION_DOWN\n")
+    proc = p3.run("run", CLS, **KDE)
+    record, _ = p3.result()
+    assert proc.returncode == 3 and record["outcome"] == "ENVIRONMENT_FAILED"
+    assert "session did not come up" in record["problems"][-1]
+    assert not [c for c in lab.calls("ssh") if "puppet agent" in " ".join(c)]
+
+
+def test_a_second_run_with_changes_fails_the_apply(p3, lab):
+    changed = "Notice: /Stage[main]/X/Exec[configure p8testuser]/returns: executed successfully\nAGENT_RC=2\n"
+    session_lab(p3, lab, runs=(changed, changed))
+    proc = p3.run("run", CLS, **KDE)
+    record, _ = p3.result()
+    assert proc.returncode == 3 and record["outcome"] == "APPLY_FAILED"
+    assert "not applied cleanly and idempotently" in record["problems"][-1]
+
+
+def test_the_login_and_agent_runs_stay_out_of_probes():
+    import sys
+    sys.path.insert(0, str(TOOLS))
+    import phase3
+    assert phase3.probe_problems("timeout 900 /opt/puppetlabs/bin/puppet agent -t")  # probes keep the Puppet ban
