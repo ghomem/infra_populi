@@ -1,0 +1,21 @@
+{
+ "class": "openvpn_server",
+ "at": "20261117T140658Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "server-listens-on-the-bound-address: baseline l.184 passes local => $local (fixture local 203.0.113.50) and l.165 proto => 'udp'; the module's default port 1194 makes 'ss -ulnH sport 1194' showing exactly 203.0.113.50:1194 the right expectation",
+  "server-config-rendered: baseline l.157-158 sets the openvpn class server_directory '/etc/openvpn/server', so openvpn::server 'puppet_infrastructure' renders /etc/openvpn/server/puppet_infrastructure.conf; the expected dev tap0 (l.167), server-bridge 192.0.2.1 255.255.255.0 192.0.2.100 192.0.2.150 (l.173 with the params fixture), PAM plugin at /usr/lib/openvpn/openvpn-plugin-auth-pam.so (l.169, the path l.196 links), reneg-sec 3600 (l.29 default) and verify-client-cert none (l.185) are what the code produces",
+  "client-connects-gets-a-pool-address-and-reaches-the-server-side: baseline l.172 pushes 'redirect-gateway bypass-dhcp bypass-dns' and 'dhcp-option DNS ${push_dns_server}' (default 8.8.8.8 at l.18); the effect reads both from the client's PUSH_REPLY (the client filters redirect-gateway only from being applied, it is still checked as received), the tap address in the l.173 server-bridge pool 192.0.2.100-150 and a ping to lan_static_ip 192.0.2.1 through the tunnel; mutates declares the apt install, host route, /run/p8vpn files and client daemon the action performs, and the effect is read-only evidence (log, address, ping), not the action's own output"
+ ],
+ "review_s": 176.0,
+ "check_file_sha256": "1469eedf7b457f2340c1a1a8001cb11fd48f6210b69431cca17a1b0d2e503bf6",
+ "reviewer_result": "20261117T140402Z-reviewer",
+ "author_result": "20261117T140104Z-author",
+ "findings": []
+}
