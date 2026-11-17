@@ -1,0 +1,99 @@
+{
+ "schema": 1,
+ "class": "linux_policies_user",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-17T01:26:43Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "407e8879c91a",
+ "migrate_subject": "P8: migrate puppet_infrastructure::linux_policies_user",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 407e8879c91a; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `linux_policies_user Done [from: release-0.9.10; upstream defect fixed: policy exec guarded by the script login check]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-stdlib', '9.7.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 19 catalog events; run 2: 3 event(s) only from expected_run2_events File[*/linux-policies/TMP/*.sh.tmp] File_line[*/linux-policies/TMP/*.sh.tmp_*] [own: File[*/linux-policies/TMP/*.sh.tmp], File_line[*/linux-policies/TMP/*.sh.tmp_*]; inherited: none] (judge the header justification); COVERAGE puppet_infrastructure::linux_policies_user: 6 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A @@1: 3-line migration header (purpose, puppetlabs-stdlib 9.7.0 dep, expected run-2 events justification); all baseline comments retained",
+   "DIFF A @@71: exec 'Execute linux policies for: ${username}' gains onlyif \"/usr/bin/who | /usr/bin/awk '{print \\$1}' | /bin/grep -q '^${username}\\$'\" \u2014 exactly the ruled upstream-defect change (upstream_defects.md linux_policies_user, status ruled; same predicate as puppet_header.sh.erb's login check, paths qualified as allowed); command, user, environment unchanged; no other hunk",
+   "run-2 events justified by upstream design: baseline File[${policies_script_tmp}] content => template puppet_header.sh.erb (header only) resets the tmp file every run and the File_line[${policies_script_tmp}_${i}] resources re-append the policy lines; baseline comment on loglevel debug already states the agent reports this file changing every run; tidy on the same path skips the catalog-managed file, so the tmp file persists between runs \u2014 none of this is touched by the migration",
+   "DIFF B identical to DIFF A; provenance ok (migration started from baseline content)"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 4,
+  "removed": 0,
+  "non_comment_changes": 1,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: per-user Linux policies; exec uses the policy script's existing login check (HQ ruling).",
+  "# Module dependencies: puppetlabs-stdlib 9.7.0 (file_line).",
+  "# Expected run-2 events: File[*/linux-policies/TMP/*.sh.tmp]; File_line[*/linux-policies/TMP/*.sh.tmp_*] \u2014 upstream resets the temporary script to its header and re-appends policy lines on every run; tidy skips the managed file."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 19,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::linux_policies_user: 6 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 20.505,
+   "master_check_s": 0.269,
+   "poweroff_s": 0.78,
+   "restore_s": 0.248,
+   "boot_to_ssh_s": 12.837,
+   "apt_update_s": 6.053,
+   "verify_s": 0.318,
+   "nic1_rx_bytes": 4206142
+  },
+  "log": ".codex_state/logs/reviews/linux_policies_user.20261117T012539Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": "RUN2_EXPECTED_EVENTS: 3 from File[*/linux-policies/TMP/*.sh.tmp] File_line[*/linux-policies/TMP/*.sh.tmp_*] [own: File[*/linux-policies/TMP/*.sh.tmp], File_line[*/linux-policies/TMP/*.sh.tmp_*]; inherited: none] (plan"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
