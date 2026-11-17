@@ -30,7 +30,7 @@ TOOLS = Path(__file__).resolve().parent
 REPO = TOOLS.parents[1]
 FIELDS = ("status", "vm", "alias", "certname", "hostname", "hostonly_ip", "baseline_snapshot", "os_family", "os",
           "capabilities")
-CAPABILITIES = {"server", "desktop", "kde", "gnome", "rhel-subscription", "second-node"}
+CAPABILITIES = {"server", "desktop", "kde", "gnome", "rhel-subscription", "second-node", "ad-dc"}
 LEGACY_VMS = {"ubuntu": "ubuntu24-puppet8-Node"}  # keeps its revert_node.sh rules (HQ 2026-11-16 item 3)
 MASTER_VM = "Ubuntu24-puppet8-Master"
 RESERVED_IPS = {"192.168.56.1", "192.168.56.10"}  # laptop, master

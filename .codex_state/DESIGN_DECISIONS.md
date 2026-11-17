@@ -1496,3 +1496,43 @@ snapshot list, record.
 - Plan expected_run2_events `Notify[Produced configs: *]`: the baseline's debug notify at mariadb_server.pp:64 (874f854)
   reports on every run, the case HQ accepted on 2026-11-10 (batch-3 acceptance 2/4); phase5_backlog item 2 already
   lists it ("will need the same plan entry").
+
+## 2026-11-17 — HQ batch-7 acceptance: batch 7 accepted (80 verified); rulings 1-8
+1. **linux_policies_user:** the File/File_line expected run-2 events are accepted on the apt_update basis (baseline
+   behaviour, stated in upstream's own comment). Conditions:
+   - the plan names each resource exactly. For the p8testuser fixture these are
+     `File[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp]` and `File_line[...sh.tmp_0]`,
+     `File_line[...sh.tmp_1]`; header updated with `record_green.sh --fix`; the reviewer re-verifies;
+   - phase5_backlog item 5: make the temporary script idempotent;
+   - the check set's `uncovered` note (policy applied under a login session, lifted_by kubuntu) was already there.
+2. **Stand-ins accepted as mock-apply:** letsencrypt_cert_standin and puppet_agent_standin.
+   - puppet_agent_standin may replace only the unit's start command; the reviewer confirms it touches nothing else.
+     reviewer.md now has the reviewer read the fixture of any mock-apply GREEN and check it against its header's scope,
+     and node_base_domain_desktop is re-reviewed under that rule.
+   - Tail list: an ACME test endpoint lifts the first, a harness mode that tolerates a running agent lifts the second.
+3. **Reporting:** "verified" splits into verified and verified with stand-in (a verified class whose plan row has a
+   node_fixture). status.py prints the split and a Stand-ins table (class, fixture, lifted by).
+   - **Single source for "lifted by":** each node fixture's one `# Lifted by:` header line.
+   - The pre-commit hook rejects a staged batch report whose `## Stand-ins` section misses a stand-in class.
+4. **mariadb_server:** approved as a module-compatibility change, not a defect.
+   - puppetlabs-mysql 17.3.0 has no parameter for the directory's mode: installdb.pp:16 hard-codes `$log_dir`, and
+     :34-38 sets no mode.
+   - So the change is a collector override on the exact title, setting the two attributes the module's resource lacks
+     (mode 0755, require Package['mysql-server']). The compiled catalog must show the baseline's attributes.
+   - Recorded in class_rulings.txt; the class is unblocked. The ruled certificate-exec guard still applies.
+5. **openvpn_server:** resolved at step (b) with no master change (escalations/openvpn_server.md, "HQ ruling 5").
+   - Production's closure is network_dhcp on the primary interface, never class network (plan corrected, 30c1ea7).
+   - The filemapper load came from a relationship target missing from the lab catalog (`Catalog#resource` builds a
+     `Puppet::Resource`, and so loads the type, only when its direct lookup misses).
+   - Two class-level puppet-openvpn/systemd defects remain for HQ: `Service['openvpn']` at :208, and option A's notify
+     on `openvpn::server`, which is a dependency cycle.
+   - This corrects the 2026-10-27 escalation's item 3, a compile-only artefact (no `service_provider` fact).
+6. **openvpn_domain:** nodes.yml gains the planned kind `dc` (p8lab-dc, Samba AD DC, 192.168.56.25, capability
+   `ad-dc`), brought up after kubuntu, gnome and ubuntu2. nginx_proxy_smtp_auth_ppa stays blocked until Salatiel
+   decides.
+7. **No package cache:** 1.3 GB per full re-verification is acceptable. The projection stays in every batch report.
+8. **Order:**
+   - bring up kubuntu, gnome and ubuntu2 with Salatiel present;
+   - then the master snapshot;
+   - then batch 8 with every reachable class.
+   The mysql_db and hashman stand-in rulings follow once HQ has read the batch-6 report.

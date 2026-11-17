@@ -2,7 +2,17 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-92 entries; 6 marked superseded (in whole or part); newest first.
+93 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-17 — HQ batch-7 acceptance: batch 7 accepted (80 verified); rulings 1-8
+- 1. **linux_policies_user:** the File/File_line expected run-2 events are accepted on the apt_update basis (baseline
+- 2. **Stand-ins accepted as mock-apply:** letsencrypt_cert_standin and puppet_agent_standin.
+- 3. **Reporting:** "verified" splits into verified and verified with stand-in (a verified class whose plan row has a
+- 4. **mariadb_server:** approved as a module-compatibility change, not a defect.
+- 5. **openvpn_server:** resolved at step (b) with no master change (escalations/openvpn_server.md, "HQ ruling 5").
+- 6. **openvpn_domain:** nodes.yml gains the planned kind `dc` (p8lab-dc, Samba AD DC, 192.168.56.25, capability
+- 7. **No package cache:** 1.3 GB per full re-verification is acceptable. The projection stays in every batch report.
+- 8. **Order:**
 
 ## 2026-11-17 — mariadb_server prerequisites (batch 7)
 - (no numbered/Rule/Decision lines; read the entry)

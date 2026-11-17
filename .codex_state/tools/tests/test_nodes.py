@@ -28,6 +28,20 @@ def test_the_tracked_inventory_is_valid():
     assert REAL["default"] == "ubuntu" and REAL["nodes"]["ubuntu"]["vm"] == "ubuntu24-puppet8-Node"
 
 
+def test_the_domain_controller_kind_is_planned_with_its_capability():
+    # HQ batch-7 ruling 6: p8lab-dc (Samba AD DC) for openvpn_domain, after the desktops and the second Ubuntu node
+    dc = REAL["nodes"]["dc"]
+    assert dc["vm"] == "p8lab-dc" and dc["status"] == "planned" and "ad-dc" in dc["capabilities"]
+
+
+@pytest.mark.parametrize("caps", [["ad-dc", "domain-controller"], []])
+def test_capabilities_outside_the_known_set_are_refused(tmp_path, caps):
+    data = copy.deepcopy(REAL)
+    data["nodes"]["dc"]["capabilities"] = caps
+    proc = run(tmp_path, data, "validate")
+    assert proc.returncode != 0 and "capabilities must be a non-empty subset" in proc.stdout + proc.stderr
+
+
 @pytest.mark.parametrize("mutate, message", [
     (lambda d: d["nodes"]["rhel9"].update(hostonly_ip="192.168.56.20"), "hostonly_ip '192.168.56.20' is also node"),
     (lambda d: d["nodes"]["rhel9"].update(hostonly_ip="192.168.56.10"), "must be a free address on vboxnet0"),

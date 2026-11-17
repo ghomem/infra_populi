@@ -14,7 +14,8 @@
 #   baseline_snapshot  the offline snapshot every revert restores (required when active)
 #   os_family          Facter os.family: Debian | RedHat
 #   os                 human label
-#   capabilities       what the node can exercise (server, desktop, kde, gnome, rhel-subscription, second-node)
+#   capabilities       what the node can exercise (server, desktop, kde, gnome, rhel-subscription, second-node,
+#                      ad-dc)
 default: ubuntu
 nodes:
   ubuntu:
@@ -72,3 +73,15 @@ nodes:
     os_family: Debian
     os: Ubuntu 24.04 server (second node)
     capabilities: [server, second-node]
+  dc:
+    # HQ batch-7 ruling 6: a Samba AD domain controller for openvpn_domain; brought up after kubuntu, gnome and ubuntu2
+    status: planned
+    vm: p8lab-dc
+    alias: p8lab-dc
+    certname: p8lab-dc
+    hostname: p8lab-dc
+    hostonly_ip: 192.168.56.25
+    baseline_snapshot: null
+    os_family: Debian
+    os: Ubuntu 24.04 server + Samba AD DC
+    capabilities: [server, second-node, ad-dc]
