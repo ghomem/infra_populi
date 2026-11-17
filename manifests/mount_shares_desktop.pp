@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none (core file resources and ERB templates only).
 ### Purpose ########
 # This class provides share mount configuration to a generic desktop node for a specific user
 
