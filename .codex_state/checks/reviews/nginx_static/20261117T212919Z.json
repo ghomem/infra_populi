@@ -1,0 +1,31 @@
+{
+ "class": "nginx_static",
+ "at": "20261117T212919Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok"
+ },
+ "evidence": [
+  "other-hosts-get-404 / nginx_static_domain.pp:236-245: static_default_<domain> listens on http_port 80 with listen_options default_server, server_name \"\" and return $default_str; with the wrapper defaults redirect_default=false (lines 207-212) $default_str='404', so a request for an existing www_root file under an unmatched Host (p8test-other.example.com) must get 404; the mismatch changes only the Host to the fixture domain, whose static_http server (287-295, www_root /var/www/html) serves that same file, so the 404 expectation must fail",
+  "other-hosts-get-404 / nginx_static_domain.pp:148-149: server_default_create true -> $server_default_ensure='present'; nginx_static.pp passes server_default_create (wrapper default true, fixture leaves it unset), so the default server exists and the probe tests it",
+  "package-default-site-removed / nginx_default_removal.pp:3-4: file /etc/nginx/sites-enabled/default ensure absent, included by nginx_static.pp:49; the probe tests exactly that path's absence; why_invariant (clean node has no nginx, so no default site) is plausible and held in the clean phase. Whole file read: all probes target 127.0.0.1 or local files only, no mutates; both mismatch controls vary only the Host header, which must change the verdict"
+ ],
+ "review_s": 88.3,
+ "check_file_sha256": "539f4e4eac1f2fbeb932c9d8d86e32e555801e3da64610941986eaaa5b2daffd",
+ "reviewer_result": "20261117T212751Z-reviewer",
+ "author_result": "20261117T212621Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "93e89e07-4525-42a8-9e9a-30728f3af083",
+   "boot_id_at_end": "93e89e07-4525-42a8-9e9a-30728f3af083",
+   "fresh": true
+  }
+ }
+}
