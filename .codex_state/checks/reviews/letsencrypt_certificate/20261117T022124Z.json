@@ -1,0 +1,18 @@
+{
+ "class": "letsencrypt_certificate",
+ "at": "20261117T022124Z",
+ "verdict": "PASS",
+ "deferral": true,
+ "checks": {
+  "deferral_valid": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "manifests/letsencrypt_certificate.pp:32-34: the define's only resource is letsencrypt::certonly with custom_plugin => true, so its whole behaviour is a certbot certonly issuance against an ACME CA; the default ubuntu node has no reachable CA, and the Phase 1 GREEN depended on the mock-apply stand-in (fixtures/node/letsencrypt_cert_standin.pp writes a self-signed cert so puppet-letsencrypt's domain-validation guard skips the certonly exec), so nothing the define does can be observed there; the deferral reason is accurate",
+  "manifests/letsencrypt_certificate.pp:26: the digitalocean branch passes --dns-digitalocean with a credentials file, i.e. DNS-01 through the DigitalOcean API, which the lab cannot have; a second node (ubuntu2, kind with capability second-node, status planned) hosting a Pebble CA plus a DNS-provider API stand-in, as the reason states, is a plausible lift, though it also needs the certbot server pointed at Pebble and the plugin's fixed API endpoint redirected and trusted",
+  "manifests/letsencrypt_certificate.pp:28: the hetzner branch passes --authenticator dns-hetzner with the same credentials file, so it has the same external-API dependency (DNS-01 via Hetzner DNS API) and is unobservable on the default node; the same ubuntu2 Pebble + API stand-in setup would lift it. The set has no uncovered notes; the header comment says plainly that only the fixture's stand-in exists and that behaviour is unverified"
+ ],
+ "check_file_sha256": "5417423fc09b05a03df489b97eb3c8ad2e6d8f5f1023ae7e28db40c5d748466e",
+ "findings": [],
+ "review_s": null
+}
