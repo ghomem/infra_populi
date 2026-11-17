@@ -1,0 +1,193 @@
+{
+ "class": "mariadb_server",
+ "role": "reviewer",
+ "at": "20261117T123348Z",
+ "runner": "f2bb1be",
+ "baseline": "874f854 (874f854)",
+ "check_file_sha256": "9f50d3c1084dbbc11b7324987f0796ef035c394316c2905497dfc126b9452fe2",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "mariadb-server-installed-and-running",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "dpkg-query: no packages found matching mariadb-server\nbash: line 2: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "server-runs-the-override-options",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 1: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "ed25519-plugin-active",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 1: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "insecure-transport-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "tls=refused plain=refused\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "root-is-local-only-and-no-anonymous-user",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 1: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "server-key-matches-certificate",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Could not open file or uri for loading certificate from /etc/mysql/certificates/server-cert.pem\n40771F3755700000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n40771F3755700000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/mysql/certificates/server-cert.pem)\nUnable to load certificate\nCould not open file or uri for loading key from /etc/mysql/certificates/server-key.pem\n40C76B3599790000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n40C76B3599790000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/mysql/certificates/server-key.pem)\n",
+   "ok": true
+  },
+  {
+   "id": "certificate-subject-from-hiera",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Could not open file or uri for loading certificate from /etc/mysql/certificates/server-cert.pem\n40376814C4710000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n40376814C4710000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/mysql/certificates/server-cert.pem)\nUnable to load certificate\n",
+   "ok": true
+  },
+  {
+   "id": "certificate-files-owner-and-mode",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/mysql/certificates/ca.pem': No such file or directory\nstat: cannot statx '/etc/mysql/certificates/server-cert.pem': No such file or directory\nstat: cannot statx '/etc/mysql/certificates/server-key.pem': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "log-directory-attributes",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/var/log/mysql': No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "{mariadb => {plugin_load_add => auth_ed25519}, mysqld => {ssl => true, ssl-cert => /etc/mysql/certificates//server-cert.pem, ssl-key => /etc/mysql/certificates//server-key.pem, ssl-ca => /etc/mysql/certificates//ca.pem, require_secure_transport => ON, bind-address => 0.0.0.0}}]\n  Package[mysql_client]\n  Anchor[mysql::client::start]\n  Anchor[mysql::client::end]\n  File[/etc/mysql/certificates/]\n  File[/opt/puppet-infrastructure/bin/deploy_self_signed_certificates.sh]\n  Exec[generate the ssl certificates, sign them and deploy them at /etc/mysql/certificates/]\n  File[/etc/mysql/conf.d]\n  File[/etc/mysql]\n  Exec[datadir-managed_dir-mkdir]\n  Exec[datadir-managed_dir-chmod]\n  File[mysql-config-file]\n  Package[mysql-server]\n  File[datadir-managed_dir]\n  File[/var/log/mysql/error.log]\n  File[/var/log/mysql]\n  Mysql_datadir[/var/lib/mysql]\n  Service[mysqld]\n  Exec[wait_for_mysql_socket_to_open]\n  Exec[remove install pass]\n  Mysql_user[root@localhost]\n  File[/root/.my.cnf]\n  Mysql_user[root@127.0.0.1]\n  Mysql_user[root@::1]\n  Mysql_user[@localhost]\n  Mysql_user[@%]\n  Mysql_user[root@localhost.localdomain]\n  Mysql_user[@localhost.localdomain]\n  Mysql_user[root@puppet8node.lan]\n  Mysql_user[@puppet8node.lan]\n  Mysql_user[root@puppet8node]\n  Mysql_user[@puppet8node]\n  Mysql_database[test]\n  Anchor[mysql::server::start]\n  Anchor[mysql::server::end]\nGREEN: run 2 events limited to the plan's expected_run2_events (Notify[Produced configs: *]) (gate v2).\nGREEN_STAMP mariadb_server dfc62f43c295\n"
+ },
+ "applied": [
+  {
+   "id": "mariadb-server-installed-and-running",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "mariadb-server install ok installed\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "server-runs-the-override-options",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/etc/mysql/certificates//ca.pem\t/etc/mysql/certificates//server-cert.pem\t/etc/mysql/certificates//server-key.pem\t1\t0.0.0.0\n",
+   "stderr": ""
+  },
+  {
+   "id": "ed25519-plugin-active",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ACTIVE\n",
+   "stderr": ""
+  },
+  {
+   "id": "insecure-transport-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "tls=connected plain=refused\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "only the transport of the first login (--skip-ssl instead of --ssl): it must be refused too, so \"tls=connected\" must not come back",
+    "rc": 0,
+    "passed": false,
+    "stdout": "tls=refused plain=refused\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "root-is-local-only-and-no-anonymous-user",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root@localhost\n",
+   "stderr": ""
+  },
+  {
+   "id": "server-key-matches-certificate",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "key-matches-certificate\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "only the certificate compared (the generated ca.pem instead of server-cert.pem): the CA has its own key, so the public keys must differ",
+    "rc": 1,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "certificate-subject-from-hiera",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "subject=C = PT, ST = Lisbon, L = Lisbon, O = My Company, OU = IT, CN = example.com, emailAddress = user@example.com\n",
+   "stderr": ""
+  },
+  {
+   "id": "certificate-files-owner-and-mode",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/etc/mysql/certificates/ca.pem root root 644\n/etc/mysql/certificates/server-cert.pem root root 644\n/etc/mysql/certificates/server-key.pem root root 644\n",
+   "stderr": ""
+  },
+  {
+   "id": "log-directory-attributes",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "directory mysql adm 755\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.8,
+ "node": "ubuntu",
+ "duration_s": 88.3
+}

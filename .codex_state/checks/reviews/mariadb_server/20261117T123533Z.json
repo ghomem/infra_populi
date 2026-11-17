@@ -1,0 +1,21 @@
+{
+ "class": "mariadb_server",
+ "at": "20261117T123533Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "insecure-transport-refused: baseline manifests/mariadb_server.pp:52 sets 'require_secure_transport' => 'ON' in the mysqld override options, so a TCP login to 127.0.0.1 must succeed with --ssl and be refused with --skip-ssl; expect tls=connected plain=refused is exactly that. The mismatch changes only the first login's transport (--ssl to --skip-ssl), which under require_secure_transport must flip it to refused, so it is a real verdict change and not a broken command",
+  "mariadb-server-installed-and-running: baseline manifests/mariadb_server.pp:159 passes package_name => 'mariadb-server' to ::mysql::server, which installs and runs that package; the probe checks the dpkg status of mariadb-server and that the running server's @@version reports MariaDB, which is what the line produces",
+  "server-runs-the-override-options: baseline lines 49-53 set ssl-cert/ssl-key/ssl-ca to \"${ssl_dir}/...\" with ssl_dir '/etc/mysql/certificates/' (line 37, trailing slash, hence the expected double slash), require_secure_transport ON (reported as 1) and bind-address 0.0.0.0; the expected SELECT row matches these values exactly"
+ ],
+ "review_s": 105.4,
+ "check_file_sha256": "9f50d3c1084dbbc11b7324987f0796ef035c394316c2905497dfc126b9452fe2",
+ "reviewer_result": "20261117T123348Z-reviewer",
+ "author_result": "20261117T123201Z-author",
+ "findings": []
+}
