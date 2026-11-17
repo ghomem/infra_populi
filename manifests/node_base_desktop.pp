@@ -1,3 +1,6 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: puppetlabs-cron_core 1.3.0 (vendored; cron).
+# Expected run-2 events: Exec[apt_update] — node_base_desktop declares packages_base, whose `class { 'apt': update => { frequency => 'always' } }` runs apt update on every agent run by upstream design (justified on packages_base).
 ### Purpose ########
 # Base profile for Ubuntu/Kubuntu desktop nodes:
 # - Centrally managed package/update helpers
