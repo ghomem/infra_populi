@@ -1,0 +1,94 @@
+{
+ "class": "node_base_domain_desktop",
+ "role": "author",
+ "at": "20261117T021146Z",
+ "runner": "dea3da7",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "8e5fc5bd1f6d0eee400d885e8ab5211920dfb6e3a566c4bf5d397b9e5113cc42",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "ssh-hardened-but-password-login-allowed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "kexalgorithms sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256\npasswordauthentication yes\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "unattended-upgrades-kept",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "install ok installed\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "ntp-daemon-running",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "inactive\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "puppet-service-enabled-and-running",
+   "control": "negative",
+   "rc": 3,
+   "passed": false,
+   "stdout": "disabled\ninactive\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "  Firewall[100 SSH whitelist 127.0.0.1]\n  Firewallchain[LIMIT_INDIVIDUAL:filter:IPv4]\n  Firewallchain[LIMIT_OVERALL:filter:IPv4]\n  Firewall[110 SSH LIMIT_INDIVIDUAL]\n  Firewall[111 SSH ACCEPT ESTABLISHED]\n  Firewall[112 SSH connlimit]\n  Firewall[113 SSH set recent]\n  Firewall[114 SSH set recent]\n  Firewall[115 SSH LIMIT_INDIVIDUAL]\n  Firewall[116 SSH LIMIT_OVERALL]\n  Firewall[117 SSH DROP]\n  Firewall[600 Drop ALL IPv6 - INPUT]\n  Firewall[601 Drop ALL IPv6 - FORWARD]\n  File[/opt/puppet-infrastructure]\n  File[/opt/puppet-infrastructure/bin]\n  File[/opt/puppet-infrastructure/etc]\n  File[/opt/puppet-infrastructure/bin/apt-update-pkg.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-surface.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-surface-desktop.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-kernel.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-dist.sh]\n  Package[openscap-scanner]\n  File[/opt/puppet-infrastructure/bin/get-relevant-updates-list]\n  File[/opt/puppet-infrastructure/bin/apt-check-updates.sh]\n  Cron[apt_check_updates]\n  File[/var/lib/apt-check-updates]\n  File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]\n  Package[ntpsec]\n  File[/etc/ntpsec/ntp.conf]\n  Service[ntp]\n  Service[puppet]\n  File[/etc/apt/apt.conf.d/15update-stamp]\n  Concat_file[/etc/ssh/sshd_config]\n  Concat_fragment[global config]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update]) (gate v2).\nGREEN_STAMP node_base_domain_desktop 60d84331d2c5\n"
+ },
+ "applied": [
+  {
+   "id": "ssh-hardened-but-password-login-allowed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "kexalgorithms diffie-hellman-group-exchange-sha256\npasswordauthentication yes\n",
+   "stderr": ""
+  },
+  {
+   "id": "unattended-upgrades-kept",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "ntp-daemon-running",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\n",
+   "stderr": ""
+  },
+  {
+   "id": "puppet-service-enabled-and-running",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "enabled\nactive\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 1.2,
+ "node": "ubuntu",
+ "duration_s": 124.7
+}
