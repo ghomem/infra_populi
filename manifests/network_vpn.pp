@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none (declares puppet_infrastructure classes only).
 ### Purpose ########
 # This class configures an OpenVPN server with user auth and
 # and an internal caching nameserver for DNS resolution to be
