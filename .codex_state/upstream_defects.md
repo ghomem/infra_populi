@@ -74,12 +74,26 @@ the entry's `Ruled change` (plus ordinary Puppet 8 translations); anything else 
 - Status: ruled
 
 ## openvpn_server
-- Short: duplicate service resource dropped (module manages openvpn-server@<name>)
-- Defect: declares `service { 'openvpn-server@puppet_infrastructure' }` (openvpn_server.pp:117) that puppet-openvpn
-  (11.0.1 and 12.0.0) declares itself on systemd hosts → `Duplicate declaration` (REAL compile 2026-10-27).
-- Ruled change (option A of escalations/openvpn_server-upstream-defects.md, settled by production-facts ruling 2):
-  remove our service resource; notifies that targeted it point at the module's `Service['openvpn-server@puppet_infrastructure']`.
-- Open (module level, not a defect ruling): behind it the compile hits a network_config type-redefine conflict.
+- Short: module owns the unit (duplicate service dropped, notifies retargeted)
+- Defect: on systemd hosts with puppet-openvpn (8.3.0 in production; 11.0.1 and 12.0.0 in the lab):
+  (1) the class declares `service { 'openvpn-server@puppet_infrastructure' }` (openvpn_server.pp:117-121), which the
+  module declares itself → `Duplicate declaration` (REAL compile 2026-10-27);
+  (2) `notify => Service['openvpn']` (:208, File['/etc/openvpn/openvpn-up.sh']) — the module declares Service['openvpn']
+  only when `service_provider != systemd` (init.pp:67-73) → "Could not find resource 'Service[openvpn]'" (harness
+  2026-11-17, escalations/openvpn_server.md "HQ ruling 5").
+- Ruled change (option A extended; escalations/openvpn_server-upstream-defects.md option A, production-facts ruling 2;
+  HQ 2026-11-17 ruling 1): the module owns the unit.
+  (a) remove the class's `service { 'openvpn-server@puppet_infrastructure': ... }` (:117-121); the notifies that named
+  it (:129, :137, :145, :153) keep their text and now reach the module's unit of the same title;
+  (b) remove the `notify => Service['openvpn-server@puppet_infrastructure']` attribute of
+  `openvpn::server { 'puppet_infrastructure': ... }` (:186): the define contains that unit (server.pp:518-526), so the
+  notify is a dependency cycle, and the module already notifies the unit for its own configuration (`$lnotify`);
+  (c) retarget :208 `notify => Service['openvpn']` to `Service['openvpn-server@puppet_infrastructure']`.
+  Nothing else changes.
+- Required evidence (HQ 2026-11-17 ruling 1): a server-config change restarts the unit exactly once; an up-script
+  change restarts it; run 2 is clean. Behaviour (Phase 3) with ubuntu2 as the client: it connects, gets a pool address,
+  reaches the server side, and a wrong password is rejected. network_vpn follows.
+- Closed: the 2026-11-16 network_config load error (resolved by the plan's required_base network_dhcp, no master change).
 - Status: ruled
 
 ## firewall_addon_hosting

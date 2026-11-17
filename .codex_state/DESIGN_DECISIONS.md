@@ -1547,3 +1547,37 @@ snapshot list, record.
   unversioned `puppet-infrastructure` dependency claim (aff6ba3).
 - **Lab runs block sleep:** KDE's idle suspend paused the VMs during a harness run 2, which hung 557 s and failed.
   test_class.sh and `phase3.py run` hold a logind sleep/idle inhibitor (c36039a); a lid close still suspends.
+
+## 2026-11-17 — HQ rulings after the bring-up (rulings 1-7, second set)
+1. **openvpn_server:** option A extended; the module owns the unit.
+   - Drop the class's service, drop the define's own notify (:186, a cycle), and retarget :208 to the module's unit.
+   - upstream_defects.md is rewritten; class_rulings.txt gains a superseding line; blocked.txt entry removed.
+   - Required evidence: a server-config change restarts the unit exactly once, an up-script change restarts it, and
+     run 2 is clean. Phase 3 uses ubuntu2 as the client: connect, pool address, server side reachable, wrong password
+     rejected. network_vpn follows.
+2. **Hazard 14:** a per-class "standalone by production evidence" entry (class, module, evidence reference), nothing
+   broader. Built in pregate (rules/hazard14_standalone.txt).
+3. **Documentation list:** a production cutover section. VPN gateways: read `service_provider` and the running
+   OpenVPN unit first.
+4. **mysql_db:** the real compile confirms the baseline ties mysql_db to mysql_server (`require =>
+   Class['puppet_infrastructure::mysql_server']`, mysql_db.pp:26). With mariadb_server alone: "Could not find resource
+   'Class[Puppet_infrastructure::Mysql_server]'"; with the plan expansion: `Duplicate declaration: Class[Mysql::Server]`.
+   - The mariadb pairing is dropped from ruling 1, and mysql_db is MySQL-only by baseline design (class_rulings.txt).
+   - mysql_server owns the client: `class { '::mysql::client': package_name => 'mysql-client' }`, a re-migration.
+     mariadb_server is unchanged (it already declares mysql::client with its MariaDB library).
+   - Standing composite: mysql_server + mysql_db only.
+5. **Master-role placeholder** (nodes.yml `puppetserver`) accepted; not built. HQ decides after batch 8 and the DC,
+   before the 23rd.
+6. **user_desktop_sudoer** may run on gnome now; KDE-specific classes and checks wait for kubuntu.
+7. **Order:**
+   - kubuntu, once Salatiel has its account;
+   - then the master snapshot;
+   - then batch 8;
+   - then p8lab-dc;
+   - then the RedHat branches on rhel9.
+   If kubuntu is not up when the rest is ready, the snapshot and batch 8 go ahead without it.
+- **Observed (lab):** the laptop's idle suspend between runs paused every VM; 09:20-11:57, while Salatiel was away.
+  - The master's clock came back 2 h 26 min behind, with timesyncd still "synchronized". A restart of
+    systemd-timesyncd stepped it.
+  - Lab runs already block sleep (c36039a). A whole batch now also holds one inhibitor, released at batch end. The
+    master's clock offset is checked before the snapshot and before each batch.
