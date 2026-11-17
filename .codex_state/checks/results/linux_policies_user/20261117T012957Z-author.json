@@ -1,0 +1,69 @@
+{
+ "class": "linux_policies_user",
+ "role": "author",
+ "at": "20261117T012957Z",
+ "runner": "b31d289",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "a7f79935c6132157fde877f0f41b45e9c6a5f84600cfd3cee68b4077b3b086b3",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "user-policy-script-composed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh': No such file or directory\nhead: cannot open '/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh' for reading: No such file or directory\ngrep: /opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh: No such file or directory\ntail: cannot open '/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh' for reading: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "script-skips-policies-without-a-session",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "ied, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794879047'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.21 seconds\u001b[0m\nRUN2_EXPECTED_EVENTS: 3 from File[*/linux-policies/TMP/*.sh.tmp] File_line[*/linux-policies/TMP/*.sh.tmp_*] [own: File[*/linux-policies/TMP/*.sh.tmp], File_line[*/linux-policies/TMP/*.sh.tmp_*]; inherited: none] (plan expected_run2_events)\nCOVERAGE puppet_infrastructure::linux_policies_user: 6 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::Linux_policies_user[linux_policies_user]\n  File[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp]\n  File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_0]\n  File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_1]\n  File[/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh]\n  Tidy[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp]\n  Exec[Execute linux policies for: p8testuser]\nGREEN: run 2 events limited to the plan's expected_run2_events (File[*/linux-policies/TMP/*.sh.tmp] File_line[*/linux-policies/TMP/*.sh.tmp_*]) (gate v2).\nGREEN_STAMP linux_policies_user 3e435e5a35d1\n"
+ },
+ "applied": [
+  {
+   "id": "user-policy-script-composed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser p8testuser 700\n#!/bin/bash\n1\ntrue # p8test policy line 1\ntrue # p8test policy line 2\n",
+   "stderr": ""
+  },
+  {
+   "id": "script-skips-policies-without-a-session",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "User p8testuser not loged in, skipping policies execution\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs USER/p8testuser.sh once as p8testuser (runuser, no session); it writes one line to the journal",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.4,
+ "node": "ubuntu",
+ "duration_s": 52.5
+}

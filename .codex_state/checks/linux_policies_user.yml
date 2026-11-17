@@ -12,6 +12,10 @@ uncovered:
   - what: the exec applying the policies on an agent run while the user is logged in
     why: the server node has no login session for p8testuser; the guard's quiet side is checked instead
     lifted_by: kubuntu
+# 2026-11-17 authoring correction (Phase 3 review FAIL, 20261117T012929Z): removed `no-policy-run-without-a-session`.
+# It expected no linuxint-policies journal line after the agent runs, derived from the comment at manifest line 70;
+# the baseline exec (lines 71-75) is unguarded and its script logs "not loged in" on every run, so 0 lines comes from
+# the ruled guard (upstream_defects.md linux_policies_user), not from the baseline. Checks derive from the baseline only.
 checks:
   - id: user-policy-script-composed
     what: USER/p8testuser.sh is owned by the user (0700) and holds the header, which sources COMMON/common, then the policy lines
@@ -27,17 +31,6 @@ checks:
       grep -c '^\. /opt/puppet-infrastructure/linux-policies/COMMON/common$' "$f"
       tail -2 "$f"
     expect: {rc: 0, stdout: "\\Ap8testuser p8testuser 700\\n#!/bin/bash\\n1\\ntrue # p8test policy line 1\\ntrue # p8test policy line 2\\n\\Z"}
-
-  - id: no-policy-run-without-a-session
-    what: with nobody logged in, the agent runs left no policy-runner trace (the exec runs only for a logged-in user)
-    control: invariant
-    why_invariant: the clean node has no linuxint-policies journal entries, and with no session the agent must not add any
-    derived_from:
-      - {path: manifests/linux_policies_user.pp, lines: "70", text: "#Execute the policies on agent run if the user is logged in"}
-      - {path: templates/linux-policies/puppet_header.sh.erb, lines: "8", text: "SYSLOG_TAG='linuxint-policies'"}
-    probe: |
-      journalctl -t linuxint-policies -o cat --no-pager | wc -l
-    expect: {rc: 0, stdout: "\\A0\\n\\Z"}
 
   - id: script-skips-policies-without-a-session
     what: >-
