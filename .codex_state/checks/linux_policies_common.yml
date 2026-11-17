@@ -1,0 +1,57 @@
+# Phase 3 checks for puppet_infrastructure::linux_policies_common (class; required_base filesystem_base). It deploys
+# the linux-policies tree under <localdir>/linux-policies (localdir /opt/puppet-infrastructure, lab Hiera), the runner
+# script COMMON/execute_linux_policies_user.sh, and an XDG autostart entry that runs it at desktop log-in. Fixture:
+# none (no parameters).
+# Not exercised: the desktop log-in that triggers the autostart entry (needs a desktop session).
+class: linux_policies_common
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 0.4
+  notes: "Wall clock 01:06:41Z to 01:07:05Z 2026-11-17, outside the worktree while the Phase 1 review ran."
+uncovered:
+  - what: the XDG autostart entry running the policies script at a user's desktop log-in
+    why: the server node has no desktop session; the entry is checked as a file only
+    lifted_by: kubuntu
+checks:
+  - id: policies-tree-deployed
+    what: the module's linux-policies tree is copied to <localdir>/linux-policies (COMMON/common byte for byte, TMP and USER)
+    control: negative
+    derived_from:
+      - {path: manifests/linux_policies_common.pp, lines: "13-14", text: "$linux_policies_dir = \"${localdir}/linux-policies\""}
+      - {path: manifests/linux_policies_common.pp, lines: "22-23", text: "source  => \"puppet:///modules/puppet_infrastructure/linux-policies/\","}
+      - {path: files/linux-policies/COMMON/common, sha256: "96142acfd235e555756e309dfbd98e45a71024a675f6d1a47ae923d3334f147a"}
+    probe: |
+      d=/opt/puppet-infrastructure/linux-policies
+      sha256sum "$d/COMMON/common" | cut -d' ' -f1
+      test -e "$d/TMP/.placeholder" && test -e "$d/USER/.placeholder" && echo tmp-and-user-present
+    expect: {rc: 0, stdout: "\\A96142acfd235e555756e309dfbd98e45a71024a675f6d1a47ae923d3334f147a\\ntmp-and-user-present\\n\\Z"}
+
+  - id: autostart-entry-runs-the-runner
+    what: the XDG autostart entry (0644) runs the policies runner with the argument autostart
+    control: negative
+    derived_from:
+      - {path: manifests/linux_policies_common.pp, lines: "27-31", text: "file { \"/etc/xdg/autostart/linux-policies-user.desktop\":"}
+      - {path: templates/linux-policies/autostart.desktop.erb, lines: "4", text: "Exec=<%= @linux_policies_dir %>/COMMON/execute_linux_policies_user.sh autostart"}
+    probe: |
+      f=/etc/xdg/autostart/linux-policies-user.desktop
+      stat -c '%U %a' "$f"; grep '^Exec=' "$f"
+    expect: {rc: 0, stdout: "\\Aroot 644\\nExec=/opt/puppet-infrastructure/linux-policies/COMMON/execute_linux_policies_user\\.sh autostart\\n\\Z"}
+
+  - id: runner-executes-the-users-policy
+    what: >-
+      the exercise: the runner (root 0755) executes USER/<the calling user>.sh when it exists and is executable
+    control: negative
+    derived_from:
+      - {path: manifests/linux_policies_common.pp, lines: "33-37", text: "content   => template('puppet_infrastructure/linux-policies/execute_linux_policies_user.sh.erb'),"}
+      - {path: templates/linux-policies/execute_linux_policies_user.sh.erb, lines: "8-14", text: "LINUX_POLICIES_SCRIPT=${LINUX_POLICIES_DIR}/USER/${USERNAME}.sh"}
+    mutates: >-
+      adds USER/root.sh (0755) to the deployed tree, a fixture policy that writes /var/tmp/p8test-policy-ran, then runs
+      the runner once as root with the argument p8test (it also logs one line to syslog)
+    probe: |
+      printf '#!/bin/sh\necho p8test-policy-ran > /var/tmp/p8test-policy-ran\n' | install -m 0755 /dev/stdin /opt/puppet-infrastructure/linux-policies/USER/root.sh
+      /opt/puppet-infrastructure/linux-policies/COMMON/execute_linux_policies_user.sh p8test
+    effect: |
+      stat -c '%U %a' /opt/puppet-infrastructure/linux-policies/COMMON/execute_linux_policies_user.sh
+      cat /var/tmp/p8test-policy-ran
+    expect: {rc: 0, stdout: "\\Aroot 755\\np8test-policy-ran\\n\\Z"}
