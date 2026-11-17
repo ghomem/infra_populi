@@ -1,0 +1,96 @@
+{
+ "schema": 1,
+ "class": "linux_policies_common",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-17T01:07:28Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "b3ff94923e8f",
+ "migrate_subject": "P8: migrate puppet_infrastructure::linux_policies_common",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit b3ff94923e8f; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `linux_policies_common Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 16 catalog events; COVERAGE puppet_infrastructure::linux_policies_common: 3 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added comment lines: 'release-0.9.10 manifest validated unchanged' + 'Module dependencies: none'); diff_summary non_comment_changes=0, no baseline comment removed",
+   "DIFF B identical to DIFF A; migrate commit touches only the manifest and migrated_classes.txt tracker line; later commit only regenerates migration_order.md"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependencies: none (core file resources only)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 16,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::linux_policies_common: 3 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 20.789,
+   "master_check_s": 0.281,
+   "poweroff_s": 0.822,
+   "restore_s": 0.207,
+   "boot_to_ssh_s": 12.84,
+   "apt_update_s": 6.308,
+   "verify_s": 0.331,
+   "nic1_rx_bytes": 3724843
+  },
+  "log": ".codex_state/logs/reviews/linux_policies_common.20261117T010632Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
