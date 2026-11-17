@@ -1,0 +1,69 @@
+# Phase 3 checks for puppet_infrastructure::mysql_db (define; per-class baseline exception 874f854; required_base
+# mysql_server, re-migrated with the HQ 2026-11-17 ruling-1 client declaration: mysql_server owns mysql::client with the
+# MySQL client package, because puppetlabs-mysql 17's mariadb-client default removed the MySQL server, escalations/mysql_db.md).
+# MySQL-only by baseline design (ruling 4: every mysql::db requires Class['puppet_infrastructure::mysql_server']).
+# Fixture (params, never committed): db_name p8test_db, rw_user p8test_rw, ro_user p8test_ro, fake p8test passwords (the
+# rw one appears below: a fixture value, never a real secret). Probes run as root (root@localhost via /root/.my.cnf).
+class: mysql_db
+baseline: 874f854 (874f854)
+fixture: params
+authoring:
+  minutes: 3
+  notes: "About 12:50Z to 12:53Z 2026-11-17 (estimate: the start was not stamped separately; reading the baseline, drafting, checking the cited lines), outside the worktree while the Phase 1 review of mysql_server ran."
+checks:
+  - id: mysql-server-survives-the-define
+    what: >-
+      after mysql_db applies, the MySQL 8.0 server and client packages are installed, no MariaDB server or client is,
+      and the mysql service is active (HQ 2026-11-17 ruling 1)
+    control: negative
+    derived_from:
+      - {path: manifests/mysql_server.pp, lines: "48", text: "package_name            => \"mysql-server-${version}\","}
+      - {path: manifests/mysql_db.pp, lines: "17", text: "mysql::db { \"${db_name}-rw\":"}
+    probe: |
+      dpkg-query -W -f '${Package} ${Status}\n' mysql-server-8.0 mysql-client-8.0
+      dpkg-query -W -f '${Status}\n' mariadb-server mariadb-client 2>/dev/null | grep -c 'install ok installed' || true
+      systemctl is-active mysql
+    expect: {rc: 0, stdout: "\\Amysql-client-8\\.0 install ok installed\\nmysql-server-8\\.0 install ok installed\\n0\\nactive\\n\\Z"}
+
+  - id: database-created-with-charset-and-collation
+    what: the database exists with utf8mb3 / utf8mb3_general_ci
+    control: negative
+    derived_from:
+      - {path: manifests/mysql_db.pp, lines: "18-22", text: "collate     => 'utf8mb3_general_ci',"}
+    probe: |
+      mysql -NB -e "SELECT DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = 'p8test_db'"
+    expect: {rc: 0, stdout: "\\Autf8mb3\\tutf8mb3_general_ci\\n\\Z"}
+
+  - id: users-from-any-host-require-tls
+    what: both users exist for host % and require TLS (ssl_type ANY)
+    control: negative
+    derived_from:
+      - {path: manifests/mysql_db.pp, lines: "23-25", text: "tls_options => ['SSL'],"}
+      - {path: manifests/mysql_db.pp, lines: "36-38", text: "host        => '%',"}
+    probe: |
+      mysql -NB -e "SELECT user, host, ssl_type FROM mysql.user WHERE user IN ('p8test_rw', 'p8test_ro') ORDER BY user"
+    expect: {rc: 0, stdout: "\\Ap8test_ro\\t%\\tANY\\np8test_rw\\t%\\tANY\\n\\Z"}
+
+  - id: grants-on-the-database
+    what: the rw user has ALL on the database and the ro user SELECT and SHOW VIEW
+    control: negative
+    derived_from:
+      - {path: manifests/mysql_db.pp, lines: "24", text: "grant       => ['ALL'],"}
+      - {path: manifests/mysql_db.pp, lines: "37", text: "grant       => ['SELECT', 'SHOW VIEW'],"}
+    probe: |
+      mysql -NB -e "SHOW GRANTS FOR 'p8test_rw'@'%'; SHOW GRANTS FOR 'p8test_ro'@'%'" | grep 'p8test_db'
+    expect: {rc: 0, stdout: "\\AGRANT ALL PRIVILEGES ON `p8test_db`\\.\\* TO `p8test_rw`@`%`\\nGRANT SELECT, SHOW VIEW ON `p8test_db`\\.\\* TO `p8test_ro`@`%`\\n\\Z"}
+
+  - id: rw-user-logs-in-over-tls
+    what: the rw user logs in over TCP with TLS with its password
+    control: negative
+    derived_from:
+      - {path: manifests/mysql_db.pp, lines: "17-25", text: "password    => $rw_pass,"}
+    probe: |
+      mysql --protocol=TCP -h 127.0.0.1 --ssl-mode=REQUIRED -u p8test_rw -p'p8test-rw-not-a-secret' -NB -e 'SELECT CURRENT_USER()' 2>/dev/null
+    mismatch:
+      varies: >-
+        only the password (p8test-wrong-password): the server must refuse the login, so the user line must not come back
+      probe: |
+        mysql --protocol=TCP -h 127.0.0.1 --ssl-mode=REQUIRED -u p8test_rw -p'p8test-wrong-password' -NB -e 'SELECT CURRENT_USER()' 2>/dev/null
+    expect: {rc: 0, stdout: "\\Ap8test_rw@%\\n\\Z"}
