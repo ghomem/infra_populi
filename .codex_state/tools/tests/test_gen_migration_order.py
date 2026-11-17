@@ -194,7 +194,8 @@ def test_repo_node_fixtures_exist_for_the_planned_classes(gen):
     assert rows["hashman_web"].node_fixture == "hashman_master_standin"  # code tree + the site logo files
     assert rows["user_lock"].node_fixture == "hashman_lock_standin"  # code tree + one fake hashman user entry
     assert rows["letsencrypt_certificate"].node_fixture == "letsencrypt_cert_standin"  # stand-in live certificate
-    assert sum(1 for r in rows.values() if r.node_fixture) == 6
+    assert rows["node_base_domain_desktop"].node_fixture == "puppet_agent_standin"  # Service['puppet'] without a daemon
+    assert sum(1 for r in rows.values() if r.node_fixture) == 7
 
 
 def test_expected_run2_events_parse(gen):
@@ -202,7 +203,8 @@ def test_expected_run2_events_parse(gen):
     assert rows["packages_base"].expected_run2_events == ("Exec[apt_update]",)
     # every entry is a reviewed, justified exception (HQ 2026-11-10 ruling 1): keep this set explicit
     assert {n for n, r in rows.items() if r.expected_run2_events} == {"packages_base", "node_base", "nginx_frontend_domain",
-                                                                      "nginx_frontend", "hashman_web", "linux_policies_user"}
+                                                                      "nginx_frontend", "hashman_web", "linux_policies_user",
+                                                                      "node_base_domain_desktop"}
     assert rows["node_base"].expected_run2_events == ("Exec[apt_update]",)
     assert rows["linux_policies_user"].expected_run2_events == ("File[*/linux-policies/TMP/*.sh.tmp]",
                                                                 "File_line[*/linux-policies/TMP/*.sh.tmp_*]")
