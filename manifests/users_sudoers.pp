@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: puppetlabs-stdlib 9.7.0 (member); through puppet_infrastructure::user_sudoer/user_base: puppetlabs-sshkeys_core 2.5.0 (vendored).
 ### Purpose ########
 # This defined type supports managing several users_sudoers and excluding some of them of this management
 
