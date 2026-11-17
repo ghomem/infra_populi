@@ -1,6 +1,6 @@
 # Puppet 8 migration: per-user Linux policies; exec uses the policy script's existing login check (HQ ruling).
 # Module dependencies: puppetlabs-stdlib 9.7.0 (file_line).
-# Expected run-2 events: File[*/linux-policies/TMP/*.sh.tmp]; File_line[*/linux-policies/TMP/*.sh.tmp_*] — upstream resets the temporary script to its header and re-appends policy lines on every run; tidy skips the managed file.
+# Expected run-2 events: File[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp]; File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_0]; File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_1] — upstream resets the temporary script to its header and re-appends policy lines on every run; tidy skips the managed file.
 ### Purpose ########
 # This defined type composes the <USERNAME>.sh script to execute the policies of a specific user
 
