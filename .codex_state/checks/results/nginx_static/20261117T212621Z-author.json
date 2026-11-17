@@ -1,0 +1,117 @@
+{
+ "class": "nginx_static",
+ "role": "author",
+ "at": "20261117T212621Z",
+ "runner": "d857ad8",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "539f4e4eac1f2fbeb932c9d8d86e32e555801e3da64610941986eaaa5b2daffd",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "nginx-config-valid",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "bash: line 1: nginx: command not found\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "http-serves-www-root-for-the-domain",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "no file in www_root\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "other-hosts-get-404",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "no file in www_root\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "package-default-site-removed",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "no-default-site\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "/nginx/sites-available/static_default_p8test.example.com.conf]\n  Concat::Fragment[static_default_p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[static_default_p8test.example.com-header]\n  Concat_fragment[static_default_p8test.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/static_main_redirector_p8test.example.com.conf]\n  Concat_fragment[static_main_redirector_p8test.example.com-header]\n  Concat_fragment[static_main_redirector_p8test.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/static_https_www_redirector_p8test.example.com.conf]\n  Concat_fragment[static_https_www_redirector_p8test.example.com-ssl-header]\n  Concat_fragment[static_https_www_redirector_p8test.example.com-ssl-footer]\n  Concat_file[/etc/nginx/sites-available/static_http_p8test.example.com.conf]\n  Concat::Fragment[static_http_p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[static_http_p8test.example.com-header]\n  Concat_fragment[static_http_p8test.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/static_https_p8test.example.com.conf]\n  Concat_fragment[static_https_p8test.example.com-ssl-header]\n  Concat_fragment[static_https_p8test.example.com-ssl-footer]\n  Concat_fragment[static_default_p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[static_http_p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP nginx_static 75254b355f42\n"
+ },
+ "applied": [
+  {
+   "id": "nginx-config-valid",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\n",
+   "stderr": ""
+  },
+  {
+   "id": "http-serves-www-root-for-the-domain",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "same-content\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the Host (p8test-other.example.com): that name has no server of its own, so the default server answers 404 and the byte comparison must fail",
+    "rc": 1,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "other-hosts-get-404",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "404\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "only the Host (p8test.example.com, the domain's own server), same existing file: that server serves it (200), so the 404 expectation must fail",
+    "rc": 0,
+    "passed": false,
+    "stdout": "200\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "package-default-site-removed",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "no-default-site\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.6,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "b092fc40-fef1-4f1a-b3de-98f55029ea02",
+   "boot_id_at_end": "b092fc40-fef1-4f1a-b3de-98f55029ea02",
+   "fresh": true
+  }
+ },
+ "duration_s": 64.7
+}
