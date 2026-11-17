@@ -1,0 +1,149 @@
+{
+ "class": "network_vpn",
+ "role": "reviewer",
+ "at": "20261117T143108Z",
+ "runner": "a701e78",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "9bcd90ee7b2be32c004cd298c7c3440a704f88d598aab68181e31ff97070c63a",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "nameserver-serves-the-vpn-network",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /etc/bind/named.conf.options: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "firewall-accepts-dns-on-the-bridge",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "forwarding-and-nat-to-the-wan",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "vpn-server-on-the-vpn-network",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/openvpn/server/puppet_infrastructure.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "vpn-account-on-the-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "client-connects-and-resolves-through-the-vpn-nameserver",
+   "control": "negative",
+   "rc": 9,
+   "passed": false,
+   "stdout": ";; communications error to 198.51.100.1#53: timed out\n;; communications error to 198.51.100.1#53: timed out\n;; no servers could be reached\n",
+   "stderr": "Device \"\" does not exist.\ngrep: /run/p8vpn/client.log: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "File[/etc/openvpn]\n  File[/etc/openvpn/keys]\n  File[/var/log/openvpn]\n  Concat[/etc/default/openvpn]\n  Concat::Fragment[openvpn.default.header]\n  Openvpn::Server[puppet_infrastructure]\n  File[/usr/lib/openvpn]\n  File[/usr/lib/openvpn/openvpn-plugin-auth-pam.so]\n  File[/etc/openvpn/openvpn-up.sh]\n  Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]\n  File[/etc/sysctl.d]\n  File[/etc/sysctl.d/99-sysctl.conf]\n  File[/etc/sysctl.d/net.ipv4.ip_forward.conf]\n  Exec[sysctl-net.ipv4.ip_forward]\n  Exec[update-sysctl.conf-net.ipv4.ip_forward]\n  Exec[enforce-sysctl-value-net.ipv4.ip_forward]\n  Concat_file[/etc/default/openvpn]\n  Concat_fragment[/etc/default/openvpn_header]\n  Concat_fragment[openvpn.default.header]\n  File[/etc/openvpn/server/puppet_infrastructure]\n  File[/etc/openvpn/server/puppet_infrastructure/scripts]\n  File[/etc/openvpn/server/puppet_infrastructure/auth]\n  File[/etc/openvpn/server/puppet_infrastructure/client-configs]\n  File[/etc/openvpn/server/puppet_infrastructure/download-configs]\n  File[/etc/openvpn/server/puppet_infrastructure.conf]\n  File[/etc/openvpn/server/puppet_infrastructure/keys/pre-shared.secret]\n  Service[openvpn-server@puppet_infrastructure]\n  File[/etc/sysctl.d/net.ipv4.conf.br0.proxy_arp_pvlan.conf]\n  Exec[sysctl-net.ipv4.conf.br0.proxy_arp_pvlan]\n  Exec[update-sysctl.conf-net.ipv4.conf.br0.proxy_arp_pvlan]\n  Exec[enforce-sysctl-value-net.ipv4.conf.br0.proxy_arp_pvlan]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP network_vpn 458c8e0e669a\n"
+ },
+ "applied": [
+  {
+   "id": "nameserver-serves-the-vpn-network",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "2\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "firewall-accepts-dns-on-the-bridge",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": ""
+  },
+  {
+   "id": "forwarding-and-nat-to-the-wan",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A FORWARD -i br0 -o p8test0 -j ACCEPT\n-A FORWARD -i p8test0 -o br0 -m state --state RELATED,ESTABLISHED -j ACCEPT\n-A FORWARD -i br0 -o br0 -j ACCEPT\n-A POSTROUTING -o p8test0 -j MASQUERADE\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "vpn-server-on-the-vpn-network",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "server-bridge 198.51.100.1 255.255.255.0 198.51.100.101 198.51.100.200\npush \"dhcp-option DNS 198.51.100.1\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "vpn-account-on-the-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8vpnuser\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the local account p8vpnuser on the server node with the fake password p8test-vpn-not-a-secret",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "client-connects-and-resolves-through-the-vpn-nameserver",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "198.51.100.101/24\ndhcp-option DNS 198.51.100.1\n127.0.0.1\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: installs openvpn and the dig client, adds the host route 203.0.113.50 via the node's host-only address, writes a client config and credentials under /run/p8vpn and starts an openvpn client daemon",
+    "rc": 0,
+    "stdout": "2026-11-17 14:33:59 WARNING: Compression for receiving enabled. Compression has been used in the past to break encryption. Sent packets are not compressed unless \"allow-compression yes\" is also set.\n2026-11-17 14:33:59 WARNING: Compression for sending and receiving enabled. Compression has been used in the past to break encryption. Allowing compression allows attacks that break encryption. Using \"--allow-compression yes\" is strongly discouraged for common usage. See --compress in the manual page for more information \n",
+    "stderr": ",\n\tLC_MEASUREMENT = \"pt_PT.UTF-8\",\n\tLC_IDENTIFICATION = \"pt_PT.UTF-8\",\n\tLC_NUMERIC = \"pt_PT.UTF-8\",\n\tLC_PAPER = \"pt_PT.UTF-8\",\n\tLANG = \"en_US.UTF-8\"\n    are supported and installed on your system.\nperl: warning: Falling back to a fallback locale (\"en_US.UTF-8\").\n\nRunning kernel seems to be up-to-date.\n\nNo services need to be restarted.\n\nNo containers need to be restarted.\n\nNo user sessions are running outdated binaries.\n\nNo VM guests are running outdated hypervisor (qemu) binaries on this host.\n"
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.7,
+ "node": "ubuntu",
+ "peer": "ubuntu2",
+ "duration_s": 171.7
+}

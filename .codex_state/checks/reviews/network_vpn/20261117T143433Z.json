@@ -1,0 +1,21 @@
+{
+ "class": "network_vpn",
+ "at": "20261117T143433Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "forwarding-and-nat-to-the-wan @ firewall_addon_openvpn_server.pp:21: firewall '205 performing nat' (table nat, chain POSTROUTING, outiface $wan_iface, proto all, jump MASQUERADE) with wan_iface=p8test0 from the params fixture (passed via network_vpn.pp:42) renders exactly '-A POSTROUTING -o p8test0 -j MASQUERADE' (proto all adds no -p); the probe greps that rule by its comment in iptables -t nat -S POSTROUTING and expects that line",
+  "vpn-account-on-the-server @ network_vpn.pp:47: the line declares openvpn_server, whose baseline openvpn::server sets pam => true and username_as_common_name => true (openvpn_server.pp:168-169, plus the auth-pam plugin link at :196), so clients authenticate against local accounts; the mutating action only creates the test account p8vpnuser with a fake password (exactly what mutates declares) as setup for the client check, and the read-only effect getent passwd shows the resulting account, not the action's output",
+  "forwarding-and-nat-to-the-wan @ firewall_addon_openvpn_server.pp:25: sysctl { 'net.ipv4.ip_forward': value => '1' } is tested by sysctl -n net.ipv4.ip_forward expecting the final line '1'; the FORWARD lines expected (br0->p8test0 accept, p8test0->br0 RELATED,ESTABLISHED accept, br0->br0 accept) match rules 202-204 at lines 17-19 with the default bridge br0 and fixture wan_iface p8test0"
+ ],
+ "review_s": 205.9,
+ "check_file_sha256": "9bcd90ee7b2be32c004cd298c7c3440a704f88d598aab68181e31ff97070c63a",
+ "reviewer_result": "20261117T143108Z-reviewer",
+ "author_result": "20261117T142733Z-author",
+ "findings": []
+}
