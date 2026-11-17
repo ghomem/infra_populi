@@ -1,0 +1,33 @@
+{
+ "class": "user_desktop_sudoer",
+ "at": "20261117T232617Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok"
+ },
+ "evidence": [
+  "the-given-key-is-pushed (user_base.pp:96-99): ssh_authorized_key titled \"${myusername}@puppet\", type ssh-rsa, key $sshkey; the fixture hash has no '!' and mykey is non-empty (RSA body AAAAB3NzaC1yc2EAAAADAQAB..., 372 chars), and ignorekey defaults false (user_desktop_sudoer.pp:7), so $sshkey = mykey and the authorized_keys line is 'ssh-rsa <key> p8testuser@puppet', exactly what the probe+expect match",
+  "kde-lock-settings-applied-in-the-session (configure_lock_screen.sh:66-95): the script, run as the user, writes [Daemon] Autolock=true, LockOnResume=true, Timeout=$1, LockGrace=$2 into $HOME/.config/kscreenlockerrc via kwriteconfig; user_kde_lock_screen.pp:14-18 passes the wrapper's values; the expect (owner p8testuser, Autolock/LockOnResume true, Timeout 5, LockGrace 0) is what these lines produce under the fixture's defaults; the session block covers the script's who-logged-in gate (lines 14-21)",
+  "kde-lock-settings-applied-in-the-session (user_desktop_sudoer.pp:12): the wrapper declares user_kde_lock_screen for $title with screenlock_timeout_minutes/screenlock_grace_seconds, defaults 5 and 0 at line 7; the params fixture sets neither (only myname, myhash, mykey), so Timeout=5 and LockGrace=0 in p8testuser's kscreenlockerrc is the declared behaviour",
+  "whole file: 6 negative controls, no invariants, no mutating checks, all probes read-only and node-local; mismatch on the sudo check varies only the user (nobody, outside the sudo group), which must change sudo's verdict, and it failed after apply as required",
+  "run: reviewer run 20261117T232347Z valid on p8lab-kubuntu (all 6 negatives failed clean), ALL_PASS after apply and the Plasma session (session run 1 changed 1, run 2 changed 0); no findings"
+ ],
+ "review_s": 150.1,
+ "check_file_sha256": "613fced881032fcaef7284e3a0140334e3c72ee8e90f4867b84cabc80710e076",
+ "reviewer_result": "20261117T232347Z-reviewer",
+ "author_result": "20261117T232051Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "de82fdf3-4eb5-44e8-b3f2-dbe59a316706",
+   "boot_id_at_end": "de82fdf3-4eb5-44e8-b3f2-dbe59a316706",
+   "fresh": true
+  }
+ }
+}
