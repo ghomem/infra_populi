@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-95 entries; 6 marked superseded (in whole or part); newest first.
+96 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-17 — Batch 8 engine decisions (report: escalations/batch-2026-11-17-8.md)
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-17 — HQ rulings after the bring-up (rulings 1-7, second set)
 - 1. **openvpn_server:** option A extended; the module owns the unit.

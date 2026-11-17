@@ -1581,3 +1581,30 @@ snapshot list, record.
     systemd-timesyncd stepped it.
   - Lab runs already block sleep (c36039a). A whole batch now also holds one inhibitor, released at batch end. The
     master's clock offset is checked before the snapshot and before each batch.
+
+## 2026-11-17 — Batch 8 engine decisions (report: escalations/batch-2026-11-17-8.md)
+- **Re-migration of a done class:** orientation reads hazard-8 drift from before the first `P8: migrate` commit, and
+  states that the earlier migration's differences are expected (d93c02d; mysql_server's ruled client change).
+- **Real NICs are device-backed:** the reviewer's fixture check ignores veths, bridges and taps, whatever state the node
+  is in (4a4dd82; openvpn_server's false-positive FAIL).
+- **Stand-in primary interface `p8test_dhcp_primary`** (mock-apply; HQ acceptance requested): a veth whose peer, in a
+  network namespace, runs dnsmasq serving 203.0.113.50 with no router and no DNS. Classes that take over the primary
+  interface (openvpn_server, network_vpn) manage it as production manages the real one.
+- **Phase 3 peer node:** `peer: {kind, why, files}` and `host: peer` (f184406, 9533f8e).
+  - The peer is reverted with the node, receives node files under /run/p8test-from-node, and is powered off after the
+    run.
+  - Its probes may name only the class node's host-only address.
+  - `on:` is not used because YAML 1.1 reads a bare `on` key as true; boolean keys are refused.
+- **Per-target base fixtures:** params/for/<target>/<base>.json is preferred when the harness applies that base for that
+  target (c8b4965, b1159ae). The reviewer's fixture check uses the same precedence.
+- **pregate:**
+  - strings and comments are scanned in one pass (d588d7d);
+  - declared classes and defines are walked (05552e4);
+  - hazard-14 "standalone" entries per class (2d731bc).
+- **Lab Hiera:** openvpn_server's local/local_interface for network_vpn (the stand-in interface). The batch-7 `db::`
+  keys were removed: common.yaml defines them first, so they never took effect. This corrects the 2026-11-17
+  "mariadb_server prerequisites" entry.
+- **network_vpn's params fixture** uses RFC 5737 198.51.100.0/24 for the VPN network, so peer probes name no 192.168
+  address (the probe host rule is unchanged).
+- **Batch-long sleep inhibitor:** the harness and phase3 runs already held one. Batch 8 also held one for its whole
+  length, after the 09:20–11:57 suspend left the master's clock 2 h 26 min behind.
