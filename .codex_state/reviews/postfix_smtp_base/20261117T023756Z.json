@@ -1,0 +1,95 @@
+{
+ "schema": 1,
+ "class": "postfix_smtp_base",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-17T02:37:56Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "805c73d52c65",
+ "migrate_subject": "P8: migrate puppet_infrastructure::postfix_smtp_base",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 805c73d52c65; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `postfix_smtp_base Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-concat', '9.1.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 14 catalog events; COVERAGE puppet_infrastructure::postfix_smtp_base: 22 concrete resources (+6 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added comment lines at top; diff_summary non_comment_changes=0, removed=0; DIFF B identical, migration started from baseline content)"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependencies: none of its own (core package/file/service/exec); through puppet_infrastructure::ssl_postfix and ssl_base: puppetlabs-concat 9.1.0."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 14,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::postfix_smtp_base: 22 concrete resources (+6 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 20.232,
+   "master_check_s": 0.309,
+   "poweroff_s": 0.571,
+   "restore_s": 0.235,
+   "boot_to_ssh_s": 13.219,
+   "apt_update_s": 5.572,
+   "verify_s": 0.326,
+   "nic1_rx_bytes": 3724827
+  },
+  "log": ".codex_state/logs/reviews/postfix_smtp_base.20261117T023621Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
