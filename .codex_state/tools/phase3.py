@@ -57,7 +57,8 @@ Check file .codex_state/checks/<class>.yml:
       # name, user, key, cipher or vhost to a tool and takes the tool's verdict (TLS, logins, HTTP by host); optional
       # for direct state reads.
       mismatch: {varies: <which value is wrong and why the verdict must change>, probe: <read-only shell>}
-      on: node | peer                # where the probe runs (default node); peer needs the set's `peer` block
+      host: node | peer              # where the probe runs (default node); peer needs the set's `peer` block
+                                     # (not `on`: YAML 1.1 reads a bare `on` key as the boolean true)
   peer: {kind: <nodes.yml kind with second-node>, why: <why the behaviour needs a second machine>, files: [<abs path>]}
       # PEER node (HQ 2026-11-17 ruling 1, the VPN client): reverted with the node under the same lab lock, powered off
       # after the run. Its probes keep every host rule except that they may name the class node's host-only address
@@ -314,14 +315,16 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
             problems.append(f"{where}: derived_from (baseline references) is required")
         else:
             problems += [f"{where}: {p}" for p, _ in (resolve_ref(r, base) for r in refs) if p]
+        if any(isinstance(k, bool) for k in c):
+            problems.append(f"{where}: a key read as a boolean (YAML 1.1 `on:`/`yes:`/`no:`); a peer probe is `host: peer`")
         mutating = "mutates" in c
-        on = c.get("on", "node")
+        on = c.get("host", "node")
         allow = None
         if on not in ("node", "peer"):
-            problems.append(f"{where}: on must be node|peer")
+            problems.append(f"{where}: host must be node|peer")
         elif on == "peer":
             if "peer" not in data:
-                problems.append(f"{where}: on: peer needs the set's `peer` block")
+                problems.append(f"{where}: host: peer needs the set's `peer` block")
             allow = peer_ip
         if not isinstance(c.get("probe"), str) or not c["probe"].strip():
             problems.append(f"{where}: probe is required")
@@ -421,7 +424,7 @@ def on_peer(script: str) -> tuple[int, str, str]:
 
 
 def on_host(check: dict, script: str) -> tuple[int, str, str]:
-    return on_peer(script) if check.get("on") == "peer" else on_node(script)
+    return on_peer(script) if check.get("host") == "peer" else on_node(script)
 
 
 def fetch_node_files(paths: list[str]) -> None:
@@ -465,8 +468,8 @@ def run_probe(check: dict, act: bool = False) -> dict:
     passed = meets(check, rc, out)
     row = {"id": check["id"], "control": check["control"], "rc": rc, "passed": passed,
            "stdout": out[-2000:], "stderr": err[-1000:]}
-    if check.get("on") == "peer":
-        row["on"] = "peer"
+    if check.get("host") == "peer":
+        row["host"] = "peer"
     if "mutates" in check:
         row["mutating"] = True
         row["action"] = action  # None in the clean phase: the action never runs before the class is applied

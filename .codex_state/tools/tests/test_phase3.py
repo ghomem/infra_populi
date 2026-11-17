@@ -559,12 +559,12 @@ PEER = {"kind": "ubuntu2", "why": "the VPN client must be a second machine on th
 
 def test_a_peer_set_validates_and_peer_probes_may_name_only_the_class_node(p3):
     p3.write(check_set(check("conf", "probe-conf"),
-                       check("client", "ping -c1 192.168.56.20 && ls /run/p8test-from-node/ca.crt", on="peer"),
+                       check("client", "ping -c1 192.168.56.20 && ls /run/p8test-from-node/ca.crt", host="peer"),
                        peer=PEER))
     assert p3.run("validate", CLS).returncode == 0
     for probe, message in [("ping -c1 192.168.56.10", "names another lab host"),
                            ("ssh p8lab-ubuntu2 true", "names another lab host")]:
-        p3.write(check_set(check("conf", "probe-conf"), check("client", probe, on="peer"), peer=PEER))
+        p3.write(check_set(check("conf", "probe-conf"), check("client", probe, host="peer"), peer=PEER))
         proc = p3.run("validate", CLS)
         assert proc.returncode == 2 and message in proc.stderr, proc.stderr
     p3.write(check_set(check("conf", "ping -c1 192.168.56.20")))  # a node probe still names no lab host
@@ -572,14 +572,14 @@ def test_a_peer_set_validates_and_peer_probes_may_name_only_the_class_node(p3):
 
 
 @pytest.mark.parametrize("top, on, message", [
-    ({}, "peer", "on: peer needs the set's `peer` block"),
+    ({}, "peer", "host: peer needs the set's `peer` block"),
     ({"peer": {**PEER, "kind": "gnome"}}, "peer", "lacks the capability 'second-node'"),
     ({"peer": {**PEER, "kind": "ubuntu"}}, "peer", "the peer is the class's own node"),
     ({"peer": {**PEER, "files": ["relative/path"]}}, "peer", "peer.files is a list of absolute paths"),
-    ({"peer": PEER}, "elsewhere", "on must be node|peer"),
+    ({"peer": PEER}, "elsewhere", "host must be node|peer"),
 ])
 def test_bad_peer_declarations_are_refused(p3, top, on, message):
-    p3.write(check_set(check("conf", "probe-conf"), check("client", "probe-client", on=on), **top))
+    p3.write(check_set(check("conf", "probe-conf"), check("client", "probe-client", host=on), **top))
     proc = p3.run("validate", CLS)
     assert proc.returncode == 2 and message in proc.stderr, proc.stderr
 
@@ -589,7 +589,7 @@ def test_a_peer_run_reverts_both_nodes_hands_the_files_over_and_powers_the_peer_
     labvm.write_text("#!/bin/sh\necho \"labvm $*\" >> \"$(dirname \"$0\")/log\"\n")
     labvm.chmod(0o755)
     (tmp_path / "revert.sh").write_text("#!/bin/sh\necho \"reverted $*\" >> \"$(dirname \"$0\")/log\"\n")
-    p3.write(check_set(check("conf", "probe-conf"), check("client", "probe-client", on="peer"), peer=PEER))
+    p3.write(check_set(check("conf", "probe-conf"), check("client", "probe-client", host="peer"), peer=PEER))
     p3.probe_rule("probe-conf", FAIL, OK)
     p3.probe_rule("probe-client", FAIL, OK)
     lab.world["ssh"].insert(0, {"match": "base64 -w0 /etc/x/ca.crt", "outputs": [{"rc": 0, "stdout": "\n"},
@@ -598,10 +598,20 @@ def test_a_peer_run_reverts_both_nodes_hands_the_files_over_and_powers_the_peer_
     assert proc.returncode == 0, proc.stdout + proc.stderr
     record, _ = p3.result()
     assert record["outcome"] == "ALL_PASS" and record["peer"] == "ubuntu2"
-    assert [r.get("on") for r in record["applied"]] == [None, "peer"]
+    assert [r.get("host") for r in record["applied"]] == [None, "peer"]
     assert p3.log.read_text().splitlines() == ["reverted --node ubuntu", "reverted --node ubuntu2",
                                                f"harness puppet_infrastructure::{CLS}", "labvm stop p8lab-ubuntu2"]
     peer_calls = [c for c in lab.calls("ssh") if c[-2] == "p8lab-ubuntu2"]
     assert len(peer_calls) == 2  # clean + applied
     stdin = [c for c in lab.calls("ssh") if c[-2] == "p8lab-ubuntu2"]
     assert all(c[-1] == "sudo -n bash -s" for c in stdin)
+
+
+
+def test_a_bare_yaml_on_key_cannot_select_the_peer(p3):
+    # YAML 1.1 reads `on:` as the boolean true: the field is `host`, and a written `on: peer` stays a node probe
+    (p3.dir / f"{CLS}.yml").write_text(yaml.safe_dump(check_set(check("conf", "probe-conf")), sort_keys=False)
+                                       .replace("  probe: probe-conf", "  on: peer\n  probe: probe-conf"))
+    assert yaml.safe_load((p3.dir / f"{CLS}.yml").read_text())["checks"][0].get(True) == "peer"
+    proc = p3.run("validate", CLS)
+    assert proc.returncode == 2 and "a key read as a boolean" in proc.stderr
