@@ -24,3 +24,19 @@ def test_ruling_lines_match_the_class_exactly(tmp_path):
 def test_tracked_rulings_file_names_the_integer_fix():
     (ruling,) = orientation.ruling_lines("nginx_frontend_domain")
     assert "Integer($element_split[1])" in ruling and "DESIGN_DECISIONS" in ruling
+
+
+# 2026-11-17 (mysql_server): a done class's re-migration reads hazard-8 drift from before its first migrate commit.
+def test_first_migrate_commit_is_the_oldest_for_the_exact_class(monkeypatch):
+    log = ("a1\tP8: migrate puppet_infrastructure::mysql_server\n"
+           "b2\tP8: migrate puppet_infrastructure::mysql_server_extra\n"
+           "c3\tP8: migrate puppet_infrastructure::mysql_server\n")
+    monkeypatch.setattr(orientation.generator, "run_git", lambda args: log)
+    assert orientation.first_migrate_commit("mysql_server") == "a1"
+    assert orientation.first_migrate_commit("mysql_db") is None
+
+
+def test_repo_mysql_server_has_no_drift_before_its_first_migration():
+    base = orientation.baseline.for_class("mysql_server")
+    first = orientation.first_migrate_commit("mysql_server")
+    assert first and orientation.pre_migration_drift("mysql_server", base, first) == []

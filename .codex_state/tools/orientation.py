@@ -78,16 +78,52 @@ def module_lines(manifest: str, inv: dict) -> list[str]:
     return out
 
 
+def first_migrate_commit(cls: str) -> str | None:
+    """The class's first `P8: migrate puppet_infrastructure::<cls>` commit, or None for a class never migrated."""
+    out = generator.run_git(["log", "--reverse", "--format=%H%x09%s"])
+    for line in out.splitlines():
+        commit, _, subject = line.partition("\t")
+        if re.fullmatch(rf"P8: migrate puppet_infrastructure::{cls}\b.*", subject):
+            return commit
+    return None
+
+
+def pre_migration_drift(cls: str, base: "baseline.Baseline", first: str) -> list[str]:
+    """Class paths whose content just before `first` differs from the baseline (hazard 8 for a re-migration)."""
+    drift = []
+    for path in baseline.class_paths(cls, base.commit, base.upstream):
+        before = generator.run_git(["show", f"{first}^:{path}"]) if path_in(first + "^", path) else None
+        upstream = baseline.git_show(base.upstream, base.commit, path)
+        if (before.encode() if before is not None else None) != upstream:
+            drift.append(path)
+    return drift
+
+
+def path_in(ref: str, path: str) -> bool:
+    return bool(generator.run_git(["ls-tree", "--name-only", ref, "--", path]).strip())
+
+
 def packet(cls: str) -> str:
     base = baseline.for_class(cls)
     rows = generator.parse_plan()
     lines = [f"ORIENTATION PACKET puppet_infrastructure::{cls} (facts gathered before you started)"]
     row = rows.get(cls)
     lines.append(f"plan: {plan_line(row)}" if row else "plan: CLASS NOT IN migration_plan.md")
-    drift = baseline.local_drift(cls, base)
-    lines.append(f"baseline: {base.name} ({base.commit[:7]}); drift: "
-                 + ("none (manifest + templates/files identical)" if not drift else
-                    f"DIFFERS in {', '.join(drift)} (not yours to sync: stop and report)"))
+    first = first_migrate_commit(cls)
+    if first is None:
+        drift = baseline.local_drift(cls, base)
+        lines.append(f"baseline: {base.name} ({base.commit[:7]}); drift: "
+                     + ("none (manifest + templates/files identical)" if not drift else
+                        f"DIFFERS in {', '.join(drift)} (not yours to sync: stop and report)"))
+    else:
+        # 2026-11-17 (mysql_server): for a done class the local content IS its earlier migration; hazard-8 drift is
+        # what the content looked like just before the first migrate commit
+        drift = pre_migration_drift(cls, base, first)
+        lines.append(f"baseline: {base.name} ({base.commit[:7]}); RE-MIGRATION of a done class (first migrate commit "
+                     f"{first[:7]}): the local manifest is that earlier migration, and its differences from the baseline "
+                     "are expected — keep them and apply only the HQ ruling below on top; drift before the first "
+                     "migration: " + ("none" if not drift else
+                                      f"DIFFERS in {', '.join(drift)} (not yours to sync: stop and report)"))
     report = pregate.pregate_class(cls)
     findings = [f"{check}: {detail}" for level, check, detail in report.lines if level in ("FINDING", "ERROR")]
     lines.append(f"pregate: {report.status}" + (f" ({len(findings)})" if findings else ""))
