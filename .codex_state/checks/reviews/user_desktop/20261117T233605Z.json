@@ -1,0 +1,31 @@
+{
+ "class": "user_desktop",
+ "at": "20261117T233605Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok"
+ },
+ "evidence": [
+  "kde-lock-settings-applied-in-the-session / files/user_kde_lock_screen/configure_lock_screen.sh:66-95: the script, run as the user by user_kde_lock_screen's exec (user => $myusername), writes kscreenlockerrc [Daemon] Autolock 'true', LockOnResume 'true', Timeout ${LOCK_TIMEOUT} ($1) and LockGrace ${LOCK_GRACE} ($2) with kwriteconfig5 into ${HOME}/.config/kscreenlockerrc; lines 14-21 skip it unless the user is logged in, which the set's session block provides; a user-owned file with those four keys sorted is exactly what the probe greps from the [Daemon] section",
+  "kde-lock-settings-applied-in-the-session / manifests/user_desktop.pp:7: defaults screenlock_timeout_minutes = 5 and screenlock_grace_seconds = 0; the params fixture sets only myname, myhash and mykey, so line 11 passes 5 and 0 to user_kde_lock_screen, whose exec passes them as $1/$2: expect Timeout=5 and LockGrace=0 is what the code produces",
+  "desktop-groups / manifests/user_desktop.pp:9-10: grouplist = flatten([mygrouplist, [title, cdrom, dip, plugdev, lp]]) with mygrouplist defaulting to [] (not set in the fixture) gives [p8testuser, cdrom, dip, plugdev, lp], passed to user_base as the user's groups (gid = first element = title); id -nG sorted 'cdrom dip lp p8testuser plugdev' is exactly that set"
+ ],
+ "review_s": 151.0,
+ "check_file_sha256": "a954b340810ab1b0d81cecbe6b373702c7db6190f505e7bd6f9f4391362fa55b",
+ "reviewer_result": "20261117T233335Z-reviewer",
+ "author_result": "20261117T233039Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "9a898eeb-3b2d-4e36-9181-0d1f31f0ab18",
+   "boot_id_at_end": "9a898eeb-3b2d-4e36-9181-0d1f31f0ab18",
+   "fresh": true
+  }
+ }
+}
