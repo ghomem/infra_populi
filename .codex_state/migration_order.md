@@ -1,12 +1,12 @@
 # Puppet Class Migration Order
 
-Generated: 2026-11-17 12:06:37 UTC
+Generated: 2026-11-17 12:21:57 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
 Precedence: git > migrated_classes.txt (canonical) > migration_order.md (advisory). The `[from: release-0.9.10]` annotation lives in migrated_classes.txt, not here.
 
-Status summary: 80 done / 1 owner_validated / 5 blocked / 0 gated / 0 needs verification / 5 pending / 1 retired / 92 total.
+Status summary: 81 done / 1 owner_validated / 5 blocked / 0 gated / 0 needs verification / 4 pending / 1 retired / 92 total.
 
 Next class: `puppet_infrastructure::openvpn_server`
 
@@ -93,15 +93,16 @@ Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — de
 | 69 | `puppet_infrastructure::user_base` | 3 | 7 | 8 | 6 | yes |  |
 | 70 | `puppet_infrastructure::firewall_secure` | 78 | 7 | 8 | 7 | no | filesystem_base |
 | 71 | `puppet_infrastructure::nginx_base` | 33 | 7 | 10 | 6 | no |  |
-| 72 | `puppet_infrastructure::postfix_smtp_base` | 0 | 8 | 6 | 6 | yes | ssl_postfix,postfix_smtp_base_config_file |
-| 73 | `puppet_infrastructure::hashman_web` | 1 | 8 | 7 | 7 | no | hashman_base,nginx_frontend |
-| 74 | `puppet_infrastructure::nginx_frontend` | 24 | 8 | 8 | 6 | no | nginx_base,nginx_default_removal,ssl_nginx_domain,nginx_frontend_domain |
-| 75 | `puppet_infrastructure::sysmon_base` | 58 | 8 | 8 | 6 | no | filesystem_base,packages_base |
-| 76 | `puppet_infrastructure::hashman_base` | 1 | 8 | 8 | 7 | no | filesystem_base |
-| 77 | `puppet_infrastructure::nginx_static_domain` | 1 | 9 | 7 | 6 | no | nginx_base,nginx_default_removal |
-| 78 | `puppet_infrastructure::firewall_secure_extra` | 58 | 9 | 8 | 8 | no | filesystem_base |
-| 79 | `puppet_infrastructure::node_base` | 58 | 9 | 10 | 6 | no | packages_base,sysmon_base,ssh_secure,firewall_secure,firewall_ipv6_drop,filesystem_base,filesystem_apt,filesystem_lib64,filesystem_sec,dns_client |
-| 80 | `puppet_infrastructure::nginx_frontend_domain` | 35 | 10 | 7 | 7 | no | nginx_base,nginx_default_removal |
+| 72 | `puppet_infrastructure::mariadb_server` | 0 | 8 | 4 | 6 | no | filesystem_base |
+| 73 | `puppet_infrastructure::postfix_smtp_base` | 0 | 8 | 6 | 6 | yes | ssl_postfix,postfix_smtp_base_config_file |
+| 74 | `puppet_infrastructure::hashman_web` | 1 | 8 | 7 | 7 | no | hashman_base,nginx_frontend |
+| 75 | `puppet_infrastructure::nginx_frontend` | 24 | 8 | 8 | 6 | no | nginx_base,nginx_default_removal,ssl_nginx_domain,nginx_frontend_domain |
+| 76 | `puppet_infrastructure::sysmon_base` | 58 | 8 | 8 | 6 | no | filesystem_base,packages_base |
+| 77 | `puppet_infrastructure::hashman_base` | 1 | 8 | 8 | 7 | no | filesystem_base |
+| 78 | `puppet_infrastructure::nginx_static_domain` | 1 | 9 | 7 | 6 | no | nginx_base,nginx_default_removal |
+| 79 | `puppet_infrastructure::firewall_secure_extra` | 58 | 9 | 8 | 8 | no | filesystem_base |
+| 80 | `puppet_infrastructure::node_base` | 58 | 9 | 10 | 6 | no | packages_base,sysmon_base,ssh_secure,firewall_secure,firewall_ipv6_drop,filesystem_base,filesystem_apt,filesystem_lib64,filesystem_sec,dns_client |
+| 81 | `puppet_infrastructure::nginx_frontend_domain` | 35 | 10 | 7 | 7 | no | nginx_base,nginx_default_removal |
 
 ## OWNER-VALIDATED
 
@@ -129,15 +130,15 @@ Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — de
 |---:|---|---:|---:|---:|---:|---|---|
 | 1 | `puppet_infrastructure::openvpn_server` | 3 | 9 | 6 | 7 | no |  |
 | 2 | `puppet_infrastructure::network_vpn` | 3 | 8 | 7 | 6 | no | caching_nameserver,firewall_addon_caching_nameserver,firewall_addon_openvpn_server,openvpn_server |
-| 3 | `puppet_infrastructure::mariadb_server` | 0 | 8 | 4 | 6 | no | filesystem_base |
-| 4 | `puppet_infrastructure::nginx_frontend_mail` | 0 | 8 | 7 | 6 | no | ssl_nginx_domain,nginx_frontend_domain |
-| 5 | `puppet_infrastructure::node_base_desktop` | 0 | 8 | 10 | 5 | no | packages_base,ssh_secure,firewall_secure,firewall_ipv6_drop_policy,filesystem_base_desktop,filesystem_apt,rsyslog_client,user_kde_lock_screen |
+| 3 | `puppet_infrastructure::nginx_frontend_mail` | 0 | 8 | 7 | 6 | no | ssl_nginx_domain,nginx_frontend_domain |
+| 4 | `puppet_infrastructure::node_base_desktop` | 0 | 8 | 10 | 5 | no | packages_base,ssh_secure,firewall_secure,firewall_ipv6_drop_policy,filesystem_base_desktop,filesystem_apt,rsyslog_client,user_kde_lock_screen |
 
 ## UPSTREAM DEFECTS FIXED LOCALLY (tracker markers; list: .codex_state/upstream_defects.md)
 
 - `puppet_infrastructure::filesystem_sec` [from: release-0.9.10] — default group assigned to a new variable (no parameter reassignment)
 - `puppet_infrastructure::firewall_addon_hosting` [from: release-0.9.10] — OUTPUT accept for the master on 8140
 - `puppet_infrastructure::linux_policies_user` [from: release-0.9.10] — policy exec guarded by the script login check
+- `puppet_infrastructure::mariadb_server` [from: 874f854] — certificate generation guarded by its post-condition
 - `puppet_infrastructure::puppet_boot_run` [from: release-0.9.10] — ensure dropped
 - `puppet_infrastructure::user_base` [from: release-0.9.10] — exec guarded by its post-condition
 - `puppet_infrastructure::user_lock` [from: release-0.9.10] — exec guarded by its post-condition
