@@ -1,3 +1,5 @@
+# Puppet 8 migration: 874f854 manifest validated unchanged.
+# Module dependencies: puppetlabs-mysql 17.3.0.
 # Create a MySQL database with a read/write user and, optionally,
 # a read-only user. Remote accounts require TLS; network access is
 # restricted separately by the node firewall.
