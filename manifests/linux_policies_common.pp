@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none (core file resources only).
 ### Purpose ########
 # This class provides the common files and directories needed to execute linux policies with puppet
 
