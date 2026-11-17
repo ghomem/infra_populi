@@ -1,3 +1,5 @@
+# Puppet 8 migration: configure NetworkManager OpenVPN connections; UUID function per HQ ck1 ruling 3.
+# Module dependencies: puppetlabs-stdlib 9.7.0.
 ### Purpose ########
 # Configure OpenVPN connections on Desktop clients
 
@@ -25,8 +27,9 @@ define puppet_infrastructure::openvpn_nm_connection(
     }
 
     # generate some random uuid here
+    # fqdn_uuid derives a stable version-5 UUID from the connection name (HQ ck1 ruling 3).
     # $uuid="7b9a2c18-c9e6-4b33-851e-2a8d2d2d7c05"
-    $uuid = fqdn_rand_uuid($connection_name)
+    $uuid = fqdn_uuid($connection_name)
 
     file { "/etc/NetworkManager/system-connections/${connection_name}":
         mode    => '0600',

@@ -46,7 +46,7 @@ node_base_desktop Done [from: release-0.9.10; mock-apply: puppet agent service s
 node_base_domain_desktop Done [from: release-0.9.10; mock-apply: puppet agent service stand-in (no agent daemon in the harness)]
 node_base Done [from: release-0.9.10]
 openvpn_domain
-openvpn_nm_connection
+openvpn_nm_connection Done [from: release-0.9.10; upstream defect fixed: fqdn_rand_uuid replaced by stdlib fqdn_uuid; mock-apply: p8test_vpn_ca synthetic CA file]
 openvpn_server Done [from: release-0.9.10; upstream defect fixed: module owns the unit (duplicate service dropped, notifies retargeted); mock-apply: stand-in DHCP primary interface p8test0 (veth + netns dnsmasq)]
 openvpn_set_vpn_passwd_file Done [from: release-0.9.10]
 packages_base Done [from: release-0.9.10]
