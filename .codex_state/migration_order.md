@@ -1,6 +1,6 @@
 # Puppet Class Migration Order
 
-Generated: 2026-11-17 06:23:53 UTC
+Generated: 2026-11-17 06:53:51 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
@@ -137,7 +137,6 @@ Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — de
 
 - `puppet_infrastructure::filesystem_sec` [from: release-0.9.10] — default group assigned to a new variable (no parameter reassignment)
 - `puppet_infrastructure::firewall_addon_hosting` [from: release-0.9.10] — OUTPUT accept for the master on 8140
-- `puppet_infrastructure::linux_policies_user` [from: release-0.9.10] — policy exec guarded by the script login check
 - `puppet_infrastructure::puppet_boot_run` [from: release-0.9.10] — ensure dropped
 - `puppet_infrastructure::user_base` [from: release-0.9.10] — exec guarded by its post-condition
 - `puppet_infrastructure::user_lock` [from: release-0.9.10] — exec guarded by its post-condition
