@@ -1,0 +1,31 @@
+{
+ "class": "user_desktop_sudoer",
+ "at": "20261117T223558Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok"
+ },
+ "evidence": [
+  "the-given-key-is-pushed: user_base.pp:96-99 declares ssh_authorized_key '${myusername}@puppet' type ssh-rsa key $sshkey; with ignorekey default false (user_desktop_sudoer.pp:7), an unlocked hash and the fixture's non-empty mykey (user_base.pp:45-59 -> $sshkey = $mykey), the probe expects exactly one 'ssh-rsa <fixture key body> p8testuser@puppet' line in /home/p8testuser/.ssh/authorized_keys \u2014 what the code produces",
+  "user-with-own-primary-group: user_desktop_sudoer.pp:9 builds [$title, cdrom, ...] with empty mygrouplist, so mygrouplist[0] == title and user_base.pp:25-31 sets $myprimary to it (both branches give the title); user_base.pp:63-71 sets comment myname ('P8 Test User'), home /home/<title>, shell /bin/bash \u2014 the probe's passwd fields and primary-group name match exactly",
+  "lock-screen-script-installed: user_kde_lock_screen (declared at user_desktop_sudoer.pp:12) includes user_kde_lock_screen_common, whose lines 8-12 declare ${bindir}/configure_lock_screen.sh owner root mode 0755; bindir = lookup('filesystem::bindir') = localdir/bin in the master's common.yaml:43; the stat probe checks owner root and mode 755 at that path. Whole file read: uncovered note (KDE lock settings need a logged-in session) is honest; all probes read-only on the node; sudo mismatch varies only the user (nobody, not in sudo) which must change sudo's verdict"
+ ],
+ "review_s": 87.2,
+ "check_file_sha256": "44cd47f65a9c79836f5732aa823b2549e561e4df1b02d9bf56b36dea5a628f36",
+ "reviewer_result": "20261117T223431Z-reviewer",
+ "author_result": "20261117T223300Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "a279dd1f-bdec-40ed-9b3a-f2c89d2a6cc1",
+   "boot_id_at_end": "a279dd1f-bdec-40ed-9b3a-f2c89d2a6cc1",
+   "fresh": true
+  }
+ }
+}
