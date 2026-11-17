@@ -1,0 +1,21 @@
+{
+ "class": "linux_policies_user",
+ "at": "20261117T012929Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "fail"
+ },
+ "evidence": [
+  "no-policy-run-without-a-session @ manifests/linux_policies_user.pp:70: line 70 is a comment ('#Execute the policies on agent run if the user is logged in') that the baseline code contradicts: the exec at lines 71-75 has no guard, so on every agent run it runs COMMON/execute_linux_policies_user.sh puppet-agent as p8testuser, which runs the 0700 user-owned USER/p8testuser.sh, whose header (puppet_header.sh.erb:9-13) logs 'User p8testuser not loged in, skipping policies execution' under tag linuxint-policies. The baseline would therefore leave >=1 such journal line after the harness runs; the expected 0 is produced only by the ruled upstream-defect guard (upstream_defects.md linux_policies_user, which names exactly this missing syslog line as the difference), not by the cited baseline lines. Expects a value the baseline code would not produce, derived from a comment (comments are leads); why_invariant's 'the agent must not add any' likewise rests on the fix",
+  "no-policy-run-without-a-session @ templates/linux-policies/puppet_header.sh.erb:8: the line does set SYSLOG_TAG='linuxint-policies', so the probe's journalctl -t filter matches the header's logger lines (the runner's own tag linuxint-policies-puppet-agent is excluded); the tag reference is accurate, but it supports the probe's selector only, not the expectation of 0 lines, which the baseline exec (lines 71-75) would contradict as above",
+  "user-policy-script-composed @ templates/linux-policies/puppet_header.sh.erb:4: the template renders '. <linux_policies_dir>/COMMON/common' with linux_policies_dir = lookup('filesystem::localdir')/linux-policies (manifest 23-24) = /opt/puppet-infrastructure/linux-policies on this lab; the probe's grep -c of that exact line expecting 1 tests what the line declares; the owner/0700 and tail-2 parts match manifest 58-63 and 46-51 under the params fixture (two 'true # p8test policy line N' policies). Derivation ok"
+ ],
+ "review_s": 63.4,
+ "check_file_sha256": "86be323dac68af859495765a29b4fb54ded20f201cdfa03378541bb3ee26d42d",
+ "reviewer_result": "20261117T012826Z-reviewer",
+ "author_result": "20261117T012706Z-author",
+ "findings": []
+}
