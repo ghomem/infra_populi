@@ -1,3 +1,5 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: none (core file, service and exec resources; packages through puppet_infrastructure::hello_world_flask_common).
 define puppet_infrastructure::hello_world_flask (
   # The IP adress where the application is listening to incoming connections
   $ip_address = '0.0.0.0',
