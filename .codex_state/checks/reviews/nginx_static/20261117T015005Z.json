@@ -1,0 +1,21 @@
+{
+ "class": "nginx_static",
+ "at": "20261117T015005Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "fail"
+ },
+ "evidence": [
+  "other-hosts-get-404 (nginx_static_domain.pp:236-245): FAIL. Lines declare a default_server on port 80 returning $default_str; the probe requests a NONEXISTENT path (/p8/phase3), which the domain's own server static_http_p8test.example.com also answers 404 (read-only curl on the applied node: Host p8test.example.com /p8/phase3 -> 404). So the probe passes whether or not the default server exists (with server_default_create false the only port-80 server answers the same 404); it does not test these lines. The mismatch changes two values (Host AND path /p8/phase3 -> /), not exactly the Host its varies names; a Host-only mismatch would return 404 and PASS. Its varies claim 'serves www_root' is also wrong: Host p8test.example.com / returns 403 (no index.html, autoindex off), not content.",
+  "http-serves-www-root-for-the-domain (nginx_static_domain.pp:141-143): ok. ssl false -> http_ensure present -> static_http server with www_root (287-295); probe fetches the first file in /var/www/html with Host p8test.example.com and compares sha256 with the file on disk; mismatch varies only the Host (p8test-other -> default server 404 page), which must change the verdict.",
+  "other-hosts-get-404 (nginx_static_domain.pp:207-212): FAIL. redirect_default false -> default_str '404' is what the expect checks, but the probe's 404 at /p8/phase3 is not attributable to the default server's return 404 (the domain server gives the same 404 for that missing path), so the reference is not tested; see the 236-245 evidence."
+ ],
+ "review_s": 100.5,
+ "check_file_sha256": "a77e549a875127da6e45e68bc01c3dabefad0a8834ac9a549f6294b1f54f7525",
+ "reviewer_result": "20261117T014825Z-reviewer",
+ "author_result": "20261117T014658Z-author",
+ "findings": []
+}
