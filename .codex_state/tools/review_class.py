@@ -253,7 +253,8 @@ def module_claims(header: list[str], inv: dict) -> list[tuple[str, str | None]]:
     authors = FORGE_AUTHORS | {m["forge"].split("-")[0] for m in inv["modules"].values() if "-" in m["forge"]}
     claims = []
     for line in header:
-        for m in re.finditer(r"\b([a-z0-9]+)-([a-z][a-z0-9_]*)\b(?:\s+v?(\d+\.\d+\.\d+))?", line):
+        # a path segment (/opt/puppet-infrastructure/...) is not a module claim (linux_policies_user, HQ batch-7 ruling 1)
+        for m in re.finditer(r"(?<![/\w.-])([a-z0-9]+)-([a-z][a-z0-9_]*)\b(?![/-])(?:\s+v?(\d+\.\d+\.\d+))?", line):
             if m.group(1) in authors:
                 claims.append((f"{m.group(1)}-{m.group(2)}", m.group(3)))
     return claims

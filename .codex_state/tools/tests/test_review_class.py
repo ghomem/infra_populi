@@ -43,6 +43,13 @@ def test_module_claims_find_author_name_and_version(inv):
     assert rc.module_claims(header, inv) == [("puppetlabs-cron_core", "1.3.0"), ("puppet-resolv_conf", None)]
 
 
+
+def test_module_claims_skip_filesystem_path_segments(inv):
+    tmp = "/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp"
+    header = [f"# Expected run-2 events: File[{tmp}]; File_line[{tmp}_0] — upstream design",
+              "# Module dependencies: puppetlabs-stdlib 9.7.0 (file_line); puppet-network 2.2.1."]
+    assert rc.module_claims(header, inv) == [("puppetlabs-stdlib", "9.7.0"), ("puppet-network", "2.2.1")]
+
 def test_modules_used_counts_env_modules_only(inv):
     manifest = "class x {\n  class { 'resolv_conf': }\n  include ssh::server\n  cron { 'c': }\n}\n"
     assert rc.modules_used(manifest, inv) == {"resolv_conf", "ssh"}
