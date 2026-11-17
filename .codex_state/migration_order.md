@@ -1,14 +1,14 @@
 # Puppet Class Migration Order
 
-Generated: 2026-11-17 02:19:16 UTC
+Generated: 2026-11-17 02:31:09 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
 Precedence: git > migrated_classes.txt (canonical) > migration_order.md (advisory). The `[from: release-0.9.10]` annotation lives in migrated_classes.txt, not here.
 
-Status summary: 79 done / 1 owner_validated / 7 blocked / 1 gated / 0 needs verification / 4 pending / 92 total.
+Status summary: 79 done / 1 owner_validated / 8 blocked / 1 gated / 0 needs verification / 3 pending / 92 total.
 
-Next class: `puppet_infrastructure::mariadb_server`
+Next class: `puppet_infrastructure::postfix_smtp_base`
 
 Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — dependencies first, then `prod` (production MACHINES: servers + 20 per desktop regex statement, from `.codex_state/diagnosis/fleet_class_usage.md`, composites propagated) descending, then cx/dep/p8 — then re-migrations marked `sink`. prod 0 = no production declaration: they stay in the queue, last (HQ 2026-10-27: migrate everything).
 
@@ -118,7 +118,8 @@ Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — de
 | 4 | `puppet_infrastructure::openvpn_nm_connection` | — blocked: CATEGORY 5 (environment mismatch — the define manages NetworkManager connections). Re-categorized 2026-10-27 (sprint 4.2): the former category-1 blocker (`Unknown function: 'fqdn_rand_uuid'`, openvpn_nm_connection.pp:29; the function exists nowhere, production master inspected 2026-09-30) has a RULED fix — fqdn_rand_uuid -> stdlib fqdn_uuid with the same seed, marker `upstream defect fixed` (HQ ck1 ruling 3; .codex_state/rules/upstream_defects.md), applied when the class is migrated. Remaining obstacle: the define notifies `exec { 'Reload Network Manager Connections: <title>': name => '/usr/bin/nmcli con reload', refreshonly }` (openvpn_nm_connection.pp:22-23); on puppet8node `command -v nmcli` = absent and NetworkManager is inactive (netplan server), so run 1 fails as soon as the connection file changes. Unblock: a NetworkManager desktop node (diagnosis C9). |
 | 5 | `puppet_infrastructure::nginx_proxy_smtp_auth_ppa` | — blocked: CATEGORY 5 (environment mismatch — the PPA publishes only Ubuntu 20.04; 2026-11-17, batch 7). The class adds apt::ppa 'ppa:solidangle/nginx-proxy-smtp-auth' (and -staging). Launchpad's dists/<release>/Release: focal 200, jammy/kinetic/noble 404 (both PPAs, checked 2026-11-17). Fresh-node run 1 on the lab's Ubuntu 24.04 node: add-apt-repository succeeded, then Apt::Update/Exec[apt_update] '/usr/bin/apt-get update' returned 100. Needs an Ubuntu 20.04 (focal) node (no nodes.yml kind). Production note: on any node newer than focal the class breaks apt-get update. |
 | 6 | `puppet_infrastructure::openvpn_domain` | — blocked: CATEGORY 5 (environment mismatch — needs an Active Directory domain controller; 2026-11-17, batch 7). The class installs samba/winbind/krb5, writes smb.conf, krb5.conf, nsswitch.conf and PAM files, then exec 'join domain' runs /root/join-domain.sh (`net join -U<join_user>%<join_password>`, then restarts winbind) unless `id <join_user>@<netbios>.<tld>` resolves. Fresh-node run 1 with a p8test fixture domain (P8TEST.example): "Failed to join domain: failed to find DC for domain P8TEST - A domain controller for this domain was not found", then "Job for winbind.service failed", exec returned 1, agent run 1 exit 6 (log .codex_state/logs/openvpn_domain.*.log). Needs a second node acting as a Samba/AD DC on the lab network and DNS for its realm. When it runs: pregate also reports templates/openvpn/smb.conf.erb `@hostname` (legacy fact, renders empty on Puppet 8) — syntax-work. |
-| 7 | `puppet_infrastructure::openvpn_server` | — blocked: CATEGORY 1 (dependency-incompatibility at module level; 2026-11-16, batch 5). puppetserver returns 500 for the catalog: validating the class's own `subscribe => Network_config[...]` relationships (baseline manifests/openvpn_server.pp) loads the Ruby type network_config (relationship_validator.rb:29 -> resource.rb:390), whose interfaces provider does `require 'puppetx/filemapper'` (puppet-network 2.2.1 interfaces.rb:1); that file is not on puppetserver's JRuby load path (ruby-load-path = vendor_ruby only; server libdir empty). Exact versions: puppet-network 2.2.1, puppet-filemapper 4.0.0, puppet-kmod 4.1.0, openvox-server 8.11.0; types generated, puppetserver restarted many times since. Control: network_dhcp (no relationship on network_config) GREEN through puppetserver the same day. Not fixed upstream (network 3.0.0 same require; filemapper 5.0.0 same path). The `puppet catalog compile` CLI compiles it (module libs on its load path). Duplicate-service fix preserved: candidates/openvpn_server.partial.pp. Needs a ruling on the master's load path: escalations/openvpn_server.md. |
+| 7 | `puppet_infrastructure::mariadb_server` | — blocked: CATEGORY 1 (dependency behaviour — puppetlabs-mysql 17.3.0 declares File['/var/log/mysql'] itself; 2026-11-17, batch 7). Codex run 1 (ruled cert guard only): harness compile "Duplicate declaration: File[/var/log/mysql] is already declared at mysql/manifests/server/installdb.pp:34; cannot redeclare mariadb_server.pp:168". The module's declaration (owner mysql, group adm on Debian, after the package) lacks only the class's mode 0755. Needs an HQ ruling (escalations/mariadb_server.md; recommended: a collector override `File <| title == '/var/log/mysql' |> { mode => '0755' }` in place of the class's resource). |
+| 8 | `puppet_infrastructure::openvpn_server` | — blocked: CATEGORY 1 (dependency-incompatibility at module level; 2026-11-16, batch 5). puppetserver returns 500 for the catalog: validating the class's own `subscribe => Network_config[...]` relationships (baseline manifests/openvpn_server.pp) loads the Ruby type network_config (relationship_validator.rb:29 -> resource.rb:390), whose interfaces provider does `require 'puppetx/filemapper'` (puppet-network 2.2.1 interfaces.rb:1); that file is not on puppetserver's JRuby load path (ruby-load-path = vendor_ruby only; server libdir empty). Exact versions: puppet-network 2.2.1, puppet-filemapper 4.0.0, puppet-kmod 4.1.0, openvox-server 8.11.0; types generated, puppetserver restarted many times since. Control: network_dhcp (no relationship on network_config) GREEN through puppetserver the same day. Not fixed upstream (network 3.0.0 same require; filemapper 5.0.0 same path). The `puppet catalog compile` CLI compiles it (module libs on its load path). Duplicate-service fix preserved: candidates/openvpn_server.partial.pp. Needs a ruling on the master's load path: escalations/openvpn_server.md. |
 
 ## TRANSITIVELY GATED
 
@@ -128,10 +129,9 @@ Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — de
 
 | # | class | prod | cx | dep | p8 | sc | internal_deps |
 |---:|---|---:|---:|---:|---:|---|---|
-| 1 | `puppet_infrastructure::mariadb_server` | 0 | 8 | 4 | 6 | no | filesystem_base |
-| 2 | `puppet_infrastructure::postfix_smtp_base` | 0 | 8 | 6 | 6 | yes | ssl_postfix,postfix_smtp_base_config_file |
-| 3 | `puppet_infrastructure::nginx_frontend_mail` | 0 | 8 | 7 | 6 | no | ssl_nginx_domain,nginx_frontend_domain |
-| 4 | `puppet_infrastructure::node_base_desktop` | 0 | 8 | 10 | 5 | no | packages_base,ssh_secure,firewall_secure,firewall_ipv6_drop_policy,filesystem_base_desktop,filesystem_apt,rsyslog_client,user_kde_lock_screen |
+| 1 | `puppet_infrastructure::postfix_smtp_base` | 0 | 8 | 6 | 6 | yes | ssl_postfix,postfix_smtp_base_config_file |
+| 2 | `puppet_infrastructure::nginx_frontend_mail` | 0 | 8 | 7 | 6 | no | ssl_nginx_domain,nginx_frontend_domain |
+| 3 | `puppet_infrastructure::node_base_desktop` | 0 | 8 | 10 | 5 | no | packages_base,ssh_secure,firewall_secure,firewall_ipv6_drop_policy,filesystem_base_desktop,filesystem_apt,rsyslog_client,user_kde_lock_screen |
 
 ## UPSTREAM DEFECTS FIXED LOCALLY (tracker markers; list: .codex_state/upstream_defects.md)
 
