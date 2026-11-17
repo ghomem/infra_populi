@@ -1,0 +1,21 @@
+{
+ "class": "node_base_desktop",
+ "at": "20261117T152109Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "ssh-hardened-without-password-or-root-login: node_base_desktop.pp:43-46 passes password_authentication/ssh_allow_root_login (defaults false, fixture leaves them unset) to ssh_secure, whose baseline maps false to 'no' for PasswordAuthentication/PermitRootLogin; sshd -T expecting both 'no' tests exactly that",
+  "ipv6-input-and-forward-dropped: node_base_desktop.pp:59 includes firewall_ipv6_drop_policy_desktop, whose baseline sets firewallchain INPUT:filter:IPv6 and FORWARD:filter:IPv6 policy drop plus one firewall rule accepting iniface lo on INPUT; ip6tables -S expecting both -P DROP lines and one '-i lo' INPUT rule matches",
+  "gnome-lock-policy-served: node_base_desktop.pp:96-101 declares gnome_lock_screen when manage_gnome_screenlock (fixture true) with timeout 5 / grace 0 (defaults, line 29-30); baseline gnome_lock_screen writes profile/user 'system-db:local' and 00-screenlock idle-delay=uint32 300, lock-enabled=true, lock-delay=uint32 0 then dconf update; the DCONF_PROFILE=user reads expect exactly those; the mismatch varies only the profile name to one without system-db:local, which must change the read values"
+ ],
+ "review_s": 174.7,
+ "check_file_sha256": "53d630e024beb820e42ee706763d0c8052df6c2ce62cbb3f959b33817ed02f03",
+ "reviewer_result": "20261117T151815Z-reviewer",
+ "author_result": "20261117T151514Z-author",
+ "findings": []
+}
