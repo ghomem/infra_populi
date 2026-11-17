@@ -1,14 +1,14 @@
 # Puppet Class Migration Order
 
-Generated: 2026-11-17 22:17:41 UTC
+Generated: 2026-11-17 22:27:16 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
 Precedence: git > migrated_classes.txt (canonical) > migration_order.md (advisory). The `[from: release-0.9.10]` annotation lives in migrated_classes.txt, not here.
 
-Status summary: 87 done / 1 owner_validated / 3 blocked / 0 gated / 0 needs verification / 0 pending / 1 retired / 92 total.
+Status summary: 87 done / 1 owner_validated / 2 blocked / 0 gated / 0 needs verification / 1 pending / 1 retired / 92 total.
 
-Next class: all migrated
+Next class: `puppet_infrastructure::user_desktop_sudoer`
 
 Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — dependencies first, then `prod` (production MACHINES: servers + 20 per desktop regex statement, from `.codex_state/diagnosis/fleet_class_usage.md`, composites propagated) descending, then cx/dep/p8 — then re-migrations marked `sink`. prod 0 = no production declaration: they stay in the queue, last (HQ 2026-10-27: migrate everything).
 
@@ -120,9 +120,8 @@ Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — de
 
 | # | class | reason |
 |---:|---|---|
-| 1 | `puppet_infrastructure::user_desktop_sudoer` | — blocked: CATEGORY 5 (environment mismatch — needs the sambashare group; 2026-11-17, batch 8). HQ ruling 6 let it run on gnome; the gnome harness run 1 (NODE_FRESH, required_base filesystem_base) failed: `useradd: group 'sambashare' does not exist` (exit 6). On p8lab-gnome (Ubuntu 24.04.4 GNOME) every group of the define's list exists except sambashare, which Samba's packages create (not installed on Ubuntu GNOME; Kubuntu ships it). Lifted by kubuntu (plan node kubuntu). The 2026-11-17 unblock commit's premise (a desktop install has both lpadmin and sambashare) was wrong for GNOME. |
-| 2 | `puppet_infrastructure::openvpn_domain` | — blocked: CATEGORY 5 (environment mismatch — needs an Active Directory domain controller; 2026-11-17, batch 7). The class installs samba/winbind/krb5, writes smb.conf, krb5.conf, nsswitch.conf and PAM files, then exec 'join domain' runs /root/join-domain.sh (`net join -U<join_user>%<join_password>`, then restarts winbind) unless `id <join_user>@<netbios>.<tld>` resolves. Fresh-node run 1 with a p8test fixture domain (P8TEST.example): "Failed to join domain: failed to find DC for domain P8TEST - A domain controller for this domain was not found", then "Job for winbind.service failed", exec returned 1, agent run 1 exit 6 (log .codex_state/logs/openvpn_domain.*.log). Needs a second node acting as a Samba/AD DC on the lab network and DNS for its realm. When it runs: pregate also reports templates/openvpn/smb.conf.erb `@hostname` (legacy fact, renders empty on Puppet 8) — syntax-work. |
-| 3 | `puppet_infrastructure::nginx_frontend_mail` | — blocked: CATEGORY 1 (module compatibility in its required_base nginx_base, second issue; 2026-11-17, after HQ batch-8 ruling 1). With `stream => true` (its per-target nginx_base fixture), puppet-nginx 8.4.0 renders `access_log /var/log/nginx/stream-access.log;` in the stream block with no format (nginx.conf.erb:419-421; init.pp:260-261 defaults, unchanged in the latest release); nginx: `[emerg] log format is not specified in /etc/nginx/nginx.conf:55`, Service[nginx] restart failed on the revert-first harness run 1 (21:46Z). Production's puppet-nginx 0.15 rendered no stream access_log. Needs an HQ ruling on nginx_base (escalations/nginx_base.md, second section; recommended: stream_access_log => 'off' in nginx_base's default configs). |
+| 1 | `puppet_infrastructure::openvpn_domain` | — blocked: CATEGORY 5 (environment mismatch — needs an Active Directory domain controller; 2026-11-17, batch 7). The class installs samba/winbind/krb5, writes smb.conf, krb5.conf, nsswitch.conf and PAM files, then exec 'join domain' runs /root/join-domain.sh (`net join -U<join_user>%<join_password>`, then restarts winbind) unless `id <join_user>@<netbios>.<tld>` resolves. Fresh-node run 1 with a p8test fixture domain (P8TEST.example): "Failed to join domain: failed to find DC for domain P8TEST - A domain controller for this domain was not found", then "Job for winbind.service failed", exec returned 1, agent run 1 exit 6 (log .codex_state/logs/openvpn_domain.*.log). Needs a second node acting as a Samba/AD DC on the lab network and DNS for its realm. When it runs: pregate also reports templates/openvpn/smb.conf.erb `@hostname` (legacy fact, renders empty on Puppet 8) — syntax-work. |
+| 2 | `puppet_infrastructure::nginx_frontend_mail` | — blocked: CATEGORY 1 (module compatibility in its required_base nginx_base, second issue; 2026-11-17, after HQ batch-8 ruling 1). With `stream => true` (its per-target nginx_base fixture), puppet-nginx 8.4.0 renders `access_log /var/log/nginx/stream-access.log;` in the stream block with no format (nginx.conf.erb:419-421; init.pp:260-261 defaults, unchanged in the latest release); nginx: `[emerg] log format is not specified in /etc/nginx/nginx.conf:55`, Service[nginx] restart failed on the revert-first harness run 1 (21:46Z). Production's puppet-nginx 0.15 rendered no stream access_log. Needs an HQ ruling on nginx_base (escalations/nginx_base.md, second section; recommended: stream_access_log => 'off' in nginx_base's default configs). |
 
 ## TRANSITIVELY GATED
 
@@ -132,7 +131,7 @@ Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — de
 
 | # | class | prod | cx | dep | p8 | sc | internal_deps |
 |---:|---|---:|---:|---:|---:|---|---|
-| - | - | - | - | - | - | - | - |
+| 1 | `puppet_infrastructure::user_desktop_sudoer` | 0 | 2 | 5 | 3 | yes | user_base,user_kde_lock_screen |
 
 ## UPSTREAM DEFECTS FIXED LOCALLY (tracker markers; list: .codex_state/upstream_defects.md)
 
