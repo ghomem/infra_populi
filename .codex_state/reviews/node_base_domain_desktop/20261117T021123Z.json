@@ -1,0 +1,98 @@
+{
+ "schema": 1,
+ "class": "node_base_domain_desktop",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-17T02:11:23Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "bd80c9f784e3",
+ "migrate_subject": "P8: migrate puppet_infrastructure::node_base_domain_desktop",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit bd80c9f784e3; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `node_base_domain_desktop Done [from: release-0.9.10; mock-apply: puppet agent service stand-in (no agent daemon in the harness)]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-ntp', '11.2.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 53 catalog events; run 2: 1 event(s) only from expected_run2_events Exec[apt_update] [own: Exec[apt_update]; inherited: none] (judge the header justification); COVERAGE puppet_infrastructure::node_base_domain_desktop: 68 concrete resources (+2 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (3 added comment lines at lines 1-3: migration header, puppetlabs-ntp 11.2.0 dependency, expected run-2 events); 0 non-comment changes vs release-0.9.10 (cf477c6); DIFF B identical",
+   "Expected run-2 Exec[apt_update] verified independently: baseline node_base_domain_desktop.pp line 9 declares class puppet_infrastructure::packages_base; baseline packages_base.pp line 19 declares class { 'apt': update => { frequency => 'always' } } on non-RedHat; master apt/manifests/update.pp maps 'always' to $_kick_apt = true -> refreshonly => false on exec apt_update, so it runs every agent run by upstream design, not caused by the migration",
+   "mock-apply puppet_agent_standin: node fixture not part of the class and not in DIFF A; agent-service behaviour unverified"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 3,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependencies: puppetlabs-ntp 11.2.0 (ntp).",
+  "# Expected run-2 events: Exec[apt_update] \u2014 node_base_domain_desktop declares packages_base, whose `class { 'apt': update => { frequency => 'always' } }` runs apt update on every agent run by upstream design (justified on packages_base)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 53,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::node_base_domain_desktop: 68 concrete resources (+2 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 21.492,
+   "master_check_s": 0.285,
+   "poweroff_s": 0.842,
+   "restore_s": 0.249,
+   "boot_to_ssh_s": 13.552,
+   "apt_update_s": 6.21,
+   "verify_s": 0.354,
+   "nic1_rx_bytes": 3725613
+  },
+  "log": ".codex_state/logs/reviews/node_base_domain_desktop.20261117T020904Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": "RUN2_EXPECTED_EVENTS: 1 from Exec[apt_update] [own: Exec[apt_update]; inherited: none] (plan"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
