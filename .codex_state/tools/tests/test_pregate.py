@@ -435,3 +435,31 @@ def test_hazard5_is_info_only_when_routed_to_the_commands_os_family(routed, leve
     assert got and all(i[0] == level for i in got), got
     if level == "INFO":
         assert "routes the class to the rhel9 node (RedHat)" in got[0][2]
+
+
+# HQ 2026-11-17 ruling 4 (the user_desktop miss, batch 6): the probe walks the puppet_infrastructure classes and defines
+# the target declares; their needs are the target's needs, and their declarations count as declared.
+TARGET = ("class puppet_infrastructure::t {\n  include puppet_infrastructure::h\n"
+          "  puppet_infrastructure::d { 'x': }\n}\n")
+HELPER = "class puppet_infrastructure::h {\n  $bindir = lookup('filesystem::bindir')\n  file { \"${bindir}/lock.sh\": }\n}\n"
+DEFINE = "define puppet_infrastructure::d {\n  file { '/srv/missing/x.conf': content => 'x' }\n}\n"
+
+
+def test_probe_walks_declared_internal_classes_and_defines(tmp_path, monkeypatch):
+    manifests = {"t": TARGET, "h": HELPER, "d": DEFINE, "b": BASE}
+    repo = probe_repo(tmp_path, monkeypatch, manifests, {"t": ([], []), "h": ([], []), "d": ([], []), "b": ([], [])})
+    assert pregate.declared_internal("t", repo) == ["t", "d", "h"]
+    got = pregate.prerequisite_findings("t", NODE, HIERA, repo)
+    assert [g.split(" (")[0] for g in got] == ["/opt/p/bin", "/srv/missing"]
+    assert "File[/opt/p/bin/lock.sh] via h" in got[0] and "via d" in got[1]
+    # bindir declared by a required_base class clears the walked class's need, not the define's
+    repo = probe_repo(tmp_path / "2", monkeypatch, manifests,
+                      {"t": (["b"], []), "h": ([], []), "d": ([], []), "b": ([], [])})
+    assert [g.split(" (")[0] for g in pregate.prerequisite_findings("t", NODE, HIERA, repo)] == ["/srv/missing"]
+
+
+def test_walk_survives_cycles_and_missing_manifests(tmp_path, monkeypatch):
+    a = "class puppet_infrastructure::a {\n  include puppet_infrastructure::c\n  include puppet_infrastructure::gone\n}\n"
+    c = "class puppet_infrastructure::c {\n  include puppet_infrastructure::a\n}\n"
+    repo = probe_repo(tmp_path, monkeypatch, {"a": a, "c": c}, {"a": ([], []), "c": ([], [])})
+    assert pregate.declared_internal("a", repo) == ["a", "c"]

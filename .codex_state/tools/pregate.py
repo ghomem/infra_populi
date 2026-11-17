@@ -342,13 +342,40 @@ def base_closure(cls: str) -> list[str]:
     return seen
 
 
+INTERNAL = "puppet_infrastructure::"
+
+
+def declared_internal(cls: str, repo: Path = REPO) -> list[str]:
+    """`cls` and every puppet_infrastructure class or define it declares, transitively (HQ 2026-11-17 ruling 4: the
+    user_desktop miss, batch 6 — its included user_kde_lock_screen_common needed bindir, which the probe never read)."""
+    seen, todo = [], [cls]
+    while todo:
+        c = todo.pop(0)
+        f = repo / f"manifests/{c}.pp"
+        if c in seen or not f.is_file():
+            continue
+        seen.append(c)
+        text = f.read_text(encoding="utf-8")
+        names = {n.lstrip(":") for n in declared_classes(text)} | resource_types(text)
+        todo.extend(sorted(n[len(INTERNAL):] for n in names if n.startswith(INTERNAL)))
+    return seen
+
+
+def harness_units(cls: str, repo: Path = REPO) -> list[str]:
+    """What the harness applies with `cls`: its required_base closure, each with what it declares (declared_internal)."""
+    units: list[str] = []
+    for c in base_closure(cls):
+        units.extend(u for u in declared_internal(c, repo) if u not in units)
+    return units
+
+
 def closure_providers(cls: str, repo: Path = REPO) -> set[str]:
     """Module/base classes the harness brings in with `cls`: every class declared by a manifest of its required_base
     closure (itself included) plus the closure's required_external entries, and `package:<name>` for every package
     those manifests install (provided_paths.txt may name a package as the provider, 2026-11-16)."""
     import gen_migration_order as gen  # noqa: PLC0415
     rows, providers = gen.parse_plan(), set()
-    for c in base_closure(cls):
+    for c in harness_units(cls, repo):
         f = repo / f"manifests/{c}.pp"
         if f.is_file():
             text = f.read_text(encoding="utf-8")
@@ -407,14 +434,15 @@ def prerequisite_findings(cls: str, node_paths: dict[str, str], hiera: dict, rep
     declared: set[str] = set()
     providers = closure_providers(cls, repo)
     needed: list[tuple[str, str]] = []
-    for c in base_closure(cls):
+    own = declared_internal(cls, repo)  # the target and what it declares: their needs are the target's needs
+    for c in harness_units(cls, repo):
         f = repo / f"manifests/{c}.pp"
         if not f.is_file():
             continue
         d, n = path_items(f.read_text(encoding="utf-8"), hiera)
         declared |= d
-        if c == cls:
-            needed = n
+        if c in own:
+            needed += [(path, why if c == cls else f"{why} via {c}") for path, why in n]
     declared = {norm_path(d) for d in declared | node_fixture_paths(cls, hiera, repo)}
     needed = [(norm_path(path), why) for path, why in needed]
     missing: dict[str, list[str]] = {}
