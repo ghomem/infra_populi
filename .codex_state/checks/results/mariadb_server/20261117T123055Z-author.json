@@ -1,0 +1,103 @@
+{
+ "class": "mariadb_server",
+ "role": "author",
+ "at": "20261117T123055Z",
+ "runner": "a5a62a3",
+ "baseline": "874f854 (874f854)",
+ "check_file_sha256": "7c1a0b355f957fdb291aed82d37ed64822cac930dae67d48f2ba85d23ee9c676",
+ "valid": false,
+ "problems": [
+  "controls did not hold on the clean node: insecure-transport-refused"
+ ],
+ "clean": [
+  {
+   "id": "mariadb-server-installed-and-running",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "dpkg-query: no packages found matching mariadb-server\nbash: line 2: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "server-runs-the-override-options",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 1: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "ed25519-plugin-active",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 1: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "insecure-transport-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "refused\n",
+   "stderr": "",
+   "ok": false
+  },
+  {
+   "id": "root-is-local-only-and-no-anonymous-user",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 1: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "server-key-matches-certificate",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Could not open file or uri for loading certificate from /etc/mysql/certificates/server-cert.pem\n4077E6F77C750000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n4077E6F77C750000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/mysql/certificates/server-cert.pem)\nUnable to load certificate\nCould not open file or uri for loading key from /etc/mysql/certificates/server-key.pem\n409770ADC57C0000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n409770ADC57C0000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/mysql/certificates/server-key.pem)\n",
+   "ok": true
+  },
+  {
+   "id": "certificate-subject-from-hiera",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Could not open file or uri for loading certificate from /etc/mysql/certificates/server-cert.pem\n40F7F4F1237A0000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n40F7F4F1237A0000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/mysql/certificates/server-cert.pem)\nUnable to load certificate\n",
+   "ok": true
+  },
+  {
+   "id": "certificate-files-owner-and-mode",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/mysql/certificates/ca.pem': No such file or directory\nstat: cannot statx '/etc/mysql/certificates/server-cert.pem': No such file or directory\nstat: cannot statx '/etc/mysql/certificates/server-key.pem': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "log-directory-attributes",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/var/log/mysql': No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": null,
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "INVALID_SET",
+ "authoring_minutes": 0.8,
+ "node": "ubuntu",
+ "duration_s": 33.8
+}
