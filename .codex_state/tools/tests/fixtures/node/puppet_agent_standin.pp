@@ -4,6 +4,7 @@
 # run-2 changes (gate v2 would no longer prove idempotency). The fixture adds a systemd drop-in that replaces
 # puppet.service's ExecStart with a sleep, so Service['puppet'] is really enabled and started, but no agent runs.
 # NOT verified with this fixture: the agent daemon itself running on its interval.
+# Lifted by: a harness mode that tolerates a running agent daemon between runs 1 and 2 (HQ batch-7 ruling 2)
 file { '/etc/systemd/system/puppet.service.d':
   ensure => directory,
   owner  => 'root',

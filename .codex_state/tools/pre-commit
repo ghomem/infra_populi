@@ -91,4 +91,24 @@ PY
     printf '  - %s\n' "${missing[@]}" >&2
     exit 1
   fi
+  # HQ batch-7 ruling 3: a staged batch report lists every class verified with a stand-in (a mock-apply node fixture)
+  # in its `## Stand-ins` section, with what lifts it; status.py --standins is the source.
+  if [[ -n "$report" && -f "$repo/.codex_state/tools/status.py" ]]; then
+    if ! standins="$(cd "$repo" && python3 .codex_state/tools/status.py --standins)"; then
+      echo "STANDINS: commit rejected — status.py --standins failed" >&2
+      exit 1
+    fi
+    section="$(awk '/^## Stand-ins/ {on = 1; next} /^## / {on = 0} on' <<<"$report_text")"
+    missing=()
+    while IFS=$'\t' read -r cls _fixture lift; do
+      [[ -n "$cls" ]] || continue
+      grep -qw -- "$cls" <<<"$section" || missing+=("${cls} — lifted by: ${lift}")
+    done <<<"$standins"
+    if [[ ${#missing[@]} -gt 0 ]]; then
+      echo "STANDINS: commit rejected — the batch report ${report} does not list these stand-in classes in its" \
+           "'## Stand-ins' section (verified with stand-in; say what lifts each):" >&2
+      printf '  - %s\n' "${missing[@]}" >&2
+      exit 1
+    fi
+  fi
 fi

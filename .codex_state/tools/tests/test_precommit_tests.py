@@ -125,3 +125,31 @@ def test_a_batch_report_must_name_every_skipped_test(repo):
     proc = commit(repo, ".codex_state/escalations/batch-2026-11-12-4.md",
                   "# report\n## Skipped tests\n- test_lab::test_needs_lab — needs the lab (set P8_LAB_TESTS=1)\n")
     assert proc.returncode == 0, proc.stderr
+
+
+# HQ batch-7 ruling 3: a staged batch report lists every stand-in class in its `## Stand-ins` section.
+FAKE_STATUS = '''import sys
+assert sys.argv[1:] == ["--standins"]
+print("user_lock\\thashman_lock_standin\\ta master-role node")
+print("user_samba\\tsamba_dc_standin\\ta Zentyal DC")
+'''
+
+
+@pytest.mark.parametrize("section, ok", [
+    ("## Stand-ins\n- user_lock: a master-role node\n- user_samba: a Zentyal DC\n", True),
+    ("## Stand-ins\n- user_lock: a master-role node\n", False),  # user_samba missing
+    ("## Stand-ins\n- user_lock_screen\n- user_samba\n", False),  # a longer name does not count for user_lock
+    ("user_lock and user_samba named elsewhere\n## Skipped tests\nnone\n", False),  # no Stand-ins section
+])
+def test_a_batch_report_must_list_every_stand_in(repo, section, ok):
+    seed(repo, "../status.py", FAKE_STATUS)
+    proc = commit(repo, ".codex_state/escalations/batch-2026-11-17-8.md", "# report\n" + section)
+    assert (proc.returncode == 0) == ok, proc.stderr
+    if not ok:
+        assert "STANDINS: commit rejected" in proc.stderr
+
+
+def test_a_failing_status_tool_rejects_the_batch_report(repo):
+    seed(repo, "../status.py", "import sys\nsys.exit(1)\n")
+    proc = commit(repo, ".codex_state/escalations/batch-2026-11-17-8.md", "# report\n## Stand-ins\nnone\n")
+    assert proc.returncode != 0 and "status.py --standins failed" in proc.stderr

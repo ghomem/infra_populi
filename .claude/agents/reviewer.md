@@ -44,6 +44,11 @@ Steps, all required:
    - A tracker marker with `mock-apply: <short>` means the harness applied the plan's synthetic node fixture
      (`.codex_state/tools/tests/fixtures/node/<name>.pp`, paths/users/commands of a service the lab lacks): judge the
      class as usual; the fixture is not part of the class and is not in DIFF A. Behaviour stays unverified.
+     Read that fixture file too (HQ batch-7 ruling 2): every resource in it must serve the stand-in its header states,
+     and none may change a resource the class under review declares or anything beyond that stated scope. For
+     `puppet_agent_standin` that scope is the unit's start command only: the drop-in's `[Service]` section may hold
+     only the `ExecStart=` reset and the replacement `ExecStart=`, beside the drop-in directory and the daemon-reload
+     that loads it. A fixture beyond its scope is faithful = fail; name the extra resource in the evidence.
    - If `idempotent` says run 2 had events only from the plan's `expected_run2_events` (HQ 2026-11-10 ruling 1), verify
      the header's `# Expected run-2 events: <refs> — <why>` justification INDEPENDENTLY against the code and the module
      (e.g. read the module's class/defaults for the resource): the events must be caused by upstream's own design, not

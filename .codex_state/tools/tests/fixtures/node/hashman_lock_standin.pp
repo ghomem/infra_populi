@@ -8,6 +8,7 @@
 #   seeding exec before user_lock's exec, only if absent (hashman_base declares hashes.pp itself with replace => no,
 #   so the fixture cannot declare the file).
 # Behaviour (a locked user refused by pp_auth/the web interface on a master) is NOT verified by a GREEN with it.
+# Lifted by: a master-role node whose hashman database holds the user (no nodes.yml kind yet; HQ batch-5 ruling 6; HQ's hashman stand-in ruling pending)
 file { '/etc/puppetlabs/code/environments/production/manifests':
   ensure => directory,
   owner  => 'root',

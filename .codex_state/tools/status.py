@@ -16,6 +16,25 @@ import gen_migration_order as generator
 REVIEWS = generator.REVIEWS_PATH
 VERIFIED = generator.VERIFIED
 PENDING_RECONCILIATION = generator.PENDING_RECONCILIATION
+VERIFIED_STANDIN = "verified with stand-in"
+NODE_FIXTURES = Path(__file__).resolve().parent / "tests" / "fixtures" / "node"
+LIFTED_BY = "# Lifted by:"
+
+
+def lifted_by(fixture: str, fixtures: Path = NODE_FIXTURES) -> str:
+    """What lifts a stand-in: its node fixture's one `# Lifted by:` header line (HQ batch-7 ruling 3; single source)."""
+    path = fixtures / f"{fixture}.pp"
+    found = [line.removeprefix(LIFTED_BY).strip()
+             for line in (path.read_text().splitlines() if path.is_file() else []) if line.startswith(LIFTED_BY)]
+    if len(found) != 1 or not found[0]:
+        generator.fail(f"node fixture {fixture}: needs exactly one '{LIFTED_BY} <what>' header line ({path})")
+    return found[0]
+
+
+def standins(rows, verified, fixtures: Path = NODE_FIXTURES) -> list[tuple[str, str, str]]:
+    """(class, node fixture, lifted by) for every verified class whose GREEN used a mock-apply node fixture."""
+    return [(name, rows[name].node_fixture, lifted_by(rows[name].node_fixture, fixtures))
+            for name in sorted(verified) if name in rows and rows[name].node_fixture]
 
 
 def verification_state(name, migration, flagged, reviews: Path = REVIEWS):
@@ -65,8 +84,8 @@ def short_reason(reason: str) -> str:
 
 
 def main() -> None:
-    if sys.argv[1:]:
-        generator.fail(f"usage: {Path(sys.argv[0]).name}")
+    if sys.argv[1:] not in ([], ["--standins"]):
+        generator.fail(f"usage: {Path(sys.argv[0]).name} [--standins]")
 
     rows = generator.parse_plan()
     migrations = generator.git_migrations()
@@ -82,6 +101,14 @@ def main() -> None:
 
     tracker = generator.read_tracker()
 
+    states = {name: verification_state(name, migrations[name], flagged) for name in sorted(done)}
+    verified = [name for name, (state, _) in states.items() if state == VERIFIED]
+    stand_in = standins(rows, verified)
+    if sys.argv[1:] == ["--standins"]:  # machine-readable, for the pre-commit hook's batch-report check
+        for row in stand_in:
+            print("\t".join(row))
+        return
+
     # Render in memory to keep the summary identical to the generator's output.
     remigrations = generator.remigration_queue(migrations, flagged)
     rendered = generator.render(rows, done, blocked, flagged, pending, gated, owner_validated, tracker, prod,
@@ -94,9 +121,8 @@ def main() -> None:
     print(f"Baseline: {generator.baseline_name()}"
           + (f" (+ per-class exceptions: {', '.join(f'{c} at {n}' for c, (_, n) in sorted(exc.items()))})" if exc else ""))
 
-    states = {name: verification_state(name, migrations[name], flagged) for name in sorted(done)}
-    verified = [name for name, (state, _) in states.items() if state == VERIFIED]
-    print(f"Done split: {len(verified)} {VERIFIED} / {len(done) - len(verified)} {PENDING_RECONCILIATION}")
+    print(f"Done split: {len(verified) - len(stand_in)} {VERIFIED} / {len(stand_in)} {VERIFIED_STANDIN} / "
+          f"{len(done) - len(verified)} {PENDING_RECONCILIATION}")
     import phase3  # noqa: PLC0415  (tools dir; Phase 3 behaviour state, HQ 2026-11-16)
     behaviour = {name: phase3.behaviour_state(name)["state"] for name in sorted(done)}
     counts: dict[str, int] = {}
@@ -106,12 +132,13 @@ def main() -> None:
           + " / ".join(f"{counts[k]} {k}" for k in sorted(counts)) + f" (of {len(done)} done)")
 
     print("\nDone classes by verification state (derived from .codex_state/reviews/)")
+    stand_in_names = {name for name, _, _ in stand_in}
     print_table(
         ("class", "state", "tracker marker", "latest v2 verdict", "behaviour"),
         [
             (
                 f"{generator.PREFIX}{name}",
-                state,
+                VERIFIED_STANDIN if name in stand_in_names else state,
                 marker(tracker.get(name)),
                 "PASS" if state == VERIFIED else failing_checks(verdict),
                 behaviour[name],
@@ -119,6 +146,10 @@ def main() -> None:
             for name, (state, verdict) in sorted(states.items(), key=lambda item: (item[1][0] != VERIFIED, item[0]))
         ],
     )
+
+    print(f"\nStand-ins ({VERIFIED_STANDIN}: the GREEN used a mock-apply node fixture; behaviour NOT verified)")
+    print_table(("class", "node fixture", "lifted by"),
+                [(f"{generator.PREFIX}{name}", fixture, lift) for name, fixture, lift in stand_in])
 
     print("\nBlocked classes")
     print_table(

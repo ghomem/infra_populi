@@ -1,6 +1,7 @@
 # MOCK-APPLY node fixture `sysmon_server` (HQ 2026-10-27 ruling 7). The monitoring server (Naemon + Thruk) lives in
 # another repository; this declares only the paths and the service account user_sysmon writes into, so the class can
 # apply on the lab node. Behaviour (Thruk login, Naemon contact parsing) is NOT verified by a GREEN with this fixture.
+# Lifted by: a monitoring-server node running Naemon + Thruk from the monitoring repository (no nodes.yml kind)
 group { 'naemon': ensure => present, system => true }
 user { 'naemon':
   ensure     => present,

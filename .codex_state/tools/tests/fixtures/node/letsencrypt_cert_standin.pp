@@ -5,6 +5,7 @@
 # The fixture creates one: a self-signed THROWAWAY certificate for p8test.example.com at
 # /etc/letsencrypt/live/p8test.example.com/cert.pem, ordered after Class['letsencrypt'] and before the certonly exec.
 # Behaviour (obtaining or renewing a certificate) is NOT verified by a GREEN with this fixture.
+# Lifted by: an ACME test endpoint in the lab, so certbot obtains a real certificate (HQ batch-7 ruling 2)
 exec { 'p8test stand-in certificate for p8test.example.com':
   command => '/bin/sh -c "install -d -m 0755 /etc/letsencrypt/live/p8test.example.com && openssl req -x509 -newkey rsa:2048 -nodes -days 90 -subj /CN=p8test.example.com -addext subjectAltName=DNS:p8test.example.com -keyout /etc/letsencrypt/live/p8test.example.com/privkey.pem -out /etc/letsencrypt/live/p8test.example.com/cert.pem"',
   creates => '/etc/letsencrypt/live/p8test.example.com/cert.pem',

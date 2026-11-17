@@ -4,6 +4,7 @@
 # but no manifests/ directory; this declares only that directory, so the class can apply on the lab node. Applying the
 # class to the lab master instead would write its database into the master's live site manifests. Behaviour (pp_auth,
 # the database as Puppet code on a master) is NOT verified by a GREEN with this fixture.
+# Lifted by: a master-role node, a Puppet server whose code tree holds hashman's database (no nodes.yml kind yet; HQ batch-5 ruling 6)
 file { '/etc/puppetlabs/code/environments/production/manifests':
   ensure => directory,
   owner  => 'root',

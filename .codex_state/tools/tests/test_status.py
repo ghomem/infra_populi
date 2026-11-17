@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -82,3 +83,39 @@ def test_repo_sweep_result_is_8_verified(status):
     # checkpoint 1: exactly the 8 sweep PASSes; grows only through new v2 PASSes after fix commits
     assert {"backup", "filesystem_base", "filesystem_base_desktop", "hello_world_flask_common",
             "network_static", "puppet_backup", "puppet_commush", "user_kde_lock_screen_common"} <= verified
+
+
+# HQ batch-7 ruling 3: "verified" splits into verified and verified with stand-in; what lifts each stand-in comes from
+# its node fixture's one `# Lifted by:` header line (single source).
+def test_lifted_by_reads_the_one_header_line(status, tmp_path):
+    (tmp_path / "fx.pp").write_text("# MOCK-APPLY node fixture `fx`\n# Lifted by: a real thing\nfile { '/x': }\n")
+    assert status.lifted_by("fx", tmp_path) == "a real thing"
+
+
+@pytest.mark.parametrize("text", ["# MOCK-APPLY\nfile { '/x': }\n", "# Lifted by: a\n# Lifted by: b\n",
+                                  "# Lifted by:   \n"])
+def test_a_fixture_without_exactly_one_lifted_by_line_is_an_error(status, tmp_path, text):
+    (tmp_path / "fx.pp").write_text(text)
+    with pytest.raises(SystemExit):
+        status.lifted_by("fx", tmp_path)
+
+
+def test_standins_are_the_verified_classes_with_a_node_fixture(status, tmp_path):
+    (tmp_path / "fx.pp").write_text("# Lifted by: a monitoring node\n")
+    row = lambda fixture: type("Row", (), {"node_fixture": fixture})()  # noqa: E731
+    rows = {"a": row("fx"), "b": row(""), "c": row("fx")}
+    # c has a fixture but is not verified: it is not a verified stand-in
+    assert status.standins(rows, ["b", "a"], tmp_path) == [("a", "fx", "a monitoring node")]
+
+
+def test_every_repo_node_fixture_says_what_lifts_it(status):
+    names = sorted(p.stem for p in status.NODE_FIXTURES.glob("*.pp"))
+    assert names and all(status.lifted_by(name) for name in names)
+
+
+def test_standins_flag_prints_only_tab_separated_rows():
+    proc = subprocess.run([sys.executable, str(STATUS), "--standins"], capture_output=True, text=True)
+    assert proc.returncode == 0, proc.stderr
+    rows = [line.split("\t") for line in proc.stdout.splitlines()]
+    assert rows and all(len(r) == 3 and r[2] for r in rows)
+    assert {"letsencrypt_certificate", "node_base_domain_desktop"} <= {r[0] for r in rows}

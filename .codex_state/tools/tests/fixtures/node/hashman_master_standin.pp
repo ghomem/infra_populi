@@ -6,6 +6,7 @@
 #   hashman::companylogomail to '/path/to/logo.png' / '/path/to/logo-email.png', local files the class copies from the
 #   node it runs on. Placeholder content stands in for the site's images.
 # Behaviour (the web interface, the logos rendered) is NOT verified by a GREEN with this fixture.
+# Lifted by: a master-role node with the code tree and the site's logo files (no nodes.yml kind yet; HQ batch-5 ruling 6)
 file { '/etc/puppetlabs/code/environments/production/manifests':
   ensure => directory,
   owner  => 'root',

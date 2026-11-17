@@ -2,6 +2,7 @@
 # Stateful STAND-INS for the Zentyal/Samba DC commands user_samba runs (pdbedit, ldbsearch, create-user.pl,
 # set-user-samba-hash.sh). They keep a fake user/hash store under /var/tmp/p8test_samba_standin so the class's
 # unless-guards see the effect of its own commands. Nothing talks to Samba: behaviour is NOT verified.
+# Lifted by: a Zentyal/Samba AD domain controller node with Zentyal's user scripts (none yet; the planned dc kind, p8lab-dc, is a plain Samba AD DC)
 file { '/var/tmp/p8test_samba_standin': ensure => directory, owner => 'root', group => 'root', mode => '0700' }
 file { '/usr/bin/pdbedit':
   ensure  => file,
