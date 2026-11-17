@@ -1,0 +1,32 @@
+{
+ "class": "ssl_nginx",
+ "at": "20261117T214213Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok"
+ },
+ "evidence": [
+  "private-key-installed-root-only @ ssl_base.pp:77-78: with letsencrypt_certificate false (ssl_nginx.pp:8-12 passes none) and the Debian default ssl_private_dir /etc/ssl/private (ssl_base.pp:64-66), key_file = /etc/ssl/private/<myprefix>.key; fixture sslprefix p8test gives exactly the stat'd path /etc/ssl/private/p8test.key",
+  "private-key-installed-root-only @ ssl_base.pp:85-91: file{$key_file} mode '0600', owner $owner, group $group, defaults 'root'/'root' (ssl_base.pp:47,50; ssl_nginx sets neither) -> expect 'root root 600' is exactly what the resource declares",
+  "nginx-bundle-cert-then-intermediate @ ssl_base.pp:100-107: concat{$bundle_file} mode '0644', owner $owner (root) -> 'root 644' on /etc/ssl/certs/p8test.nginx.bundle.crt (path from lines 79 with myservice 'nginx'); the 2-certificate count and first-subject CN p8test.invalid follow from fragments 01 (<prefix>.crt) and 02 (<prefix>.intermediate.crt) at ssl_base.pp:109-119 under the master's fixture PKI, which the set's header states",
+  "whole file: 3 negative controls, no invariants, no mutates; all probes are local read-only stat/grep/openssl on the node. The mismatch for bundle-certificate-matches-the-key varies only the key (the node's own Puppet agent private key, a different keypair), which must change the pubkey-equality verdict; it failed after apply as required. No uncovered notes in the file"
+ ],
+ "review_s": 83.0,
+ "check_file_sha256": "1e881a32c6eebaaacdd0891f5306dfcdac79cc8187c8d853a0dbbebb593d7363",
+ "reviewer_result": "20261117T214050Z-reviewer",
+ "author_result": "20261117T213855Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "5b3b2bf6-55a3-49bf-ac67-6a3648d3f616",
+   "boot_id_at_end": "5b3b2bf6-55a3-49bf-ac67-6a3648d3f616",
+   "fresh": true
+  }
+ }
+}
