@@ -1,3 +1,6 @@
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Module dependencies: puppetlabs-ntp 11.2.0 (ntp).
+# Expected run-2 events: Exec[apt_update] — node_base_domain_desktop declares packages_base, whose `class { 'apt': update => { frequency => 'always' } }` runs apt update on every agent run by upstream design (justified on packages_base).
 ### Purpose ########
 # This class provides basic desirable properties of a domain based desktop node
 class puppet_infrastructure::node_base_domain_desktop (
