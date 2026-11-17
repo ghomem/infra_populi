@@ -1,0 +1,20 @@
+{
+ "class": "users_sudoers",
+ "at": "20261117T004133Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "managed-user-is-a-sudoer: users_sudoers.pp:18 create_resources(user_sudoer, $configs_filtered) with fixture entry p8testuser (myname 'P8 Test User', no mygrouplist) -> user_sudoer adds 'sudo' on Debian -> user_base user with comment=myname, gid=title (grouplist[0]=='sudo'), groups [sudo]; probe's GECOS 'P8 Test User' and sorted groups 'p8testuser sudo' are exactly what the code produces; negative holds (no account on clean node)",
+  "unmanaged-user-is-left-alone: users_sudoers.pp:15 filter drops keys in $unmanaged_users; fixture lists p8testuser2 in both configs and unmanaged_users, so no user_base/user is declared for it and getent must stay empty; why_invariant (clean node lacks p8testuser2) is plausible and confirmed by the clean phase; both probes read-only, node-local"
+ ],
+ "review_s": 67.7,
+ "check_file_sha256": "33c0a51278dae6894f7f08cc687edf29cb3ea02f8de2a0115f95a074e92e066c",
+ "reviewer_result": "20261117T004026Z-reviewer",
+ "author_result": "20261117T003913Z-author",
+ "findings": []
+}

@@ -1,0 +1,60 @@
+{
+ "class": "users_sudoers",
+ "role": "reviewer",
+ "at": "20261117T004026Z",
+ "runner": "edeaf7a",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "33c0a51278dae6894f7f08cc687edf29cb3ea02f8de2a0115f95a074e92e066c",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "managed-user-is-a-sudoer",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "id: 'p8testuser': no such user\n",
+   "ok": true
+  },
+  {
+   "id": "unmanaged-user-is-left-alone",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "no-p8testuser2\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Users_sudoers[users_sudoers]/Puppet_infrastructure::User_sudoer[p8testuser]/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.32 seconds\u001b[0m\nRUN1_EVENTS: 3 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1794876073'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::users_sudoers: 3 concrete resources (+3 defined-type instances)\n  Puppet_infrastructure::Users_sudoers[users_sudoers]\n  Puppet_infrastructure::User_sudoer[p8testuser]\n  Puppet_infrastructure::User_base[p8testuser]\n  Group[p8testuser]\n  User[p8testuser]\n  Ssh_authorized_key[p8testuser@puppet]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP users_sudoers 7fcf7e13c515\n"
+ },
+ "applied": [
+  {
+   "id": "managed-user-is-a-sudoer",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser:P8 Test User\np8testuser sudo ",
+   "stderr": ""
+  },
+  {
+   "id": "unmanaged-user-is-left-alone",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "no-p8testuser2\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.2,
+ "node": "ubuntu",
+ "duration_s": 48.7
+}
