@@ -89,6 +89,7 @@ class TrackerEntry:
     from_ref: str
     defect_fixed: str
     mock_apply: str = ""
+    retired: str = ""  # HQ 2026-11-17 ruling 3: `<class> Retired [reason: <why>]`, the class removed from the module
 
 
 def fail(message: str) -> None:
@@ -262,7 +263,8 @@ def parse_plan() -> dict[str, ClassRow]:
 
 
 TRACKER_LINE = re.compile(
-    r"(?:(?P<name>[A-Za-z0-9_]+)(?P<done> Done)?|Done (?P<name2>[A-Za-z0-9_]+))"
+    r"(?:(?P<name>[A-Za-z0-9_]+)(?:(?P<done> Done)| Retired \[reason: (?P<retired>[^\]\[]+?)\])?"
+    r"|Done (?P<name2>[A-Za-z0-9_]+))"
     r"(?: \[from: (?P<ref>[A-Za-z0-9._-]+)(?:; upstream defect fixed: (?P<defect>[^\]\[;]+?))?"
     r"(?:; mock-apply: (?P<mock>[^\]\[;]+?))?\])?"
 )
@@ -270,7 +272,8 @@ TRACKER_LINE = re.compile(
 
 def parse_tracker_line(line: str) -> TrackerEntry | None:
     """Parse one tracker line; None for blank/comment lines; fail() on anything malformed.
-    Accepts `<class>`, `<class> Done [marker]` and the historical `Done <class> [marker]`."""
+    Accepts `<class>`, `<class> Done [marker]`, `<class> Retired [reason: <why>]` and the historical
+    `Done <class> [marker]`."""
     stripped = line.strip()
     if not stripped or stripped.startswith("#"):
         return None
@@ -283,6 +286,7 @@ def parse_tracker_line(line: str) -> TrackerEntry | None:
         from_ref=match.group("ref") or "",
         defect_fixed=(match.group("defect") or "").strip(),
         mock_apply=(match.group("mock") or "").strip(),
+        retired=(match.group("retired") or "").strip(),
     )
 
 
@@ -297,6 +301,22 @@ def read_tracker(path: Path | None = None) -> dict[str, TrackerEntry]:
             fail(f"duplicate class in {path.name}: {entry.name}")
         entries[entry.name] = entry
     return entries
+
+
+def retired_classes(tracker: dict[str, TrackerEntry], rows: dict[str, "ClassRow"], blocked: dict[str, str],
+                    manifests: Path | None = None) -> dict[str, str]:
+    """Retired classes (HQ 2026-11-17 ruling 3) and their reasons. A retired class is gone from the module: no plan row,
+    no blocked entry, no manifest."""
+    manifests = manifests or REPO_ROOT / "manifests"
+    retired = {name: entry.retired for name, entry in tracker.items() if entry.retired}
+    for name in sorted(retired):
+        if name in rows:
+            fail(f"retired class {name} still has a migration_plan.md row")
+        if name in blocked:
+            fail(f"retired class {name} is still in blocked.txt")
+        if (manifests / f"{name}.pp").exists():
+            fail(f"retired class {name} still has manifests/{name}.pp")
+    return retired
 
 
 def tracker_mismatches(entries: dict[str, TrackerEntry], done: set[str]) -> tuple[list[str], list[str]]:
@@ -572,7 +592,8 @@ def render(
         key=lambda name: rows[name].sort_key,
     )
     unknown_flagged = sorted(((flagged - set(blocked)) - set(rows)) - owner_validated)
-    total = len(rows)
+    retired = {name: entry.retired for name, entry in (tracker or {}).items() if entry.retired}
+    total = len(rows) + len(retired)
     done_count = len((done & set(rows)) - owner_validated)
     blocked_count = len((blocked.keys() & set(rows)) - owner_validated)
     gated_count = len(found_gated)
@@ -594,7 +615,8 @@ def render(
         "",
         f"Status summary: {done_count} done / {owner_validated_count} owner_validated / "
         f"{blocked_count} blocked / {gated_count} gated / "
-        f"{len(needs_verification)} needs verification / {pending_count} pending / {total} total.",
+        f"{len(needs_verification)} needs verification / {pending_count} pending / {len(retired)} retired / "
+        f"{total} total.",
         "",
         f"Next class: `{next_class}`" if next_class != "all migrated" else "Next class: all migrated",
         "",
@@ -678,6 +700,10 @@ def render(
         lines.extend(
             f"- `{PREFIX}{name}` [from: {entry.from_ref}] — {entry.defect_fixed}" for name, entry in defects
         )
+
+    if retired:
+        lines.extend(["", "## RETIRED (removed from the module; tracker `Retired [reason: ...]`)", ""])
+        lines.extend(f"- `{PREFIX}{name}` — {reason}" for name, reason in sorted(retired.items()))
 
     lines.extend(["", "## KNOWN GAPS", "", KNOWN_GAP, ""])
 
@@ -767,10 +793,11 @@ def main() -> None:
     conflicting = sorted(owner_validated & set(blocked))
     if conflicting:
         fail("owner_validated classes must not also be blocked: " + ", ".join(conflicting))
-    done = set(migrations) - set(blocked) - owner_validated
+    tracker = read_tracker()
+    retired = retired_classes(tracker, rows, blocked)
+    done = set(migrations) - set(blocked) - owner_validated - set(retired)
     prod = read_prod_nodes()
     pending_order, gated = topological_pending(rows, done, set(blocked), owner_validated, prod)
-    tracker = read_tracker()
     remigrations = remigration_queue(migrations, flagged)
     output = render(rows, done, blocked, flagged, pending_order, gated, owner_validated, tracker, prod, remigrations)
     ORDER_PATH.write_text(output, encoding="utf-8")
@@ -790,7 +817,7 @@ def main() -> None:
         f"{done_count} done / {owner_validated_count} owner_validated / "
         f"{blocked_count} blocked / {gated_count} gated / "
         f"{len(needs_verification)} needs verification / {len(pending_order)} pending / "
-        f"{len(rows)} total"
+        f"{len(retired)} retired / {len(rows) + len(retired)} total"
     )
     print(f"next pending class: {next_class}")
     if unknown_done:

@@ -1,12 +1,12 @@
 # Puppet Class Migration Order
 
-Generated: 2026-11-17 06:55:10 UTC
+Generated: 2026-11-17 07:38:42 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
 Precedence: git > migrated_classes.txt (canonical) > migration_order.md (advisory). The `[from: release-0.9.10]` annotation lives in migrated_classes.txt, not here.
 
-Status summary: 80 done / 1 owner_validated / 7 blocked / 1 gated / 0 needs verification / 3 pending / 92 total.
+Status summary: 80 done / 1 owner_validated / 7 blocked / 1 gated / 0 needs verification / 3 pending / 0 retired / 92 total.
 
 Next class: `puppet_infrastructure::mariadb_server`
 

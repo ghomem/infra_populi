@@ -95,11 +95,11 @@ def main() -> None:
     conflicting = sorted(owner_validated & set(blocked))
     if conflicting:
         generator.fail("owner_validated classes must not also be blocked: " + ", ".join(conflicting))
-    done = set(migrations) - set(blocked) - owner_validated
+    tracker = generator.read_tracker()
+    retired = generator.retired_classes(tracker, rows, blocked)
+    done = set(migrations) - set(blocked) - owner_validated - set(retired)
     prod = generator.read_prod_nodes()
     pending, gated = generator.topological_pending(rows, done, set(blocked), owner_validated, prod)
-
-    tracker = generator.read_tracker()
 
     states = {name: verification_state(name, migrations[name], flagged) for name in sorted(done)}
     verified = [name for name, (state, _) in states.items() if state == VERIFIED]
@@ -159,6 +159,9 @@ def main() -> None:
             for name, reason in sorted(blocked.items())
         ],
     )
+
+    print("\nRetired classes (removed from the module)")
+    print_table(("class", "reason"), [(f"{generator.PREFIX}{name}", reason) for name, reason in sorted(retired.items())])
 
     print("\nRe-migration queue (HQ ck1 order)")
     print_table(("class", "when"), [(f"{generator.PREFIX}{name}", when) for name, when in remigrations])

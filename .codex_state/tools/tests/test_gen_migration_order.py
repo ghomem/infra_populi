@@ -94,6 +94,46 @@ def test_tracker_mismatches(gen, tmp_path):
     assert gen.tracker_mismatches(entries, {"a", "c"}) == (["c"], ["b"])
 
 
+
+# HQ 2026-11-17 ruling 3: a retired class is removed from the module and carries its reason in the tracker.
+def test_retired_tracker_line(gen):
+    entry = gen.parse_tracker_line("old_ppa Retired [reason: PPA workarounds are not carried forward]")
+    assert (entry.name, entry.done, entry.retired) == ("old_ppa", False, "PPA workarounds are not carried forward")
+
+
+@pytest.mark.parametrize("line", ["old_ppa Retired", "old_ppa Retired [reason: ]", "old_ppa Retired [from: r]",
+                                  "old_ppa Done Retired [reason: x]"])
+def test_malformed_retired_line_fails(gen, line):
+    with pytest.raises(SystemExit):
+        gen.parse_tracker_line(line)
+
+
+def retired_setup(gen, tmp_path):
+    path = tmp_path / "migrated_classes.txt"
+    path.write_text("old_ppa Retired [reason: gone]\nbackup Done [from: r]\n")
+    (tmp_path / "manifests").mkdir()
+    return gen.read_tracker(path)
+
+
+def test_retired_classes_must_be_gone_from_plan_blocked_and_manifests(gen, tmp_path):
+    tracker = retired_setup(gen, tmp_path)
+    row = gen.parse_plan()["backup"]
+    assert gen.retired_classes(tracker, {"backup": row}, {}, tmp_path / "manifests") == {"old_ppa": "gone"}
+    for rows, blocked in [({"old_ppa": row}, {}), ({}, {"old_ppa": "cat 5"})]:
+        with pytest.raises(SystemExit):
+            gen.retired_classes(tracker, rows, blocked, tmp_path / "manifests")
+    (tmp_path / "manifests" / "old_ppa.pp").write_text("class x {}\n")
+    with pytest.raises(SystemExit):
+        gen.retired_classes(tracker, {}, {}, tmp_path / "manifests")
+
+
+def test_render_counts_and_lists_retired_classes(gen):
+    rows = gen.parse_plan()
+    tracker = {"old_ppa": gen.TrackerEntry("old_ppa", False, "", "", retired="PPA for focal only")}
+    text = gen.render(rows, set(), {}, set(), [], set(), set(), tracker)
+    assert f"/ 1 retired / {len(rows) + 1} total." in text
+    assert "## RETIRED" in text and "`puppet_infrastructure::old_ppa` — PPA for focal only" in text
+
 @pytest.mark.repo_state  # inconsistent by design while record_green's own commit is being made
 def test_repo_tracker_parses_and_matches_git(gen):
     entries = gen.read_tracker()
