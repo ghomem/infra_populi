@@ -1,4 +1,4 @@
-# Puppet 8 migration: select service_name 'mysql' (DESIGN_DECISIONS 2026-11-16 HQ batch-5 ruling 2).
+# Puppet 8 migration: select MySQL service and client (DESIGN_DECISIONS 2026-11-16 HQ batch-5 ruling 2; 2026-11-17 HQ ruling 1).
 # Module dependency: puppetlabs-mysql 17.3.0.
 # Install and configure a MySQL server using the Ubuntu packages.
 #
@@ -60,6 +60,8 @@ class puppet_infrastructure::mysql_server (
       },
     },
   }
+
+  class { '::mysql::client': package_name => 'mysql-client', }
 
   File['/etc/apparmor.d/local/usr.sbin.mysqld']
     -> Package['mysql-server']
