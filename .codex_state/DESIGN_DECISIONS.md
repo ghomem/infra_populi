@@ -1681,3 +1681,20 @@ snapshot list, record.
     - Verdicts written before this keep their PASS. The next re-run of openvpn_server's and network_vpn's sets records
       both nodes.
   - **Per-target settings for a base class** (params/for/<target>/<base>.json).
+
+## 2026-11-17 — HQ batch-8 ruling 1: nginx_base, a module-compatibility change
+- **The ruling:** the module does the single include of /etc/nginx/modules-enabled, and nginx_base's own include is
+  dropped. No production read is needed.
+- **The change** (class_rulings.txt): in `$default_configs`, `nginx_cfg_prepend => {'include' =>
+  '/etc/nginx/modules-enabled/*'}` becomes `include_modules_enabled => true`.
+  - It is explicit, so RedHat keeps the include the baseline had. The module's default is true on Debian only.
+  - The rhel9 pass checks the RedHat path.
+- **Evidence against the baseline** (the 3268e9a check set, phase3 run 1, 20261117T205451Z, before the re-migration):
+  four read-only checks pass. With libnginx-mod-stream installed the result is: 2 includes,
+  `module "ngx_stream_module" is already loaded`, nginx -t failed, the service failed.
+- **The same set must pass after the change.**
+- **Then:**
+  1. Re-run the harness, the reviewer and the behaviour checks for every done class whose closure includes nginx_base:
+     hashman_web, nginx_frontend, nginx_frontend_domain, nginx_static, nginx_static_domain (code), and ssl_nginx and
+     ssl_nginx_domain (plan required_base).
+  2. Migrate nginx_frontend_mail.

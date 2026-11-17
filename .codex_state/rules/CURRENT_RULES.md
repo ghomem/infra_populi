@@ -2,7 +2,11 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-99 entries; 6 marked superseded (in whole or part); newest first.
+100 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-17 — HQ batch-8 ruling 1: nginx_base, a module-compatibility change
+- 1. Re-run the harness, the reviewer and the behaviour checks for every done class whose closure includes nginx_base:
+- 2. Migrate nginx_frontend_mail.
 
 ## 2026-11-17 — HQ batch-8 acceptance: rulings 2 and 3
 - (no numbered/Rule/Decision lines; read the entry)
