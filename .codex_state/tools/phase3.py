@@ -22,7 +22,9 @@ derived from the pinned baseline, probed on the node only, with negative control
   phase3.py verdict <class> --derived ok|fail --evidence TEXT [--evidence ...]
                                  reviewer: compares its latest run with the latest author run (same validity, same
                                  per-check outcome on both phases) and persists .codex_state/checks/reviews/<class>/
-                                 <UTC>.json. PASS = both runs valid + reproduced + derived ok.
+                                 <UTC>.json. PASS = both runs valid + reproduced + derived ok + every node of the
+                                 reviewer's run fresh (HQ 2026-11-17 batch-8 ruling 3: the node and, for a set with a
+                                 peer, the peer; both are recorded in the verdict).
 
 A class that cannot be tested on this lab declares a DEFERRAL instead of checks (HQ 2026-11-16):
   class / baseline / authoring as below, plus
@@ -402,6 +404,14 @@ def node_env() -> dict:
     return env
 
 
+def node_boot(kind: str) -> str | None:
+    """The node's kernel boot ID (revert_node.sh --node-state, first line), or None when it cannot be read."""
+    revert = os.environ.get("P8_PHASE3_REVERT") or str(TOOLS / "revert_node.sh")
+    proc = subprocess.run([revert, "--node", kind, "--node-state"], env=node_env(), capture_output=True, text=True)
+    lines = proc.stdout.split()
+    return lines[0] if proc.returncode == 0 and lines else None
+
+
 def on_node(script: str) -> tuple[int, str, str]:
     try:
         proc = subprocess.run(["ssh", "-o", "BatchMode=yes", NODE, "sudo -n bash -s"], input=script,
@@ -536,6 +546,13 @@ def cmd_run(cls: str, role: str) -> int:
     record["authoring_minutes"] = (data.get("authoring") or {}).get("minutes")
 
     def finish(outcome: str, rc: int) -> int:
+        # HQ 2026-11-17 batch-8 ruling 3: each node reverted for this run is fresh if it kept the boot of that revert
+        # through the run (the class node also needs the harness's NODE_FRESH). Read here, still under the lab lock.
+        for role_name, entry in (record.get("nodes") or {}).items():
+            if entry.get("boot_id"):
+                entry["boot_id_at_end"] = node_boot(entry["kind"])
+                entry["fresh"] = entry["boot_id_at_end"] == entry["boot_id"] and \
+                    (role_name != "node" or bool((record.get("apply") or {}).get("node_fresh")))
         record["outcome"] = outcome
         record["duration_s"] = round(time.monotonic() - t0, 1)
         stem = write_outputs(cls, record)
@@ -562,11 +579,13 @@ def cmd_run(cls: str, role: str) -> int:
     import nodes  # noqa: PLC0415
     node = nodes.select(nodes.load(), cls=cls)
     NODE, record["node"] = node["alias"], node["kind"]
+    record["nodes"] = {"node": {"kind": node["kind"], "snapshot": node.get("baseline_snapshot")}}
     global PEER
     peer = None
     if "peer" in data:
         peer = {**nodes.load()["nodes"][data["peer"]["kind"]], "kind": data["peer"]["kind"]}
         PEER, record["peer"] = peer["alias"], peer["kind"]
+        record["nodes"]["peer"] = {"kind": peer["kind"], "snapshot": peer.get("baseline_snapshot")}
     try:
         if peer and peer["status"] != "active":
             record["problems"].append(f"peer node {peer['kind']} is {peer['status']}")
@@ -589,6 +608,7 @@ def run_locked(cls: str, data: dict, record: dict, finish) -> int:
         err = [l for l in (rv.stderr or rv.stdout).splitlines() if l.strip()][-1:] or ["(no output)"]
         record["problems"].append(f"node revert failed: {err[0]}")
         return finish("ENVIRONMENT_FAILED", 3)
+    record["nodes"]["node"]["boot_id"] = node_boot(record["node"])
     if record.get("peer"):
         print(f"==> Reverting the peer node {record['peer']}")
         rv = subprocess.run([revert, "--node", record["peer"]], env=node_env(), capture_output=True, text=True)
@@ -597,6 +617,7 @@ def run_locked(cls: str, data: dict, record: dict, finish) -> int:
             err = [l for l in (rv.stderr or rv.stdout).splitlines() if l.strip()][-1:] or ["(no output)"]
             record["problems"].append(f"peer revert failed: {err[0]}")
             return finish("ENVIRONMENT_FAILED", 3)
+        record["nodes"]["peer"]["boot_id"] = node_boot(record["peer"])
         fetch_node_files(data["peer"].get("files") or [])
     print("==> CLEAN phase: negative controls must fail, invariants must pass (mutating checks: effect only)")
     for check in data["checks"]:
@@ -751,18 +772,25 @@ def cmd_verdict(cls: str, derived: str, evidence: list[str]) -> int:
         and mine["check_file_sha256"] == theirs["check_file_sha256"]
     checks["reproduced"] = "ok" if same else "fail"
     checks["derived_from"] = derived
+    # HQ 2026-11-17 batch-8 ruling 3: the reviewer's run had every node fresh (with a peer: both), recorded below.
+    ran = (mine or {}).get("nodes") or {}
+    want = {"node", "peer"} if "peer" in data else {"node"}
+    checks["nodes_fresh"] = "ok" if set(ran) == want and all(e.get("fresh") for e in ran.values()) else "fail"
     verdict = "PASS" if all(v == "ok" for v in checks.values()) else "FAIL"
     started = dt.datetime.strptime(mine["at"], "%Y%m%dT%H%M%SZ").replace(tzinfo=dt.timezone.utc) if mine else None
     review_s = round((dt.datetime.now(dt.timezone.utc) - started).total_seconds(), 1) if started else None
     record = {"class": cls, "at": now(), "verdict": verdict, "checks": checks, "evidence": evidence,
               "review_s": review_s, "check_file_sha256": mine and mine["check_file_sha256"],
               "reviewer_result": mine and f"{mine['at']}-reviewer", "author_result": theirs and f"{theirs['at']}-author",
-              "findings": (mine or {}).get("findings", [])}
+              "findings": (mine or {}).get("findings", []), "nodes": ran}
     out = phase3_dir() / "reviews" / cls
     out.mkdir(parents=True, exist_ok=True)
     path = out / f"{record['at']}.json"
     path.write_text(json.dumps(record, indent=1) + "\n")
     print(f"VERDICT {verdict}\nclass {cls}\nchecks {json.dumps(checks)}\nfindings {record['findings']}")
+    for role_name, e in ran.items():
+        print(f"{role_name} {e.get('kind')} {e.get('snapshot')} boot {str(e.get('boot_id'))[:8]} "
+              f"{'fresh' if e.get('fresh') else 'NOT FRESH'}")
     for e in evidence:
         print(f"evidence {e}")
     print(f"persisted {path.relative_to(REPO) if path.is_relative_to(REPO) else path}")

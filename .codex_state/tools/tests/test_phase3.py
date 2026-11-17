@@ -32,6 +32,16 @@ def check_set(*checks, **top):
     return data
 
 
+# revert_node.sh stand-in: `--node-state` prints a boot ID per kind (P8_BOOT_<kind> overrides it, to fake a reboot
+# mid-run), anything else is logged as a revert.
+REVERT_STUB = """#!/bin/sh
+case "$*" in
+  *--node-state*) kind=$2; eval "b=\\${{P8_BOOT_$kind:-boot-$kind}}"; echo "$b"; echo absent ;;
+  *) echo "{log}" >> "$(dirname "$0")/log" ;;
+esac
+"""
+
+
 @pytest.fixture
 def p3(tmp_path, lab):
     home = tmp_path / "home"
@@ -41,7 +51,7 @@ def p3(tmp_path, lab):
     checks = tmp_path / "checks"
     checks.mkdir()
     revert = tmp_path / "revert.sh"
-    revert.write_text("#!/bin/sh\necho reverted >> \"$(dirname \"$0\")/log\"\n")
+    revert.write_text(REVERT_STUB.format(log="reverted"))
     harness = tmp_path / "harness.sh"
     harness.write_text("#!/bin/sh\necho \"harness $*\" >> \"$(dirname \"$0\")/log\"\n"
                        "echo 'NODE_FRESH: yes (boot x)'\necho 'GREEN: run 2 exited 0 with no change events (gate v2).'\n")
@@ -235,8 +245,27 @@ def test_verdict_passes_when_the_reviewer_reproduces_the_author_run(p3):
     proc = p3.run("verdict", CLS, "--derived", "ok", "--evidence", "conf: lines 5-11 declare the file")
     assert proc.returncode == 0 and proc.stdout.startswith("VERDICT PASS"), proc.stdout + proc.stderr
     (path,) = (p3.dir / "reviews" / CLS).glob("*.json")
-    assert json.loads(path.read_text())["checks"] == {"reviewer_run": "ok", "author_run": "ok", "reproduced": "ok",
-                                                      "derived_from": "ok"}
+    verdict = json.loads(path.read_text())
+    assert verdict["checks"] == {"reviewer_run": "ok", "author_run": "ok", "reproduced": "ok", "derived_from": "ok",
+                                 "nodes_fresh": "ok"}
+    assert verdict["nodes"]["node"]["boot_id"] == "boot-ubuntu" and verdict["nodes"]["node"]["fresh"] is True
+
+
+def test_verdict_fails_when_the_reviewer_node_rebooted_during_its_run(p3, tmp_path):
+    p3.write(check_set(check("conf", "probe-conf")))
+    p3.probe_rule("probe-conf", FAIL, OK)
+    assert p3.run("run", CLS).returncode == 0
+    p3.probe_rule("probe-conf", FAIL, OK)
+    # the boot ID read at the end differs from the one read after the revert: the stub answers per call count
+    counter = tmp_path / "boots"
+    (tmp_path / "revert.sh").write_text(
+        "#!/bin/sh\ncase \"$*\" in *--node-state*) n=$(cat " + str(counter) + " 2>/dev/null || echo 0); "
+        "echo $((n+1)) > " + str(counter) + "; echo boot-$n; echo absent ;; *) echo reverted >> \"$(dirname \"$0\")/log\" ;; esac\n")
+    p3.run("run", CLS, "--role", "reviewer")
+    record, _ = p3.result("reviewer")
+    assert record["nodes"]["node"]["fresh"] is False
+    proc = p3.run("verdict", CLS, "--derived", "ok", "--evidence", "x")
+    assert proc.returncode == 1 and '"nodes_fresh": "fail"' in proc.stdout and "NOT FRESH" in proc.stdout
 
 
 def test_verdict_fails_when_the_runs_differ_or_derivation_is_wrong(p3):
@@ -588,7 +617,7 @@ def test_a_peer_run_reverts_both_nodes_hands_the_files_over_and_powers_the_peer_
     labvm = tmp_path / "labvm.sh"
     labvm.write_text("#!/bin/sh\necho \"labvm $*\" >> \"$(dirname \"$0\")/log\"\n")
     labvm.chmod(0o755)
-    (tmp_path / "revert.sh").write_text("#!/bin/sh\necho \"reverted $*\" >> \"$(dirname \"$0\")/log\"\n")
+    (tmp_path / "revert.sh").write_text(REVERT_STUB.format(log="reverted $*"))
     p3.write(check_set(check("conf", "probe-conf"), check("client", "probe-client", host="peer"), peer=PEER))
     p3.probe_rule("probe-conf", FAIL, OK)
     p3.probe_rule("probe-client", FAIL, OK)
@@ -603,6 +632,9 @@ def test_a_peer_run_reverts_both_nodes_hands_the_files_over_and_powers_the_peer_
                                                f"harness puppet_infrastructure::{CLS}", "labvm stop p8lab-ubuntu2"]
     peer_calls = [c for c in lab.calls("ssh") if c[-2] == "p8lab-ubuntu2"]
     assert len(peer_calls) == 2  # clean + applied
+    # both nodes fresh, both recorded (HQ 2026-11-17 batch-8 ruling 3)
+    assert {k: (v["kind"], v["boot_id"], v["fresh"]) for k, v in record["nodes"].items()} == \
+        {"node": ("ubuntu", "boot-ubuntu", True), "peer": ("ubuntu2", "boot-ubuntu2", True)}
     stdin = [c for c in lab.calls("ssh") if c[-2] == "p8lab-ubuntu2"]
     assert all(c[-1] == "sudo -n bash -s" for c in stdin)
 

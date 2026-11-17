@@ -6,7 +6,7 @@
 # dnsmasq answers DHCP with the single address 203.0.113.50 and no router option (the node's default route and DNS stay
 # on NIC1, its SSH path on NIC2). The class then manages p8test0 exactly as production manages the primary interface.
 # Behaviour of a real uplink (clients reaching the server over the primary interface) is NOT verified by a GREEN with it.
-# Lifted by: a node whose primary interface the class may take over (a disposable gateway VM; no nodes.yml kind yet)
+# Lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3)
 package { 'dnsmasq-base':
   ensure => installed,
 }

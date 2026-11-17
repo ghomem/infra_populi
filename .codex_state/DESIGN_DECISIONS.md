@@ -1662,3 +1662,22 @@ snapshot list, record.
   - The wrong known_hosts entry was replaced, and the p8tmpssh forward was removed while the VM was powered off.
   - The bring-up then completed as P8LAB_KUBUNTU_BASELINE_v1 (a9f5707).
 - **Tests:** 13, for first_contact and the forward refusal.
+
+## 2026-11-17 — HQ batch-8 acceptance: rulings 2 and 3
+- **Start rule, amended (ruling 2):**
+  - A reviewer FAIL that an engine bug caused in the safe direction (a false FAIL) does not stop the next batch when the
+    bug is fixed with a test and the re-review PASSes. The batch report lists it.
+  - batch 8's openvpn_server FAIL is such a case (4a4dd82, re-review PASS).
+  - Any discovered false PASS stops everything and goes to HQ.
+- **Accepted (ruling 3):**
+  - **The stand-in primary interface p8test_dhcp_primary.** The label stays stand-in. Its `Lifted by` line and the tail
+    list now name a dedicated real NIC the class may take over (openvpn_server, network_vpn).
+  - **The second-node mode for behaviour checks**, with both nodes fresh and both recorded in the verdict.
+    - `phase3.py run` records `nodes.{node,peer}`: kind, baseline snapshot, the boot ID read right after its revert,
+      the boot ID read at the end of the run, and `fresh`. The boot must be unchanged, and the class node also needs
+      the harness's NODE_FRESH.
+    - `verdict` adds `nodes_fresh` (every node of the reviewer's run fresh; for a set with a peer, both node and peer)
+      and copies `nodes` into the verdict file.
+    - Verdicts written before this keep their PASS. The next re-run of openvpn_server's and network_vpn's sets records
+      both nodes.
+  - **Per-target settings for a base class** (params/for/<target>/<base>.json).
