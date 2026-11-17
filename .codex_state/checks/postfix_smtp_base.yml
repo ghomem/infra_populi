@@ -1,0 +1,74 @@
+# Phase 3 checks for puppet_infrastructure::postfix_smtp_base (class). Fixture (params, never committed):
+# smtp_hostname smtp.p8test.example.com, smtp_sslprefix p8test (the master's throwaway p8test PKI via ssl_postfix),
+# postfix_port 587, smtp_users [p8testuser with the fake {PLAIN} password p8test-not-a-secret], allowed_client_ips
+# [127.0.0.1], one allowed MAIL FROM address for p8testuser; extra_sec and letsencrypt_certificate false.
+# Probes talk to the node's own postfix and dovecot on 127.0.0.1 only.
+class: postfix_smtp_base
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.5
+  notes: "Wall clock 02:36:27Z to 02:36:57Z 2026-11-17, outside the worktree while the Phase 1 review ran; each tool verdict has a single-value mismatch."
+checks:
+  - id: smtpd-on-the-configured-port-with-the-hostname
+    what: postfix's smtpd listens on postfix_port and greets with myhostname = smtp_hostname
+    control: negative
+    derived_from:
+      - {path: templates/postfix_smtp_base/master.cf.erb, lines: "12", text: "<%=@postfix_port%>      inet  n       -       y       -       -       smtpd"}
+      - {path: templates/postfix_smtp_base/main.cf.erb, lines: "75", text: "myhostname = <%=@smtp_hostname%>"}
+      - {path: templates/postfix_smtp_base/main.cf.erb, lines: "10", text: "smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu)"}
+    probe: |
+      python3 -c "import smtplib; s = smtplib.SMTP('127.0.0.1', 587, timeout=5); print(s.getwelcome().decode()); s.quit()"
+    expect: {rc: 0, stdout: "\\Asmtp\\.p8test\\.example\\.com ESMTP Postfix \\(Ubuntu\\)\\n\\Z"}
+
+  - id: starttls-presents-the-sslprefix-bundle
+    what: STARTTLS on postfix_port presents the certificate at /etc/ssl/certs/<smtp_sslprefix>.postfix.bundle.crt
+    control: negative
+    derived_from:
+      - {path: manifests/postfix_smtp_base.pp, lines: "58-59", text: "$certificate_filename = \"/etc/ssl/certs/${smtp_sslprefix}.postfix.bundle.crt\""}
+      - {path: templates/postfix_smtp_base/main.cf.erb, lines: "23", text: "smtpd_tls_cert_file=<%=@certificate_filename%>"}
+    probe: |
+      a=$(openssl s_client -starttls smtp -connect 127.0.0.1:587 </dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256)
+      b=$(openssl x509 -in /etc/ssl/certs/p8test.postfix.bundle.crt -noout -fingerprint -sha256)
+      test -n "$a" && test "$a" = "$b" && echo served-cert-is-bundle
+    mismatch:
+      varies: >-
+        only the certificate compared (the first certificate of the system CA bundle instead of the p8test bundle): the
+        fingerprints must differ
+      probe: |
+        a=$(openssl s_client -starttls smtp -connect 127.0.0.1:587 </dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256)
+        b=$(openssl x509 -in /etc/ssl/certs/ca-certificates.crt -noout -fingerprint -sha256)
+        test -n "$a" && test "$a" = "$b" && echo served-cert-is-bundle
+    expect: {rc: 0, stdout: "\\Aserved-cert-is-bundle\\n\\Z"}
+
+  - id: sasl-user-authenticates-through-dovecot
+    what: dovecot's passdb holds the smtp_users entry, so p8testuser authenticates with its password (postfix uses dovecot SASL)
+    control: negative
+    derived_from:
+      - {path: manifests/postfix_smtp_base.pp, lines: "117-121", text: "content   => template('puppet_infrastructure/postfix_smtp_base/sasl_users.erb'),"}
+      - {path: templates/postfix_smtp_base/sasl_users.erb, lines: "3", text: "<%=smtp_user['name']%>:<%=smtp_user['password_hash']%>"}
+      - {path: templates/postfix_smtp_base/main.cf.erb, lines: "92", text: "smtpd_sasl_type = dovecot"}
+    probe: |
+      doveadm auth test p8testuser p8test-not-a-secret 2>&1 | grep -E '^passdb: '
+    mismatch:
+      varies: >-
+        only the password (p8test-wrong-password): dovecot must refuse it, so the "auth succeeded" expectation must fail
+      probe: |
+        doveadm auth test p8testuser p8test-wrong-password 2>&1 | grep -E '^passdb: '
+    expect: {rc: 0, stdout: "\\Apassdb: p8testuser auth succeeded\\n\\Z"}
+
+  - id: client-access-map-allows-the-listed-ip
+    what: the hashed client_access map (postmap) answers OK for each allowed_client_ips entry
+    control: negative
+    derived_from:
+      - {path: manifests/postfix_smtp_base.pp, lines: "131", text: "puppet_infrastructure::postfix_smtp_base_config_file {'/etc/postfix/client_access':"}
+      - {path: manifests/postfix_smtp_base_config_file.pp, lines: "26", text: "command     => \"/usr/sbin/postmap ${name}\","}
+      - {path: templates/postfix_smtp_base/client_access.erb, lines: "2-3", text: "<%=allowed_client_ip%> OK"}
+    probe: |
+      postmap -q 127.0.0.1 hash:/etc/postfix/client_access
+    mismatch:
+      varies: >-
+        only the queried address (127.0.0.2, not in allowed_client_ips): the map has no entry, so OK must not come back
+      probe: |
+        postmap -q 127.0.0.2 hash:/etc/postfix/client_access
+    expect: {rc: 0, stdout: "\\AOK\\n\\Z"}
