@@ -1,0 +1,122 @@
+# Phase 3 checks for puppet_infrastructure::openvpn_server (class; required_base network_dhcp; MOCK-APPLY: the plan's
+# node_fixture p8test_dhcp_primary supplies p8test0, a stand-in DHCP primary interface; migrated with the ruled change
+# "module owns the unit", upstream_defects.md openvpn_server). HQ 2026-11-17 ruling 1: with ubuntu2 as the client it
+# connects, gets a pool address, reaches the server side, and a wrong password is rejected.
+# Fixture (params, never committed): lan_static_ip 192.0.2.1/24, pool 192.0.2.100-150, lan_iface lo:0, bridge br0,
+# local 203.0.113.50 (p8test0's DHCP address), local_interface p8test0; defaults: cipher AES-256-CBC, push_dns_server
+# 8.8.8.8, client_isolation true, reneg_sec 3600, compression comp-lzo.
+# The peer reaches 203.0.113.50 (a local address of the node) through a host route via the node's host-only address.
+# The client filters the pushed redirect-gateway (it is checked as received): applied, it would send the peer's route
+# to the server through NIC1's NAT gateway instead of the host-only path.
+class: openvpn_server
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.7
+  notes: "Wall clock 13:53:31Z to 13:54:10Z 2026-11-17 (no lab run active; baseline manifest and the module's rendered config format read)."
+peer:
+  kind: ubuntu2
+  why: the VPN client must be a second machine on the lab network that connects to the server node over UDP
+  files: [/etc/openvpn/keys/ca.crt]
+checks:
+  - id: server-listens-on-the-bound-address
+    what: the OpenVPN server listens on UDP 1194 at the `local` address
+    control: negative
+    derived_from:
+      - {path: manifests/openvpn_server.pp, lines: "165", text: "proto                    => 'udp',"}
+      - {path: manifests/openvpn_server.pp, lines: "184", text: "local                    => $local,"}
+    probe: |
+      ss -ulnH 'sport = :1194' | awk '{print $4}'
+    expect: {rc: 0, stdout: "\\A203\\.0\\.113\\.50:1194\\n\\Z"}
+
+  - id: server-config-rendered
+    what: the server config carries the bridged tap0, the server-bridge pool, PAM auth without client certificates and the renegotiation interval
+    control: negative
+    derived_from:
+      - {path: manifests/openvpn_server.pp, lines: "157-158", text: "server_directory => '/etc/openvpn/server',"}
+      - {path: manifests/openvpn_server.pp, lines: "167-169", text: "pam                      => true,"}
+      - {path: manifests/openvpn_server.pp, lines: "173", text: "server_bridge            => \"${lan_static_ip} ${lan_netmask} ${vpn_pool_start} ${vpn_pool_end}\","}
+      - {path: manifests/openvpn_server.pp, lines: "185", text: "custom_options           => { 'reneg-sec' => $reneg_sec, 'verify-client-cert' => 'none' },"}
+    probe: |
+      grep -E '^(dev|server-bridge|plugin|verify-client-cert|reneg-sec) ' /etc/openvpn/server/puppet_infrastructure.conf
+    expect: {rc: 0, stdout: "\\Adev tap0\\nserver-bridge 192\\.0\\.2\\.1 255\\.255\\.255\\.0 192\\.0\\.2\\.100 192\\.0\\.2\\.150\\nplugin /usr/lib/openvpn/openvpn-plugin-auth-pam\\.so \"login\"\\nreneg-sec 3600\\nverify-client-cert none\\n\\Z"}
+
+  - id: bridge-holds-the-lan-address-and-tap0
+    what: br0 carries lan_static_ip and the server's tap0 is one of its ports (the up script)
+    control: negative
+    derived_from:
+      - {path: manifests/openvpn_server.pp, lines: "174", text: "up                       => \"/etc/openvpn/openvpn-up.sh ${lan_bridge_iface} ${lan_iface} tap0\","}
+      - {path: manifests/openvpn_server.pp, lines: "17", text: "$lan_bridge_iface         = 'br0',"}
+    probe: |
+      ip -4 -br addr show br0 | awk '{print $3}'
+      ip -br link show master br0 | awk '{print $1}' | grep -x tap0
+    expect: {rc: 0, stdout: "\\A192\\.0\\.2\\.1/24\\ntap0\\n\\Z"}
+
+  - id: client-isolation-on-the-bridge
+    what: client isolation is on, so proxy_arp_pvlan on br0 is 0
+    control: negative
+    derived_from:
+      - {path: manifests/openvpn_server.pp, lines: "45", text: "$proxy_arp = Numeric(!$client_isolation)"}
+      - {path: manifests/openvpn_server.pp, lines: "211", text: "sysctl  { 'net.ipv4.conf.br0.proxy_arp_pvlan': value => $proxy_arp  }"}
+    probe: |
+      sysctl -n net.ipv4.conf.br0.proxy_arp_pvlan
+    expect: {rc: 0, stdout: "\\A0\\n\\Z"}
+
+  - id: vpn-account-on-the-server
+    what: a local account exists on the server for PAM authentication (setup for the client checks)
+    control: negative
+    derived_from:
+      - {path: manifests/openvpn_server.pp, lines: "169", text: "pam                      => true,"}
+    mutates: creates the local account p8vpnuser on the server node with the fake password p8test-vpn-not-a-secret
+    probe: |
+      useradd -M -s /usr/sbin/nologin p8vpnuser && echo 'p8vpnuser:p8test-vpn-not-a-secret' | chpasswd
+    effect: |
+      getent passwd p8vpnuser | cut -d: -f1
+    expect: {rc: 0, stdout: "\\Ap8vpnuser\\n\\Z"}
+
+  - id: client-connects-gets-a-pool-address-and-reaches-the-server-side
+    what: >-
+      the peer's client authenticates with the PAM account, receives the pushed options, gets a tap address from the
+      server-bridge pool and reaches lan_static_ip on the server's bridge through the tunnel
+    control: negative
+    host: peer
+    derived_from:
+      - {path: manifests/openvpn_server.pp, lines: "172", text: "push                     => ['redirect-gateway bypass-dhcp bypass-dns', \"dhcp-option DNS ${push_dns_server}\"],"}
+      - {path: manifests/openvpn_server.pp, lines: "173", text: "server_bridge            => \"${lan_static_ip} ${lan_netmask} ${vpn_pool_start} ${vpn_pool_end}\","}
+    mutates: >-
+      on the peer: installs the openvpn package, adds the host route 203.0.113.50 via the node's host-only address,
+      writes a client config and credentials under /run/p8vpn and starts an openvpn client daemon
+    probe: |
+      DEBIAN_FRONTEND=noninteractive apt-get -qq -y install openvpn >/dev/null
+      ip route replace 203.0.113.50/32 via 192.168.56.20
+      mkdir -p /run/p8vpn
+      printf 'p8vpnuser\np8test-vpn-not-a-secret\n' > /run/p8vpn/auth
+      printf 'client\ndev tap\nproto udp\nremote 203.0.113.50 1194\nca /run/p8test-from-node/ca.crt\nauth-user-pass /run/p8vpn/auth\ncipher AES-256-CBC\ndata-ciphers AES-256-GCM:AES-256-CBC\ncomp-lzo\nallow-compression yes\npull-filter ignore "redirect-gateway"\nverb 3\n' > /run/p8vpn/client.conf
+      openvpn --config /run/p8vpn/client.conf --daemon --log /run/p8vpn/client.log --writepid /run/p8vpn/pid
+      for i in $(seq 40); do grep -q 'Initialization Sequence Completed' /run/p8vpn/client.log && break; sleep 1; done
+    effect: |
+      grep -c 'Initialization Sequence Completed' /run/p8vpn/client.log
+      grep -o 'PUSH_REPLY,[^]]*' /run/p8vpn/client.log | head -1 | grep -o -e 'redirect-gateway bypass-dhcp bypass-dns' -e 'dhcp-option DNS 8.8.8.8'
+      ip -4 -br addr show "$(ip -br link | awk '$1 ~ /^tap/ {print $1; exit}')" | awk '{print $3}'
+      ping -c 2 -W 2 192.0.2.1 >/dev/null && echo reaches-server-side
+    expect: {rc: 0, stdout: "\\A1\\nredirect-gateway bypass-dhcp bypass-dns\\ndhcp-option DNS 8\\.8\\.8\\.8\\n192\\.0\\.2\\.(1[0-4][0-9]|150)/24\\nreaches-server-side\\n\\Z"}
+
+  - id: wrong-password-rejected
+    what: a client with a wrong password for the same account is refused (AUTH_FAILED) and gets no tunnel
+    control: negative
+    host: peer
+    derived_from:
+      - {path: manifests/openvpn_server.pp, lines: "169", text: "pam                      => true,"}
+    mutates: >-
+      on the peer: writes a second client config with a wrong password under /run/p8vpn-bad and starts a second openvpn
+      client daemon (it stops itself on AUTH_FAILED)
+    probe: |
+      mkdir -p /run/p8vpn-bad
+      printf 'p8vpnuser\np8test-wrong-password\n' > /run/p8vpn-bad/auth
+      sed 's#/run/p8vpn/auth#/run/p8vpn-bad/auth#' /run/p8vpn/client.conf > /run/p8vpn-bad/client.conf
+      openvpn --config /run/p8vpn-bad/client.conf --daemon --log /run/p8vpn-bad/client.log
+      for i in $(seq 40); do grep -q -e 'AUTH_FAILED' -e 'Initialization Sequence Completed' /run/p8vpn-bad/client.log && break; sleep 1; done
+    effect: |
+      grep -c 'AUTH_FAILED' /run/p8vpn-bad/client.log
+      grep -c 'Initialization Sequence Completed' /run/p8vpn-bad/client.log || true
+    expect: {rc: 0, stdout: "\\A[1-9]\\d*\\n0\\n\\Z"}
