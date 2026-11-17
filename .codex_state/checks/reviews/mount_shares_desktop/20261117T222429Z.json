@@ -1,0 +1,38 @@
+{
+ "class": "mount_shares_desktop",
+ "at": "20261117T222429Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok"
+ },
+ "evidence": [
+  "scripts-render-the-share-and-options @ templates/shares/shares.sh.erb:153-157: the loop body renders SHARENAME=<share_name>, CIFSVERSION=\"<cifs_version>\" and the literal mountshare line; with the fixture's share {share_name p8share, cifs_version 3.0} the probe's exact-line greps SHARENAME=p8share, CIFSVERSION=\"3.0\" and the mountshare line (count 1 each, one share) are exactly what the template produces",
+  "scripts-render-the-share-and-options @ templates/shares/shares.sh.erb:9: USERNAME=<%= @auth_user %> with auth_user at its baseline default '$USER' (manifests/mount_shares_desktop.pp:5, fixture leaves it unset) renders the literal line USERNAME=$USER, which the probe greps exactly",
+  "the-mount-script-mounts-the-share @ templates/shares/shares.sh.erb:125: the script runs mount.cifs //$SERVER/$SHARE onto TDIR=$MDIR/$SHARE with MDIR=/tmp/$USER/mnt-manual (line 8) after chmod 700 \"$MDIR\"; the action is the rendered script run as the desktop user (USER=p8testuser, password via $PASSWORD so get_password skips kdialog), as the baseline intends; the read-only effect shows the result (findmnt FSTYPE cifs at /tmp/p8testuser/mnt-manual/p8share, MDIR mode 700, the server file readable through the mount), not just the action's exit code; mutates declares the mount and the output file"
+ ],
+ "review_s": 127.9,
+ "check_file_sha256": "f59c5164cbd073e3c366ec05703fbc1d792544485077e92efe2351ec1e1e6b7a",
+ "reviewer_result": "20261117T222222Z-reviewer",
+ "author_result": "20261117T222008Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "boot_id": "c6c03d2d-3802-4854-b120-6599204bf9d3",
+   "boot_id_at_end": "c6c03d2d-3802-4854-b120-6599204bf9d3",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v1",
+   "boot_id": "19d3bf0a-dc79-4321-8b61-624491fc14e9",
+   "boot_id_at_end": "19d3bf0a-dc79-4321-8b61-624491fc14e9",
+   "fresh": true
+  }
+ }
+}
