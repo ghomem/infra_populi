@@ -269,6 +269,11 @@ def cmd_tracker_set(cls: str, argv: list[str]) -> int:
     if bool(mock) != bool(fixture and fixture.node_fixture):
         raise SystemExit(f"ERROR: --mock-apply is required exactly when the plan gives {cls} a node_fixture "
                          f"(plan: {fixture.node_fixture if fixture else None!r})")
+    current = generator.read_tracker(TRACKER).get(cls)
+    if current is not None and current.defect_fixed and current.defect_fixed != defect:
+        # 2026-11-17: a --fix without --defect silently dropped linux_policies_user's ruled-defect marker
+        raise SystemExit(f"ERROR: the tracker carries `upstream defect fixed: {current.defect_fixed}` for {cls}; repeat "
+                         f"--defect \"{current.defect_fixed}\" (a different marker needs a ruled upstream_defects.md change)")
     base_name = baseline.for_class(cls).name
     TRACKER.write_text(tracker_text(TRACKER.read_text(encoding="utf-8"), cls, base_name, defect, mock))
     extra = (f"; upstream defect fixed: {defect}" if defect else "") + (f"; mock-apply: {mock}" if mock else "")

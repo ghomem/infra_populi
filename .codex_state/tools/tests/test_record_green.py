@@ -220,6 +220,25 @@ def test_fix_mode_refuses_a_code_change(clone, lab):
     assert proc.returncode == 1 and "may not change code" in proc.stderr
 
 
+
+def test_fix_mode_refuses_to_drop_a_ruled_defect_marker(clone, lab):
+    # 2026-11-17: a --fix without --defect dropped linux_policies_user's `upstream defect fixed: ...` marker
+    done = "user_base"
+    marker = next(l for l in (clone.root / ".codex_state/migrated_classes.txt").read_text().splitlines()
+                  if l.split()[:1] == [done])
+    defect = marker.split("upstream defect fixed: ", 1)[1].rstrip("]")
+    env = {"P8_GREEN_DIR": str(clone.root.parent / "green")}
+    stamp(lab, clone.root, done, env)
+    path = clone.root / f"manifests/{done}.pp"
+    path.write_text(path.read_text().replace("# Puppet 8 migration", "# Puppet 8 migration (records fix)", 1))
+    cmd = ["bash", str(clone.root / ".codex_state/tools/record_green.sh"), done, "--fix", "header wording", "--no-push"]
+    lab_env = {**env, "P8_COMPOSITE_CMD": "true", "P8_PUPPETFILE_CMD": "true"}
+    proc = lab.run(cmd, env=lab_env, cwd=clone.root)
+    assert proc.returncode == 1 and f'repeat --defect "{defect}"' in proc.stderr
+    proc = lab.run([*cmd, "--defect", defect], env=lab_env, cwd=clone.root)
+    assert proc.returncode == 0, proc.stderr
+    assert marker in (clone.root / ".codex_state/migrated_classes.txt").read_text().splitlines()
+
 def test_fix_mode_refuses_a_class_that_is_not_recorded(clone):
     clone.stamp()
     clone.add_header()
