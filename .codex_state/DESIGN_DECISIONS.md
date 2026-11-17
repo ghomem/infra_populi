@@ -1463,3 +1463,14 @@ too; other commits keep the fast subset. Cause: the lab_vm.sh commit (516b455) l
   VM.
 - **Batch reports (ruling 7):** add the projected download for re-verifying all done classes, from the per-class byte
   counts.
+
+## 2026-11-17 — HQ batch-5 ruling 4: snapshot_master.sh `--lab-test`
+`snapshot_master.sh <P8LABTEST_name> --lab-test <p8lab-vm> <ssh-alias>` runs the script's full path against a
+disposable `p8lab-*` VM: busy check, description, ACPI shutdown, offline take, restart, health check, UUID from the
+snapshot list, record.
+- **Target:** never the master or ubuntu24-puppet8-Node; names `P8LABTEST_*` only.
+- **Record:** `.codex_state/logs/lab_snapshot_tests.jsonl` (untracked).
+- **Stand-in:** the VM runs a puppetserver stand-in, a systemd unit `puppetserver` serving
+  `https://localhost:8140/status/v1/simple` = running. The health check's real command and parsing are exercised
+  without a 2 GB puppetserver.
+- **Why:** both real runs failed after the take (v4 at the health check, v5 at the UUID lookup).

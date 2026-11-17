@@ -3,6 +3,10 @@
 # TRACKED TOOLING (HQ VM-operations ruling, 2026-10-27). TAKE-ONLY offline snapshot of the lab master.
 #
 #   snapshot_master.sh <NAME> [--note "<what this snapshot captures beyond the last one>"] [--dry-run]
+#   snapshot_master.sh <P8LABTEST_NAME> --lab-test <p8lab-vm> <ssh-alias> [--note ...] [--dry-run]
+#       HQ batch-5 ruling 4: the same full path (take -> restart -> health check -> record) against a disposable
+#       p8lab-* VM that runs a puppetserver stand-in; never the master; the record goes to
+#       .codex_state/logs/lab_snapshot_tests.jsonl (untracked) unless P8_SNAPSHOT_RECORD is set.
 #
 # Refuses (nothing touched) when: NAME is malformed or already exists; a harness / Codex / reviewer / composite
 # run is in progress; the master is not running; the repo's Puppetfile export differs from the master's.
@@ -21,7 +25,7 @@ MASTER_VM="Ubuntu24-puppet8-Master"
 MASTER_HOST="puppet8master"
 ACPI_TIMEOUT_SECONDS="${ACPI_TIMEOUT_SECONDS:-240}"
 BOOT_TIMEOUT_SECONDS="${BOOT_TIMEOUT_SECONDS:-300}"
-RECORD="${P8_SNAPSHOT_RECORD:-$REPO/.codex_state/lab/master_snapshots.jsonl}"
+RECORD_DEFAULT="$REPO/.codex_state/lab/master_snapshots.jsonl"
 # Engine runs that must not see the master go away (process command lines).
 BUSY_RE='test_class\.sh|codex_migrate_class|codex exec|review_class\.py check|composite_compile\.py|record_green\.sh|revert_node\.sh'
 
@@ -29,17 +33,29 @@ refuse() { echo "SNAPSHOT REFUSED: $*" >&2; exit 1; }
 vm_state() { VBoxManage showvminfo "$MASTER_VM" --machinereadable | sed -n 's/^VMState="\(.*\)"$/\1/p'; }
 
 [[ $# -ge 1 ]] || { sed -n '4,16p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
-NAME="$1"; DRY=0; NOTE=""
+NAME="$1"; DRY=0; NOTE=""; LAB_TEST=0
 shift
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run) DRY=1; shift ;;
     --note) NOTE="${2:-}"; [[ -n "$NOTE" ]] || refuse "--note needs a text"; shift 2 ;;
+    --lab-test)
+      [[ $# -ge 3 ]] || refuse "--lab-test needs <p8lab-vm> <ssh-alias>"
+      LAB_TEST=1; MASTER_VM="$2"; MASTER_HOST="$3"; shift 3 ;;
     *) refuse "unknown argument '$1'" ;;
   esac
 done
 [[ "$NOTE" != *$'\n'* && ${#NOTE} -le 600 ]] || refuse "--note must be one line of at most 600 characters"
-[[ "$NAME" =~ ^P8MASTER_[A-Za-z0-9_]+$ ]] || refuse "name '${NAME}' must match P8MASTER_[A-Za-z0-9_]+"
+if [[ $LAB_TEST -eq 1 ]]; then
+  # a disposable lab VM only: never the master, never the original node
+  [[ "$MASTER_VM" =~ ^p8lab-[a-z0-9][a-z0-9-]{0,40}$ ]] || refuse "--lab-test VM '${MASTER_VM}' must be a p8lab-* VM"
+  [[ "$MASTER_HOST" =~ ^p8lab-[a-z0-9][a-z0-9-]{0,40}$ ]] || refuse "--lab-test alias '${MASTER_HOST}' must be a p8lab-* alias"
+  [[ "$NAME" =~ ^P8LABTEST_[A-Za-z0-9_]+$ ]] || refuse "a --lab-test snapshot name must match P8LABTEST_[A-Za-z0-9_]+"
+  RECORD_DEFAULT="$REPO/.codex_state/logs/lab_snapshot_tests.jsonl"
+else
+  [[ "$NAME" =~ ^P8MASTER_[A-Za-z0-9_]+$ ]] || refuse "name '${NAME}' must match P8MASTER_[A-Za-z0-9_]+"
+fi
+RECORD="${P8_SNAPSHOT_RECORD:-$RECORD_DEFAULT}"
 
 # 1. nothing of the engine is running
 busy="$(pgrep -af "$BUSY_RE" | grep -v "snapshot_master" || true)"

@@ -187,3 +187,43 @@ def test_health_check_reads_the_real_endpoint_output(clone, lab, answer, ok):
     assert (proc.returncode == 0) == ok, proc.stderr
     if not ok:
         assert "not healthy" in proc.stderr
+
+
+
+# HQ batch-5 ruling 4: the full path against a disposable p8lab VM (a puppetserver stand-in), never the master.
+LABVM = "p8lab-snaptest"
+
+
+def lab_target(lab):
+    lab.world["vms"][LABVM] = {"state": "running", "snapshot": "", "snapshots": []}
+    lab.world["ssh"][:0] = [{"match": rf"{LABVM} true$", "stdout": ""}]
+
+
+def test_lab_test_runs_the_full_path_on_the_p8lab_vm_only(clone, lab, tmp_path):
+    lab_target(lab)
+    rec = tmp_path / "labtests.jsonl"
+    proc = clone.run("P8LABTEST_exercise_1", "--lab-test", LABVM, LABVM, P8_SNAPSHOT_RECORD=str(rec))
+    assert proc.returncode == 0, proc.stderr
+    calls = lab.calls("VBoxManage")
+    assert ["VBoxManage", "controlvm", LABVM, "acpipowerbutton"] in calls
+    assert any(c[1:4] == ["snapshot", LABVM, "take"] for c in calls)
+    assert ["VBoxManage", "startvm", LABVM, "--type", "headless"] in calls
+    assert_nothing_done_to_the_master(lab)
+    (r,) = [json.loads(l) for l in rec.read_text().splitlines()]
+    assert r["name"] == "P8LABTEST_exercise_1" and r["uuid"]
+    assert not clone.rec.exists()  # never the master's record
+
+
+@pytest.mark.parametrize("args, text", [
+    (["P8LABTEST_x", "--lab-test", MASTER, "p8lab-a"], "must be a p8lab-* VM"),
+    (["P8LABTEST_x", "--lab-test", NODE, "p8lab-a"], "must be a p8lab-* VM"),
+    (["P8LABTEST_x", "--lab-test", "p8lab-a", "puppet8master"], "must be a p8lab-* alias"),
+    (["P8MASTER_x", "--lab-test", "p8lab-a", "p8lab-a"], "must match P8LABTEST_"),
+    (["P8LABTEST_x"], "must match P8MASTER_"),
+    (["P8LABTEST_x", "--lab-test", "p8lab-a"], "needs <p8lab-vm> <ssh-alias>"),
+])
+def test_lab_test_refusals_touch_nothing(clone, lab, args, text):
+    proc = clone.run(*args)
+    assert proc.returncode != 0 and text in proc.stderr
+    assert [c for c in lab.calls("VBoxManage") if c[1] not in ("showvminfo", "list")
+            and not (c[1] == "snapshot" and c[3] == "list")] == []
