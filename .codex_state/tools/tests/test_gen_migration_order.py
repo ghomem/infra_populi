@@ -206,8 +206,10 @@ def test_expected_run2_events_parse(gen):
                                                                       "nginx_frontend", "hashman_web", "linux_policies_user",
                                                                       "node_base_domain_desktop", "mariadb_server"}
     assert rows["node_base"].expected_run2_events == ("Exec[apt_update]",)
-    assert rows["linux_policies_user"].expected_run2_events == ("File[*/linux-policies/TMP/*.sh.tmp]",
-                                                                "File_line[*/linux-policies/TMP/*.sh.tmp_*]")
+    # HQ batch-7 ruling 1: each resource named exactly (the p8testuser fixture's titles), no glob
+    tmp = "/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp"
+    assert rows["linux_policies_user"].expected_run2_events == (f"File[{tmp}]", f"File_line[{tmp}_0]",
+                                                                f"File_line[{tmp}_1]")
 
 
 
