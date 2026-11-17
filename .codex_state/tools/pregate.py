@@ -187,6 +187,23 @@ def enclosed_by_os_guard(code: str, pos: int) -> bool:
     return False
 
 
+def hazard14_standalone(cls: str, repo: Path = REPO) -> dict[str, str]:
+    """{module: evidence reference} for `cls` from rules/hazard14_standalone.txt (HQ 2026-11-17 ruling 2): a class
+    proven by production evidence to use the module's resources without its base class. Per class, nothing broader.
+    Line format: `<class> <module> — <evidence reference>`."""
+    path = repo / ".codex_state" / "rules" / "hazard14_standalone.txt"
+    out = {}
+    for line in path.read_text(encoding="utf-8").splitlines() if path.is_file() else []:
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        m = re.fullmatch(r"([a-z][a-z0-9_]*) ([a-z][a-z0-9_]*) — (\S.{9,})", line.strip())
+        if not m:
+            raise SystemExit(f"ERROR: malformed hazard14_standalone.txt line (class module — evidence): {line!r}")
+        if m.group(1) == cls:
+            out[m.group(2)] = m.group(3)
+    return out
+
+
 def module_base_findings(manifest: str, inventory: dict, required_external: tuple[str, ...] = ()) -> list[str]:
     """Hazard 14 (HQ 2026-11-10 ruling 3): a class that uses a Puppetfile module's resources (its defines, native types,
     or `Exec['apt_update']`) without declaring the module's base class, and whose plan has no required_external for it.
@@ -478,7 +495,8 @@ def routed_node(cls: str) -> tuple[str, str] | None:
 
 
 def scan_hazards(manifest: str, inventory: dict | None, report: Report,
-                 required_external: tuple[str, ...] = (), routed: tuple[str, str] | None = None) -> None:
+                 required_external: tuple[str, ...] = (), routed: tuple[str, str] | None = None,
+                 standalone: dict[str, str] | None = None) -> None:
     code = strip_comments(manifest)
     # 1. external custom types / classes from modules that are not installed
     if inventory is not None:
@@ -517,7 +535,12 @@ def scan_hazards(manifest: str, inventory: dict | None, report: Report,
     # 14. module resources without the module's base class (needs required_external)
     if inventory is not None:
         for finding in module_base_findings(manifest, inventory, required_external):
-            report.add("FINDING", "hazard14-module-base", finding)
+            mod = re.search(r"from module `([^`]+)`", finding)
+            if mod and mod.group(1) in (standalone or {}):
+                report.add("INFO", "hazard14-module-base", f"{finding.split(';')[0]}: standalone by production evidence "
+                           f"({(standalone or {})[mod.group(1)]}; rules/hazard14_standalone.txt)")
+            else:
+                report.add("FINDING", "hazard14-module-base", finding)
     # 6. stdlib-4 functions removed in stdlib 9
     for fn in sorted(set(STDLIB4_REMOVED.findall(code))):
         report.add("FINDING", "hazard6-stdlib", f"calls `{fn}()`, removed in stdlib 9")
@@ -741,7 +764,8 @@ def pregate_class(cls: str) -> Report:
                           and baseline.git_show(base.upstream, base.commit, p) == local[p])
     apply_remote(results, report, report_inherited=True, identical_to_baseline=identical)
     # hazard 14 is satisfied by a base class the required_base closure declares (nginx_base -> class nginx) too
-    scan_hazards(manifest, inventory, report, tuple(sorted(closure_providers(cls))), routed_node(cls))
+    scan_hazards(manifest, inventory, report, tuple(sorted(closure_providers(cls))), routed_node(cls),
+                 hazard14_standalone(cls))
     # HQ 2026-11-11 ruling 4: dynamic prerequisite probe against the clean-node inventory
     import node_inventory  # noqa: PLC0415
     node_paths = node_inventory.load(cls=cls)  # the class's node (plan `node`, else the default)

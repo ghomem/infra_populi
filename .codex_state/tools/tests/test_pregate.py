@@ -463,3 +463,25 @@ def test_walk_survives_cycles_and_missing_manifests(tmp_path, monkeypatch):
     c = "class puppet_infrastructure::c {\n  include puppet_infrastructure::a\n}\n"
     repo = probe_repo(tmp_path, monkeypatch, {"a": a, "c": c}, {"a": ([], []), "c": ([], [])})
     assert pregate.declared_internal("a", repo) == ["a", "c"]
+
+
+# HQ 2026-11-17 ruling 2: per-class "standalone by production evidence" entries turn hazard 14 into INFO, nothing broader.
+def test_hazard14_standalone_entries_are_per_class(tmp_path):
+    rules = tmp_path / ".codex_state" / "rules"
+    rules.mkdir(parents=True)
+    (rules / "hazard14_standalone.txt").write_text("# c\nopenvpn_server network — fleet data, escalation item 1\n")
+    assert pregate.hazard14_standalone("openvpn_server", tmp_path) == {"network": "fleet data, escalation item 1"}
+    assert pregate.hazard14_standalone("network_vpn", tmp_path) == {}
+    (rules / "hazard14_standalone.txt").write_text("openvpn_server network\n")  # no evidence reference
+    with pytest.raises(SystemExit):
+        pregate.hazard14_standalone("openvpn_server", tmp_path)
+
+
+def test_hazard14_standalone_reports_info_not_finding():
+    inv = {"modules": {"network": {}}, "bases": {"network"}, "type_modules": {"network_config": ("network", "env")}}
+    manifest = "class c {\n  network_config { 'p8test0': ensure => present }\n}\n"
+    for standalone, level in [({}, "FINDING"), ({"network": "evidence ref"}, "INFO")]:
+        report = pregate.Report("c")
+        pregate.scan_hazards(manifest, inv | {"types": set(), "defines": set()}, report, (), None, standalone)
+        rows = [r for r in report.lines if r[1] == "hazard14-module-base"]
+        assert len(rows) == 1 and rows[0][0] == level
