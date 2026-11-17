@@ -1,0 +1,31 @@
+{
+ "class": "hashman_web",
+ "at": "20261117T211953Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok"
+ },
+ "evidence": [
+  "hashman-service-on-8080: hashman.service.erb:7 ExecStart gunicorn --bind 0.0.0.0:8080, with hashman_web.pp:176-179 service ensure running/enable true; probe checks is-enabled, is-active and the 0.0.0.0:8080 listener, which is what those lines produce",
+  "backend-serves-the-portal: httpserver.py.erb:27-28 TITLE = customname + ' @ ' + company; index route (111-113) renders index.html whose <title>{{ strtitle }}</title> (baseline files/.../templates/index.html:6); with lab Hiera customname 'Hashman', company 'My Company' the expected 'title>Hashman @ My Company' is what the code yields",
+  "frontend-proxies-the-domain-over-tls: hashman_web.pp:186-188 nginx_frontend domain=$address (puppet.example.com), sslprefix, backend 127.0.0.1:8080; HTTPS fetch of / for that name must return the backend index title. Mismatch varies only the path to /static/styles/custom.css, a baseline file served by the backend with no 'title' text (grep count 0), so the verdict must change; it does not merely break the command"
+ ],
+ "review_s": 142.0,
+ "check_file_sha256": "be5da2e0b675e8de92d41db4c609b8ab1036f1390954bb8f76302a2319340aa7",
+ "reviewer_result": "20261117T211731Z-reviewer",
+ "author_result": "20261117T211522Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "904f5476-70ed-4881-9d87-745c49707267",
+   "boot_id_at_end": "904f5476-70ed-4881-9d87-745c49707267",
+   "fresh": true
+  }
+ }
+}
