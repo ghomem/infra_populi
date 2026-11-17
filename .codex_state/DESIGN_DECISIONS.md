@@ -1487,3 +1487,12 @@ snapshot list, record.
   File_line[*/linux-policies/TMP/*.sh.tmp_*]`, the same basis as Exec[apt_update] and Notify (upstream design that
   reports a change every run). New resource kinds for the mechanism: listed in the batch-7 report for HQ acceptance.
 - class_rulings.txt gains the exact form of checkpoint-2 ruling 2's guard (absolute paths; no path parameter needed).
+
+## 2026-11-17 — mariadb_server prerequisites (batch 7)
+- Lab Hiera fixture keys `db::organization`, `db::cname`, `db::email` (fake p8test values; master_fixtures.sh hiera):
+  the class looks them up for its self-signed certificates' subject and the lab Hiera lacked them.
+- class_rulings.txt carries the exact form of the ruled guard (upstream_defects.md mariadb_server): an absolute
+  `/usr/bin/test`, since the exec has no `path` (the user_lock lesson: a bare command fails before it guards).
+- Plan expected_run2_events `Notify[Produced configs: *]`: the baseline's debug notify at mariadb_server.pp:64 (874f854)
+  reports on every run, the case HQ accepted on 2026-11-10 (batch-3 acceptance 2/4); phase5_backlog item 2 already
+  lists it ("will need the same plan entry").

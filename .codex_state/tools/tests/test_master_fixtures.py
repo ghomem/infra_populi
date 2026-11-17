@@ -48,7 +48,7 @@ def test_fixture_values_are_obviously_fake():
     hiera = remotes()[3]
     values = [l.split(": ", 1)[1] for l in hiera.split("<<'YAML'", 1)[1].split("YAML\n", 1)[0].splitlines()
               if "::" in l and not l.startswith("#")]
-    assert len(values) == 7
+    assert len(values) == 10
     stock = {"'/etc/puppetlabs/puppet/ssl'"}  # the OpenVox default ssldir: a stock path, neither fake nor a secret
     assert all("p8test" in v or "lookup(" in v or v.strip().strip("'").isdigit() or v in stock for v in values), values
     pki = remotes()[2]

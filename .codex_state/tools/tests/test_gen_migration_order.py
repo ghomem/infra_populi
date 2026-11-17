@@ -204,7 +204,7 @@ def test_expected_run2_events_parse(gen):
     # every entry is a reviewed, justified exception (HQ 2026-11-10 ruling 1): keep this set explicit
     assert {n for n, r in rows.items() if r.expected_run2_events} == {"packages_base", "node_base", "nginx_frontend_domain",
                                                                       "nginx_frontend", "hashman_web", "linux_policies_user",
-                                                                      "node_base_domain_desktop"}
+                                                                      "node_base_domain_desktop", "mariadb_server"}
     assert rows["node_base"].expected_run2_events == ("Exec[apt_update]",)
     assert rows["linux_policies_user"].expected_run2_events == ("File[*/linux-policies/TMP/*.sh.tmp]",
                                                                 "File_line[*/linux-policies/TMP/*.sh.tmp_*]")

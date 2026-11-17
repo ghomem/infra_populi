@@ -132,6 +132,10 @@ puppet8node::postfix_smtp_node::relaypass: 'p8test-not-a-secret'
 # rsyslog_server does `include puppet_infrastructure::rsyslog_base`, whose default ssldir is the pre-AIO
 # /var/lib/puppet/ssl; the lab's agents keep theirs at the OpenVox default (rsyslog_client passes the same value).
 puppet_infrastructure::rsyslog_base::ssldir_override: '/etc/puppetlabs/puppet/ssl'
+# mariadb_server (874f854) puts these in its self-signed certificates' subject (deploy_self_signed_certificates.sh).
+db::organization: 'p8test org'
+db::cname: 'db.p8test.invalid'
+db::email: 'p8test@p8test.invalid'
 YAML
 )"
 if [[ "$(cat "$data" 2>/dev/null)" != "$want" ]]; then
