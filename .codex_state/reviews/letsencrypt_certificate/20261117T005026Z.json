@@ -1,0 +1,96 @@
+{
+ "schema": 1,
+ "class": "letsencrypt_certificate",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-17T00:50:26Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "bcc6a17fef6c",
+ "migrate_subject": "P8: migrate puppet_infrastructure::letsencrypt_certificate",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit bcc6a17fef6c; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `letsencrypt_certificate Done [from: release-0.9.10; mock-apply: certificate stand-in (no ACME CA or DNS API)]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppet-letsencrypt', '13.4.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 19 catalog events; COVERAGE puppet_infrastructure::letsencrypt_certificate: 2 concrete resources (+2 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added comment lines at top: 'release-0.9.10 manifest validated unchanged' + puppet-letsencrypt 13.4.0 dependency); 0 non-comment changes; define body identical to baseline cf477c6",
+   "DIFF B: same 2-line header added by migrate commit bcc6a17; provenance ok (started from baseline content); mock-apply fixture letsencrypt_cert_standin not part of the class, behaviour unverified"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependency: puppet-letsencrypt 13.4.0 (letsencrypt::certonly; split/join/empty are Puppet core functions)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 19,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::letsencrypt_certificate: 2 concrete resources (+2 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 20.061,
+   "master_check_s": 0.299,
+   "poweroff_s": 0.843,
+   "restore_s": 0.261,
+   "boot_to_ssh_s": 12.677,
+   "apt_update_s": 5.61,
+   "verify_s": 0.371,
+   "nic1_rx_bytes": 3724618
+  },
+  "log": ".codex_state/logs/reviews/letsencrypt_certificate.20261117T004921Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
