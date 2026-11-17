@@ -1,0 +1,96 @@
+{
+ "schema": 1,
+ "class": "hello_world_flask",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-17T01:36:58Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "7eac36db38cf",
+ "migrate_subject": "P8: migrate puppet_infrastructure::hello_world_flask",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 7eac36db38cf; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `hello_world_flask Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 15 catalog events; COVERAGE puppet_infrastructure::hello_world_flask: 10 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added lines at top of manifests/hello_world_flask.pp, 0 non-comment changes vs release-0.9.10 cf477c6); header's 'Module dependencies: none' verified against code: only core file/service/exec resources (lines 37-90) plus include of puppet_infrastructure::hello_world_flask_common (line 17)",
+   "DIFF B: identical to DIFF A (migrate commit 7eac36db38cf only added the 2-line header); provenance ok, migration started from baseline content"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependencies: none (core file, service and exec resources; packages through puppet_infrastructure::hello_world_flask_common)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 15,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::hello_world_flask: 10 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 21.39,
+   "master_check_s": 0.251,
+   "poweroff_s": 0.871,
+   "restore_s": 0.226,
+   "boot_to_ssh_s": 13.638,
+   "apt_update_s": 6.072,
+   "verify_s": 0.332,
+   "nic1_rx_bytes": 3724777
+  },
+  "log": ".codex_state/logs/reviews/hello_world_flask.20261117T013547Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ }
+}
