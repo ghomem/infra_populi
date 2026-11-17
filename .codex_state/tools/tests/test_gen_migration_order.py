@@ -230,12 +230,12 @@ def test_repo_node_fixtures_exist_for_the_planned_classes(gen):
     rows = gen.parse_plan()
     assert rows["user_sysmon"].node_fixture == "sysmon_server"
     assert rows["user_samba"].node_fixture == "samba_dc_standin"
-    assert rows["hashman_base"].node_fixture == "puppetserver_code_tree"  # batch 5: the class runs on the master
-    assert rows["hashman_web"].node_fixture == "hashman_master_standin"  # code tree + the site logo files
-    assert rows["user_lock"].node_fixture == "hashman_lock_standin"  # code tree + one fake hashman user entry
+    assert rows["hashman_base"].node_fixture == ""  # HQ 2026-11-17 ruling 2: a plain GREEN (the agent ships the code tree)
+    assert rows["hashman_web"].node_fixture == "hashman_master_standin"  # the site logo files
+    assert rows["user_lock"].node_fixture == "hashman_lock_standin"  # one fake hashman user entry
     assert rows["letsencrypt_certificate"].node_fixture == "letsencrypt_cert_standin"  # stand-in live certificate
     assert rows["node_base_domain_desktop"].node_fixture == "puppet_agent_standin"  # Service['puppet'] without a daemon
-    assert sum(1 for r in rows.values() if r.node_fixture) == 7
+    assert sum(1 for r in rows.values() if r.node_fixture) == 6
 
 
 def test_expected_run2_events_parse(gen):
