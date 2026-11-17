@@ -1634,3 +1634,31 @@ snapshot list, record.
   - A clock that cannot be read is refused too.
 - **Tests:** 13 (clock_check, lock, revert, harness, the master fixture, lab_vm pause). The fake lab answers the clock
   probe with the current time and leaves it out of the call log by default.
+
+## 2026-11-17 — HQ batch-8 ruling 9: Incus on the laptop; first contact over the host-only lease
+- **Fact:** Incus runs on the laptop (`incusd`, active, managed by the laptop's own Puppet) and holds 127.0.0.1:2222.
+  The lab must not assume that any localhost port is free.
+- **What happened:** kubuntu's bring-up used a NAT port forward 127.0.0.1:2222 → 22 (`p8tmpssh`). The forward never
+  bound, because Incus already had the port, so every attempt reached Incus. As a result:
+  - the "Permission denied" was Incus's sshd, not kubuntu's;
+  - the fingerprint I quoted for kubuntu (SHA256:lqe0zo6S…) was Incus's.
+  gnome's forward (2223) did bind, so its key, pinned at bring-up, is gnome's own (every later connection to its
+  host-only address .23 verified against it).
+- **Rule:**
+  - A new VM is first reached at the host-only address that vboxnet0's DHCP server leased to that VM's own NIC2 MAC.
+  - No fingerprint obtained through a forwarded port is ever quoted.
+  - No NAT port forward is added to a lab VM.
+- **Tools:**
+  - `first_contact.py <p8lab-vm> [--alias] [--user] [--pin]`:
+    - reads NIC2's MAC from VBoxManage and finds its acked lease in the vboxnet0 lease file;
+    - keyscans that address, prints the fingerprints for comparison on the VM's console, and prints Salatiel's two
+      commands (key install, sudo) for that address;
+    - reports any forward with the command to remove it;
+    - `--pin` writes the keys under the alias after a backup.
+  - `lab_vm.sh modify` refuses `--natpfN <rule>`; `--natpfN delete` stays allowed.
+- **kubuntu:**
+  - First contact went over the host-only address (lease 192.168.56.102). Its keyscan matched HQ's console fingerprint
+    SHA256:bYpyVI9T….
+  - The wrong known_hosts entry was replaced, and the p8tmpssh forward was removed while the VM was powered off.
+  - The bring-up then completed as P8LAB_KUBUNTU_BASELINE_v1 (a9f5707).
+- **Tests:** 13, for first_contact and the forward refusal.

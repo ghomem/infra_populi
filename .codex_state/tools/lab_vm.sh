@@ -8,7 +8,8 @@
 #       full clone of an existing VM into a new p8lab-* VM. The source is never modified: it must be powered off,
 #       or be cloned from one of its named snapshots; its configuration and snapshot list are compared before and
 #       after. Never the master as a source.
-#   lab_vm.sh modify <p8lab-name> <modifyvm options...>   powered-off VM only; a --name must stay p8lab-*
+#   lab_vm.sh modify <p8lab-name> <modifyvm options...>   powered-off VM only; a --name must stay p8lab-*; no NAT
+#                                    port forward may be added (--natpfN delete only; first contact: first_contact.py)
 #   lab_vm.sh start <p8lab-name>     headless; refused if it would leave under 4 GB free on the laptop
 #                                    (MemAvailable minus the VM's memory), or unless the VM has the lab network:
 #                                    NIC1 NAT with the host resolver, NIC2 host-only vboxnet0 (HQ NAT review G)
@@ -29,7 +30,7 @@ readonly ACPI_TIMEOUT_SECONDS="${ACPI_TIMEOUT_SECONDS:-180}"
 MEMINFO="${P8_MEMINFO:-/proc/meminfo}"
 
 refuse() { echo "LAB_VM REFUSED: $*" >&2; exit 1; }
-usage() { sed -n '5,22p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
+usage() { sed -n '5,23p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
 
 lab_name() { [[ "$1" =~ ^p8lab-[a-z0-9][a-z0-9-]{0,40}$ ]]; }
 vm_exists() { VBoxManage showvminfo "$1" --machinereadable >/dev/null 2>&1; }
@@ -96,6 +97,11 @@ case "$verb" in
     for i in "${!args[@]}"; do
       if [[ "${args[$i]}" == "--name" ]]; then
         lab_name "${args[$((i + 1))]:-}" || refuse "--name must stay p8lab-* (got '${args[$((i + 1))]:-}')"
+      fi
+      # HQ 2026-11-17 batch-8 ruling 9: no NAT port forwards (a localhost port can be someone else's: Incus holds 2222).
+      # First contact goes over the VM's host-only lease (first_contact.py); removing a forward stays allowed.
+      if [[ "${args[$i]}" =~ ^--natpf[0-9]+$ && "${args[$((i + 1))]:-}" != "delete" ]]; then
+        refuse "no NAT port forwards on lab VMs (${args[$i]} ${args[$((i + 1))]:-}); reach a new VM with first_contact.py"
       fi
     done
     VBoxManage modifyvm "$name" "$@" || refuse "VBoxManage modifyvm failed"

@@ -145,6 +145,18 @@ def test_stop_acpi_then_hard(vms, lab):
     assert proc.returncode == 0 and lab.state()["vms"]["p8lab-busy"]["state"] == "poweroff"
 
 
+@pytest.mark.parametrize("opts", [["--natpf1", "p8tmpssh,tcp,127.0.0.1,2222,,22"], ["--memory", "4096", "--natpf2", "x,tcp,,2200,,22"]])
+def test_modify_refuses_a_new_port_forward(vms, opts):
+    # HQ 2026-11-17 batch-8 ruling 9: Incus holds 127.0.0.1:2222; first contact goes over the host-only lease
+    assert refused(vms.run("modify", "p8lab-rhel9", *opts), "no NAT port forwards on lab VMs")
+    assert vms.mutating() == []
+
+
+def test_modify_may_remove_a_port_forward(vms):
+    assert vms.run("modify", "p8lab-rhel9", "--natpf1", "delete", "p8tmpssh").returncode == 0
+    assert vms.mutating()[0][1:] == ["modifyvm", "p8lab-rhel9", "--natpf1", "delete", "p8tmpssh"]
+
+
 def test_pause_pauses_a_running_lab_vm_then_resumes_it(vms, lab):
     proc = vms.run("pause", "p8lab-busy", "120")
     assert proc.returncode == 0 and "paused p8lab-busy for 120s and resumed it" in proc.stdout

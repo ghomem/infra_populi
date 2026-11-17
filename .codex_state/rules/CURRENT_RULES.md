@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-97 entries; 6 marked superseded (in whole or part); newest first.
+98 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-17 — HQ batch-8 ruling 9: Incus on the laptop; first contact over the host-only lease
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-17 — HQ batch-8 ruling 4: lab clocks
 - (no numbered/Rule/Decision lines; read the entry)
