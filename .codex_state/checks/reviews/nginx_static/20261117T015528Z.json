@@ -1,0 +1,21 @@
+{
+ "class": "nginx_static",
+ "at": "20261117T015528Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok"
+ },
+ "evidence": [
+  "http-serves-www-root-for-the-domain: nginx_static_domain.pp:141-143 sets http_ensure present / https_ensure absent for ssl=false (fixture default), so static_http_<domain> (287-295, www_root=/var/www/html, server_name [domain]) serves www_root over port 80; probe fetches an existing www_root file with Host p8test.example.com from 127.0.0.1 and compares sha256 byte for byte; mismatch varies only the Host to a name with no server, which falls to static_default (return 404) and must break the comparison",
+  "nginx-config-valid: nginx_static.pp:51-53 declares nginx_static_domain {$domain} with domain/www_root from the fixture; the probe 'nginx -t' expecting 'test is successful' checks the resulting nginx configuration is valid, which is the precondition of every server the wrapper declares; local only, read-only",
+  "package-default-site-removed: nginx_default_removal.pp:3-4 declares file /etc/nginx/sites-enabled/default ensure absent, included by nginx_static.pp:49; probe tests that path is absent; invariant plausible since the clean node has no nginx and hence no default site"
+ ],
+ "review_s": 141.5,
+ "check_file_sha256": "539f4e4eac1f2fbeb932c9d8d86e32e555801e3da64610941986eaaa5b2daffd",
+ "reviewer_result": "20261117T015307Z-reviewer",
+ "author_result": "20261117T015036Z-author",
+ "findings": []
+}
