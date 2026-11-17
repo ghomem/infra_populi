@@ -1,0 +1,113 @@
+{
+ "schema": 1,
+ "class": "mount_shares_desktop",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-17T22:19:16Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "61bcbfde205e",
+ "migrate_subject": "P8: migrate puppet_infrastructure::mount_shares_desktop",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 61bcbfde205e; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `mount_shares_desktop Done [from: release-0.9.10; mock-apply: p8test_desktop_home: fixture user's ~/Desktop (no first graphical login)]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 4 catalog events; COVERAGE puppet_infrastructure::mount_shares_desktop: 2 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added comment lines at top; define body, params/defaults and both file resources byte-identical to release-0.9.10 cf477c6); DIFF B identical to DIFF A",
+   "Templates shares/shares.sh.erb and shares/unmount-shares.sh.erb identical to baseline (baseline.py show diff empty)",
+   "Header claim 'no module dependencies' holds: only core file resources with template()"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependencies: none (core file resources and ERB templates only)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 4,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::mount_shares_desktop: 2 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "node": "gnome",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "total_s": 17.468,
+   "master_check_s": 0.28,
+   "poweroff_s": 0.873,
+   "restore_s": 0.226,
+   "boot_to_ssh_s": 9.474,
+   "apt_update_s": 6.258,
+   "verify_s": 0.357,
+   "nic1_rx_bytes": 6993758
+  },
+  "log": ".codex_state/logs/reviews/mount_shares_desktop.20261117T221811Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "mock_apply": "p8test_desktop_home: fixture user's ~/Desktop (no first graphical login) (node fixture p8test_desktop_home: behaviour NOT verified)",
+ "node_fixture": {
+  "name": "p8test_desktop_home",
+  "header": [
+   "# MOCK-APPLY node fixture `p8test_desktop_home` (HQ 2026-10-27 ruling 7; HQ batch-8 ruling 5) for mount_shares_desktop.",
+   "# The define writes its two scripts into /home/<username>/Desktop (mount_shares_desktop.pp:7-8) and never declares it:",
+   "# on a desktop the user's first graphical login creates ~/Desktop (xdg-user-dirs), and no class of the code tree owns",
+   "# it. This declares the fixture user p8testuser (never a real account) with that directory, as a first login leaves it.",
+   "# Lifted by: a first graphical login of the user on a lab desktop node (xdg-user-dirs creates ~/Desktop)"
+  ],
+  "resources": [
+   "user[p8testuser]",
+   "file[/home/p8testuser/Desktop]"
+  ],
+  "scope_evidence": "user[p8testuser] (fixture account, managehome) and file[/home/p8testuser/Desktop] (directory owned by p8testuser, as xdg-user-dirs on first graphical login would leave it) - both only provide the parent dir the define writes into (mount_shares_desktop.pp desktop_dir); neither touches the define's two file resources shares-mount.sh/shares-unmount.sh; within the stated stand-in"
+ }
+}
