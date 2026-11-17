@@ -41,15 +41,15 @@ nodes:
     os: RHEL 9.5 (registered; BaseOS + AppStream)
     capabilities: [server, rhel-subscription]
   kubuntu:
-    status: planned
+    status: active
     vm: p8lab-kubuntu
     alias: p8lab-kubuntu
     certname: p8lab-kubuntu
     hostname: p8lab-kubuntu
     hostonly_ip: 192.168.56.22
-    baseline_snapshot: null
+    baseline_snapshot: P8LAB_KUBUNTU_BASELINE_v1
     os_family: Debian
-    os: Kubuntu desktop (KDE)
+    os: Ubuntu 24.04.4 desktop (Kubuntu, KDE)
     capabilities: [desktop, kde]
   gnome:
     status: active
