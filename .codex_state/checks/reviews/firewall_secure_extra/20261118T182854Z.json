@@ -1,0 +1,49 @@
+{
+ "class": "firewall_secure_extra",
+ "at": "20261118T182854Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "fail",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "an-ssh-burst-is-cut-at-the-overall-limit: lines 153-154 (with 132: overlim_minute 20) accept 20/min with iptables' default burst of 5 in LIMIT_OVERALL, and 117 drops the rest. 20 parallel SYNs from the unlisted primary address, after 61 s for refill, let 5 in. A token refills every 3 s, longer than nc -w2, so retransmitted SYNs get none, and rules 112/114 can only drop more. 'in 5, dropped 15' is what the code produces. Derivation ok.",
+  "a-whitelisted-source-is-held-to-the-connection-limit: lines 225-228 drop 8888/tcp in WHITELIST_SIDE_CHAIN above connlimit ddos_limit, which the fixture sets to '3'. The +100 address (192.168.56.124) is the fixture's ip_whitelist entry, so it is marked 0x413 and jumps to the side chain through 521. 5 connections 1 s apart stay under the new-connection limit (2/sec, burst 5), so 3 stay established and the 4th and 5th are dropped. Derivation ok.",
+  "held-ssh-connections-stop-at-eight: line 149 drops above connlimit 8 (indilim, line 130) in LIMIT_INDIVIDUAL. One connection every 4 s stays under the overall refill (1 every 3 s) and the recent limit (15 in 60 s), so only rule 112 cuts: 8 established, the 9th and 10th dropped. Derivation ok.",
+  "DERIVATION FAILURE a-fragmented-ping-gets-no-reply: lines 184-185 declare 518 with isfragment => true and no proto. The firewall type's proto defaults to 'tcp' (puppetlabs-firewall 8.3.0 on the master, lib/puppet/type/firewall.rb:283 default 'tcp'; :291 'Set to true to match tcp fragments (requires proto to be set to tcp)'). On the applied node, iptables -t mangle -S renders it as '-p tcp -f ... 518 drop fragmented packages'. A fragmented ICMP echo can never match it, so 'fragmented: 0 received' is not a value the code produces. The check tests something lines 184-185 do not say.",
+  "DERIVATION FAILURE a-blacklisted-source-gets-nothing (ICMP half): lines 125-127 declare 666 with no proto, so it renders '-A INPUT -s 192.168.56.174/32 -p tcp ... 666 grounding naughty boys' (read on the applied node). The code never drops ICMP from a blacklisted source, so 'icmp from blacklisted dropped' is not what the code produces. Line 25's comment ('dropped unconditionally') is a lead, not the code. The SSH half is derived correctly (see finding).",
+  "finding a-blacklisted-source-gets-nothing: the peer saw 'icmp from blacklisted in / ssh from blacklisted in'. SSH: in the rendered INPUT chain, 666 comes after '110 SSH LIMIT_INDIVIDUAL' (jumps to the limit chains, which end in 116 ACCEPT), so the blacklisted source's SSH is accepted under the limits. That is a baseline rule-order finding. ICMP: '000 ICMP limit' accepts first, and 666 is tcp-only anyway (derivation failure above).",
+  "finding a-fragmented-ping-gets-no-reply: the peer saw 'fragmented: 3 received' (expected 0). Rule 518 counted 0. This is not a behaviour finding: 518 is tcp-only and cannot match ICMP (derivation failure above). The node has nf_defrag_ipv4 loaded (used by nf_conntrack), which reassembles fragments before the mangle table, so a TCP-fragment test may also show 518 at 0. That is a hypothesis for a correct check, not a measured result.",
+  "finding the-rst-limit-dropped-the-third: 519 and 520 counted 0 and 0 of the 3 in-connection RSTs (expected 2 accepted, 1 dropped). In the rendered INPUT chain, '003 accept related established rules' (state RELATED,ESTABLISHED ACCEPT) comes before 519/520 and accepts those RSTs. Out-of-connection RSTs are INVALID and dropped by mangle 501 first. This is a baseline rule-order finding and reproduces the author's earlier runs.",
+  "purpose gap: Tested and passing in my run on the applied node: default-drop policies and SSH whitelist; loopback reaches a local service (rule 001, a port no other rule accepts); the three SSH brute-force limits as connection behaviour (5 of a burst of 20, 8 held, 14 then drops); mangle 501/502 drops read from counters; the low-MSS SYN dropped by 503 (counted 2) while MSS 1000 connects; the ICMP echo limit (6 of 20 in 980 ms); only the whitelisted source reaches the service through the side chain; the side-chain connection limit (3) and new-connection rate (8 of 20 in 2016 ms); purge of an unmanaged rule; the flush script plus rebuild on the next agent run. The RST limit and the blacklist's SSH half are tested and are baseline findings. GAPS: (1) the purpose and outcomes misread two rules that set no proto. Rule 518 drops only TCP fragments and rule 666 drops only TCP from blacklisted sources (both render '-p tcp': the firewall type defaults proto to tcp). The rows 'fragmented packets are dropped' and 'a blacklisted source is dropped outright, SSH and ICMP included' claim more than the code does (the same applies to 524 and 501, both tcp-only). (2) What 518 really declares, TCP fragments, is lab-exercisable and untested. The peer already has hping3 from bogus-packets-are-sent, and its -f option fragments TCP. The current check probes ICMP fragments, which the rule cannot match. Uncovered rows I accept as honest: country_whitelist (no xt_geoip or GeoIP database on 24.04 from any class); internal_forward (needs a routed internal network); anti_ddos without ip_filter and the plain/strict modes (other fixture variants). Rule 002: the reason is true (route_localnet=0 on all and enp0s8, read on the node, so the kernel drops martian 127/8 destinations before INPUT). But lifted_by 'ubuntu' names the default node, which the reason says cannot show it; the rule would act only on a node with route_localnet=1. Imprecise, not a gap on its own."
+ ],
+ "review_s": 684.9,
+ "check_file_sha256": "3b04922edb069dcd85385ffc1fbcc9af5a7921b6e783ba44bfb674a8d523a113",
+ "reviewer_result": "20261118T181730Z-reviewer",
+ "author_result": "20261118T180625Z-author",
+ "findings": [
+  "a-blacklisted-source-gets-nothing",
+  "a-fragmented-ping-gets-no-reply",
+  "the-rst-limit-dropped-the-third"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "abb64394-175a-4231-9ecc-83b2d79a752f",
+   "boot_id_at_end": "abb64394-175a-4231-9ecc-83b2d79a752f",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "f7c054a2-83cc-43db-8fea-3de298f20b1d",
+   "boot_id_at_end": "f7c054a2-83cc-43db-8fea-3de298f20b1d",
+   "fresh": true
+  }
+ }
+}
