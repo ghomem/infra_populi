@@ -1,0 +1,39 @@
+# Phase 3 checks for puppet_infrastructure::filesystem_lib64 (class; node ubuntu; on Debian only in production's
+# node_base, and as a [Debian] base of sysmon_base). Fixture: defaults (the class has no parameters). The clean node has
+# /usr/lib64 (a directory holding the ld-linux link) and no /usr/lib64/nagios. Monitoring checks configured with the
+# RedHat plugin path /usr/lib64/nagios/plugins must run on Ubuntu, where the plugins live in /usr/lib/nagios/plugins: a
+# mutating check installs the Ubuntu plugins (packages_base installs them in production) and runs one through the link.
+class: filesystem_lib64
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 0.1
+  notes: "10:59:55Z to 10:59:55Z 2026-11-18 (date at start and at validation, within the second; the baseline class and the clean-node inventory were read before the clock started), outside the worktree while firewall_secure's re-review ran."
+purpose: >-
+  An Ubuntu compatibility link: monitoring checks invoke the nagios plugins by their RedHat path /usr/lib64/nagios,
+  which on Ubuntu must reach the plugins in /usr/lib/nagios.
+checks:
+  - id: lib64-nagios-is-a-link-to-lib-nagios
+    what: /usr/lib64 is a root-owned directory and /usr/lib64/nagios a link to /usr/lib/nagios
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_lib64.pp, lines: "5-9", text: "file { '/usr/lib64/':"}
+      - {path: manifests/filesystem_lib64.pp, lines: "11-15", text: "target  => '/usr/lib/nagios',"}
+    probe: |
+      stat -c '%F %U:%G' /usr/lib64
+      readlink /usr/lib64/nagios
+    expect: {rc: 0, stdout: "\\Adirectory root:root\\n/usr/lib/nagios\\n\\Z"}
+
+  - id: a-plugin-runs-by-its-redhat-path
+    what: with the Ubuntu monitoring plugins installed, a plugin invoked by its /usr/lib64/nagios/plugins path runs
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_lib64.pp, lines: "1-2", text: "# This class provides a ubuntu only filesystem compatibility measure related to nagios plugins invocation"}
+      - {path: manifests/filesystem_lib64.pp, lines: "11-15", text: "target  => '/usr/lib/nagios',"}
+    mutates: installs monitoring-plugins-basic (Ubuntu's plugin package, in /usr/lib/nagios/plugins) on the node
+    timeout: 300
+    probe: |
+      DEBIAN_FRONTEND=noninteractive apt-get -qq -y install monitoring-plugins-basic >/dev/null 2>&1
+    effect: |
+      /usr/lib64/nagios/plugins/check_disk -w 1% -c 1% -p / | cut -d' ' -f1-2
+    expect: {rc: 0, stdout: "\\ADISK OK\\n\\Z"}
