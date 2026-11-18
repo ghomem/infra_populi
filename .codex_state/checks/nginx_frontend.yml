@@ -28,9 +28,13 @@ outcomes:
   - outcome: a request for a name no server holds gets 404 from the default server, over HTTP and HTTPS
     from: manifests/nginx_frontend.pp:150-155, 177-206
     checks: [the-default-server-answers-404]
+  # Correction round 1 (2026-11-18, review 20261118T220835Z): the status page's refusal off loopback became a check.
   - outcome: the monitoring server, pinned to 127.0.0.1 in /etc/hosts, answers Hello World and serves nginx's status to 127.0.0.1
     from: manifests/nginx_frontend.pp:209-265
     checks: [the-monitoring-server-answers]
+  - outcome: the status page is refused (403) to a request that does not come from 127.0.0.1
+    from: manifests/nginx_frontend.pp:252-260
+    checks: [the-status-page-is-refused-off-loopback]
   - outcome: the Nagios check reads nginx's status, OK under its thresholds, WARNING and CRITICAL over them
     from: manifests/nginx_frontend.pp:268-276
     checks: [the-nginx-status-check-reports]
@@ -151,3 +155,18 @@ checks:
       "$c" -m 0 >/dev/null; echo "warning at 0 rc=$?"
       "$c" -M 0 >/dev/null; echo "critical at 0 rc=$?"
     expect: {rc: 0, stdout: "\\Aroot:root 755\\ndefaults rc=0\\nwarning at 0 rc=1\\ncritical at 0 rc=2\\n\\Z"}
+
+  - id: the-status-page-is-refused-off-loopback
+    what: a request for /nginx_status sent to the node's own host-only address (so not from 127.0.0.1) gets 403
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_frontend.pp, lines: "254-260", text: "location_deny  => [ 'all', ],"}
+    probe: |
+      h="$(hostname -s).monitoring.p8test.example.com"; a=$(ip -4 -o addr show enp0s8 | awk '{print $4}' | cut -d/ -f1 | head -1)
+      curl -s -o /dev/null --max-time 5 -w '%{http_code}\n' --resolve "$h:80:$a" "http://$h/nginx_status"
+    mismatch:
+      varies: the address (127.0.0.1, the one address the page allows)
+      probe: |
+        h="$(hostname -s).monitoring.p8test.example.com"
+        curl -s -o /dev/null --max-time 5 -w '%{http_code}\n' --resolve "$h:80:127.0.0.1" "http://$h/nginx_status"
+    expect: {rc: 0, stdout: "\\A403\\n\\Z"}
