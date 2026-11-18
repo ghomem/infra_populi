@@ -1,4 +1,4 @@
-# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Puppet 8 migration: release-0.9.10 manifest, plus one local change (policy B, HQ batch-10 ruling 4; rules/local_changes.md #3): net-tools is installed, so the two connection checks find netstat, which Ubuntu 24.04 no longer ships.
 # Module dependencies: none.
 ### Purpose ########
 # This class provides a nagios plugin that can be used trigger and monitor puppet runs, cpu, memory and zimbra
@@ -19,6 +19,9 @@ class puppet_infrastructure::sysmon_base {
 
   $localdir = lookup('filesystem::localdir')
   $bindir   = lookup('filesystem::bindir')
+
+  # check_netstat_conns.sh and check_netstat_cip.sh run netstat (local change #3)
+  package { 'net-tools': ensure => installed, }
 
 
 # puppet
