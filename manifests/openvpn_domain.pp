@@ -1,3 +1,5 @@
+# Puppet 8 migration: preserve Samba domain integration for OpenVPN using the structured hostname fact.
+# Module dependencies: none.
 class puppet_infrastructure::openvpn_domain (
   String $join_user,
   String $join_password,
@@ -8,6 +10,7 @@ class puppet_infrastructure::openvpn_domain (
   Array[String] $groups,
 ){
 
+  $hostname           = $facts['networking']['hostname']
   $dependencies       = ['samba','winbind','krb5-user','libnss-winbind','libpam-winbind','cifs-utils','ntpdate']
   $domain_script_path = '/root'
 
