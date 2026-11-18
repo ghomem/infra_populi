@@ -70,6 +70,10 @@ checks:
       grep -c -E "^[0-9.]+[[:space:]]+$t([[:space:]]|$)" /etc/hosts
     expect: {rc: 0, stdout: "\\A192\\.168\\.56\\.24\\n1\\n\\Z"}
 
+  # 2026-11-18 authoring correction (run 1, 20261118T111532Z): the peer's server kept its TLS files in
+  # /etc/p8test-rsyslog, which Ubuntu's AppArmor profile for rsyslogd does not let it read ("apparmor=DENIED ...
+  # /etc/p8test-rsyslog/ca.pem"), so no listener came up. They now live under /etc/rsyslog.d, which the profile allows
+  # (the class's own /etc/rsyslog.d/tls is there for the same reason). The behaviour is unchanged.
   - id: the-peer-runs-a-tls-log-server
     what: setup for the forwarding checks, an rsyslog TLS listener on the peer's 6514 with the peer's own Puppet certificate
     control: negative
@@ -77,20 +81,20 @@ checks:
     derived_from:
       - {path: manifests/rsyslog_client.pp, lines: "6", text: "Integer           $port             = 6514,"}
     mutates: >-
-      on the peer: installs rsyslog-gnutls, copies its own Puppet CA, certificate and key to /etc/p8test-rsyslog
+      on the peer: installs rsyslog-gnutls, copies its own Puppet CA, certificate and key to /etc/rsyslog.d/p8test-tls
       (syslog-readable), adds /etc/rsyslog.d/10-p8test-server.conf (an imtcp gtls listener on 6514, x509/certvalid,
       writing what it receives to /var/log/p8test-remote.log) and restarts rsyslog
     probe: |
       export DEBIAN_FRONTEND=noninteractive
       apt-get -qq -y install rsyslog-gnutls >/dev/null 2>&1
-      s=/etc/puppetlabs/puppet/ssl; c=$(hostname); d=/etc/p8test-rsyslog
+      s=/etc/puppetlabs/puppet/ssl; c=$(hostname); d=/etc/rsyslog.d/p8test-tls
       install -d -m 0750 -o root -g syslog $d
       install -m 0640 -o root -g syslog $s/certs/ca.pem $d/ca.pem
       install -m 0640 -o root -g syslog $s/certs/$c.pem $d/cert.pem
       install -m 0640 -o root -g syslog $s/private_keys/$c.pem $d/key.pem
       cat > /etc/rsyslog.d/10-p8test-server.conf <<'EOF'
-      global(DefaultNetstreamDriver="gtls" DefaultNetstreamDriverCAFile="/etc/p8test-rsyslog/ca.pem"
-             DefaultNetstreamDriverCertFile="/etc/p8test-rsyslog/cert.pem" DefaultNetstreamDriverKeyFile="/etc/p8test-rsyslog/key.pem")
+      global(DefaultNetstreamDriver="gtls" DefaultNetstreamDriverCAFile="/etc/rsyslog.d/p8test-tls/ca.pem"
+             DefaultNetstreamDriverCertFile="/etc/rsyslog.d/p8test-tls/cert.pem" DefaultNetstreamDriverKeyFile="/etc/rsyslog.d/p8test-tls/key.pem")
       module(load="imtcp" StreamDriver.Name="gtls" StreamDriver.Mode="1" StreamDriver.AuthMode="x509/certvalid")
       template(name="p8testRemote" type="string" string="%HOSTNAME% %syslogtag%%msg%\n")
       ruleset(name="p8test_remote") { action(type="omfile" file="/var/log/p8test-remote.log" template="p8testRemote") }
@@ -102,6 +106,11 @@ checks:
       ss -ltnH 'sport = :6514' | wc -l
     expect: {rc: 0, stdout: "\\A[1-9]\\n\\Z"}
 
+  # 2026-11-18 authoring correction (run 2, 20261118T111830Z): the class applied (and rsyslog first tried the target)
+  # before the peer's server existed, so rsyslog suspended the forward ("Connection refused", next retry in 30 s) and
+  # the token line, logged 5 s after the server came up, fell into that suspension and was dropped (the template's
+  # legacy action has no queue). The action now restarts rsyslog first, as a client would start with its server up.
+  # The behaviour is unchanged; the loss of lines logged while the target is unreachable is noted for Phase 5.
   - id: a-local-log-line-leaves-over-tls
     what: >-
       a line logged on the node with logger is forwarded: rsyslog holds an established TCP session to the target's
@@ -109,8 +118,10 @@ checks:
     control: negative
     derived_from:
       - {path: templates/rsyslog/forward_simple.conf.epp, sha256: "ef43a4f10d8babd1057b4048d7398b7f81da3ff67733e50e00c78ac99ad25f73"}
-    mutates: logs `p8test-rsyslog-forward-token` with tag p8test-rsyslog through logger on the node, then waits 5 s
+    mutates: restarts rsyslog on the node, logs `p8test-rsyslog-forward-token` with tag p8test-rsyslog through logger, then waits 5 s
     probe: |
+      systemctl restart rsyslog
+      sleep 2
       logger -t p8test-rsyslog p8test-rsyslog-forward-token
       sleep 5
     effect: |
