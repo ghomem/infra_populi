@@ -42,6 +42,9 @@ checks:
         net rpc testjoin -w P8NOPE 2>&1 | tail -1
     expect: {rc: 0, stdout: "Join to 'P8TEST' is OK"}
 
+  # 2026-11-18 authoring correction (run 1, 20261118T004132Z): the probe split `id -nG` on spaces, which cuts the group
+  # name "domain users" in two; the user resolved with both groups (run 1 printed p8testgroup only). The probe now
+  # matches the whole names in id's output; the behaviour is unchanged.
   - id: domain-users-and-groups-resolve-through-winbind
     what: through nsswitch and winbind the join user resolves as a domain user in the required group
     control: negative
@@ -49,11 +52,11 @@ checks:
       - {path: manifests/openvpn_domain.pp, lines: "88", text: "unless  => \"id ${join_user}@${domain_netbios_name}.${domain_tld}\","}
       - {path: files/openvpn/nsswitch.conf, sha256: "300e2c53d0076734999257ceb0cb7ca9c20f0912b21c512e5360bdbd2b98dbcb"}
     probe: |
-      id -nG p8testuser@P8TEST.example | tr ' ' '\n' | grep -x -e 'domain users' -e p8testgroup | sort
+      id -nG p8testuser@P8TEST.example | grep -o -w -e 'domain users' -e p8testgroup | sort
     mismatch:
       varies: the user (p8nouser, no such domain account), so winbind must not resolve it
       probe: |
-        id -nG p8nouser@P8TEST.example | tr ' ' '\n' | grep -x -e 'domain users' -e p8testgroup | sort
+        id -nG p8nouser@P8TEST.example | grep -o -w -e 'domain users' -e p8testgroup | sort
     expect: {rc: 0, stdout: "\\Adomain users\\np8testgroup\\n\\Z"}
 
   - id: pam-winbind-requires-the-group-and-openvpn-pam-installed
