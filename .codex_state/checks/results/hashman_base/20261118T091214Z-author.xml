@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.hashman_base"><testsuite name="phase3.hashman_base.clean" tests="6" failures="0"><testcase classname="phase3.hashman_base.clean" name="config-rendered-from-hiera" /><testcase classname="phase3.hashman_base.clean" name="empty-database-files" /><testcase classname="phase3.hashman_base.clean" name="python-dependencies-installed" /><testcase classname="phase3.hashman_base.clean" name="cli-wrapper-starts-the-cli" /><testcase classname="phase3.hashman_base.clean" name="admin-adds-a-user-with-a-password" /><testcase classname="phase3.hashman_base.clean" name="a-client-applies-the-user-from-the-database" /></testsuite><testsuite name="phase3.hashman_base.applied" tests="6" failures="2"><testcase classname="phase3.hashman_base.applied" name="config-rendered-from-hiera" /><testcase classname="phase3.hashman_base.applied" name="empty-database-files" /><testcase classname="phase3.hashman_base.applied" name="python-dependencies-installed" /><testcase classname="phase3.hashman_base.applied" name="cli-wrapper-starts-the-cli" /><testcase classname="phase3.hashman_base.applied" name="admin-adds-a-user-with-a-password"><failure message="check failed after the class was applied (finding)">rc 2
+0
+
+cat: /run/p8test-hashman/cli.txt: No such file or directory
+sed: can't read /etc/puppetlabs/code/environments/production/manifests/nodes/p8test-hashman-client.pp: No such file or directory
+</failure></testcase><testcase classname="phase3.hashman_base.applied" name="a-client-applies-the-user-from-the-database"><failure message="check failed after the class was applied (finding)">rc 0
+Authentication failure
+Authentication failure
+
+</failure></testcase></testsuite></testsuites>

@@ -4,21 +4,27 @@
 # Fixture: class defaults (debug_mode false) and the lab Hiera (hashman::company 'My Company', hashman::address via
 # puppet::address puppet.example.com, hashman::testenv 'False', no minpasswordlen/relaxpassword keys -> 6 / True,
 # hashman::dbdir = puppet::manifdir/01_hashman/, hashman::bindir = /opt/puppet-infrastructure/hashman).
-# What a node can show: the CLI and its library rendered from Hiera, the empty database files, the Python packages, and
-# that the CLI starts (imports load) under the node's Python. NOT shown: the database as Puppet code on a master, user
-# authentication flows (they need the master's Puppet run to consume the database): the `uncovered` note below.
+# What the checks show: the CLI and its library rendered from Hiera, the empty database files, the Python packages, that
+# the CLI starts, and (2026-11-18, HQ ruling C2: node puppetserver, the master-role node p8lab-puppetserver; hashman_base
+# composed with postfix_smtp_node, the local MTA its mail needs) the database as Puppet code on a master: the
+# administrator adds the fixture user p8hashuser with the CLI, sets its password with `setpw`, and copies the role line
+# it prints into the client's node definition. The peer's (ubuntu2) agent run against the master-role server applies
+# the user, and PAM there accepts the password. The former `uncovered` note is lifted by that.
 class: hashman_base
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
 authoring:
-  minutes: 0.8
+  minutes: 5.8
   corrections:
     - "2026-11-16, after run 20261116T200848Z (authoring error, behaviour as the baseline): the probe merged stderr, whose first line is Python 3.12's DeprecationWarning for `import crypt` (pp_auth.py:10); the usage line is on stdout. The warning is a forward note: crypt is removed in Python 3.13, so the CLI needs work on a distribution shipping it (batch-5 report)."
-  notes: "Wall clock 20:07:19Z to 20:08:04Z 2026-11-16, outside the worktree while the Phase 1 review ran (CLI, config and interface templates read)."
-uncovered:
-  - what: the user database as Puppet code on a master (01_hashman/*.pp consumed by the master's own catalog) and the authentication flows built on it
-    why: the lab node is an agent; only a node that is also the Puppet server compiles its code tree into catalogs, and applying the class to the lab master would write into its live site manifests
-    lifted_by: puppetserver
+  notes: "Wall clock 20:07:19Z to 20:08:04Z 2026-11-16, outside the worktree while the Phase 1 review ran (CLI, config and interface templates read); extended 09:05Z to 09:10Z 2026-11-18 for HQ ruling C2 (two mutating checks; the flow was explored by hand for hashman_web), outside the worktree while that review ran."
+peer:
+  kind: ubuntu2
+  why: the database is consumed by the master's catalogs for other machines, so another machine must apply a user from it
+peer_agent:
+  after: admin-adds-a-user-with-a-password
+  certname: p8test-hashman-client
+  why: the database reaches another machine only through that machine's agent run against the master-role server
 checks:
   - id: config-rendered-from-hiera
     what: the library config carries the database dir, company, URL, test-env and debug flags and the password defaults
@@ -63,3 +69,57 @@ checks:
       stat -c '%U %a' /opt/puppet-infrastructure/bin/pp_auth.sh
       /opt/puppet-infrastructure/bin/pp_auth.sh 2>/dev/null | head -1
     expect: {rc: 0, stdout: "\\Aroot 755\\nUsage: pp_auth\\.py auth +USER PASSWORD\\n\\Z"}
+
+
+  - id: admin-adds-a-user-with-a-password
+    what: >-
+      with the CLI the administrator adds p8hashuser, changes its initial password with `setpw`, unlocks it and copies
+      the role line `printinfo` prints into the client's node definition; `auth` then accepts the set password only
+    control: negative
+    derived_from:
+      - {path: templates/hashman/pp_auth.py.erb, lines: "202-215", text: "if ( confirm_mail == \"SILENT\" ):"}
+      - {path: templates/hashman/pp_auth.py.erb, lines: "137-148", text: "rc = setpw( username, newpassword, False, password )"}
+      - {path: templates/hashman/pp_auth.py.erb, lines: "111-120", text: "rc = auth( username , password )"}
+      - {path: templates/hashman/libhashman/interface.py.erb, lines: "343", text: "puppet_infrastructure::user        {"}
+      - {path: manifests/hashman_base.pp, lines: "18", text: "$dbdir      = lookup('hashman::dbdir')"}
+    mutates: >-
+      on the node, through the wrapper /opt/puppet-infrastructure/bin/pp_auth.sh: useradd p8hashuser (SILENT), setpw
+      from the logged initial password to p8test-Cli-pw5!, unlock, and the printinfo role line written as node
+      'p8test-hashman-client' into the server's manifests/nodes/p8test-hashman-client.pp; the auth answers for the set
+      and for a wrong password go to /run/p8test-hashman/cli.txt
+    probe: |
+      set -e
+      c=/opt/puppet-infrastructure/bin/pp_auth.sh
+      install -d -m 0700 /run/p8test-hashman
+      initial=$($c useradd p8hashuser p8hashuser@example.invalid "P8test Hash User" p8test SILENT 2>&1 | sed -n 's/.*created with initial password //p' | head -1)
+      $c setpw p8hashuser "$initial" 'p8test-Cli-pw5!' > /dev/null 2>&1
+      $c unlock p8hashuser "p8test end to end" > /dev/null 2>&1
+      line=$($c printinfo p8hashuser 2>/dev/null | grep -E '^  puppet_infrastructure::user +[{]')
+      install -d -m 0755 /etc/puppetlabs/code/environments/production/manifests/nodes
+      printf "node 'p8test-hashman-client' {\n%s\n}\n" "$line" > /etc/puppetlabs/code/environments/production/manifests/nodes/p8test-hashman-client.pp
+      set +e
+      $c auth p8hashuser 'p8test-Cli-pw5!' > /dev/null 2>&1; echo "auth set password rc=$?" > /run/p8test-hashman/cli.txt
+      $c auth p8hashuser 'p8test-Wrong-pw5!' > /dev/null 2>&1; echo "auth wrong password rc=$?" >> /run/p8test-hashman/cli.txt
+    effect: |
+      cat /run/p8test-hashman/cli.txt
+      grep -c -E "^[$]p8hashuser_pwd_hash = '[$]6[$]" /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp
+      sed -n 2p /etc/puppetlabs/code/environments/production/manifests/nodes/p8test-hashman-client.pp
+    expect: {rc: 0, stdout: "\\Aauth set password rc=0\\nauth wrong password rc=[1-9]\\d*\\n1\\n  puppet_infrastructure::user        \\{ 'p8hashuser': myname => \\$::p8hashuser_cname, myhash => \\$::p8hashuser_pwd_hash, mykey  => \\$::p8hashuser_ssh_key,  \\}\\n\\Z"}
+
+  - id: a-client-applies-the-user-from-the-database
+    what: >-
+      after its agent run against the master-role server, the peer has p8hashuser with the database's name, and PAM
+      accepts the password set with the CLI and refuses a wrong one
+    control: negative
+    host: peer
+    derived_from:
+      - {path: manifests/user_base.pp, lines: "71", text: "password       => $myhash,"}
+      - {path: templates/hashman/libhashman/config.py.erb, lines: "38", text: "SUFFIX_USER      = '_pwd_hash'"}
+    mutates: none beyond authenticating p8hashuser with PAM (declared mutating so it runs after the peer's agent run)
+    probe: |
+      true
+    effect: |
+      getent passwd p8hashuser | cut -d: -f1,5
+      printf '%s\n' 'p8test-Cli-pw5!' | pamtester login p8hashuser authenticate 2>&1 | sed -n 's/.*pamtester: //p'
+      printf '%s\n' 'p8test-Wrong-pw5!' | pamtester login p8hashuser authenticate 2>&1 | sed -n 's/.*pamtester: //p'
+    expect: {rc: 0, stdout: "\\Ap8hashuser:P8test Hash User\\nsuccessfully authenticated\\nAuthentication failure\\n\\Z"}
