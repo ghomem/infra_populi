@@ -1,0 +1,33 @@
+{
+ "class": "ssl_base",
+ "at": "20261118T212926Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-key-is-private-and-matches-the-certificate: ssl_base.pp:77-78 put the non-LE key at ${ssl_private_dir}/${myprefix}.key (Ubuntu default /etc/ssl/private, fixture prefix p8test) sourced from extra_files ssl/p8test.key, and 85-92 set mode 0600 owner/group $owner/$group (default root); the probe reads /etc/ssl/private/p8test.key, expects root:root 600 and the key's public key equal to the bundle's first certificate's (fragment 01 = p8test.crt, master_fixtures.sh puts server.key/server.crt under those names). Mismatch compares against the bundle's second certificate (the CA's, a different key), which must and did change the verdict",
+  "the-key-and-bundle-drift: ssl_base.pp:85-92 file{$key_file} notify => Service[$myservicename]; the action is a drift setup (appends one comment line to the key and the bundle, notes nginx MainPID and journal cursor under /run/p8test-ssl), mutates declares all of it (the dir with the note file), and the effect reads the files and the note file (count 1 1, noted), not the action's own output; on the clean node the effect alone failed as a negative control must",
+  "the-bundle-is-the-leaf-then-its-issuer: ssl_base.pp:79-81 name the bundle ${ssl_certs_dir}/${myprefix}.${myservice}.bundle.crt = /etc/ssl/certs/p8test.nginx.bundle.crt from p8test.crt then p8test.intermediate.crt, and 100-119 make it a concat 0644 owner/group root (defaults) with fragment 01 the first cert and 02 the intermediate; the probe expects root:root 644, 2 certificates, CN p8test.invalid then p8test throwaway CA (the fixture's intermediate stand-in), and the first verifying against the second. Mismatch swaps only the trust anchor to the system CA bundle, which did not sign the leaf, so verify must fail; it did",
+  "purpose covered: Purpose matches the header (lines 1-10: key to the private dir, cert bundled as the service needs it into the certs dir, service restarted on change) and the code. My run (20261118T212715Z-reviewer) tested all three on the Ubuntu node: key 0600 root:root matching the leaf; bundle 0644 leaf-then-issuer that verifies; after a hand drift of both files the node's agent run restored both and nginx got a new main PID with exactly one Started in its journal (both notifies coalesced). Uncovered rows are honest: the Let's Encrypt variant (70-76) needs letsencrypt_certificate true, a different fixture; nginx_frontend_mail's set (fixture letsencrypt_certificate true, via ssl_nginx_domain, key path ${prefix}-key.pem at its baseline 31-33) does check 465/993 serve the first certificate of p8test.nginx.bundle.pem, and master_fixtures.sh does lay out -key.pem/.pem/-chain.pem; the row names what no set checks (chain cert, modes/owners, restart). The RedHat branch (57-62) needs rhel9, active in nodes.yml. Owner/group and the warning notify (46-50, 94-97): verified at cf477c6 that ssl_nginx, ssl_nginx_domain and ssl_postfix pass neither owner nor group and only nginx/postfix, so these are unused variants of a one-fixture set"
+ ],
+ "review_s": 131.1,
+ "check_file_sha256": "a32ab28e7e5ab876aa8943d605a4bf9e435b655b6d820b374c685ea9b4ced55f",
+ "reviewer_result": "20261118T212715Z-reviewer",
+ "author_result": "20261118T212515Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "09d905d3-803a-4d37-9640-c337ab68dff2",
+   "boot_id_at_end": "09d905d3-803a-4d37-9640-c337ab68dff2",
+   "fresh": true
+  }
+ }
+}
