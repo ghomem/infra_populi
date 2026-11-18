@@ -1,0 +1,33 @@
+{
+ "class": "ssl_nginx_domain",
+ "at": "20261118T214644Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-agent-run-restores-the-bundle-and-restarts-nginx-once <- ssl_base.pp:100-107 (concat bundle_file notify => Service[$myservicename], myservicename nginx from ssl_nginx_domain.pp:12): effect expects the drift line gone (0), a new nginx MainPID and exactly one 'Started nginx.service' since the cursor noted before the bundle-only drift; my run's node_agent events show only Concat[/etc/ssl/certs/p8test.nginx.bundle.crt] content corrective + Service[nginx] 'Triggered refresh from 1 event', so the restart is the bundle's notify alone",
+  "nginx-serves-tls-with-the-pair <- ssl_nginx_domain.pp:9-14 (ssl_base for service nginx, prefix p8test): the define deploys a key+bundle for nginx and declares no vhost, so the action only adds a loopback server block naming /etc/ssl/certs/p8test.nginx.bundle.crt and /etc/ssl/private/p8test.key and reloads; the read-only effect does the handshake and expects 2 certificates served, CN p8test.invalid, chain verifying against the second: what bundle_file (ssl_base.pp:79-81, order 01 cert / 02 intermediate) gives nginx under the params fixture (sslprefix p8test, letsencrypt false)",
+  "the-agent-run-restores-the-bundle-and-restarts-nginx-once <- ssl_base.pp:10 '# The service is restarted if the certificate changes.': the header claim matches the code (concat notify at 100-107) and the probe tests exactly that: the certificate bundle changed alone, the agent restores it and nginx restarts once (new PID, one Started line)",
+  "purpose covered: Purpose (nginx gets the domain's key and cert+intermediate bundle through ssl_base, can serve TLS with them, and restarts when either changes) matches the define's header and its one ssl_base declaration (myservice/myservicename nginx). Tested: key root:root 0600 at /etc/ssl/private/p8test.key matching the bundle's first certificate (mismatch: the issuer's key fails); bundle root:root 0644 leaf CN p8test.invalid then the throwaway CA, verifying (mismatch: system CA store fails); nginx actually serving that chain over TLS on loopback; bundle-only and key-only drift each restored by the agent with exactly one nginx restart (my run's agent events: only that file's corrective change + 1 refresh each). Uncovered rows are honest: the RedHat branch (ssl_base.pp:57-62, /etc/pki/tls/private) needs rhel9; letsencrypt_certificate true is a second fixture variant (one set = one fixture), partly covered by nginx_frontend_mail's set, its remaining parts (-chain.pem cert, modes/owners, restart) listed as unchecked with lifted_by ubuntu. The ssl_base warning notify branch is unreachable from this define (myservice fixed to nginx); owner/group are not parameters of this define."
+ ],
+ "review_s": 126.1,
+ "check_file_sha256": "6670e3dd95ef00614e26310ba5620122bacb8947f077e92169fab61e263127ed",
+ "reviewer_result": "20261118T214438Z-reviewer",
+ "author_result": "20261118T214223Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "032d5ec2-9957-4e77-83e9-01c5b94bde3b",
+   "boot_id_at_end": "032d5ec2-9957-4e77-83e9-01c5b94bde3b",
+   "fresh": true
+  }
+ }
+}
