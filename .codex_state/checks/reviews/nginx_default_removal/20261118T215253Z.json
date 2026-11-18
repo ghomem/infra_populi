@@ -1,0 +1,32 @@
+{
+ "class": "nginx_default_removal",
+ "at": "20261118T215253Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-nginx-package-enables-its-default-site: manifests/nginx_default_removal.pp:2-5 (comment 'removes the default config file from the package' + file '/etc/nginx/sites-enabled/default') presupposes that the nginx package creates that site; the setup action installs the package (declared in mutates) and the read-only effect shows the result (file present, welcome page heading counted once on port 80), not the apt output; it fails on the clean node (no nginx) as a negative must",
+  "the-next-agent-run-removes-the-default-site: manifests/nginx_default_removal.pp:3-5 (ensure => absent on /etc/nginx/sites-enabled/default) is exactly what the effect tests after the node's agent run: nginx still installed, the file absent (test -e), and nginx -T no longer listing that file; the action is a no-op 'true' and declares no change. Minor: the nginx -T count would also read 0 if nginx -T itself failed, but the test -e line independently proves the declared resource",
+  "purpose covered: Purpose (remove the package's default site from nginx's configuration; the class notifies nothing) matches the baseline comment and its single file resource, which is the whole manifest (no templates, files or parameters). The one outcome row maps to both checks, which together exercise the real sequence production relies on (package enables the site, the next agent run removes it) and prove the removal on disk and in nginx's parsed configuration. Not tested: a running nginx dropping the site, which needs a reload the class does not trigger (stated in the purpose, so not an outcome of this class); no uncovered rows are needed."
+ ],
+ "review_s": 88.5,
+ "check_file_sha256": "3c7639c84960309f790b4707fb200b7f69b6237a7af0ef295a01b66e89730b94",
+ "reviewer_result": "20261118T215125Z-reviewer",
+ "author_result": "20261118T214937Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "94971302-47a9-4dbb-b000-90ced31e60f0",
+   "boot_id_at_end": "94971302-47a9-4dbb-b000-90ced31e60f0",
+   "fresh": true
+  }
+ }
+}
