@@ -161,6 +161,8 @@ checks:
 
   # 2026-11-18 (HQ batch-10 ruling 5, policy B): the renewal case, formerly uncovered, is a check now. It fails on the
   # baseline (the service subscribes to the directory only) and passes after the local change (rules/local_changes.md).
+  # 2026-11-18 authoring correction (run 4, 20261118T151822Z): the noted time contains a space and was written
+  # unquoted, so sourcing the file failed; the values are quoted now.
   - id: a-tls-file-changes
     what: setup for the next check, the copied CA file changed by hand (as a renewal changes it), with rsyslog's process id and the time noted
     control: negative
@@ -169,7 +171,7 @@ checks:
     mutates: notes rsyslog's main PID and the time in /run/p8test-rsyslog/before, then appends a comment line to /etc/rsyslog.d/tls/ca.pem on the node
     probe: |
       install -d -m 0700 /run/p8test-rsyslog
-      printf 'pid=%s\nsince=%s\n' "$(systemctl show -p MainPID --value rsyslog)" "$(date '+%Y-%m-%d %H:%M:%S')" > /run/p8test-rsyslog/before
+      printf "pid='%s'\nsince='%s'\n" "$(systemctl show -p MainPID --value rsyslog)" "$(date '+%Y-%m-%d %H:%M:%S')" > /run/p8test-rsyslog/before
       echo '# p8test drift' >> /etc/rsyslog.d/tls/ca.pem
     effect: |
       grep -c '^# p8test drift$' /etc/rsyslog.d/tls/ca.pem
