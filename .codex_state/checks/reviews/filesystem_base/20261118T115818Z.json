@@ -1,0 +1,33 @@
+{
+ "class": "filesystem_base",
+ "at": "20261118T115818Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-next-agent-run-restores-the-syslog-mode @ manifests/filesystem_base.pp:56-63: under the params fixture (customize_syslog_mode true) the file resource manages $syslog_filepath (/var/log/syslog on the non-RedHat default branch) with owner syslog, group adm, mode $syslog_mode; the effect reads owner:group and mode after the node's agent run following the 0644 drift, and expects syslog:adm 640, which is what those lines enforce",
+  "the-local-tree-exists @ manifests/filesystem_base.pp:10-16: the five basedirs come from the filesystem::* lookups, which the lab Hiera (common.yaml 42-46) resolves to /opt/puppet-infrastructure and its bin, etc, backup, pkgsdir; the probe stats exactly those five, and root:root 755 is the declared root/root 0644 with Puppet adding x on directories for each r bit",
+  "the-next-agent-run-restores-the-syslog-mode @ manifests/filesystem_base.pp:7: the syslog_mode default 'u=rw,g=r,o=' (the fixture leaves it at its default) is octal 640, matching the expected 640; the class-applied marker ties the effect to the applied node",
+  "purpose covered: The purpose matches the baseline header ('basic filesystem definitions for all non-desktop machines') and code: local tree (checked by path, owner and mode), locale file for ssh sessions (checked by content hash and by a clean-env shell that sources it as PAM does and runs locale without errors, giving en_US.UTF-8), mypython link (checked by readlink and by running it as Python 3), and with customize_syslog_mode the syslog owner and mode kept as set (shown through a hand drift to 0644 that the next agent run corrects to syslog:adm 640, not merely a static stat). Uncovered is honest: the default customize_syslog_mode=false branch only leaves the file alone (a no-op outside the purpose's 'when asked' part, liftable by a second fixture on ubuntu), and the RedHat branch (/var/log/messages root:root) needs rhel9."
+ ],
+ "review_s": 82.5,
+ "check_file_sha256": "21ac625594bf0f183c917d49e5082779c230609250f5da1d1c8d8c2aa7f898e1",
+ "reviewer_result": "20261118T115656Z-reviewer",
+ "author_result": "20261118T115513Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "d542a65d-81f0-4071-876c-789e7f8eba79",
+   "boot_id_at_end": "d542a65d-81f0-4071-876c-789e7f8eba79",
+   "fresh": true
+  }
+ }
+}
