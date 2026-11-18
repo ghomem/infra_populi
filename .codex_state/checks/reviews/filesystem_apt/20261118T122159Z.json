@@ -1,0 +1,33 @@
+{
+ "class": "filesystem_apt",
+ "at": "20261118T122159Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "helper-scripts-installed <- files/apt/get-relevant-updates-list (whole file, sha256 077fa70554dd): manifest lines 131-137 install it root/root 0755 from that source under relevant_updates_method 2 (default); the probe's stat (root 755) and sha256sum of the installed file against the baseline file's hash test exactly that",
+  "surface-list-and-daily-job <- manifests/filesystem_apt.pp:163-176: with no Hiera prio/hour/minute keys the lookups default to High/0/0, so cron apt_check_updates for root with monthday '*' is '0 0 * * * /opt/puppet-infrastructure/bin/apt-check-updates.sh High' (localdir /opt/puppet-infrastructure); the crontab grep expects that line",
+  "the-wrapper-upgrades-an-installed-package-with-an-update <- manifests/filesystem_apt.pp:24-30 (+ files/apt/apt-update-pkg.sh): the file installs the wrapper, which upgrades an installed package only when aptitude lists it as upgradable (~U) and then prints 'package $PKGNAME updated to version $VERSION'; the action downgrades a small package one version below the candidate and runs the wrapper; the effect records versions read via dpkg-query afterwards (upgraded to the candidate), not only the wrapper's own output; mutates declares the downgrade and the run",
+  "purpose gap: Tested: the wrapper (refuses a missing package, upgrades an installed package with an update), every helper installed 0755 root (static ones byte for byte), openscap-scanner, the surface script's UPDATE_CMD/SURFACE lines, the daily cron line, the daily job run end-to-end against Canonical OVAL (list written, one package per line), and apt-update-relevant.sh installing a listed update. Gap: the purpose itself names 'surface, kernel and full update scripts', but apt-update-kernel.sh (apt-get install --only-upgrade of the installed linux-image metapackage) and apt-update-dist.sh (apt-get dist-upgrade with force-confdef/confold) are only checked as installed files, never run; both are exercisable on the lab's reverted ubuntu node (e.g. run apt-update-dist.sh and expect no upgradable packages afterwards; run apt-update-kernel.sh and expect exit 0 with the metapackage at its candidate), and neither is listed under uncovered. apt-update-surface.sh is likewise never executed (only its two variable lines are read), though 'less', one of the downgrade candidates, is on the server surface list, so the existing downgrade pattern would exercise it directly. The uncovered notes (desktop variant -> gnome; parameter variants -> ubuntu) are honest for what they list."
+ ],
+ "review_s": 182.5,
+ "check_file_sha256": "f412c417cb86836678fb3c706d90678a43067ee2c0d9eb184ff7e8c7b2ea14e5",
+ "reviewer_result": "20261118T121857Z-reviewer",
+ "author_result": "20261118T121530Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "37a993a5-ebff-40de-be67-a562b6c7dc18",
+   "boot_id_at_end": "37a993a5-ebff-40de-be67-a562b6c7dc18",
+   "fresh": true
+  }
+ }
+}
