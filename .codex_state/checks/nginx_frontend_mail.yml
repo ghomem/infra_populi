@@ -118,7 +118,8 @@ checks:
       postconf -M 'submissions/inet=submissions inet n - y - - smtpd'
       postconf -P 'submissions/inet/smtpd_tls_wrappermode=yes' 'submissions/inet/smtpd_sasl_auth_enable=yes' \
         'submissions/inet/smtpd_sasl_type=dovecot' 'submissions/inet/smtpd_sasl_path=private/auth' \
-        'submissions/inet/smtpd_recipient_restrictions=permit_sasl_authenticated,reject'
+        'submissions/inet/smtpd_recipient_restrictions=permit_sasl_authenticated,reject' \
+        'submissions/inet/smtpd_relay_restrictions=permit_sasl_authenticated,reject'
       cat > /etc/dovecot/conf.d/99-p8test.conf <<'EOF'
       disable_plaintext_auth = no
       service auth {
@@ -168,18 +169,23 @@ checks:
       cat /run/p8test-mail/smtp25.txt
     expect: {rc: 0, stdout: "\\AMAIL 250\\nRCPT 250\\nDATA 250 2\\.0\\.0 Ok: queued as \\w+\\n\\Z"}
 
+  # 2026-11-18 authoring correction (run 1, 20261118T073212Z): the check sent to p8test@relay.invalid, which the
+  # backend's own `default_transport = error:` refused at RCPT (550 "relays nothing") although nginx had passed the
+  # login on (the peer logged auth=1). The backend's submissions service now accepts any recipient only from an
+  # authenticated sender (permit_sasl_authenticated, reject), and the message goes to the local mailbox. The behaviour
+  # is unchanged.
   - id: smtps-465-relays-the-client-login-to-the-backend
     what: >-
       over SMTPS (smtp_auth login plain) the client's login is passed on to the backend (proxy_smtp_auth on), so the
-      backend accepts a relayed recipient it accepts only from an authenticated sender
+      backend, which accepts a recipient on 465 only from an authenticated sender, queues the message
     control: negative
     derived_from:
       - {path: manifests/nginx_frontend_mail.pp, lines: "67-81", text: "'proxy_smtp_auth          on;',"}
       - {path: manifests/nginx_frontend_mail.pp, lines: "73", text: "smtp_auth                => 'login plain',"}
       - {path: manifests/nginx_frontend_mail.pp, lines: "106-114", text: "proxy       => \"${mail_backend}:${smtps_port}\","}
     mutates: >-
-      logs in as p8testuser over 127.0.0.1:465 and sends one message to p8test@relay.invalid (bounced locally on the
-      backend); writes the SMTP replies to /run/p8test-mail/smtps465.txt
+      logs in as p8testuser over 127.0.0.1:465 and sends one message (token p8test-smtps-465-token) to
+      p8testuser@localhost; writes the SMTP replies to /run/p8test-mail/smtps465.txt
     probe: |
       mkdir -p /run/p8test-mail
       python3 - > /run/p8test-mail/smtps465.txt 2>&1 <<'EOF'
@@ -189,12 +195,14 @@ checks:
       s.ehlo("p8test-client")
       print("AUTH", s.login("p8testuser", "p8test-mail-not-a-secret")[0])
       print("MAIL", s.mail("p8testuser@localhost")[0])
-      print("RCPT", s.rcpt("p8test@relay.invalid")[0])
+      print("RCPT", s.rcpt("p8testuser@localhost")[0])
+      code, msg = s.data(b"Subject: p8test\r\n\r\np8test-smtps-465-token\r\n")
+      print("DATA", code, msg.decode())
       s.quit()
       EOF
     effect: |
       cat /run/p8test-mail/smtps465.txt
-    expect: {rc: 0, stdout: "\\AAUTH 235\\nMAIL 250\\nRCPT 250\\n\\Z"}
+    expect: {rc: 0, stdout: "\\AAUTH 235\\nMAIL 250\\nRCPT 250\\nDATA 250 2\\.0\\.0 Ok: queued as \\w+\\n\\Z"}
 
   - id: imaps-993-logs-in-at-the-backend-and-sees-the-mail
     what: >-
@@ -221,6 +229,9 @@ checks:
       cat /run/p8test-mail/imaps993.txt
     expect: {rc: 0, stdout: "\\ALOGIN OK\\nFOUND 1\\n\\Z"}
 
+  # 2026-11-18 authoring correction (run 1): nginx does not relay the backend's 535; it closes the session after the
+  # backend refuses the login (the peer logged "SASL PLAIN authentication failed"). The probe records any refusal,
+  # and the peer check below proves the refusal was the backend's.
   - id: smtps-465-wrong-password-is-refused-by-the-backend
     what: >-
       over SMTPS a wrong password is refused, because nginx passes the login on and the backend refuses it (the
@@ -238,12 +249,12 @@ checks:
       s.ehlo("p8test-client")
       try:
           print("AUTH", s.login("p8testuser", "p8test-wrong-password")[0])
-      except smtplib.SMTPAuthenticationError as e:
-          print("REFUSED", e.smtp_code)
+      except (smtplib.SMTPAuthenticationError, smtplib.SMTPServerDisconnected) as e:
+          print("REFUSED", type(e).__name__)
       EOF
     effect: |
       cat /run/p8test-mail/smtps465-wrong.txt
-    expect: {rc: 0, stdout: "\\AREFUSED 5\\d\\d\\n\\Z"}
+    expect: {rc: 0, stdout: "\\AREFUSED SMTP(AuthenticationError|ServerDisconnected)\\n\\Z"}
 
   - id: imaps-993-wrong-password-is-refused-by-the-backend
     what: >-
@@ -281,19 +292,25 @@ checks:
       cat /run/p8test-mail/https443.txt
     expect: {rc: 0, stdout: "\\Ap8test-webmail-backend\\n\\Z"}
 
+  # 2026-11-18 authoring correction (run 1): the SMTPS session logs as postfix/smtpd (not submissions/smtpd), and its
+  # client= line with the SASL user appears only for a queued message; the evidence now reads both tokens in the
+  # mailbox, the queued SMTPS message's SASL user, and the backend's own refusals of the wrong passwords.
   - id: the-backend-received-the-sessions-from-the-proxy
     what: >-
-      on the backend, the port-25 message sits in p8testuser's mailbox and the SMTPS relay attempt was made by the
-      authenticated user p8testuser, both from the node's address
+      on the backend: both messages sit in p8testuser's mailbox; the SMTPS one was queued for the SASL user
+      p8testuser; the wrong passwords were refused by the backend itself (postfix SASL, dovecot), all from the node
     control: negative
     host: peer
     derived_from:
       - {path: manifests/nginx_frontend_mail.pp, lines: "116-124", text: "proxy       => \"${mail_backend}:${smtp_port}\","}
       - {path: manifests/nginx_frontend_mail.pp, lines: "67-81", text: "'proxy_smtp_auth          on;',"}
+      - {path: manifests/nginx_frontend_mail.pp, lines: "54-65", text: "imap_auth                => 'login plain',"}
     mutates: none beyond reading the backend's mailbox and log (declared mutating so it runs after the node's sessions)
     probe: |
       true
     effect: |
-      grep -c 'p8test-smtp-25-token' /var/mail/p8testuser
-      journalctl --no-pager -q -t postfix/submissions/smtpd | grep -c 'client=.*\[192\.168\.56\.20\], sasl_method=[A-Z]*, sasl_username=p8testuser$'
-    expect: {rc: 0, stdout: "\\A1\\n[1-9]\\d*\\n\\Z"}
+      grep -c -e 'p8test-smtp-25-token' -e 'p8test-smtps-465-token' /var/mail/p8testuser
+      journalctl --no-pager -q -b | grep -c 'client=unknown\[192\.168\.56\.20\], sasl_method=[A-Z]*, sasl_username=p8testuser$'
+      journalctl --no-pager -q -b | grep -c 'unknown\[192\.168\.56\.20\]: SASL [A-Z]* authentication failed: .*sasl_username=p8testuser'
+      journalctl --no-pager -q -b | grep -c 'imap-login: .*auth failed.*user=.p8testuser..*rip=192\.168\.56\.20'
+    expect: {rc: 0, stdout: "\\A2\\n1\\n[1-9]\\d*\\n[1-9]\\d*\\n\\Z"}
