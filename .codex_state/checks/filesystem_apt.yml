@@ -1,0 +1,123 @@
+# Phase 3 checks for puppet_infrastructure::filesystem_apt (class; node ubuntu; Ubuntu 24.04). Fixture: defaults
+# (server_mode true, relevant_updates_method 2, relevant_updates_no_kernel false; no Hiera prio/hour/minute keys, so
+# High at 00:00). The class installs update helper scripts, openscap-scanner (24.04) and a daily cron that keeps the
+# list of updates of priority >= High in /var/lib/apt-check-updates/list. Probes read the node's own files; mutating
+# checks run the helpers as an operator or the cron would, against the Ubuntu archive and Canonical's OVAL data.
+class: filesystem_apt
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 0.7
+  notes: "11:00:27Z to 11:01:09Z 2026-11-18 (date at start and at validation; the baseline class and its scripts were read before the clock started), outside the worktree while firewall_secure's re-review ran."
+purpose: >-
+  Apt update tooling for Ubuntu 24.04 servers (the target release; the 20.04/22.04 openscap package branch is not in Phase 1): a wrapper that upgrades a package only if it is installed and has an update (never
+  installing anything new), surface, kernel and full update scripts, and a daily job that lists the relevant (High or
+  above) security updates from Canonical's OVAL data with openscap, for monitoring.
+uncovered:
+  - what: "the desktop variant (server_mode false): the desktop surface list and the compatibility link"
+    why: the fixture is a server; one set holds one fixture
+    lifted_by: gnome
+  - what: "the other parameter variants: relevant_updates_method 0 (no relevant-updates job), relevant_updates_no_kernel true, a custom apt_surface_list, and Hiera prio_threshold/checkhour/checkmin"
+    why: each is a fixture variant of the same server; one set holds one fixture (the defaults)
+    lifted_by: ubuntu
+checks:
+  - id: helper-scripts-installed
+    what: the helper scripts are installed root-owned 0755 (the static ones byte for byte), and openscap-scanner is installed
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_apt.pp, lines: "24-30", text: "source  => 'puppet:///modules/puppet_infrastructure/apt/apt-update-pkg.sh',"}
+      - {path: manifests/filesystem_apt.pp, lines: "120-128", text: "$openscap_pkg = 'openscap-scanner'"}
+      - {path: files/apt/apt-update-pkg.sh, sha256: "b19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5"}
+      - {path: files/apt/apt-update-kernel.sh, sha256: "8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db"}
+      - {path: files/apt/apt-update-dist.sh, sha256: "c240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3"}
+      - {path: files/apt/get-relevant-updates-list, sha256: "077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6"}
+    probe: |
+      cd /opt/puppet-infrastructure/bin
+      stat -c '%n %U %a' apt-update-pkg.sh apt-update-surface.sh apt-update-kernel.sh apt-update-dist.sh get-relevant-updates-list apt-check-updates.sh
+      sha256sum apt-update-pkg.sh apt-update-kernel.sh apt-update-dist.sh get-relevant-updates-list | awk '{print $1}'
+      dpkg-query -W -f '${Package} ${Status}\n' openscap-scanner
+    expect: {rc: 0, stdout: "\\Aapt-update-pkg\\.sh root 755\\napt-update-surface\\.sh root 755\\napt-update-kernel\\.sh root 755\\napt-update-dist\\.sh root 755\\nget-relevant-updates-list root 755\\napt-check-updates\\.sh root 755\\nb19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5\\n8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db\\nc240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3\\n077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6\\nopenscap-scanner install ok installed\\n\\Z"}
+
+  - id: surface-list-and-daily-job
+    what: >-
+      the surface script updates the server surface list through the wrapper, and root's crontab runs the relevant
+      updates job daily at 00:00 with threshold High
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_apt.pp, lines: "33-41", text: "$apt_surface_server = ['openssh-server', 'openssh-client', 'openssh-sftp-server',"}
+      - {path: manifests/filesystem_apt.pp, lines: "163-176", text: "command  => \"${localdir}/bin/apt-check-updates.sh ${prio_threshold}\","}
+    probe: |
+      grep -E '^(UPDATE_CMD|SURFACE)=' /opt/puppet-infrastructure/bin/apt-update-surface.sh
+      crontab -l -u root | grep -v '^#' | grep apt-check-updates
+    expect: {rc: 0, stdout: "\\AUPDATE_CMD=/opt/puppet-infrastructure/bin/apt-update-pkg\\.sh\\nSURFACE=\"openssh-server openssh-client openssh-sftp-server openssl libssl1\\.1 libudev1 ca-certificates vim vim-runtime vim-common coreutils gzip less multitail util-linux openvpn nginx-core nginx-extras postfix dovecot-core rsyslog rsyslog-gnutls\"\\n0 0 \\* \\* \\* /opt/puppet-infrastructure/bin/apt-check-updates\\.sh High\\n\\Z"}
+
+  - id: the-wrapper-never-installs-a-missing-package
+    what: asked to update a package that is not installed (cowsay), the wrapper refuses and installs nothing
+    control: negative
+    derived_from:
+      - {path: files/apt/apt-update-pkg.sh, sha256: "b19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5"}
+      - {path: manifests/filesystem_apt.pp, lines: "23", text: "# wrapper for apt-get install the avoid undesired installs"}
+    mutates: runs /opt/puppet-infrastructure/bin/apt-update-pkg.sh cowsay on the node; its output and exit code go to /run/p8test-apt/missing.txt
+    probe: |
+      install -d -m 0700 /run/p8test-apt
+      { /opt/puppet-infrastructure/bin/apt-update-pkg.sh cowsay; echo "rc=$?"; } > /run/p8test-apt/missing.txt 2>&1
+    effect: |
+      cat /run/p8test-apt/missing.txt
+      dpkg-query -W -f '${Status}\n' cowsay 2>/dev/null | grep -c ' installed$'
+    expect: {rc: 1, stdout: "\\Apackage cowsay not installed\\nrc=1\\n0\\n\\Z"}
+
+  - id: the-wrapper-upgrades-an-installed-package-with-an-update
+    what: >-
+      an installed package one version behind the archive (a small one, downgraded first) is upgraded by the wrapper
+      to the archive's candidate version
+    control: negative
+    timeout: 300
+    derived_from:
+      - {path: files/apt/apt-update-pkg.sh, sha256: "b19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5"}
+      - {path: manifests/filesystem_apt.pp, lines: "24-30", text: "file { \"${localdir}/bin/apt-update-pkg.sh\":"}
+    mutates: >-
+      picks the first of wget, less, tzdata, curl, vim-tiny whose archive has an older version than the installed
+      candidate, downgrades it to that version (apt-get install --allow-downgrades), then runs apt-update-pkg.sh on it;
+      the package and its versions go to /run/p8test-apt/upgrade.txt
+    probe: |
+      install -d -m 0700 /run/p8test-apt
+      for p in wget less tzdata curl vim-tiny; do
+        cand=$(apt-cache policy "$p" | awk '/Candidate:/ {print $2}')
+        old=$(apt-cache madison "$p" | awk -F'|' '{gsub(/ /,"",$2); print $2}' | grep -v -x "$cand" | head -1)
+        [ -n "$old" ] && dpkg-query -W "$p" >/dev/null 2>&1 && break
+        old=""
+      done
+      [ -n "$old" ] || { echo "no package with an older archive version" > /run/p8test-apt/upgrade.txt; exit 0; }
+      DEBIAN_FRONTEND=noninteractive apt-get -qq -y --allow-downgrades install "$p=$old" >/dev/null 2>&1
+      before=$(dpkg-query -W -f '${Version}' "$p")
+      out=$(/opt/puppet-infrastructure/bin/apt-update-pkg.sh "$p" 2>&1)
+      after=$(dpkg-query -W -f '${Version}' "$p")
+      { [ "$before" = "$old" ] && echo "downgraded to the archive's older version"
+        [ "$after" = "$cand" ] && echo "upgraded to the candidate"
+        printf '%s\n' "$out" | grep -q "^package $p updated to version $cand$" && echo "wrapper reported the update"; } > /run/p8test-apt/upgrade.txt
+    effect: |
+      cat /run/p8test-apt/upgrade.txt
+    expect: {rc: 0, stdout: "\\Adowngraded to the archive's older version\\nupgraded to the candidate\\nwrapper reported the update\\n\\Z"}
+
+  - id: the-daily-job-lists-relevant-updates
+    what: >-
+      run as the cron runs it, the job fetches Canonical's OVAL data for the release, evaluates it with openscap and
+      writes the list of updates of priority >= High (the file exists, possibly empty) without error
+    control: negative
+    timeout: 600
+    derived_from:
+      - {path: manifests/filesystem_apt.pp, lines: "149-155", text: "content => template('puppet_infrastructure/apt/apt-check-updates-v2.sh.erb'),"}
+      - {path: manifests/filesystem_apt.pp, lines: "106-107", text: "$update_cache_dir = '/var/lib/apt-check-updates'"}
+      - {path: manifests/filesystem_apt.pp, lines: "131-137", text: "source  => 'puppet:///modules/puppet_infrastructure/apt/get-relevant-updates-list',"}
+    mutates: >-
+      runs /opt/puppet-infrastructure/bin/apt-check-updates.sh High on the node (downloads the release's OVAL file
+      from security-metadata.canonical.com into a temporary directory, writes /var/lib/apt-check-updates/list); its
+      exit code goes to /run/p8test-apt/check.txt
+    probe: |
+      install -d -m 0700 /run/p8test-apt
+      /opt/puppet-infrastructure/bin/apt-check-updates.sh High >/dev/null 2>&1; echo "rc=$?" > /run/p8test-apt/check.txt
+    effect: |
+      cat /run/p8test-apt/check.txt
+      test -f /var/lib/apt-check-updates/list && echo list-written
+      awk 'NF != 1' /var/lib/apt-check-updates/list | wc -l
+    expect: {rc: 0, stdout: "\\Arc=0\\nlist-written\\n0\\n\\Z"}
