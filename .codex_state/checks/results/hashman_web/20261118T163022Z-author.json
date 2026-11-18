@@ -1,0 +1,440 @@
+{
+ "class": "hashman_web",
+ "role": "author",
+ "at": "20261118T163022Z",
+ "runner": "2d8864c",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "17404af4e28abe485fd14a4231297f2a4635aee3e238faa88e19194357e20459",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "hashman-service-on-8080",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "not-found\ninactive\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "other-machines-reach-hashman-only-through-nginx",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "8080-refused\n",
+   "stderr": "curl: (7) Failed to connect to puppet.example.com port 443 after 1 ms: Couldn't connect to server\n",
+   "host": "peer",
+   "ok": true
+  },
+  {
+   "id": "the-password-strength-api-answers-through-nginx",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "curl: (7) Failed to connect to puppet.example.com port 443 after 1 ms: Couldn't connect to server\n",
+   "host": "peer",
+   "ok": true
+  },
+  {
+   "id": "backend-serves-the-portal",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "curl: (7) Failed to connect to 127.0.0.1 port 8080 after 0 ms: Couldn't connect to server\n",
+   "ok": true
+  },
+  {
+   "id": "frontend-proxies-the-domain-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "curl: (7) Failed to connect to puppet.example.com port 443 after 0 ms: Couldn't connect to server\n",
+   "ok": true
+  },
+  {
+   "id": "logos-copied-from-hiera-sources",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cmp: /path/to/logo.png: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "admin-adds-the-user-and-assigns-its-role",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "grep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp: No such file or directory\ngrep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/*.pp: No such file or directory\nsed: can't read /etc/puppetlabs/code/environments/production/manifests/nodes/p8test-hashman-client.pp: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-user-changes-the-password-in-a-browser",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-hashman/browser.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-record-holds-the-new-password",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp: No such file or directory\nTraceback (most recent call last):\n  File \"<string>\", line 3, in <module>\nAttributeError: 'NoneType' object has no attribute 'group'\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-client-accepts-the-new-password-after-its-agent-run",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "Authentication failure\nAuthentication failure\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "an-old-unit-binds-every-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-rebinds-the-backend-to-localhost",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /lib/systemd/system/hashman.service: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "Concat::Fragment[http_puppet.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_puppet.example.com-header]\n  Concat_fragment[http_puppet.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/http_www.puppet.example.com.conf]\n  Concat::Fragment[http_www.puppet.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_www.puppet.example.com-header]\n  Concat_fragment[http_www.puppet.example.com-footer]\n  Concat_fragment[https_www.puppet.example.com-800-442437fd34f82e9def422b18d842a28c-ssl]\n  Concat_file[/etc/nginx/sites-available/https_puppet.example.com.conf]\n  Concat_fragment[https_puppet.example.com-header]\n  Concat_fragment[https_puppet.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/https_www.puppet.example.com.conf]\n  Concat_fragment[https_www.puppet.example.com-ssl-header]\n  Concat_fragment[https_www.puppet.example.com-ssl-footer]\n  Concat::Fragment[https_www.puppet.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\n  Concat_fragment[backend_puppet.example.com_upstream_member_127.0.0.1:8080 in puppet.example.com]\n  Concat_fragment[http_puppet.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_www.puppet.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[https_www.puppet.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\nGREEN: run 2 events limited to the plan's expected_run2_events (Notify[Generated Upstream members for *]) (gate v2).\nGREEN_STAMP hashman_web 7e25572bf477\n"
+ },
+ "applied": [
+  {
+   "id": "hashman-service-on-8080",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "enabled\nactive\n127.0.0.1:8080\n",
+   "stderr": ""
+  },
+  {
+   "id": "other-machines-reach-hashman-only-through-nginx",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "8080-refused\ntitle>Hashman @ My Company\n",
+   "stderr": "",
+   "host": "peer",
+   "mismatch": {
+    "varies": "the path (/static/styles/custom.css, a stylesheet without a title), so the title must come from the index route",
+    "rc": 0,
+    "passed": false,
+    "stdout": "8080-refused\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-password-strength-api-answers-through-nginx",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK\n",
+   "stderr": "",
+   "host": "peer",
+   "mismatch": {
+    "varies": "the password (abcdef, a dictionary-like weak one), so the strength check must answer NOK",
+    "rc": 0,
+    "passed": false,
+    "stdout": "NOK\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "backend-serves-the-portal",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "title>Hashman @ My Company\n",
+   "stderr": ""
+  },
+  {
+   "id": "frontend-proxies-the-domain-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "title>Hashman @ My Company\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the path (/static/styles/custom.css, a stylesheet the backend serves without a title): the title must come from the backend's index route, not from any page nginx might return for the name",
+    "rc": 0,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "logos-copied-from-hiera-sources",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "copied\n",
+   "stderr": ""
+  },
+  {
+   "id": "admin-adds-the-user-and-assigns-its-role",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n7\ninitial-kept\n  puppet_infrastructure::user        { 'p8hashuser': myname => $::p8hashuser_cname, myhash => $::p8hashuser_pwd_hash, mykey  => $::p8hashuser_ssh_key,  }\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "on the node: `pp_auth.py useradd p8hashuser p8hashuser@example.invalid \"P8test Hash User\" p8test SILENT` (the initial password it logs goes to /run/p8test-hashman/initial, mode 0600), `pp_auth.py unlock p8hashuser`, and the role line `pp_auth.py printinfo` prints is written as node 'p8test-hashman-client' into the server's manifests/nodes/p8test-hashman-client.pp",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-user-changes-the-password-in-a-browser",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "TITLE Hashman @ My Company\nAFTER_LOGIN next\nRESULT Success: you can now close this window and proceed to your application.\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: runs /opt/p8test-browser (baseline v2) against https://puppet.example.com/ resolved to the class node's host-only address; logs in, sets the new password p8T#qv7!Kw2 on hashman's page; writes the page transcript to /run/p8test-hashman/browser.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-record-holds-the-new-password",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "record $6$\nnew password verifies True\ninitial password verifies False\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the database (declared mutating so it runs after the browser session)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-client-accepts-the-new-password-after-its-agent-run",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8hashuser:P8test Hash User\nsuccessfully authenticated\ninitial-handed-over\nAuthentication failure\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond authenticating p8hashuser with PAM (declared mutating so it runs after the peer's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "an-old-unit-binds-every-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0.0.0.0:8080\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "rewrites --bind in /lib/systemd/system/hashman.service to 0.0.0.0:8080, reloads systemd and restarts hashman on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-agent-run-rebinds-the-backend-to-localhost",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "--bind 127.0.0.1:8080\n127.0.0.1:8080\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the unit and the listeners (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 29.6,
+ "node": "puppetserver",
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "boot_id": "a4d3d7af-9d60-4d60-8806-1e288f82a520",
+   "boot_id_at_end": "a4d3d7af-9d60-4d60-8806-1e288f82a520",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "9589f129-72e8-412c-873a-06148b067d81",
+   "boot_id_at_end": "9589f129-72e8-412c-873a-06148b067d81",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "peer_agent": {
+  "certname": "p8test-hashman-client",
+  "server": "p8lab-puppetserver",
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashuser]/Puppet_infrastructure::User_base[p8hashuser]/Group[p8hashuser]/ensure: created\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashuser]/Puppet_infrastructure::User_base[p8hashuser]/User[p8hashuser]/ensure: created\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashuser]/Puppet_infrastructure::User_base[p8hashuser]/Ssh_authorized_key[p8hashuser@puppet]/ensure: created\u001b[0m"
+  ],
+  "tail": "\u001b[0m\n\u001b[mNotice: /File[/var/lib/p8test-agent/p8test-hashman-client/lib/puppet_x/stdlib]/ensure: created\u001b[0m\n\u001b[mNotice: /File[/var/lib/p8test-agent/p8test-hashman-client/lib/puppet_x/stdlib.rb]/ensure: defined content as '{sha256}5b935ddf8095cd536501080ae7c5126541f8362d602e5ceeae2435d376685258'\u001b[0m\n\u001b[mNotice: /File[/var/lib/p8test-agent/p8test-hashman-client/lib/puppet_x/stdlib/toml_dumper.rb]/ensure: defined content as '{sha256}57a02bbb4f19016a8320b0baa3531f877d84bcfdbd57488f8bd173b5ea9f8272'\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from p8lab-puppetserver:8140 (192.168.56.26)\u001b[0m\n\u001b[mNotice: Catalog compiled by p8lab-puppetserver\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8test-hashman-client\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795019729'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashuser]/Puppet_infrastructure::User_base[p8hashuser]/Group[p8hashuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashuser]/Puppet_infrastructure::User_base[p8hashuser]/User[p8hashuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashuser]/Puppet_infrastructure::User_base[p8hashuser]/Ssh_authorized_key[p8hashuser@puppet]/ensure: created\u001b[0m\n\u001b[0;32mInfo: Creating state file /var/lib/p8test-agent/p8test-hashman-client/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 0.34 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "node_agent": {
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_web/File[/lib/systemd/system/hashman.service]/content:",
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_web/File[/lib/systemd/system/hashman.service]/content:",
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_web/File[/lib/systemd/system/hashman.service]/content: content changed '{sha256}75a2523f43a8ddb73bf9d55d89833a08895ca0912222bd523a0b8a50139579f4' to '{sha256}d82a3dd3520e7757ba82475531cb5a7ca929fa3dce9b94d8e20e9bad0884a573' (corrective)\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_web/Service[hashman]: Triggered 'refresh' from 1 event\u001b[0m"
+  ],
+  "tail": "mNotice: /Stage[main]/Puppet_infrastructure::Hashman_web/File[/lib/systemd/system/hashman.service]/content: \n--- /lib/systemd/system/hashman.service\t2026-11-18 16:35:34.081277047 +0000\n+++ /tmp/puppet-file20261118-4787-ieskc0\t2026-11-18 16:35:51.759546126 +0000\n@@ -4,7 +4,7 @@\n After=basic.target network.target\n \n [Service]\n-ExecStart=/usr/bin/gunicorn --bind 0.0.0.0:8080 wsgi --access-logfile /var/log/hashman/gunicorn-receiver-access.log --error-logfile /var/log/hashman/gunicorneceiver-error.log\n+ExecStart=/usr/bin/gunicorn --bind 127.0.0.1:8080 wsgi --access-logfile /var/log/hashman/gunicorn-receiver-access.log --error-logfile /var/log/hashman/gunicorneceiver-error.log\n KillMode=process\n WorkingDirectory=/opt/puppet-infrastructure/hashman/httpserver\n \n\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_web/File[/lib/systemd/system/hashman.service]/content: \n\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_web/File[/lib/systemd/system/hashman.service]/content: content changed '{sha256}75a2523f43a8ddb73bf9d55d89833a08895ca0912222bd523a0b8a50139579f4' to '{sha256}d82a3dd3520e7757ba82475531cb5a7ca929fa3dce9b94d8e20e9bad0884a573' (corrective)\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Hashman_web/File[/lib/systemd/system/hashman.service]: Scheduling refresh of Service[hashman]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_web/Service[hashman]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 1.74 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "outcomes": [
+  {
+   "outcome": "the hashman web service runs and its backend listens on the local machine only",
+   "checks": [
+    "hashman-service-on-8080",
+    "backend-serves-the-portal"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "other machines reach hashman only through nginx over HTTPS, never the backend port",
+   "checks": [
+    "other-machines-reach-hashman-only-through-nginx",
+    "frontend-proxies-the-domain-over-tls"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a master still running the old unit gets the localhost bind at its next agent run",
+   "checks": [
+    "an-old-unit-binds-every-address",
+    "the-next-agent-run-rebinds-the-backend-to-localhost"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the site's logos are copied from the paths in Hiera",
+   "checks": [
+    "logos-copied-from-hiera-sources"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "an administrator adds a user with hashman's CLI and the role line it prints declares the user from the database",
+   "checks": [
+    "admin-adds-the-user-and-assigns-its-role"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the user changes the password on the web page, through nginx, in a browser",
+   "checks": [
+    "the-user-changes-the-password-in-a-browser"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "hashman's database holds the new password, and only the new one verifies",
+   "checks": [
+    "the-record-holds-the-new-password"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "another machine accepts the new password after its agent run against the master",
+   "checks": [
+    "the-client-accepts-the-new-password-after-its-agent-run"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the password-strength API answers OK for a strong password and NOK for a weak one, through nginx",
+   "checks": [
+    "the-password-strength-api-answers-through-nginx"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "help requests and password e-mails reach the team and the user",
+   "uncovered": {
+    "why": "the lab's relay host is fake, so mail leaves the master's MTA for nowhere; delivery needs ubuntu2 running a mail server that the master's postfix relays to (not in its baseline)",
+    "lifted_by": "ubuntu2"
+   }
+  },
+  {
+   "outcome": "users sign data and verify signatures with the portal's key",
+   "uncovered": {
+    "why": "no baseline class deploys ${hashmandir}/ssl/hashman-key.pem or hashman-pubkey.pem (files/hashman/ssl ships only a public key that no manifest installs), so a site provides the key pair by hand",
+    "lifted_by": "puppetserver"
+   }
+  },
+  {
+   "outcome": "with server-side session expiry on, an idle session is ended after the timeout",
+   "uncovered": {
+    "why": "off under the default, which this fixture keeps; a second fixture with hashman::active_session_expiration true would test it",
+    "lifted_by": "puppetserver"
+   }
+  }
+ ],
+ "duration_s": 330.0
+}

@@ -19,7 +19,7 @@ baseline: release-0.9.10 (cf477c6)
 fixture: defaults
 authoring:
   minutes: 29.6
-  notes: "Wall clock 20:29:43Z to 20:39:21Z 2026-11-16 (the first four checks, outside the worktree); extended 08:41Z to 09:01Z 2026-11-18 for HQ ruling C2 (the end-to-end flow explored by hand on the master-role node and the peer, then the four mutating checks).; the outcomes table, the purpose and the localhost-bind checks (HQ batch-10 rulings 2, 6) 15:35:02Z to 15:37:00Z 2026-11-18 (date; the validator placeholder fix in between)"
+  notes: "Wall clock 20:29:43Z to 20:39:21Z 2026-11-16 (the first four checks, outside the worktree); extended 08:41Z to 09:01Z 2026-11-18 for HQ ruling C2 (the end-to-end flow explored by hand on the master-role node and the peer, then the four mutating checks).; the outcomes table, the purpose and the localhost-bind checks (HQ batch-10 rulings 2, 6) 15:35:02Z to 15:37:00Z 2026-11-18 (date; the validator placeholder fix in between); purpose correction 1 (checkpwd, sign/verify, session expiry) 16:30:14Z to 16:30:15Z 2026-11-18 (date; the routes were read before)"
 peer:
   kind: ubuntu2
   why: the user changes the password in a browser on another machine, and that machine must then accept it
@@ -60,9 +60,18 @@ outcomes:
   - outcome: another machine accepts the new password after its agent run against the master
     from: manifests/user_base.pp:71; templates/hashman/libhashman/interface.py.erb:343
     checks: [the-client-accepts-the-new-password-after-its-agent-run]
+  - outcome: the password-strength API answers OK for a strong password and NOK for a weak one, through nginx
+    from: templates/hashman/httpserver/httpserver.py.erb:230-239 (/checkpwd)
+    checks: [the-password-strength-api-answers-through-nginx]
   - outcome: help requests and password e-mails reach the team and the user
-    from: templates/hashman/httpserver/httpserver.py.erb:213-231 (reqhelp); templates/hashman/libhashman/mailutils.py.erb
-    uncovered: {why: "the lab's relay host is fake, so mail leaves the master's MTA for nowhere; delivery needs a lab mail server the master relays to", lifted_by: ubuntu2}
+    from: templates/hashman/httpserver/httpserver.py.erb:213-227 (reqhelp); templates/hashman/libhashman/mailutils.py.erb
+    uncovered: {why: "the lab's relay host is fake, so mail leaves the master's MTA for nowhere; delivery needs ubuntu2 running a mail server that the master's postfix relays to (not in its baseline)", lifted_by: ubuntu2}
+  - outcome: users sign data and verify signatures with the portal's key
+    from: templates/hashman/httpserver/httpserver.py.erb:242-282 (/sign, /verify; PRIV_KEY and PUB_KEY at lines 73-74)
+    uncovered: {why: "no baseline class deploys ${hashmandir}/ssl/hashman-key.pem or hashman-pubkey.pem (files/hashman/ssl ships only a public key that no manifest installs), so a site provides the key pair by hand", lifted_by: puppetserver}
+  - outcome: with server-side session expiry on, an idle session is ended after the timeout
+    from: templates/hashman/httpserver/httpserver.py.erb:196-209; manifests/hashman_web.pp (hashman::active_session_expiration, default False)
+    uncovered: {why: "off under the default, which this fixture keeps; a second fixture with hashman::active_session_expiration true would test it", lifted_by: puppetserver}
 checks:
   # 2026-11-18 (HQ batch-10 ruling 6, policy B): the backend binds to 127.0.0.1 (local change #2); this check expected
   # the baseline's 0.0.0.0 before.
@@ -95,6 +104,22 @@ checks:
         nc -z -w3 192.168.56.26 8080 >/dev/null 2>&1 && echo 8080-open || echo 8080-refused
         curl -sSk --max-time 10 --resolve puppet.example.com:443:192.168.56.26 https://puppet.example.com/static/styles/custom.css | grep -o 'title.[^<]*' | head -1
     expect: {rc: 0, stdout: "\\A8080-refused\\ntitle>Hashman @ My Company\\n\\Z"}
+
+  # 2026-11-18 purpose correction (review 20261118T162830Z): /checkpwd is tested, /sign and /verify and session expiry
+  # are listed as uncovered with their reasons.
+  - id: the-password-strength-api-answers-through-nginx
+    what: from the peer, POST /checkpwd through nginx answers OK for a strong password
+    control: negative
+    host: peer
+    derived_from:
+      - {path: templates/hashman/httpserver/httpserver.py.erb, lines: "230-239", text: "if ( checkstr_pwd( password ) and checkpw(password) ):"}
+    probe: |
+      curl -sSk --max-time 10 --resolve puppet.example.com:443:192.168.56.26 -X POST https://puppet.example.com/checkpwd --data 'password=p8T#qv7!Kw2'; echo
+    mismatch:
+      varies: the password (abcdef, a dictionary-like weak one), so the strength check must answer NOK
+      probe: |
+        curl -sSk --max-time 10 --resolve puppet.example.com:443:192.168.56.26 -X POST https://puppet.example.com/checkpwd --data 'password=abcdef'; echo
+    expect: {rc: 0, stdout: "\\AOK\\n\\Z"}
 
   - id: backend-serves-the-portal
     what: the Flask app answers / with its index titled '<customname> @ <company>'
