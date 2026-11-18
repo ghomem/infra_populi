@@ -1,0 +1,38 @@
+{
+ "class": "openvpn_domain",
+ "at": "20261118T005429Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok"
+ },
+ "evidence": [
+  "the-dc-holds-the-node-machine-account: baseline join-domain.sh.erb (sha256 44727c6b matches) runs 'net join -U<join_user>%<password>', which creates the node's machine account on the DC; smb.conf.erb:5 sets netbios name = @hostname (puppet8node), so the DC's 'samba-tool computer list' must list exactly PUPPET8NODE$ after apply and not on the reverted DC",
+  "pam-winbind-requires-the-group-and-openvpn-pam-installed: openvpn_domain.pp:14-15 prefixes each group with domain_netbios_name+winbind_separator and joins with ',' -> with the params fixture (P8TEST, '+', [p8testgroup]) 'P8TEST+p8testgroup', which pam_winbind.conf.erb:30 writes as require_membership_of; the second probe hashes /etc/pam.d/openvpn against the baseline files/openvpn/openvpn_pam (sha256 e664b2eb verified fresh), the file resource's source",
+  "domain-users-and-groups-resolve-through-winbind: baseline nsswitch.conf (sha256 300e2c53 verified) sets passwd/group 'compat winbind', and openvpn_domain.pp:88 uses 'id <join_user>@<netbios>.<tld>' as the joined-state test; the probe resolves p8testuser@P8TEST.example and expects its domain groups 'domain users' and p8testgroup; the mismatch changes only the user to a non-existent p8nouser, which winbind must not resolve (empty output fails the expect) - a value change that must change the verdict"
+ ],
+ "review_s": 204.4,
+ "check_file_sha256": "9dd8108f0048be7dfa88ee6fe794d95c29703b17eea0470a893b2d8e755a1e75",
+ "reviewer_result": "20261118T005105Z-reviewer",
+ "author_result": "20261118T004730Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "aeb2e6d2-8fc4-463f-825d-e2b230b0f1c4",
+   "boot_id_at_end": "aeb2e6d2-8fc4-463f-825d-e2b230b0f1c4",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "dc",
+   "snapshot": "P8LAB_DC_BASELINE_v1",
+   "boot_id": "413585e8-54bf-48bb-abda-9c4351f393c0",
+   "boot_id_at_end": "413585e8-54bf-48bb-abda-9c4351f393c0",
+   "fresh": true
+  }
+ }
+}
