@@ -15,7 +15,7 @@ authoring:
   notes: "16:37:08Z to 16:39:18Z 2026-11-18 (date at the start of reading the baseline and at validation), outside the worktree while hashman_web's re-review ran; the fixture was chosen to exercise the extras (the plain mode duplicates firewall_secure, covered there)."
 purpose: >-
   firewall_secure's default-drop firewall with SSH brute-force limits, extended with DDoS mitigation (invalid and
-  bogus-flag packets and fragments dropped, ICMP and RST rate-limited, per-source limits on the listed services), a
+  bogus-flag packets, out-of-connection RSTs and fragments dropped, ICMP rate-limited, per-source limits on the listed services), a
   whitelist side chain through which only listed sources reach the services, and a blacklist that drops listed sources
   outright.
 peer:
@@ -30,13 +30,13 @@ outcomes:
     checks: [policies-and-ssh-rules]
   - outcome: invalid packets, new packets without SYN, suspicious MSS, bogus TCP flag combinations and fragments are dropped before routing
     from: manifests/firewall_secure_extra.pp:157-185
-    checks: [mangle-anti-ddos-rules, bogus-flag-and-rst-packets-are-counted-by-their-drop-rules, the-drop-rules-counted-them]
+    checks: [mangle-anti-ddos-rules, the-mangle-counters-are-zeroed, bogus-flag-and-rst-packets-are-sent, the-invalid-rule-dropped-them]
   - outcome: ICMP echo requests are limited to 2 per second
     from: manifests/firewall_secure_extra.pp:87-99
     checks: [icmp-echo-is-rate-limited]
-  - outcome: RST packets are limited to 2 per second (burst 2), the rest dropped
-    from: manifests/firewall_secure_extra.pp:187-190
-    checks: [bogus-flag-and-rst-packets-are-counted-by-their-drop-rules, the-drop-rules-counted-them]
+  - outcome: an RST flood (RST packets outside any connection) is dropped before routing
+    from: manifests/firewall_secure_extra.pp:159-160, 187-190
+    checks: [bogus-flag-and-rst-packets-are-sent, the-invalid-rule-dropped-them]
   - outcome: only whitelisted sources reach the listed service, through the side chain
     from: manifests/firewall_secure_extra.pp:192-224, 252
     checks: [a-service-listens, the-service-is-reached-only-from-the-whitelist]
@@ -119,6 +119,9 @@ checks:
       cat /run/p8test-fwx/filter.txt
     expect: {rc: 0, stdout: "\\Aservice from whitelisted in\\nservice from unlisted dropped\\nssh from unlisted in\\n\\Z"}
 
+  # 2026-11-18 authoring correction (run 1, 20261118T165605Z): netcat-openbsd keeps a connection open after its input
+  # ends, so the 3 held connections outlived this check, and the next check's source was over the connection limit
+  # (rule 521 dropped all 10). Each connection is now ended by `timeout 20`, and the check waits 2 s after.
   - id: a-whitelisted-source-is-held-to-the-connection-limit
     what: from the whitelisted address, held connections to the service stop at ddos_limit (3 established of 5)
     control: negative
@@ -127,14 +130,15 @@ checks:
     derived_from:
       - {path: manifests/firewall_secure_extra.pp, lines: "225-228", text: "connlimit_above => $ddos_limit, action => 'drop'"}
     mutates: >-
-      5 TCP connections from the peer's +100 address to the service, one per second, each held 20 s; the established
+      5 TCP connections from the peer's +100 address to the service, one per second, each ended after 20 s; the established
       count goes to /run/p8test-fwx/held.txt
     probe: |
       a=$(ip -4 -o addr show enp0s8 | awk '{print $4}' | cut -d/ -f1 | head -1); w=${a%.*}.$(( ${a##*.} + 100 ))
-      for i in $(seq 5); do (sleep 20 | nc -s "$w" 192.168.56.20 8888 >/dev/null 2>&1) & sleep 1; done
+      for i in $(seq 5); do (timeout 20 nc -s "$w" 192.168.56.20 8888 </dev/null >/dev/null 2>&1) & sleep 1; done
       sleep 1
       ss -tnH state established "( dport = :8888 and dst 192.168.56.20 )" | wc -l > /run/p8test-fwx/held.txt
       wait
+      sleep 2
     effect: |
       cat /run/p8test-fwx/held.txt
     expect: {rc: 0, stdout: "\\A3\\n\\Z"}
@@ -190,41 +194,51 @@ checks:
       n=$(cat /run/p8test-fwx/icmp.txt); [ -n "$n" ] && [ "$n" -ge 5 ] && [ "$n" -le 8 ] && echo "limited: $n"
     expect: {rc: 0, stdout: "\\Alimited: [5-8]\\n\\Z"}
 
-  - id: bogus-flag-and-rst-packets-are-counted-by-their-drop-rules
-    what: >-
-      packets with SYN+FIN set, and a burst of RST packets, sent by the peer are counted by the class's drop rules
-      (505 in mangle PREROUTING, 520 in INPUT)
+  # 2026-11-18 authoring correction (run 1, 20261118T165605Z): conntrack classes a SYN+FIN packet and an RST outside
+  # any connection as INVALID, so rule 501 (ctstate INVALID, first of the mangle drops) drops them, and 505 and the RST
+  # limit (519/520 in INPUT) never see them (verified by hand on the applied node: 501 counted exactly 5 SYN+FIN and 50
+  # RST packets; 505, 519 and 520 counted 0). The check now zeroes the mangle counters first and reads rule 501.
+  - id: the-mangle-counters-are-zeroed
+    what: setup for the next two checks, the mangle table's packet counters zeroed on the node
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "159-160", text: "firewall { '501 drop invalid packets': chain => 'PREROUTING', table => 'mangle', ctstate => 'INVALID', action => 'drop', }"}
+    mutates: zeroes the packet counters of the node's mangle PREROUTING chain (iptables -t mangle -Z PREROUTING)
+    probe: |
+      iptables -t mangle -Z PREROUTING
+    effect: |
+      iptables -t mangle -v -x -L PREROUTING -n | awk '/501 drop invalid packets/ {print $1; exit}'
+    expect: {rc: 0, stdout: "\\A0\\n\\Z"}
+
+  - id: bogus-flag-and-rst-packets-are-sent
+    what: setup for the next check, 5 SYN+FIN packets and an RST flood of 50 sent by the peer to the node's port 22
     control: negative
     host: peer
     timeout: 300
     derived_from:
       - {path: manifests/firewall_secure_extra.pp, lines: "170", text: "firewall { '505 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN FIN,SYN',"}
       - {path: manifests/firewall_secure_extra.pp, lines: "187-190", text: "firewall { '520 limit RST tcp packets (default behavior)': chain => 'INPUT', proto => 'tcp', tcp_flags => 'RST RST', action => 'drop', }"}
-    mutates: installs hping3 on the peer, then sends 5 SYN+FIN packets and 50 RST packets (fast) from its primary address to the class node's port 22; done marker in /run/p8test-fwx/sent.txt
+    mutates: installs hping3 on the peer, then sends 5 SYN+FIN packets and 50 RST packets (2 ms apart) from its primary address to the class node's port 22; the number hping3 sent goes to /run/p8test-fwx/sent.txt
     probe: |
+      install -d -m 0700 /run/p8test-fwx
       DEBIAN_FRONTEND=noninteractive apt-get -qq -y install hping3 >/dev/null 2>&1
-      hping3 -q -c 5 -S -F -p 22 192.168.56.20 >/dev/null 2>&1
-      hping3 -q -c 50 -i u2000 -R -p 22 192.168.56.20 >/dev/null 2>&1
-      echo sent > /run/p8test-fwx/sent.txt
+      { hping3 -q -c 5 -S -F -p 22 192.168.56.20 2>&1; hping3 -q -c 50 -i u2000 -R -p 22 192.168.56.20 2>&1; } | sed -n 's/^\([0-9]*\) packets transmitted.*/\1/p' | paste -sd' ' > /run/p8test-fwx/sent.txt
     effect: |
       cat /run/p8test-fwx/sent.txt
-    expect: {rc: 0, stdout: "\\Asent\\n\\Z"}
+    expect: {rc: 0, stdout: "\\A5 50\\n\\Z"}
 
-  - id: the-drop-rules-counted-them
-    what: on the node, the bogus-flag rule (505) counted at least 5 packets and the RST drop rule (520) at least 40
+  - id: the-invalid-rule-dropped-them
+    what: on the node, rule 501 (ctstate INVALID, mangle PREROUTING) counted at least the 55 packets the peer sent
     control: negative
     derived_from:
-      - {path: manifests/firewall_secure_extra.pp, lines: "170", text: "firewall { '505 drop packets bogus tcp flags'"}
-      - {path: manifests/firewall_secure_extra.pp, lines: "187-190", text: "limit => '2/sec', burst => '2', tcp_flags => 'RST RST', action => 'accept', }"}
+      - {path: manifests/firewall_secure_extra.pp, lines: "159-160", text: "firewall { '501 drop invalid packets': chain => 'PREROUTING', table => 'mangle', ctstate => 'INVALID', action => 'drop', }"}
     mutates: none beyond reading the rule counters (declared mutating so it runs after the peer sent the packets)
     probe: |
       true
     effect: |
-      bogus=$(iptables -t mangle -v -x -L PREROUTING -n | awk '/505 drop packets bogus tcp flags/ {print $1; exit}')
-      rst=$(iptables -v -x -L INPUT -n | awk '/520 limit RST tcp packets \(default behavior\)/ {print $1; exit}')
-      [ -n "$bogus" ] && [ "$bogus" -ge 5 ] && echo "bogus flags dropped: at least 5"
-      [ -n "$rst" ] && [ "$rst" -ge 40 ] && echo "RST beyond the limit dropped: at least 40"
-    expect: {rc: 0, stdout: "\\Abogus flags dropped: at least 5\\nRST beyond the limit dropped: at least 40\\n\\Z"}
+      n=$(iptables -t mangle -v -x -L PREROUTING -n | awk '/501 drop invalid packets/ {print $1; exit}')
+      [ -n "$n" ] && [ "$n" -ge 55 ] && echo "invalid packets dropped: at least 55"
+    expect: {rc: 0, stdout: "\\Ainvalid packets dropped: at least 55\\n\\Z"}
 
   - id: an-unmanaged-rule-is-added
     what: setup for the purge check, a rule Puppet does not manage added to INPUT by hand
