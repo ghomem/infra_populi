@@ -1,0 +1,98 @@
+{
+ "schema": 1,
+ "class": "ssl_base",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-18T03:02:45Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "e77afc28a0ab",
+ "migrate_subject": "P8: migrate puppet_infrastructure::ssl_base",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit e77afc28a0ab; 601 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `ssl_base Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-concat', '9.1.0'), ('puppet-nginx', '8.4.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 17 catalog events; COVERAGE puppet_infrastructure::ssl_base: 5 concrete resources (+3 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added comment lines at top of manifests/ssl_base.pp: 'release-0.9.10 manifest validated unchanged' + module dependency line); no non-comment change vs release-0.9.10 (cf477c6), diff_summary non_comment_changes=0",
+   "DIFF B: migrate commit e77afc28a0ab adds only the same 2 header lines; provenance ok (started from baseline content)",
+   "rhel9 node: harness GREEN, run 2 no events, 5 concrete resources + 3 defined-type instances covered; the define has no OS-specific branches in the diff, content identical to baseline"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependency: puppetlabs-concat 9.1.0; the notified Service[$myservicename] belongs to the consumer (harness: puppet-nginx 8.4.0 class nginx)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 17,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::ssl_base: 5 concrete resources (+3 defined-type instances)"
+  ],
+  "revert": {
+   "node": "rhel9",
+   "snapshot": "P8LAB_RHEL9_BASELINE_v1",
+   "total_s": 77.005,
+   "master_check_s": 0.606,
+   "poweroff_s": 1.394,
+   "restore_s": 0.473,
+   "boot_to_ssh_s": 24.252,
+   "apt_update_s": 49.522,
+   "verify_s": 0.758,
+   "nic1_rx_bytes": 135916932
+  },
+  "log": ".codex_state/logs/reviews/ssl_base.20261118T030040Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "rhel9"
+}
