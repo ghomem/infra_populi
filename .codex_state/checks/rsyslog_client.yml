@@ -1,0 +1,132 @@
+# Phase 3 checks for puppet_infrastructure::rsyslog_client (class; node ubuntu; it declares rsyslog_base itself).
+# Fixture (params, never committed; changed 2026-11-18 for these checks): target = the peer's host name, target_ip =
+# the peer's host-only address (so the class pins it in /etc/hosts), ssldir_override /etc/puppetlabs/puppet/ssl (the
+# OpenVox agent's ssldir); port 6514, check_names false, no failover, forward_auth_log false at their defaults.
+# The peer (ubuntu2) plays the remote log server: an rsyslog TLS listener on 6514 with the peer's own Puppet
+# certificate from the same lab CA (x509/certvalid on both sides). Node probes name no other host; peer probes name
+# only the class node's host-only address.
+class: rsyslog_client
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 3
+  notes: "About 10:27Z to 10:30Z 2026-11-18 (scratch file times), outside the worktree while firewall_secure's review ran (baseline class, rsyslog_base and the forwarding template read)."
+purpose: >-
+  Forwards all of the node's local logs to a remote rsyslog server over TLS, authenticated with the node's Puppet
+  certificate and CA, with the target optionally pinned in /etc/hosts.
+uncovered:
+  - what: the failover target (forwarding switches to it while the first target is suspended) and forward_auth_log
+    why: >-
+      the fixture forwards to one live target and sets neither; failover needs a second fixture variant (a dead
+      target, the peer as failover), which one set cannot hold
+    lifted_by: ubuntu2
+peer:
+  kind: ubuntu2
+  why: forwarding logs needs a remote log server on another machine that receives them
+checks:
+  - id: forwarding-rule-sends-everything-over-tls
+    what: >-
+      the forward rule sends every facility and severity to the target on 6514 over gtls with the node's certificate,
+      key and CA, validating the server's certificate (x509/certvalid, check_names false)
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_client.pp, lines: "42-55", text: "file { '/etc/rsyslog.d/40-forward.conf':"}
+      - {path: templates/rsyslog/forward_simple.conf.epp, sha256: "ef43a4f10d8babd1057b4048d7398b7f81da3ff67733e50e00c78ac99ad25f73"}
+    probe: |
+      grep -E '^(\$DefaultNetstreamDriver |\$ActionSendStreamDriverMode|\$ActionSendStreamDriverAuthMode|\*\.\*)' /etc/rsyslog.d/40-forward.conf | sed -E 's/ +/ /g; s/@@[^:]+:/@@TARGET:/'
+      rsyslogd -N1 >/dev/null 2>&1 && echo config-valid
+    expect: {rc: 0, stdout: "\\A\\$DefaultNetstreamDriver gtls\\n\\$ActionSendStreamDriverMode 1\\n\\$ActionSendStreamDriverAuthMode x509/certvalid\\n\\*\\.\\* @@TARGET:6514\\nconfig-valid\\n\\Z"}
+
+  - id: tls-material-is-the-nodes-puppet-identity
+    what: >-
+      rsyslog's TLS files are the node's Puppet CA, certificate and key (byte for byte), the key readable by syslog
+      only, and the certificate verifies against that CA
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_base.pp, lines: "49-71", text: "source  => \"${ssldir}/private_keys/${certname}.pem\","}
+      - {path: manifests/rsyslog_client.pp, lines: "16-18", text: "class { 'puppet_infrastructure::rsyslog_base':"}
+    probe: |
+      s=/etc/puppetlabs/puppet/ssl; c=$(hostname); t=/etc/rsyslog.d/tls
+      cmp -s $s/certs/ca.pem $t/ca.pem && cmp -s $s/certs/$c.pem $t/$c.pem && cmp -s $s/private_keys/$c.pem $t/$c.key && echo same-as-puppet
+      stat -c '%U %a' $t/$c.key
+      openssl verify -CAfile $t/ca.pem $t/$c.pem | sed 's/^.*: //'
+    mismatch:
+      varies: the CA (the system bundle instead of the Puppet CA), which did not sign the node's certificate
+      probe: |
+        c=$(hostname); t=/etc/rsyslog.d/tls
+        cmp -s /etc/puppetlabs/puppet/ssl/certs/ca.pem $t/ca.pem && cmp -s /etc/puppetlabs/puppet/ssl/certs/$c.pem $t/$c.pem && cmp -s /etc/puppetlabs/puppet/ssl/private_keys/$c.pem $t/$c.key && echo same-as-puppet
+        stat -c '%U %a' $t/$c.key
+        openssl verify -CAfile /etc/ssl/certs/ca-certificates.crt $t/$c.pem 2>&1 | sed 's/^.*: //' | tail -1
+    expect: {rc: 0, stdout: "\\Asame-as-puppet\\nsyslog 600\\nOK\\n\\Z"}
+
+  - id: the-target-is-pinned-in-hosts
+    what: the target's name resolves to target_ip through the /etc/hosts entry the class adds
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_client.pp, lines: "24-28", text: "host { $target:"}
+    probe: |
+      t=$(grep -oE '@@[^:]+' /etc/rsyslog.d/40-forward.conf | head -1 | cut -c3-)
+      getent hosts "$t" | awk '{print $1}'
+      grep -c -E "^[0-9.]+[[:space:]]+$t([[:space:]]|$)" /etc/hosts
+    expect: {rc: 0, stdout: "\\A192\\.168\\.56\\.24\\n1\\n\\Z"}
+
+  - id: the-peer-runs-a-tls-log-server
+    what: setup for the forwarding checks, an rsyslog TLS listener on the peer's 6514 with the peer's own Puppet certificate
+    control: negative
+    host: peer
+    derived_from:
+      - {path: manifests/rsyslog_client.pp, lines: "6", text: "Integer           $port             = 6514,"}
+    mutates: >-
+      on the peer: installs rsyslog-gnutls, copies its own Puppet CA, certificate and key to /etc/p8test-rsyslog
+      (syslog-readable), adds /etc/rsyslog.d/10-p8test-server.conf (an imtcp gtls listener on 6514, x509/certvalid,
+      writing what it receives to /var/log/p8test-remote.log) and restarts rsyslog
+    probe: |
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get -qq -y install rsyslog-gnutls >/dev/null 2>&1
+      s=/etc/puppetlabs/puppet/ssl; c=$(hostname); d=/etc/p8test-rsyslog
+      install -d -m 0750 -o root -g syslog $d
+      install -m 0640 -o root -g syslog $s/certs/ca.pem $d/ca.pem
+      install -m 0640 -o root -g syslog $s/certs/$c.pem $d/cert.pem
+      install -m 0640 -o root -g syslog $s/private_keys/$c.pem $d/key.pem
+      cat > /etc/rsyslog.d/10-p8test-server.conf <<'EOF'
+      global(DefaultNetstreamDriver="gtls" DefaultNetstreamDriverCAFile="/etc/p8test-rsyslog/ca.pem"
+             DefaultNetstreamDriverCertFile="/etc/p8test-rsyslog/cert.pem" DefaultNetstreamDriverKeyFile="/etc/p8test-rsyslog/key.pem")
+      module(load="imtcp" StreamDriver.Name="gtls" StreamDriver.Mode="1" StreamDriver.AuthMode="x509/certvalid")
+      template(name="p8testRemote" type="string" string="%HOSTNAME% %syslogtag%%msg%\n")
+      ruleset(name="p8test_remote") { action(type="omfile" file="/var/log/p8test-remote.log" template="p8testRemote") }
+      input(type="imtcp" port="6514" ruleset="p8test_remote")
+      EOF
+      systemctl restart rsyslog
+      sleep 2
+    effect: |
+      ss -ltnH 'sport = :6514' | wc -l
+    expect: {rc: 0, stdout: "\\A[1-9]\\n\\Z"}
+
+  - id: a-local-log-line-leaves-over-tls
+    what: >-
+      a line logged on the node with logger is forwarded: rsyslog holds an established TCP session to the target's
+      6514
+    control: negative
+    derived_from:
+      - {path: templates/rsyslog/forward_simple.conf.epp, sha256: "ef43a4f10d8babd1057b4048d7398b7f81da3ff67733e50e00c78ac99ad25f73"}
+    mutates: logs `p8test-rsyslog-forward-token` with tag p8test-rsyslog through logger on the node, then waits 5 s
+    probe: |
+      logger -t p8test-rsyslog p8test-rsyslog-forward-token
+      sleep 5
+    effect: |
+      ss -tnpH state established '( dport = :6514 )' | grep -c rsyslogd
+    expect: {rc: 0, stdout: "\\A[1-9]\\n\\Z"}
+
+  - id: the-server-received-the-line-from-the-node
+    what: the peer's log server wrote the node's line, under the node's host name, in the order sent
+    control: negative
+    host: peer
+    derived_from:
+      - {path: templates/rsyslog/forward_simple.conf.epp, sha256: "ef43a4f10d8babd1057b4048d7398b7f81da3ff67733e50e00c78ac99ad25f73"}
+      - {path: manifests/rsyslog_client.pp, lines: "42-55", text: "file { '/etc/rsyslog.d/40-forward.conf':"}
+    mutates: none beyond reading the peer's received log (declared mutating so it runs after the node's line was sent)
+    probe: |
+      true
+    effect: |
+      grep -m1 'p8test-rsyslog-forward-token' /var/log/p8test-remote.log
+    expect: {rc: 0, stdout: "\\Apuppet8node p8test-rsyslog: ?p8test-rsyslog-forward-token\\n\\Z"}
