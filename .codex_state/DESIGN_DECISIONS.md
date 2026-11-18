@@ -1777,3 +1777,71 @@ snapshot list, record.
   - sysmon_base: on a fresh RHEL 9 node, packages_base's nagios-plugins-all creates /usr/lib64/nagios/ as a
     directory, and filesystem_lib64's link to /usr/lib/nagios then fails.
   - hello_world_flask_common: python3-gunicorn and python3-flask come from EPEL, which the class never declares.
+
+## 2026-11-18 — HQ rulings on round 9 (accepted: 89 done, 77 verified, 12 with stand-in)
+- **A1 nginx_frontend_mail:** approved, `stream_access_log => 'off'` in nginx_base's default configs, a
+  module-compatibility change (class_rulings.txt). Evidence required: for each done class that includes nginx_base, the
+  rendered nginx.conf is byte-identical before and after; re-review only nginx_base and any class whose rendering changed.
+  Built for it: `test_class.sh --compile-only --file-digest <path>` (38c8d75). Result (escalations/nginx_base.md, "Ruling
+  A1 evidence"): identical for all eight, on Debian and RedHat facts; only nginx_frontend_mail's changes (stream block).
+- **A2 RedHat:** no class changes. Production composes these classes under node_base. The plan's required_base becomes
+  node-kind-aware: sysmon_base without filesystem_lib64 on RedHat; hello_world_flask_common with extra_packages_el on
+  RedHat. If a class's own code forced the dependency regardless of OS, stop and show HQ the line. Checked: neither does
+  (sysmon_base's /usr/lib64/nagios/plugins files require only Class[packages_base]; hello_world_flask_common declares
+  its two packages and nothing that names EPEL).
+- **A3 accepted:** the desktop-session checks, per-node reviewer verdicts (spawn form `<class> --node <kind>`),
+  forward-free first contact, and the three stand-ins (p8test_vpn_ca, p8test_desktop_home, p8test_domain_dns).
+- **B. New standing policy (Salatiel).** Improving templates, files and scripts so a class achieves its purpose on the
+  target OS releases is allowed and expected. Each such change:
+  - is driven by a behaviour check that fails before and passes after;
+  - is minimal;
+  - is recorded in the local-changes list (`rules/local_changes.md`, new) with its evidence;
+  - is reviewer-verified.
+
+  No per-item ruling is needed. Escalate when a fix changes a class interface, removes functionality, or has more than
+  one reasonable design. Syntax-only stays the default where no check demands a change. This re-derives the Phase 1
+  "any behaviour change escalates" bar (CLAUDE.md "Phase scoping") for purpose fixes only. Re-triage the Phase 5
+  backlog and every known finding into "stops the class achieving its purpose" (now) or "normalisation" (Phase 5).
+- **C. Phase 1 exit: behaviour approved for every active class.**
+  1. Every class has a check set that tests its purpose, passing and reviewer-reproduced. The reviewer also judges
+     purpose coverage; the existing sets are re-judged.
+  2. Stand-ins and `uncovered` notes are lifted where the lab can lift them. The master-role node is built now (no
+     longer deferred to December), and Hashman is verified end to end:
+     - the page loads through nginx;
+     - a fixture user changes a password in a headless browser run from a lab node;
+     - the user record is written;
+     - another node accepts the new password after its agent run.
+  3. A behaviour approval report, one row per class: purpose, what the checks prove, what they do not, node kinds,
+     stand-ins. Phase 1 is finished when Salatiel approves it.
+- **D. Order:**
+  1. nginx_frontend_mail and the RedHat fixes;
+  2. the master-role node and Hashman;
+  3. the backfill and purpose fixes, in batches of 10 under the start rule;
+  4. the approval report;
+  5. the test-suite design note (F);
+  6. the rename (E).
+
+  Phase 1's target release is Ubuntu 24.04. A 26.04 pass (server and desktop kinds) comes near the end, on HQ's word;
+  only the read-only OpenVox support check is done now.
+- **E. Phase 2 rename:** target `infra_populi`, option A (at the cutover).
+  - Scope (Salatiel, non-negotiable): every live reference in every variant (underscore, hyphen, capitalised, prose)
+    becomes the matching infra_populi variant. That covers the namespace, paths including /opt/puppet-infrastructure,
+    file and directory names, unit and instance names, rendered text, the engine and the docs. This supersedes the
+    draft's out-of-scope note on /opt/puppet-infrastructure.
+  - Left as written: references to the old repository as a source (baseline refs), and append-only history.
+  - Production moves to a new master, with nodes recreated or re-pointed. The plan adds an inventory of node-visible
+    names and, for each, what a re-pointed node is left with; that becomes a cutover runbook section.
+  - Consumer conversion scripts (puppet-nodes, meaningful_puppet, Hashman's database, Hiera keys) are prepared and tested
+    on synthetic fixtures, applied at cutover, with a check that fails on any leftover old name.
+  - Tag `phase1-complete` first. The script and rename_check cover the whole tree and every variant. Full
+    re-verification on every node kind with every check set. The baseline's version number is kept; the first
+    infra_populi version is Salatiel's call.
+  - Production reads are Salatiel's, before the cutover.
+- **F. Behaviour test suite** (a design note, then stop for HQ review). Requirements:
+  - a conventional top-level test location in the module, not under .codex_state;
+  - per-class checks, fixtures and the runner, with a short "test one class" guide;
+  - the runner works without the advisor or Codex, against any disposable test node;
+  - checks state the purpose they test;
+  - no lab-specific names or secrets;
+  - JUnit output;
+  - the engine consumes the same suite.

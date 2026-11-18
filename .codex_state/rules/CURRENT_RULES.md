@@ -2,7 +2,18 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-104 entries; 6 marked superseded (in whole or part); newest first.
+105 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-18 — HQ rulings on round 9 (accepted: 89 done, 77 verified, 12 with stand-in)
+- 1. Every class has a check set that tests its purpose, passing and reviewer-reproduced. The reviewer also judges
+- 2. Stand-ins and `uncovered` notes are lifted where the lab can lift them. The master-role node is built now (no
+- 3. A behaviour approval report, one row per class: purpose, what the checks prove, what they do not, node kinds,
+- 1. nginx_frontend_mail and the RedHat fixes;
+- 2. the master-role node and Hashman;
+- 3. the backfill and purpose fixes, in batches of 10 under the start rule;
+- 4. the approval report;
+- 5. the test-suite design note (F);
+- 6. the rename (E).
 
 ## 2026-11-18 — rhel9 pass, first triage: two harness/fixture fixes
 - (no numbered/Rule/Decision lines; read the entry)
