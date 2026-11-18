@@ -251,7 +251,7 @@ def test_expected_run2_events_parse(gen):
     assert {n for n, r in rows.items() if r.expected_run2_events} == {"packages_base", "node_base", "nginx_frontend_domain",
                                                                       "nginx_frontend", "hashman_web", "linux_policies_user",
                                                                       "node_base_domain_desktop", "mariadb_server",
-                                                                      "node_base_desktop"}
+                                                                      "node_base_desktop", "nginx_frontend_mail"}
     assert rows["node_base"].expected_run2_events == ("Exec[apt_update]", "Exec[dnf-makecache]")
     # HQ batch-7 ruling 1: each resource named exactly (the p8testuser fixture's titles), no glob
     tmp = "/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp"
