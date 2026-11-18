@@ -45,6 +45,11 @@ Check file .codex_state/checks/<class>.yml:
   authoring: {minutes: N, notes: "..."}
   purpose: <the class's purpose in one or two sentences, from its own header and code: what it is FOR, not what it
            declares> (HQ 2026-11-18 ruling C1; >= 40 characters). The reviewer judges whether the checks test it.
+  outcomes:                       # HQ 2026-11-18 ruling 2: the purpose as observable outcomes, the reviewer's table
+    - outcome: <what can be observed when the class does its job (>= 15 characters)>
+      from: <where the baseline says so: manifests/x.pp:12-14, a template, a header comment>
+      checks: [<id of a check that probes it>, ...]        # >= 1 existing check id, or instead:
+      uncovered: {why: <why the lab does not probe it (>= 20 characters)>, lifted_by: <node kind>}
   checks:
     - id: <slug>
       what: <one line>
@@ -281,6 +286,54 @@ def peer_problems(cls: str, peer) -> tuple[list[str], str | None]:
 
 
 PURPOSE_MISSING = "purpose: the class's purpose (one or two sentences, >= 40 characters) is required (HQ 2026-11-18 C1)"
+OUTCOMES_MISSING = "outcomes: the purpose as observable outcomes, each mapped to checks or uncovered, is required (HQ ruling 2)"
+
+
+def outcome_problems(data: dict) -> list[str]:
+    """HQ 2026-11-18 ruling 2: every outcome maps to at least one check of the set, or is declared uncovered."""
+    rows = data.get("outcomes")
+    if not rows:
+        return [OUTCOMES_MISSING]
+    if not isinstance(rows, list):
+        return ["outcomes must be a list"]
+    ids = {c.get("id") for c in data.get("checks") or [] if isinstance(c, dict)}
+    out = []
+    for i, row in enumerate(rows):
+        where = f"outcomes[{i}]"
+        if not isinstance(row, dict) or len(str(row.get("outcome", ""))) < 15 or not str(row.get("from", "")).strip():
+            out.append(f"{where}: takes outcome (>= 15 characters) and from (the baseline reference)")
+            continue
+        has_checks, has_uncovered = "checks" in row, "uncovered" in row
+        if has_checks == has_uncovered:
+            out.append(f"{where}: maps to `checks` (>= 1 check id) or is `uncovered`, exactly one of them")
+        elif has_checks:
+            refs = row["checks"]
+            if not isinstance(refs, list) or not refs:
+                out.append(f"{where}: checks must list at least one check id")
+            else:
+                out += [f"{where}: no check {r!r} in the set" for r in refs if r not in ids]
+        else:
+            u = row["uncovered"]
+            if not isinstance(u, dict) or set(u) != {"why", "lifted_by"} or len(str(u.get("why", ""))) < 20:
+                out.append(f"{where}: uncovered takes why (>= 20 characters) and lifted_by")
+            else:
+                out += lifting_problems(u["lifted_by"], None, f"{where}.uncovered")
+    return out
+
+
+def outcome_results(data: dict, applied: list[dict]) -> list[dict]:
+    """Per outcome: covered by which checks, and whether all of them passed after apply (the approval report's row)."""
+    passed = {r["id"]: r.get("passed") for r in applied}
+    rows = []
+    for row in data.get("outcomes") or []:
+        if not isinstance(row, dict):
+            continue
+        if "checks" in row:
+            rows.append({"outcome": row.get("outcome"), "checks": row["checks"],
+                         "passed": all(passed.get(c) is True for c in row["checks"])})
+        else:
+            rows.append({"outcome": row.get("outcome"), "uncovered": row.get("uncovered")})
+    return rows
 
 
 def validate(cls: str) -> tuple[list[str], dict, bytes]:
@@ -322,6 +375,7 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
         problems.append(f"fixture: defaults but {params} exists (the harness would apply it)")
     if len(str(data.get("purpose") or "").strip()) < 40:
         problems.append(PURPOSE_MISSING)
+    problems += outcome_problems(data)
     peer_ip = None
     if "peer" in data:
         found, peer_ip = peer_problems(cls, data["peer"])
@@ -712,6 +766,7 @@ def cmd_run(cls: str, role: str) -> int:
                 entry["fresh"] = entry["boot_id_at_end"] == entry["boot_id"] and \
                     (role_name != "node" or bool((record.get("apply") or {}).get("node_fresh")))
         record["outcome"] = outcome
+        record["outcomes"] = outcome_results(data, record["applied"])
         record["duration_s"] = round(time.monotonic() - t0, 1)
         stem = write_outputs(cls, record)
         shown = stem.relative_to(REPO) if stem.is_relative_to(REPO) else stem
@@ -1013,8 +1068,9 @@ def behaviour_state(cls: str) -> dict:
     row["authoring_min"] = (data.get("authoring") or {}).get("minutes")
     # HQ 2026-11-18 ruling C1: a set that states no purpose yet, or whose review predates the purpose judgement, is
     # `unjudged` (its earlier PASS stands as history, not as behaviour approval)
-    if problems == [PURPOSE_MISSING]:
-        return {**row, "state": "unjudged", "detail": "the set states no purpose yet"}
+    if problems and set(problems) <= {PURPOSE_MISSING, OUTCOMES_MISSING}:
+        return {**row, "state": "unjudged", "detail": "no purpose yet" if PURPOSE_MISSING in problems
+                else "no outcomes table yet (HQ 2026-11-18 ruling 2)"}
     if problems:
         return {**row, "state": "invalid", "detail": problems[0]}
     if "deferred" in data:

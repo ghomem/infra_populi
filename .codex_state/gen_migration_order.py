@@ -89,7 +89,8 @@ class MigrationCommit:
 @dataclass(frozen=True)
 class TrackerEntry:
     """One migrated_classes.txt line. Marker grammar (HQ checkpoint-1 ruling 3):
-    `[from: <ref>]` or `[from: <ref>; upstream defect fixed: <short>]`."""
+    `[from: <ref>]` or `[from: <ref>; upstream defect fixed: <short>]`, then optionally `; local change: <short>`
+    (a purpose fix under policy B, HQ 2026-11-18, listed in rules/local_changes.md) and `; mock-apply: <short>`."""
 
     name: str
     done: bool
@@ -97,6 +98,7 @@ class TrackerEntry:
     defect_fixed: str
     mock_apply: str = ""
     retired: str = ""  # HQ 2026-11-17 ruling 3: `<class> Retired [reason: <why>]`, the class removed from the module
+    local_change: str = ""  # HQ 2026-11-18 policy B: a purpose fix, its row in rules/local_changes.md
 
 
 def fail(message: str) -> None:
@@ -300,6 +302,7 @@ TRACKER_LINE = re.compile(
     r"(?:(?P<name>[A-Za-z0-9_]+)(?:(?P<done> Done)| Retired \[reason: (?P<retired>[^\]\[]+?)\])?"
     r"|Done (?P<name2>[A-Za-z0-9_]+))"
     r"(?: \[from: (?P<ref>[A-Za-z0-9._-]+)(?:; upstream defect fixed: (?P<defect>[^\]\[;]+?))?"
+    r"(?:; local change: (?P<local>[^\]\[;]+?))?"
     r"(?:; mock-apply: (?P<mock>[^\]\[;]+?))?\])?"
 )
 
@@ -321,6 +324,7 @@ def parse_tracker_line(line: str) -> TrackerEntry | None:
         defect_fixed=(match.group("defect") or "").strip(),
         mock_apply=(match.group("mock") or "").strip(),
         retired=(match.group("retired") or "").strip(),
+        local_change=(match.group("local") or "").strip(),
     )
 
 

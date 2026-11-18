@@ -32,6 +32,10 @@ COVERED = ("--purpose", "covered", "--purpose-evidence", "the checks back up and
 def check_set(*checks, **top):
     data = {"class": CLS, "baseline": "release-0.9.10 (cf477c6)", "fixture": "params",
             "authoring": {"minutes": 5}, "purpose": PURPOSE, "checks": list(checks)}
+    ids = [c["id"] for c in checks if isinstance(c, dict) and "id" in c]
+    if ids:  # HQ 2026-11-18 ruling 2: the default table maps the purpose to every check of the set
+        data["outcomes"] = [{"outcome": "a daily snapshot of the directory exists", "from": "manifests/backup_rsnapshot.pp:5-19",
+                             "checks": ids}]
     data.update(top)
     return data
 
@@ -283,9 +287,12 @@ def test_verdict_fails_when_the_runs_differ_or_derivation_is_wrong(p3):
 @pytest.mark.repo_state
 @pytest.mark.parametrize("cls", ["backup_rsnapshot", "ssh_secure", "nginx_static_domain"])
 def test_the_pilot_check_sets_validate(cls):
+    # HQ 2026-11-18 ruling 2: the pilot sets gain their outcomes table when the backfill re-judges them; until then
+    # the missing table is their only problem
     import subprocess
     proc = subprocess.run(["python3", SCRIPT, "validate", cls], capture_output=True, text=True)
-    assert proc.returncode == 0, proc.stderr
+    problems = [l for l in proc.stderr.splitlines() if l.startswith("INVALID")]
+    assert proc.returncode == 0 or all("outcomes: the purpose as observable outcomes" in l for l in problems), proc.stderr
 
 
 # HQ 2026-11-10: mutating probes — opt-in per check, declared change, after all read-only checks, evidence = effect.
@@ -432,6 +439,8 @@ def test_no_mismatch_run_when_the_check_itself_fails(p3, lab):
 
 # HQ 2026-11-16 item 2: behaviour state (derived) and deferrals.
 DEFERRED = {"class": CLS, "baseline": "release-0.9.10 (cf477c6)", "authoring": {"minutes": 2}, "purpose": PURPOSE,
+            "outcomes": [{"outcome": "the backup reaches the remote host", "from": "manifests/backup_rsnapshot.pp:13-19",
+                          "uncovered": {"why": "the cron pushes to a remote backup host", "lifted_by": "ubuntu2"}}],
             "deferred": {"needs": "second-node", "why": "the cron pushes to a remote backup host that the lab lacks",
                          "lifted_by": "ubuntu2"},
             "derived_from": [REF_CRON]}
@@ -834,7 +843,7 @@ def test_a_set_must_state_the_class_purpose(p3):
     p3.write(data)
     proc = p3.run("validate", CLS)
     assert proc.returncode == 2 and "purpose: the class's purpose" in proc.stderr
-    assert state_of(p3, CLS)[1:3] == ["unjudged", "the set states no purpose yet"]
+    assert state_of(p3, CLS)[1:3] == ["unjudged", "no purpose yet"]
 
 
 def test_the_verdict_needs_a_purpose_judgement_and_a_gap_fails_it(p3):
@@ -913,3 +922,46 @@ def test_node_agent_runs_after_each_listed_anchor(p3, lab):
     record, _ = p3.result()
     assert set(record["node_agent"]) == {"drift-one", "drift-two"}
     assert proc.stdout.count("node agent run:") == 2
+
+
+
+# ------------------------------------------------------------------ outcomes table (HQ 2026-11-18 ruling 2)
+
+def test_every_outcome_maps_to_checks_or_is_uncovered(p3):
+    base = check_set(check("conf", "probe-conf"))
+    for outcomes, message in [
+        (None, "outcomes: the purpose as observable outcomes"),
+        ([{"outcome": "a daily snapshot exists", "from": "x.pp:1"}], "exactly one of them"),
+        ([{"outcome": "a daily snapshot exists", "from": "x.pp:1", "checks": ["nope"]}], "no check 'nope' in the set"),
+        ([{"outcome": "a daily snapshot exists", "from": "x.pp:1", "checks": []}], "at least one check id"),
+        ([{"outcome": "short", "from": "x.pp:1", "checks": ["conf"]}], "outcome (>= 15 characters)"),
+        ([{"outcome": "a daily snapshot exists", "from": "x.pp:1", "uncovered": {"why": "w" * 25, "lifted_by": "nope"}}],
+         "is not a node kind"),
+    ]:
+        data = dict(base)
+        data.pop("outcomes")
+        if outcomes is not None:
+            data["outcomes"] = outcomes
+        p3.write(data)
+        proc = p3.run("validate", CLS)
+        assert proc.returncode == 2 and message in proc.stderr, (message, proc.stderr)
+    data = dict(base)
+    data["outcomes"] = base["outcomes"] + [{"outcome": "the snapshot reaches a remote host", "from": "x.pp:2",
+                                            "uncovered": {"why": "the lab has no remote backup host", "lifted_by": "ubuntu2"}}]
+    p3.write(data)
+    assert p3.run("validate", CLS).returncode == 0
+
+
+def test_a_set_without_outcomes_is_unjudged(p3):
+    data = check_set(check("conf", "probe-conf"))
+    data.pop("outcomes")
+    p3.write(data)
+    assert state_of(p3, CLS)[1:3] == ["unjudged", "no outcomes table yet (HQ 2026-11-18 ruling 2)"]
+
+
+def test_the_run_records_each_outcome_with_its_checks(p3, lab):
+    p3.write(check_set(check("conf", "probe-conf")))
+    p3.probe_rule("probe-conf", FAIL, OK)
+    assert p3.run("run", CLS).returncode == 0
+    record, _ = p3.result()
+    assert record["outcomes"] == [{"outcome": "a daily snapshot of the directory exists", "checks": ["conf"], "passed": True}]

@@ -44,6 +44,14 @@ Steps, all required:
      prints the RULED UPSTREAM-DEFECT CHANGE from `.codex_state/upstream_defects.md` (you may read that
      file). DIFF A may then also contain exactly that change — no more, no less; any other non-translation hunk
      still FAILs. A marker without a ruled registry entry fails `records` mechanically.
+   - If the marker reads `; local change: <short>` (a purpose fix under policy B, HQ 2026-11-18), the check output
+     prints the LOCAL CHANGE row from `.codex_state/rules/local_changes.md` (you may read that file and the result
+     files its row names). DIFF A may then also contain exactly that change: no more, no less. Judge that it is the
+     minimal change for the failing check the row cites; any other non-translation hunk still FAILs. A marker without
+     a row fails `records` mechanically.
+   - A node fixture listed in `.codex_state/rules/test_asset_fixtures.txt` is a test asset (e.g. placeholder site
+     images), not a stand-in (HQ 2026-11-18 ruling 9): the class carries no mock-apply marker; judge with
+     `--fixture-scope` that the fixture only supplies that asset.
    - A tracker marker with `mock-apply: <short>` means the harness applied the plan's synthetic node fixture
      (`.codex_state/tools/tests/fixtures/node/<name>.pp`, paths/users/commands of a service the lab lacks): judge the
      class as usual; the fixture is not part of the class and is not in DIFF A. Behaviour stays unverified.
@@ -93,7 +101,11 @@ read `.codex_state/checks/results/<class>/*-author.*`: the verdict tool compares
    enforces it): judge that its `varies` names a value whose change MUST change the verdict, and that its probe
    changes exactly that value. The runner requires it to fail on the applied node; a mismatch that only breaks the
    command (e.g. a typo) proves nothing and is a derivation failure.
-2b. Judge purpose coverage (HQ 2026-11-18 ruling C1). The set's `purpose:` states what the class is FOR. Check it
+2b. Judge purpose coverage (HQ 2026-11-18 rulings C1 and 2). The set's `purpose:` states what the class is FOR, and
+   its `outcomes:` table lists that purpose as observable outcomes, each with its baseline reference and either the
+   checks that probe it or an `uncovered` reason. Judge against the table: is every outcome of the class (read the
+   WHOLE manifest, its templates and files, and its header comments) in it; does each mapped check really probe its
+   outcome; is each `uncovered` reason true? Check the purpose
    against the class's own header comments and baseline code (`baseline.py show --for <class> manifests/<class>.pp`).
    Then judge: do the checks, taken together, test that purpose (the class doing its job: a service answering, a user
    able to log in, a backup restorable, a rule blocking), or only that files and packages exist? `covered` when every

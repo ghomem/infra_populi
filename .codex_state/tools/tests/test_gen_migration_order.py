@@ -335,3 +335,11 @@ def test_classify_resolves_required_base_for_the_os_family(monkeypatch):
     by_node = json.loads(classify(env={"P8_NODE": "rhel9"}).stdout)  # review_class --node rhel9 exports P8_NODE
     assert by_node["required_base_os_family"] == "RedHat" and "filesystem_lib64" not in by_node["required_base"]
     assert classify("--os-family", "Suse").returncode != 0
+
+
+def test_local_change_marker_grammar(gen):
+    # HQ 2026-11-18 policy B: a purpose fix is marked in the tracker, before any mock-apply
+    e = gen.parse_tracker_line("rsyslog_base Done [from: release-0.9.10; local change: restarts on TLS file changes]")
+    assert e.local_change == "restarts on TLS file changes" and e.defect_fixed == "" and e.mock_apply == ""
+    e = gen.parse_tracker_line("x Done [from: release-0.9.10; upstream defect fixed: d; local change: l; mock-apply: m]")
+    assert (e.defect_fixed, e.local_change, e.mock_apply) == ("d", "l", "m")

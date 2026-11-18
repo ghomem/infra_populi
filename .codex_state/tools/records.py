@@ -16,7 +16,7 @@
                                         boot of the LATEST revert with no agent run in between, else 1.
   records.py header-check <class>       exit 0 if the manifest gained a migration header naming its
                                         module dependencies (or `none`) versus the baseline, else 1.
-  records.py tracker-set <class> [--defect SHORT] [--mock-apply SHORT]
+  records.py tracker-set <class> [--defect SHORT] [--local-change SHORT] [--mock-apply SHORT]
       Rewrites the class's migrated_classes.txt line to `<class> Done [from: <baseline>]` or
       `<class> Done [from: <baseline>; upstream defect fixed: SHORT]` (HQ checkpoint-1 ruling 3).
   records.py code-unchanged <class>     exit 0 if the class's code equals HEAD's (comment-only change).
@@ -243,11 +243,12 @@ def cmd_header_check(cls: str) -> int:
     return 0
 
 
-def tracker_text(text: str, cls: str, base_name: str, defect: str, mock: str = "") -> str:
+def tracker_text(text: str, cls: str, base_name: str, defect: str, mock: str = "", local: str = "") -> str:
     marker = (f"[from: {base_name}" + (f"; upstream defect fixed: {defect}" if defect else "")
-              + (f"; mock-apply: {mock}" if mock else "") + "]")
+              + (f"; local change: {local}" if local else "") + (f"; mock-apply: {mock}" if mock else "") + "]")
     new_line = f"{cls} Done {marker}"
-    if generator.parse_tracker_line(new_line) != generator.TrackerEntry(cls, True, base_name, defect, mock):
+    want = generator.TrackerEntry(cls, True, base_name, defect, mock, local_change=local)
+    if generator.parse_tracker_line(new_line) != want:
         raise SystemExit(f"ERROR: marker does not parse back: {new_line!r}")
     lines, hits = [], 0
     for line in text.splitlines():
@@ -265,18 +266,26 @@ def tracker_text(text: str, cls: str, base_name: str, defect: str, mock: str = "
 def cmd_tracker_set(cls: str, argv: list[str]) -> int:
     defect = argv[argv.index("--defect") + 1].strip() if "--defect" in argv else ""
     mock = argv[argv.index("--mock-apply") + 1].strip() if "--mock-apply" in argv else ""
+    local = argv[argv.index("--local-change") + 1].strip() if "--local-change" in argv else ""
     fixture = generator.parse_plan().get(cls)
-    if bool(mock) != bool(fixture and fixture.node_fixture):
-        raise SystemExit(f"ERROR: --mock-apply is required exactly when the plan gives {cls} a node_fixture "
-                         f"(plan: {fixture.node_fixture if fixture else None!r})")
+    standin = bool(fixture and fixture.node_fixture) and fixture.node_fixture not in review_class.test_asset_fixtures()
+    if bool(mock) != standin:
+        raise SystemExit(f"ERROR: --mock-apply is required exactly when the plan gives {cls} a stand-in node_fixture "
+                         f"(plan: {fixture.node_fixture if fixture else None!r}; test assets: rules/test_asset_fixtures.txt)")
+    if local and review_class.local_change_entry(cls) is None:
+        raise SystemExit(f"ERROR: --local-change needs a row for {cls} in .codex_state/rules/local_changes.md (policy B)")
     current = generator.read_tracker(TRACKER).get(cls)
     if current is not None and current.defect_fixed and current.defect_fixed != defect:
         # 2026-11-17: a --fix without --defect silently dropped linux_policies_user's ruled-defect marker
         raise SystemExit(f"ERROR: the tracker carries `upstream defect fixed: {current.defect_fixed}` for {cls}; repeat "
                          f"--defect \"{current.defect_fixed}\" (a different marker needs a ruled upstream_defects.md change)")
     base_name = baseline.for_class(cls).name
-    TRACKER.write_text(tracker_text(TRACKER.read_text(encoding="utf-8"), cls, base_name, defect, mock))
-    extra = (f"; upstream defect fixed: {defect}" if defect else "") + (f"; mock-apply: {mock}" if mock else "")
+    if current is not None and current.local_change and current.local_change != local:
+        raise SystemExit(f"ERROR: the tracker carries `local change: {current.local_change}` for {cls}; repeat "
+                         f"--local-change \"{current.local_change}\"")
+    TRACKER.write_text(tracker_text(TRACKER.read_text(encoding="utf-8"), cls, base_name, defect, mock, local))
+    extra = (f"; upstream defect fixed: {defect}" if defect else "") + (f"; local change: {local}" if local else "") \
+        + (f"; mock-apply: {mock}" if mock else "")
     print(f"TRACKER {cls} Done [from: {base_name}{extra}]")
     return 0
 

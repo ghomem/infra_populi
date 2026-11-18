@@ -176,6 +176,27 @@ def class_paths(cls: str, base: baseline.Baseline) -> list[str]:
     return sorted(paths)
 
 
+def test_asset_fixtures(path: Path | None = None) -> set[str]:
+    """Node fixtures that are test assets, not stand-ins (HQ 2026-11-18 ruling 9): a GREEN with one is no mock-apply."""
+    path = path or STATE / "rules" / "test_asset_fixtures.txt"
+    if not path.is_file():
+        return set()
+    return {l.split()[0] for l in path.read_text(encoding="utf-8").splitlines() if l.strip() and not l.startswith("#")}
+
+
+def local_change_entry(cls: str, path: Path | None = None) -> str | None:
+    """The class's rows in rules/local_changes.md (policy B purpose fixes), joined; None when it has none."""
+    path = path or STATE / "rules" / "local_changes.md"
+    if not path.is_file():
+        return None
+    rows = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if line.startswith("|") and len(cells) >= 3 and cells[1] == cls:
+            rows.append(f"#{cells[0]}: {cells[2]}")
+    return " | ".join(rows) or None
+
+
 def defect_entry(cls: str, path: Path | None = None) -> dict | None:
     """The class's entry in .codex_state/upstream_defects.md: {'status', 'change'} or None."""
     path = path or STATE / "upstream_defects.md"
@@ -437,12 +458,28 @@ def run_checks(cls: str, harness: bool) -> dict:
         else:
             row = generator.parse_plan().get(cls)
             fixture = row.node_fixture if row else ""
-            if bool(fixture) != bool(entry.mock_apply):
+            if fixture in test_asset_fixtures():  # a test asset (ruling 9): shown to the reviewer, no mock-apply
+                out["node_fixture"] = node_fixture_summary(fixture)
+                fixture_is_asset = True
+            else:
+                fixture_is_asset = False
+            if fixture_is_asset:
+                if entry.mock_apply:
+                    rec.append(f"node fixture {fixture} is a test asset, yet the tracker says mock-apply")
+            elif bool(fixture) != bool(entry.mock_apply):
                 rec.append(f"plan node_fixture {fixture or '(none)'} vs tracker mock-apply "
                            f"{entry.mock_apply or '(none)'}: a node-fixture GREEN must be labelled mock-apply and only then")
             elif fixture:
                 out["mock_apply"] = f"{entry.mock_apply} (node fixture {fixture}: behaviour NOT verified)"
                 out["node_fixture"] = node_fixture_summary(fixture)
+        if entry is not None and entry.done and entry.local_change:
+            out["local_change"] = entry.local_change
+            row_text = local_change_entry(cls)
+            if row_text is None:
+                rec.append(f"marker says `local change: {entry.local_change}` but rules/local_changes.md has no row "
+                           "for the class")
+            else:
+                out["local_change_row"] = row_text
         if entry is not None and entry.done and entry.from_ref == base.name and entry.defect_fixed:
             out["defect_fixed"] = entry.defect_fixed
             ruled = defect_entry(cls)
@@ -653,6 +690,8 @@ def cmd_check(argv: list[str]) -> int:
               + ", ".join(fx["resources"]))
     if data.get("ruled_change"):
         print(f"  RULED UPSTREAM-DEFECT CHANGE (tracker: {data.get('defect_fixed')}): {data['ruled_change']}")
+    if data.get("local_change_row"):
+        print(f"  LOCAL CHANGE, POLICY B (tracker: {data.get('local_change')}): {data['local_change_row']}")
     print("---- DIFF A: final content vs baseline (what the tracker marker claims) ----")
     print(data["diffs"].get("final_vs_baseline", "")[:12000])
     print("---- DIFF B: the migrate commit itself (what the migration changed) ----")

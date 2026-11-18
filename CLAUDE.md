@@ -150,7 +150,12 @@ the target release (Ubuntu 24.04) needs no per-item ruling. The change must be d
 before and passes after, must be minimal, must be listed in `.codex_state/rules/local_changes.md` with its evidence,
 and must be reviewer-verified. Escalate when a fix changes a class interface, removes functionality, or has more than
 one reasonable design. Syntax-only stays the default where no check demands a change. Phase 1 exit is behaviour
-approval of every active class (DESIGN_DECISIONS 2026-11-18 "HQ rulings on round 9", C).
+approval of every active class (DESIGN_DECISIONS 2026-11-18 "HQ rulings on round 9", C). Policy B covers manifest
+changes too (HQ batch-10 ruling 4), recorded with `record_green.sh --local-change "<short>"` and a local_changes.md row.
+Check sets list the purpose as observable outcomes in an `outcomes:` table, each mapped to checks or `uncovered`
+(ruling 2). Times and numbers in sets, records and reports are measured or absent, never estimated (ruling 3).
+Backfill start rule (ruling 1): a corrected and re-reviewed check-set FAIL does not stop the run; a behaviour finding
+or a Phase 1 FAIL does; a set still failing after two correction rounds is escalated and the run continues.
 
 ## Phase 3 checks (ruling 11, 2026-10-27; runner built for HQ batch-3 acceptance B)
 Behaviour checks per class in `.codex_state/checks/<class>.yml` (advisor-authored, advisor-only), run by

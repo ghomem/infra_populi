@@ -1947,3 +1947,47 @@ snapshot list, record.
   drift), the runner makes one agent run on the class's node, as the harness and the session do. The exit code and
   changed resources go under `node_agent`; the checks after it judge the correction. 2 tests.
 - **For HQ acceptance** with the other runner capabilities of this round (peer_agent, refreshed peer files).
+
+## 2026-11-18 — HQ rulings on batch 10 (accepted: 90 done; Hashman verified end to end; 16/16 RedHat branches)
+1. **Start rule for the backfill** (replaces the limit of three):
+   - A check-set FAIL that is corrected and re-reviewed PASS does not stop the run.
+   - A behaviour finding or a Phase 1 FAIL does stop it.
+   - A set that cannot reach PASS after two correction rounds is escalated, and the run continues.
+   - Each batch report gives the first-draft FAIL count. Batch 10's: 5 of 10 sets failed their first review
+     (firewall_secure, rsyslog_base, dns_client, filesystem_apt and filesystem_yum).
+2. **Writing check sets:** first list the class's purpose as observable outcomes, taken from the baseline's code and
+   comments. Every outcome maps to at least one probe, in a table inside the set; an outcome with no probe is
+   declared `uncovered` with its reason. The reviewer judges against that table.
+   - Built: phase3.py `outcomes:`, where each row is `{outcome, from, checks: [ids]}` or `{..., uncovered: {why,
+     lifted_by}}`.
+   - The validator refuses a missing or ill-formed table. A set without one is `unjudged` ("no outcomes table yet").
+   - Each run records every outcome with its checks and whether they all passed, for the approval report.
+   - reviewer.md step 2b judges against the table. 3 tests.
+   - The ten batch-10 sets and the three pilots predate the table; they gain it, and a re-review, in the backfill.
+3. **Numbers:** any time or number in a set, a record or a report is measured or absent, never estimated. Authoring
+   minutes come from `date` at the start and at validation (or from file times, said so), never from memory.
+4. **Policy B also covers purpose fixes in manifests,** under the same conditions.
+   - Built: tracker marker `; local change: <short>`, set by `record_green.sh --local-change` and refused without the
+     class's row in rules/local_changes.md.
+   - The reviewer's check output prints the row (LOCAL CHANGE, POLICY B), and DIFF A may contain exactly that change.
+   - Tests: tracker grammar, the row reader, the marker writer.
+5. **rsyslog_base (#14) approved:** the service subscribes to the three TLS files, and the check shows that a changed
+   file restarts rsyslog once. The same applies to rsyslog_client and rsyslog_server if they share the pattern.
+6. **hashman_web (#8):** the backend binds to 127.0.0.1, with no firewall change. If the baseline's nginx proxies to
+   anything other than the local machine, stop and report instead. Checks: port 8080 refused from the peer, the page
+   works through nginx, and the end-to-end run still passes. Recorded as a local change.
+7. **Accepted:** all the capabilities listed in the batch 10 report.
+8. **Postfix on the master:** answered from the fleet data, as a count of node statements that declare both
+   hashman_web and postfix_smtp_node. If zero, the documentation list says that Hashman needs a mail service
+   nothing declares.
+9. **Logo files:** a placeholder logo is a test asset, not a stand-in, and company logos stay out of the repo. The
+   documentation list notes that a site supplies its own.
+   - Built: rules/test_asset_fixtures.txt. A node fixture listed there needs no mock-apply marker (records.py), and
+     the reviewer judges it as a test asset.
+10. **Lift** the mount_shares_desktop and user_lock stand-ins as queued. The remaining stand-ins go into the approval
+    report for Salatiel's explicit acceptance.
+11. **Ubuntu 26.04:** the cutover targets the newest OpenVox 8 that supports it. The lab upgrades only right before
+    the 26.04 pass, as one recorded toolchain change with a canary. Hashman's `crypt` fix belongs to that pass.
+    Nothing now.
+12. **Order unchanged:** backfill in batches of 10 by production use, then the approval report, then the test-suite
+    design note, then the rename.

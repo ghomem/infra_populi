@@ -367,3 +367,23 @@ def test_the_node_option_exports_the_node(monkeypatch):
     assert rc.node_option("ssh_secure", ["--node", "rhel9"]) == "rhel9" and os.environ["P8_NODE"] == "rhel9"
     assert rc.node_kind("ssh_secure") == "rhel9"  # every node lookup of the review follows it
     assert rc.node_option("ssh_secure", []) is None
+
+
+def test_local_change_rows_and_test_asset_fixtures(tmp_path):
+    # HQ 2026-11-18: policy B purpose fixes are rows of rules/local_changes.md; ruling 9: a test asset is no stand-in
+    lc = tmp_path / "local_changes.md"
+    lc.write_text("| # | class | change (file:line) | check | reviewer | date |\n|---|---|---|---|---|---|\n"
+                  "| 1 | rsyslog_base | subscribe to the TLS files (rsyslog_base.pp:79) | a | b | 2026-11-18 |\n")
+    assert rc.local_change_entry("rsyslog_base", lc) == "#1: subscribe to the TLS files (rsyslog_base.pp:79)"
+    assert rc.local_change_entry("hashman_web", lc) is None
+    assets = tmp_path / "assets.txt"
+    assets.write_text("# comment\nhashman_master_standin  the site's logo placeholders\n")
+    assert rc.test_asset_fixtures(assets) == {"hashman_master_standin"}
+    assert rc.test_asset_fixtures(tmp_path / "missing.txt") == set()
+
+
+def test_tracker_text_writes_a_local_change_marker():
+    import records
+    out = records.tracker_text("rsyslog_base Done [from: release-0.9.10]\n", "rsyslog_base", "release-0.9.10", "",
+                               local="restarts on TLS file changes")
+    assert out == "rsyslog_base Done [from: release-0.9.10; local change: restarts on TLS file changes]\n"

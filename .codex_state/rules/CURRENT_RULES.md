@@ -2,7 +2,21 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-110 entries; 6 marked superseded (in whole or part); newest first.
+111 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-18 — HQ rulings on batch 10 (accepted: 90 done; Hashman verified end to end; 16/16 RedHat branches)
+- 1. **Start rule for the backfill** (replaces the limit of three):
+- 2. **Writing check sets:** first list the class's purpose as observable outcomes, taken from the baseline's code and
+- 3. **Numbers:** any time or number in a set, a record or a report is measured or absent, never estimated. Authoring
+- 4. **Policy B also covers purpose fixes in manifests,** under the same conditions.
+- 5. **rsyslog_base (#14) approved:** the service subscribes to the three TLS files, and the check shows that a changed
+- 6. **hashman_web (#8):** the backend binds to 127.0.0.1, with no firewall change. If the baseline's nginx proxies to
+- 7. **Accepted:** all the capabilities listed in the batch 10 report.
+- 8. **Postfix on the master:** answered from the fleet data, as a count of node statements that declare both
+- 9. **Logo files:** a placeholder logo is a test asset, not a stand-in, and company logos stay out of the repo. The
+- 10. **Lift** the mount_shares_desktop and user_lock stand-ins as queued. The remaining stand-ins go into the approval
+- 11. **Ubuntu 26.04:** the cutover targets the newest OpenVox 8 that supports it. The lab upgrades only right before
+- 12. **Order unchanged:** backfill in batches of 10 by production use, then the approval report, then the test-suite
 
 ## 2026-11-18 — Runner: `node_agent`, an agent run on the class's node after a drift-making check (backfill)
 - (no numbered/Rule/Decision lines; read the entry)
