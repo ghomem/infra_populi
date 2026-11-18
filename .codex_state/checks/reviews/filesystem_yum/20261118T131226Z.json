@@ -1,0 +1,34 @@
+{
+ "class": "filesystem_yum",
+ "at": "20261118T131226Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "fail",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "update-scripts-installed <- manifests/filesystem_yum.pp:18-24: baseline declares ${localdir}/bin/yum-update-dist.sh mode 0755 owner root from puppet:///modules/puppet_infrastructure/yum/yum-update-dist.sh; probe stats /opt/puppet-infrastructure/bin (lab filesystem::localdir) for root/755 and sha256 70fdcab7 - supported (group root is declared but not probed; minor).",
+  "update-scripts-installed <- files/yum/yum-update-dist.sh (whole file, 70fdcab7): the probe's sha256 expectation is exactly this file's hash - supported.",
+  "the-surface-script-brings-the-exposed-packages-up-to-date <- files/yum/yum-update-surface.sh (whole file, bd37299a): lines 4-5/13-19 run '/usr/bin/yum update -y' per package of SURFACE and echo 'error updating package $p' on a non-zero yum rc, line 22 exit 0; action runs the script, effect itself queries rpm and 'dnf -q check-update' of the installed surface packages (clean node: pending rc=100, applied: 0) - supported and discriminating. The 'rc=0' and error-line parts read the action's own output (rc=0 is unconditional per line 22), but the read-only check-update carries the evidence.",
+  "the-full-update-script-leaves-nothing-to-update (read in full, mutating): DERIVATION FAILURE. The effect is only 'cat /run/p8test-yum/dist.txt', a file the ACTION wrote: both 'rc=' and 'pending rc=' (the dnf -q check-update) are computed inside the probe/action, so the evidence is the action's own output, not a read-only observation of its result. On the clean node the effect failed only because dist.txt was absent (stderr 'cat: ... No such file or directory'), so the negative control never looked at the node's update state. Fix: move 'dnf -q check-update >/dev/null 2>&1; echo \"pending rc=$?\"' from the action into the effect (as the surface check does).",
+  "purpose covered: Purpose (yum update helpers for RedHat servers: per-package surface update script and a full update script) matches the baseline header 'helper scripts for yum based system updates' and the two files the class installs (manifests/filesystem_yum.pp:8-24). The checks install both scripts (owner/mode/hash), run the surface script and verify no installed surface package has a pending update afterwards (clean node had pending surface updates: pending rc=100) with error lines only for absent packages (nginx/httpd), and run the full script and verify dnf finds nothing pending. Both parts the rhel9 node can exercise are tested; nothing is uncovered except the cosmetic filtered output format of the surface script (grep Updating/cut, line 14), which the purpose does not claim. The full-script check's mechanism defect is recorded under derivation, not coverage."
+ ],
+ "review_s": 365.0,
+ "check_file_sha256": "e16d798e3a945bf16cf4f826c9149085e58b161f6369a3fcb2d8941543d66bf0",
+ "reviewer_result": "20261118T130621Z-reviewer",
+ "author_result": "20261118T130002Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "rhel9",
+   "snapshot": "P8LAB_RHEL9_BASELINE_v1",
+   "boot_id": "1cf92fd4-e5d5-4314-8796-8aee4ef84331",
+   "boot_id_at_end": "1cf92fd4-e5d5-4314-8796-8aee4ef84331",
+   "fresh": true
+  }
+ }
+}
