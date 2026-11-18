@@ -1,0 +1,41 @@
+{
+ "class": "hashman_web",
+ "at": "20261118T162830Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "admin-adds-the-user-and-assigns-its-role / interface.py.erb:343: mk_info builds the role line from str_base '  puppet_infrastructure::user        { ' + username + myname/myhash/mykey => $::<user>_cname/_pwd_hash/_ssh_key (lines 343-350); the effect reads line 2 of the node file the action wrote from printinfo and expects exactly that string, plus the 7 other db entries useradd writes (interface.py.erb:121-130) and a $!6$ (expired) hash; pp_auth.py.erb:212-213 SILENT sets mailnotif False, so no mail leaves; mutates declares useradd, unlock, the 0600 initial file and the node file, which is everything the action changes; the effect is the database, not the CLI output",
+  "logos-copied-from-hiera-sources / hashman_web.pp:117-123: the else branch copies source => $hashmancompanylogo (and 138-146 for the mail logo) when Hiera sets non-default values; the lab Hiera sets /path/to/logo.png and /path/to/logo-email.png (placeholders from the listed test-asset fixture), and cmp of each source against static/img/logo.png and logo-email.png tests exactly that copy; fails on the clean node, passes after apply",
+  "the-client-accepts-the-new-password-after-its-agent-run / user_base.pp:71: user { $myusername: password => $myhash } sets the account hash from the database variable the role line passes (myhash => $::p8hashuser_pwd_hash); after the peer's agent run as p8test-hashman-client, getent shows the user with comment 'P8test Hash User' (comment => $myname, line 67) and pamtester accepts the new password and refuses the handed-over initial one: the hash the web page wrote is the one the client applied. Probe 'true' plus a read-only PAM effect; mutates honestly says it only authenticates",
+  "whole file read: no invariants; mutating checks declare their changes (sed/daemon-reload/restart of the unit in an-old-unit-binds-every-address is what the baseline template line 7 renders); the browser check's effect is its own transcript, but the transcript holds server-rendered content (title, /next redirect, STR_OK_PWD_CHANGED of httpserver.py.erb:52,147) and the result itself is evidenced separately by the-record-holds-the-new-password (crypt verify against hashes.pp); both mismatch controls vary the path to /static/styles/custom.css, which has no title, so the verdict must change, and both failed on the applied node as required; peer probes name only 192.168.56.26, the class node",
+  "purpose gap: Tested (reviewer run 20261118T162223Z ALL_PASS, agrees with the purpose statement): gunicorn enabled and bound to 127.0.0.1:8080 only (local change #2) and rebound by the next agent run, 8080 refused from the peer, the portal through nginx over TLS, logo copy from Hiera, and Hashman end to end (CLI useradd + role line, browser login and password change through nginx from the peer, new hash in hashes.pp with only the new password verifying, the peer's agent run applying it so PAM accepts the new and refuses the initial password). Mail/help requests are listed uncovered. GAP: the outcomes table omits outcomes of the class's own template httpserver.py.erb that are neither probed nor listed uncovered: /checkpwd (lines 230-239, the password-strength API: curl --data password=... must answer OK or NOK) which the lab CAN exercise from the peer through nginx; /sign and /verify (lines 242-282, data signing with ${hashmandir}/ssl/hashman-key.pem, a key no baseline class provides: it belongs under uncovered with that reason); and the server-side session expiry (lines 196-209, off under the default hashman::active_session_expiration False: should be stated). Also the reqhelp uncovered note names lifted_by ubuntu2, whose nodes.yml capabilities (server, second-node) hold no mail server: the lifting node needs stating as ubuntu2 plus a lab MTA the master relays to."
+ ],
+ "review_s": 367.1,
+ "check_file_sha256": "07c385d164b79a4c9a67eb8cf42387b2a819a9fcd1b42c502dd5b75f3931f705",
+ "reviewer_result": "20261118T162223Z-reviewer",
+ "author_result": "20261118T161404Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "boot_id": "978f422c-27e7-4c85-9be2-de80b9a704a0",
+   "boot_id_at_end": "978f422c-27e7-4c85-9be2-de80b9a704a0",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "19f970b9-575d-4087-8926-4ce41a0304ea",
+   "boot_id_at_end": "19f970b9-575d-4087-8926-4ce41a0304ea",
+   "fresh": true
+  }
+ }
+}
