@@ -1,4 +1,4 @@
-# Puppet 8 migration: release-0.9.8 manifest validated unchanged.
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
 # Module dependencies: none (uses Puppet built-in file resources and lookup()).
 ### Purpose ########
 # This class provides basic filesystem definitions for all non-desktop machines
