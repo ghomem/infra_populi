@@ -14,9 +14,11 @@ purpose: >-
   Gives nginx a domain's TLS key and certificate bundle (through ssl_base, for the nginx service), so nginx can serve
   that domain over TLS with the certificate and its intermediate, and is restarted when either changes.
 node_agent:
-  after: the-key-and-bundle-drift
-  why: the key and bundle notify nginx, which only the next agent run after a change can show
+  after: [the-bundle-alone-drifts, the-key-alone-drifts]
+  why: the key and the bundle each notify nginx, which only the next agent run after a change to each can show
 outcomes:
+  # Correction round 2 (2026-11-18, review 20261118T214106Z): the bundle and the key now drift one at a time, each
+  # followed by an agent run, so each file's notify is shown on its own.
   # Correction round 1 (2026-11-18, review 20261118T213542Z): the TLS check's handshake moved from its action into its
   # effect (the action only adds the server block and reloads nginx); a RedHat row was added.
   - outcome: on Ubuntu the key is deployed to /etc/ssl/private/<prefix>.key, 0600, and it is the key of the deployed certificate
@@ -30,7 +32,7 @@ outcomes:
     checks: [nginx-serves-tls-with-the-pair]
   - outcome: nginx is restarted once when the key or certificate changes
     from: manifests/ssl_nginx_domain.pp:11-12; manifests/ssl_base.pp:84-107
-    checks: [the-key-and-bundle-drift, the-agent-run-restores-both-and-restarts-the-service-once]
+    checks: [the-bundle-alone-drifts, the-agent-run-restores-the-bundle-and-restarts-nginx-once, the-key-alone-drifts, the-agent-run-restores-the-key-and-restarts-nginx-once]
   - outcome: on RedHat (ssl_base's CentOS/RHEL branch) the key goes to /etc/pki/tls/private
     from: manifests/ssl_base.pp:57-62
     uncovered: {why: "the RedHat branch; this set runs on the plan's Ubuntu node", lifted_by: rhel9}
@@ -103,37 +105,65 @@ checks:
       openssl verify -CAfile <(cert 2) <(cert 1) 2>&1 | sed 's/^.*: /chain: /'
     expect: {rc: 0, stdout: "\\Acertificates served: 2\\nserved: p8test\\.invalid\\nchain: OK\\n\\Z"}
 
-  - id: the-key-and-bundle-drift
-    what: setup for the next check, the key and the bundle changed by hand (as a renewal changes them), with nginx's process id and journal cursor noted
+  - id: the-bundle-alone-drifts
+    what: setup for the next check, the certificate bundle alone changed by hand (as a renewal that keeps the key changes it), with nginx's process id and journal cursor noted
     control: negative
     derived_from:
-      - {path: manifests/ssl_base.pp, lines: "85-92", text: "notify => Service[$myservicename],"}
-    mutates: notes nginx's main PID and its journal cursor in /run/p8test-ssl/before, then appends a comment line to /etc/ssl/private/p8test.key and to /etc/ssl/certs/p8test.nginx.bundle.crt on the node
+      - {path: manifests/ssl_base.pp, lines: "100-107", text: "notify         => Service[$myservicename],"}
+    mutates: notes nginx's main PID and its journal cursor in /run/p8test-ssl/before-bundle, then appends a comment line to /etc/ssl/certs/p8test.nginx.bundle.crt on the node
     probe: |
       install -d -m 0700 /run/p8test-ssl
-      printf "pid='%s'\ncursor='%s'\n" "$(systemctl show -p MainPID --value nginx)" "$(journalctl -u nginx -n 0 --show-cursor --no-pager -q | sed -n 's/^-- cursor: //p')" > /run/p8test-ssl/before
-      echo '# p8test drift' >> /etc/ssl/private/p8test.key
+      printf "pid='%s'\ncursor='%s'\n" "$(systemctl show -p MainPID --value nginx)" "$(journalctl -u nginx -n 0 --show-cursor --no-pager -q | sed -n 's/^-- cursor: //p')" > /run/p8test-ssl/before-bundle
       echo '# p8test drift' >> /etc/ssl/certs/p8test.nginx.bundle.crt
     effect: |
-      grep -c '^# p8test drift$' /etc/ssl/private/p8test.key /etc/ssl/certs/p8test.nginx.bundle.crt | cut -d: -f2 | paste -sd' '
-      grep -q "^pid='[1-9]" /run/p8test-ssl/before && echo noted
-    expect: {rc: 0, stdout: "\\A1 1\\nnoted\\n\\Z"}
+      grep -c '^# p8test drift$' /etc/ssl/certs/p8test.nginx.bundle.crt
+      grep -q "^pid='[1-9]" /run/p8test-ssl/before-bundle && echo noted
+    expect: {rc: 0, stdout: "\\A1\\nnoted\\n\\Z"}
 
-  - id: the-agent-run-restores-both-and-restarts-the-service-once
-    what: >-
-      after the node's agent run, neither file holds the drift line, and nginx was restarted exactly once for the two
-      changes (a new main PID; one start in its journal since the change)
+  - id: the-agent-run-restores-the-bundle-and-restarts-nginx-once
+    what: after the node's agent run, the bundle is restored and nginx was restarted exactly once (a new main PID; one start in its journal since the change)
     control: negative
     derived_from:
       - {path: manifests/ssl_base.pp, lines: "10", text: "# The service is restarted if the certificate changes."}
       - {path: manifests/ssl_base.pp, lines: "100-107", text: "notify         => Service[$myservicename],"}
-    mutates: none beyond reading the files, nginx's state and its journal (declared mutating so it runs after the node's agent run)
+    mutates: none beyond reading the bundle, nginx's state and its journal (declared mutating so it runs after the node's agent run)
     probe: |
       true
     effect: |
-      grep -c '^# p8test drift$' /etc/ssl/private/p8test.key /etc/ssl/certs/p8test.nginx.bundle.crt | cut -d: -f2 | paste -sd' '
-      . /run/p8test-ssl/before
+      grep -c '^# p8test drift$' /etc/ssl/certs/p8test.nginx.bundle.crt || true
+      . /run/p8test-ssl/before-bundle
       now=$(systemctl show -p MainPID --value nginx)
       [ -n "$now" ] && [ "$now" != 0 ] && [ "$now" != "$pid" ] && echo restarted
       journalctl -u nginx --after-cursor "$cursor" --no-pager -q | grep -c 'Started nginx.service'
-    expect: {rc: 0, stdout: "\\A0 0\\nrestarted\\n1\\n\\Z"}
+    expect: {rc: 0, stdout: "\\A0\\nrestarted\\n1\\n\\Z"}
+
+  - id: the-key-alone-drifts
+    what: setup for the next check, the key alone changed by hand, with nginx's process id and journal cursor noted
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "85-92", text: "notify => Service[$myservicename],"}
+    mutates: notes nginx's main PID and its journal cursor in /run/p8test-ssl/before-key, then appends a comment line to /etc/ssl/private/p8test.key on the node
+    probe: |
+      install -d -m 0700 /run/p8test-ssl
+      printf "pid='%s'\ncursor='%s'\n" "$(systemctl show -p MainPID --value nginx)" "$(journalctl -u nginx -n 0 --show-cursor --no-pager -q | sed -n 's/^-- cursor: //p')" > /run/p8test-ssl/before-key
+      echo '# p8test drift' >> /etc/ssl/private/p8test.key
+    effect: |
+      grep -c '^# p8test drift$' /etc/ssl/private/p8test.key
+      grep -q "^pid='[1-9]" /run/p8test-ssl/before-key && echo noted
+    expect: {rc: 0, stdout: "\\A1\\nnoted\\n\\Z"}
+
+  - id: the-agent-run-restores-the-key-and-restarts-nginx-once
+    what: after the node's agent run, the key is restored and nginx was restarted exactly once (a new main PID; one start in its journal since the change)
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "84-92", text: "# Key file: always created, always notifies service"}
+    mutates: none beyond reading the key, nginx's state and its journal (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      grep -c '^# p8test drift$' /etc/ssl/private/p8test.key || true
+      . /run/p8test-ssl/before-key
+      now=$(systemctl show -p MainPID --value nginx)
+      [ -n "$now" ] && [ "$now" != 0 ] && [ "$now" != "$pid" ] && echo restarted
+      journalctl -u nginx --after-cursor "$cursor" --no-pager -q | grep -c 'Started nginx.service'
+    expect: {rc: 0, stdout: "\\A0\\nrestarted\\n1\\n\\Z"}
