@@ -8,25 +8,35 @@ baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
   minutes: 2
-  notes: "About 10:28Z to 10:31Z 2026-11-18 (scratch file times, overlapping rsyslog_client's), outside the worktree while firewall_secure's review ran."
+  notes: "About 10:28Z to 10:31Z 2026-11-18 (scratch file times, overlapping rsyslog_client's), outside the worktree while firewall_secure's review ran.; the outcomes table (HQ ruling 2) and the TLS-file restart check (ruling 5) 15:17:52Z to 15:18:14Z 2026-11-18 (date)"
 purpose: >-
   The shared rsyslog setup of log servers and clients: rsyslog with its GnuTLS driver installed and running, and the
   node's Puppet CA, certificate and key copied where rsyslog (which drops to the syslog user) can read them for TLS; rsyslog
-  is kept running and is restarted when the TLS directory resource changes.
-uncovered:
-  - what: >-
-      a change to the TLS files' content (a renewed certificate): the service subscribes to the directory resource only
-      (line 79), so a renewed certificate does not restart rsyslog, against the comment on line 73 (escalated: purpose
-      triage item 14)
-    why: >-
-      showing whether rsyslog then still uses the old certificate needs a certificate re-issued by the lab master's CA;
-      a check may not change the master
-    lifted_by: puppetserver
-  - what: the RedHat branch (a syslog user and group with uid/gid 0)
-    why: these checks run on the Ubuntu node, where the syslog account exists already
-    lifted_by: rhel9
+  is kept running and is restarted when its TLS material changes.
+outcomes:
+  - outcome: rsyslog and its GnuTLS driver are installed, and rsyslog runs and starts at boot
+    from: manifests/rsyslog_base.pp:10-12, 75-80
+    checks: [rsyslog-and-its-tls-driver-are-installed-and-running]
+  - outcome: the node's Puppet CA, certificate and key are copied for rsyslog, byte for byte, and form a valid identity
+    from: manifests/rsyslog_base.pp:32-35, 49-71
+    checks: [the-tls-files-are-the-nodes-puppet-identity]
+  - outcome: the user rsyslog drops to (syslog) can read the key, and other users cannot
+    from: manifests/rsyslog_base.pp:41-47, 65-71
+    checks: [rsyslog-can-read-the-key-as-the-user-it-runs-as]
+  - outcome: a stopped rsyslog runs again after the next agent run
+    from: manifests/rsyslog_base.pp:75-80 (ensure => running)
+    checks: [rsyslog-is-stopped, the-next-agent-run-starts-rsyslog-again]
+  - outcome: a change to the TLS directory restarts rsyslog at the next agent run
+    from: manifests/rsyslog_base.pp:73-80 (subscribe)
+    checks: [the-tls-directory-drifts, the-agent-run-restores-the-directory-and-restarts-rsyslog]
+  - outcome: a change to a TLS file (a renewed certificate) restarts rsyslog once at the next agent run
+    from: manifests/rsyslog_base.pp:73 (comment "reload it whenever the TLS files change"); HQ batch-10 ruling 5
+    checks: [a-tls-file-changes, the-agent-run-restores-the-file-and-restarts-rsyslog-once]
+  - outcome: on RedHat, a syslog user and group (uid/gid 0) exist for the copied files' ownership
+    from: manifests/rsyslog_base.pp:14-28
+    uncovered: {why: "these checks run on the Ubuntu node, where the syslog account exists already", lifted_by: rhel9}
 node_agent:
-  after: [rsyslog-is-stopped, the-tls-directory-drifts]
+  after: [rsyslog-is-stopped, the-tls-directory-drifts, a-tls-file-changes]
   why: >-
     the class keeps rsyslog running and restarts it when the TLS directory resource changes, which only its next agent
     run after each change can show
@@ -148,4 +158,40 @@ checks:
       [ -n "$now" ] && [ "$now" != 0 ] && [ "$now" != "$(cat /run/p8test-rsyslog/pid)" ] && echo restarted
       systemctl is-active rsyslog
     expect: {rc: 0, stdout: "\\A755\\nrestarted\\nactive\\n\\Z"}
+
+  # 2026-11-18 (HQ batch-10 ruling 5, policy B): the renewal case, formerly uncovered, is a check now. It fails on the
+  # baseline (the service subscribes to the directory only) and passes after the local change (rules/local_changes.md).
+  - id: a-tls-file-changes
+    what: setup for the next check, the copied CA file changed by hand (as a renewal changes it), with rsyslog's process id and the time noted
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_base.pp, lines: "49-55", text: "file { '/etc/rsyslog.d/tls/ca.pem':"}
+    mutates: notes rsyslog's main PID and the time in /run/p8test-rsyslog/before, then appends a comment line to /etc/rsyslog.d/tls/ca.pem on the node
+    probe: |
+      install -d -m 0700 /run/p8test-rsyslog
+      printf 'pid=%s\nsince=%s\n' "$(systemctl show -p MainPID --value rsyslog)" "$(date '+%Y-%m-%d %H:%M:%S')" > /run/p8test-rsyslog/before
+      echo '# p8test drift' >> /etc/rsyslog.d/tls/ca.pem
+    effect: |
+      grep -c '^# p8test drift$' /etc/rsyslog.d/tls/ca.pem
+      test -s /run/p8test-rsyslog/before && echo noted
+    expect: {rc: 0, stdout: "\\A1\\nnoted\\n\\Z"}
+
+  - id: the-agent-run-restores-the-file-and-restarts-rsyslog-once
+    what: >-
+      after the node's agent run, the CA file is the Puppet CA again and rsyslog was restarted exactly once since the
+      change (a new main PID; one start in its journal)
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_base.pp, lines: "49-55", text: "source  => \"${ssldir}/certs/ca.pem\","}
+      - {path: manifests/rsyslog_base.pp, lines: "73", text: "# Keep rsyslog running and reload it whenever the TLS files change."}
+    mutates: none beyond reading the file, rsyslog's state and its journal (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      cmp -s /etc/puppetlabs/puppet/ssl/certs/ca.pem /etc/rsyslog.d/tls/ca.pem && echo ca-restored
+      . /run/p8test-rsyslog/before
+      now=$(systemctl show -p MainPID --value rsyslog)
+      [ -n "$now" ] && [ "$now" != 0 ] && [ "$now" != "$pid" ] && echo restarted
+      journalctl -u rsyslog --since "$since" --no-pager -q | grep -c 'Started rsyslog.service'
+    expect: {rc: 0, stdout: "\\Aca-restored\\nrestarted\\n1\\n\\Z"}
 
