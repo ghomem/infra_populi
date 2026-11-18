@@ -1,0 +1,99 @@
+{
+ "schema": 1,
+ "class": "packages_base",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-18T03:19:12Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "2fc7219e9d06",
+ "migrate_subject": "P8: migrate puppet_infrastructure::packages_base",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 2fc7219e9d06; 648 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `packages_base Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-apt', '11.3.2')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 8 catalog events; run 2: 1 event(s) only from expected_run2_events Exec[apt_update] Exec[dnf-makecache] [own: Exec[apt_update], Exec[dnf-makecache]; inherited: none] (judge the header justification); COVERAGE puppet_infrastructure::packages_base: 13 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (3 added comment lines 1-3); body below the header is byte-identical to baseline cf477c6 manifests/packages_base.pp (diff of baseline.py show vs tail +4 of HEAD: identical)",
+   "DIFF B (2fc7219) adds only the 2-line header plus the Exec[apt_update] run-2 line; the later record commit e58996f extends that comment line to Exec[dnf-makecache]; comments only, no code change",
+   "run-2 justification verified against the code: on os.family RedHat the baseline class declares exec { 'dnf-makecache': command => 'dnf makecache', refreshonly => false } with no unless/onlyif/creates, so it runs on every agent run by upstream design (comment 'this line is needed to make sure apt-get update or dnf-makecache runs on each puppet run'); the single run-2 event on rhel9 is that exec, not caused by the migration"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 3,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependency: puppetlabs-apt 11.3.2.",
+  "# Expected run-2 events: Exec[apt_update]; Exec[dnf-makecache]. Exec[apt_update] \u2014 upstream's `class { 'apt': update => { frequency => 'always' } }` (this file, comment above it) makes the apt module run apt update on every agent run (its update.pp turns 'always' into refreshonly => false). Exec[dnf-makecache] \u2014 on RedHat, packages_base's `exec { 'dnf-makecache': refreshonly => false }` (\"this line is needed to make sure apt-get update or dnf-makecache runs on each puppet run\") runs on every agent run by upstream design."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 8,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::packages_base: 13 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "node": "rhel9",
+   "snapshot": "P8LAB_RHEL9_BASELINE_v1",
+   "total_s": 74.849,
+   "master_check_s": 0.641,
+   "poweroff_s": 1.089,
+   "restore_s": 0.508,
+   "boot_to_ssh_s": 23.5,
+   "apt_update_s": 48.391,
+   "verify_s": 0.72,
+   "nic1_rx_bytes": 135919901
+  },
+  "log": ".codex_state/logs/reviews/packages_base.20261118T031455Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": "RUN2_EXPECTED_EVENTS: 1 from Exec[apt_update] Exec[dnf-makecache] [own: Exec[apt_update], Exec[dnf-makecache]; inherited: none] (plan"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "rhel9"
+}
