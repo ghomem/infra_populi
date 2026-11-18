@@ -1,4 +1,4 @@
-# Puppet 8 migration: release-0.9.8 manifest validated unchanged.
+# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
 # Module dependencies: none (uses Puppet built-in package/file resources and lookup()).
 class puppet_infrastructure::hello_world_flask_common {
 
