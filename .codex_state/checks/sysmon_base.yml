@@ -18,6 +18,8 @@ peer:
   kind: ubuntu2
   why: the bandwidth check's CRITICAL state needs traffic on the node's NIC during its sample, which only another machine can send
 outcomes:
+  # Correction round 2 (2026-11-18, review 20261118T210122Z): the Elasticsearch check is exercised on the node (it
+  # queries localhost:9200, so a stand-in there drives it), and the RHEL package-count branch has its own row.
   # Correction round 1 (2026-11-18, review 20261118T204912Z): every alarm path is now exercised (the Puppet check's
   # CRITICAL, the stale package list, CPU CRITICAL under load, bandwidth WARNING and CRITICAL), measured by hand on the
   # applied node first.
@@ -54,9 +56,12 @@ outcomes:
   - outcome: the TLS certificate check reports a certificate's expiry in short words, WARNING inside the warning window
     from: manifests/sysmon_base.pp:121-128; files/sysmon/check_http_ssl_cert.sh
     checks: [the-certificate-check-reports-expiry-in-short-words]
-  - outcome: the Elasticsearch query check counts log events matching a query
+  - outcome: the Elasticsearch query check asks localhost:9200 for matching sshd events, OK when there are none, Critical listing each event's time, user and host, and Unknown with the error when Elasticsearch cannot be asked
     from: manifests/sysmon_base.pp:130-136; files/sysmon/elastic_query_check.py
-    uncovered: {why: "needs an Elasticsearch server holding the node's logs; no lab node runs one and no class installs one", lifted_by: ubuntu2}
+    checks: [the-elastic-check-is-unknown-without-elasticsearch, the-elastic-check-is-ok-with-no-events, the-elastic-check-is-critical-with-events]
+  - outcome: on RedHat the package-count check counts the security updates of a severity (dnf or yum updateinfo, Important by default)
+    from: files/sysmon/check_package_count.sh:36-46
+    uncovered: {why: "the RedHat branch of the script; the set runs on the plan's Ubuntu node", lifted_by: rhel9}
   - outcome: on RedHat the same checks are installed (the computed package name nagios-plugins-disk is not used by any resource)
     from: manifests/sysmon_base.pp:4-15
     uncovered: {why: "the set runs on the plan's Ubuntu node; sysmon_base's RedHat run is the Phase 1 per-node verdict on rhel9", lifted_by: rhel9}
@@ -149,6 +154,15 @@ checks:
       $P/check_mem.pl -f -w 5 -c 2 | cut -d' ' -f1; echo "rc=${PIPESTATUS[0]}"
       $P/check_mem.pl -u -w 1 -c 2 | cut -d' ' -f1; echo "rc=${PIPESTATUS[0]}"
     expect: {rc: 0, stdout: "\\AOK: Total=N%\\nrc=0\\nOK\\nrc=0\\nCRITICAL\\nrc=2\\n\\Z"}
+
+  - id: the-elastic-check-is-unknown-without-elasticsearch
+    what: with nothing listening on localhost:9200, the Elasticsearch check prints Unknown and the error, and exits 3
+    control: negative
+    derived_from:
+      - {path: files/sysmon/elastic_query_check.py, sha256: "901a03a3b60e6f3b7c433cf94ef056b4de2247b58d0b4b483a874d3c0927a168"}
+    probe: |
+      /opt/puppet-infrastructure/bin/elastic_query_check.py -f sshd -q 'sshd' | head -2 | sed 's/Connection refused.*/Connection refused/'; echo "rc=${PIPESTATUS[0]}"
+    expect: {rc: 0, stdout: "\\AUnknown\\n<urlopen error \\[Errno 111\\] Connection refused\\nrc=3\\n\\Z"}
 
   - id: the-os-check-reports-the-release
     what: the OS check says OK with the distribution and release
@@ -317,3 +331,50 @@ checks:
     effect: |
       /opt/puppet-infrastructure/bin/check_bandwidth.sh enp0s8 1 0 0 1000 | cut -d' ' -f8; echo "rc=${PIPESTATUS[0]}"
     expect: {rc: 0, stdout: "\\ACRITICAL!\\nrc=2\\n\\Z"}
+
+  - id: the-elastic-check-is-ok-with-no-events
+    what: with a stand-in on localhost:9200 answering a search with no hits (an Elasticsearch 6 style integer total, which the script reads), the check prints OK and exits 0
+    control: negative
+    derived_from:
+      - {path: files/sysmon/elastic_query_check.py, sha256: "901a03a3b60e6f3b7c433cf94ef056b4de2247b58d0b4b483a874d3c0927a168"}
+    mutates: >-
+      writes a stand-in search server (/run/p8test-sysmon/es.py, answering every POST with /run/p8test-sysmon/es.json)
+      and starts it on 127.0.0.1:9200 as transient unit p8test-es, with an answer of no hits
+    probe: |
+      install -d -m 0700 /run/p8test-sysmon; cd /run/p8test-sysmon
+      cat > es.py <<'PY'
+      import http.server
+      class H(http.server.BaseHTTPRequestHandler):
+          def do_POST(self):
+              self.rfile.read(int(self.headers.get('Content-Length', 0)))
+              body = open('/run/p8test-sysmon/es.json', 'rb').read()
+              self.send_response(200); self.send_header('Content-Type', 'application/json'); self.end_headers(); self.wfile.write(body)
+          def log_message(self, *a):
+              pass
+      http.server.HTTPServer(('127.0.0.1', 9200), H).serve_forever()
+      PY
+      echo '{"hits": {"total": 0, "hits": []}}' > es.json
+      systemd-run --unit p8test-es -q python3 /run/p8test-sysmon/es.py
+      sleep 1
+    effect: |
+      /opt/puppet-infrastructure/bin/elastic_query_check.py -f sshd -q 'sshd'; echo "rc=$?"
+    expect: {rc: 0, stdout: "\\AOK\\nrc=0\\n\\Z"}
+
+  - id: the-elastic-check-is-critical-with-events
+    what: >-
+      with the stand-in answering two sshd events, the check prints Critical, then one line per event (time - user -
+      host) in time order, and exits 2
+    control: negative
+    derived_from:
+      - {path: files/sysmon/elastic_query_check.py, sha256: "901a03a3b60e6f3b7c433cf94ef056b4de2247b58d0b4b483a874d3c0927a168"}
+    mutates: rewrites the stand-in's answer (/run/p8test-sysmon/es.json) to two hits, given out of time order
+    probe: |
+      cat > /run/p8test-sysmon/es.json <<'JS'
+      {"hits": {"total": 2, "hits": [
+        {"_source": {"syslog_hostname": "p8test-host-b", "syslog_timestamp": "Nov 18 10:05:00", "syslog_message": "Failed password for invalid user p8testuser from 10.255.255.2"}},
+        {"_source": {"syslog_hostname": "p8test-host-a", "syslog_timestamp": "Nov 18 10:01:00", "syslog_message": "Failed password for invalid user p8testsudo from 10.255.255.1"}}
+      ]}}
+      JS
+    effect: |
+      /opt/puppet-infrastructure/bin/elastic_query_check.py -f sshd -q 'sshd'; echo "rc=$?"
+    expect: {rc: 0, stdout: "\\ACritical\\nNov 18 10:01:00 - p8testsudo - p8test-host-a\\nNov 18 10:05:00 - p8testuser - p8test-host-b\\nrc=2\\n\\Z"}
