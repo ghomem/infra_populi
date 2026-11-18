@@ -76,14 +76,17 @@ checks:
         runuser -u nobody -- openssl pkey -in /etc/rsyslog.d/tls/$c.key -noout 2>/dev/null && echo key-readable-by-syslog
     expect: {rc: 0, stdout: "\\A\\$PrivDropToUser syslog\\nsyslog\\nkey-readable-by-syslog\\n\\Z"}
 
+  # 2026-11-18 authoring correction (run 1, 20261118T112712Z): `systemctl stop rsyslog` alone left syslog.socket
+  # listening, and the next log line re-activated rsyslog at once (effect: active; the agent run had nothing to do).
+  # The drift now stops the socket too, so only the class's `ensure => running` can bring rsyslog back.
   - id: rsyslog-is-stopped
     what: setup for the next check, rsyslog stopped by hand (drift)
     control: negative
     derived_from:
       - {path: manifests/rsyslog_base.pp, lines: "75-80", text: "ensure    => running,"}
-    mutates: stops the rsyslog service on the node (systemctl stop rsyslog)
+    mutates: stops syslog.socket and the rsyslog service on the node
     probe: |
-      systemctl stop rsyslog
+      systemctl stop syslog.socket rsyslog
     effect: |
       systemctl is-active rsyslog
     expect: {rc: 3, stdout: "\\Ainactive\\n\\Z"}
