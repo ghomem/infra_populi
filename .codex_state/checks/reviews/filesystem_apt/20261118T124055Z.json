@@ -1,0 +1,33 @@
+{
+ "class": "filesystem_apt",
+ "at": "20261118T124055Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-full-update-script-leaves-nothing-to-upgrade / files/apt/apt-update-dist.sh (whole file): the baseline script is exactly 'apt-get -y --force-confdef --force-confold dist-upgrade' under DEBIAN_FRONTEND=noninteractive; running it and expecting rc=0 and an 'apt-get -s dist-upgrade' summary of 0 upgraded/0 not upgraded tests what that dist-upgrade must produce; the mutates text declares the run and its result file, and the effect reads the simulated summary, not the script's own output",
+  "the-full-update-script-leaves-nothing-to-upgrade / manifests/filesystem_apt.pp:93-100: the lines install apt-update-dist.sh root:root 0755 from puppet:///modules/puppet_infrastructure/apt/apt-update-dist.sh in ${localdir}/bin (= /opt/puppet-infrastructure/bin); the probe runs that installed path, which exists only after apply (negative control failed on the clean node as it should)",
+  "the-wrapper-upgrades-an-installed-package-with-an-update / files/apt/apt-update-pkg.sh (whole file): the wrapper runs apt-get install only when dpkg -s finds the package and aptitude ~U lists it as upgradable, then prints 'package $PKGNAME updated to version $VERSION'; downgrading an installed package to an older archive version and expecting it back at the candidate plus that exact message is what the script declares; the declared mutation (downgrade + wrapper run) matches the action, and the effect is the before/after dpkg versions, so the expect is matched on the result, not only on the wrapper's message",
+  "purpose covered: Purpose matches the baseline header ('helper scripts for apt based system updates') and code for the defaults on 24.04: wrapper refusal of a missing package (cowsay, rc 1, nothing installed) and upgrade of an outdated installed one; surface script (generated server list + run upgrading a downgraded surface package through the wrapper); kernel script (run, metapackage at candidate - weak where no newer kernel exists, but the script's own --only-upgrade install of the metapackage is all it declares); dist script (run, nothing left to upgrade); daily job (crontab entry 0 0 * * * ... High, and a real run fetching Canonical OVAL, oscap eval, list written one package per line); apt-update-relevant.sh installing a package on the list through the wrapper; openscap-scanner, file modes and static script hashes. The list's content against the High threshold is checked only for format, not for which USNs qualify (that is get-relevant-updates-list's internal judgement against live OVAL data). Uncovered lists honestly the desktop variant (server_mode false: desktop surface list + compatibility link, lifted by gnome) and the other parameter/Hiera variants (method 0, no_kernel true, custom surface list, prio/hour/minute keys); the 20.04/22.04 libopenscap8 branch is stated as out of the target release in the purpose."
+ ],
+ "review_s": 510.6,
+ "check_file_sha256": "d0038bad1ebcfc8e87512f1730c9299526ea36f87bb5565ec376372bc345a05f",
+ "reviewer_result": "20261118T123225Z-reviewer",
+ "author_result": "20261118T122322Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "8e019e7b-a0ea-4c73-b5da-a8d6406d7394",
+   "boot_id_at_end": "8e019e7b-a0ea-4c73-b5da-a8d6406d7394",
+   "fresh": true
+  }
+ }
+}
