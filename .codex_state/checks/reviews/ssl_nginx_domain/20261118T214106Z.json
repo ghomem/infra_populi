@@ -1,0 +1,33 @@
+{
+ "class": "ssl_nginx_domain",
+ "at": "20261118T214106Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-key-is-private-and-matches-the-certificate: ssl_base.pp:77-78 (with 85-92) put the non-LE key at /etc/ssl/private/<prefix>.key, mode 0600, owner/group root by default; with sslprefix p8test the probe stats /etc/ssl/private/p8test.key for root:root 600 and compares its public key with the bundle's first certificate (from <prefix>.crt, line 80). Mismatch varies the certificate compared (the issuer's), which must change the verdict, and it failed after apply",
+  "the-bundle-is-the-leaf-then-its-issuer: ssl_base.pp:109-119 concat fragments order 01 <prefix>.crt then 02 <prefix>.intermediate.crt into the bundle at line 79 (/etc/ssl/certs/p8test.nginx.bundle.crt, since ssl_nginx_domain passes myservice nginx); concat at 100-107 sets 0644 root:root. The probe checks 644 root:root, two certificates, CN p8test.invalid then the throwaway CA (the fixture's intermediate stand-in), and that the first verifies against the second. Mismatch swaps only the trust anchor to the system CA bundle, which did not sign the leaf, and it failed after apply",
+  "nginx-serves-tls-with-the-pair: ssl_base.pp:79-81 name the bundle (leaf then intermediate) and ssl_nginx_domain.pp:9-14 deliver it for the nginx service; the action (declared in mutates: one conf.d server block on 127.0.0.1:8443 naming the deployed bundle and key, plus reload) only lets nginx load the pair, and the read-only effect performs the handshake and checks nginx sends 2 certificates, leaf CN p8test.invalid, chain verifying against the second, i.e. the action's result, not its output",
+  "purpose gap: Tested on Ubuntu: key at /etc/ssl/private/p8test.key root:root 0600 matching the certificate; bundle leaf-then-intermediate root:root 0644 verifying; nginx actually serving TLS with the pair and sending the intermediate; drift reverted by the agent run with exactly one nginx restart. Honestly uncovered: RedHat private dir (rhel9, active in nodes.yml) and the Let's Encrypt fixture variant (with the nginx_frontend_mail partial coverage stated truly). Gap: the outcome 'nginx is restarted once when the key or certificate changes' and its cited ssl_base.pp:10 ('The service is restarted if the certificate changes') are probed only by drifting the key AND the bundle together, so a missing notify on either file (e.g. the concat's notify at 100-107) would still pass with one restart from the other; a certificate-only change (a renewal that keeps the key) is exercisable on this lab and is untested. Drifting the bundle alone (and/or the key alone) before an agent run would close it"
+ ],
+ "review_s": 127.2,
+ "check_file_sha256": "42f2f98420a42a2f0778a9cd08c7fda11be8ebd55d03d2428bd431016f2c7d09",
+ "reviewer_result": "20261118T213859Z-reviewer",
+ "author_result": "20261118T213659Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "9e6cf810-2db7-4544-9d14-daf6ab0ed2ef",
+   "boot_id_at_end": "9e6cf810-2db7-4544-9d14-daf6ab0ed2ef",
+   "fresh": true
+  }
+ }
+}
