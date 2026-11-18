@@ -1,17 +1,31 @@
-# Phase 3 checks for puppet_infrastructure::hashman_web (class; required_base hashman_base, nginx_base; MOCK-APPLY:
-# node_fixture hashman_master_standin supplies the master's code-tree directory and placeholder files at the lab
-# Hiera's example logo paths /path/to/logo.png and /path/to/logo-email.png).
+# Phase 3 checks for puppet_infrastructure::hashman_web (class; node puppetserver, the master-role node p8lab-puppetserver,
+# a Puppet server whose code tree holds hashman's database; required_base hashman_base (with postfix_smtp_node, the
+# local MTA hashman mails through) and nginx_base; node_fixture hashman_master_standin: placeholder files at the lab
+# Hiera's example logo paths /path/to/logo.png and /path/to/logo-email.png, the site's own images).
 # Fixture: class defaults (letsencrypt_certificate false) and the lab Hiera (hashman::customname 'Hashman',
 # hashman::company 'My Company', hashman::address = puppet::address puppet.example.com, hashman::sslprefix
 # star.example.com, served by the master's fixture PKI).
-# What a node can show: the gunicorn service, the Flask app answering, nginx proxying the domain to it over TLS, the
-# logos copied from their Hiera sources. NOT shown: logins against a real user database on a master (mock-apply).
+# 2026-11-18 (HQ ruling C2): Hashman end to end. The administrator adds the fixture user p8hashuser with hashman's CLI
+# (SILENT: no mail to the user) and copies the role line hashman prints into a node definition of the master-role
+# server, as production copies it into the node definitions. The user changes the initial password in a headless
+# Chromium on the peer (ubuntu2), through nginx. Hashman writes the new record. The peer's agent run against the
+# master-role server, as p8test-hashman-client, applies the user, and PAM on the peer then accepts the new password
+# and refuses the initial one. The initial password goes from the node to the peer as a handed-over file. Node probes
+# name no lab host; peer probes name only the class node's host-only address.
 class: hashman_web
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
 authoring:
-  minutes: 9.6
-  notes: "Wall clock 20:29:43Z to 20:39:21Z 2026-11-16 (includes fixing the review tool's binary-file crash in between), outside the worktree."
+  minutes: 29.6
+  notes: "Wall clock 20:29:43Z to 20:39:21Z 2026-11-16 (the first four checks, outside the worktree); extended 08:41Z to 09:01Z 2026-11-18 for HQ ruling C2 (the end-to-end flow explored by hand on the master-role node and the peer, then the four mutating checks)."
+peer:
+  kind: ubuntu2
+  why: the user changes the password in a browser on another machine, and that machine must then accept it
+  files: [/run/p8test-hashman/initial]
+peer_agent:
+  after: the-record-holds-the-new-password
+  certname: p8test-hashman-client
+  why: the new password reaches another machine only through that machine's agent run against the master-role server
 checks:
   - id: hashman-service-on-8080
     what: the hashman unit (gunicorn) is enabled and running, listening on 0.0.0.0:8080
@@ -59,3 +73,118 @@ checks:
       d=/opt/puppet-infrastructure/hashman/httpserver/static/img
       cmp /path/to/logo.png "$d/logo.png" && cmp /path/to/logo-email.png "$d/logo-email.png" && echo copied
     expect: {rc: 0, stdout: "\\Acopied\\n\\Z"}
+
+  - id: admin-adds-the-user-and-assigns-its-role
+    what: >-
+      hashman's CLI adds p8hashuser (database entries written, the password expired and, after unlock, unlocked), and
+      the role line it prints, copied into the client's node definition, declares the user from the database variables
+    control: negative
+    derived_from:
+      - {path: templates/hashman/pp_auth.py.erb, lines: "202-215", text: "if ( confirm_mail == \"SILENT\" ):"}
+      - {path: templates/hashman/pp_auth.py.erb, lines: "189-199", text: "rc = unlockpw( username )"}
+      - {path: templates/hashman/libhashman/interface.py.erb, lines: "90", text: "def useradd( username, password, email, name, company"}
+      - {path: templates/hashman/libhashman/interface.py.erb, lines: "343", text: "puppet_infrastructure::user        {"}
+      - {path: manifests/hashman_base.pp, lines: "18", text: "$dbdir      = lookup('hashman::dbdir')"}
+    mutates: >-
+      on the node: `pp_auth.py useradd p8hashuser p8hashuser@example.invalid "P8test Hash User" p8test SILENT` (the
+      initial password it logs goes to /run/p8test-hashman/initial, mode 0600), `pp_auth.py unlock p8hashuser`, and the
+      role line `pp_auth.py printinfo` prints is written as node 'p8test-hashman-client' into the server's
+      manifests/nodes/p8test-hashman-client.pp
+    probe: |
+      set -e
+      cd /opt/puppet-infrastructure/hashman/common
+      install -d -m 0700 /run/p8test-hashman
+      out=$(./pp_auth.py useradd p8hashuser p8hashuser@example.invalid "P8test Hash User" p8test SILENT 2>&1)
+      printf '%s' "$out" | sed -n 's/.*created with initial password //p' | head -1 | tr -d '\n' > /run/p8test-hashman/initial
+      chmod 0600 /run/p8test-hashman/initial
+      ./pp_auth.py unlock p8hashuser "p8test end to end" > /dev/null 2>&1
+      line=$(./pp_auth.py printinfo p8hashuser 2>/dev/null | grep -E '^  puppet_infrastructure::user +[{]')
+      install -d -m 0755 /etc/puppetlabs/code/environments/production/manifests/nodes
+      printf "node 'p8test-hashman-client' {\n%s\n}\n" "$line" > /etc/puppetlabs/code/environments/production/manifests/nodes/p8test-hashman-client.pp
+    effect: |
+      db=/etc/puppetlabs/code/environments/production/manifests/01_hashman
+      grep -c -E "^[$]p8hashuser_pwd_hash = '[$]!6[$]" $db/hashes.pp
+      grep -c -E "^[$]p8hashuser_(cname|email|company|ssh_key|ppsigs|ppwrapped|pwd_hash_smb) = " $db/*.pp | awk -F: '{s+=$2} END {print s}'
+      test -s /run/p8test-hashman/initial && echo initial-kept
+      sed -n 2p /etc/puppetlabs/code/environments/production/manifests/nodes/p8test-hashman-client.pp
+    expect: {rc: 0, stdout: "\\A1\\n7\\ninitial-kept\\n  puppet_infrastructure::user        \\{ 'p8hashuser': myname => \\$::p8hashuser_cname, myhash => \\$::p8hashuser_pwd_hash, mykey  => \\$::p8hashuser_ssh_key,  \\}\\n\\Z"}
+
+  - id: the-user-changes-the-password-in-a-browser
+    what: >-
+      from the peer, a headless Chromium logs p8hashuser in through nginx with the initial password (typed, as the
+      page's validation expects) and changes it on the page; hashman answers with its success message
+    control: negative
+    host: peer
+    derived_from:
+      - {path: templates/hashman/httpserver/httpserver.py.erb, lines: "161-182", text: "rc = subprocess.call([ PP_AUTH_CMD , 'extauth', username , password, extra_msg ])"}
+      - {path: templates/hashman/httpserver/httpserver.py.erb, lines: "129-159", text: "PP_AUTH_CMD, 'setpw', username , oldpassword, newpassword"}
+      - {path: templates/hashman/httpserver/httpserver.py.erb, lines: "52", text: "STR_OK_PWD_CHANGED = 'you can now close this window and proceed to your application.'"}
+      - {path: manifests/hashman_web.pp, lines: "186-188", text: "backend_hosts_and_ports    => ['127.0.0.1:8080', ],"}
+    mutates: >-
+      on the peer: runs /opt/p8test-browser (baseline v2) against https://puppet.example.com/ resolved to the class
+      node's host-only address; logs in, sets the new password p8T#qv7!Kw2 on hashman's page; writes the page
+      transcript to /run/p8test-hashman/browser.txt
+    probe: |
+      install -d -m 0700 /run/p8test-hashman
+      /opt/p8test-browser/bin/python - > /run/p8test-hashman/browser.txt 2>&1 <<'EOF'
+      from playwright.sync_api import sync_playwright
+      initial = open("/run/p8test-from-node/initial").read()
+      with sync_playwright() as p:
+          b = p.chromium.launch(args=["--host-resolver-rules=MAP puppet.example.com 192.168.56.26"])
+          pg = b.new_page(ignore_https_errors=True)
+          pg.goto("https://puppet.example.com/", timeout=30000)
+          print("TITLE", pg.title())
+          pg.locator("input[name=username]").press_sequentially("p8hashuser")
+          pg.locator("input[name=password]").press_sequentially(initial)
+          pg.click("#login"); pg.wait_for_load_state()
+          print("AFTER_LOGIN", pg.url.split("/", 3)[-1])
+          pg.locator("#oldpassword").press_sequentially(initial)
+          pg.locator("#newpassword").press_sequentially("p8T#qv7!Kw2")
+          pg.locator("#newpassword2").press_sequentially("p8T#qv7!Kw2")
+          pg.click("#passbutton"); pg.wait_for_load_state()
+          print("RESULT", pg.inner_text("body").strip().splitlines()[0])
+          b.close()
+      EOF
+    effect: |
+      cat /run/p8test-hashman/browser.txt
+    expect: {rc: 0, stdout: "\\ATITLE Hashman @ My Company\\nAFTER_LOGIN next\\nRESULT Success: you can now close this window and proceed to your application\\.\\n\\Z"}
+
+  - id: the-record-holds-the-new-password
+    what: >-
+      hashman's database now holds p8hashuser's new password, unexpired and unlocked: the new password verifies against
+      the record and the initial one no longer does
+    control: negative
+    derived_from:
+      - {path: templates/hashman/libhashman/dbutils.py.erb, lines: "589", text: "ourentry = crypt.crypt( password , '$' + SALTTYPE + '$' + saltstr + '$')"}
+      - {path: templates/hashman/libhashman/config.py.erb, lines: "38", text: "SUFFIX_USER      = '_pwd_hash'"}
+    mutates: none beyond reading the database (declared mutating so it runs after the browser session)
+    probe: |
+      true
+    effect: |
+      grep -h "^[$]p8hashuser_pwd_hash = " /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp | python3 -W ignore -c '
+      import crypt, re, sys
+      h = re.search(r"= .(.*).\s*$", sys.stdin.read()).group(1)
+      print("record", h[:3])
+      print("new password verifies", crypt.crypt("p8T#qv7!Kw2", h) == h)
+      print("initial password verifies", crypt.crypt(open("/run/p8test-hashman/initial").read(), h) == h)'
+    expect: {rc: 0, stdout: "\\Arecord \\$6\\$\\nnew password verifies True\\ninitial password verifies False\\n\\Z"}
+
+  - id: the-client-accepts-the-new-password-after-its-agent-run
+    what: >-
+      after its agent run against the master-role server, the peer has the user p8hashuser, and PAM accepts the new
+      password and refuses the initial one
+    control: negative
+    host: peer
+    derived_from:
+      - {path: manifests/user_base.pp, lines: "71", text: "password       => $myhash,"}
+      - {path: templates/hashman/libhashman/interface.py.erb, lines: "343", text: "puppet_infrastructure::user        {"}
+    mutates: none beyond authenticating p8hashuser with PAM (declared mutating so it runs after the peer's agent run)
+    probe: |
+      true
+    effect: |
+      getent passwd p8hashuser | cut -d: -f1,5
+      printf '%s\n' 'p8T#qv7!Kw2' | pamtester login p8hashuser authenticate 2>&1 | sed -n 's/.*pamtester: //p'
+      test -s /run/p8test-from-node/initial && echo initial-handed-over
+      { cat /run/p8test-from-node/initial; echo; } | pamtester login p8hashuser authenticate 2>&1 | sed -n 's/.*pamtester: //p'
+    expect: {rc: 0, stdout: "\\Ap8hashuser:P8test Hash User\\nsuccessfully authenticated\\ninitial-handed-over\\nAuthentication failure\\n\\Z"}
+
