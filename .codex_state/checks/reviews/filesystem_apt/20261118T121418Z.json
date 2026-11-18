@@ -1,0 +1,33 @@
+{
+ "class": "filesystem_apt",
+ "at": "20261118T121418Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "surface-list-and-daily-job @ manifests/filesystem_apt.pp:163-176: with no Hiera prio/hour/min keys the lookups default to High/'0'/'0', and cron 'apt_check_updates' (user root, monthday '*') renders as '0 0 * * * <localdir>/bin/apt-check-updates.sh High' in root's crontab - exactly the probe's expected line",
+  "helper-scripts-installed @ files/apt/apt-update-dist.sh (whole file, sha256 c240c6764a5d...): manifest lines 94-100 deploy it via source => to <localdir>/bin/apt-update-dist.sh root:root 0755; the probe's stat (root 755) and sha256sum (third hash = c240c676...) test exactly that byte-for-byte copy",
+  "helper-scripts-installed @ files/apt/get-relevant-updates-list (whole file, sha256 077fa70554dd...): manifest lines 131-137 (method 2, the default) deploy it via source => root:root 0755; the probe's stat line and fourth hash (077fa705...) test that copy",
+  "purpose gap: Tested: the wrapper apt-update-pkg.sh refusing an uninstalled package (cowsay) and upgrading a downgraded installed package to the candidate; the surface script's UPDATE_CMD/SURFACE (server default list); kernel/dist scripts installed byte for byte; openscap-scanner installed; the daily cron line and an actual run of apt-check-updates.sh High fetching the OVAL data and writing /var/lib/apt-check-updates/list. Gap: the class's final resource, <localdir>/bin/apt-update-relevant.sh (baseline manifest lines 183-191, template apt/apt-update-relevant.sh.erb: 'script to install relevant security updates, using the list created by apt-check-updates.sh'), is in no check, not in the stated purpose and not listed under uncovered. It is the consumer that turns the daily list into installed updates and the lab default node can exercise it (installed root 0755, UPDATE_CMD=<localdir>/bin/apt-update-pkg.sh and SURFACE read from /var/lib/apt-check-updates/list, or a run against a list naming a downgraded package). The purpose therefore misreads the class (lists relevant updates 'for monitoring' only) and a lab-exercisable part is untested. Uncovered notes for server_mode false (gnome) and other parameter variants are honest."
+ ],
+ "review_s": 201.7,
+ "check_file_sha256": "a0a99a4393f428ff324aa2dbe173f56f142c099e88a909d61f62968e3b6f5197",
+ "reviewer_result": "20261118T121057Z-reviewer",
+ "author_result": "20261118T120741Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "4662537d-a852-425c-8212-f59af52196ce",
+   "boot_id_at_end": "4662537d-a852-425c-8212-f59af52196ce",
+   "fresh": true
+  }
+ }
+}
