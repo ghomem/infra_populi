@@ -1,14 +1,14 @@
 # Puppet Class Migration Order
 
-Generated: 2026-11-18 07:02:08 UTC
+Generated: 2026-11-18 07:05:41 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
 Precedence: git > migrated_classes.txt (canonical) > migration_order.md (advisory). The `[from: release-0.9.10]` annotation lives in migrated_classes.txt, not here.
 
-Status summary: 89 done / 1 owner_validated / 1 blocked / 0 gated / 0 needs verification / 0 pending / 1 retired / 92 total.
+Status summary: 89 done / 1 owner_validated / 0 blocked / 0 gated / 0 needs verification / 1 pending / 1 retired / 92 total.
 
-Next class: all migrated
+Next class: `puppet_infrastructure::nginx_frontend_mail`
 
 Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — dependencies first, then `prod` (production MACHINES: servers + 20 per desktop regex statement, from `.codex_state/diagnosis/fleet_class_usage.md`, composites propagated) descending, then cx/dep/p8 — then re-migrations marked `sink`. prod 0 = no production declaration: they stay in the queue, last (HQ 2026-10-27: migrate everything).
 
@@ -122,7 +122,7 @@ Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — de
 
 | # | class | reason |
 |---:|---|---|
-| 1 | `puppet_infrastructure::nginx_frontend_mail` | — blocked: CATEGORY 1 (module compatibility in its required_base nginx_base, second issue; 2026-11-17, after HQ batch-8 ruling 1). With `stream => true` (its per-target nginx_base fixture), puppet-nginx 8.4.0 renders `access_log /var/log/nginx/stream-access.log;` in the stream block with no format (nginx.conf.erb:419-421; init.pp:260-261 defaults, unchanged in the latest release); nginx: `[emerg] log format is not specified in /etc/nginx/nginx.conf:55`, Service[nginx] restart failed on the revert-first harness run 1 (21:46Z). Production's puppet-nginx 0.15 rendered no stream access_log. Needs an HQ ruling on nginx_base (escalations/nginx_base.md, second section; recommended: stream_access_log => 'off' in nginx_base's default configs). |
+| - | - | - |
 
 ## TRANSITIVELY GATED
 
@@ -132,7 +132,7 @@ Order (step 4.3): HQ re-migrations marked `first`, then the pending queue — de
 
 | # | class | prod | cx | dep | p8 | sc | internal_deps |
 |---:|---|---:|---:|---:|---:|---|---|
-| - | - | - | - | - | - | - | - |
+| 1 | `puppet_infrastructure::nginx_frontend_mail` | 0 | 8 | 7 | 6 | no | ssl_nginx_domain,nginx_frontend_domain |
 
 ## UPSTREAM DEFECTS FIXED LOCALLY (tracker markers; list: .codex_state/upstream_defects.md)
 

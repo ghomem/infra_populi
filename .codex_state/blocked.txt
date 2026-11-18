@@ -2,4 +2,3 @@
 # Format: <class_short_name> — <reason>
 # The first whitespace-delimited token on each non-comment, non-empty line is the class short-name.
 
-nginx_frontend_mail — blocked: CATEGORY 1 (module compatibility in its required_base nginx_base, second issue; 2026-11-17, after HQ batch-8 ruling 1). With `stream => true` (its per-target nginx_base fixture), puppet-nginx 8.4.0 renders `access_log /var/log/nginx/stream-access.log;` in the stream block with no format (nginx.conf.erb:419-421; init.pp:260-261 defaults, unchanged in the latest release); nginx: `[emerg] log format is not specified in /etc/nginx/nginx.conf:55`, Service[nginx] restart failed on the revert-first harness run 1 (21:46Z). Production's puppet-nginx 0.15 rendered no stream access_log. Needs an HQ ruling on nginx_base (escalations/nginx_base.md, second section; recommended: stream_access_log => 'off' in nginx_base's default configs).
