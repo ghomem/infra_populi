@@ -17,7 +17,9 @@ node_agent:
   after: the-key-and-bundle-drift
   why: the key and bundle notify nginx, which only the next agent run after a change can show
 outcomes:
-  - outcome: the key is deployed to /etc/ssl/private/<prefix>.key, 0600, and it is the key of the deployed certificate
+  # Correction round 1 (2026-11-18, review 20261118T213542Z): the TLS check's handshake moved from its action into its
+  # effect (the action only adds the server block and reloads nginx); a RedHat row was added.
+  - outcome: on Ubuntu the key is deployed to /etc/ssl/private/<prefix>.key, 0600, and it is the key of the deployed certificate
     from: manifests/ssl_nginx_domain.pp:9-14; manifests/ssl_base.pp:77-92
     checks: [the-key-is-private-and-matches-the-certificate]
   - outcome: the bundle /etc/ssl/certs/<prefix>.nginx.bundle.crt is the certificate then its intermediate
@@ -29,6 +31,9 @@ outcomes:
   - outcome: nginx is restarted once when the key or certificate changes
     from: manifests/ssl_nginx_domain.pp:11-12; manifests/ssl_base.pp:84-107
     checks: [the-key-and-bundle-drift, the-agent-run-restores-both-and-restarts-the-service-once]
+  - outcome: on RedHat (ssl_base's CentOS/RHEL branch) the key goes to /etc/pki/tls/private
+    from: manifests/ssl_base.pp:57-62
+    uncovered: {why: "the RedHat branch; this set runs on the plan's Ubuntu node", lifted_by: rhel9}
   - outcome: a Let's Encrypt certificate (letsencrypt_certificate true, passed to ssl_base)
     from: manifests/ssl_nginx_domain.pp:5, 13
     uncovered: {why: "a fixture variant (one set holds one fixture). Covered elsewhere in part: nginx_frontend_mail's set (fixture letsencrypt_certificate true, which reaches this define) checks that 465 and 993 serve the first certificate of p8test.nginx.bundle.pem, loaded with p8test-key.pem. Checked by no set: the -chain.pem second certificate, the files' modes and owners, and the restart on change", lifted_by: ubuntu}
@@ -86,20 +91,16 @@ checks:
     derived_from:
       - {path: manifests/ssl_nginx_domain.pp, lines: "9-14", text: "myservicename           => 'nginx',"}
       - {path: manifests/ssl_base.pp, lines: "79-81", text: "$bundle_file              = \"${ssl_certs_dir}/${myprefix}.${myservice}.bundle.crt\""}
-    mutates: adds /etc/nginx/conf.d/p8test-tls.conf (a TLS server on 127.0.0.1:8443 with the bundle and key) and reloads nginx; the handshake's results go to /run/p8test-ssl/serve.txt
+    mutates: adds /etc/nginx/conf.d/p8test-tls.conf (a TLS server on 127.0.0.1:8443 with the bundle and key) and reloads nginx
     probe: |
-      install -d -m 0700 /run/p8test-ssl
       printf 'server {\n  listen 127.0.0.1:8443 ssl;\n  server_name p8test.invalid;\n  ssl_certificate /etc/ssl/certs/p8test.nginx.bundle.crt;\n  ssl_certificate_key /etc/ssl/private/p8test.key;\n  return 204;\n}\n' > /etc/nginx/conf.d/p8test-tls.conf
       nginx -t -q && systemctl reload nginx && sleep 1
+    effect: |
       chain=$(openssl s_client -connect 127.0.0.1:8443 -servername p8test.invalid -showcerts </dev/null 2>/dev/null)
       cert() { echo "$chain" | awk -v n="$1" '/BEGIN CERT/{i++} i==n && /BEGIN CERT/,/END CERT/'; }
-      {
-        echo "certificates served: $(echo "$chain" | grep -c 'BEGIN CERTIFICATE')"
-        cert 1 | openssl x509 -noout -subject -nameopt multiline | sed -n 's/^ *commonName *= /served: /p'
-        openssl verify -CAfile <(cert 2) <(cert 1) 2>&1 | sed 's/^.*: /chain: /'
-      } > /run/p8test-ssl/serve.txt
-    effect: |
-      cat /run/p8test-ssl/serve.txt
+      echo "certificates served: $(echo "$chain" | grep -c 'BEGIN CERTIFICATE')"
+      cert 1 | openssl x509 -noout -subject -nameopt multiline | sed -n 's/^ *commonName *= /served: /p'
+      openssl verify -CAfile <(cert 2) <(cert 1) 2>&1 | sed 's/^.*: /chain: /'
     expect: {rc: 0, stdout: "\\Acertificates served: 2\\nserved: p8test\\.invalid\\nchain: OK\\n\\Z"}
 
   - id: the-key-and-bundle-drift
