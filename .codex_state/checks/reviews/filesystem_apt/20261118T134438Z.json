@@ -1,0 +1,33 @@
+{
+ "class": "filesystem_apt",
+ "at": "20261118T134438Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "surface-list-and-daily-job: manifests/filesystem_apt.pp:163-176 declare cron apt_check_updates for root with command ${localdir}/bin/apt-check-updates.sh ${prio_threshold}, monthday '*', hour/minute from lookups defaulting to High/'0'/'0'; under the defaults fixture (no Hiera keys) the crontab line '0 0 * * * /opt/puppet-infrastructure/bin/apt-check-updates.sh High' is exactly what Puppet's cron renders, and the UPDATE_CMD/SURFACE lines match apt-update-surface.sh.erb filled with localdir and the joined server list (lines 33-41)",
+  "helper-scripts-installed: manifests/filesystem_apt.pp:178-191 declare /var/lib/apt-check-updates as a 0755 directory (no owner) and apt-update-relevant.sh root:root 0755 from the template; the probe reads exactly the dir mode and the script's owner/mode (root 755)",
+  "helper-scripts-installed: files/apt/apt-update-dist.sh whole file sha256 c240c676... at the pin; the manifest (lines 94-100) sources it verbatim to /opt/puppet-infrastructure/bin/apt-update-dist.sh, and the probe's third sha256 line expects exactly that digest",
+  "purpose covered: Purpose (header 'helper scripts for apt based system updates', code: wrapper, surface/kernel/dist scripts, openscap-based daily relevant-updates list, apt-update-relevant.sh) is read correctly for the 24.04 server defaults. Every script is exercised on the node: the wrapper refuses a missing package (cowsay) and upgrades a downgraded installed one; the surface script upgrades a downgraded surface package through the wrapper; the kernel script leaves the metapackage at the candidate; the dist script leaves 0 upgradable; the daily job is run as the cron runs it (High) against Canonical OVAL with openscap and writes a well-formed list; apt-update-relevant.sh upgrades a listed downgraded package. Mutating actions declare what they change (downgrade, upgrade, list write, files under /run/p8test-apt) and each effect reads the node's dpkg/apt state itself. Left out honestly: the desktop variant (server_mode false: desktop list + compatibility link, lifted by gnome, which nodes.yml has with desktop/gnome capabilities) and the other parameter variants (method 0, no_kernel true, custom list, Hiera threshold/hour/minute), fixture variants on ubuntu; the cron's actual midnight firing is checked as the crontab entry, not waited for."
+ ],
+ "review_s": 568.6,
+ "check_file_sha256": "9faa70dcd9bffce12f384da46be73a4218a837628d0d7e54ffe176a0a63e8d32",
+ "reviewer_result": "20261118T133510Z-reviewer",
+ "author_result": "20261118T132622Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "5e1b5520-9977-412d-b9a8-cb13652b5228",
+   "boot_id_at_end": "5e1b5520-9977-412d-b9a8-cb13652b5228",
+   "fresh": true
+  }
+ }
+}
