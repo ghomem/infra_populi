@@ -1,0 +1,79 @@
+# Phase 3 checks for puppet_infrastructure::openvpn_domain (class; node ubuntu; MOCK-APPLY: node fixture
+# p8test_domain_dns puts the lab DC's DNS first in the node's resolv.conf). The class installs Samba/winbind/Kerberos,
+# writes smb.conf (security = domain), krb5.conf, nsswitch.conf, pam_winbind.conf and /etc/pam.d/openvpn, and joins the
+# node to the domain with join-domain.sh (net join) unless the join user already resolves. Fixture (params, never
+# committed): join_user p8testuser / fake password, domain_hostname p8lab-dc, NetBIOS P8TEST, tld example, separator +,
+# groups [p8testgroup]. The peer is p8lab-dc, the lab's Samba AD DC (realm P8TEST.EXAMPLE): reverted with the node so
+# the join starts from a domain without this machine, and asked whether it now holds the node's machine account.
+# Probes read the node's own Samba/winbind state and files; the DC is reached only by the tools the class configures.
+class: openvpn_domain
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.4
+  notes: "Wall clock 00:37:45Z to 00:38:10Z 2026-11-18 (draft to valid, outside the worktree while the Phase 1 review ran; the baseline manifest, templates and the manual join on 2026-11-18 read before)."
+peer:
+  kind: dc
+  why: the class joins the node to an Active Directory domain, so a domain controller must serve that domain
+checks:
+  - id: smb-conf-joins-as-a-domain-member
+    what: >-
+      smb.conf makes the node a member of P8TEST (security = domain, realm, WINS server name) under its own NetBIOS
+      name, the node's host name (empty on Puppet 8 without the structured-fact fix)
+    control: negative
+    derived_from:
+      - {path: templates/openvpn/smb.conf.erb, lines: "4-8", text: "netbios name = <%= @hostname %>"}
+      - {path: templates/openvpn/smb.conf.erb, lines: "8", text: "wins server = <%= @domain_hostname %>.<%= @domain_netbios_name %>.<%= @domain_tld %>"}
+    probe: |
+      grep -E '^(security|netbios name|realm|wins server|workgroup|winbind separator) = ' /etc/samba/smb.conf
+    expect: {rc: 0, stdout: "\\Asecurity = domain\\nnetbios name = puppet8node\\nrealm = P8TEST\\.example\\nwins server = p8lab-dc\\.P8TEST\\.example\\nworkgroup = P8TEST\\nwinbind separator = \\+\\n\\Z"}
+
+  - id: the-node-is-joined-to-the-domain
+    what: the machine account works (net rpc testjoin succeeds for the workgroup)
+    control: negative
+    derived_from:
+      - {path: manifests/openvpn_domain.pp, lines: "86-88", text: "exec { 'join domain':"}
+      - {path: templates/openvpn/join-domain.sh.erb, sha256: "44727c6b39ee6abf83293f3015f0f7ba04d0b7aabafec684b26eeab389954eea"}
+    probe: |
+      net rpc testjoin 2>&1 | tail -1
+    mismatch:
+      varies: the workgroup (P8NOPE, a domain that does not exist), so the join test must fail
+      probe: |
+        net rpc testjoin -w P8NOPE 2>&1 | tail -1
+    expect: {rc: 0, stdout: "Join to 'P8TEST' is OK"}
+
+  - id: domain-users-and-groups-resolve-through-winbind
+    what: through nsswitch and winbind the join user resolves as a domain user in the required group
+    control: negative
+    derived_from:
+      - {path: manifests/openvpn_domain.pp, lines: "88", text: "unless  => \"id ${join_user}@${domain_netbios_name}.${domain_tld}\","}
+      - {path: files/openvpn/nsswitch.conf, sha256: "300e2c53d0076734999257ceb0cb7ca9c20f0912b21c512e5360bdbd2b98dbcb"}
+    probe: |
+      id -nG p8testuser@P8TEST.example | tr ' ' '\n' | grep -x -e 'domain users' -e p8testgroup | sort
+    mismatch:
+      varies: the user (p8nouser, no such domain account), so winbind must not resolve it
+      probe: |
+        id -nG p8nouser@P8TEST.example | tr ' ' '\n' | grep -x -e 'domain users' -e p8testgroup | sort
+    expect: {rc: 0, stdout: "\\Adomain users\\np8testgroup\\n\\Z"}
+
+  - id: pam-winbind-requires-the-group-and-openvpn-pam-installed
+    what: pam_winbind requires membership of P8TEST+p8testgroup; /etc/pam.d/openvpn is the module's file byte for byte
+    control: negative
+    derived_from:
+      - {path: manifests/openvpn_domain.pp, lines: "14-15", text: "$prefixed_groups        = $groups.map | $group | { \"${domain_netbios_name}${winbind_separator}${group}\" }"}
+      - {path: templates/openvpn/pam_winbind.conf.erb, lines: "30", text: "require_membership_of = <%= @comma_separated_groups %>"}
+      - {path: files/openvpn/openvpn_pam, sha256: "e664b2eb0c148c0c6765e30f2ff4e09ee24d111406efb86dfa60ffe1e47e2b51"}
+    probe: |
+      grep -x 'require_membership_of = P8TEST+p8testgroup' /etc/security/pam_winbind.conf
+      sha256sum /etc/pam.d/openvpn | cut -d' ' -f1
+    expect: {rc: 0, stdout: "\\Arequire_membership_of = P8TEST\\+p8testgroup\\ne664b2eb0c148c0c6765e30f2ff4e09ee24d111406efb86dfa60ffe1e47e2b51\\n\\Z"}
+
+  - id: the-dc-holds-the-node-machine-account
+    what: the domain controller now lists the node's machine account (the join happened on the DC's side too)
+    control: negative
+    host: peer
+    derived_from:
+      - {path: templates/openvpn/join-domain.sh.erb, sha256: "44727c6b39ee6abf83293f3015f0f7ba04d0b7aabafec684b26eeab389954eea"}
+    probe: |
+      samba-tool computer list | grep -c -x 'PUPPET8NODE\$'
+    expect: {rc: 0, stdout: "\\A1\\n\\Z"}
