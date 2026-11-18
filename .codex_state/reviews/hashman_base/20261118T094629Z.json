@@ -1,0 +1,97 @@
+{
+ "schema": 1,
+ "class": "hashman_base",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-18T09:46:29Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "7b31e25f50c1",
+ "migrate_subject": "P8: migrate puppet_infrastructure::hashman_base",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 7b31e25f50c1; 446 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `hashman_base Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 42 catalog events; COVERAGE puppet_infrastructure::hashman_base: 32 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added comment lines at top: 'release-0.9.10 manifest validated unchanged' + 'Module dependencies: none'); 0 non-comment changes vs release-0.9.10 (cf477c6)",
+   "DIFF B: migrate commit 7b31e25f50c1 adds only the same 2 header lines; provenance ok (started from baseline content)"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependencies: none (core file/package resources only)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 42,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::hashman_base: 32 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "node": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "total_s": 19.794,
+   "master_check_s": 0.27,
+   "poweroff_s": 0.59,
+   "restore_s": 0.232,
+   "boot_to_ssh_s": 13.279,
+   "apt_update_s": 5.074,
+   "verify_s": 0.349,
+   "nic1_rx_bytes": 10771114
+  },
+  "log": ".codex_state/logs/reviews/hashman_base.20261118T094500Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "puppetserver"
+}
