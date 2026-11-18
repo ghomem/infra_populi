@@ -44,6 +44,8 @@ checks:
       docker ps --filter name='^docker_container$' --format '{{.Names}} {{.Image}}'
     expect: {rc: 0, stdout: "\\Anginx:alpine\\nactive\\ndocker_container nginx:alpine\\n\\Z"}
 
+  # 2026-11-18 authoring correction (run 1, 20261118T221532Z): nginx's welcome page names nginx in its title and its
+  # heading, so the count was 2; the heading alone is counted now (here and in the restart check).
   - id: the-app-answers-on-loopback-only
     what: port 18080 is published on 127.0.0.1 only, and the container's nginx answers there
     control: negative
@@ -52,13 +54,13 @@ checks:
     probe: |
       docker port docker_container 80/tcp
       ss -ltnH 'sport = :18080' | awk '{print $4}' | sort -u
-      curl -s --max-time 5 http://127.0.0.1:18080/ | grep -c 'Welcome to nginx'
+      curl -s --max-time 5 http://127.0.0.1:18080/ | grep -c '<h1>Welcome to nginx'
     mismatch:
       varies: the address asked (the node's host-only address instead of 127.0.0.1), where nothing may listen
       probe: |
         docker port docker_container 80/tcp
         ss -ltnH 'sport = :18080' | awk '{print $4}' | sort -u
-        curl -s --max-time 5 "http://$(ip -4 -o addr show enp0s8 | awk '{print $4}' | cut -d/ -f1):18080/" | grep -c 'Welcome to nginx'
+        curl -s --max-time 5 "http://$(ip -4 -o addr show enp0s8 | awk '{print $4}' | cut -d/ -f1):18080/" | grep -c '<h1>Welcome to nginx'
     expect: {rc: 0, stdout: "\\A127\\.0\\.0\\.1:18080\\n127\\.0\\.0\\.1:18080\\n1\\n\\Z"}
 
   - id: the-container-is-killed
@@ -91,5 +93,5 @@ checks:
         [ "${now%% *}" = true ] && [ "${now#* }" != "$before" ] && break; sleep 2
       done
       [ "${now%% *}" = true ] && [ "${now#* }" != "$before" ] && echo started-again
-      curl -s --max-time 5 http://127.0.0.1:18080/ | grep -c 'Welcome to nginx'
+      curl -s --max-time 5 http://127.0.0.1:18080/ | grep -c '<h1>Welcome to nginx'
     expect: {rc: 0, stdout: "\\Astarted-again\\n1\\n\\Z"}
