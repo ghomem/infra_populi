@@ -1,0 +1,41 @@
+{
+ "class": "sysmon_base",
+ "at": "20261118T210122Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-checks-are-installed @ manifests/sysmon_base.pp:22-29: the lines declare ${localdir}/bin/nagios-puppet.sh root:root 0755 from the module; the probe's first stat line expects exactly root:root 755 for it. Content is rightly not hashed (local change #4 edits that file)",
+  "the-bandwidth-check-is-critical-above-its-threshold @ files/sysmon/check_bandwidth.sh (whole file): with warn=crit=0 the OK branch (< 0) never holds and the WARNING branch needs RX or TX bits equal to 0, so CRITICAL! exit 2 follows when both directions carry traffic, which the peer's 10 ms pings and the node's echo replies give. cut -f8 is the status word of '<IN x Mbit/s OUT y Mbit/s - STATUS - ...>'",
+  "the-checks-are-installed @ files/sysmon/check_package_count.sh (whole file): the manifest deploys it with source => the module file, so the deployed file must hash to the baseline file's sha256 a2a5bd07...; the probe hashes it in the expected position",
+  "mutating checks: each mutates declares what its action changes (reboot flag, update list and its mtime, disable lock, transient units p8test-tls/p8test-load/p8test-traffic, the agent run nagios-puppet.sh itself makes); for the two Puppet-check checks the effect is the plugin's status line and exit code, which for a Nagios plugin is the result itself, not a side output",
+  "purpose gap: Covered: every installed file (owner, mode, bytes, mypython shebang) and every Debian status path of the checks the lab can drive: Puppet OK/UNKNOWN under the run lock/CRITICAL when disabled, reboot OK/WARNING, file handles, connection counts, package count OK/WARNING/stale CRITICAL, bandwidth OK/WARNING/CRITICAL with the peer, dd latency OK/CRITICAL, CPU OK/CRITICAL under load, memory OK/CRITICAL, OS release, TLS expiry OK/WARNING in short words. Reviewer run 20261118T205704Z ALL_PASS. Gap 1: the elastic_query_check.py outcome is 'uncovered ... lifted_by: ubuntu2', but the script hardcodes URL http://localhost:9200/_search (baseline line 118), so Elasticsearch would have to run on the class node itself; ubuntu2 is a plain second Ubuntu server (nodes.yml) with no Elasticsearch, and no class installs one (no manifest uses files/elk or templates/elk). So no node kind in nodes.yml lifts it, and the note does not say so. Also, the lab CAN exercise the script's own Nagios contract when Elasticsearch is unreachable: the except branch prints 'Unknown' and the error and exits 3. No check runs it. A 127.0.0.1:9200 stand-in, like the set's openssl s_server for the TLS check, could also drive its OK/Critical parsing. Gap 2 (table): the RHEL branch of check_package_count.sh (yum/dnf updateinfo list --sec-severity=${2:-Important}, counting security updates of a severity) is a separate behaviour. It is missing from the outcomes table: the RedHat row lists only 'the same checks are installed' (lifted_by rhel9 would apply)."
+ ],
+ "review_s": 258.7,
+ "check_file_sha256": "527b320f80edc4152a7a414504bba0b46b3ab04c32ab8d86e35c8d42d4ff687d",
+ "reviewer_result": "20261118T205704Z-reviewer",
+ "author_result": "20261118T205205Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "87ccfc7c-ebc1-4a79-bd6b-043b8fdef934",
+   "boot_id_at_end": "87ccfc7c-ebc1-4a79-bd6b-043b8fdef934",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "46f7fcc5-bf71-41e4-a63b-228043be60fd",
+   "boot_id_at_end": "46f7fcc5-bf71-41e4-a63b-228043be60fd",
+   "fresh": true
+  }
+ }
+}
