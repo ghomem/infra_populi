@@ -1,4 +1,4 @@
-# Puppet 8 migration: release-0.9.10 manifest, plus one local change (policy B, HQ batch-10 ruling 4; rules/local_changes.md #3): net-tools is installed, so the two connection checks find netstat, which Ubuntu 24.04 no longer ships.
+# Puppet 8 migration: release-0.9.10 manifest, plus two local changes (policy B, HQ batch-10 ruling 4; rules/local_changes.md #3, #4): net-tools is installed, so the two connection checks find netstat, which Ubuntu 24.04 no longer ships; files/sysmon/nagios-puppet.sh looks for the agent's lock notice in its whole output, so a run in progress is UNKNOWN again under OpenVox 8.
 # Module dependencies: none.
 ### Purpose ########
 # This class provides a nagios plugin that can be used trigger and monitor puppet runs, cpu, memory and zimbra
