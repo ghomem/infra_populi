@@ -1,0 +1,68 @@
+# Phase 3 checks for puppet_infrastructure::packages_base (class; node ubuntu; required_external none of its own: it
+# declares class apt itself). Fixture: defaults (unattended_upgrades false). On Ubuntu the class declares
+# `class { 'apt': update => { frequency => 'always' } }`, installs the Debian package list, removes supervisor and
+# cloud-init and keeps unattended-upgrades off. The clean node has cloud-init, unattended-upgrades, vim and wget, and
+# lacks aptitude, acl, monitoring-plugins-standard, ecryptfs-utils and iptables-persistent (node inventory
+# P8NODE_BASELINE_GREEN_v4). Probes read the node's own packages, tools and Puppet's last run report.
+class: packages_base
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 3
+  notes: "About 10:24Z to 10:27Z 2026-11-18 (scratch file time), outside the worktree while firewall_secure's review ran (baseline manifest and the clean-node inventory read)."
+purpose: >-
+  The minimum package set of a generic node: the tools every node needs (monitoring plugins, ACLs, ecryptfs, the
+  firewall's persistence, vim, wget, aptitude) installed and usable, package lists refreshed on every agent run, and
+  supervisor, cloud-init and, by default, unattended upgrades removed.
+uncovered:
+  - what: the RedHat branch (dnf makecache every run, extra_packages_el, the RedHat package list and dnf-automatic)
+    why: these checks run on the Ubuntu node; the RedHat branch's Phase 1 verdict ran on rhel9, its behaviour does not run here
+    lifted_by: rhel9
+checks:
+  - id: the-package-list-is-installed
+    what: every package of the Debian list is installed
+    control: negative
+    derived_from:
+      - {path: manifests/packages_base.pp, lines: "27", text: "$package_list = ['iptables-persistent', $nagios_package_name, 'ecryptfs-utils', 'vim', 'wget', 'aptitude', 'acl']"}
+      - {path: manifests/packages_base.pp, lines: "26", text: "$nagios_package_name = 'monitoring-plugins-standard'"}
+    probe: |
+      dpkg-query -W -f '${Package} ${Status}\n' iptables-persistent monitoring-plugins-standard ecryptfs-utils vim wget aptitude acl | sort
+    expect: {rc: 0, stdout: "\\Aacl install ok installed\\naptitude install ok installed\\necryptfs-utils install ok installed\\niptables-persistent install ok installed\\nmonitoring-plugins-standard install ok installed\\nvim install ok installed\\nwget install ok installed\\n\\Z"}
+
+  - id: the-tools-work
+    what: >-
+      the installed tools run: a monitoring plugin checks the root filesystem, the ACL tools read ACLs, the ecryptfs
+      setup helper and aptitude are on the path
+    control: negative
+    derived_from:
+      - {path: manifests/packages_base.pp, lines: "26-27", text: "$nagios_package_name = 'monitoring-plugins-standard'"}
+      - {path: manifests/packages_base.pp, lines: "43-46", text: "package { $package_list:"}
+    probe: |
+      /usr/lib/nagios/plugins/check_disk -w 1% -c 1% -p / | cut -d' ' -f1-2
+      getfacl -p /etc/hostname 2>/dev/null | head -1
+      command -v ecryptfs-setup-private aptitude
+    expect: {rc: 0, stdout: "\\ADISK OK\\n# file: /etc/hostname\\n/usr/bin/ecryptfs-setup-private\\n/usr/bin/aptitude\\n\\Z"}
+
+  - id: supervisor-cloud-init-and-unattended-upgrades-are-removed
+    what: supervisor, cloud-init and (unattended_upgrades false) unattended-upgrades are not installed
+    control: negative
+    derived_from:
+      - {path: manifests/packages_base.pp, lines: "51", text: "package { [ 'supervisor' , 'cloud-init' ]: ensure => absent, }"}
+      - {path: manifests/packages_base.pp, lines: "59-61", text: "package { 'unattended-upgrades': ensure => absent, }"}
+    probe: |
+      for p in supervisor cloud-init unattended-upgrades; do
+        s=$(dpkg-query -W -f '${Status}' "$p" 2>/dev/null)
+        case "$s" in *" installed") echo "$p installed";; *) echo "$p absent";; esac
+      done
+    expect: {rc: 0, stdout: "\\Asupervisor absent\\ncloud-init absent\\nunattended-upgrades absent\\n\\Z"}
+
+  - id: package-lists-refresh-on-every-agent-run
+    what: >-
+      the last agent run (the harness's run 2, with nothing else to change) refreshed the package lists:
+      Exec[apt_update] ran, as `update => { frequency => 'always' }` makes it do on every run
+    control: negative
+    derived_from:
+      - {path: manifests/packages_base.pp, lines: "11-19", text: "class { 'apt': update => { frequency => 'always' } }"}
+    probe: |
+      awk '/^  Exec\[apt_update\]:$/ {f=1; next} f && /^  [^ ]/ {f=0} f && /^    changed: true$/ {c++} END {print c+0}' /opt/puppetlabs/puppet/cache/state/last_run_report.yaml
+    expect: {rc: 0, stdout: "\\A1\\n\\Z"}
