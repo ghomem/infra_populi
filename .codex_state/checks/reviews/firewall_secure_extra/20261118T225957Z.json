@@ -1,0 +1,45 @@
+{
+ "class": "firewall_secure_extra",
+ "at": "20261118T225957Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "fail",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "bogus-packets-are-sent: baseline :159-160 (rule 501, ctstate INVALID in mangle PREROUTING) and :162-163 (502) are what the follow-up check the-invalid-and-not-syn-rules-dropped-them reads; this setup step only proves hping3 sent 5 SYN+FIN, 50 RST and 5 stray ACKs (its expect is the send count, the rule effect is judged in the next check from rule 501/502 counters), consistent with the lines",
+  "the-rst-limit-dropped-the-third: baseline :187-190 declare rule 519 accept RST at limit 2/sec burst 2 and 520 drop the rest, so 3 simultaneous RSTs -> 2 accepted, 1 dropped is what those lines declare; the class's own rule 003 (:119-123, accept RELATED,ESTABLISHED, sorted before 519) takes in-connection RSTs and rule 501 drops out-of-connection ones as INVALID, so the declared limit is unreachable - the check correctly tests the declared outcome and its failure is a finding, not a derivation error",
+  "policies-and-ssh-rules: baseline :83-84 set INPUT and FORWARD policy drop (OUTPUT untouched, ACCEPT), :135-137 one '100 SSH whitelist' rule per entry of unique(flatten(lab Hiera whitelist + fixture acl)) = 2, and :153 rule 116 in LIMIT_OVERALL for strict=false; the probe reads exactly those with iptables -S",
+  "finding the-rst-limit-dropped-the-third: the node's counters for rule 519 and 520 rose by 0 and 0 after the peer reset 3 connections at once (expected 2 and 1): the RSTs never reach rules 519/520 (rule 003 accepts ESTABLISHED first) - same unreachable RST limit the set itself names in its fragment row",
+  "finding held-ssh-connections-stop-at-eight: the peer saw 7 established SSH connections (expected 8) after 10 connections one every 4 s held by timeout 50 nc; baseline :130/:149 (connlimit_above 8) allow up to 8, so one of the first 8 was not held: either a dropped or closed connection (e.g. sshd ending an unauthenticated nc session) or a real limit below 8; the author's run passed this check, so the two runs disagree and the check's exact-8 expectation is not reproducible as written",
+  "purpose covered: Purpose (default-drop + SSH brute-force limits + DDoS extras + whitelist side chain + blacklist) matches the header (:1-13) and code. Tested on the applied node with a peer: policies and SSH rules, loopback accept (001), the three SSH limits (overall 20/min burst 5, 8 held, 15 new/min), mangle drops 501/502/503 by counters, ICMP 2/sec limit, the RST limit (a finding: unreachable), whitelist-only access to the service through the side chain with its connlimit and new-connection rate, the blacklist dropping every protocol (local change #5) while an unlisted source passes, purge of unmanaged rules at the next agent run, and the flush script plus rebuild. Uncovered rows are true: rule 002 and rule 518 measured inert (defrag runs before mangle; 127/8 destination dropped before INPUT), geoip needs xtables-addons and a GeoIP DB, internal_forward needs an internal network, and the no-ip_filter / no-anti_ddos / strict variants need another fixture of the same node (one set holds one fixture). Minor: rows 002 and 518 name lifted_by ubuntu although their reasons say no node would show the rule act; compile-time fail() validations (:39-52) are not rows (no node outcome)."
+ ],
+ "review_s": 604.4,
+ "check_file_sha256": "f32d3f9df74cfa96c0be33f3c504ff54ddfbab2926ec68b82c026843332b0fc5",
+ "reviewer_result": "20261118T224953Z-reviewer",
+ "author_result": "20261118T223957Z-author",
+ "findings": [
+  "the-rst-limit-dropped-the-third",
+  "held-ssh-connections-stop-at-eight"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "6ace819d-7435-4bd4-b80d-9137dc4e1920",
+   "boot_id_at_end": "6ace819d-7435-4bd4-b80d-9137dc4e1920",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "3e64e9e8-c187-495f-b255-bf1c935069cf",
+   "boot_id_at_end": "3e64e9e8-c187-495f-b255-bf1c935069cf",
+   "fresh": true
+  }
+ }
+}
