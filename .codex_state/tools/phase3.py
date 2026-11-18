@@ -74,6 +74,13 @@ Check file .codex_state/checks/<class>.yml:
       # harness does: the first may apply what needs the session, the second passes the harness's run-2 gate (exit 0
       # with no change events, or only the plan's expected_run2_events), now with the user logged in. Both runs are recorded under `session`; then the APPLIED
       # phase runs. The login and the agent runs are runner steps, never probes (probes keep the Puppet ban).
+  peer_agent: {after: <id of a mutating check>, certname: <p8test* identity>, why: <why the peer's agent run is the evidence>}
+      # PEER AGENT RUN (2026-11-18, HQ ruling C2: Hashman end to end): for a class whose node is itself a Puppet server
+      # (capability puppet-server, the master-role node). Right after the named mutating check, the runner makes one
+      # agent run on the peer against the class's node, as the client `certname` (the master-role server's
+      # autosign.conf names it), from its own confdir /etc/p8test-agent/<certname> (own ssldir, vardir, rundir), so the
+      # peer's identity toward the lab master is untouched. Its exit code and changes are recorded under `peer_agent`;
+      # the checks after it judge what it applied. A runner step, never a probe (probes keep the Puppet ban).
 
 Probe rules (validate): the node is the only host — no other host name or address, no ssh/scp/sftp/rsync except to
 the node itself (127.0.0.1/localhost), never Puppet (agent/apply/resource); read-only — no service or package state
@@ -305,6 +312,8 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
         problems += found
     if "session" in data:
         problems += session_problems(cls, data["session"])
+    if "peer_agent" in data:
+        problems += peer_agent_problems(cls, data["peer_agent"], data)
     checks = data.get("checks")
     if not isinstance(checks, list) or not checks:
         return problems + ["no checks"], data, raw
@@ -467,6 +476,53 @@ def session_problems(cls: str, session) -> list[str]:
     return out
 
 
+PEER_AGENT_KEYS = {"after", "certname", "why"}
+PEER_AGENT_CERT = re.compile(r"p8test[a-z0-9-]{0,40}")
+# {ip_re} is the address as an ERE (dots escaped), {ip} as written
+PEER_AGENT = """set -e
+d=/etc/p8test-agent/{certname}
+install -d -m 0755 "$d" /var/lib/p8test-agent/{certname} /run/p8test-agent/{certname} /var/log/p8test-agent/{certname}
+printf '[main]\\ncertname = %s\\nserver = %s\\nssldir = %s/ssl\\nvardir = %s\\nrundir = %s\\nlogdir = %s\\n' \\
+  {certname} {server} "$d" /var/lib/p8test-agent/{certname} /run/p8test-agent/{certname} /var/log/p8test-agent/{certname} \\
+  > "$d/puppet.conf"
+grep -qE '^{ip_re}[[:space:]]+{server}$' /etc/hosts || echo '{ip} {server}' >> /etc/hosts
+set +e
+timeout 900 /opt/puppetlabs/bin/puppet agent -t --confdir "$d" --detailed-exitcodes --waitforcert 0 2>&1
+echo "AGENT_RC=$?"
+"""
+
+
+def peer_agent_problems(cls: str, block, data: dict) -> list[str]:
+    import nodes  # noqa: PLC0415
+    if not isinstance(block, dict) or set(block) != PEER_AGENT_KEYS or len(str(block.get("why", ""))) < 20:
+        return ["peer_agent takes after, certname and why (>= 20 characters)"]
+    out = []
+    if "peer" not in data:
+        out.append("peer_agent needs the set's `peer` block (the machine that makes the agent run)")
+    if not PEER_AGENT_CERT.fullmatch(str(block["certname"])):
+        out.append("peer_agent.certname must be a p8test* fixture identity")
+    mutating = [c.get("id") for c in data.get("checks") or [] if isinstance(c, dict) and "mutates" in c]
+    if block["after"] not in mutating:
+        out.append("peer_agent.after must name a mutating check of the set (the run follows its action)")
+    node = nodes.select(nodes.load(), cls=cls)
+    if "puppet-server" not in node.get("capabilities", []):
+        out.append(f"peer_agent: the class's node {node['kind']} lacks the capability 'puppet-server'")
+    return out
+
+
+def peer_agent_run(cls: str, certname: str) -> dict:
+    """The peer's agent run against the class's node (a Puppet server), as `certname`."""
+    import nodes  # noqa: PLC0415
+    node = nodes.select(nodes.load(), cls=cls)
+    script = PEER_AGENT.format(certname=certname, server=node["certname"], ip=node["hostonly_ip"],
+                               ip_re=node["hostonly_ip"].replace(".", "\\."))
+    rc, out, err = on_peer(script, timeout=AGENT_TIMEOUT)
+    m = re.search(r"AGENT_RC=(\d+)", out)
+    events = [line.strip() for line in out.splitlines() if "Notice: /Stage[main]/" in line]
+    return {"certname": certname, "server": node["certname"], "rc": int(m.group(1)) if m else rc, "events": events,
+            "tail": (out + err)[-1500:]}
+
+
 def agent_run() -> dict:
     """One agent run on the node: its exit code and the resources that reported changes."""
     rc, out, err = on_node(SESSION_AGENT, timeout=AGENT_TIMEOUT)
@@ -488,16 +544,16 @@ def session_run2_clean(cls: str, run: dict) -> bool:
         all(any(ref in line for ref in expected) for line in run["events"])
 
 
-def on_peer(script: str) -> tuple[int, str, str]:
+def on_peer(script: str, timeout: int = PROBE_TIMEOUT) -> tuple[int, str, str]:
     """A peer probe: the node files are written under /run/p8test-from-node first (declared by peer.files)."""
     pre = "".join(f"mkdir -p /run/p8test-from-node && printf '%s' '{b64}' | base64 -d "
                   f"> /run/p8test-from-node/{Path(path).name}\n" for path, b64 in PEER_FILES.items())
     try:
         proc = subprocess.run(["ssh", "-o", "BatchMode=yes", PEER, "sudo -n bash -s"], input=pre + script,
-                              capture_output=True, text=True, timeout=PROBE_TIMEOUT, env=node_env())
+                              capture_output=True, text=True, timeout=timeout, env=node_env())
         return proc.returncode, proc.stdout, proc.stderr
     except subprocess.TimeoutExpired:
-        return 124, "", f"probe timed out after {PROBE_TIMEOUT}s"
+        return 124, "", f"probe timed out after {timeout}s"
 
 
 def on_host(check: dict, script: str) -> tuple[int, str, str]:
@@ -763,6 +819,11 @@ def run_locked(cls: str, data: dict, record: dict, finish) -> int:
         record["applied"].append(r)
         print(f"  {'pass' if r['passed'] else 'FAIL'} {check['id']} (mutating: {check['mutates']}; "
               f"action rc {r['action']['rc']}, judged on the effect)")
+        if data.get("peer_agent", {}).get("after") == check["id"]:
+            run = peer_agent_run(cls, data["peer_agent"]["certname"])
+            record["peer_agent"] = run
+            print(f"  peer agent run as {run['certname']} against {run['server']}: rc {run['rc']}, "
+                  f"{len(run['events'])} changed")
     record["not_run"] = [r["id"] for r in record["applied"] if r.get("not_run")]
     record["findings"] = [r["id"] for r in record["applied"] if not r["passed"] and not r.get("not_run")]
     if record["findings"] or record["not_run"]:

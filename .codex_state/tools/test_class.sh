@@ -420,6 +420,25 @@ deploy_repo_to_master() {
 
 }
 
+# HQ 2026-11-18 ruling C2: a node that is itself a Puppet server (nodes.yml capability puppet-server, the master-role
+# node) serves the module under test from its own code tree, as a production master does: the same tree the master
+# gets, deployed after the revert. The node's own environment holds nothing else of this repository.
+deploy_repo_to_node_server() {
+  local caps stage_dir="/var/tmp/infra_populi_stage/puppet_infrastructure"
+  caps="$(python3 "$NODES_TOOL" get --node "$NODE_KIND" capabilities)" || die "Could not read the capabilities of node ${NODE_KIND}"
+  [[ " ${caps} " == *" puppet-server "* ]] || return 0
+  echo "==> Deploying local repo to the node's own Puppet server code tree (${NODE_HOST}:${MASTER_MODULE_DIR})"
+  ssh -T "$NODE_HOST" "mkdir -p \"$(dirname "$stage_dir")\"" || die "Could not prepare the staging directory on ${NODE_HOST}"
+  rsync -a --delete \
+    --no-owner --no-group --no-perms --no-acls --no-xattrs \
+    --exclude=.git/ --exclude=.github/ --exclude=.vscode/ --exclude=.idea/ --exclude=.codex_state/ \
+    -e "ssh -T" \
+    "${LOCAL_REPO}/" \
+    "${NODE_HOST}:${stage_dir}/" || die "Could not copy the module to ${NODE_HOST}"
+  ssh -T "$NODE_HOST" "sudo -n rm -rf \"$MASTER_MODULE_DIR\" && sudo -n mkdir -p \"$(dirname "$MASTER_MODULE_DIR")\" && sudo -n mv \"$stage_dir\" \"$MASTER_MODULE_DIR\" && sudo -n chown -R root:root \"$MASTER_MODULE_DIR\"" ||
+    die "Could not install the module in ${NODE_HOST}'s code tree"
+}
+
 update_node_codemgr_block() {
   local tmpfile remote_block
   tmpfile="$(mktemp)"
@@ -825,6 +844,7 @@ main() {
   fi
 
   deploy_repo_to_master
+  deploy_repo_to_node_server
   update_node_codemgr_block "${classes[@]}"
 
   # HQ batch-3 acceptance, item 1: is the node still on the latest revert's boot with no agent run since?

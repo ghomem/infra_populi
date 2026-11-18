@@ -1870,3 +1870,28 @@ snapshot list, record.
   `revert_node.sh --node puppetserver` restores it.
 - **Tests:** no real kind is planned any more, so the tests of the planned-node rules use a synthetic planned kind
   (conftest `with_planned_kind`/`planned_inventory`) instead of the real inventory.
+
+## 2026-11-18 — Hashman end to end: the harness deploys to a master-role node; the runner's peer agent run (HQ ruling C2)
+- **Harness (test_class.sh `deploy_repo_to_node_server`):** when the target node has the `puppet-server` capability,
+  the harness also installs the module under test in that node's own code tree, after the revert and right after the
+  master's copy: the same tree, staged and moved into place as root, as for the master. A production master serves
+  the module the same way. The node's environment otherwise holds only stdlib (its baseline). 2 tests (a puppet-server
+  node gets the copy; an ordinary node never does).
+- **Runner (phase3.py `peer_agent`):** a set whose class node is a Puppet server may declare
+  `peer_agent: {after, certname, why}`.
+  - Right after the named mutating check (action, then effect), the runner makes one agent run on the peer against the
+    class's node, as `certname`.
+  - `certname` must be a p8test* identity, and the master-role baseline's autosign.conf names exactly one,
+    p8test-hashman-client.
+  - The run uses its own confdir /etc/p8test-agent/<certname> (own ssldir, vardir, rundir, logdir), so the peer's
+    identity toward the lab master is untouched.
+  - The peer resolves the server through one hosts line naming the class node's host-only address, the only other
+    host a peer may name.
+  - The exit code, the changed resources and the output tail go to the result under `peer_agent`; the checks after
+    it judge the result.
+  - It is a runner step like the session's agent runs. Probes keep the Puppet ban.
+  - Validation refuses: a node without puppet-server, a set without a peer, a non-p8test identity, and an anchor that
+    is not a mutating check.
+  - 3 tests.
+- **For HQ acceptance:** a new capability of the behaviour runner, like the peer and session modes. It lets C2's last
+  step ("another node accepts the new password after its agent run") be a check.

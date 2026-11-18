@@ -717,3 +717,79 @@ def test_the_login_and_agent_runs_stay_out_of_probes():
     sys.path.insert(0, str(TOOLS))
     import phase3
     assert phase3.probe_problems("timeout 900 /opt/puppetlabs/bin/puppet agent -t")  # probes keep the Puppet ban
+
+
+# ------------------------------------------------------------------ peer agent run (2026-11-18, HQ ruling C2: Hashman)
+
+MASTER_ROLE = {"P8_NODE": "puppetserver"}  # the real inventory: the master-role node, capability puppet-server
+PEER_AGENT = {"after": "user-changes-password", "certname": "p8test-hashman-client",
+              "why": "the user record reaches another machine only through its agent run against the server"}
+
+
+def peer_agent_set(**over):
+    return check_set(check("page", "probe-page"),
+                     mutating("user-changes-password", action="act-change", effect="eff-change",
+                              mutates="changes the fixture user's password in the web page", host="peer"),
+                     mutating("new-password-accepted", action="act-login", effect="eff-login",
+                              mutates="authenticates the fixture user with PAM", host="peer"),
+                     peer={"kind": "ubuntu2", "why": "the browser and the agent of another machine run there"},
+                     peer_agent={**PEER_AGENT, **over})
+
+
+def test_a_peer_agent_set_needs_a_puppet_server_node_a_fixture_identity_and_a_mutating_anchor(p3):
+    p3.write(peer_agent_set())
+    assert p3.run("validate", CLS, **MASTER_ROLE).returncode == 0
+    proc = p3.run("validate", CLS)  # the default node, ubuntu, is no Puppet server
+    assert proc.returncode == 2 and "lacks the capability 'puppet-server'" in proc.stderr
+    for over, message in [({"certname": "salatiel"}, "p8test* fixture identity"),
+                          ({"after": "page"}, "must name a mutating check"),
+                          ({"why": "short"}, "peer_agent takes after, certname and why")]:
+        p3.write(peer_agent_set(**over))
+        proc = p3.run("validate", CLS, **MASTER_ROLE)
+        assert proc.returncode == 2 and message in proc.stderr, proc.stderr
+    data = peer_agent_set()
+    del data["peer"]
+    for c in data["checks"]:
+        c.pop("host", None)
+    p3.write(data)
+    proc = p3.run("validate", CLS, **MASTER_ROLE)
+    assert proc.returncode == 2 and "needs the set's `peer` block" in proc.stderr
+
+
+def test_the_peer_agent_run_follows_its_anchor_against_the_class_node_from_its_own_confdir(p3, lab, tmp_path):
+    labvm = tmp_path / "labvm.sh"
+    labvm.write_text("#!/bin/sh\necho \"labvm $*\" >> \"$(dirname \"$0\")/log\"\n")
+    labvm.chmod(0o755)
+    p3.write(peer_agent_set())
+    p3.probe_rule("probe-page", FAIL, OK)
+    lab.world["read_stdin"] = True
+    for marker in ("act-change", "act-login"):
+        lab.world["ssh"].insert(0, {"match": marker, "stdout": "", "rc": 0})
+    p3.probe_rule("eff-change", FAIL, OK)
+    p3.probe_rule("eff-login", FAIL, OK)
+    lab.world["ssh"].insert(0, {"match": r"/etc/p8test-agent/p8test-hashman-client", "stdout":
+                                "Notice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User"
+                                "[p8hashuser]/User[p8hashuser]/password: changed [redacted] to [redacted]\nAGENT_RC=2\n"})
+    proc = p3.run("run", CLS, P8_PHASE3_LABVM=str(labvm), **MASTER_ROLE)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    record, _ = p3.result()
+    run = record["peer_agent"]
+    assert run["certname"] == "p8test-hashman-client" and run["server"] == "p8lab-puppetserver"
+    assert run["rc"] == 2 and len(run["events"]) == 1
+    sent = [json.loads(l) for l in (lab.calls_path.parent / "calls.jsonl.stdin").read_text().splitlines()]
+    order = [i for i, s in enumerate(sent) if any(m in s[2] for m in ("act-change", "eff-change", "p8test-agent",
+                                                                       "act-login"))]
+    kinds = ["agent" if "p8test-agent" in sent[i][2] else sent[i][2].strip().split()[-1] for i in order]
+    # clean: the effect only; applied: action, effect, then the agent run, then the next mutating check
+    assert kinds == ["eff-change", "act-change", "eff-change", "agent", "act-login"]
+    agent = next(s for s in sent if "p8test-agent" in s[2])
+    assert agent[1].endswith("p8lab-ubuntu2 sudo -n bash -s")  # on the peer, never on the node
+    assert '--confdir "$d"' in agent[2] and "server = %s" in agent[2] and "p8lab-puppetserver" in agent[2]
+    assert "echo '192.168.56.26 p8lab-puppetserver' >> /etc/hosts" in agent[2]
+
+
+def test_the_peer_agent_run_stays_out_of_probes():
+    import sys
+    sys.path.insert(0, str(TOOLS))
+    import phase3
+    assert phase3.probe_problems("timeout 900 /opt/puppetlabs/bin/puppet agent -t --confdir /etc/p8test-agent/x")

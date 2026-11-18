@@ -316,3 +316,24 @@ def test_an_event_on_console_and_in_the_report_counts_once(lab):
     proc = lab.run([SCRIPT, "puppet_infrastructure::packages_base"])
     assert proc.returncode == 0, proc.stderr
     assert "RUN2_EXPECTED_EVENTS: 1 from Exec[apt_update]" in proc.stdout
+
+
+# HQ 2026-11-18 ruling C2: the master-role node (capability puppet-server) also receives the module under test in its
+# own code tree; an ordinary node never does.
+def test_a_puppet_server_node_gets_the_module_in_its_own_code_tree(lab):
+    lab.world["ssh"].insert(0, {"match": r"p8lab-puppetserver sudo /opt/puppetlabs/bin/puppet agent -t",
+                                "outputs": [{"rc": 2, "stdout": EXEC_EVENT + APPLIED}, {"rc": 0, "stdout": APPLIED}]})
+    proc = lab.run([SCRIPT, "--node", "puppetserver", "--fixture", "guarded_exec"])
+    assert proc.returncode == 0, proc.stderr
+    assert any(c[0] == "rsync" and c[-1] == "p8lab-puppetserver:/var/tmp/infra_populi_stage/puppet_infrastructure/"
+               for c in lab.calls())
+    module = "/etc/puppetlabs/code/environments/production/modules/puppet_infrastructure"
+    assert any("p8lab-puppetserver" in c and f'sudo -n mv "/var/tmp/infra_populi_stage/puppet_infrastructure" "{module}"' in " ".join(c)
+               for c in lab.calls("ssh"))
+
+
+def test_an_ordinary_node_gets_no_module_copy(lab):
+    agent_runs(lab, {"rc": 2, "stdout": EXEC_EVENT + APPLIED}, {"rc": 0, "stdout": APPLIED})
+    proc = lab.run([SCRIPT, "--fixture", "guarded_exec"])
+    assert proc.returncode == 0, proc.stderr
+    assert [c for c in lab.calls() if c[0] == "rsync" and not c[-1].startswith("puppet8master")] == []
