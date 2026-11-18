@@ -102,6 +102,8 @@ checks:
       echo "rc=$rc"
     expect: {rc: 0, stdout: "\\Akernel counts, max as the kernel says\\nrc=0\\n\\Z"}
 
+  # 2026-11-18 authoring correction (run 2, 20261118T201641Z): `grep -c` exits 1 when it counts 0, so the probe's last
+  # line made rc 1 once netstat was present; it now ends with `|| true`.
   - id: the-connection-checks-count-real-connections
     what: >-
       the connection check counts at least one listening TCP socket (sshd) and one established connection (the
@@ -114,7 +116,7 @@ checks:
       B=/opt/puppet-infrastructure/bin
       $B/check_netstat_conns.sh 2>&1 | sed -n 's/.*tcp_listen=\([0-9]*\) .*tcp_established=\([0-9]*\) .*/listen \1 established \2/p' | awk '{print "tcp listen", ($2 != 0 ? "counted" : "zero"), "established", ($4 != 0 ? "counted" : "zero")}'
       $B/check_netstat_cip.sh 22 2>&1 | sed -n 's/.*num_of_ips=\([0-9]*\);.*/\1/p' | awk '{print "remote IPs on 22", ($1 != 0 ? "counted" : "zero")}'
-      $B/check_netstat_conns.sh 2>&1 >/dev/null | grep -c 'command not found'
+      $B/check_netstat_conns.sh 2>&1 >/dev/null | grep -c 'command not found' || true
     expect: {rc: 0, stdout: "\\Atcp listen counted established counted\\nremote IPs on 22 counted\\n0\\n\\Z"}
 
   - id: the-bandwidth-check-reports-throughput
