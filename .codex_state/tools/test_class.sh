@@ -272,6 +272,12 @@ expand_one_class() {
     expand_one_class "$base" internal
   done
   for external in "${required_externals[@]}"; do
+    # A Debian-only external (puppetlabs-apt fails on any other OS family) is not declared on a RedHat target
+    # (2026-11-18, the rhel9 pass: nginx_base's `apt` is for its Ubuntu-only Exec['apt_update']).
+    if [[ " ${DEBIAN_ONLY_EXTERNALS[*]} " == *" ${external} "* && "$(target_os_family)" == "RedHat" ]]; then
+      echo "==> required_external ${external} not declared: Debian-only, the target is RedHat" >&2
+      continue
+    fi
     expand_one_class "$external" external
   done
 
@@ -281,6 +287,10 @@ expand_one_class() {
 }
 
 declare -a PARAMS_TARGETS=()
+readonly -a DEBIAN_ONLY_EXTERNALS=(apt)
+COMPILE_FACTS_FAMILY=""  # compile-only: the OS family of the facts the compile uses (redhat/native rewrite)
+
+target_os_family() { echo "${COMPILE_FACTS_FAMILY:-$NODE_OS_FAMILY}"; }
 
 expand_target_classes() {
   local target
@@ -733,6 +743,11 @@ main() {
     fi
     [[ ! ( "$variant" == "debian" && "$NODE_OS_FAMILY" == "RedHat" ) ]] ||
       die "--facts debian cannot rewrite a RedHat node's facts; use native"
+    case "$variant" in
+      redhat) COMPILE_FACTS_FAMILY="RedHat" ;;
+      debian) COMPILE_FACTS_FAMILY="Debian" ;;
+      *) COMPILE_FACTS_FAMILY="$NODE_OS_FAMILY" ;;
+    esac
     guard_owner_validated_targets "$@"
     # SKIP_DEPLOY=1: the caller already deployed this tree (composite runner, step 2.2).
     [[ "${SKIP_DEPLOY:-0}" == "1" ]] || deploy_repo_to_master

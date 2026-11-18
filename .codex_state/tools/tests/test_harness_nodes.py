@@ -83,3 +83,18 @@ def test_a_per_target_fixture_configures_a_base_class_only_for_that_target(lab, 
         assert "for-target" in out and base in out, given
     out = lab.run([SCRIPT, "--render-only", base], env={"HOME": str(home)}).stdout
     assert "for-target" not in out  # the base applied on its own keeps its shared (here: no) fixture
+
+
+# 2026-11-18, the rhel9 pass: nginx_base's required_external `apt` (for its Ubuntu-only Exec['apt_update']) failed
+# every RedHat compile ("This module only works on Debian"); a Debian-only external is not declared on RedHat.
+def test_a_debian_only_external_is_not_declared_on_a_redhat_target(lab, rhel):
+    proc = lab.run([SCRIPT, "--node", "rhel9", "--render-only", "puppet_infrastructure::nginx_base"], env=rhel)
+    out = proc.stdout + proc.stderr
+    assert "required_external apt not declared: Debian-only, the target is RedHat" in out
+    assert "include apt" not in proc.stdout and "class { 'apt'" not in proc.stdout
+
+
+def test_a_debian_only_external_is_still_declared_on_ubuntu(lab):
+    proc = lab.run([SCRIPT, "--render-only", "puppet_infrastructure::nginx_base"])
+    assert "not declared: Debian-only" not in proc.stdout + proc.stderr
+    assert "apt" in proc.stdout

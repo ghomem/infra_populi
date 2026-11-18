@@ -1759,3 +1759,21 @@ snapshot list, record.
     reviewer finds the migrated code at fault.
   - A class that needs RedHat-specific params gets params/rhel9/<class>.json.
 - **Tests:** 5.
+
+## 2026-11-18 — rhel9 pass, first triage: two harness/fixture fixes
+- **The triage:** the 16 done classes with OS-specific branches, each run through the revert-first harness on
+  p8lab-rhel9 by the advisor, before any per-node review. 8 GREEN, 8 RED.
+- **Harness: a Debian-only required_external is not declared on a RedHat target.**
+  - nginx_base's plan `required_external apt` exists for its Ubuntu-only `Exec['apt_update']`. The harness declared
+    it on rhel9, where puppetlabs-apt fails the compile ("only works on Debian"). That took down nginx_base and the
+    three classes whose required_base is nginx_base.
+  - test_class.sh now skips externals listed in DEBIAN_ONLY_EXTERNALS (apt) when the target OS family is RedHat:
+    the node's family, or the compile-only facts variant. 2 tests.
+- **Lab Hiera:** postfix_smtp_node looks up `<hostname>::postfix_smtp_node::relayuser/relaypass`. master_fixtures.sh
+  adds the p8lab-rhel9 pair, obviously fake like puppet8node's. Applied: CHANGED, then OK.
+- **Separately, for HQ** (escalations/redhat_branches.md, at the end of the pass):
+  - packages_base/node_base `Exec[dnf-makecache]` runs on every agent run by design. It is the RedHat counterpart of
+    the expected `Exec[apt_update]` and needs a plan entry.
+  - sysmon_base: on a fresh RHEL 9 node, packages_base's nagios-plugins-all creates /usr/lib64/nagios/ as a
+    directory, and filesystem_lib64's link to /usr/lib/nagios then fails.
+  - hello_world_flask_common: python3-gunicorn and python3-flask come from EPEL, which the class never declares.

@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-103 entries; 6 marked superseded (in whole or part); newest first.
+104 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-18 — rhel9 pass, first triage: two harness/fixture fixes
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-18 — A reviewer verdict per node (HQ batch-8 ruling 6: the RedHat branches on rhel9)
 - (no numbered/Rule/Decision lines; read the entry)
