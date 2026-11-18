@@ -108,6 +108,21 @@ def test_standins_are_the_verified_classes_with_a_node_fixture(status, tmp_path)
     assert status.standins(rows, ["b", "a"], tmp_path) == [("a", "fx", "a monitoring node")]
 
 
+def test_a_test_asset_fixture_is_not_a_standin(status, tmp_path):
+    (tmp_path / "fx.pp").write_text("# Lifted by: a monitoring node\n")
+    (tmp_path / "asset.pp").write_text("# Lifted by: the site's own files\n")
+    row = lambda fixture: type("Row", (), {"node_fixture": fixture})()  # noqa: E731
+    rows = {"a": row("fx"), "w": row("asset")}
+    # HQ 2026-11-18 ruling 9: a placeholder test asset (rules/test_asset_fixtures.txt) is not a stand-in
+    assert status.standins(rows, ["a", "w"], tmp_path, test_assets={"asset"}) == [("a", "fx", "a monitoring node")]
+
+
+def test_the_repo_test_asset_class_is_not_a_standin(status):
+    rows = status.generator.parse_plan()
+    assert rows["hashman_web"].node_fixture in status.review_class.test_asset_fixtures()
+    assert status.standins(rows, ["hashman_web"]) == []
+
+
 def test_every_repo_node_fixture_says_what_lifts_it(status):
     names = sorted(p.stem for p in status.NODE_FIXTURES.glob("*.pp"))
     assert names and all(status.lifted_by(name) for name in names)

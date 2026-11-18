@@ -12,6 +12,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(1, str(Path(__file__).resolve().parent))
 import gen_migration_order as generator
+import review_class  # noqa: E402
 
 REVIEWS = generator.REVIEWS_PATH
 VERIFIED = generator.VERIFIED
@@ -31,10 +32,14 @@ def lifted_by(fixture: str, fixtures: Path = NODE_FIXTURES) -> str:
     return found[0]
 
 
-def standins(rows, verified, fixtures: Path = NODE_FIXTURES) -> list[tuple[str, str, str]]:
-    """(class, node fixture, lifted by) for every verified class whose GREEN used a mock-apply node fixture."""
+def standins(rows, verified, fixtures: Path = NODE_FIXTURES,
+             test_assets: set[str] | None = None) -> list[tuple[str, str, str]]:
+    """(class, node fixture, lifted by) for every verified class whose GREEN used a mock-apply node fixture.
+    A test-asset fixture (rules/test_asset_fixtures.txt, HQ 2026-11-18 ruling 9) is not a stand-in."""
+    assets = review_class.test_asset_fixtures() if test_assets is None else test_assets
     return [(name, rows[name].node_fixture, lifted_by(rows[name].node_fixture, fixtures))
-            for name in sorted(verified) if name in rows and rows[name].node_fixture]
+            for name in sorted(verified)
+            if name in rows and rows[name].node_fixture and rows[name].node_fixture not in assets]
 
 
 def verification_state(name, migration, flagged, reviews: Path = REVIEWS):
