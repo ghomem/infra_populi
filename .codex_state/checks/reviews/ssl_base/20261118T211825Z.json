@@ -1,0 +1,33 @@
+{
+ "class": "ssl_base",
+ "at": "20261118T211825Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-key-and-bundle-drift: manifests/ssl_base.pp:85-92 declares the key file with notify => Service[$myservicename] (and 100-107 the bundle concat with the same notify); the action is a hand drift of both managed files (the stimulus a renewal would be), mutates declares everything it writes (/run/p8test-ssl/before, one line appended to /etc/ssl/private/p8test.key and /etc/ssl/certs/p8test.nginx.bundle.crt), and the effect reads the files and the noted PID, not the action's output; it sets up the next check, which proves both files restored (0 0), a new nginx MainPID and exactly one 'Started nginx.service' after the cursor, as lines 10 and 100-107 say",
+  "the-bundle-is-the-leaf-then-its-issuer: lines 109-119 put ${myprefix}.crt as fragment 01 and ${myprefix}.intermediate.crt as 02 into ${ssl_certs_dir}/${myprefix}.${myservice}.bundle.crt (79-81), concat 100-107 is 0644 owner/group root by default; under the fixture (p8test, nginx; master PKI: leaf CN p8test.invalid signed by the throwaway CA) the probe's root:root 644, 2 certs, CN order leaf then CA, and openssl verify OK is what the code produces; the mismatch changes only the trust anchor (system CA bundle, which did not sign the leaf), so the verdict must change",
+  "the-key-is-private-and-matches-the-certificate: lines 77-78 place puppet:///extra_files/ssl/p8test.key at /etc/ssl/private/p8test.key, 85-92 make it mode 0600 with owner/group root by default; the probe checks root:root 600 and that the key's public key equals the bundle's first certificate's (the leaf from ${myprefix}.crt); the mismatch compares against the second certificate (the CA's, a different key pair) only, so it must fail and did",
+  "purpose gap: Covered: the stated purpose (key 0600 in /etc/ssl/private, leaf-then-intermediate bundle 0644 in /etc/ssl/certs, service restarted once when either changes) is tested end to end on the ubuntu node under the non-letsencrypt fixture, and the reviewer run ALL_PASS agrees. Gap: the outcomes row for the remaining branches (manifests/ssl_base.pp:44-50, 57-75, 94-97) is marked uncovered with a reason that is not true as written: (1) it names letsencrypt_certificate as a consumer set that covers the Let's Encrypt variant, but letsencrypt_certificate does not declare ssl_base at cf477c6 (consumers are ssl_nginx, ssl_nginx_domain, ssl_postfix) and its set is DEFERRED; it names ssl_nginx_domain, which has no check set; ssl_postfix's set runs letsencrypt_certificate false. The only set that touches the LE branch (<prefix>.nginx.bundle.pem) is nginx_frontend_mail, which the row does not name, and no set checks <prefix>-key.pem or the .pem/-chain.pem order. (2) lifted_by: ubuntu is wrong for the RedHat directories (59-61, /etc/pki/tls/private): that needs the active rhel9 node kind. (3) owner/group variants and the non-nginx/postfix WARNING notify (94-97) are not exercised by any consumer at the baseline, and the row claims consumers cover them. Correct the row: name the set that actually covers the LE branch (or cover it), give rhel9 as lifted_by for the RedHat part, and state honestly that owner/warning variants are untested."
+ ],
+ "review_s": 148.0,
+ "check_file_sha256": "245b7f8a62bd1d2dacaae518ccc7a0294b5c8a45a3c987ae10bd3cb314bb18f7",
+ "reviewer_result": "20261118T211558Z-reviewer",
+ "author_result": "20261118T211402Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "57aa9c36-cfbd-44cc-abf7-7eb5024ab481",
+   "boot_id_at_end": "57aa9c36-cfbd-44cc-abf7-7eb5024ab481",
+   "fresh": true
+  }
+ }
+}
