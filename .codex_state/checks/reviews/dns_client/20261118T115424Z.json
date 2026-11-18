@@ -1,0 +1,33 @@
+{
+ "class": "dns_client",
+ "at": "20261118T115424Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "names-resolve-through-the-given-server: manifests/dns_client.pp:8-12 (with 1-2 'configures the DNS servers for the client') hands $nameservers to class resolv_conf; saz-resolv_conf 8.0.1's template (read on the master) writes one 'nameserver <ns>' line per element in array order, so with the fixture [10.0.2.3, 1.1.1.1] dig without @server uses 10.0.2.3 first: NOERROR with SERVER 10.0.2.3 is what the code produces (clean node: 1.1.1.1). The mismatch varies only the queried name to the reserved p8test.invalid, which must turn the server's verdict into NXDOMAIN (a real verdict change, not a broken command); it failed as required",
+  "a-nameserver-is-added-by-hand: same lines 8-12; the action (append 'nameserver 9.9.9.9') is exactly what its mutates declares, and the read-only effect (grep ^nameserver of the file) shows the drift result (10.0.2.3, 1.1.1.1, 9.9.9.9), not the echo's output; it is the setup the node_agent run then corrects",
+  "the-next-agent-run-keeps-only-the-given-servers: lines 8-12 declare class resolv_conf, whose file resource renders content from the template, so the agent run after the hand edit restores exactly 'nameserver 10.0.2.3\\nnameserver 1.1.1.1' (node agent run rc 2, 3 changed in my run); probe 'true' with mutates 'none beyond reading the file' is honest, the effect is a read-only grep",
+  "purpose covered: Purpose (resolver pointed at the given servers, only those, kept so, names resolving through them) matches the header comment (lines 1-2) and the code (lines 8-12). Tested: the exact list in order with 8.8.8.8 from the clean file excluded (two-server fixture), a lookup through the system resolver answered by the first given server, and convergence after a hand-added nameserver on the next agent run. Left out and listed honestly under uncovered: the empty-list guard (line 8, an empty list leaves the resolver untouched), which needs a second params fixture on the same ubuntu node kind while a set holds one fixture. The 'incompatible with network-manager' comment (line 3) is a constraint, not purpose."
+ ],
+ "review_s": 92.0,
+ "check_file_sha256": "7dc97951c0a5c54bed49aa0d7d6ae5fb24e682d7d62bf7414f860c510990f2c6",
+ "reviewer_result": "20261118T115252Z-reviewer",
+ "author_result": "20261118T115106Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "1426381c-7e79-41dd-8e24-3069664ceb91",
+   "boot_id_at_end": "1426381c-7e79-41dd-8e24-3069664ceb91",
+   "fresh": true
+  }
+ }
+}
