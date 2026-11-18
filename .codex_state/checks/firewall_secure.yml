@@ -34,15 +34,17 @@ checks:
       iptables -S | grep -E '^-P (INPUT|FORWARD|OUTPUT) '
     expect: {rc: 0, stdout: "\\A-P INPUT DROP\\n-P FORWARD DROP\\n-P OUTPUT ACCEPT\\n\\Z"}
 
+  # 2026-11-18 authoring correction (run 2, 20261118T104207Z): the expectation still listed two addresses after the
+  # fixture's acl gained the peer's second address; it now lists all three. The behaviour is unchanged.
   - id: whitelist-is-the-hiera-list-plus-the-acl
-    what: SSH from each whitelisted address (lab Hiera 127.0.0.1, the acl's laptop address) is accepted before any limit
+    what: SSH from each whitelisted address (lab Hiera 127.0.0.1, the acl's laptop and peer-second addresses) is accepted before any limit
     control: negative
     derived_from:
       - {path: manifests/firewall_secure.pp, lines: "31-34", text: "$mylist = unique ( flatten( [ $whitelist, $acl ] ) )"}
       - {path: manifests/firewall_secure.pp, lines: "82-83", text: "firewall { \"100 SSH whitelist ${ip}\":  chain => 'INPUT', proto  => 'tcp', dport  => $ssh_port, source => $ip,"}
     probe: |
       iptables -S INPUT | grep -- '--comment "100 SSH whitelist' | grep -o -E -- '-s [0-9./]+ .*-j ACCEPT$' | sed -E 's/ -p tcp.*//'
-    expect: {rc: 0, stdout: "\\A-s 127\\.0\\.0\\.1/32\\n-s 192\\.168\\.56\\.1/32\\n\\Z"}
+    expect: {rc: 0, stdout: "\\A-s 127\\.0\\.0\\.1/32\\n-s 192\\.168\\.56\\.1/32\\n-s 192\\.168\\.56\\.124/32\\n\\Z"}
 
   - id: the-running-rules-are-saved-for-the-next-boot
     what: the saved rule set the boot loads (netfilter-persistent, enabled) equals the running one
