@@ -1,0 +1,99 @@
+# Phase 3 checks for puppet_infrastructure::nginx_frontend_domain (define; node ubuntu; required_base per plan).
+# Fixture (params, never committed): domain p8test.example.com, frontend_sslprefix p8test, manage_ssl true,
+# backend_hosts_and_ports ["127.0.0.1:8080"], backend_protocol http; every other parameter at its default
+# (enable_ssl true, decorate_naked false, server_https_www_create and redirect_http_www_to_https_www_create true,
+# TLSv1.3 only, security_headers false, no IP whitelist, no external-redirect prevention). The lab's throwaway
+# certificate (master_fixtures.sh) names p8test.example.com and *.p8test.example.com. Probes connect only to the node's
+# own loopback, naming the domain with curl's --resolve.
+class: nginx_frontend_domain
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 1.4
+  notes: "20:45:07Z to 20:46:32Z 2026-11-18 (date at the start of reading the baseline and at validation), outside the worktree while sysmon_base's Phase 3 review ran; not prototyped on a node."
+purpose: >-
+  A TLS frontend for one domain in nginx: plain HTTP on the domain and on www redirects to HTTPS, and HTTPS on the
+  domain and www proxies to the domain's backends (an upstream), with the domain's certificate and modern TLS settings.
+outcomes:
+  - outcome: plain HTTP on the domain redirects (301) to HTTPS on the domain, keeping the path
+    from: manifests/nginx_frontend_domain.pp:416-433
+    checks: [a-backend-answers, http-redirects-to-https]
+  - outcome: plain HTTP on www redirects (301) to HTTPS on www, keeping the path
+    from: manifests/nginx_frontend_domain.pp:445-454
+    checks: [http-redirects-to-https]
+  - outcome: HTTPS on www and on the domain proxies to the backend, with the domain's certificate, which verifies against its issuer
+    from: manifests/nginx_frontend_domain.pp:409-412, 521-524, 564, 576-577, 684-696
+    checks: [https-proxies-to-the-backend]
+  - outcome: only TLS 1.3 is accepted (the default protocol list)
+    from: manifests/nginx_frontend_domain.pp:92, 311, 695
+    checks: [only-tls-1-3-is-accepted]
+  - outcome: the variants (decorate_naked, security headers, IP whitelist, external-redirect prevention, dynamic DNS, Let's Encrypt, extra protocols and ciphers, timeouts, servers_create false)
+    from: manifests/nginx_frontend_domain.pp:1-140 (parameters)
+    uncovered: {why: "fixture variants (one set holds one fixture), untested: this fixture leaves every one of them at its default", lifted_by: ubuntu}
+  - outcome: on RedHat the key is read from /etc/pki/tls/private
+    from: manifests/nginx_frontend_domain.pp:272-283
+    uncovered: {why: "the RedHat branch; this set runs on the plan's Ubuntu node", lifted_by: rhel9}
+checks:
+  - id: a-backend-answers
+    what: setup for the frontend checks, a backend on 127.0.0.1:8080 (the fixture's backend) serving a page that names it
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_frontend_domain.pp, lines: "409-412", text: "nginx::resource::upstream { $backend_name:"}
+    mutates: starts a transient unit p8test-backend (python3 -m http.server on 127.0.0.1:8080, serving /run/p8test-frontend/www, whose index.html says p8test-backend)
+    probe: |
+      install -d -m 0755 /run/p8test-frontend/www
+      echo p8test-backend > /run/p8test-frontend/www/index.html
+      systemd-run --unit p8test-backend -q python3 -m http.server 8080 --bind 127.0.0.1 --directory /run/p8test-frontend/www
+      sleep 2
+    effect: |
+      curl -s --max-time 5 http://127.0.0.1:8080/
+    expect: {rc: 0, stdout: "\\Ap8test-backend\\n\\Z"}
+
+  - id: http-redirects-to-https
+    what: plain HTTP to the domain and to www answers 301 to HTTPS on the same name, with the path and query kept
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_frontend_domain.pp, lines: "420", text: "$naked_str = \"301 https://${domain}\\$request_uri\""}
+      - {path: manifests/nginx_frontend_domain.pp, lines: "453", text: "'return' => \"301 https://www.${domain}\\$request_uri\","}
+    mutates: none beyond two local HTTP requests (declared mutating so it runs after the backend starts)
+    probe: |
+      true
+    effect: |
+      for h in p8test.example.com www.p8test.example.com; do
+        curl -s -o /dev/null --max-time 5 --resolve "$h:80:127.0.0.1" -w '%{http_code} %{redirect_url}\n' "http://$h/p8test/path?q=1"
+      done
+    expect: {rc: 0, stdout: "\\A301 https://p8test\\.example\\.com/p8test/path\\?q=1\\n301 https://www\\.p8test\\.example\\.com/p8test/path\\?q=1\\n\\Z"}
+
+  - id: https-proxies-to-the-backend
+    what: >-
+      HTTPS to www and to the domain returns the backend's page, over a certificate that verifies against the issuer
+      in the domain's bundle under each name; under a name the certificate does not hold (other.example.com) the
+      verification fails and no page is returned
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_frontend_domain.pp, lines: "521-524", text: "$domain_list = [ $domain, \"www.${domain}\" ]"}
+      - {path: manifests/nginx_frontend_domain.pp, lines: "564", text: "$proxy_value = \"${backend_protocol}://${backend_name}\""}
+    mutates: none beyond two local HTTPS requests (declared mutating so it runs after the backend starts)
+    probe: |
+      true
+    effect: |
+      ca=$(awk '/BEGIN CERT/{i++} i==2' /etc/ssl/certs/p8test.nginx.bundle.crt)
+      for h in www.p8test.example.com p8test.example.com other.example.com; do
+        echo "$h: $(curl -s --max-time 5 --cacert <(echo "$ca") --resolve "$h:443:127.0.0.1" "https://$h/")"
+      done
+    expect: {rc: 0, stdout: "\\Awww\\.p8test\\.example\\.com: p8test-backend\\np8test\\.example\\.com: p8test-backend\\nother\\.example\\.com: \\n\\Z"}
+
+  - id: only-tls-1-3-is-accepted
+    what: a TLS 1.3 handshake with the frontend succeeds and a TLS 1.2 one is refused
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_frontend_domain.pp, lines: "92", text: "$base_ssl_protocols_prefix = ['TLSv1.3', ],"}
+      - {path: manifests/nginx_frontend_domain.pp, lines: "695", text: "ssl_protocols             => $base_ssl_protocols,"}
+    mutates: none beyond two local TLS handshakes (declared mutating so it runs after the backend starts)
+    probe: |
+      true
+    effect: |
+      for v in tls1_3 tls1_2; do
+        openssl s_client -connect 127.0.0.1:443 -servername www.p8test.example.com -$v </dev/null 2>/dev/null | grep -q '^ *Protocol *: TLSv1' && echo "$v accepted" || echo "$v refused"
+      done
+    expect: {rc: 0, stdout: "\\Atls1_3 accepted\\ntls1_2 refused\\n\\Z"}
