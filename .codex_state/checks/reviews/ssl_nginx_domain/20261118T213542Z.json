@@ -1,0 +1,33 @@
+{
+ "class": "ssl_nginx_domain",
+ "at": "20261118T213542Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "fail",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-key-is-private-and-matches-the-certificate / manifests/ssl_base.pp:77-78: with the fixture (sslprefix p8test, letsencrypt_certificate default false) the else branch sets key_file /etc/ssl/private/p8test.key from extra_files/ssl/p8test.key, and 85-92 give it mode 0600, owner/group defaults root:root; the probe's stat 'root:root 600' and the key's public key equal to the bundle's first certificate's (the .crt fragment, order 01) test exactly that. The mismatch varies the compared certificate to the bundle's second (the CA's), which must change the verdict, and it failed on the applied node as required",
+  "nginx-serves-tls-with-the-pair / manifests/ssl_nginx_domain.pp:9-14: the lines declare ssl_base for myservice/myservicename 'nginx', so the pair is /etc/ssl/certs/p8test.nginx.bundle.crt + the key, for nginx; a consumer server block naming both is a fair stand-in for the define's purpose. DERIVATION FAILURE in the mutating design: the effect is only 'cat /run/p8test-ssl/serve.txt', a file the ACTION wrote; the s_client handshake, the certificate count, the CN and the openssl verify are all computed inside the action (probe lines 94-100), so expect is matched against the action's own output, not a read-only observation of its result (same defect as the filesystem_yum 20261118T131226Z FAIL). On the clean node the effect failed only because serve.txt was absent (stderr 'cat: /run/p8test-ssl/serve.txt: No such file or directory'), so the negative control never probed nginx. Fix: the action only writes the server block and reloads; the effect runs the loopback s_client/verify itself",
+  "nginx-serves-tls-with-the-pair / manifests/ssl_base.pp:79-81: bundle_file ${ssl_certs_dir}/p8test.nginx.bundle.crt built from p8test.crt then p8test.intermediate.crt (fragments 01/02, 109-119); expecting nginx to serve 2 certificates, the first CN p8test.invalid, verifying against the second, is what those lines would produce with the throwaway PKI. The expected values are right; the failure is where they are measured (previous evidence)",
+  "purpose gap: The purpose (nginx gets the domain's key and leaf+intermediate bundle through ssl_base and is restarted on change) matches the header comment and ssl_nginx_domain.pp:9-14. Tested on the applied node: key path/owner/mode and key-cert match, bundle order/owner/mode and chain verification, nginx serving the pair (but see the derivation failure: that evidence comes from the action's own output), and one restart for two drifted files (agent run: 'Service[nginx]: Triggered refresh from 2 events', only the key and the bundle changed). The LE variant row is honest about what nginx_frontend_mail covers and what no set covers. GAP: the outcomes table has no row for the RedHat branch the define reaches through ssl_base (ssl_base.pp:57-62: key in /etc/pki/tls/private on RedHat; ssl_base's header names 'CentOS 7 (nginx)', i.e. this define), and outcome 1 states /etc/ssl/private unconditionally. The lab has an active rhel9 node; ssl_base's own set lists this as uncovered lifted_by rhel9, this set must too"
+ ],
+ "review_s": 162.5,
+ "check_file_sha256": "40268e795dd2828c013c833a26418b4da561a6a03ec250e36caf158c0cbb860c",
+ "reviewer_result": "20261118T213300Z-reviewer",
+ "author_result": "20261118T213022Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "8e8811ac-e877-4a54-b460-cc47cd75d10d",
+   "boot_id_at_end": "8e8811ac-e877-4a54-b460-cc47cd75d10d",
+   "fresh": true
+  }
+ }
+}
