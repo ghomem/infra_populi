@@ -27,6 +27,12 @@ node_agent:
     the class purges firewall rules it does not manage, and rebuilds its rules after the flush its WARNING asks for;
     only its next agent run can show either
 outcomes:
+  # Correction round 3 (2026-11-18, HQ batch-11 rulings 1 and 3; review 20261118T182854Z), the last:
+  # - local change #5 (rules/local_changes.md): the blacklist drop is titled 00 and covers all protocols, so the
+  #   blacklist check expects ICMP and SSH dropped, and a non-listed source is shown unaffected;
+  # - the rows say TCP where the type's default protocol makes a rule TCP-only (501-518, 524);
+  # - the ICMP-fragment check is removed (rule 518 matches TCP fragments only); rules 518 and 002 are uncovered rows
+  #   with their measurements (both counted nothing in every measured case; see the rows).
   # Correction round 2 (2026-11-18, review 20261118T180137Z): rule 503 and fragments became checks (python's
   # TCP_MAXSEG sets the SYN's MSS; a 3000-byte ping is fragmented), loopback got a check, and rows were added for
   # rule 002 and for anti_ddos without ip_filter. Measured by hand on the applied node before writing them.
@@ -40,19 +46,19 @@ outcomes:
     checks: [a-service-listens, loopback-reaches-a-local-service]
   - outcome: traffic to 127.0.0.0/8 arriving on another interface is rejected (rule 002)
     from: manifests/firewall_secure_extra.pp:113-118
-    uncovered: {why: "measured on the applied node: 3 hand-built Ethernet frames from the peer to 127.0.0.1 through the node's NIC were counted 0 by rule 002, as route_localnet is 0 on the node and the kernel drops such a destination before INPUT; no check can show rule 002 act (a lead in escalations/firewall_secure_extra.behaviour.md)", lifted_by: ubuntu}
+    uncovered: {why: "measured on the applied node 2026-11-18: 3 hand-built Ethernet frames from the peer to 127.0.0.1 through the node's NIC were counted 0 by rule 002 with route_localnet 0 (the kernel drops such a destination before INPUT) and again 0 with route_localnet set to 1 on the node, for a reason not found; no check can show the rule act, and it is listed as a lead in escalations/firewall_secure_extra.behaviour.md", lifted_by: ubuntu}
   - outcome: SSH from a host on no list is limited against brute force (overall 20 a minute with a burst of 5, 8 held per host, 15 new a minute per host)
     from: manifests/firewall_secure_extra.pp:129-132, 144-155
     checks: [an-ssh-burst-is-cut-at-the-overall-limit, held-ssh-connections-stop-at-eight, new-ssh-connections-stop-at-fifteen-a-minute]
-  - outcome: invalid packets (bogus flag combinations such as SYN+FIN, out-of-connection RSTs) and new packets without SYN are dropped before routing
+  - outcome: invalid TCP packets (bogus flag combinations such as SYN+FIN, out-of-connection RSTs) and new TCP packets without SYN are dropped before routing (the rules set no protocol, so the type's tcp default applies)
     from: manifests/firewall_secure_extra.pp:157-185
     checks: [mangle-anti-ddos-rules, the-mangle-counters-are-zeroed, bogus-packets-are-sent, the-invalid-and-not-syn-rules-dropped-them]
-  - outcome: SYN packets with an MSS outside 536-65535 are dropped (rule 503), while a normal MSS connects
+  - outcome: TCP SYN packets with an MSS outside 536-65535 are dropped (rule 503), while a normal MSS connects
     from: manifests/firewall_secure_extra.pp:165-166
     checks: [the-mangle-counters-are-zeroed, a-low-mss-syn-is-dropped, the-mss-rule-dropped-it]
-  - outcome: fragmented packets are dropped (rule 518)
+  - outcome: TCP fragments are dropped (rule 518; tcp by the type's default)
     from: manifests/firewall_secure_extra.pp:184-185
-    checks: [a-fragmented-ping-gets-no-reply]
+    uncovered: {why: "measured on the applied node 2026-11-18: 5 TCP-fragmented SYNs from the peer (hping3 -f) reached the node's NIC (tcpdump: 8-byte fragments) and were counted 0 by rule 518 and 0 by 501; the kernel's connection tracking reassembles fragments at a hook that runs before the mangle table (defrag priority -400, mangle -150), so the rule only ever sees whole packets. An unreachable rule like the RST limit, reported to HQ in escalations/firewall_secure_extra.behaviour.md", lifted_by: ubuntu}
   - outcome: ICMP echo requests are limited to 2 per second
     from: manifests/firewall_secure_extra.pp:87-99
     checks: [icmp-echo-is-rate-limited]
@@ -65,8 +71,8 @@ outcomes:
   - outcome: a whitelisted source holds at most ddos_limit connections to the service and opens new ones at the limited rate
     from: manifests/firewall_secure_extra.pp:225-250
     checks: [a-whitelisted-source-is-held-to-the-connection-limit, a-whitelisted-source-is-held-to-the-new-connection-rate]
-  - outcome: a blacklisted source is dropped outright, SSH and ICMP included
-    from: manifests/firewall_secure_extra.pp:25, 125-127
+  - outcome: a blacklisted source is dropped outright, every protocol (local change #5), while a source on no list is unaffected
+    from: manifests/firewall_secure_extra.pp:25, 125-127 (local change #5)
     checks: [a-blacklisted-source-gets-nothing]
   - outcome: rules Puppet does not manage are purged at the next agent run
     from: manifests/firewall_secure_extra.pp:79-84
@@ -221,21 +227,25 @@ checks:
     expect: {rc: 0, stdout: "\\Ain \\d+ of 20 in \\d+ ms\\nlimited\\n\\Z"}
 
   - id: a-blacklisted-source-gets-nothing
-    what: from the blacklisted address (+150), ping and SSH to the node are dropped
+    what: >-
+      from the blacklisted address (+150), ping and SSH to the node are dropped; from the peer's primary address (on no
+      list), both get in (round 3: local change #5 drops a listed address on every protocol, before every accept)
     control: negative
     host: peer
     derived_from:
       - {path: manifests/firewall_secure_extra.pp, lines: "125-127", text: "firewall { \"666 grounding naughty boys: ${bad_ip}\":  chain => 'INPUT', source => $bad_ip,  action => 'drop', }"}
-    mutates: a ping and an SSH connection attempt from the peer's +150 address to the class node; results in /run/p8test-fwx/black.txt
+    mutates: a ping and an SSH connection attempt from the peer's +150 address, then from its primary address, to the class node; results in /run/p8test-fwx/black.txt
     probe: |
       a=$(ip -4 -o addr show enp0s8 | awk '{print $4}' | cut -d/ -f1 | head -1); b=${a%.*}.$(( ${a##*.} + 150 ))
       {
         ping -c2 -W2 -q -I "$b" 192.168.56.20 >/dev/null 2>&1 && echo "icmp from blacklisted in" || echo "icmp from blacklisted dropped"
         nc -z -w2 -s "$b" 192.168.56.20 22 >/dev/null 2>&1 && echo "ssh from blacklisted in" || echo "ssh from blacklisted dropped"
+        ping -c2 -W2 -q -I "$a" 192.168.56.20 >/dev/null 2>&1 && echo "icmp from unlisted in" || echo "icmp from unlisted dropped"
+        nc -z -w2 -s "$a" 192.168.56.20 22 >/dev/null 2>&1 && echo "ssh from unlisted in" || echo "ssh from unlisted dropped"
       } > /run/p8test-fwx/black.txt
     effect: |
       cat /run/p8test-fwx/black.txt
-    expect: {rc: 0, stdout: "\\Aicmp from blacklisted dropped\\nssh from blacklisted dropped\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Aicmp from blacklisted dropped\\nssh from blacklisted dropped\\nicmp from unlisted in\\nssh from unlisted in\\n\\Z"}
 
   - id: icmp-echo-is-rate-limited
     what: >-
@@ -256,32 +266,6 @@ checks:
       [ -n "$n" ] && [ -n "$t" ] && [ "$n" -ge 2 ] && [ "$n" -le $(( 5 + 2 * ((t + 999) / 1000) + 1 )) ] && echo limited || echo "not limited"
     expect: {rc: 0, stdout: "\\A20 packets transmitted, \\d+ received.*\\nlimited\\n\\Z"}
 
-  - id: a-fragmented-ping-gets-no-reply
-    what: >-
-      from the peer, 3 pings of 3000 bytes (fragmented on the 1500-byte link) get no reply, while 3 small pings do
-      (correction round 2; measured by hand on the applied node: 3 of 3 fragmented pings answered, rule 518 counted 0)
-    control: negative
-    host: peer
-    derived_from:
-      - {path: manifests/firewall_secure_extra.pp, lines: "184-185", text: "-> firewall { '518 drop fragmented packages': chain => 'PREROUTING', table => 'mangle', isfragment => true, action => 'drop', }"}
-    mutates: after 3 s (the ICMP limit refills), 3 pings of 3000 bytes and 3 of 100 bytes from the peer's primary address to the class node, 1 s apart; the replies go to /run/p8test-fwx/frag.txt
-    probe: |
-      sleep 3
-      {
-        echo "fragmented: $(ping -c3 -W2 -q -s 3000 192.168.56.20 2>&1 | sed -n 's/.* \([0-9]*\) received.*/\1/p') received"
-        echo "unfragmented: $(ping -c3 -W2 -q -s 100 192.168.56.20 2>&1 | sed -n 's/.* \([0-9]*\) received.*/\1/p') received"
-      } > /run/p8test-fwx/frag.txt
-    effect: |
-      cat /run/p8test-fwx/frag.txt
-    expect: {rc: 0, stdout: "\\Afragmented: 0 received\\nunfragmented: 3 received\\n\\Z"}
-
-  # 2026-11-18 correction round 1 (review 20261118T172004Z): the ICMP check failed in the reviewer's run and printed
-  # nothing; it now prints ping's summary and bounds the replies by the flood's measured duration, after 3 s of refill.
-
-  # RST limit, added in correction round 1: three connections from the whitelisted address are reset at once (3 RSTs
-  # inside connections, which conntrack does not mark INVALID); rule 519 accepts 2 a second with a burst of 2 and rule
-  # 520 drops the rest, so the third RST should be dropped. Counters are compared before and after (iptables -Z on
-  # INPUT fails on this nf_tables backend: "RULE_REPLACE failed").
   - id: the-rst-counters-are-recorded
     what: setup for the RST limit check, rule 519's and 520's packet counters recorded on the node
     control: negative
