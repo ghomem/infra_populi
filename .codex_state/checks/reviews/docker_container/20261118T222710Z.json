@@ -1,0 +1,33 @@
+{
+ "class": "docker_container",
+ "at": "20261118T222710Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-container-is-killed (manifests/docker_container.pp:82-93): docker::run declares the container under the module's systemd unit (run.pp systemd_restart default 'on-failure', remove_container_on_stop => false keeps the container to start again); the kill is a crash stimulus, not something the class runs, and its effect only shows the start time was noted - the kill's real result is judged by the-service-starts-it-again (a new StartedAt, running), so the pair is sound; mutates declares the /run/p8test-docker note and the kill, nothing else",
+  "the-container-runs-the-image-under-systemd (82-84, with 42-46): under the params fixture (image nginx, tag alpine) image_id = 'nginx:alpine' and docker::run title docker_container; the probe reads the pulled image's tag, the unit docker-docker_container (module service_prefix 'docker-' + title, run.pp:217/511) is active, and the running container uses nginx:alpine - exactly what the lines declare",
+  "the-app-answers-on-loopback-only (52-54): with app_port 80 and host_port 18080 myapp_port = ['127.0.0.1:18080:80']; the probe checks docker port mapping, that the only listener on 18080 is 127.0.0.1, and nginx's heading answers there; the mismatch varies only the curl address to the host-only address (enp0s8), which must fail when the bind is loopback-only and would pass if the port were published on all addresses - a real verdict change, it failed after apply as required",
+  "purpose covered: Purpose (one container from an image at a tag/digest, optional registry login, under systemd, app port on 127.0.0.1 only, recreated on image change) matches the baseline define. Tested on the applied node: image pulled at the tag, container running from it as systemd unit docker-<title>, port published on 127.0.0.1:18080 only with nginx answering, and a killed container started again by its service (module on-failure restart). Honestly uncovered: recreation on image change (subscribe => Docker::Image, line 92) needs a second agent run with a changed image behind the tag, which the runner's single apply and the lab's lack of a controlled registry do not provide; registry login, digest, named volumes (the mkvol exec), env, command and network variants are other fixtures of the single params fixture per set (registry login also needs a private registry). Both uncovered rows name lifted_by ubuntu with the needed extra (registry / variant fixture)."
+ ],
+ "review_s": 323.8,
+ "check_file_sha256": "5fb3e51f14c25c0ea6ca23521efdda31dfdbc234c5238e5cca2179319268b23e",
+ "reviewer_result": "20261118T222147Z-reviewer",
+ "author_result": "20261118T221836Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "deef04f2-74ab-40cc-be1e-2405d8ff5d78",
+   "boot_id_at_end": "deef04f2-74ab-40cc-be1e-2405d8ff5d78",
+   "fresh": true
+  }
+ }
+}
