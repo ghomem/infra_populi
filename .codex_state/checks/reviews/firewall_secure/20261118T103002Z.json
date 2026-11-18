@@ -1,0 +1,40 @@
+{
+ "class": "firewall_secure",
+ "at": "20261118T103002Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "flush-script-installed: baseline lines 21-27 declare ${localdir}/bin/iptables-flush.sh mode 0755 owner root from puppet:///modules/puppet_infrastructure/iptables/iptables-flush.sh; the probe stats owner/mode and compares the installed file's sha256 to the baseline file's own hash (af2e05ea...), exactly what those lines produce with filesystem::localdir=/opt/puppet-infrastructure",
+  "an-unmanaged-rule-is-added: setup for the purge test of line 37 (resources { 'firewall': purge => $strict_purge }, strict_purge default true in the fixture); mutates declares exactly the one appended INPUT rule the action adds; the effect (iptables -S INPUT | grep -c p8test-rogue) reads the rule table, not the action's output, and fails on the clean node; the follow-up check after the node agent run expects 0, which is what purge => true does",
+  "a-burst-of-new-ssh-connections-is-cut-at-the-limit: lines 77-79/100/101 send NEW SSH from a non-whitelisted host through LIMIT_OVERALL, limit 20/min accept then 117 drop; the module sets no burst so iptables' default burst 5 applies; 20 parallel SYNs from the peer (on no list) after a 61 s refill of the limit and the recent window yield 5 in / 15 dropped (connlimit 8 is not reached because only 5 are accepted; recent hitcount 15 only adds drops); expectation matches the code",
+  "purpose gap: Purpose matches the header (lines 2-3) and the default-mode code. Tested behaviourally: INPUT/FORWARD DROP and OUTPUT ACCEPT policies, ICMP and SSH reaching the node from a peer on no list while a listening port 8888 is dropped, the SSH burst from a non-whitelisted host cut by the overall limit (5 of 20), purge of a hand-added rule on the next agent run, persistence of the running rules and the flush script. GAP: the purpose part 'whitelisted hosts reach SSH freely' (lines 31-34, 82-83) is tested only structurally (whitelist-is-the-hiera-list-plus-the-acl reads iptables -S rule text), never as behaviour, although the lab can exercise it: e.g. a peer secondary host-only address (mutating, on the peer) put in the fixture acl, bursting 20 SSH connects from that source and expecting all 20 in beside the 5/20 from the unlisted address. The set has no uncovered section stating this (nor the per-IP limits connlimit 8 / recent 15 per 60 s, lines 96-98, which the burst result does not distinguish from the overall limit; strict and ignore_patterns modes are outside the stated default-mode purpose)."
+ ],
+ "review_s": 236.8,
+ "check_file_sha256": "ddfb5972ae0bf746a81cd01781e77705ee0158a6629d9371eba338e2da37f03c",
+ "reviewer_result": "20261118T102606Z-reviewer",
+ "author_result": "20261118T102230Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "2588eb91-ec30-426b-bef6-20aaa667c081",
+   "boot_id_at_end": "2588eb91-ec30-426b-bef6-20aaa667c081",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "b49a23db-31be-4f6d-8a6e-f1d2026c9b56",
+   "boot_id_at_end": "b49a23db-31be-4f6d-8a6e-f1d2026c9b56",
+   "fresh": true
+  }
+ }
+}
