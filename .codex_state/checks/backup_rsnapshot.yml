@@ -16,6 +16,9 @@ authoring:
     destination as `daily.0//etc`; the expectation demanded ` /etc /opt/...`. The new regex accepts the trailing
     slash and asserts the destination ends in `etc` (template line 12 `./<%= @prefix %>`). 0.5 min. Shared research for the three pilots (baselines, fixtures, read-only look at the clean node's
     sshd/tools, fixture certificate type), 15:52-15:57Z, is reported once in the pilot report.
+purpose: >-
+  Simple rsnapshot-based generic backups: a configuration per title and a daily cron run that snapshots the configured
+  directory into the snapshot root, so its files can be restored from there.
 checks:
   - id: conf-file-mode
     what: the per-title rsnapshot config exists at /etc/rsnapshot.d/rsnapshot-<title>.conf, 0644 root:root

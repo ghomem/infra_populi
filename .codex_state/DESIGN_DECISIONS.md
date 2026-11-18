@@ -1921,3 +1921,21 @@ snapshot list, record.
   reaches the peer. Hashman's admin step on the node produces the initial password the peer's browser needs. 1 test.
 - **For the 26.04 pass:** hashman imports Python's `crypt` (DeprecationWarning on 24.04's 3.12; the module is gone in
   3.13). On 26.04 it stops the class's purpose.
+
+## 2026-11-18 — Purpose coverage: check sets state the class's purpose; the reviewer judges it (HQ ruling C1)
+- **The set:**
+  - A top-level `purpose:` is required: one or two sentences on what the class is FOR, from its own header and code.
+  - It is ≥ 40 characters and validated.
+  - With each check's `what`, it is how "checks state the purpose they test" (also requirement F).
+- **The verdict:** `phase3.py verdict ... --purpose covered|gap --purpose-evidence TEXT` is required.
+  - `gap` fails the review (checks.purpose = fail), and the evidence is persisted.
+  - The reviewer's instructions (.claude/agents/reviewer.md, `--phase3` step 2b) define it:
+    - `covered` when every part of the purpose the lab can exercise is tested, and every part it cannot is listed
+      under `uncovered` with the node kind that would lift it;
+    - `gap` when a part the lab CAN exercise is untested, or the stated purpose misreads the class.
+  - The same applies to deferrals.
+- **The state:** a new value `unjudged`, for a set without a stated purpose, or one whose review predates the purpose
+  judgement. Its earlier PASS stays as history but is not behaviour approval (C3).
+- **Where things stand:** status shows 41 none, 3 stale (the pilot sets, which gained their purpose here), 46
+  unjudged, of 90 done. The backfill re-judges them all in batches of 10 under the start rule (D3).
+- **Tests:** 3 new; the pinned verdict shape gains `purpose`.

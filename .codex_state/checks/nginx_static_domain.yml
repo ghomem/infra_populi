@@ -25,6 +25,9 @@ authoring:
     never the varied value: each port has exactly one server, so nginx's default-server rule answers any Host the same
     way and a Host mismatch could not discriminate. Varied instead: the path, the compared file or certificate, the
     verified hostname, the requested protocol, the offered suites, and the offered curve.
+purpose: >-
+  Sets up nginx servers (vhosts) that serve a domain's static content from a local directory, with the class's
+  redirect and TLS options, so requests for the domain get that content.
 checks:
   - id: nginx-config-valid
     what: the nginx configuration the define produces passes `nginx -t`

@@ -93,11 +93,19 @@ read `.codex_state/checks/results/<class>/*-author.*`: the verdict tool compares
    enforces it): judge that its `varies` names a value whose change MUST change the verdict, and that its probe
    changes exactly that value. The runner requires it to fail on the applied node; a mismatch that only breaks the
    command (e.g. a typo) proves nothing and is a derivation failure.
+2b. Judge purpose coverage (HQ 2026-11-18 ruling C1). The set's `purpose:` states what the class is FOR. Check it
+   against the class's own header comments and baseline code (`baseline.py show --for <class> manifests/<class>.pp`).
+   Then judge: do the checks, taken together, test that purpose (the class doing its job: a service answering, a user
+   able to log in, a backup restorable, a rule blocking), or only that files and packages exist? `covered` when every
+   part of the purpose the lab can exercise is tested, and every part it cannot is listed honestly under `uncovered`
+   with the node kind that would lift it. `gap` when a part the lab CAN exercise is untested, or when the stated
+   purpose misreads the class: name that part in the evidence.
 3. Record: `python3 .codex_state/tools/phase3.py verdict <class> --derived ok|fail --evidence "<check id: why the
-   reference supports (or not) the probe>"` — one --evidence per spot-checked reference, plus one per finding if the
+   reference supports (or not) the probe>" --purpose covered|gap --purpose-evidence "<what of the purpose the checks
+   test, and what they leave out and why>"` — one --evidence per spot-checked reference, plus one per finding if the
    run had findings ("finding <id>: <what the probe saw vs the expectation>"). PASS = your run and the author's run
-   are both valid, they agree on every check in both phases, and derivation is ok; findings do not fail the review
-   (they are Phase 3 results, triaged by the advisor).
+   are both valid, they agree on every check in both phases, derivation is ok and the purpose is covered; findings do
+   not fail the review (they are Phase 3 results, triaged by the advisor).
 4. Report EXACTLY the verdict command's output and nothing else.
 
 A DEFERRED set (`deferred:` instead of checks; `phase3.py validate` prints `DEFERRED`) has nothing to run: skip step 1.
@@ -106,5 +114,6 @@ of these:
 - do those lines really make the behaviour impossible to observe on this lab's default node, as stated?
 - would the named node kind (`.codex_state/lab/nodes.yml`) lift it?
 
-Then record `verdict <class> --derived ok|fail --evidence "<reference: why>"`. A set's `uncovered` notes are part of
+Then record `verdict <class> --derived ok|fail --evidence "<reference: why>" --purpose covered|gap
+--purpose-evidence "<...>"` (for a deferral: whether the stated purpose is right and the deferral covers all of it). A set's `uncovered` notes are part of
 the file. Judge that each states honestly what the checks do not cover.

@@ -17,6 +17,9 @@ authoring:
     mac negotiation offer the class's own algorithm, which must negotiate. password-auth-off lost its wire part
     (`ssh … nobody@127.0.0.1`): no input value changes the server's verdict, so no mismatch can discriminate it, and
     the effective-config read (sshd -T, a direct state read) stays as the evidence.
+purpose: >-
+  Manages sshd with hardened settings: the daemon runs with the class's restricted ciphers, key exchanges, MACs and
+  login rules, so clients can log in only within those restrictions.
 checks:
   - id: kex-only-dh-gex-sha256
     what: the effective KexAlgorithms is exactly diffie-hellman-group-exchange-sha256

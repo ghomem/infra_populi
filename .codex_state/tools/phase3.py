@@ -16,10 +16,12 @@ derived from the pinned baseline, probed on the node only, with negative control
                                  baseline lines read fresh from the upstream pin, beside the check's probe/expect.
   phase3.py state [<class> ...]  behaviour state per class (HQ 2026-11-16), DERIVED from the check, result and
                                  review files: pass | finding | deferred (<needs>) | none (no check file) |
-                                 unreviewed | stale (check file changed after its review) | review-failed | invalid;
+                                 unreviewed | stale (check file changed after its review) | review-failed | invalid |
+                                 unjudged (no stated purpose, or a review before the purpose judgement, HQ C1);
                                  with authoring minutes and the author-run / reviewer-run / review times. A finding
                                  without .codex_state/escalations/<class>.behaviour.md is flagged.
-  phase3.py verdict <class> --derived ok|fail --evidence TEXT [--evidence ...]
+  phase3.py verdict <class> --derived ok|fail --evidence TEXT [--evidence ...] --purpose covered|gap
+                     --purpose-evidence TEXT
                                  reviewer: compares its latest run with the latest author run (same validity, same
                                  per-check outcome on both phases) and persists .codex_state/checks/reviews/<class>/
                                  <UTC>.json. PASS = both runs valid + reproduced + derived ok + every node of the
@@ -41,6 +43,8 @@ Check file .codex_state/checks/<class>.yml:
   baseline: release-0.9.10 (cf477c6)   # = `baseline.py for <class>`
   fixture: params | defaults      # what the harness applies: the class's params file, or no params file at all
   authoring: {minutes: N, notes: "..."}
+  purpose: <the class's purpose in one or two sentences, from its own header and code: what it is FOR, not what it
+           declares> (HQ 2026-11-18 ruling C1; >= 40 characters). The reviewer judges whether the checks test it.
   checks:
     - id: <slug>
       what: <one line>
@@ -270,6 +274,9 @@ def peer_problems(cls: str, peer) -> tuple[list[str], str | None]:
     return out, node_ip
 
 
+PURPOSE_MISSING = "purpose: the class's purpose (one or two sentences, >= 40 characters) is required (HQ 2026-11-18 C1)"
+
+
 def validate(cls: str) -> tuple[list[str], dict, bytes]:
     data, raw = load_set(cls)
     problems: list[str] = []
@@ -307,6 +314,8 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
         problems.append(f"fixture: params but {params} is missing")
     if data.get("fixture") == "defaults" and params.is_file():
         problems.append(f"fixture: defaults but {params} exists (the harness would apply it)")
+    if len(str(data.get("purpose") or "").strip()) < 40:
+        problems.append(PURPOSE_MISSING)
     peer_ip = None
     if "peer" in data:
         found, peer_ip = peer_problems(cls, data["peer"])
@@ -892,12 +901,17 @@ def outcomes(record: dict) -> dict:
             "mismatch": {r["id"]: r["mismatch"].get("passed") for r in record["applied"] if r.get("mismatch")}}
 
 
-def cmd_verdict(cls: str, derived: str, evidence: list[str]) -> int:
+def cmd_verdict(cls: str, derived: str, evidence: list[str], purpose: str = "", purpose_evidence: str = "") -> int:
     if derived not in ("ok", "fail") or not evidence:
         raise SystemExit("ERROR: verdict needs --derived ok|fail and at least one --evidence")
+    # HQ 2026-11-18 ruling C1: the reviewer also judges whether the checks test the class's stated purpose
+    if purpose not in ("covered", "gap") or len(purpose_evidence.strip()) < 20:
+        raise SystemExit("ERROR: verdict needs --purpose covered|gap and --purpose-evidence TEXT (>= 20 characters)")
+    evidence = evidence + [f"purpose {purpose}: {purpose_evidence.strip()}"]
     problems, data, raw = validate(cls)
     if "deferred" in data:  # no runs to reproduce: the reviewer judges the stated reason against the cited lines
-        checks = {"deferral_valid": "fail" if problems else "ok", "derived_from": derived}
+        checks = {"deferral_valid": "fail" if problems else "ok", "derived_from": derived,
+                  "purpose": "ok" if purpose == "covered" else "fail"}
         verdict = "PASS" if all(v == "ok" for v in checks.values()) else "FAIL"
         record = {"class": cls, "at": now(), "verdict": verdict, "deferral": True, "checks": checks,
                   "evidence": evidence, "check_file_sha256": hashlib.sha256(raw).hexdigest(), "findings": [],
@@ -925,6 +939,7 @@ def cmd_verdict(cls: str, derived: str, evidence: list[str]) -> int:
     ran = (mine or {}).get("nodes") or {}
     want = {"node", "peer"} if "peer" in data else {"node"}
     checks["nodes_fresh"] = "ok" if set(ran) == want and all(e.get("fresh") for e in ran.values()) else "fail"
+    checks["purpose"] = "ok" if purpose == "covered" else "fail"
     verdict = "PASS" if all(v == "ok" for v in checks.values()) else "FAIL"
     started = dt.datetime.strptime(mine["at"], "%Y%m%dT%H%M%SZ").replace(tzinfo=dt.timezone.utc) if mine else None
     review_s = round((dt.datetime.now(dt.timezone.utc) - started).total_seconds(), 1) if started else None
@@ -963,6 +978,10 @@ def behaviour_state(cls: str) -> dict:
         return row
     problems, data, raw = validate(cls)
     row["authoring_min"] = (data.get("authoring") or {}).get("minutes")
+    # HQ 2026-11-18 ruling C1: a set that states no purpose yet, or whose review predates the purpose judgement, is
+    # `unjudged` (its earlier PASS stands as history, not as behaviour approval)
+    if problems == [PURPOSE_MISSING]:
+        return {**row, "state": "unjudged", "detail": "the set states no purpose yet"}
     if problems:
         return {**row, "state": "invalid", "detail": problems[0]}
     if "deferred" in data:
@@ -972,6 +991,8 @@ def behaviour_state(cls: str) -> dict:
             return {**row, "state": "unreviewed", "detail": f"deferral ({d['needs']}) not yet judged by the reviewer"}
         if review["verdict"] != "PASS":
             return {**row, "state": "review-failed", "detail": "deferral rejected"}
+        if "purpose" not in review["checks"]:
+            return {**row, "state": "unjudged", "detail": "the review predates the purpose judgement"}
         return {**row, "state": "deferred", "detail": f"{d['needs']}, lifted by {d['lifted_by']}"}
     author, reviewer, review = latest(cls, "author"), latest(cls, "reviewer"), latest_review(cls)
     row["author_run_s"] = (author or {}).get("duration_s")
@@ -986,6 +1007,8 @@ def behaviour_state(cls: str) -> dict:
     if review["verdict"] != "PASS":
         failed = ", ".join(k for k, v in review["checks"].items() if v != "ok")
         return {**row, "state": "review-failed", "detail": failed}
+    if "purpose" not in review["checks"]:
+        return {**row, "state": "unjudged", "detail": "the review predates the purpose judgement"}
     if review.get("findings"):
         esc = REPO / ".codex_state" / "escalations" / f"{cls}.behaviour.md"
         detail = ", ".join(review["findings"]) + ("" if esc.is_file() else " — NO ESCALATION FILE")
@@ -1043,7 +1066,8 @@ def main(argv: list[str]) -> int:
         return cmd_state([short(c) for c in argv[1:]])
     if len(argv) >= 2 and argv[0] == "verdict":
         evidence = [argv[i + 1] for i, a in enumerate(argv[:-1]) if a == "--evidence"]
-        return cmd_verdict(short(argv[1]), opt("--derived", ""), evidence)
+        return cmd_verdict(short(argv[1]), opt("--derived", ""), evidence, opt("--purpose", ""),
+                           opt("--purpose-evidence", ""))
     print(__doc__.strip(), file=sys.stderr)
     return 2
 

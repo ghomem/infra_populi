@@ -25,9 +25,13 @@ def check(cid, probe, control="negative", **extra):
     return copy.deepcopy(c)  # the REF_* templates are shared; tests mutate their copy
 
 
+PURPOSE = "keeps daily rsnapshot backups of a directory, restorable from the snapshot root"
+COVERED = ("--purpose", "covered", "--purpose-evidence", "the checks back up and restore a file")
+
+
 def check_set(*checks, **top):
     data = {"class": CLS, "baseline": "release-0.9.10 (cf477c6)", "fixture": "params",
-            "authoring": {"minutes": 5}, "checks": list(checks)}
+            "authoring": {"minutes": 5}, "purpose": PURPOSE, "checks": list(checks)}
     data.update(top)
     return data
 
@@ -242,12 +246,12 @@ def run_both(p3, applied_for_reviewer=OK):
 
 def test_verdict_passes_when_the_reviewer_reproduces_the_author_run(p3):
     run_both(p3)
-    proc = p3.run("verdict", CLS, "--derived", "ok", "--evidence", "conf: lines 5-11 declare the file")
+    proc = p3.run("verdict", CLS, *COVERED, "--derived", "ok", "--evidence", "conf: lines 5-11 declare the file")
     assert proc.returncode == 0 and proc.stdout.startswith("VERDICT PASS"), proc.stdout + proc.stderr
     (path,) = (p3.dir / "reviews" / CLS).glob("*.json")
     verdict = json.loads(path.read_text())
     assert verdict["checks"] == {"reviewer_run": "ok", "author_run": "ok", "reproduced": "ok", "derived_from": "ok",
-                                 "nodes_fresh": "ok"}
+                                 "nodes_fresh": "ok", "purpose": "ok"}
     assert verdict["nodes"]["node"]["boot_id"] == "boot-ubuntu" and verdict["nodes"]["node"]["fresh"] is True
 
 
@@ -264,15 +268,15 @@ def test_verdict_fails_when_the_reviewer_node_rebooted_during_its_run(p3, tmp_pa
     p3.run("run", CLS, "--role", "reviewer")
     record, _ = p3.result("reviewer")
     assert record["nodes"]["node"]["fresh"] is False
-    proc = p3.run("verdict", CLS, "--derived", "ok", "--evidence", "x")
+    proc = p3.run("verdict", CLS, *COVERED, "--derived", "ok", "--evidence", "x")
     assert proc.returncode == 1 and '"nodes_fresh": "fail"' in proc.stdout and "NOT FRESH" in proc.stdout
 
 
 def test_verdict_fails_when_the_runs_differ_or_derivation_is_wrong(p3):
     run_both(p3, applied_for_reviewer=FAIL)
-    proc = p3.run("verdict", CLS, "--derived", "ok", "--evidence", "x")
+    proc = p3.run("verdict", CLS, *COVERED, "--derived", "ok", "--evidence", "x")
     assert proc.returncode == 1 and '"reproduced": "fail"' in proc.stdout
-    proc = p3.run("verdict", CLS, "--derived", "fail", "--evidence", "cron check tests the wrong hour")
+    proc = p3.run("verdict", CLS, *COVERED, "--derived", "fail", "--evidence", "cron check tests the wrong hour")
     assert proc.returncode == 1 and '"derived_from": "fail"' in proc.stdout
 
 
@@ -427,7 +431,7 @@ def test_no_mismatch_run_when_the_check_itself_fails(p3, lab):
 
 
 # HQ 2026-11-16 item 2: behaviour state (derived) and deferrals.
-DEFERRED = {"class": CLS, "baseline": "release-0.9.10 (cf477c6)", "authoring": {"minutes": 2},
+DEFERRED = {"class": CLS, "baseline": "release-0.9.10 (cf477c6)", "authoring": {"minutes": 2}, "purpose": PURPOSE,
             "deferred": {"needs": "second-node", "why": "the cron pushes to a remote backup host that the lab lacks",
                          "lifted_by": "ubuntu2"},
             "derived_from": [REF_CRON]}
@@ -468,7 +472,7 @@ def test_state_moves_from_none_to_unreviewed_to_pass_to_stale(p3):
     assert state_of(p3, CLS)[1] == "unreviewed"
     record, _ = p3.result()
     assert record["duration_s"] >= 0 and record["authoring_minutes"] == 5
-    assert p3.run("verdict", CLS, "--derived", "ok", "--evidence", "e").returncode == 0
+    assert p3.run("verdict", CLS, *COVERED, "--derived", "ok", "--evidence", "e").returncode == 0
     (review,) = (p3.dir / "reviews" / CLS).glob("*.json")
     assert json.loads(review.read_text())["review_s"] is not None
     row = state_of(p3, CLS)
@@ -485,7 +489,7 @@ def test_a_reproduced_finding_is_the_state_and_flags_a_missing_escalation(p3):
     p3.run("run", CLS)
     p3.probe_rule("probe-conf", FAIL, FAIL)
     p3.run("run", CLS, "--role", "reviewer")
-    proc = p3.run("verdict", CLS, "--derived", "ok", "--evidence", "finding conf: x")
+    proc = p3.run("verdict", CLS, *COVERED, "--derived", "ok", "--evidence", "finding conf: x")
     assert proc.returncode == 0 and "write .codex_state/escalations/backup_rsnapshot.behaviour.md" in proc.stdout
     row = state_of(p3, CLS)
     assert row[1] == "finding" and row[2] == "conf — NO ESCALATION FILE"
@@ -493,7 +497,7 @@ def test_a_reproduced_finding_is_the_state_and_flags_a_missing_escalation(p3):
 
 def test_a_failed_review_is_the_state(p3):
     run_both(p3, applied_for_reviewer=FAIL)
-    p3.run("verdict", CLS, "--derived", "ok", "--evidence", "e")
+    p3.run("verdict", CLS, *COVERED, "--derived", "ok", "--evidence", "e")
     assert state_of(p3, CLS)[1:3] == ["review-failed", "reproduced"]
 
 
@@ -558,14 +562,14 @@ def test_the_reviewer_judges_a_deferral_and_only_then_it_counts(p3):
     spot = p3.run("spot", CLS)
     assert "DEFERRAL — needs second-node, lifted by node kind ubuntu2" in spot.stdout
     assert '  |     command => "/usr/bin/rsnapshot -c ${myconffile} daily",' in spot.stdout  # baseline lines, fresh
-    proc = p3.run("verdict", CLS, "--derived", "ok", "--evidence", "lines 13-19: cron needs a remote host")
+    proc = p3.run("verdict", CLS, *COVERED, "--derived", "ok", "--evidence", "lines 13-19: cron needs a remote host")
     assert proc.returncode == 0 and proc.stdout.startswith("VERDICT PASS")
     assert state_of(p3, CLS)[1:3] == ["deferred", "second-node, lifted by ubuntu2"]
     data = copy.deepcopy(DEFERRED)
     data["deferred"]["why"] += " (edited)"
     p3.write(data)
     assert state_of(p3, CLS)[1] == "unreviewed"
-    p3.run("verdict", CLS, "--derived", "fail", "--evidence", "the reason does not follow from the lines")
+    p3.run("verdict", CLS, *COVERED, "--derived", "fail", "--evidence", "the reason does not follow from the lines")
     assert state_of(p3, CLS)[1:3] == ["review-failed", "deferral rejected"]
 
 
@@ -819,3 +823,36 @@ def test_a_file_a_node_action_writes_reaches_the_next_peer_check(p3, lab, tmp_pa
     sent = [json.loads(l) for l in (lab.calls_path.parent / "calls.jsonl.stdin").read_text().splitlines()]
     act_peer = next(s for s in sent if "act-peer" in s[2])
     assert "aW5pdGlhbAo=" in act_peer[2] and "/run/p8test-from-node/initial" in act_peer[2]
+
+
+
+# ------------------------------------------------------------------ purpose coverage (HQ 2026-11-18 ruling C1)
+
+def test_a_set_must_state_the_class_purpose(p3):
+    data = check_set(check("conf", "probe-conf"))
+    del data["purpose"]
+    p3.write(data)
+    proc = p3.run("validate", CLS)
+    assert proc.returncode == 2 and "purpose: the class's purpose" in proc.stderr
+    assert state_of(p3, CLS)[1:3] == ["unjudged", "the set states no purpose yet"]
+
+
+def test_the_verdict_needs_a_purpose_judgement_and_a_gap_fails_it(p3):
+    run_both(p3)
+    proc = p3.run("verdict", CLS, "--derived", "ok", "--evidence", "conf: lines 5-11 declare the file")
+    assert proc.returncode != 0 and "--purpose covered|gap" in proc.stderr
+    proc = p3.run("verdict", CLS, "--purpose", "gap", "--purpose-evidence", "nothing restores a file from a snapshot",
+                  "--derived", "ok", "--evidence", "conf: lines 5-11 declare the file")
+    assert proc.returncode == 1 and proc.stdout.startswith("VERDICT FAIL") and '"purpose": "fail"' in proc.stdout
+    assert "evidence purpose gap: nothing restores a file" in proc.stdout
+    assert state_of(p3, CLS)[1:3] == ["review-failed", "purpose"]
+
+
+def test_a_review_before_the_purpose_judgement_leaves_the_set_unjudged(p3):
+    run_both(p3)
+    assert p3.run("verdict", CLS, *COVERED, "--derived", "ok", "--evidence", "e").returncode == 0
+    (path,) = (p3.dir / "reviews" / CLS).glob("*.json")
+    old = json.loads(path.read_text())
+    del old["checks"]["purpose"]  # as every review before 2026-11-18 was written
+    path.write_text(json.dumps(old))
+    assert state_of(p3, CLS)[1:3] == ["unjudged", "the review predates the purpose judgement"]
