@@ -1,0 +1,98 @@
+{
+ "schema": 1,
+ "class": "sysmon_base",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-18T08:02:56Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "37a4ff86d977",
+ "migrate_subject": "P8: migrate puppet_infrastructure::sysmon_base",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 37a4ff86d977; 660 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `sysmon_base Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 29 catalog events; run 2: 1 event(s) only from expected_run2_events Exec[apt_update] Exec[dnf-makecache] [own: none; inherited: Exec[apt_update] via packages_base, Exec[dnf-makecache] via packages_base] (judge the header justification); COVERAGE puppet_infrastructure::sysmon_base: 13 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added lines: 'Puppet 8 migration: release-0.9.10 manifest validated unchanged.' and 'Module dependencies: none.'); diff_summary non_comment_changes=0; DIFF B identical (the migrate commit added only that header)",
+   "run-2 event Exec[dnf-makecache] is inherited from packages_base (required_base), not from sysmon_base (own: none): baseline packages_base.pp (cf477c6) declares exec { 'dnf-makecache': command => 'dnf makecache', refreshonly => false } with no guard under 'if $os_family == RedHat', commented 'needed to make sure apt-get update or dnf-makecache runs on each puppet run' \u2014 runs every agent run by upstream design; packages_base header justification matches the baseline code",
+   "rhel9 branches: sysmon_base's RedHat case only sets the (unused) $packagename = nagios-plugins-disk; /usr/lib64/nagios/plugins/check_cpu.py and check_mem.pl require Class[packages_base] as at the baseline; all 13 resources unchanged vs baseline"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependencies: none."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 29,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::sysmon_base: 13 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "node": "rhel9",
+   "snapshot": "P8LAB_RHEL9_BASELINE_v1",
+   "total_s": 57.48,
+   "master_check_s": 0.293,
+   "poweroff_s": 0.596,
+   "restore_s": 0.238,
+   "boot_to_ssh_s": 18.736,
+   "apt_update_s": 37.211,
+   "verify_s": 0.406,
+   "nic1_rx_bytes": 135928258
+  },
+  "log": ".codex_state/logs/reviews/sysmon_base.20261118T075928Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": "RUN2_EXPECTED_EVENTS: 1 from Exec[apt_update] Exec[dnf-makecache] [own: none; inherited: Exec[apt_update] via packages_base, Exec[dnf-makecache] via packages_base] (plan"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "rhel9"
+}
