@@ -27,23 +27,32 @@ node_agent:
     the class purges firewall rules it does not manage, and rebuilds its rules after the flush its WARNING asks for;
     only its next agent run can show either
 outcomes:
+  # Correction round 2 (2026-11-18, review 20261118T180137Z): rule 503 and fragments became checks (python's
+  # TCP_MAXSEG sets the SYN's MSS; a 3000-byte ping is fragmented), loopback got a check, and rows were added for
+  # rule 002 and for anti_ddos without ip_filter. Measured by hand on the applied node before writing them.
   # Correction round 1 (2026-11-18, review 20261118T172004Z): the SSH limits, the flush script and the RST limit
   # became behaviour checks; the mangle rows now say which rule each packet met (measured by hand on the applied node).
   - outcome: INPUT and FORWARD drop by default; the Hiera whitelist and the acl reach SSH unlimited
     from: manifests/firewall_secure_extra.pp:72-84, 134-137
     checks: [policies-and-ssh-rules]
+  - outcome: loopback traffic is accepted (rule 001)
+    from: manifests/firewall_secure_extra.pp:108-112
+    checks: [a-service-listens, loopback-reaches-a-local-service]
+  - outcome: traffic to 127.0.0.0/8 arriving on another interface is rejected (rule 002)
+    from: manifests/firewall_secure_extra.pp:113-118
+    uncovered: {why: "measured on the applied node: 3 hand-built Ethernet frames from the peer to 127.0.0.1 through the node's NIC were counted 0 by rule 002, as route_localnet is 0 on the node and the kernel drops such a destination before INPUT; no check can show rule 002 act (a lead in escalations/firewall_secure_extra.behaviour.md)", lifted_by: ubuntu}
   - outcome: SSH from a host on no list is limited against brute force (overall 20 a minute with a burst of 5, 8 held per host, 15 new a minute per host)
     from: manifests/firewall_secure_extra.pp:129-132, 144-155
     checks: [an-ssh-burst-is-cut-at-the-overall-limit, held-ssh-connections-stop-at-eight, new-ssh-connections-stop-at-fifteen-a-minute]
   - outcome: invalid packets (bogus flag combinations such as SYN+FIN, out-of-connection RSTs) and new packets without SYN are dropped before routing
     from: manifests/firewall_secure_extra.pp:157-185
     checks: [mangle-anti-ddos-rules, the-mangle-counters-are-zeroed, bogus-packets-are-sent, the-invalid-and-not-syn-rules-dropped-them]
-  - outcome: SYN packets with an MSS outside 536-65535 are dropped (rule 503)
+  - outcome: SYN packets with an MSS outside 536-65535 are dropped (rule 503), while a normal MSS connects
     from: manifests/firewall_secure_extra.pp:165-166
-    uncovered: {why: "needs a SYN with a chosen MSS option; hping3 cannot set TCP options and the peer's baseline has no packet-crafting tool", lifted_by: ubuntu2}
+    checks: [the-mangle-counters-are-zeroed, a-low-mss-syn-is-dropped, the-mss-rule-dropped-it]
   - outcome: fragmented packets are dropped (rule 518)
     from: manifests/firewall_secure_extra.pp:184-185
-    uncovered: {why: "measured on the applied node: 5 fragmented SYNs from the peer were counted by neither 518 nor 501; which rule, if any, sees fragments is a lead in escalations/firewall_secure_extra.behaviour.md, not a check yet", lifted_by: ubuntu}
+    checks: [a-fragmented-ping-gets-no-reply]
   - outcome: ICMP echo requests are limited to 2 per second
     from: manifests/firewall_secure_extra.pp:87-99
     checks: [icmp-echo-is-rate-limited]
@@ -71,6 +80,9 @@ outcomes:
   - outcome: unlisted sources on the service port are forwarded to an internal landing server (internal_forward)
     from: manifests/firewall_secure_extra.pp:213-221, 254-266
     uncovered: {why: "needs an internal network behind the node with a server on it; the lab's nodes share one host-only link", lifted_by: ubuntu2}
+  - outcome: with anti_ddos but without ip_filter, every source is held to the per-source connection and rate limits on the listed services in INPUT
+    from: manifests/firewall_secure_extra.pp:269-303
+    uncovered: {why: "a fixture variant of the same node (one set holds one fixture); this one exercises the side-chain variant of the same limits (lines 225-250), which pass", lifted_by: ubuntu}
   - outcome: without anti_ddos the listed service ports are simply opened, and strict mode admits only listed SSH sources
     from: manifests/firewall_secure_extra.pp:139-143, 306-312
     uncovered: {why: "fixture variants of the same node (one set holds one fixture); this one exercises the class's DDoS and filter extras", lifted_by: ubuntu}
@@ -109,6 +121,18 @@ checks:
       ss -ltnH 'sport = :8888' | awk '{print $4}'
       iptables -S WHITELIST_SIDE_CHAIN | grep -c -- '524 drop all traffic in the side chain'
     expect: {rc: 0, stdout: "\\A0\\.0\\.0\\.0:8888\\n1\\n\\Z"}
+
+  - id: loopback-reaches-a-local-service
+    what: on the node, a connection over loopback to the service port (which no other rule accepts) gets through
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "108-112", text: "-> firewall { '001 accept all to lo interface':"}
+    mutates: none beyond one local connection to 127.0.0.1:8888 (declared mutating so it runs after the service starts)
+    probe: |
+      true
+    effect: |
+      nc -z -w2 127.0.0.1 8888 && echo "loopback in"
+    expect: {rc: 0, stdout: "\\Aloopback in\\n\\Z"}
 
   - id: the-service-is-reached-only-from-the-whitelist
     what: >-
@@ -232,6 +256,25 @@ checks:
       [ -n "$n" ] && [ -n "$t" ] && [ "$n" -ge 2 ] && [ "$n" -le $(( 5 + 2 * ((t + 999) / 1000) + 1 )) ] && echo limited || echo "not limited"
     expect: {rc: 0, stdout: "\\A20 packets transmitted, \\d+ received.*\\nlimited\\n\\Z"}
 
+  - id: a-fragmented-ping-gets-no-reply
+    what: >-
+      from the peer, 3 pings of 3000 bytes (fragmented on the 1500-byte link) get no reply, while 3 small pings do
+      (correction round 2; measured by hand on the applied node: 3 of 3 fragmented pings answered, rule 518 counted 0)
+    control: negative
+    host: peer
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "184-185", text: "-> firewall { '518 drop fragmented packages': chain => 'PREROUTING', table => 'mangle', isfragment => true, action => 'drop', }"}
+    mutates: after 3 s (the ICMP limit refills), 3 pings of 3000 bytes and 3 of 100 bytes from the peer's primary address to the class node, 1 s apart; the replies go to /run/p8test-fwx/frag.txt
+    probe: |
+      sleep 3
+      {
+        echo "fragmented: $(ping -c3 -W2 -q -s 3000 192.168.56.20 2>&1 | sed -n 's/.* \([0-9]*\) received.*/\1/p') received"
+        echo "unfragmented: $(ping -c3 -W2 -q -s 100 192.168.56.20 2>&1 | sed -n 's/.* \([0-9]*\) received.*/\1/p') received"
+      } > /run/p8test-fwx/frag.txt
+    effect: |
+      cat /run/p8test-fwx/frag.txt
+    expect: {rc: 0, stdout: "\\Afragmented: 0 received\\nunfragmented: 3 received\\n\\Z"}
+
   # 2026-11-18 correction round 1 (review 20261118T172004Z): the ICMP check failed in the reviewer's run and printed
   # nothing; it now prints ping's summary and bounds the replies by the flood's measured duration, after 3 s of refill.
 
@@ -298,7 +341,7 @@ checks:
   # limit (519/520 in INPUT) never see them (verified by hand on the applied node: 501 counted exactly 5 SYN+FIN and 50
   # RST packets; 505, 519 and 520 counted 0). The check now zeroes the mangle counters first and reads rule 501.
   - id: the-mangle-counters-are-zeroed
-    what: setup for the mangle counter check, the mangle table's packet counters zeroed on the node
+    what: setup for the mangle counter checks, the mangle table's packet counters zeroed on the node
     control: negative
     derived_from:
       - {path: manifests/firewall_secure_extra.pp, lines: "159-160", text: "firewall { '501 drop invalid packets': chain => 'PREROUTING', table => 'mangle', ctstate => 'INVALID', action => 'drop', }"}
@@ -344,6 +387,44 @@ checks:
       [ -n "$n" ] && [ "$n" -ge 55 ] && echo "invalid packets dropped: at least 55"
       [ -n "$m" ] && [ "$m" -ge 5 ] && echo "new packets without SYN dropped: at least 5"
     expect: {rc: 0, stdout: "\\Arule 501: \\d+, rule 502: \\d+\\ninvalid packets dropped: at least 55\\nnew packets without SYN dropped: at least 5\\n\\Z"}
+
+  - id: a-low-mss-syn-is-dropped
+    what: >-
+      from the peer, a connection whose SYN announces MSS 100 to the node's port 22 gets no answer, while one with MSS
+      1000 connects (correction round 2; measured by hand: the same, rule 503 counted 2)
+    control: negative
+    host: peer
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "165-166", text: "-> firewall { '503 drop syn packets with suspicious mss': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', ctstate => 'NEW', mss => '! 536:65535', action  => 'drop', }"}
+    mutates: two TCP connection attempts from the peer's primary address to the class node's port 22 (TCP_MAXSEG 100, then 1000; 2 s timeout each); results in /run/p8test-fwx/mss.txt
+    probe: |
+      python3 - > /run/p8test-fwx/mss.txt <<'PY'
+      import socket
+      for mss in (100, 1000):
+          s = socket.socket(); s.setsockopt(socket.IPPROTO_TCP, socket.TCP_MAXSEG, mss); s.settimeout(2)
+          try:
+              s.connect(("192.168.56.20", 22)); r = "connected"
+          except OSError:
+              r = "no answer"
+          s.close(); print(f"mss {mss}: {r}")
+      PY
+    effect: |
+      cat /run/p8test-fwx/mss.txt
+    expect: {rc: 0, stdout: "\\Amss 100: no answer\\nmss 1000: connected\\n\\Z"}
+
+  - id: the-mss-rule-dropped-it
+    what: on the node, rule 503 counted the low-MSS SYN (at least 1 since the counters were zeroed)
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "165-166", text: "-> firewall { '503 drop syn packets with suspicious mss': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', ctstate => 'NEW', mss => '! 536:65535', action  => 'drop', }"}
+    mutates: none beyond reading the rule counters (declared mutating so it runs after the peer's attempts)
+    probe: |
+      true
+    effect: |
+      n=$(iptables -t mangle -v -x -L PREROUTING -n | awk '/503 drop syn packets with suspicious mss/ {print $1; exit}')
+      echo "rule 503: ${n:-absent}"
+      [ -n "$n" ] && [ "$n" -ge 1 ] && echo "low-MSS SYN dropped"
+    expect: {rc: 0, stdout: "\\Arule 503: \\d+\\nlow-MSS SYN dropped\\n\\Z"}
 
   # SSH brute-force limits, added in correction round 1 (the same rules and numbers as firewall_secure, whose set
   # measured them): each check first waits 61 s so the previous check's 60 s recent window and the overall limit
