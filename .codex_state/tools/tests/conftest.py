@@ -220,3 +220,25 @@ def isolated_logs(tmp_path, monkeypatch):
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: clones, stub-lab harness runs; full suite only (pre-commit runs the rest)")
     config.addinivalue_line("markers", "repo_state: checks the live repo's consistency; full suite only")
+
+
+PLANNED_KIND = "future"
+
+
+def with_planned_kind(data: dict) -> dict:
+    """The inventory plus one synthetic PLANNED kind (2026-11-18: every real kind is active since the master-role node's
+    bring-up, so the tests of the planned-node rules bring their own)."""
+    data["nodes"][PLANNED_KIND] = {
+        "status": "planned", "vm": "p8lab-future", "alias": "p8lab-future", "certname": "p8lab-future",
+        "hostname": "p8lab-future", "hostonly_ip": "192.168.56.29", "baseline_snapshot": None,
+        "os_family": "Debian", "os": "a node not brought up yet (test fixture)", "capabilities": ["server"]}
+    return data
+
+
+def planned_inventory(tmp_path) -> str:
+    """Path of a nodes.yml: the real inventory plus the synthetic planned kind (for P8_NODES)."""
+    import yaml
+    data = with_planned_kind(yaml.safe_load((TOOLS.parent / "lab" / "nodes.yml").read_text()))
+    path = tmp_path / "nodes-planned.yml"
+    path.write_text(yaml.safe_dump(data))
+    return str(path)

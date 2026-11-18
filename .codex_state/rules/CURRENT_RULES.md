@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-105 entries; 6 marked superseded (in whole or part); newest first.
+106 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-18 — The master-role node p8lab-puppetserver is up (HQ ruling C2)
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-18 — HQ rulings on round 9 (accepted: 89 done, 77 verified, 12 with stand-in)
 - 1. Every class has a check set that tests its purpose, passing and reviewer-reproduced. The reviewer also judges

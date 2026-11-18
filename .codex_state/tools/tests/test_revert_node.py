@@ -1,6 +1,6 @@
 import json
 
-from conftest import TOOLS
+from conftest import PLANNED_KIND, TOOLS, planned_inventory
 import pytest
 
 pytestmark = pytest.mark.slow  # excluded from the per-commit fast subset (HQ 2026-11-11 ruling 3)
@@ -243,9 +243,9 @@ def test_an_unregistered_rhel_node_fails_the_revert(lab, tmp_path):
     assert not (lab.root / "node_revert.json").exists()
 
 
-def test_a_planned_or_unknown_node_acts_on_no_vm(lab):
-    for kind in ("puppetserver", "nope"):
-        proc = lab.run([SCRIPT, "--node", kind])
+def test_a_planned_or_unknown_node_acts_on_no_vm(lab, tmp_path):
+    for kind in (PLANNED_KIND, "nope"):
+        proc = lab.run([SCRIPT, "--node", kind], env={"P8_NODES": planned_inventory(tmp_path)})
         assert proc.returncode == 1 and "No usable node in the lab inventory" in proc.stderr
     assert lab.calls("VBoxManage") == []
 

@@ -86,15 +86,16 @@ nodes:
     os: Ubuntu 24.04 server + Samba 4.19 AD DC (realm P8TEST.EXAMPLE, domain P8TEST)
     capabilities: [server, second-node, ad-dc]
   puppetserver:
-    # A master-role node (HQ batch-5 ruling 6; named for hashman_base's `uncovered` note, HQ 2026-11-17 ruling 2):
-    # a Puppet server whose code tree holds hashman's user database. Placeholder: bring-up is not scheduled.
-    status: planned
+    # A master-role node (HQ batch-5 ruling 6; named for hashman_base's `uncovered` note, HQ 2026-11-17 ruling 2;
+    # built 2026-11-18, HQ ruling C2): a Puppet server whose code tree holds hashman's user database. It is also an
+    # agent of puppet8master (the harness applies to it); the server role has its own ssldir and CA.
+    status: active
     vm: p8lab-puppetserver
     alias: p8lab-puppetserver
     certname: p8lab-puppetserver
     hostname: p8lab-puppetserver
     hostonly_ip: 192.168.56.26
-    baseline_snapshot: null
+    baseline_snapshot: P8LAB_PUPPETSERVER_BASELINE_v1
     os_family: Debian
-    os: Ubuntu 24.04 server + openvox-server (a second Puppet server)
+    os: Ubuntu 24.04 server + openvox-server 8.11.0 (a second Puppet server)
     capabilities: [server, puppet-server]

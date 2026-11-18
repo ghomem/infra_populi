@@ -1845,3 +1845,28 @@ snapshot list, record.
   - no lab-specific names or secrets;
   - JUnit output;
   - the engine consumes the same suite.
+
+## 2026-11-18 — The master-role node p8lab-puppetserver is up (HQ ruling C2)
+- **The VM:**
+  - cloned from ubuntu24-puppet8-Node at P8NODE_BASELINE_GREEN_v4 (`lab_vm.sh clone`), with 4096 MB for the JVM;
+  - first contact forward-free with `first_contact.py --static 192.168.56.20`, puppet8node powered off: the node's
+    pinned key and the clone's own NIC2 MAC both checked;
+  - re-identified in that one verified session: new SSH host keys (printed over it, pinned under the alias, then
+    matched by a keyscan at the new address), hostname, machine-id, certname, enp0s8 192.168.56.26, agent ssl state
+    removed;
+  - backups ~/.ssh/known_hosts.pre-p8lab-puppetserver and ~/.ssh/config.pre-p8lab-puppetserver.
+- **Two roles:**
+  - **An agent of puppet8master,** so the harness applies to it. Cert p8lab-puppetserver: the request's public-key
+    hash was compared on both machines before signing. The agent service is disabled, as on every lab node.
+  - **Its own Puppet server:** openvox-server 8.11.0, the lab master's version. Its `[server]` section has its own
+    ssldir (`/etc/puppetlabs/puppet/ssl-server`) and its own CA (`/etc/puppetlabs/puppetserver/ca`, "Puppet CA:
+    p8lab-puppetserver"). So the agent identity in the default ssldir, CA puppet8master, is untouched; both verified.
+    Heap 768m; enabled, and back up by itself after a revert (status running).
+- **Its production environment** holds only puppetlabs-stdlib 9.7.0, copied from puppet8master's: the user define's
+  only module dependency (fqdn_rand_string). The module under test arrives per run (next entry).
+  `autosign.conf` names one client, p8test-hashman-client, the identity a peer uses to fetch the users the master-role
+  server defines.
+- **Baseline:** P8LAB_PUPPETSERVER_BASELINE_v1 (8962f4ba). nodes.yml marks the kind active.
+  `revert_node.sh --node puppetserver` restores it.
+- **Tests:** no real kind is planned any more, so the tests of the planned-node rules use a synthetic planned kind
+  (conftest `with_planned_kind`/`planned_inventory`) instead of the real inventory.

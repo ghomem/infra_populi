@@ -4,7 +4,7 @@ facts variant and per-node params follow the selected node."""
 import pytest
 import yaml
 
-from conftest import TOOLS
+from conftest import PLANNED_KIND, TOOLS, planned_inventory
 
 pytestmark = pytest.mark.slow
 
@@ -48,9 +48,10 @@ def test_the_default_node_is_unchanged(lab):
     assert "facts: debian" in proc.stdout
 
 
-def test_a_planned_node_is_refused_before_anything_runs(lab):
-    proc = lab.run([SCRIPT, "--node", "puppetserver", "--revert-first", "puppet_infrastructure::dns_client"])
-    assert proc.returncode == 1 and "No usable lab node 'puppetserver'" in proc.stderr
+def test_a_planned_node_is_refused_before_anything_runs(lab, tmp_path):
+    proc = lab.run([SCRIPT, "--node", PLANNED_KIND, "--revert-first", "puppet_infrastructure::dns_client"],
+                   env={"P8_NODES": planned_inventory(tmp_path)})
+    assert proc.returncode == 1 and f"No usable lab node '{PLANNED_KIND}'" in proc.stderr
     assert lab.calls("VBoxManage") == [] and lab.calls("rsync") == []
 
 

@@ -7,7 +7,7 @@ import sys
 import pytest
 import yaml
 
-from conftest import TOOLS
+from conftest import PLANNED_KIND, TOOLS, planned_inventory, with_planned_kind
 
 SCRIPT = str(TOOLS / "nodes.py")
 REAL = yaml.safe_load((TOOLS.parent / "lab" / "nodes.yml").read_text())
@@ -35,10 +35,11 @@ def test_the_domain_controller_kind_is_planned_with_its_capability():
 
 
 
-def test_the_master_role_kind_is_planned_with_its_capability():
-    # HQ batch-5 ruling 6 / 2026-11-17 ruling 2: the master-role node that lifts the hashman notes; a placeholder
+def test_the_master_role_kind_is_active_with_its_capability():
+    # HQ 2026-11-18 ruling C2: the master-role node that lifts the hashman notes, brought up on 2026-11-18
     kind = REAL["nodes"]["puppetserver"]
-    assert kind["status"] == "planned" and kind["capabilities"] == ["server", "puppet-server"]
+    assert kind["status"] == "active" and kind["capabilities"] == ["server", "puppet-server"]
+    assert kind["baseline_snapshot"] == "P8LAB_PUPPETSERVER_BASELINE_v1" and kind["hostonly_ip"] == "192.168.56.26"
 
 @pytest.mark.parametrize("caps", [["ad-dc", "domain-controller"], []])
 def test_capabilities_outside_the_known_set_are_refused(tmp_path, caps):
@@ -54,11 +55,12 @@ def test_capabilities_outside_the_known_set_are_refused(tmp_path, caps):
     (lambda d: d["nodes"]["rhel9"].update(hostonly_ip="10.0.2.15"), "must be a free address on vboxnet0"),
     (lambda d: d["nodes"]["rhel9"].update(vm="rhel9-clone"), "must be named p8lab-*"),
     (lambda d: d["nodes"]["rhel9"].update(vm="Ubuntu24-puppet8-Master"), "the master VM is never a node"),
-    (lambda d: d["nodes"]["puppetserver"].update(status="active"), "an active node needs its baseline_snapshot"),
+    (lambda d: with_planned_kind(d)["nodes"][PLANNED_KIND].update(status="active"),
+     "an active node needs its baseline_snapshot"),
     (lambda d: d["nodes"]["rhel9"].update(os_family="Suse"), "os_family must be Debian|RedHat"),
     (lambda d: d["nodes"]["rhel9"].update(capabilities=["telepathy"]), "capabilities must be a non-empty subset"),
     (lambda d: d["nodes"]["rhel9"].pop("certname"), "missing certname"),
-    (lambda d: d.update(default="puppetserver"), "the default node must be active"),
+    (lambda d: with_planned_kind(d).update(default=PLANNED_KIND), "the default node must be active"),
     (lambda d: d["nodes"]["gnome"].update(alias="p8lab-kubuntu"), "alias 'p8lab-kubuntu' is also node"),
 ])
 def test_invalid_inventories_are_refused(tmp_path, mutate, message):
@@ -82,10 +84,11 @@ def test_selection_order_explicit_then_env_then_default(tmp_path):
 
 
 def test_a_planned_node_is_refused_unless_bring_up_asks(tmp_path):
-    proc = run(tmp_path, REAL, "env", "--node", "puppetserver")
+    data = with_planned_kind(copy.deepcopy(REAL))
+    proc = run(tmp_path, data, "env", "--node", PLANNED_KIND)
     assert proc.returncode != 0 and "is planned" in proc.stderr
-    proc = run(tmp_path, REAL, "env", "--node", "puppetserver", "--allow-planned")
-    assert proc.returncode == 0 and "NODE_VM=p8lab-puppetserver" in proc.stdout and "NODE_SNAPSHOT=''" in proc.stdout
+    proc = run(tmp_path, data, "env", "--node", PLANNED_KIND, "--allow-planned")
+    assert proc.returncode == 0 and "NODE_VM=p8lab-future" in proc.stdout and "NODE_SNAPSHOT=''" in proc.stdout
 
 
 def test_env_is_shell_safe_and_complete(tmp_path):

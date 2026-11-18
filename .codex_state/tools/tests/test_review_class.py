@@ -7,7 +7,7 @@ import sys
 
 import pytest
 
-from conftest import TOOLS
+from conftest import TOOLS, planned_inventory
 
 sys.path.insert(0, str(TOOLS))
 sys.path.insert(1, str(TOOLS.parent))
@@ -349,10 +349,11 @@ def test_a_per_node_verdict_is_kept_beside_the_class_verdicts(tmp_path, monkeypa
 
 @pytest.mark.parametrize("cls,kind,message", [
     ("user_kde_lock_screen", "rhel9", "the plan pins user_kde_lock_screen to node kubuntu"),
-    ("ssh_secure", "puppetserver", "is not an active node kind"),
+    ("ssh_secure", "future", "is not an active node kind"),  # conftest's synthetic planned kind
     ("ssh_secure", "nope", "is not an active node kind"),
 ])
-def test_the_node_option_is_refused_where_it_would_mislead(monkeypatch, cls, kind, message):
+def test_the_node_option_is_refused_where_it_would_mislead(monkeypatch, tmp_path, cls, kind, message):
+    monkeypatch.setenv("P8_NODES", planned_inventory(tmp_path))
     monkeypatch.setenv("P8_NODE", "")  # registers P8_NODE so pytest restores it: node_option exports it
     monkeypatch.delenv("P8_NODE")
     with pytest.raises(SystemExit, match=message):
