@@ -11,14 +11,25 @@ authoring:
   notes: "About 10:28Z to 10:31Z 2026-11-18 (scratch file times, overlapping rsyslog_client's), outside the worktree while firewall_secure's review ran."
 purpose: >-
   The shared rsyslog setup of log servers and clients: rsyslog with its GnuTLS driver installed and running, and the
-  node's Puppet CA, certificate and key copied where rsyslog (which drops to the syslog user) can read them for TLS; rsyslog is kept running.
+  node's Puppet CA, certificate and key copied where rsyslog (which drops to the syslog user) can read them for TLS; rsyslog
+  is kept running and is restarted when the TLS directory resource changes.
 uncovered:
+  - what: >-
+      a change to the TLS files' content (a renewed certificate): the service subscribes to the directory resource only
+      (line 79), so a renewed certificate does not restart rsyslog, against the comment on line 73 (escalated: purpose
+      triage item 14)
+    why: >-
+      showing whether rsyslog then still uses the old certificate needs a certificate re-issued by the lab master's CA;
+      a check may not change the master
+    lifted_by: puppetserver
   - what: the RedHat branch (a syslog user and group with uid/gid 0)
     why: these checks run on the Ubuntu node, where the syslog account exists already
     lifted_by: rhel9
 node_agent:
-  after: rsyslog-is-stopped
-  why: the class keeps rsyslog running, which only its next agent run after a stop can show
+  after: [rsyslog-is-stopped, the-tls-directory-drifts]
+  why: >-
+    the class keeps rsyslog running and restarts it when the TLS directory resource changes, which only its next agent
+    run after each change can show
 checks:
   - id: rsyslog-and-its-tls-driver-are-installed-and-running
     what: rsyslog and rsyslog-gnutls are installed, the gtls network stream driver is present, rsyslog runs and is enabled
@@ -103,3 +114,38 @@ checks:
       systemctl is-active rsyslog
       test -s "/etc/rsyslog.d/tls/$(hostname).key" && echo tls-in-place
     expect: {rc: 0, stdout: "\\Aactive\\ntls-in-place\\n\\Z"}
+
+  # 2026-11-18 purpose correction (review 20261118T113259Z): the service's restart relationship (subscribe to the TLS
+  # directory, line 79) was neither tested nor listed; the next two checks test it, and the uncovered note above states
+  # what the relationship does not cover.
+  - id: the-tls-directory-drifts
+    what: setup for the next check, the TLS directory's mode changed by hand (drift), with rsyslog's process id noted
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_base.pp, lines: "41-47", text: "file { '/etc/rsyslog.d/tls':"}
+    mutates: notes rsyslog's main PID in /run/p8test-rsyslog/pid, then chmod 0700 /etc/rsyslog.d/tls on the node
+    probe: |
+      install -d -m 0700 /run/p8test-rsyslog
+      systemctl show -p MainPID --value rsyslog > /run/p8test-rsyslog/pid
+      chmod 0700 /etc/rsyslog.d/tls
+    effect: |
+      stat -c '%a' /etc/rsyslog.d/tls
+      test -s /run/p8test-rsyslog/pid && echo pid-noted
+    expect: {rc: 0, stdout: "\\A700\\npid-noted\\n\\Z"}
+
+  - id: the-agent-run-restores-the-directory-and-restarts-rsyslog
+    what: after the node's agent run, the directory is back to 0755 and rsyslog was restarted (a new main PID), running
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_base.pp, lines: "73-80", text: "subscribe => File['/etc/rsyslog.d/tls'],"}
+      - {path: manifests/rsyslog_base.pp, lines: "41-47", text: "mode    => '0755',"}
+    mutates: none beyond reading the directory and rsyslog's state (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      stat -c '%a' /etc/rsyslog.d/tls
+      now=$(systemctl show -p MainPID --value rsyslog)
+      [ -n "$now" ] && [ "$now" != 0 ] && [ "$now" != "$(cat /run/p8test-rsyslog/pid)" ] && echo restarted
+      systemctl is-active rsyslog
+    expect: {rc: 0, stdout: "\\A755\\nrestarted\\nactive\\n\\Z"}
+
