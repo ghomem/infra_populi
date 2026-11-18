@@ -59,6 +59,8 @@ Check file .codex_state/checks/<class>.yml:
         - {path: manifests/x.pp, lines: "12-14", text: "<exact substring of those lines>"}
         - {path: files/x, sha256: <of the whole baseline file>}
       probe: <shell, run as root on the node via `ssh <node> sudo -n bash -s`>
+      # every node and peer script starts with tools/probe_helpers.sh (HQ batch-12 ruling 6): p8_count, p8_listening,
+      # p8_tcp, p8_http, p8_service, p8_digest, p8_rc, p8_tls, p8_established read; p8_hold (mutating) only in an action
       expect: {rc: 0, stdout: <regex, re.M>, stdout_not: <regex>}   # rc defaults to 0
       # opt-in MUTATING check (HQ 2026-11-10): `probe` is an action that changes the node; the evidence is its effect
       # (`timeout: N`, 1-600 s, lets the action outlast the 120 s probe limit, e.g. to wait out a rate-limit window)
@@ -251,6 +253,9 @@ def lifting_problems(kind, need: str | None, where: str) -> list[str]:
         return [f"{where}: node {kind} lacks the capability {NEED_CAPABILITY[need]!r} that `{need}` needs"]
     return []
 HOST_RULES = 3  # FORBIDDEN[:3] keep probes on the node and away from Puppet; the rest keep them read-only
+# Probe helpers (HQ batch-12 ruling 6): prepended to every node and peer script; the mutating ones only in an action.
+HELPERS = (TOOLS / "probe_helpers.sh").read_text(encoding="utf-8")
+MUTATING_HELPER = re.compile(r"\bp8_hold\b")
 
 
 def probe_problems(probe: str, mutating: bool = False, allow: str | None = None) -> list[str]:
@@ -259,6 +264,8 @@ def probe_problems(probe: str, mutating: bool = False, allow: str | None = None)
     if allow:
         probe = re.sub(rf"(?<![\d.]){re.escape(allow)}(?![\d.])", "CLASS_NODE", probe)  # no angle brackets: `>` reads as a redirect
     out = [f"probe {why}: {pat.pattern}" for pat, why in rules if pat.search(probe)]
+    if not mutating and MUTATING_HELPER.search(probe):
+        out.append("probe calls a mutating helper (p8_hold), which belongs in a check's action")
     if LOCAL_SSH.search(probe) and not LOCAL_TARGET.search(probe):
         out.append("probe uses ssh to a host other than the node itself (127.0.0.1/localhost)")
     return out
@@ -510,7 +517,7 @@ def node_boot(kind: str) -> str | None:
 def on_node(script: str, timeout: int = 0) -> tuple[int, str, str]:
     timeout = timeout or PROBE_TIMEOUT
     try:
-        proc = subprocess.run(["ssh", "-o", "BatchMode=yes", NODE, "sudo -n bash -s"], input=script,
+        proc = subprocess.run(["ssh", "-o", "BatchMode=yes", NODE, "sudo -n bash -s"], input=HELPERS + script,
                               capture_output=True, text=True, timeout=timeout, env=node_env())
         return proc.returncode, proc.stdout, proc.stderr
     except subprocess.TimeoutExpired:
@@ -637,7 +644,7 @@ def on_peer(script: str, timeout: int = PROBE_TIMEOUT) -> tuple[int, str, str]:
     pre = "".join(f"mkdir -p /run/p8test-from-node && printf '%s' '{b64}' | base64 -d "
                   f"> /run/p8test-from-node/{Path(path).name}\n" for path, b64 in PEER_FILES.items())
     try:
-        proc = subprocess.run(["ssh", "-o", "BatchMode=yes", PEER, "sudo -n bash -s"], input=pre + script,
+        proc = subprocess.run(["ssh", "-o", "BatchMode=yes", PEER, "sudo -n bash -s"], input=pre + HELPERS + script,
                               capture_output=True, text=True, timeout=timeout, env=node_env())
         return proc.returncode, proc.stdout, proc.stderr
     except subprocess.TimeoutExpired:

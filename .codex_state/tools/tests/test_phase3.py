@@ -976,3 +976,31 @@ def test_a_read_only_peer_probe_may_name_the_class_node_before_a_port():
     probe = "curl -sk --resolve puppet.example.com:443:192.168.56.26 https://puppet.example.com/ | head -1"
     assert phase3.probe_problems(probe, allow="192.168.56.26") == []
     assert phase3.probe_problems(probe.replace("192.168.56.26", "192.168.56.10"), allow="192.168.56.26")
+
+
+# ------------------------------------------------------------------ probe helpers (HQ batch-12 ruling 6)
+def test_mutating_helpers_only_in_an_action():
+    import sys
+    sys.path.insert(0, str(TOOLS))
+    import phase3
+    assert any("mutating helper" in p for p in phase3.probe_problems("p8_hold 127.0.0.1 22 30"))
+    assert phase3.probe_problems("p8_hold 127.0.0.1 22 30", mutating=True) == []
+    assert phase3.probe_problems("p8_count x /etc/hosts; p8_established 127.0.0.1 22; p8_http http://127.0.0.1/") == []
+
+
+def test_every_node_and_peer_script_starts_with_the_helpers(monkeypatch):
+    import subprocess
+    import sys
+    sys.path.insert(0, str(TOOLS))
+    import phase3
+    seen = []
+
+    class Done:
+        returncode, stdout, stderr = 0, "", ""
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: (seen.append(k["input"]), Done())[1])
+    monkeypatch.setattr(phase3, "PEER_FILES", {})
+    phase3.on_node("echo node")
+    phase3.on_peer("echo peer")
+    helpers = (TOOLS / "probe_helpers.sh").read_text(encoding="utf-8")
+    assert seen == [helpers + "echo node", helpers + "echo peer"]
+
