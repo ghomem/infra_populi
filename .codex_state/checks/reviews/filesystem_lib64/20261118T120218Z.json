@@ -1,0 +1,33 @@
+{
+ "class": "filesystem_lib64",
+ "at": "20261118T120218Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "lib64-nagios-is-a-link-to-lib-nagios @ manifests/filesystem_lib64.pp:11-15: baseline declares file '/usr/lib64/nagios/' ensure=>link target=>'/usr/lib/nagios'; probe 'readlink /usr/lib64/nagios' expecting exactly '/usr/lib/nagios' tests that declaration directly (class has no parameters, defaults fixture). Negative on clean node (no /usr/lib64/nagios), passes after apply.",
+  "lib64-nagios-is-a-link-to-lib-nagios @ manifests/filesystem_lib64.pp:5-9: baseline declares '/usr/lib64/' ensure=>directory owner root group root; probe 'stat -c %F %U:%G /usr/lib64' expecting 'directory root:root' matches it exactly (the clean node already satisfies this half; the link half makes the control negative).",
+  "a-plugin-runs-by-its-redhat-path @ manifests/filesystem_lib64.pp:1-2: baseline header states the class is an Ubuntu compatibility measure for nagios plugin invocation; baseline consumers confirm the RedHat path is invoked (files/sysmon/check_http_ssl_cert.sh calls /usr/lib64/nagios/plugins/check_http, check_package_count.sh calls .../check_file_age, sysmon_base.pp:95,104 deploy plugins there). mutates declares the apt install of monitoring-plugins-basic (the action's only change besides its dependencies); it stands in for packages_base.pp:26-27, which installs monitoring-plugins-standard on Debian (depends on -basic, which ships check_disk). The effect runs check_disk by its /usr/lib64/nagios/plugins path and expects 'DISK OK' (the plugin's result through the link, not apt's output; the pipe through cut masks check_disk's rc but the stdout match still requires an OK status). Negative on the clean node (path absent), passes after apply.",
+  "purpose covered: Purpose (RedHat plugin path /usr/lib64/nagios must reach Ubuntu's /usr/lib/nagios) matches the baseline header (lines 1-2) and code (directory + link). The checks test the declared state (directory root:root, link target exact) and the job itself: a real Ubuntu plugin invoked by its RedHat path runs and returns DISK OK. Nothing the lab can exercise is left out: the class has no parameters, no service, and is Debian-only in node_base, so no uncovered list is needed; writes into the link by sysmon_base are sysmon_base's behaviour, not this class's."
+ ],
+ "review_s": 84.5,
+ "check_file_sha256": "63637afac5e63065ef5d930e5522c1b374c0e2a97048c9779f223a7be92b3c5e",
+ "reviewer_result": "20261118T120054Z-reviewer",
+ "author_result": "20261118T115909Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "e933fd02-8ee0-4e15-80fe-14b8288e4af0",
+   "boot_id_at_end": "e933fd02-8ee0-4e15-80fe-14b8288e4af0",
+   "fresh": true
+  }
+ }
+}
