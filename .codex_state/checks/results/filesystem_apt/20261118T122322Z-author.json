@@ -1,0 +1,251 @@
+{
+ "class": "filesystem_apt",
+ "role": "author",
+ "at": "20261118T122322Z",
+ "runner": "6744a39",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "d0038bad1ebcfc8e87512f1730c9299526ea36f87bb5565ec376372bc345a05f",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "helper-scripts-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 1: cd: /opt/puppet-infrastructure/bin: No such file or directory\nstat: cannot statx 'apt-update-pkg.sh': No such file or directory\nstat: cannot statx 'apt-update-surface.sh': No such file or directory\nstat: cannot statx 'apt-update-kernel.sh': No such file or directory\nstat: cannot statx 'apt-update-dist.sh': No such file or directory\nstat: cannot statx 'get-relevant-updates-list': No such file or directory\nstat: cannot statx 'apt-check-updates.sh': No such file or directory\nstat: cannot statx 'apt-update-relevant.sh': No such file or directory\nstat: cannot statx '/var/lib/apt-check-updates': No such file or directory\nsha256sum: apt-update-pkg.sh: No such file or directory\nsha256sum: apt-update-kernel.sh: No such file or directory\nsha256sum: apt-update-dist.sh: No such file or directory\nsha256sum: get-relevant-updates-list: No such file or directory\ndpkg-query: no packages found matching openscap-scanner\n",
+   "ok": true
+  },
+  {
+   "id": "surface-list-and-daily-job",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /opt/puppet-infrastructure/bin/apt-update-surface.sh: No such file or directory\nno crontab for root\n",
+   "ok": true
+  },
+  {
+   "id": "the-wrapper-never-installs-a-missing-package",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /run/p8test-apt/missing.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-wrapper-upgrades-an-installed-package-with-an-update",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-apt/upgrade.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-daily-job-lists-relevant-updates",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /run/p8test-apt/check.txt: No such file or directory\nawk: fatal: cannot open file `/var/lib/apt-check-updates/list' for reading: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-relevant-updates-on-the-list-get-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-apt/relevant.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-surface-script-updates-an-outdated-surface-package",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-apt/surface.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-kernel-script-brings-the-kernel-metapackage-up-to-date",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-apt/kernel.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-full-update-script-leaves-nothing-to-upgrade",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-apt/dist.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": ";32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795004714'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 21.51 seconds\u001b[0m\nRUN2_EXPECTED_EVENTS: 1 from Exec[apt_update] Exec[dnf-makecache] [own: none; inherited: Exec[apt_update] via packages_base, Exec[dnf-makecache] via packages_base] (plan expected_run2_events)\nCOVERAGE puppet_infrastructure::filesystem_apt: 10 concrete resources (+0 defined-type instances)\n  File[/opt/puppet-infrastructure/bin/apt-update-pkg.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-surface.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-kernel.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-dist.sh]\n  Package[openscap-scanner]\n  File[/opt/puppet-infrastructure/bin/get-relevant-updates-list]\n  File[/opt/puppet-infrastructure/bin/apt-check-updates.sh]\n  Cron[apt_check_updates]\n  File[/var/lib/apt-check-updates]\n  File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\nGREEN_STAMP filesystem_apt e91ba7cd11cc\n"
+ },
+ "applied": [
+  {
+   "id": "helper-scripts-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "apt-update-pkg.sh root 755\napt-update-surface.sh root 755\napt-update-kernel.sh root 755\napt-update-dist.sh root 755\nget-relevant-updates-list root 755\napt-check-updates.sh root 755\napt-update-relevant.sh root 755\n/var/lib/apt-check-updates 755\nb19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5\n8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db\nc240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3\n077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6\nopenscap-scanner install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "surface-list-and-daily-job",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "UPDATE_CMD=/opt/puppet-infrastructure/bin/apt-update-pkg.sh\nSURFACE=\"openssh-server openssh-client openssh-sftp-server openssl libssl1.1 libudev1 ca-certificates vim vim-runtime vim-common coreutils gzip less multitail util-linux openvpn nginx-core nginx-extras postfix dovecot-core rsyslog rsyslog-gnutls\"\n0 0 * * * /opt/puppet-infrastructure/bin/apt-check-updates.sh High\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-wrapper-never-installs-a-missing-package",
+   "control": "negative",
+   "rc": 1,
+   "passed": true,
+   "stdout": "package cowsay not installed\nrc=1\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs /opt/puppet-infrastructure/bin/apt-update-pkg.sh cowsay on the node; its output and exit code go to /run/p8test-apt/missing.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-wrapper-upgrades-an-installed-package-with-an-update",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "downgraded to the archive's older version\nupgraded to the candidate\nwrapper reported the update\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "picks the first of wget, less, tzdata, curl, vim-tiny whose archive has an older version than the installed candidate, downgrades it to that version (apt-get install --allow-downgrades), then runs apt-update-pkg.sh on it; the package and its versions go to /run/p8test-apt/upgrade.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-daily-job-lists-relevant-updates",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc=0\nlist-written\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs /opt/puppet-infrastructure/bin/apt-check-updates.sh High on the node (downloads the release's OVAL file from security-metadata.canonical.com into a temporary directory, writes /var/lib/apt-check-updates/list); its exit code goes to /run/p8test-apt/check.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-relevant-updates-on-the-list-get-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "on the list one version behind\nupgraded to the candidate\nreported through the wrapper\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "picks the first of wget, less, tzdata, curl, vim-tiny whose archive has an older version, downgrades it, writes its name as the only line of /var/lib/apt-check-updates/list (as the daily job writes the list), runs apt-update-relevant.sh; the package's versions go to /run/p8test-apt/relevant.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-surface-script-updates-an-outdated-surface-package",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "surface package one version behind\nupgraded to the candidate\nreported through the wrapper\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "picks the first of less, gzip, vim whose archive has an older version, downgrades it, then runs apt-update-surface.sh (which updates every installed surface package that has an update); the package's versions go to /run/p8test-apt/surface.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-kernel-script-brings-the-kernel-metapackage-up-to-date",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc=0\nmetapackage at the candidate\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs apt-update-kernel.sh on the node (an --only-upgrade install of the kernel metapackage, if newer); the result goes to /run/p8test-apt/kernel.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-full-update-script-leaves-nothing-to-upgrade",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc=0\n0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs apt-update-dist.sh on the node (apt-get dist-upgrade -y, keeping changed configuration files); the result goes to /run/p8test-apt/dist.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.7,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "64167158-ab8e-4980-b5f2-3e9f74993649",
+   "boot_id_at_end": "64167158-ab8e-4980-b5f2-3e9f74993649",
+   "fresh": true
+  }
+ },
+ "duration_s": 495.3
+}

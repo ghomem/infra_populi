@@ -13,7 +13,7 @@ purpose: >-
   Apt update tooling for Ubuntu 24.04 servers (the target release; the 20.04/22.04 openscap package branch is not in Phase 1): a wrapper that upgrades a package only if it is installed and has an update (never
   installing anything new), surface, kernel and full update scripts, and a daily job that lists the relevant (High or
   above) security updates from Canonical's OVAL data with openscap (for monitoring), and a script that installs the
-  updates on that list through the wrapper.
+  updates on that list through the wrapper; each script is run here.
 uncovered:
   - what: "the desktop variant (server_mode false): the desktop surface list and the compatibility link"
     why: the fixture is a server; one set holds one fixture
@@ -160,4 +160,73 @@ checks:
     effect: |
       cat /run/p8test-apt/relevant.txt
     expect: {rc: 0, stdout: "\\Aon the list one version behind\\nupgraded to the candidate\\nreported through the wrapper\\n\\Z"}
+
+  # 2026-11-18 purpose correction (review 20261118T122159Z): the surface, kernel and full update scripts were checked
+  # as installed files only; the next three checks run each one (the full update last, as it upgrades everything).
+  - id: the-surface-script-updates-an-outdated-surface-package
+    what: >-
+      a surface-list package one version behind the archive (less, gzip or vim, downgraded first) is brought to the
+      archive's candidate by apt-update-surface.sh, through the wrapper
+    control: negative
+    timeout: 600
+    derived_from:
+      - {path: manifests/filesystem_apt.pp, lines: "63-70", text: "content => template('puppet_infrastructure/apt/apt-update-surface.sh.erb'),"}
+      - {path: manifests/filesystem_apt.pp, lines: "33-41", text: "'coreutils', 'gzip', 'less', 'multitail',"}
+    mutates: >-
+      picks the first of less, gzip, vim whose archive has an older version, downgrades it, then runs
+      apt-update-surface.sh (which updates every installed surface package that has an update); the package's
+      versions go to /run/p8test-apt/surface.txt
+    probe: |
+      install -d -m 0700 /run/p8test-apt
+      for p in less gzip vim; do
+        cand=$(apt-cache policy "$p" | awk '/Candidate:/ {print $2}')
+        old=$(apt-cache madison "$p" | awk -F'|' '{gsub(/ /,"",$2); print $2}' | grep -v -x "$cand" | head -1)
+        [ -n "$old" ] && dpkg-query -W "$p" >/dev/null 2>&1 && break
+        old=""
+      done
+      [ -n "$old" ] || { echo "no surface package with an older archive version" > /run/p8test-apt/surface.txt; exit 0; }
+      DEBIAN_FRONTEND=noninteractive apt-get -qq -y --allow-downgrades install "$p=$old" >/dev/null 2>&1
+      before=$(dpkg-query -W -f '${Version}' "$p")
+      out=$(/opt/puppet-infrastructure/bin/apt-update-surface.sh 2>&1)
+      after=$(dpkg-query -W -f '${Version}' "$p")
+      { [ "$before" = "$old" ] && echo "surface package one version behind"
+        [ "$after" = "$cand" ] && echo "upgraded to the candidate"
+        printf '%s\n' "$out" | grep -q "^package $p updated to version $cand$" && echo "reported through the wrapper"; } > /run/p8test-apt/surface.txt
+    effect: |
+      cat /run/p8test-apt/surface.txt
+    expect: {rc: 0, stdout: "\\Asurface package one version behind\\nupgraded to the candidate\\nreported through the wrapper\\n\\Z"}
+
+  - id: the-kernel-script-brings-the-kernel-metapackage-up-to-date
+    what: apt-update-kernel.sh finds the installed kernel metapackage and leaves it at the archive's candidate, exit 0
+    control: negative
+    timeout: 600
+    derived_from:
+      - {path: manifests/filesystem_apt.pp, lines: "84-91", text: "source  => 'puppet:///modules/puppet_infrastructure/apt/apt-update-kernel.sh',"}
+      - {path: files/apt/apt-update-kernel.sh, sha256: "8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db"}
+    mutates: runs apt-update-kernel.sh on the node (an --only-upgrade install of the kernel metapackage, if newer); the result goes to /run/p8test-apt/kernel.txt
+    probe: |
+      install -d -m 0700 /run/p8test-apt
+      /opt/puppet-infrastructure/bin/apt-update-kernel.sh >/dev/null 2>&1; rc=$?
+      m=$(dpkg -l 'linux-image-*' | awk '/^ii/ && $2 !~ /-[0-9]+\.[0-9]+\.[0-9]/ {print $2}')
+      { echo "rc=$rc"
+        [ -n "$m" ] && [ "$(dpkg-query -W -f '${Version}' "$m")" = "$(apt-cache policy "$m" | awk '/Candidate:/ {print $2}')" ] && echo "metapackage at the candidate"; } > /run/p8test-apt/kernel.txt
+    effect: |
+      cat /run/p8test-apt/kernel.txt
+    expect: {rc: 0, stdout: "\\Arc=0\\nmetapackage at the candidate\\n\\Z"}
+
+  - id: the-full-update-script-leaves-nothing-to-upgrade
+    what: apt-update-dist.sh runs a non-interactive dist-upgrade, after which nothing is left to upgrade
+    control: negative
+    timeout: 600
+    derived_from:
+      - {path: manifests/filesystem_apt.pp, lines: "93-100", text: "source  => 'puppet:///modules/puppet_infrastructure/apt/apt-update-dist.sh',"}
+      - {path: files/apt/apt-update-dist.sh, sha256: "c240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3"}
+    mutates: runs apt-update-dist.sh on the node (apt-get dist-upgrade -y, keeping changed configuration files); the result goes to /run/p8test-apt/dist.txt
+    probe: |
+      install -d -m 0700 /run/p8test-apt
+      /opt/puppet-infrastructure/bin/apt-update-dist.sh >/dev/null 2>&1; echo "rc=$?" > /run/p8test-apt/dist.txt
+      apt-get -s dist-upgrade | grep -E '^[0-9]+ upgraded' >> /run/p8test-apt/dist.txt
+    effect: |
+      cat /run/p8test-apt/dist.txt
+    expect: {rc: 0, stdout: "\\Arc=0\\n0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded\\.\\n\\Z"}
 
