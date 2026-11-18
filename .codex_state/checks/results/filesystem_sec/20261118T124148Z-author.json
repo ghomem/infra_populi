@@ -1,0 +1,73 @@
+{
+ "class": "filesystem_sec",
+ "role": "author",
+ "at": "20261118T124148Z",
+ "runner": "e880fa2",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "647e517ab485adc6797f6f47ff1d431e70ddfd989b00776020cfd48eb4a41ef4",
+ "valid": false,
+ "problems": [
+  "controls did not hold on the clean node: a-restricted-command-is-opened-by-hand"
+ ],
+ "clean": [
+  {
+   "id": "restricted-commands-belong-to-the-sudo-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "/usr/bin/wget root:root 755\n/usr/bin/curl root:root 755\n/usr/bin/sftp root:root 755\n/usr/bin/scp root:root 755\n/usr/bin/ssh root:root 755\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "only-the-sudo-group-can-run-them",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-sec/run.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-restricted-command-is-opened-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "755\nruns\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": false
+  },
+  {
+   "id": "the-next-agent-run-restricts-it-again",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "root:root 755\nruns\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": null,
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "INVALID_SET",
+ "authoring_minutes": 0.6,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "31a43753-70ff-4988-b1d5-6fd7d2b27a76",
+   "boot_id_at_end": "31a43753-70ff-4988-b1d5-6fd7d2b27a76",
+   "fresh": false
+  }
+ },
+ "duration_s": 26.0
+}

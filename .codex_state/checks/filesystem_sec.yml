@@ -1,0 +1,88 @@
+# Phase 3 checks for puppet_infrastructure::filesystem_sec (define; title filesystem_sec; node ubuntu). Fixture
+# (params, never committed): restricted_cmds [/bin/nc, /bin/netstat, /usr/bin/wget, /usr/bin/curl, /usr/bin/lynx,
+# /usr/bin/traceroute, /usr/bin/telnet, /usr/bin/ftp, /usr/bin/sftp, /usr/bin/scp, /usr/bin/make, /usr/bin/pip,
+# /usr/bin/ssh, /usr/bin/gcc], restricted_mode 0750, restricted_group '' (so sudo on Ubuntu). On the clean node wget,
+# curl, sftp, scp and ssh are regular files; nc, telnet and ftp are links (Puppet manages a link's owner, not a mode it
+# cannot have); the others are not installed. Probes read the node's files and run the tools as two fixture accounts.
+class: filesystem_sec
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.6
+  notes: "11:01:57Z to 11:02:32Z 2026-11-18 (date at start and at validation; the baseline define was read before the clock started), outside the worktree while firewall_secure's re-review ran.; the drift-and-restore pair added at 11:43:54Z in one command after the rsyslog_base purpose review"
+purpose: >-
+  Restricts a set of commands useful to an intruder (network clients, compilers) to one group: only members of the
+  restricted group (sudo on Ubuntu, wheel on RedHat) can run them, and they stay restricted.
+uncovered:
+  - what: the RedHat default group (wheel)
+    why: these checks run on the Ubuntu node
+    lifted_by: rhel9
+  - what: a custom restricted_group or restricted_mode
+    why: the fixture uses the default group and 0750; another group or mode is a second fixture on the same node
+    lifted_by: ubuntu
+node_agent:
+  after: a-restricted-command-is-opened-by-hand
+  why: the class keeps the commands restricted, which its next agent run after a hand change shows
+checks:
+  - id: restricted-commands-belong-to-the-sudo-group
+    what: each installed restricted command that is a regular file is root:sudo 0750
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_sec.pp, lines: "7-13", text: "$restricted_group = 'sudo'"}
+      - {path: manifests/filesystem_sec.pp, lines: "15-19", text: "file { $restricted_cmds:"}
+      - {path: manifests/filesystem_sec.pp, lines: "3", text: "$restricted_mode = '0750'"}
+    probe: |
+      stat -c '%n %U:%G %a' /usr/bin/{wget,curl,sftp,scp,ssh}
+    expect: {rc: 0, stdout: "\\A/usr/bin/wget root:sudo 750\\n/usr/bin/curl root:sudo 750\\n/usr/bin/sftp root:sudo 750\\n/usr/bin/scp root:sudo 750\\n/usr/bin/ssh root:sudo 750\\n\\Z"}
+
+  - id: only-the-sudo-group-can-run-them
+    what: >-
+      an ordinary account cannot execute the restricted commands, and an account in the sudo group can (without using
+      sudo: the group's execute bit is what lets it in)
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_sec.pp, lines: "1-2", text: "# This classe provides extra filesystem security by restricting a certain set of commands to a certain group"}
+      - {path: manifests/filesystem_sec.pp, lines: "15-19", text: "mode  => $restricted_mode,"}
+    mutates: >-
+      creates two fixture accounts without a home: p8testuser (no extra group) and p8testsudo (in group sudo); the
+      results of running the commands as each go to /run/p8test-sec/run.txt
+    probe: |
+      install -d -m 0700 /run/p8test-sec
+      id p8testuser >/dev/null 2>&1 || useradd -M -s /usr/sbin/nologin p8testuser
+      id p8testsudo >/dev/null 2>&1 || useradd -M -s /usr/sbin/nologin -G sudo p8testsudo
+      for u in p8testuser p8testsudo; do
+        for t in {wget,curl,sftp,scp,ssh}; do
+          runuser -u "$u" -- "/usr/bin/$t" -V </dev/null >/dev/null 2>&1; rc=$?
+          [ "$rc" = 126 ] && echo "$u $t denied" || echo "$u $t runs"
+        done
+      done > /run/p8test-sec/run.txt
+    effect: |
+      cat /run/p8test-sec/run.txt
+    expect: {rc: 0, stdout: "\\Ap8testuser wget denied\\np8testuser curl denied\\np8testuser sftp denied\\np8testuser scp denied\\np8testuser ssh denied\\np8testsudo wget runs\\np8testsudo curl runs\\np8testsudo sftp runs\\np8testsudo scp runs\\np8testsudo ssh runs\\n\\Z"}
+
+  - id: a-restricted-command-is-opened-by-hand
+    what: setup for the next check, wget made executable by everyone by hand (drift)
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_sec.pp, lines: "15-19", text: "mode  => $restricted_mode,"}
+    mutates: chmod 0755 /usr/bin/wget on the node
+    probe: |
+      chmod 0755 /usr/bin/wget
+    effect: |
+      stat -c '%a' /usr/bin/wget
+      runuser -u p8testuser -- /usr/bin/wget -V </dev/null >/dev/null 2>&1; [ $? = 126 ] && echo denied || echo runs
+    expect: {rc: 0, stdout: "\\A755\\nruns\\n\\Z"}
+
+  - id: the-next-agent-run-restricts-it-again
+    what: after the node's agent run, wget is root:sudo 0750 again and the ordinary account is denied again
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_sec.pp, lines: "15-19", text: "file { $restricted_cmds:"}
+    mutates: none beyond running wget as the fixture account (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      stat -c '%U:%G %a' /usr/bin/wget
+      runuser -u p8testuser -- /usr/bin/wget -V </dev/null >/dev/null 2>&1; [ $? = 126 ] && echo denied || echo runs
+    expect: {rc: 0, stdout: "\\Aroot:sudo 750\\ndenied\\n\\Z"}
+
