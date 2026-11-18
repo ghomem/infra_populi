@@ -1,0 +1,98 @@
+{
+ "schema": 1,
+ "class": "nginx_base",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-18T03:31:25Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "f02baf8afe30",
+ "migrate_subject": "P8: migrate puppet_infrastructure::nginx_base",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit f02baf8afe30; 102 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "1 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/nginx_base.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `nginx_base Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppet-nginx', '8.4.0'), ('puppetlabs-apt', '11.3.2')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 16 catalog events; COVERAGE puppet_infrastructure::nginx_base: 19 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A @@1: two-line migration header comment only (purpose of the change + puppet-nginx 8.4.0 / puppetlabs-apt 11.3.2, both confirmed by header_modules).",
+   "DIFF A @@84 (baseline nginx_base.pp:88): `nginx_cfg_prepend => {'include' => '/etc/nginx/modules-enabled/*'}` -> `include_modules_enabled => true` is exactly the line class_rulings.txt:15 (HQ batch-8 ruling 1, module-compatibility change, DESIGN_DECISIONS 2026-11-17) allows; nothing else in $default_configs, the OS conditional, the conf.d file or the DH exec changed. DIFF B is the same single hunk (re-migration).",
+   "RedHat path checked on rhel9: the else branch (class { 'nginx': * => $configs }) is unchanged; the explicit true overrides puppet-nginx 8.4.0 params.pp:19 (false off Debian), so templates/conf.d/nginx.conf.erb:29-31 renders the single directory include the baseline's prepend gave on RedHat. Node read after the run: /etc/nginx/nginx.conf has exactly one line `include /etc/nginx/modules-enabled/*.conf;` (no second include), nginx -t ok, nginx active (nginx-1.20.1-32.el9). The module's config.pp:211-215 File['/etc/nginx/modules-enabled'] (empty dir) and the *.conf vs * glob are the ruled consequences named in class_rulings.txt:15; on RHEL the directory holds nothing either way, so the effective nginx config equals the baseline's. Run 2 clean (idempotent=ok)."
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 3,
+  "removed": 1,
+  "non_comment_changes": 2,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: the module includes /etc/nginx/modules-enabled once (include_modules_enabled; nginx_base's own prepend dropped; DESIGN_DECISIONS 2026-11-17 HQ batch-8 ruling 1).",
+  "# Module dependencies: puppet-nginx 8.4.0 (class nginx), puppetlabs-apt 11.3.2 (Exec['apt_update'] on Ubuntu)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 16,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::nginx_base: 19 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "node": "rhel9",
+   "snapshot": "P8LAB_RHEL9_BASELINE_v1",
+   "total_s": 74.384,
+   "master_check_s": 0.605,
+   "poweroff_s": 1.048,
+   "restore_s": 0.487,
+   "boot_to_ssh_s": 23.175,
+   "apt_update_s": 48.343,
+   "verify_s": 0.726,
+   "nic1_rx_bytes": 135920930
+  },
+  "log": ".codex_state/logs/reviews/nginx_base.20261118T032837Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "rhel9"
+}
