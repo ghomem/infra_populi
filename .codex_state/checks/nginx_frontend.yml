@@ -121,6 +121,8 @@ checks:
         curl -s -k -o /dev/null --max-time 5 -w 'https %{http_code}\n' --resolve p8test.example.com:443:127.0.0.1 https://p8test.example.com/
     expect: {rc: 0, stdout: "\\Ahttp 404\\nhttps 404\\n\\Z"}
 
+  # 2026-11-18 authoring correction (run 1, 20261118T220129Z): nginx's return turns the \n of 'Hello World!\n' into a
+  # newline, so the body ends with one; the expectation allowed only a literal backslash-n.
   - id: the-monitoring-server-answers
     what: >-
       the monitoring name (<host>.monitoring.p8test.example.com) resolves to 127.0.0.1 through /etc/hosts, its server
@@ -135,7 +137,7 @@ checks:
       getent hosts "$h" | awk '{print $1}'
       curl -s --max-time 5 -w '\n%{http_code} %{content_type}\n' "http://$h/"
       curl -s --max-time 5 "http://$h/nginx_status" | head -1 | sed 's/[0-9][0-9]*/N/'
-    expect: {rc: 0, stdout: "\\A127\\.0\\.0\\.1\\nHello World!(\\\\n)?\\n200 text/plain\\nActive connections: N \\n\\Z"}
+    expect: {rc: 0, stdout: "\\A127\\.0\\.0\\.1\\nHello World!\\n\\n200 text/plain\\nActive connections: N \\n\\Z"}
 
   - id: the-nginx-status-check-reports
     what: the installed Nagios check reads nginx's status and exits 0 with its defaults, 1 with a warning threshold of 0 active connections, and 2 with a critical threshold of 0
