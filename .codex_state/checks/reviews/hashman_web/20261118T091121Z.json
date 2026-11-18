@@ -1,0 +1,38 @@
+{
+ "class": "hashman_web",
+ "at": "20261118T091121Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok"
+ },
+ "evidence": [
+  "the-user-changes-the-password-in-a-browser @ templates/hashman/httpserver/httpserver.py.erb:161-182: POST /login runs PP_AUTH_CMD extauth and on rc 0 creates the session and redirects to url_for('next'), so typing p8hashuser + the initial password must land on 'next' (AFTER_LOGIN next); extauth's auth() accepts the expired '$!6$' entry (dbutils.py.erb:192-196) that useradd+unlock leave; then /changepw (129-147) runs setpw and renders generic-msg with STR_OK 'Success: ' + STR_OK_PWD_CHANGED, exactly the expected RESULT line; the transcript records hashman's rendered pages (not a self-asserted status), and the resulting state is proven read-only by the-record-holds-the-new-password",
+  "admin-adds-the-user-and-assigns-its-role @ manifests/hashman_base.pp:18: $dbdir = lookup('hashman::dbdir') resolves in the lab Hiera to /etc/puppetlabs/code/environments/production/manifests/01_hashman/ (migration_plan.md resolved values), the directory the effect reads; config.py.erb:29-45 put _pwd_hash in hashes.pp and the 7 other suffixes (cname,email,company,ssh_key,ppsigs,ppwrapped,pwd_hash_smb) in their files, all written by useradd (interface.py.erb:121-130) -> count 1 and 7; expirepw+lockpw then unlockpw lstrip('!') (dbutils.py.erb:804,829) leave '$!6$'; the node-file line equals mk_info's str_base + str_extra (interface.py.erb:343-350); mutates declares useradd/unlock/node file and the effect reads the database and files, not the action's output",
+  "the-user-changes-the-password-in-a-browser @ manifests/hashman_web.pp:186-188: nginx_frontend serves domain $address (lab puppet.example.com) with frontend_sslprefix and proxies to backend 127.0.0.1:8080, so the peer's Chromium, resolving puppet.example.com to the class node's host-only address over HTTPS (ignore_https_errors for the fixture PKI), reaches the Flask app through nginx and gets its index title 'Hashman @ My Company' (TITLE, httpserver.py.erb:28); the probe names only the class node, as allowed for peer probes"
+ ],
+ "review_s": 284.4,
+ "check_file_sha256": "1aea0673b81132fb90c2e06eac82c89b5e81f87e94eb39c6fd7036ce22e255c2",
+ "reviewer_result": "20261118T090637Z-reviewer",
+ "author_result": "20261118T090150Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "boot_id": "e2e7f390-fc78-4b54-acd9-8311edfda152",
+   "boot_id_at_end": "e2e7f390-fc78-4b54-acd9-8311edfda152",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "2c5879b6-013a-4ac5-8f07-93d3c2529ed7",
+   "boot_id_at_end": "2c5879b6-013a-4ac5-8f07-93d3c2529ed7",
+   "fresh": true
+  }
+ }
+}
