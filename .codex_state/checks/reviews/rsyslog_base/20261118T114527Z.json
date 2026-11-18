@@ -1,0 +1,33 @@
+{
+ "class": "rsyslog_base",
+ "at": "20261118T114527Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-tls-files-are-the-nodes-puppet-identity <- rsyslog_base.pp:32-35: $ssldir is $ssldir_override when set; the params fixture sets /etc/puppetlabs/puppet/ssl, which is exactly the source dir the probe compares against (s=/etc/puppetlabs/puppet/ssl)",
+  "the-tls-files-are-the-nodes-puppet-identity <- rsyslog_base.pp:49-71: ca.pem, <certname>.pem and <certname>.key are sourced from ${ssldir}/certs/ca.pem, certs/<certname>.pem and private_keys/<certname>.pem, syslog:syslog 0644/0644/0600 (dir 0755 from 41-47); the probe cmp's those three byte for byte and stats exactly those owners/modes; openssl verify against the copied CA shows the copies are a usable identity; the mismatch swaps only the CA file to the system bundle, which did not sign the Puppet cert, so the verdict must change",
+  "rsyslog-is-stopped <- rsyslog_base.pp:75-80: service rsyslog ensure => running; the action (systemctl stop syslog.socket rsyslog) is a declared drift setup, mutates states it fully, and the effect (systemctl is-active rsyslog -> inactive, rc 3) is the service's state, not the action's output; the follow-up check then shows the agent run restores running",
+  "purpose covered: Purpose matches the header (lines 1-2, 73) and code: packages rsyslog + rsyslog-gnutls installed and the gtls driver present, service running and enabled (lines 10-12, 75-80); CA/cert/key copied byte for byte from the node's Puppet ssldir with syslog ownership and modes, cert verifies against the copied CA, and the syslog user rsyslog drops to can read the key while nobody cannot (41-71); the service is brought back to running by the agent after a stop (ensure => running), and a drift of the TLS directory resource is restored and restarts rsyslog (new MainPID; subscribe on line 79). Uncovered, listed honestly: a content change of the TLS files (renewed certificate) does not restart rsyslog since only the directory is subscribed, and testing that needs a re-issued certificate, which a check may not do on puppet8master (lifted_by puppetserver, an active node with its own CA); the RedHat syslog uid/gid 0 branch (lines 16-28) is lifted_by rhel9 (active). Actual TLS use by rsyslog is configured by rsyslog_client/rsyslog_server, not this class."
+ ],
+ "review_s": 111.9,
+ "check_file_sha256": "3d36afef68aeab1cc81a95a1c13365dbed2fef5c9e94ebf661ed547cefa988ff",
+ "reviewer_result": "20261118T114336Z-reviewer",
+ "author_result": "20261118T113505Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "3e13ce10-3b99-48f8-a2ce-64817156759e",
+   "boot_id_at_end": "3e13ce10-3b99-48f8-a2ce-64817156759e",
+   "fresh": true
+  }
+ }
+}
