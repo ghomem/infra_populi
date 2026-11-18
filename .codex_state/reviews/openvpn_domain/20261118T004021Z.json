@@ -1,0 +1,116 @@
+{
+ "schema": 1,
+ "class": "openvpn_domain",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-18T00:40:21Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "479cca6b3dc6",
+ "migrate_subject": "P8: migrate puppet_infrastructure::openvpn_domain",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 479cca6b3dc6; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `openvpn_domain Done [from: release-0.9.10; mock-apply: p8test_domain_dns: lab domain DNS resolver]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 15 catalog events; COVERAGE puppet_infrastructure::openvpn_domain: 15 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-2): migration header comment only (purpose + 'Module dependencies: none'; the class uses only core package/file/exec types).",
+   "DIFF A hunk 2 (line 13): adds $hostname = $facts['networking']['hostname']. templates/openvpn/smb.conf.erb:5 'netbios name = <%= @hostname %>' reads the legacy top-scope hostname fact (absent on Puppet 8, legacy facts off); binding the local variable to the structured fact gives the template the identical value. Legacy fact -> $facts[...] translation; template itself unchanged vs baseline (smb.conf/pam_winbind/krb5/join-domain .erb all identical). No resource, attribute, default or logic changed; DIFF B equals DIFF A."
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 3,
+  "removed": 0,
+  "non_comment_changes": 1,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: preserve Samba domain integration for OpenVPN using the structured hostname fact.",
+  "# Module dependencies: none."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 15,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::openvpn_domain: 15 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 31.572,
+   "master_check_s": 0.599,
+   "poweroff_s": 1.159,
+   "restore_s": 0.493,
+   "boot_to_ssh_s": 18.601,
+   "apt_update_s": 10.06,
+   "verify_s": 0.66,
+   "nic1_rx_bytes": 11269193
+  },
+  "log": ".codex_state/logs/reviews/openvpn_domain.20261118T003744Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "mock_apply": "p8test_domain_dns: lab domain DNS resolver (node fixture p8test_domain_dns: behaviour NOT verified)",
+ "node_fixture": {
+  "name": "p8test_domain_dns",
+  "header": [
+   "# MOCK-APPLY node fixture `p8test_domain_dns` (HQ 2026-10-27 ruling 7; HQ batch-8 ruling 6) for openvpn_domain. The class",
+   "# joins the node to an Active Directory domain and finds its DC by name (smb.conf `wins server`, the realm's DNS SRV",
+   "# records); in production a domain member's DNS is the domain's. The lab node resolves through a static",
+   "# /etc/resolv.conf (1.1.1.1, 8.8.8.8; systemd-resolved in foreign mode, so libc and Samba read only that file), which",
+   "# knows nothing of the lab domain p8test.example. This puts the lab DC p8lab-dc's DNS (Samba internal DNS on",
+   "# 192.168.56.25, forwarding everything else to 10.0.2.3) first, ahead of the node's own resolvers.",
+   "# p8lab-dc must be running during the run (nodes.yml kind dc).",
+   "# 2026-11-17: first version routed the domain through a systemd-resolved drop-in; libc never consults resolved here",
+   "# (Codex run 1 BLOCKED: getent failed, net join could not find the DC). A manual join with this file succeeded.",
+   "# Lifted by: a node on a network whose DNS (DHCP) serves the AD domain, as production's"
+  ],
+  "resources": [
+   "file[/etc/resolv.conf]"
+  ],
+  "scope_evidence": "p8test_domain_dns declares a single resource, file[/etc/resolv.conf] (lab DC 192.168.56.25 first, then 1.1.1.1/8.8.8.8), ordered before Class[openvpn_domain]; it serves exactly the stated stand-in (production domain member's DNS serving the AD domain so net join / SRV lookups find the DC). The class declares no resolv.conf or resolver resource, so the fixture changes nothing the class under review declares and stays within its stated scope."
+ }
+}
