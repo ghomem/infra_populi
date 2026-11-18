@@ -14,13 +14,19 @@ purpose: >-
   network connections, upgradable packages, bandwidth, disk write latency, OS version, TLS certificate expiry, CPU and
   memory. Each prints a Nagios status line with performance data and exits 0 (OK), 1 (WARNING), 2 (CRITICAL) or
   3 (UNKNOWN).
+peer:
+  kind: ubuntu2
+  why: the bandwidth check's CRITICAL state needs traffic on the node's NIC during its sample, which only another machine can send
 outcomes:
+  # Correction round 1 (2026-11-18, review 20261118T204912Z): every alarm path is now exercised (the Puppet check's
+  # CRITICAL, the stale package list, CPU CRITICAL under load, bandwidth WARNING and CRITICAL), measured by hand on the
+  # applied node first.
   - outcome: the checks are installed root-owned 0755 as the module's files (check_cpu.py from its template, run by the local python)
     from: manifests/sysmon_base.pp:22-136
     checks: [the-checks-are-installed]
-  - outcome: the Puppet check runs the agent and reports OK with the agent's exit code, and UNKNOWN (not CRITICAL) when another agent run holds the lock
+  - outcome: the Puppet check runs the agent and reports OK with the agent's exit code, UNKNOWN (not CRITICAL) when another agent run holds the lock, and CRITICAL when the run fails otherwise (an agent disabled by an administrator)
     from: manifests/sysmon_base.pp:24-29; files/sysmon/nagios-puppet.sh
-    checks: [the-puppet-check-ok-then-unknown-under-lock]
+    checks: [the-puppet-check-ok-then-unknown-under-lock, the-puppet-check-is-critical-when-the-agent-is-disabled]
   - outcome: the reboot check says OK, and WARNING once a package asks for a reboot
     from: manifests/sysmon_base.pp:31-37; files/sysmon/check_reboot_required.sh
     checks: [the-reboot-check-says-ok, a-pending-reboot-gives-a-warning]
@@ -30,18 +36,18 @@ outcomes:
   - outcome: the connection checks count the node's listening and established connections, and the remote IPs on a port
     from: manifests/sysmon_base.pp:49-65; files/sysmon/check_netstat_conns.sh, check_netstat_cip.sh
     checks: [the-connection-checks-count-real-connections]
-  - outcome: the package-count check warns at the given number of upgradable packages from the update list
+  - outcome: the package-count check warns at the given number of upgradable packages from the update list, and alarms when the list is older than 26 hours
     from: manifests/sysmon_base.pp:67-74; files/sysmon/check_package_count.sh
-    checks: [the-package-count-check-warns-at-its-threshold]
-  - outcome: the bandwidth check reports the interface's throughput against its thresholds
+    checks: [the-package-count-check-warns-at-its-threshold, a-stale-package-list-raises-the-alarm]
+  - outcome: the bandwidth check reports the interface's throughput against its thresholds, WARNING inside them and CRITICAL above them
     from: manifests/sysmon_base.pp:76-83; files/sysmon/check_bandwidth.sh
-    checks: [the-bandwidth-check-reports-throughput]
+    checks: [the-bandwidth-check-reports-throughput, the-peer-sends-traffic, the-bandwidth-check-is-critical-above-its-threshold]
   - outcome: the disk latency check times a synchronous write and goes CRITICAL past its threshold
     from: manifests/sysmon_base.pp:85-92; files/sysmon/check_dd_latency.sh
     checks: [the-latency-check-times-a-write]
-  - outcome: the CPU and memory plugins report usage, and memory goes CRITICAL past its threshold
+  - outcome: the CPU and memory plugins report usage, and each goes CRITICAL past its threshold
     from: manifests/sysmon_base.pp:94-110
-    checks: [cpu-and-memory-are-reported]
+    checks: [cpu-and-memory-are-reported, the-cpu-plugin-is-critical-under-load]
   - outcome: the OS check reports the release
     from: manifests/sysmon_base.pp:112-119; files/sysmon/check_os_version.sh
     checks: [the-os-check-reports-the-release]
@@ -120,13 +126,16 @@ checks:
     expect: {rc: 0, stdout: "\\Atcp listen counted established counted\\nremote IPs on 22 counted\\n0\\n\\Z"}
 
   - id: the-bandwidth-check-reports-throughput
-    what: the bandwidth check samples the host-only NIC for 1 s and reports OK with its throughput against thresholds of 100/200 Mbit/s
+    what: >-
+      the bandwidth check samples the host-only NIC for 1 s and reports OK with its throughput against thresholds of
+      100/200 Mbit/s, and WARNING against 0/1000 Mbit/s (any throughput is at or above 0 and below 1000)
     control: negative
     derived_from:
       - {path: files/sysmon/check_bandwidth.sh, sha256: "93923b2ac8f27d18472598c51edd3a56c7a612607ae92aea1615161f87222e8d"}
     probe: |
       /opt/puppet-infrastructure/bin/check_bandwidth.sh enp0s8 1 100 200 1000 | sed -E 's/[0-9]+\.[0-9]+/N/g; s/[0-9]+\/[0-9]+ Bytes/B Bytes/'; echo "rc=${PIPESTATUS[0]}"
-    expect: {rc: 0, stdout: "\\AIN N Mbit/s OUT N Mbit/s - OK - B Bytes in 1 sec \\| InUsage=N% OutUsage=N% inBandwidth=NMbps;100;200 outBandwidth=NMbps;100;200\\nrc=0\\n\\Z"}
+      /opt/puppet-infrastructure/bin/check_bandwidth.sh enp0s8 1 0 1000 1000 | cut -d' ' -f8; echo "rc=${PIPESTATUS[0]}"
+    expect: {rc: 0, stdout: "\\AIN N Mbit/s OUT N Mbit/s - OK - B Bytes in 1 sec \\| InUsage=N% OutUsage=N% inBandwidth=NMbps;100;200 outBandwidth=NMbps;100;200\\nrc=0\\nWARNING!\\nrc=1\\n\\Z"}
 
   - id: cpu-and-memory-are-reported
     what: the CPU plugin says OK with total and per-CPU usage; the memory plugin says OK on free memory over 5% and CRITICAL when used memory passes 2%
@@ -239,3 +248,72 @@ checks:
       $B/check_http_ssl_cert.sh -H 127.0.0.1 -p 8443 -S -C 5,2 | sed -E "s/'p8test.local' expires on .*/'p8test.local' expires on DATE/"; echo "rc=${PIPESTATUS[0]}"
       $B/check_http_ssl_cert.sh -H 127.0.0.1 -p 8443 -S -C 30,5 | sed -E 's/expires in [0-9]+ day.*/expires in N days/'; echo "rc=${PIPESTATUS[0]}"
     expect: {rc: 0, stdout: "\\AOK - 'p8test\\.local' expires on DATE\\nrc=0\\nWARNING - 'p8test\\.local' expires in N days\\nrc=1\\n\\Z"}
+
+  - id: the-puppet-check-is-critical-when-the-agent-is-disabled
+    what: with the agent disabled by an administrator (its disable lock present), the Puppet check reports CRITICAL with the agent's exit code 1 and exits 2
+    control: negative
+    timeout: 300
+    derived_from:
+      - {path: files/sysmon/nagios-puppet.sh, sha256: "a20117e8983bb2df71e2083a37afe060a4350e38a273889a33d78977a48b9828"}
+    mutates: writes the agent's disable lock (/opt/puppetlabs/puppet/cache/state/agent_disabled.lock, message p8test), runs the class's Puppet check once, then removes the lock; the result goes to /run/p8test-sysmon/disabled.txt
+    probe: |
+      install -d -m 0700 /run/p8test-sysmon; cd /run/p8test-sysmon
+      lk=/opt/puppetlabs/puppet/cache/state/agent_disabled.lock
+      printf '{"disabled_message":"p8test"}' > "$lk"
+      /opt/puppet-infrastructure/bin/nagios-puppet.sh > disabled.out; echo $? > disabled.rc
+      rm -f "$lk"
+      echo "$(cut -d' ' -f1-4 disabled.out) rc=$(cat disabled.rc)" > disabled.txt
+    effect: |
+      cat /run/p8test-sysmon/disabled.txt
+    expect: {rc: 0, stdout: "\\ACRITICAL: exit code 1 rc=2\\n\\Z"}
+
+  - id: a-stale-package-list-raises-the-alarm
+    what: once the update list is two days old (past the check's 26 hours), the package check prints check_file_age's CRITICAL line and exits 1
+    control: negative
+    derived_from:
+      - {path: files/sysmon/check_package_count.sh, sha256: "a2a5bd075742a0073e201fc418fb5692177b4081d5f19d8082cbc83bd439f351"}
+    mutates: sets the modification time of /var/lib/apt-check-updates/list (written by the package-count check above) to two days ago
+    probe: |
+      touch -d '2 days ago' /var/lib/apt-check-updates/list
+    effect: |
+      /opt/puppet-infrastructure/bin/check_package_count.sh 10 | head -1 | cut -d' ' -f1-2; echo "rc=${PIPESTATUS[0]}"
+    expect: {rc: 0, stdout: "\\AFILE_AGE CRITICAL:\\nrc=1\\n\\Z"}
+
+  - id: the-cpu-plugin-is-critical-under-load
+    what: with two busy processes for 20 s, the CPU plugin reports CRITICAL against thresholds of 30/50% and exits 2
+    control: negative
+    derived_from:
+      - {path: manifests/sysmon_base.pp, lines: "95-101", text: "content => template('puppet_infrastructure/sysmon/check_cpu.py.erb'),"}
+    mutates: runs two busy loops (yes into /dev/null) for 20 s as transient unit p8test-load on the node
+    probe: |
+      systemd-run --unit p8test-load -q timeout 20 sh -c 'yes >/dev/null & yes >/dev/null & wait'
+      sleep 2
+    effect: |
+      /usr/lib64/nagios/plugins/check_cpu.py -w 30 -c 50 | cut -d':' -f1; echo "rc=${PIPESTATUS[0]}"
+    expect: {rc: 0, stdout: "\\ACRITICAL\\nrc=2\\n\\Z"}
+
+  - id: the-peer-sends-traffic
+    what: setup for the next check, the peer pings the class node every 10 ms for 20 s
+    control: negative
+    host: peer
+    derived_from:
+      - {path: files/sysmon/check_bandwidth.sh, sha256: "93923b2ac8f27d18472598c51edd3a56c7a612607ae92aea1615161f87222e8d"}
+    mutates: starts a transient unit p8test-traffic on the peer that pings the class node every 10 ms for 20 s
+    probe: |
+      systemd-run --unit p8test-traffic -q timeout 20 ping -q -i 0.01 192.168.56.20
+      sleep 1
+    effect: |
+      systemctl is-active p8test-traffic
+    expect: {rc: 0, stdout: "\\Aactive\\n\\Z"}
+
+  - id: the-bandwidth-check-is-critical-above-its-threshold
+    what: with the peer's pings arriving, the bandwidth check reports CRITICAL against thresholds of 0/0 Mbit/s and exits 2
+    control: negative
+    derived_from:
+      - {path: files/sysmon/check_bandwidth.sh, sha256: "93923b2ac8f27d18472598c51edd3a56c7a612607ae92aea1615161f87222e8d"}
+    mutates: none beyond a 1 s sample of the NIC's counters (declared mutating so it runs while the peer's pings arrive)
+    probe: |
+      true
+    effect: |
+      /opt/puppet-infrastructure/bin/check_bandwidth.sh enp0s8 1 0 0 1000 | cut -d' ' -f8; echo "rc=${PIPESTATUS[0]}"
+    expect: {rc: 0, stdout: "\\ACRITICAL!\\nrc=2\\n\\Z"}
