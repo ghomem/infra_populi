@@ -226,7 +226,7 @@ def test_expected_run2_event_only_is_green(lab):
     proc = lab.run([SCRIPT, "puppet_infrastructure::packages_base"])
     assert proc.returncode == 0, proc.stderr
     assert "RUN2_EXPECTED_EVENTS: 1 from Exec[apt_update]" in proc.stdout
-    assert "GREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update])" in proc.stdout
+    assert "GREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache])" in proc.stdout
 
 
 def test_an_unexpected_event_beside_an_expected_one_is_red(lab):
@@ -260,9 +260,10 @@ def test_inherited_expected_run2_is_named_in_output_and_metrics(lab):
                                 "COVERAGE puppet_infrastructure::sysmon_base: 13 concrete resources (+0 defined-type instances)\n"})
     proc = lab.run([SCRIPT, "puppet_infrastructure::sysmon_base"])
     assert proc.returncode == 0, proc.stderr
-    assert "[own: none; inherited: Exec[apt_update] via packages_base]" in proc.stdout
+    assert "[own: none; inherited: Exec[apt_update] via packages_base, Exec[dnf-makecache] via packages_base]" in proc.stdout
     h = [json.loads(l) for l in (lab.root / "metrics" / "events.jsonl").read_text().splitlines()][-1]["data"]
-    assert h["run2_expected"] == {"hits": 1, "own": [], "inherited": {"packages_base": ["Exec[apt_update]"]}}
+    assert h["run2_expected"] == {"hits": 1, "own": [],
+                                  "inherited": {"packages_base": ["Exec[apt_update]", "Exec[dnf-makecache]"]}}
 
 
 # --- run-2 REPORT stage (batch 3, nginx_frontend_domain): a change logged below notice has no console line

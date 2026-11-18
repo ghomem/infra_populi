@@ -246,13 +246,13 @@ def test_repo_node_fixtures_exist_for_the_planned_classes(gen):
 
 def test_expected_run2_events_parse(gen):
     rows = gen.parse_plan()
-    assert rows["packages_base"].expected_run2_events == ("Exec[apt_update]",)
+    assert rows["packages_base"].expected_run2_events == ("Exec[apt_update]", "Exec[dnf-makecache]")  # RedHat: rhel9 pass
     # every entry is a reviewed, justified exception (HQ 2026-11-10 ruling 1): keep this set explicit
     assert {n for n, r in rows.items() if r.expected_run2_events} == {"packages_base", "node_base", "nginx_frontend_domain",
                                                                       "nginx_frontend", "hashman_web", "linux_policies_user",
                                                                       "node_base_domain_desktop", "mariadb_server",
                                                                       "node_base_desktop"}
-    assert rows["node_base"].expected_run2_events == ("Exec[apt_update]",)
+    assert rows["node_base"].expected_run2_events == ("Exec[apt_update]", "Exec[dnf-makecache]")
     # HQ batch-7 ruling 1: each resource named exactly (the p8testuser fixture's titles), no glob
     tmp = "/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp"
     assert rows["linux_policies_user"].expected_run2_events == (f"File[{tmp}]", f"File_line[{tmp}_0]",
