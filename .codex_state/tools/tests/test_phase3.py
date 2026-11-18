@@ -895,3 +895,21 @@ def test_only_a_mutating_action_may_take_a_longer_timeout(p3):
         p3.write(check_set(check("conf", "probe-conf"), bad))
         proc = p3.run("validate", CLS)
         assert proc.returncode == 2 and "timeout (seconds, 1-600)" in proc.stderr, proc.stderr
+
+
+def test_node_agent_runs_after_each_listed_anchor(p3, lab):
+    p3.write(check_set(check("conf", "probe-conf"),
+                       mutating("drift-one", action="act-one", effect="eff-one", mutates="first drift"),
+                       mutating("drift-two", action="act-two", effect="eff-two", mutates="second drift"),
+                       node_agent={"after": ["drift-one", "drift-two"], "why": "each drift is corrected by a run"}))
+    p3.probe_rule("probe-conf", FAIL, OK)
+    for m in ("act-one", "act-two"):
+        lab.world["ssh"].insert(0, {"match": m, "stdout": "", "rc": 0})
+    p3.probe_rule("eff-one", FAIL, OK)
+    p3.probe_rule("eff-two", FAIL, OK)
+    lab.world["ssh"].insert(0, {"match": r"puppet agent -t --detailed-exitcodes", "stdout": "AGENT_RC=0\n"})
+    proc = p3.run("run", CLS)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    record, _ = p3.result()
+    assert set(record["node_agent"]) == {"drift-one", "drift-two"}
+    assert proc.stdout.count("node agent run:") == 2

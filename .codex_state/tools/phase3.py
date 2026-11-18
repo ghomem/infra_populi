@@ -87,7 +87,7 @@ Check file .codex_state/checks/<class>.yml:
       # autosign.conf names it), from its own confdir /etc/p8test-agent/<certname> (own ssldir, vardir, rundir), so the
       # peer's identity toward the lab master is untouched. Its exit code and changes are recorded under `peer_agent`;
       # the checks after it judge what it applied. A runner step, never a probe (probes keep the Puppet ban).
-  node_agent: {after: <id of a mutating check>, why: <why an agent run after that change is the evidence>}
+  node_agent: {after: <id of a mutating check, or a list of ids>, why: <why an agent run after that change is the evidence>}
       # NODE AGENT RUN (2026-11-18, the backfill: a class whose purpose includes correcting drift, e.g. purging rules it
       # does not manage): right after the named mutating check (whose action made the drift), the runner makes one
       # agent run on the class's node, as the harness does. Its exit code and changes go under `node_agent`; the checks
@@ -538,8 +538,9 @@ def node_agent_problems(block, data: dict) -> list[str]:
     if not isinstance(block, dict) or set(block) != NODE_AGENT_KEYS or len(str(block.get("why", ""))) < 20:
         return ["node_agent takes after and why (>= 20 characters)"]
     mutating = [c.get("id") for c in data.get("checks") or [] if isinstance(c, dict) and "mutates" in c]
-    if block["after"] not in mutating:
-        return ["node_agent.after must name a mutating check of the set (the run follows its action)"]
+    anchors = block["after"] if isinstance(block["after"], list) else [block["after"]]
+    if not anchors or any(a not in mutating for a in anchors):
+        return ["node_agent.after must name a mutating check of the set, or a list of them (a run follows each action)"]
     return []
 
 
@@ -856,9 +857,13 @@ def run_locked(cls: str, data: dict, record: dict, finish) -> int:
         record["applied"].append(r)
         print(f"  {'pass' if r['passed'] else 'FAIL'} {check['id']} (mutating: {check['mutates']}; "
               f"action rc {r['action']['rc']}, judged on the effect)")
-        if data.get("node_agent", {}).get("after") == check["id"]:
+        anchors = data.get("node_agent", {}).get("after")
+        if check["id"] in (anchors if isinstance(anchors, list) else [anchors]):
             run = agent_run()
-            record["node_agent"] = run
+            if isinstance(anchors, list):  # one run per anchor, recorded by anchor
+                record.setdefault("node_agent", {})[check["id"]] = run
+            else:
+                record["node_agent"] = run
             print(f"  node agent run: rc {run['rc']}, {len(run['events'])} changed")
         if data.get("peer_agent", {}).get("after") == check["id"]:
             run = peer_agent_run(cls, data["peer_agent"]["certname"])
