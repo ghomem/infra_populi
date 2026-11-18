@@ -1,3 +1,6 @@
+# Puppet 8 migration: raw_prepend 'proxy_smtp_auth on;' / 'off;' becomes the mailhost parameter proxy_smtp_auth, which puppet-nginx 8.4.0 renders itself (the raw line was a second directive nginx refuses).
+# Module dependencies: puppet-nginx 8.4.0 (nginx::resource::mailhost, nginx::resource::streamhost, nginx::resource::server).
+# Expected run-2 events: Notify[Generated Upstream members for *] — nginx_frontend_domain's debug notify (nginx_frontend_domain.pp:256), declared through this class, reports on every agent run without changing the node.
 ### PURPOSE ########
 # This class sets up mail reverse proxy with the following ports and protocols (by default):
 # - port 993: imap with ssl
@@ -75,9 +78,7 @@ class puppet_infrastructure::nginx_frontend_mail (
     ssl                      => true,
     ssl_cert                 => $ssl_cert_path,
     ssl_key                  => $ssl_key_path,
-    raw_prepend              => [
-      'proxy_smtp_auth          on;',
-    ],
+    proxy_smtp_auth           => 'on',
   }
 
   nginx::resource::mailhost { $smtp_helo:
@@ -88,9 +89,7 @@ class puppet_infrastructure::nginx_frontend_mail (
     smtp_auth                => 'none',
     proxy_pass_error_message => 'on',
     ssl                      => false,
-    raw_prepend              => [
-      'proxy_smtp_auth          off;',
-    ],
+    proxy_smtp_auth           => 'off',
   }
 
   nginx::resource::streamhost { 'imap_auth_stream':
