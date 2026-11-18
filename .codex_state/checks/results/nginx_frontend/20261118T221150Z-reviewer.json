@@ -1,0 +1,287 @@
+{
+ "class": "nginx_frontend",
+ "role": "reviewer",
+ "at": "20261118T221150Z",
+ "runner": "acbe0dd",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "cf8dda50853653eedb5b4389f032c0903bc7267111431b2d4119b4e751a71862",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "a-backend-answers",
+   "control": "negative",
+   "rc": 7,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "http-redirects-to-https",
+   "control": "negative",
+   "rc": 7,
+   "passed": false,
+   "stdout": "000 \n000 \n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "https-proxies-to-the-backend",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "www.p8test.example.com: \np8test.example.com: \nother.example.com: \n",
+   "stderr": "awk: fatal: cannot open file `/etc/ssl/certs/p8test.nginx.bundle.crt' for reading: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "only-tls-1-3-is-accepted",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "tls1_3 refused\ntls1_2 refused\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-default-server-answers-404",
+   "control": "negative",
+   "rc": 7,
+   "passed": false,
+   "stdout": "http 000\nhttps 000\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-monitoring-server-answers",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n000 \n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-nginx-status-check-reports",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "defaults rc=127\nwarning at 0 rc=127\ncritical at 0 rc=127\n",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/check_nginx_status.py': No such file or directory\nbash: line 3: /opt/puppet-infrastructure/bin/check_nginx_status.py: No such file or directory\nbash: line 4: /opt/puppet-infrastructure/bin/check_nginx_status.py: No such file or directory\nbash: line 5: /opt/puppet-infrastructure/bin/check_nginx_status.py: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-status-page-is-refused-off-loopback",
+   "control": "negative",
+   "rc": 7,
+   "passed": false,
+   "stdout": "000\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "ream_footer]\n  Concat_file[/etc/nginx/sites-available/http_p8test.example.com.conf]\n  Concat::Fragment[http_p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_p8test.example.com-header]\n  Concat_fragment[http_p8test.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/http_www.p8test.example.com.conf]\n  Concat::Fragment[http_www.p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_www.p8test.example.com-header]\n  Concat_fragment[http_www.p8test.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/https_p8test.example.com.conf]\n  Concat_fragment[https_p8test.example.com-header]\n  Concat_fragment[https_p8test.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/https_www.p8test.example.com.conf]\n  Concat_fragment[https_www.p8test.example.com-ssl-header]\n  Concat_fragment[https_www.p8test.example.com-ssl-footer]\n  Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\n  Concat_fragment[backend_p8test.example.com_upstream_member_127.0.0.1:8080 in p8test.example.com]\n  Concat_fragment[http_p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_www.p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\nGREEN: run 2 events limited to the plan's expected_run2_events (Notify[Generated Upstream members for *]) (gate v2).\nGREEN_STAMP nginx_frontend 34c35ce624bb\n"
+ },
+ "applied": [
+  {
+   "id": "the-default-server-answers-404",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "http 404\nhttps 404\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the name (the domain, which the domain's servers hold) in place of unknown.invalid",
+    "rc": 0,
+    "passed": false,
+    "stdout": "http 301\nhttps 502\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-monitoring-server-answers",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "127.0.0.1\nHello World!\n\n200 text/plain\nActive connections: N \n",
+   "stderr": ""
+  },
+  {
+   "id": "the-nginx-status-check-reports",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root:root 755\ndefaults rc=0\nwarning at 0 rc=1\ncritical at 0 rc=2\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-status-page-is-refused-off-loopback",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "403\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the address (127.0.0.1, the one address the page allows)",
+    "rc": 0,
+    "passed": false,
+    "stdout": "200\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-backend-answers",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test-backend\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "starts a transient unit p8test-backend (python3 -m http.server on 127.0.0.1:8080, serving /run/p8test-frontend/www, whose index.html says p8test-backend)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "http-redirects-to-https",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "301 https://p8test.example.com/p8test/path?q=1\n301 https://www.p8test.example.com/p8test/path?q=1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond two local HTTP requests (declared mutating so it runs after the backend starts)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "https-proxies-to-the-backend",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "www.p8test.example.com: p8test-backend\np8test.example.com: p8test-backend\nother.example.com: \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond two local HTTPS requests (declared mutating so it runs after the backend starts)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "only-tls-1-3-is-accepted",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "tls1_3 accepted\ntls1_2 refused\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond two local TLS handshakes (declared mutating so it runs after the backend starts)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.9,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "5f3d9057-15d5-4d15-8910-10520b455f49",
+   "boot_id_at_end": "5f3d9057-15d5-4d15-8910-10520b455f49",
+   "fresh": true
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "plain HTTP on the domain and on www redirects (301) to HTTPS on the same name, keeping the path",
+   "checks": [
+    "a-backend-answers",
+    "http-redirects-to-https"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "HTTPS on www and on the domain proxies to the backend with the domain's certificate (managed by this class)",
+   "checks": [
+    "https-proxies-to-the-backend"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "only TLS 1.3 is accepted (the default protocol list)",
+   "checks": [
+    "only-tls-1-3-is-accepted"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a request for a name no server holds gets 404 from the default server, over HTTP and HTTPS",
+   "checks": [
+    "the-default-server-answers-404"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the monitoring server, pinned to 127.0.0.1 in /etc/hosts, answers Hello World and serves nginx's status to 127.0.0.1",
+   "checks": [
+    "the-monitoring-server-answers"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the status page is refused (403) to a request that does not come from 127.0.0.1",
+   "checks": [
+    "the-status-page-is-refused-off-loopback"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the Nagios check reads nginx's status, OK under its thresholds, WARNING and CRITICAL over them",
+   "checks": [
+    "the-nginx-status-check-reports"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the variants (redirect_default, no default or monitoring server, no SSL, Let's Encrypt, IP whitelist and the other pass-through parameters)",
+   "uncovered": {
+    "why": "fixture variants (one set holds one fixture), untested: this fixture sets only server_monitoring_create and leaves the rest at their defaults",
+    "lifted_by": "ubuntu"
+   }
+  },
+  {
+   "outcome": "on RedHat the key is read from /etc/pki/tls/private",
+   "uncovered": {
+    "why": "the RedHat branch; this set runs on the plan's Ubuntu node",
+    "lifted_by": "rhel9"
+   }
+  }
+ ],
+ "duration_s": 127.2
+}
