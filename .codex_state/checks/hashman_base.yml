@@ -71,9 +71,13 @@ checks:
     expect: {rc: 0, stdout: "\\Aroot 755\\nUsage: pp_auth\\.py auth +USER PASSWORD\\n\\Z"}
 
 
+  # 2026-11-18 authoring correction (run 1, 20261118T091214Z): the action ran `setpw` before `unlock`; setpw first
+  # authenticates the old password (pp_auth.py.erb:146), which a locked user cannot, so `set -e` stopped the action
+  # and nothing was written. The administrator unlocks first, as the web flow (unlock, then login) does. The behaviour
+  # is unchanged.
   - id: admin-adds-a-user-with-a-password
     what: >-
-      with the CLI the administrator adds p8hashuser, changes its initial password with `setpw`, unlocks it and copies
+      with the CLI the administrator adds p8hashuser, unlocks it, changes its initial password with `setpw` and copies
       the role line `printinfo` prints into the client's node definition; `auth` then accepts the set password only
     control: negative
     derived_from:
@@ -83,8 +87,8 @@ checks:
       - {path: templates/hashman/libhashman/interface.py.erb, lines: "343", text: "puppet_infrastructure::user        {"}
       - {path: manifests/hashman_base.pp, lines: "18", text: "$dbdir      = lookup('hashman::dbdir')"}
     mutates: >-
-      on the node, through the wrapper /opt/puppet-infrastructure/bin/pp_auth.sh: useradd p8hashuser (SILENT), setpw
-      from the logged initial password to p8test-Cli-pw5!, unlock, and the printinfo role line written as node
+      on the node, through the wrapper /opt/puppet-infrastructure/bin/pp_auth.sh: useradd p8hashuser (SILENT), unlock,
+      setpw from the logged initial password to p8test-Cli-pw5!, and the printinfo role line written as node
       'p8test-hashman-client' into the server's manifests/nodes/p8test-hashman-client.pp; the auth answers for the set
       and for a wrong password go to /run/p8test-hashman/cli.txt
     probe: |
@@ -92,8 +96,8 @@ checks:
       c=/opt/puppet-infrastructure/bin/pp_auth.sh
       install -d -m 0700 /run/p8test-hashman
       initial=$($c useradd p8hashuser p8hashuser@example.invalid "P8test Hash User" p8test SILENT 2>&1 | sed -n 's/.*created with initial password //p' | head -1)
-      $c setpw p8hashuser "$initial" 'p8test-Cli-pw5!' > /dev/null 2>&1
       $c unlock p8hashuser "p8test end to end" > /dev/null 2>&1
+      $c setpw p8hashuser "$initial" 'p8test-Cli-pw5!' > /dev/null 2>&1
       line=$($c printinfo p8hashuser 2>/dev/null | grep -E '^  puppet_infrastructure::user +[{]')
       install -d -m 0755 /etc/puppetlabs/code/environments/production/manifests/nodes
       printf "node 'p8test-hashman-client' {\n%s\n}\n" "$line" > /etc/puppetlabs/code/environments/production/manifests/nodes/p8test-hashman-client.pp
