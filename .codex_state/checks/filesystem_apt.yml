@@ -12,7 +12,8 @@ authoring:
 purpose: >-
   Apt update tooling for Ubuntu 24.04 servers (the target release; the 20.04/22.04 openscap package branch is not in Phase 1): a wrapper that upgrades a package only if it is installed and has an update (never
   installing anything new), surface, kernel and full update scripts, and a daily job that lists the relevant (High or
-  above) security updates from Canonical's OVAL data with openscap, for monitoring.
+  above) security updates from Canonical's OVAL data with openscap (for monitoring), and a script that installs the
+  updates on that list through the wrapper.
 uncovered:
   - what: "the desktop variant (server_mode false): the desktop surface list and the compatibility link"
     why: the fixture is a server; one set holds one fixture
@@ -31,12 +32,14 @@ checks:
       - {path: files/apt/apt-update-kernel.sh, sha256: "8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db"}
       - {path: files/apt/apt-update-dist.sh, sha256: "c240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3"}
       - {path: files/apt/get-relevant-updates-list, sha256: "077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6"}
+      - {path: manifests/filesystem_apt.pp, lines: "178-191", text: "file { \"${localdir}/bin/apt-update-relevant.sh\":"}
     probe: |
       cd /opt/puppet-infrastructure/bin
-      stat -c '%n %U %a' apt-update-pkg.sh apt-update-surface.sh apt-update-kernel.sh apt-update-dist.sh get-relevant-updates-list apt-check-updates.sh
+      stat -c '%n %U %a' apt-update-pkg.sh apt-update-surface.sh apt-update-kernel.sh apt-update-dist.sh get-relevant-updates-list apt-check-updates.sh apt-update-relevant.sh
+      stat -c '%n %a' /var/lib/apt-check-updates
       sha256sum apt-update-pkg.sh apt-update-kernel.sh apt-update-dist.sh get-relevant-updates-list | awk '{print $1}'
       dpkg-query -W -f '${Package} ${Status}\n' openscap-scanner
-    expect: {rc: 0, stdout: "\\Aapt-update-pkg\\.sh root 755\\napt-update-surface\\.sh root 755\\napt-update-kernel\\.sh root 755\\napt-update-dist\\.sh root 755\\nget-relevant-updates-list root 755\\napt-check-updates\\.sh root 755\\nb19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5\\n8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db\\nc240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3\\n077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6\\nopenscap-scanner install ok installed\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Aapt-update-pkg\\.sh root 755\\napt-update-surface\\.sh root 755\\napt-update-kernel\\.sh root 755\\napt-update-dist\\.sh root 755\\nget-relevant-updates-list root 755\\napt-check-updates\\.sh root 755\\napt-update-relevant\\.sh root 755\\n/var/lib/apt-check-updates 755\\nb19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5\\n8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db\\nc240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3\\n077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6\\nopenscap-scanner install ok installed\\n\\Z"}
 
   - id: surface-list-and-daily-job
     what: >-
@@ -121,3 +124,40 @@ checks:
       test -f /var/lib/apt-check-updates/list && echo list-written
       awk 'NF != 1' /var/lib/apt-check-updates/list | wc -l
     expect: {rc: 0, stdout: "\\Arc=0\\nlist-written\\n0\\n\\Z"}
+
+  # 2026-11-18 purpose correction (review 20261118T121418Z): apt-update-relevant.sh (manifest lines 183-191), the
+  # script that installs the updates on the daily list, was missing from the purpose and the checks; it is in both now.
+  - id: the-relevant-updates-on-the-list-get-installed
+    what: >-
+      a package on the relevant-updates list (one version behind the archive) is upgraded to the archive's candidate
+      by apt-update-relevant.sh, through the wrapper
+    control: negative
+    timeout: 300
+    derived_from:
+      - {path: manifests/filesystem_apt.pp, lines: "183-191", text: "content => template('puppet_infrastructure/apt/apt-update-relevant.sh.erb'),"}
+      - {path: templates/apt/apt-update-relevant.sh.erb, sha256: "0953a9fc34832eb2a15c3d1aa42ea2bf14428789054d249f910b4c32b65f3eb2"}
+    mutates: >-
+      picks the first of wget, less, tzdata, curl, vim-tiny whose archive has an older version, downgrades it, writes
+      its name as the only line of /var/lib/apt-check-updates/list (as the daily job writes the list), runs
+      apt-update-relevant.sh; the package's versions go to /run/p8test-apt/relevant.txt
+    probe: |
+      install -d -m 0700 /run/p8test-apt
+      for p in wget less tzdata curl vim-tiny; do
+        cand=$(apt-cache policy "$p" | awk '/Candidate:/ {print $2}')
+        old=$(apt-cache madison "$p" | awk -F'|' '{gsub(/ /,"",$2); print $2}' | grep -v -x "$cand" | head -1)
+        [ -n "$old" ] && dpkg-query -W "$p" >/dev/null 2>&1 && break
+        old=""
+      done
+      [ -n "$old" ] || { echo "no package with an older archive version" > /run/p8test-apt/relevant.txt; exit 0; }
+      DEBIAN_FRONTEND=noninteractive apt-get -qq -y --allow-downgrades install "$p=$old" >/dev/null 2>&1
+      printf '%s\n' "$p" > /var/lib/apt-check-updates/list
+      before=$(dpkg-query -W -f '${Version}' "$p")
+      out=$(/opt/puppet-infrastructure/bin/apt-update-relevant.sh 2>&1)
+      after=$(dpkg-query -W -f '${Version}' "$p")
+      { [ "$before" = "$old" ] && echo "on the list one version behind"
+        [ "$after" = "$cand" ] && echo "upgraded to the candidate"
+        printf '%s\n' "$out" | grep -q "^package $p updated to version $cand$" && echo "reported through the wrapper"; } > /run/p8test-apt/relevant.txt
+    effect: |
+      cat /run/p8test-apt/relevant.txt
+    expect: {rc: 0, stdout: "\\Aon the list one version behind\\nupgraded to the candidate\\nreported through the wrapper\\n\\Z"}
+
