@@ -1,4 +1,5 @@
 # Puppet 8 migration: the module includes /etc/nginx/modules-enabled once (include_modules_enabled; nginx_base's own prepend dropped; DESIGN_DECISIONS 2026-11-17 HQ batch-8 ruling 1).
+# Puppet 8 migration: stream_access_log => 'off', as production's nginx module (0.15.0) rendered no stream access_log and 8.4.0's default has no format, which nginx refuses (HQ 2026-11-18 ruling A1).
 # Module dependencies: puppet-nginx 8.4.0 (class nginx), puppetlabs-apt 11.3.2 (Exec['apt_update'] on Ubuntu).
 ### Purpose ########
 # Our base nginx class installs nginx and performs configurations common to all servers (aka vhosts)
@@ -86,6 +87,7 @@ class puppet_infrastructure::nginx_base (
     server_tokens     => 'off',
     log_format        => $log_formats,
     include_modules_enabled => true,
+    stream_access_log => 'off',
   }
 
   # Beware the merge function behavior:
