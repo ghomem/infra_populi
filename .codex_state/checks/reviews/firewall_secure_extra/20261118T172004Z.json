@@ -1,0 +1,45 @@
+{
+ "class": "firewall_secure_extra",
+ "at": "20261118T172004Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "fail",
+  "derived_from": "fail",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-next-agent-run-purges-the-unmanaged-rule (manifests/firewall_secure_extra.pp:79-80): ok. resources { 'firewall': purge => true } is what makes the hand-added p8test-rogue rule vanish at the next agent run (my run: the agent removed Firewall[9034 p8test-rogue], effect 0 then 1).",
+  "bogus-flag-and-rst-packets-are-sent (manifests/firewall_secure_extra.pp:170, also 187-190): FAIL. The probe and expect do not test what these lines declare. Line 170 is rule 505 (drop FIN,SYN) and 187-190 is rule 520 (drop RST). The set's own correction note says 505, 519 and 520 count 0 for these packets because rule 501 (ctstate INVALID) drops them first. The effect is 'cat sent.txt', which is hping3's own transmitted count ('5 50'), not a result on the node. A mutating check's effect must show the action's result, not its own output. The cited lines should be 159-160, as in the-invalid-rule-dropped-them.",
+  "an-unmanaged-rule-is-added (manifests/firewall_secure_extra.pp:79-80): ok. This is setup for the purge check. The effect reads the node's live INPUT chain (iptables -S | grep -c p8test-rogue = 1), which is the action's result. It fails on the clean node as a negative control should.",
+  "finding a-blacklisted-source-gets-nothing: from the peer's +150 address the probe saw 'icmp from blacklisted in / ssh from blacklisted in'; the expectation was both dropped. The manifest adds rule 666 '' drop (line 126) in INPUT, but the accept rules 000 ICMP limit and 100 SSH whitelist / 110-117 come before it, so the blacklist does not drop ICMP or SSH.",
+  "finding icmp-echo-is-rate-limited: the effect exited rc 1 with empty stdout, so the peer's recorded reply count for 20 echo requests 0.05 s apart was empty or outside 5-8. The effect prints nothing on failure, so the observed count is not in the results. The peer was unreachable after the run, so I could not read it. The author's run 2 is reported as 12 of 13 pass with only the blacklist check failing, so the runs disagree on this check.",
+  "purpose gap: Tested as behaviour on the lab: the service port reaches the node only from the whitelisted source, through the side chain; the per-source connection limit (3 held) and the new-connection rate (5 of 10); the ICMP limit (it failed in my run); out-of-connection SYN+FIN and RST dropped, but only by rule 501 (INVALID); the blacklist (it fails: finding); the purge of unmanaged rules. Honestly uncovered: geoip/country_whitelist, internal_forward, and the non-anti_ddos/strict variants. GAP 1: the outcomes table leaves out the iptables-flush.sh script (lines 63-70). The class's own WARNING (line 13) says that script must be run after any input change, and the lab can check it (firewall_secure's set does: flush-script-installed). It is neither checked nor listed as uncovered. GAP 2: the stated purpose includes 'SSH brute-force limits' (lines 145-154: 8 simultaneous connections and 15 new per minute per host, 20 per minute overall). The only check is policies-and-ssh-rules, and it tests them only as rule text (a count of rule 116). The same peer can exercise them, as firewall_secure's held-connections-stop-at-eight and new-connections-stop-at-fifteen-a-minute do. GAP 3: rules 519/520 (an RST limit of 2/sec, burst 2, for RSTs that conntrack accepts) and rules 502-518 are shown only as rule text (the 18-rule count). The behaviour checks show only INVALID-state drops. The outcome rows for bogus flags and the RST flood map to checks that show only rule 501; the RST limit is neither tested nor listed as uncovered."
+ ],
+ "review_s": 280.7,
+ "check_file_sha256": "b7118014b04313a90deb967ba5bd21631f4d47edbe25ddddb40809794a7672f1",
+ "reviewer_result": "20261118T171524Z-reviewer",
+ "author_result": "20261118T171046Z-author",
+ "findings": [
+  "a-blacklisted-source-gets-nothing",
+  "icmp-echo-is-rate-limited"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "2894f291-3f28-49c6-bb8f-5a71f05e75cb",
+   "boot_id_at_end": "2894f291-3f28-49c6-bb8f-5a71f05e75cb",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "96eabe84-ecc2-4243-82f7-36932c036e9a",
+   "boot_id_at_end": "96eabe84-ecc2-4243-82f7-36932c036e9a",
+   "fresh": true
+  }
+ }
+}
