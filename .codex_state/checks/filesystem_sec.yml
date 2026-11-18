@@ -52,14 +52,16 @@ checks:
       id p8testsudo >/dev/null 2>&1 || useradd -M -s /usr/sbin/nologin -G sudo p8testsudo
       for u in p8testuser p8testsudo; do
         for t in {wget,curl,sftp,scp,ssh}; do
-          runuser -u "$u" -- "/usr/bin/$t" -V </dev/null >/dev/null 2>&1; rc=$?
-          [ "$rc" = 126 ] && echo "$u $t denied" || echo "$u $t runs"
+          runuser -u "$u" -- "/usr/bin/$t" -V </dev/null 2>&1 >/dev/null | grep -q 'Permission denied' && echo "$u $t denied" || echo "$u $t runs"
         done
       done > /run/p8test-sec/run.txt
     effect: |
       cat /run/p8test-sec/run.txt
     expect: {rc: 0, stdout: "\\Ap8testuser wget denied\\np8testuser curl denied\\np8testuser sftp denied\\np8testuser scp denied\\np8testuser ssh denied\\np8testsudo wget runs\\np8testsudo curl runs\\np8testsudo sftp runs\\np8testsudo scp runs\\np8testsudo ssh runs\\n\\Z"}
 
+  # 2026-11-18 authoring correction (run 2, 20261118T124301Z): runuser exits 1, not 126, when the kernel refuses to
+  # execute the command ("runuser: failed to execute /usr/bin/wget: Permission denied"); the checks now read that
+  # message. The behaviour is unchanged (run 2's stderr shows the denial).
   # 2026-11-18 authoring correction (run 1, 20261118T124148Z, INVALID): on the clean node wget is 0755 and the fixture
   # account does not exist, so the drift effect matched there too; it now also shows curl still restricted by the class.
   - id: a-restricted-command-is-opened-by-hand
@@ -72,7 +74,7 @@ checks:
       chmod 0755 /usr/bin/wget
     effect: |
       stat -c '%a' /usr/bin/wget
-      runuser -u p8testuser -- /usr/bin/wget -V </dev/null >/dev/null 2>&1; [ $? = 126 ] && echo denied || echo runs
+      runuser -u p8testuser -- /usr/bin/wget -V </dev/null 2>&1 >/dev/null | grep -q 'Permission denied' && echo denied || echo runs
       stat -c 'curl %G %a' /usr/bin/curl
     expect: {rc: 0, stdout: "\\A755\\nruns\\ncurl sudo 750\\n\\Z"}
 
@@ -86,6 +88,6 @@ checks:
       true
     effect: |
       stat -c '%U:%G %a' /usr/bin/wget
-      runuser -u p8testuser -- /usr/bin/wget -V </dev/null >/dev/null 2>&1; [ $? = 126 ] && echo denied || echo runs
+      runuser -u p8testuser -- /usr/bin/wget -V </dev/null 2>&1 >/dev/null | grep -q 'Permission denied' && echo denied || echo runs
     expect: {rc: 0, stdout: "\\Aroot:sudo 750\\ndenied\\n\\Z"}
 
