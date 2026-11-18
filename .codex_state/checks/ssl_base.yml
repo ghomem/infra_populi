@@ -26,9 +26,17 @@ outcomes:
   - outcome: the service is restarted once when the key or certificate changes
     from: manifests/ssl_base.pp:10, 84-107
     checks: [the-key-and-bundle-drift, the-agent-run-restores-both-and-restarts-the-service-once]
-  - outcome: Let's Encrypt material (<prefix>-key.pem, <prefix>.pem, <prefix>-chain.pem into a .bundle.pem), RedHat directories, other owners, and a warning for services other than nginx and postfix
-    from: manifests/ssl_base.pp:44-50, 57-75, 94-97
-    uncovered: {why: "fixture and OS variants (one set holds one fixture on one node); the consumers' sets (ssl_nginx_domain, ssl_postfix, letsencrypt_certificate) cover their own variants", lifted_by: ubuntu}
+  # Correction round 1 (2026-11-18, review 20261118T211825Z): the variant row claimed other sets cover these
+  # variants; none does. It is now three rows that say what is untested and what would lift it.
+  - outcome: Let's Encrypt material (<prefix>-key.pem into the private directory, <prefix>.pem then <prefix>-chain.pem into <prefix>.<service>.bundle.pem)
+    from: manifests/ssl_base.pp:44, 70-76
+    uncovered: {why: "a fixture variant (letsencrypt_certificate true); one set holds one fixture, and no check set in this repository checks these file names or their order; the lab's test PKI already provides the -key.pem, .pem and -chain.pem files", lifted_by: ubuntu}
+  - outcome: on RedHat the key goes to /etc/pki/tls/private
+    from: manifests/ssl_base.pp:57-62
+    uncovered: {why: "the RedHat branch; this set runs on the plan's Ubuntu node", lifted_by: rhel9}
+  - outcome: other owners and groups for the files, and a warning notify for services other than nginx and postfix
+    from: manifests/ssl_base.pp:46-50, 94-97
+    uncovered: {why: "untested: no consumer at the baseline (ssl_nginx, ssl_nginx_domain, ssl_postfix) passes owner or group or a service other than nginx or postfix, and this set's fixture uses the defaults", lifted_by: ubuntu}
 checks:
   - id: the-key-is-private-and-matches-the-certificate
     what: the key file is root:root 0600, and its public key is the bundle's first certificate's
