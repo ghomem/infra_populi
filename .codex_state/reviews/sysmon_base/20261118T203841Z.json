@@ -1,0 +1,100 @@
+{
+ "schema": 1,
+ "class": "sysmon_base",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-18T20:38:41Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "d2cd3ed27930",
+ "migrate_subject": "P8: migrate puppet_infrastructure::sysmon_base",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit d2cd3ed27930; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/sysmon_base.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `sysmon_base Done [from: release-0.9.10; local change: net-tools installed for the connection checks]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 32 catalog events; run 2: 1 event(s) only from expected_run2_events Exec[apt_update] Exec[dnf-makecache] [own: none; inherited: Exec[apt_update] via packages_base, Exec[dnf-makecache] via packages_base] (judge the header justification); COVERAGE puppet_infrastructure::sysmon_base: 14 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A manifests/sysmon_base.pp @@-1,2: two-line migration header only (names local changes #3, #4; Module dependencies: none).",
+   "DIFF A manifests/sysmon_base.pp @@-18,4: exactly local change #3: one added resource package { 'net-tools': ensure => installed, } plus a one-line comment, after the lookups; no other resource, attribute or logic changed. Minimal for the-connection-checks-count-real-connections: check_netstat_conns.sh:14 runs 'netstat -an' (scripts unchanged), and the before result 20261118T195759Z-author shows 'tcp listen zero established zero / remote IPs on 22 zero / 1' (command-not-found count).",
+   "DIFF A files/sysmon/nagios-puppet.sh @@-14,5: exactly local change #4: 'echo $OUTPUT |grep agent_catalog_run.lock' becomes 'echo $TEMP |grep ...' (one word) plus a two-line comment; $OUTPUT (first OUTLIM=160 chars) still used for display, RC/UNKNOWN/CRITICAL logic and the baseline's '2>1' quirk untouched. Minimal for the-puppet-check-ok-then-unknown-under-lock, whose before result 20261118T202120Z-author shows 'second: CRITICAL: exit code 1 rc=2' for a run holding the lock; the baseline's own intent (UNKNOWN on agent_catalog_run.lock) is preserved.",
+   "DIFF B: re-migration; the migrate commit adds local change #4 to nagios-puppet.sh and rewrites the header line from one to two local changes; the earlier migrated content (#3) is judged in DIFF A.",
+   "idempotent: the only run-2 event is Exec[apt_update], inherited via packages_base, whose header justification holds: packages_base.pp declares class { 'apt': update => { frequency => 'always' } } and the master's apt/manifests/update.pp:14 maps 'always' to $_kick_apt = true (runs every agent run); upstream design, not the migration."
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 7,
+  "removed": 1,
+  "non_comment_changes": 3,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest, plus two local changes (policy B, HQ batch-10 ruling 4; rules/local_changes.md #3, #4): net-tools is installed, so the two connection checks find netstat, which Ubuntu 24.04 no longer ships; files/sysmon/nagios-puppet.sh looks for the agent's lock notice in its whole output, so a run in progress is UNKNOWN again under OpenVox 8.",
+  "# Module dependencies: none."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 32,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::sysmon_base: 14 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 31.425,
+   "master_check_s": 0.532,
+   "poweroff_s": 1.133,
+   "restore_s": 0.564,
+   "boot_to_ssh_s": 18.216,
+   "apt_update_s": 10.345,
+   "verify_s": 0.635,
+   "nic1_rx_bytes": 13076149
+  },
+  "log": ".codex_state/logs/reviews/sysmon_base.20261118T203519Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": "RUN2_EXPECTED_EVENTS: 1 from Exec[apt_update] Exec[dnf-makecache] [own: none; inherited: Exec[apt_update] via packages_base, Exec[dnf-makecache] via packages_base] (plan"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "ubuntu"
+}
