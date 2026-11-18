@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.docker_container"><testsuite name="phase3.docker_container.clean" tests="4" failures="0"><testcase classname="phase3.docker_container.clean" name="the-container-runs-the-image-under-systemd" /><testcase classname="phase3.docker_container.clean" name="the-app-answers-on-loopback-only" /><testcase classname="phase3.docker_container.clean" name="the-container-is-killed" /><testcase classname="phase3.docker_container.clean" name="the-service-starts-it-again" /></testsuite><testsuite name="phase3.docker_container.applied" tests="5" failures="1"><testcase classname="phase3.docker_container.applied" name="the-container-runs-the-image-under-systemd" /><testcase classname="phase3.docker_container.applied" name="the-app-answers-on-loopback-only"><failure message="check failed after the class was applied (finding)">rc 0
+127.0.0.1:18080
+127.0.0.1:18080
+2
+
+</failure></testcase><testcase classname="phase3.docker_container.applied" name="the-app-answers-on-loopback-only.mismatch"><skipped message="the check itself failed" /></testcase><testcase classname="phase3.docker_container.applied" name="the-container-is-killed"><skipped message="not run: read-only checks failed (the-app-answers-on-loopback-only)" /></testcase><testcase classname="phase3.docker_container.applied" name="the-service-starts-it-again"><skipped message="not run: read-only checks failed (the-app-answers-on-loopback-only)" /></testcase></testsuite></testsuites>
