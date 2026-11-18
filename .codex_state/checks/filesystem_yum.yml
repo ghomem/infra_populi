@@ -54,6 +54,8 @@ checks:
       dnf -q check-update $installed >/dev/null 2>&1; echo "pending rc=$?"
     expect: {rc: 0, stdout: "\\Arc=0\\nerrors for installed packages: 0\\npending rc=0\\n\\Z"}
 
+  # 2026-11-18 derivation correction (review 20261118T131226Z): the pending-update query ran in the action, so the
+  # effect only repeated the action's output; the effect now queries dnf itself.
   - id: the-full-update-script-leaves-nothing-to-update
     what: run as an operator runs it, yum-update-dist.sh updates every package, after which dnf finds nothing to update
     control: negative
@@ -65,7 +67,7 @@ checks:
     probe: |
       install -d -m 0700 /run/p8test-yum
       /opt/puppet-infrastructure/bin/yum-update-dist.sh >/dev/null 2>&1; echo "rc=$?" > /run/p8test-yum/dist.txt
-      dnf -q check-update >/dev/null 2>&1; echo "pending rc=$?" >> /run/p8test-yum/dist.txt
     effect: |
       cat /run/p8test-yum/dist.txt
+      dnf -q check-update >/dev/null 2>&1; echo "pending rc=$?"
     expect: {rc: 0, stdout: "\\Arc=0\\npending rc=0\\n\\Z"}
