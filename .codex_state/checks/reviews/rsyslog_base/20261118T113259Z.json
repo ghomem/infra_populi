@@ -1,0 +1,33 @@
+{
+ "class": "rsyslog_base",
+ "at": "20261118T113259Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-next-agent-run-starts-rsyslog-again: manifests/rsyslog_base.pp:75-80 declares service rsyslog ensure => running / enable => true; after the prior check stops syslog.socket and rsyslog (effect inactive, rc 3), the effect after the node's agent run expects 'active' plus the key still present, which is exactly what ensure => running restores; action 'true' declares no change and the effect reads state only",
+  "the-tls-files-are-the-nodes-puppet-identity: manifests/rsyslog_base.pp:49-71 copies ${ssldir}/certs/ca.pem, certs/${certname}.pem and private_keys/${certname}.pem into /etc/rsyslog.d/tls as ca.pem, <certname>.pem, <certname>.key, syslog:syslog 0644/0644/0600 (dir 0755 at lines 41-47); with the params fixture ssldir_override=/etc/puppetlabs/puppet/ssl and certname puppet8node = hostname, the probe cmp's exactly those three source/target pairs and stats exactly those owners/modes; the openssl verify against the copied CA adds that the pair is a matching identity; the mismatch swaps only the CA file to the system bundle, which must turn the verdict from OK to an error, and it failed after apply as required",
+  "rsyslog-and-its-tls-driver-are-installed-and-running: manifests/rsyslog_base.pp:10-12 installs rsyslog and rsyslog-gnutls (ensure installed); the probe checks both dpkg statuses and lmnsd_gtls.so, the driver rsyslog-gnutls ships (absent on the clean node, rsyslog-gnutls not-installed there), plus active/enabled from the service at 75-80",
+  "purpose gap: The checks test the package install with the GnuTLS driver, the byte-identical copy of the node's Puppet CA/cert/key with the declared owners and modes, that the copied cert verifies against the copied CA, that the syslog user rsyslog drops to (PrivDropToUser) can read the 0600 key while another user cannot, and that the next agent run restarts a stopped rsyslog; the RedHat uid/gid-0 syslog account (lines 14-28) is honestly listed as uncovered, lifted by rhel9 (active in nodes.yml). Gap: the class's restart relationship is neither tested nor listed under uncovered. Line 73's comment says 'Keep rsyslog running and reload it whenever the TLS files change', but line 79 has the service subscribe only to File['/etc/rsyslog.d/tls'] (the directory), not to the ca.pem/cert/key files. The lab can exercise this, e.g. drift the directory's mode, run the agent and compare rsyslog's ActiveEnterTimestamp/MainPID; or change ca.pem's content to show whether a renewed certificate restarts rsyslog. The purpose statement leaves out this part of what the class declares, and it is where the class's comment and its code disagree (a cert renewal would not restart rsyslog)."
+ ],
+ "review_s": 120.1,
+ "check_file_sha256": "b25ffecab4ad07ae09517b89841be8d982e70de7cddd36f037c5c224c8073840",
+ "reviewer_result": "20261118T113059Z-reviewer",
+ "author_result": "20261118T112905Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "7c1edd2b-620e-4269-b369-8f3a2ba74192",
+   "boot_id_at_end": "7c1edd2b-620e-4269-b369-8f3a2ba74192",
+   "fresh": true
+  }
+ }
+}
