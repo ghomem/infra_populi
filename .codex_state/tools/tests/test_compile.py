@@ -168,3 +168,10 @@ def test_composites_compile_on_the_default_node_whatever_the_classes_lab_nodes(m
     argv = seen["argv"]
     assert argv[1:3] == ["--node", "ubuntu"] and argv[3] == "--compile-only"
     assert argv[-2:] == ["puppet_infrastructure::user_kde_lock_screen", "puppet_infrastructure::packages_base"]
+
+
+def test_composites_report_the_environment_when_the_default_node_is_down(monkeypatch, capsys):
+    monkeypatch.setattr(cc, "default_node_answers", lambda: (False, "puppet8node"))
+    monkeypatch.setattr(cc, "compile_only", lambda *a, **k: pytest.fail("no compile without the node's facts"))
+    assert cc.run_composites() == 3
+    assert "COMPOSITES: ENVIRONMENT — the default node puppet8node does not answer" in capsys.readouterr().out

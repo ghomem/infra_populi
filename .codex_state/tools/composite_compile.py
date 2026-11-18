@@ -4,7 +4,8 @@
   composite_compile.py               every composite in compile/composites.txt vs its expectation
   composite_compile.py --defaults    every git-DONE class compiled with default parameters (report)
 
-Composites: exit 0 when every result matches its `expect`, 1 otherwise. Defaults: report only
+Composites: exit 0 when every result matches its `expect`, 1 otherwise, 3 when the default node does not answer (its
+facts feed every compile; nothing was compiled, so nothing is known about the code). Defaults: report only
 (exit 0); a class whose defaults need a mandatory parameter is reported as such, not as a failure.
 Deploys the tree once, then calls `test_class.sh --compile-only` with SKIP_DEPLOY=1.
 """
@@ -73,7 +74,22 @@ def first_error(output: str) -> str:
     return (lines[-1] if lines else "")[:300]
 
 
+def default_node_answers() -> tuple[bool, str]:
+    """(answers, alias) of the inventory's default node: the compiles read its facts (2026-11-18: with it powered off,
+    every composite 'failed' and record_green reported a regression)."""
+    import nodes  # noqa: PLC0415
+    alias = nodes.select(nodes.load(), kind=nodes.load()["default"])["alias"]
+    proc = subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", alias, "true"],
+                          capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=60)
+    return proc.returncode == 0, alias
+
+
 def run_composites() -> int:
+    answers, alias = default_node_answers()
+    if not answers:
+        print(f"COMPOSITES: ENVIRONMENT — the default node {alias} does not answer (powered off?); every compile reads "
+              f"its facts. Bring it up (revert_node.sh) and run again.")
+        return 3
     bad = 0
     for i, row in enumerate(parse_composites(COMPOSITES.read_text(encoding="utf-8"))):
         rc, out = compile_only(row["classes"], row["facts"], deploy=(i == 0))

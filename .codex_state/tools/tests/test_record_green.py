@@ -400,3 +400,16 @@ def test_harness_with_no_revert_recorded_stamps_stale(lab, tmp_path):
     assert proc.returncode == 0, proc.stderr
     assert json.loads((green / "dns_client.json").read_text())["revert"] == \
         {"fresh": False, "reason": "no revert recorded on this laptop"}
+
+
+def test_composites_that_could_not_run_refuse_as_environment(clone):
+    # 2026-11-18: the default node was powered off; that is no regression, so the refusal names the environment
+    clone.stamp()
+    clone.add_header()
+    head = git(clone.root, "rev-parse", "HEAD")
+    stub = Path(clone.root).parent / "composites-env.sh"
+    stub.write_text("#!/bin/sh\nexit 3\n")
+    stub.chmod(0o755)
+    proc = clone.run("--no-push", P8_COMPOSITE_CMD=str(stub))
+    assert proc.returncode == 1 and "default node does not answer" in proc.stderr
+    assert git(clone.root, "rev-parse", "HEAD") == head

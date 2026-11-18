@@ -79,7 +79,11 @@ $PUPPETFILE_CMD || refuse "the master Puppetfile differs from ${PUPPETFILE_EXPOR
 
 # 5. standing composite compiles (step 2.2) on the tree being recorded.
 echo "==> Standing composite compiles"
-if ! $COMPOSITE_CMD; then
+composite_rc=0
+$COMPOSITE_CMD || composite_rc=$?
+if [[ $composite_rc -eq 3 ]]; then
+  refuse "the composite compiles could not run: the default node does not answer (environment, not the code)"
+elif [[ $composite_rc -ne 0 ]]; then
   echo "RECORD REFUSED: a composite compile no longer matches compile/composites.txt — a regression to" \
        "investigate, or a fix: composites.txt is the advisor's (stop and report the DIFF line; do not edit it)" >&2
   exit 4
