@@ -1,0 +1,33 @@
+{
+ "class": "dns_client",
+ "at": "20261118T114959Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "resolv-conf-names-exactly-the-given-servers: manifests/dns_client.pp:8-12 passes $nameservers to class resolv_conf; saz-resolv_conf 8.0.1's template (read on the master) writes one 'nameserver <ns>' line per element and nothing else matching ^nameserver, so with the fixture [10.0.2.3] exactly 'nameserver 10.0.2.3' is what the code produces (clean node: 1.1.1.1/8.8.8.8, applied: 10.0.2.3)",
+  "a-nameserver-is-added-by-hand: same lines 8-12; the action (append 'nameserver 9.9.9.9') matches its mutates declaration, and the read-only effect (grep of the file) shows the drift result, not the echo's output; it is the setup the node_agent run then corrects",
+  "names-resolve-through-the-given-server: lines 1-2 ('configures the DNS servers for the client') plus 8-12; dig without @server uses /etc/resolv.conf, so NOERROR with SERVER 10.0.2.3 shows the resolver goes through the given server (clean: SERVER 1.1.1.1). The mismatch varies the queried name to the reserved p8test.invalid, which must change the server's verdict to NXDOMAIN, a real verdict change and not a broken command; it failed as required",
+  "purpose gap: Tested: the resolver file names only the given server, lookups are answered through it, and a hand-added nameserver is removed by the next agent run (drift and restore). Left out and not listed (the set has no uncovered notes): (1) the class's only own logic, the guard 'if ($nameservers != [])' at manifests/dns_client.pp:8, under which an empty list leaves the node's resolver untouched, is neither tested nor listed as uncovered; (2) with a single-server fixture, several servers and their order (check resolv-conf-names-exactly-the-given-servers claims 'in order') are not exercised, although the lab can: the clean node already resolves through 1.1.1.1 and 8.8.8.8 over the NAT, so a fixture such as [10.0.2.3, 1.1.1.1] would test order and 'only those'. Either test these or list them honestly under uncovered with the reason."
+ ],
+ "review_s": 105.5,
+ "check_file_sha256": "656dec1539aa4188b0b7036c4bb6b98b6eb8cc6794117d38de2db2b56c0a88d8",
+ "reviewer_result": "20261118T114814Z-reviewer",
+ "author_result": "20261118T114618Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "c433b71e-7c9a-4aaf-bc41-5f9517fad9ee",
+   "boot_id_at_end": "c433b71e-7c9a-4aaf-bc41-5f9517fad9ee",
+   "fresh": true
+  }
+ }
+}

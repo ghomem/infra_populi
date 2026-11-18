@@ -1,0 +1,137 @@
+{
+ "class": "dns_client",
+ "role": "reviewer",
+ "at": "20261118T114814Z",
+ "runner": "a1da74a",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "656dec1539aa4188b0b7036c4bb6b98b6eb8cc6794117d38de2db2b56c0a88d8",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "resolv-conf-names-exactly-the-given-servers",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "nameserver 1.1.1.1\nnameserver 8.8.8.8\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "names-resolve-through-the-given-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "status: NOERROR\nSERVER: 1.1.1.1\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "a-nameserver-is-added-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "nameserver 1.1.1.1\nnameserver 8.8.8.8\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-keeps-only-the-given-servers",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "nameserver 1.1.1.1\nnameserver 8.8.8.8\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "\n--- /etc/resolv.conf\t2026-02-17 18:38:14.401085095 +0000\n+++ /tmp/puppet-file20261118-1455-z3jrhe\t2026-11-18 11:48:53.913996452 +0000\n@@ -1,5 +1,4 @@\n # File managed by puppet\n \n domain lan\n-nameserver 1.1.1.1\n-nameserver 8.8.8.8\n+nameserver 10.0.2.3\n\u001b[0m\n\u001b[mNotice: /Stage[main]/Resolv_conf/File[/etc/resolv.conf]/content: content changed '{sha256}700c436ea6b6d122738e66e7bd171403ed494774ada030096f899eb4db0153ef' to '{sha256}95bce2b341698fa723273207989f51e485be9803f7b055f3f9ccd1a61f5c2809'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.36 seconds\u001b[0m\nRUN1_EVENTS: 1 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795002542'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.34 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::dns_client: 2 concrete resources (+0 defined-type instances)\n  Package[resolvconf]\n  File[/etc/resolv.conf]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP dns_client 3c0b06a4c27c\n"
+ },
+ "applied": [
+  {
+   "id": "resolv-conf-names-exactly-the-given-servers",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nameserver 10.0.2.3\n",
+   "stderr": ""
+  },
+  {
+   "id": "names-resolve-through-the-given-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "status: NOERROR\nSERVER: 10.0.2.3\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the name (p8test.invalid, a reserved name that never exists), so the server must answer NXDOMAIN",
+    "rc": 0,
+    "passed": false,
+    "stdout": "status: NXDOMAIN\nSERVER: 10.0.2.3\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-nameserver-is-added-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nameserver 10.0.2.3\nnameserver 9.9.9.9\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "appends `nameserver 9.9.9.9` to /etc/resolv.conf on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-agent-run-keeps-only-the-given-servers",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nameserver 10.0.2.3\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the file (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 2,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "c433b71e-7c9a-4aaf-bc41-5f9517fad9ee",
+   "boot_id_at_end": "c433b71e-7c9a-4aaf-bc41-5f9517fad9ee",
+   "fresh": true
+  }
+ },
+ "node_agent": {
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Resolv_conf/File[/etc/resolv.conf]/content:",
+   "\u001b[mNotice: /Stage[main]/Resolv_conf/File[/etc/resolv.conf]/content:",
+   "\u001b[mNotice: /Stage[main]/Resolv_conf/File[/etc/resolv.conf]/content: content changed '{sha256}25938901bfa34ec81d0dc725c7bf7339c3554d15ed81f797aa644fa710620b8c' to '{sha256}95bce2b341698fa723273207989f51e485be9803f7b055f3f9ccd1a61f5c2809' (corrective)\u001b[0m"
+  ],
+  "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795002552'\u001b[0m\n\u001b[mNotice: /Stage[main]/Resolv_conf/File[/etc/resolv.conf]/content: \n--- /etc/resolv.conf\t2026-11-18 11:49:05.420799823 +0000\n+++ /tmp/puppet-file20261118-1749-cdpy9i\t2026-11-18 11:49:13.301799010 +0000\n@@ -2,4 +2,3 @@\n \n domain lan\n nameserver 10.0.2.3\n-nameserver 9.9.9.9\n\u001b[0m\n\u001b[mNotice: /Stage[main]/Resolv_conf/File[/etc/resolv.conf]/content: \n\u001b[0m\n\u001b[mNotice: /Stage[main]/Resolv_conf/File[/etc/resolv.conf]/content: content changed '{sha256}25938901bfa34ec81d0dc725c7bf7339c3554d15ed81f797aa644fa710620b8c' to '{sha256}95bce2b341698fa723273207989f51e485be9803f7b055f3f9ccd1a61f5c2809' (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 0.46 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "duration_s": 59.3
+}
