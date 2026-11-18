@@ -1,0 +1,33 @@
+{
+ "class": "packages_base",
+ "at": "20261118T111440Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "supervisor-cloud-init-and-unattended-upgrades-are-removed: packages_base.pp:51 declares supervisor and cloud-init ensure=>absent (and :59-61 unattended-upgrades absent under the default unattended_upgrades=false); the probe reports each as absent unless dpkg status ends in ' installed', which is exactly what apt ensure=>absent (remove, not purge) leaves; both were installed on the clean node, so the negative control fails there",
+  "the-tools-work: packages_base.pp:43-46 installs $package_list (Debian list at :27, monitoring-plugins-standard at :26); the probe runs check_disk (monitoring plugins), getfacl (acl), and locates ecryptfs-setup-private (ecryptfs-utils) and aptitude, all absent on the clean node and provided by those listed packages",
+  "the-package-list-is-installed: packages_base.pp:26 sets the nagios package to monitoring-plugins-standard, used in the :27 list; the probe queries exactly the seven :27 packages (iptables-persistent, monitoring-plugins-standard, ecryptfs-utils, vim, wget, aptitude, acl) and expects 'install ok installed' for each, which ensure=>present yields",
+  "purpose covered: The stated purpose matches the class header ('minimum set of packages for a generic Ubuntu node') and the Debian code: all seven list packages are checked fully installed, four of them functionally (check_disk, getfacl, ecryptfs-setup-private, aptitude); the removal of supervisor, cloud-init and (default) unattended-upgrades is checked; the apt update=>{frequency=>always} effect (:19) is checked via Exec[apt_update] changing in the harness's run 2 report. vim/wget/iptables-persistent are tested by installed state only (vim and wget already exist on the clean node; iptables-persistent's rule persistence is exercised by the firewall classes, this class sets no rules). Not tested: the RedHat branch, honestly listed as uncovered (lifted_by rhel9); the non-default unattended_upgrades=true branch (:55) is outside the set's defaults fixture and its purpose is explicitly scoped 'by default'. Exec['update-package-lists'] (:36-40) is refreshonly with no notifier, so it never runs and has no behaviour to test."
+ ],
+ "review_s": 190.2,
+ "check_file_sha256": "4eca0eacef8258f3b9315d96fd89bab7fd077256f5bf63750a31326e6e754ffc",
+ "reviewer_result": "20261118T111130Z-reviewer",
+ "author_result": "20261118T110827Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "15c2acd2-15db-4521-9123-7f10dde29ea0",
+   "boot_id_at_end": "15c2acd2-15db-4521-9123-7f10dde29ea0",
+   "fresh": true
+  }
+ }
+}
