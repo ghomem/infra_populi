@@ -83,14 +83,32 @@ def test_compile_only_rejects_unknown_facts_variant(lab):
     assert lab.run([HARNESS, "--compile-only", "--facts", "suse", "puppet_infrastructure::x"]).returncode == 1
 
 
+def test_compile_only_file_digest_ships_the_titles_to_the_master(lab):
+    # HQ 2026-11-18 ruling A1: rendered nginx.conf byte-identical before/after; the titles travel in the work tarball.
+    lab.world["read_stdin"] = True
+    lab.world["ssh"].insert(0, {"match": r"puppet facts show", "stdout": "{}"})
+    lab.world["ssh"].insert(0, {"match": r"run\.sh.*digest_paths.*/etc/nginx/nginx\.conf",
+                                "stdout": "FILE_DIGEST /etc/nginx/nginx.conf: sha256:ab bytes:1\n"})
+    proc = lab.run([HARNESS, "--compile-only", "--file-digest", "/etc/nginx/nginx.conf",
+                    "puppet_infrastructure::puppet_backup"])
+    assert proc.returncode == 0, proc.stderr
+    assert "FILE_DIGEST /etc/nginx/nginx.conf: sha256:ab" in proc.stdout
+
+
+def test_compile_only_file_digest_needs_an_absolute_title(lab):
+    proc = lab.run([HARNESS, "--compile-only", "--file-digest", "nginx.conf", "puppet_infrastructure::x"])
+    assert proc.returncode == 1 and "absolute File title" in proc.stderr
+
+
 LAB = pytest.mark.skipif(not os.environ.get("P8_LAB_TESTS"), reason="needs puppet8master (set P8_LAB_TESTS=1)")
 SECRET = "P8TEST-SECRET-MARKER"
 
 
-def run_filter(stdin: str, *targets: str) -> subprocess.CompletedProcess:
+def run_filter(stdin: str, *targets: str, digest: str = "") -> subprocess.CompletedProcess:
     import base64
     script = base64.b64encode((TOOLS / "compile" / "filter.rb").read_bytes()).decode()
-    cmd = (f'd=$(mktemp -d) && echo {script} | base64 -d > "$d/f.rb" && cat > "$d/in" && '
+    paths = f'echo {base64.b64encode(digest.encode()).decode()} | base64 -d > "$d/digest_paths" && ' if digest else ""
+    cmd = (f'd=$(mktemp -d) && echo {script} | base64 -d > "$d/f.rb" && {paths}cat > "$d/in" && '
            f'/opt/puppetlabs/puppet/bin/ruby "$d/f.rb" {" ".join(targets)} < "$d/in"; rc=$?; rm -rf "$d"; exit $rc')
     return subprocess.run(["ssh", "-T", "puppet8master", cmd], input=stdin, capture_output=True, text=True, timeout=60)
 
@@ -111,6 +129,23 @@ def test_filter_prints_titles_never_parameters_on_the_master():
 def test_filter_withholds_unparseable_input_on_the_master():
     proc = run_filter('Notice: x\n{"tags": [ broken ' + SECRET, "puppet_infrastructure::a")
     assert proc.returncode == 4
+    assert SECRET not in proc.stdout + proc.stderr
+
+
+@LAB
+def test_filter_file_digest_hashes_never_prints_content_on_the_master():
+    import hashlib
+    catalog = {"tags": [], "classes": ["puppet_infrastructure::a"], "resources": [
+        {"type": "File", "title": "/etc/a.conf", "tags": ["puppet_infrastructure::a"], "parameters": {"content": SECRET}},
+        {"type": "File", "title": "/etc/dir", "tags": ["puppet_infrastructure::a"], "parameters": {"ensure": "directory"}},
+        {"type": "File", "title": "/etc/pw", "tags": ["passwd_common"], "parameters": {"content": SECRET}}]}
+    proc = run_filter(json.dumps(catalog), "puppet_infrastructure::a", digest="/etc/a.conf\n/etc/dir\n/etc/pw\n/etc/none\n")
+    assert proc.returncode == 0, proc.stderr
+    want = hashlib.sha256(SECRET.encode()).hexdigest()
+    assert f"FILE_DIGEST /etc/a.conf: sha256:{want} bytes:{len(SECRET)}" in proc.stdout
+    assert "FILE_DIGEST /etc/dir: no content parameter" in proc.stdout
+    assert "FILE_DIGEST /etc/pw: withheld (passwd_common" in proc.stdout
+    assert "FILE_DIGEST /etc/none: not in the catalog" in proc.stdout
     assert SECRET not in proc.stdout + proc.stderr
 
 

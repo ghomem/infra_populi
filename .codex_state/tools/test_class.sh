@@ -288,6 +288,7 @@ expand_one_class() {
 
 declare -a PARAMS_TARGETS=()
 readonly -a DEBIAN_ONLY_EXTERNALS=(apt)
+declare -a COMPILE_DIGEST_PATHS=()  # compile-only --file-digest: File titles whose rendered content is hashed
 COMPILE_FACTS_FAMILY=""  # compile-only: the OS family of the facts the compile uses (redhat/native rewrite)
 
 target_os_family() { echo "${COMPILE_FACTS_FAMILY:-$NODE_OS_FAMILY}"; }
@@ -527,6 +528,8 @@ compile_on_master() {
   python3 "$COMPILE_DIR/facts.py" "$variant" "$NODE_CERTNAME" <<<"$facts_json" >"$work/facts/${NODE_CERTNAME}.yaml" ||
     { rm -r "$work"; die "Could not build ${variant} facts"; }
   cp "$COMPILE_DIR/run.sh" "$COMPILE_DIR/filter.rb" "$work/"
+  # HQ 2026-11-18 ruling A1: a rendered file's sha256 (never its content) for a before/after comparison.
+  [[ ${#COMPILE_DIGEST_PATHS[@]} -eq 0 ]] || printf '%s\n' "${COMPILE_DIGEST_PATHS[@]}" >"$work/digest_paths"
   rc=0
   # shellcheck disable=SC2029  # target names expand locally by design
   tar -C "$work" -cf - . | timeout 180 ssh -T "$MASTER_HOST" \
@@ -729,13 +732,16 @@ main() {
         --facts) variant="${2:-}"; shift 2 ;;
         --defaults) export COMPILE_DEFAULTS=1; shift ;;
         --no-expand) export NO_EXPAND=1; shift ;;
+        --file-digest)
+          [[ "${2:-}" == /* ]] || die "--file-digest needs an absolute File title"
+          COMPILE_DIGEST_PATHS+=("$2"); shift 2 ;;
         *) break ;;
       esac
     done
     [[ -z "$variant" || "$variant" == "debian" || "$variant" == "redhat" || "$variant" == "native" ]] ||
       die "--facts must be debian, redhat or native"
     export COMPILE_ONLY=1
-    [[ $# -ge 1 ]] || die "Usage: $0 --compile-only [--facts debian|redhat] [--defaults] [--no-expand] <class1> [class2 ...]"
+    [[ $# -ge 1 ]] || die "Usage: $0 --compile-only [--facts debian|redhat] [--defaults] [--no-expand] [--file-digest <path>]... <class1> [class2 ...]"
     need_cmd rsync; need_cmd ssh; need_cmd tar
     select_node "$@"
     if [[ -z "$variant" ]]; then
