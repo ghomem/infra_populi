@@ -2003,3 +2003,17 @@ snapshot list, record.
   deleted and 1 test). The two class counts do not depend on that difference.
 - **Result:** production's Hashman master composes the MTA that Hashman's mail needs, which is the lab composition
   (hashman_base's required_base postfix_smtp_node). No documentation-list entry is needed.
+
+## 2026-11-18 — Backfill order: a conditional declaration counts only the statements that turn it on
+- **Error:** I ordered backfill batch 2 by fleet_class_usage.md's `prod` column. Its closure is unconditional, and its
+  own `conditional` column marks the rows that overstate. firewall_secure_extra (row 58) and puppet_boot_run (row 58)
+  are declared by node_base only inside `if ($firewall_secure_extra)` and `if ($run_puppet_on_boot)`, both false by
+  default.
+- **Measured** (one node statement per file, every group except deleted/, tests/ and passwd/; names and counts only):
+  - 0 of 38 statements set `firewall_secure_extra => true`;
+  - 1 of 38 sets `run_puppet_on_boot => true`;
+  - no fleet file outside passwd/ names firewall_secure_extra or its parameters.
+- **Rule from now on:** for a class whose row has a `conditional` note, the backfill's production-use count is the
+  number of statements that turn the condition on, read from the fleet by names and counts only. Classes with 0 go to
+  the end of the backfill order.
+- Evidence: escalations/firewall_secure_extra.behaviour.md; batch report escalations/batch-2026-11-18-11.md.

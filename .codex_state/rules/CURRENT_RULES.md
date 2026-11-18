@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-112 entries; 6 marked superseded (in whole or part); newest first.
+113 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-18 — Backfill order: a conditional declaration counts only the statements that turn it on
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-18 — HQ batch-10 ruling 8 answered: postfix_smtp_node on the Hashman master
 - (no numbered/Rule/Decision lines; read the entry)
