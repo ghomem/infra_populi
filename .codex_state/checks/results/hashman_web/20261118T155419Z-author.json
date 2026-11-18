@@ -1,0 +1,347 @@
+{
+ "class": "hashman_web",
+ "role": "author",
+ "at": "20261118T155419Z",
+ "runner": "193de9b",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "07c385d164b79a4c9a67eb8cf42387b2a819a9fcd1b42c502dd5b75f3931f705",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "hashman-service-on-8080",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "not-found\ninactive\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "other-machines-reach-hashman-only-through-nginx",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "8080-refused\n",
+   "stderr": "curl: (7) Failed to connect to puppet.example.com port 443 after 1 ms: Couldn't connect to server\n",
+   "host": "peer",
+   "ok": true
+  },
+  {
+   "id": "backend-serves-the-portal",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "curl: (7) Failed to connect to 127.0.0.1 port 8080 after 0 ms: Couldn't connect to server\n",
+   "ok": true
+  },
+  {
+   "id": "frontend-proxies-the-domain-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "curl: (7) Failed to connect to puppet.example.com port 443 after 0 ms: Couldn't connect to server\n",
+   "ok": true
+  },
+  {
+   "id": "logos-copied-from-hiera-sources",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cmp: /path/to/logo.png: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "admin-adds-the-user-and-assigns-its-role",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "grep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp: No such file or directory\ngrep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/*.pp: No such file or directory\nsed: can't read /etc/puppetlabs/code/environments/production/manifests/nodes/p8test-hashman-client.pp: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-user-changes-the-password-in-a-browser",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-hashman/browser.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-record-holds-the-new-password",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp: No such file or directory\nTraceback (most recent call last):\n  File \"<string>\", line 3, in <module>\nAttributeError: 'NoneType' object has no attribute 'group'\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-client-accepts-the-new-password-after-its-agent-run",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "Authentication failure\nAuthentication failure\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "an-old-unit-binds-every-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-rebinds-the-backend-to-localhost",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /lib/systemd/system/hashman.service: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "Concat::Fragment[http_puppet.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_puppet.example.com-header]\n  Concat_fragment[http_puppet.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/http_www.puppet.example.com.conf]\n  Concat::Fragment[http_www.puppet.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_www.puppet.example.com-header]\n  Concat_fragment[http_www.puppet.example.com-footer]\n  Concat_fragment[https_www.puppet.example.com-800-442437fd34f82e9def422b18d842a28c-ssl]\n  Concat_file[/etc/nginx/sites-available/https_puppet.example.com.conf]\n  Concat_fragment[https_puppet.example.com-header]\n  Concat_fragment[https_puppet.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/https_www.puppet.example.com.conf]\n  Concat_fragment[https_www.puppet.example.com-ssl-header]\n  Concat_fragment[https_www.puppet.example.com-ssl-footer]\n  Concat::Fragment[https_www.puppet.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\n  Concat_fragment[backend_puppet.example.com_upstream_member_127.0.0.1:8080 in puppet.example.com]\n  Concat_fragment[http_puppet.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_www.puppet.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[https_www.puppet.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\nGREEN: run 2 events limited to the plan's expected_run2_events (Notify[Generated Upstream members for *]) (gate v2).\nGREEN_STAMP hashman_web de26796c4c09\n"
+ },
+ "applied": [
+  {
+   "id": "hashman-service-on-8080",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "enabled\nactive\n0.0.0.0:8080\n",
+   "stderr": ""
+  },
+  {
+   "id": "other-machines-reach-hashman-only-through-nginx",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "8080-open\ntitle>Hashman @ My Company\n",
+   "stderr": "",
+   "host": "peer",
+   "mismatch": {
+    "varies": "the path (/static/styles/custom.css, a stylesheet without a title), so the title must come from the index route",
+    "not_run": "the check itself failed"
+   }
+  },
+  {
+   "id": "backend-serves-the-portal",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "title>Hashman @ My Company\n",
+   "stderr": ""
+  },
+  {
+   "id": "frontend-proxies-the-domain-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "title>Hashman @ My Company\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the path (/static/styles/custom.css, a stylesheet the backend serves without a title): the title must come from the backend's index route, not from any page nginx might return for the name",
+    "rc": 0,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "logos-copied-from-hiera-sources",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "copied\n",
+   "stderr": ""
+  },
+  {
+   "id": "admin-adds-the-user-and-assigns-its-role",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (hashman-service-on-8080, other-machines-reach-hashman-only-through-nginx)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "the-user-changes-the-password-in-a-browser",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (hashman-service-on-8080, other-machines-reach-hashman-only-through-nginx)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "the-record-holds-the-new-password",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (hashman-service-on-8080, other-machines-reach-hashman-only-through-nginx)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "the-client-accepts-the-new-password-after-its-agent-run",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (hashman-service-on-8080, other-machines-reach-hashman-only-through-nginx)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "an-old-unit-binds-every-address",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (hashman-service-on-8080, other-machines-reach-hashman-only-through-nginx)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "the-next-agent-run-rebinds-the-backend-to-localhost",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (hashman-service-on-8080, other-machines-reach-hashman-only-through-nginx)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  }
+ ],
+ "findings": [
+  "hashman-service-on-8080",
+  "other-machines-reach-hashman-only-through-nginx"
+ ],
+ "not_run": [
+  "admin-adds-the-user-and-assigns-its-role",
+  "the-user-changes-the-password-in-a-browser",
+  "the-record-holds-the-new-password",
+  "the-client-accepts-the-new-password-after-its-agent-run",
+  "an-old-unit-binds-every-address",
+  "the-next-agent-run-rebinds-the-backend-to-localhost"
+ ],
+ "outcome": "FINDINGS",
+ "authoring_minutes": 29.6,
+ "node": "puppetserver",
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "boot_id": "307311b2-f009-44ff-b329-c095ddce848a",
+   "boot_id_at_end": "307311b2-f009-44ff-b329-c095ddce848a",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "bfa2b656-bdc7-4689-84ce-96053eaf86ca",
+   "boot_id_at_end": "bfa2b656-bdc7-4689-84ce-96053eaf86ca",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "outcomes": [
+  {
+   "outcome": "the hashman web service runs and its backend listens on the local machine only",
+   "checks": [
+    "hashman-service-on-8080",
+    "backend-serves-the-portal"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "other machines reach hashman only through nginx over HTTPS, never the backend port",
+   "checks": [
+    "other-machines-reach-hashman-only-through-nginx",
+    "frontend-proxies-the-domain-over-tls"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "a master still running the old unit gets the localhost bind at its next agent run",
+   "checks": [
+    "an-old-unit-binds-every-address",
+    "the-next-agent-run-rebinds-the-backend-to-localhost"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "the site's logos are copied from the paths in Hiera",
+   "checks": [
+    "logos-copied-from-hiera-sources"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "an administrator adds a user with hashman's CLI and the role line it prints declares the user from the database",
+   "checks": [
+    "admin-adds-the-user-and-assigns-its-role"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "the user changes the password on the web page, through nginx, in a browser",
+   "checks": [
+    "the-user-changes-the-password-in-a-browser"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "hashman's database holds the new password, and only the new one verifies",
+   "checks": [
+    "the-record-holds-the-new-password"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "another machine accepts the new password after its agent run against the master",
+   "checks": [
+    "the-client-accepts-the-new-password-after-its-agent-run"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "help requests and password e-mails reach the team and the user",
+   "uncovered": {
+    "why": "the lab's relay host is fake, so mail leaves the master's MTA for nowhere; delivery needs a lab mail server the master relays to",
+    "lifted_by": "ubuntu2"
+   }
+  }
+ ],
+ "duration_s": 358.5
+}
