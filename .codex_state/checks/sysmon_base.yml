@@ -185,6 +185,8 @@ checks:
       /opt/puppet-infrastructure/bin/check_reboot_required.sh; echo "rc=$?"
     expect: {rc: 0, stdout: "\\AWARNING - Reboot required to update host \\(/var/run/reboot-required found\\)\\nrc=1\\n\\Z"}
 
+  # 2026-11-18 authoring correction (run 3, 20261118T202120Z): the check prints its package list one name per line
+  # after the status, so only its first line is compared now.
   - id: the-package-count-check-warns-at-its-threshold
     what: >-
       with a fresh update list of 3 package names (filesystem_apt's update script writes it in production), the
@@ -198,10 +200,12 @@ checks:
       printf 'p8test-a\np8test-b\np8test-c\n' > /var/lib/apt-check-updates/list
     effect: |
       B=/opt/puppet-infrastructure/bin
-      $B/check_package_count.sh 10 | cut -d' ' -f1-3; echo "rc=${PIPESTATUS[0]}"
-      $B/check_package_count.sh 2 | cut -d' ' -f1-3; echo "rc=${PIPESTATUS[0]}"
+      $B/check_package_count.sh 10 | head -1 | cut -d' ' -f1-3; echo "rc=${PIPESTATUS[0]}"
+      $B/check_package_count.sh 2 | head -1 | cut -d' ' -f1-3; echo "rc=${PIPESTATUS[0]}"
     expect: {rc: 0, stdout: "\\AOK - 3\\nrc=0\\nWARNING - 3\\nrc=1\\n\\Z"}
 
+  # 2026-11-18 authoring correction (run 3, 20261118T202120Z): `grep -c` exits 1 when it counts 0; the last line now
+  # ends with `|| true`.
   - id: the-latency-check-times-a-write
     what: the latency check times a 1 MB synchronous write into /tmp, OK under 5 s, and CRITICAL with a threshold of 0 s
     control: negative
@@ -214,7 +218,7 @@ checks:
       B=/opt/puppet-infrastructure/bin
       $B/check_dd_latency.sh /tmp 1 5 10 | cut -d' ' -f1; echo "rc=${PIPESTATUS[0]}"
       $B/check_dd_latency.sh /tmp 1 0 0 | cut -d' ' -f1; echo "rc=${PIPESTATUS[0]}"
-      ls /tmp | grep -c '^zero\.img\.'
+      ls /tmp | grep -c '^zero\.img\.' || true
     expect: {rc: 0, stdout: "\\AOK\\nrc=0\\nCRITICAL\\nrc=2\\n0\\n\\Z"}
 
   - id: the-certificate-check-reports-expiry-in-short-words
