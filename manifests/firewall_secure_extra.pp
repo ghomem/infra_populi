@@ -1,4 +1,4 @@
-# Puppet 8 migration: preserve release-0.9.10 rules using jump and integer numeric attributes; retain parameter defaults.
+# Puppet 8 migration: preserve release-0.9.10 rules using jump and integer numeric attributes; retain parameter defaults; plus one local change (policy B, HQ batch-11 ruling 1; rules/local_changes.md #5): the blacklist drop is titled 00 so it comes before every accept, and it covers all protocols, as the parameter's comment describes a blacklist of addresses.
 # Module dependency: puppetlabs-firewall 8.3.0.
 ### Purpose ########
 # This class provides an extension of firewall secure with some extra features
@@ -125,7 +125,9 @@ class puppet_infrastructure::firewall_secure_extra ( $strict = false,
   }
   
   $ip_blacklist.each |$bad_ip|{
-    firewall { "666 grounding naughty boys: ${bad_ip}":  chain => 'INPUT', source => $bad_ip,  jump => 'drop', }
+    # Local change #5: '00' sorts before every other title (the firewall type orders rules by title), so a listed
+    # address is dropped before any accept, the established one included; all protocols, not the type's tcp default.
+    firewall { "00 grounding naughty boys: ${bad_ip}":  chain => 'INPUT', source => $bad_ip, proto => 'all', jump => 'drop', }
   }
 
   # paramters for every other host
