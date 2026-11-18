@@ -1,0 +1,98 @@
+{
+ "schema": 1,
+ "class": "rsyslog_base",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-18T03:05:35Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "ac4cabbbfe2d",
+ "migrate_subject": "P8: migrate puppet_infrastructure::rsyslog_base",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit ac4cabbbfe2d; 690 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `rsyslog_base Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 7 catalog events; COVERAGE puppet_infrastructure::rsyslog_base: 9 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (2 added lines, '# Puppet 8 migration: release-0.9.10 manifest validated unchanged.' and '# Module dependencies: none.'); every resource, attribute and conditional is byte-identical to release-0.9.10 (cf477c6)",
+   "rhel9 node: the RedHat branch (if $facts['os']['family'] == 'RedHat') declares group 'syslog' (gid 0, allowdupe) and user 'syslog' (uid 0, allowdupe), unchanged from the baseline; COVERAGE 9 concrete resources = 2 packages + group + user + 4 files + service, so the RedHat branch was in the applied catalog; run 2 GREEN with no events",
+   "DIFF B: the migrate commit ac4cabbbfe2d adds only the same 2 header lines to manifests/rsyslog_base.pp (plus the tracker line); no node fixture applied"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependencies: none."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 7,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::rsyslog_base: 9 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "node": "rhel9",
+   "snapshot": "P8LAB_RHEL9_BASELINE_v1",
+   "total_s": 76.78,
+   "master_check_s": 0.61,
+   "poweroff_s": 1.388,
+   "restore_s": 0.491,
+   "boot_to_ssh_s": 24.28,
+   "apt_update_s": 49.336,
+   "verify_s": 0.675,
+   "nic1_rx_bytes": 135915268
+  },
+  "log": ".codex_state/logs/reviews/rsyslog_base.20261118T030332Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "rhel9"
+}
