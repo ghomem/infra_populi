@@ -26,11 +26,13 @@ outcomes:
   - outcome: the service is restarted once when the key or certificate changes
     from: manifests/ssl_base.pp:10, 84-107
     checks: [the-key-and-bundle-drift, the-agent-run-restores-both-and-restarts-the-service-once]
+  # Correction round 2 (2026-11-18, review 20261118T212404Z): the Let's Encrypt row says what nginx_frontend_mail's set
+  # covers and what no set covers.
   # Correction round 1 (2026-11-18, review 20261118T211825Z): the variant row claimed other sets cover these
   # variants; none does. It is now three rows that say what is untested and what would lift it.
   - outcome: Let's Encrypt material (<prefix>-key.pem into the private directory, <prefix>.pem then <prefix>-chain.pem into <prefix>.<service>.bundle.pem)
     from: manifests/ssl_base.pp:44, 70-76
-    uncovered: {why: "a fixture variant (letsencrypt_certificate true); one set holds one fixture, and no check set in this repository checks these file names or their order; the lab's test PKI already provides the -key.pem, .pem and -chain.pem files", lifted_by: ubuntu}
+    uncovered: {why: "a fixture variant (letsencrypt_certificate true; one set holds one fixture). Covered elsewhere in part: nginx_frontend_mail's set (fixture letsencrypt_certificate true, reaching ssl_base through ssl_nginx_domain) checks, in smtps-and-imaps-serve-the-frontend-certificate, that 465 and 993 serve the first certificate of p8test.nginx.bundle.pem, which nginx loads with p8test-key.pem, so the file names and the leaf-first order hold there. Checked by no set: the -chain.pem second certificate in the bundle, the two files' modes and owners, and the restart on change. The lab's test PKI already provides the -key.pem, .pem and -chain.pem files", lifted_by: ubuntu}
   - outcome: on RedHat the key goes to /etc/pki/tls/private
     from: manifests/ssl_base.pp:57-62
     uncovered: {why: "the RedHat branch; this set runs on the plan's Ubuntu node", lifted_by: rhel9}
