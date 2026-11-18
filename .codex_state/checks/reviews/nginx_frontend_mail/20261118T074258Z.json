@@ -1,0 +1,38 @@
+{
+ "class": "nginx_frontend_mail",
+ "at": "20261118T074258Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok"
+ },
+ "evidence": [
+  "smtps-465-relays-the-client-login-to-the-backend: baseline 67-81 declare the SMTPS mailhost on $smtps_port with ssl, smtp_auth 'login plain' and raw_prepend 'proxy_smtp_auth on;'; the probe logs in over TLS on 127.0.0.1:465 and expects AUTH 235 then RCPT/DATA accepted by a backend whose 465 service accepts a recipient only from a SASL-authenticated sender (permit_sasl_authenticated, reject), so the queued message is only possible if nginx passed the login on, as proxy_smtp_auth on states; the effect is the server's protocol replies (backend acceptance), cross-checked on the peer by the-backend-received-the-sessions-from-the-proxy",
+  "smtp-25-delivers-through-the-proxy: baseline 116-124 declare smtp_auth_stream proxying to ${mail_backend}:${smtp_port} on 9925 with proxy_ssl off (reached via the 4244 auth server's Auth-Port 9925, lines 150-160, and the port-25 mailhost with smtp_auth none / proxy_smtp_auth off, 83-94); the probe sends an unauthenticated message to 127.0.0.1:25 and expects the backend's 250 'queued as', which can only come through that plaintext stream to the backend's port 25; supported",
+  "nginx-config-valid-and-running: baseline 54 opens the imaps mailhost, one of the nginx mail/stream/server resources the class declares; nginx -t succeeding and the service active is the direct precondition of that configuration taking effect under the params fixture, and it fails on the clean node (no nginx); supported, if broad"
+ ],
+ "review_s": 188.1,
+ "check_file_sha256": "bbcf95736e25f321c303f463d5ec6b24096907dc26d377470ce3c2319e0f8e40",
+ "reviewer_result": "20261118T073950Z-reviewer",
+ "author_result": "20261118T073636Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "d046a7ff-68f8-47d7-aa1c-5830926f6697",
+   "boot_id_at_end": "d046a7ff-68f8-47d7-aa1c-5830926f6697",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v1",
+   "boot_id": "813a9573-e5ac-4de9-bb0e-bee58227054e",
+   "boot_id_at_end": "813a9573-e5ac-4de9-bb0e-bee58227054e",
+   "fresh": true
+  }
+ }
+}
