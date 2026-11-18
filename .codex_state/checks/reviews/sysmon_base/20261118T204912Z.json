@@ -1,0 +1,34 @@
+{
+ "class": "sysmon_base",
+ "at": "20261118T204912Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-checks-are-installed / files/sysmon/check_mem.pl (whole file, sha256 aadc9c91a7fa): manifests/sysmon_base.pp:103-109 copies it to /usr/lib64/nagios/plugins/check_mem.pl root:root 0755; the probe's sha256sum of the installed file equals the baseline file's hash and its stat line expects root:root 755 - exactly what the source => and mode lines declare; absent on the clean node",
+  "the-connection-checks-count-real-connections / files/sysmon/check_netstat_conns.sh (whole file): the script runs 'netstat -an' and prints tcp_listen= (grep tcp|LISTEN) and tcp_established= (grep tcp|ESTABLISHED) as perfdata with state OK; the probe extracts those two counters and expects both non-zero (sshd listening, the runner's own SSH session established) and no 'command not found' on stderr - what the script's counters should report on a node with an SSH session; net-tools comes from local change #3 (local_changes.md row 3), the script itself is baseline (hash matches)",
+  "the-connection-checks-count-real-connections / files/sysmon/check_netstat_cip.sh (whole file): with PORT=:22 the script filters 'netstat -antu' on local address ~ :22, drops LISTEN and 127.0.0.1, and prints num_of_ips= the count of unique remote IPs; the probe runs it with 22 and expects that count non-zero, which the runner's SSH session from 192.168.56.1 produces; the expectation is what the code computes",
+  "whole file read: 12 negative controls, no invariants, no mismatch needed (no probe takes a tool's verdict on a name/user/key/cipher/vhost; check_http -C judges expiry, not the CN). Mutating checks declare their changes (reboot-required file, the apt-check-updates list, the transient openssl s_server unit, the latency check's own /tmp files, one agent run); each action is what the cited script does or its input. The puppet check's effect is the check's own status line, accepted because that status line is the product under test, written to a file by the action and read back. The puppet check's agent run reaches the master as the class's nagios-puppet.sh does by design; declared in mutates. The derived_from nagios-puppet.sh hash is the baseline file; the UNKNOWN-under-lock expectation needs local change #4 (row 4), recorded there",
+  "purpose gap: Tested: every check installed root:root 0755 byte for byte (check_cpu.py with the mypython shebang from the template); reboot OK and WARNING; file handles against /proc/sys/fs/file-nr; netstat counts (with local change #3); package count OK and WARNING from a fresh list; bandwidth OK with throughput; latency OK and CRITICAL; OS release; certificate OK and WARNING with the wrapper's short wording; CPU OK; memory OK and CRITICAL; the Puppet check OK on a run and UNKNOWN under the run lock (with local change #4). Honest uncovered rows: Elasticsearch query check (no Elasticsearch in the lab, lifted_by ubuntu2) and the RedHat run (rhel9). Gap: the Puppet check's CRITICAL path is neither tested nor listed as uncovered, although it is the alarm of the class's first-named purpose ('trigger and monitor puppet runs', nagios-puppet.sh lines 15-29: rc 1 without the lock text, or rc > 2, gives CRITICAL exit 2) and the lab can exercise it on the node alone, e.g. 'puppet agent --disable' makes 'puppet agent --test' exit 1 with an administratively-disabled notice and no agent_catalog_run.lock text. The outcome row states only OK and UNKNOWN. Also untested and not listed: check_package_count.sh's stale-list safety alarm (check_file_age -w/-c 93600 on /var/lib/apt-check-updates/list, exit 1 with the FILE_AGE output; exercisable with touch -d on the list), and the alarm states of the CPU and bandwidth checks (only OK is probed; both are reachable with low thresholds, e.g. check_bandwidth.sh enp0s8 1 0 0 1000 gives CRITICAL! with any traffic)"
+ ],
+ "review_s": 290.4,
+ "check_file_sha256": "c8f14b894e5bc479195cc9ac436e3e112d2aac15c1228c9fab7550ebb8fc0548",
+ "reviewer_result": "20261118T204422Z-reviewer",
+ "author_result": "20261118T203954Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "307c4e5c-c274-4fcc-91c6-427b341c592a",
+   "boot_id_at_end": "307c4e5c-c274-4fcc-91c6-427b341c592a",
+   "fresh": true
+  }
+ }
+}
