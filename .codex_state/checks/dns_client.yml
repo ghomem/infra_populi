@@ -1,0 +1,69 @@
+# Phase 3 checks for puppet_infrastructure::dns_client (class; node ubuntu). Fixture (params, never committed; changed
+# 2026-11-18 for these checks): nameservers [10.0.2.3], the VirtualBox NAT resolver every lab VM reaches. The clean node
+# has a static /etc/resolv.conf naming 1.1.1.1 and 8.8.8.8, so the fixture's single, different server makes the class's
+# effect visible. saz-resolv_conf 8.0.1 renders the file. Probes read the node's own resolver and query through it.
+class: dns_client
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 2
+  notes: "About 10:29Z to 10:31Z 2026-11-18 (scratch file times), outside the worktree while firewall_secure's review ran (baseline class and saz-resolv_conf 8.0.1's template read).; the drift-and-restore pair added at 11:43:54Z in one command after the rsyslog_base purpose review"
+purpose: >-
+  Points the node's resolver at the given DNS servers, and only those, and keeps it so, so that names resolve through them.
+node_agent:
+  after: a-nameserver-is-added-by-hand
+  why: the class keeps the resolver on the given servers only, which its next agent run after a hand edit shows
+checks:
+  - id: resolv-conf-names-exactly-the-given-servers
+    what: /etc/resolv.conf names the given nameservers, in order, and no other
+    control: negative
+    derived_from:
+      - {path: manifests/dns_client.pp, lines: "8-12", text: "nameservers => $nameservers"}
+    probe: |
+      grep -E '^nameserver ' /etc/resolv.conf
+    expect: {rc: 0, stdout: "\\Anameserver 10\\.0\\.2\\.3\\n\\Z"}
+
+  - id: names-resolve-through-the-given-server
+    what: >-
+      a lookup through the system resolver configuration (dig without a server) is answered, and the answer comes from
+      the given server
+    control: negative
+    derived_from:
+      - {path: manifests/dns_client.pp, lines: "1-2", text: "# This class configures the DNS servers for the client"}
+      - {path: manifests/dns_client.pp, lines: "8-12", text: "class { 'resolv_conf':"}
+    probe: |
+      out=$(dig +time=3 +tries=2 deb.debian.org A)
+      printf '%s\n' "$out" | grep -o -E 'status: [A-Z]+'
+      printf '%s\n' "$out" | grep -o -E 'SERVER: [0-9.]+'
+    mismatch:
+      varies: the name (p8test.invalid, a reserved name that never exists), so the server must answer NXDOMAIN
+      probe: |
+        out=$(dig +time=3 +tries=2 p8test.invalid A)
+        printf '%s\n' "$out" | grep -o -E 'status: [A-Z]+'
+        printf '%s\n' "$out" | grep -o -E 'SERVER: [0-9.]+'
+    expect: {rc: 0, stdout: "\\Astatus: NOERROR\\nSERVER: 10\\.0\\.2\\.3\\n\\Z"}
+
+  - id: a-nameserver-is-added-by-hand
+    what: setup for the next check, a second nameserver added to /etc/resolv.conf by hand (drift)
+    control: negative
+    derived_from:
+      - {path: manifests/dns_client.pp, lines: "8-12", text: "nameservers => $nameservers"}
+    mutates: appends `nameserver 9.9.9.9` to /etc/resolv.conf on the node
+    probe: |
+      echo 'nameserver 9.9.9.9' >> /etc/resolv.conf
+    effect: |
+      grep -E '^nameserver ' /etc/resolv.conf
+    expect: {rc: 0, stdout: "\\Anameserver 10\\.0\\.2\\.3\\nnameserver 9\\.9\\.9\\.9\\n\\Z"}
+
+  - id: the-next-agent-run-keeps-only-the-given-servers
+    what: after the node's agent run, /etc/resolv.conf names only the given server again
+    control: negative
+    derived_from:
+      - {path: manifests/dns_client.pp, lines: "8-12", text: "class { 'resolv_conf':"}
+    mutates: none beyond reading the file (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      grep -E '^nameserver ' /etc/resolv.conf
+    expect: {rc: 0, stdout: "\\Anameserver 10\\.0\\.2\\.3\\n\\Z"}
+
