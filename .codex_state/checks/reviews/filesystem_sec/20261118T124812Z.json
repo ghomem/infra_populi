@@ -1,0 +1,33 @@
+{
+ "class": "filesystem_sec",
+ "at": "20261118T124812Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "restricted-commands-belong-to-the-sudo-group @ manifests/filesystem_sec.pp:15-19: file { $restricted_cmds: owner => root, group => $restricted_group, mode => $restricted_mode } with the fixture's empty restricted_group (sudo on non-RedHat, lines 7-13) and mode 0750 yields root:sudo 750, exactly what stat on the five installed regular files (wget, curl, sftp, scp, ssh) expects; symlinks (nc, telnet, ftp) and absent tools are honestly excluded in the header",
+  "a-restricted-command-is-opened-by-hand @ manifests/filesystem_sec.pp:15-19: the mode attribute is the enforced state; the action chmods wget to 0755 (declared in mutates), the read-only effect shows the result (stat 755, p8testuser can execute) plus curl still sudo 750 so it fails on the clean node; with the following check it proves the next agent run restores mode => $restricted_mode",
+  "restricted-commands-belong-to-the-sudo-group @ manifests/filesystem_sec.pp:3: $restricted_mode defaults to '0750' (fixture also 0750), so the expected octal 750 in stat output is what the define produces",
+  "purpose covered: Purpose (baseline line 2: restrict a set of commands to a group; default sudo on Ubuntu, wheel on RedHat) is tested as behaviour, not only file state: ownership/mode root:sudo 0750 on the installed commands; an ordinary account (p8testuser) is denied execution of wget/curl/sftp/scp/ssh while a sudo-group account (p8testsudo) can run them without sudo; a hand drift to 0755 is reverted by the next agent run and the ordinary account is denied again. Uncovered and honestly listed: the RedHat wheel default (needs rhel9) and a non-default restricted_group/restricted_mode (second fixture on the ubuntu node). Reviewer run 20261118T124648Z ALL_PASS, all four negatives failed on the clean node."
+ ],
+ "review_s": 84.4,
+ "check_file_sha256": "c86ac5014d0013d84056b8851b60d54dcf7011a06fe177f4619af977ec31a525",
+ "reviewer_result": "20261118T124648Z-reviewer",
+ "author_result": "20261118T124504Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "ebcd9c27-59e6-4aea-9a1c-e3f4cca0f2f8",
+   "boot_id_at_end": "ebcd9c27-59e6-4aea-9a1c-e3f4cca0f2f8",
+   "fresh": true
+  }
+ }
+}
