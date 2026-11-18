@@ -1,0 +1,87 @@
+# Phase 3 checks for puppet_infrastructure::filesystem_base (class; node ubuntu). Fixture (params, never committed):
+# customize_syslog_mode true, syslog_mode 'u=rw,g=r,o=' at its default. The lab Hiera's filesystem::* keys put the
+# local tree at /opt/puppet-infrastructure (bin, etc, backup, pkgsdir). On the clean node /etc/default/locale is
+# Ubuntu's link to /etc/locale.conf and /var/log/syslog already has 0640 syslog:adm, so the syslog mode is shown by a
+# drift that the class's next agent run corrects. Probes read the node's own files and run its tools.
+class: filesystem_base
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.6
+  notes: "10:58:55Z to 10:59:34Z 2026-11-18 (date at start and at validation; the baseline class, its locale file and the lab Hiera were read before the clock started), outside the worktree while firewall_secure's re-review ran (baseline class, the locale file and the lab Hiera read)."
+purpose: >-
+  The basic filesystem of every non-desktop machine: the local tree for custom scripts and data, a locale setting that
+  stops locale errors in ssh sessions, the mypython link to the system Python 3, and (when asked) the syslog file's
+  owner and mode kept as set.
+uncovered:
+  - what: the default customize_syslog_mode false, under which the class leaves the syslog file alone
+    why: one set holds one fixture, and this one sets it true to test the managed mode; the default is a second fixture on the same node
+    lifted_by: ubuntu
+  - what: the RedHat paths (/var/log/messages owned root:root)
+    why: these checks run on the Ubuntu node
+    lifted_by: rhel9
+node_agent:
+  after: the-syslog-mode-drifts
+  why: the class keeps the syslog file's mode, which only its next agent run after a change can show
+checks:
+  - id: the-local-tree-exists
+    what: the local, bin, etc, backup and pkgsdir directories exist, root-owned, searchable (0644 plus Puppet's x for directories)
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_base.pp, lines: "10-16", text: "$basedirs = [ $localdir, $bindir, $etcdir, $backdir, $pkgsdir ]"}
+      - {path: manifests/filesystem_base.pp, lines: "19-24", text: "mode   => '0644'"}
+    probe: |
+      cd /opt/puppet-infrastructure && stat -c '%n %U:%G %a' . bin etc backup pkgsdir
+    expect: {rc: 0, stdout: "\\A\\. root:root 755\\nbin root:root 755\\netc root:root 755\\nbackup root:root 755\\npkgsdir root:root 755\\n\\Z"}
+
+  - id: the-locale-setting-works
+    what: >-
+      /etc/default/locale is the module's file, and a shell that takes its settings (as PAM does for ssh sessions) gets
+      en_US.UTF-8 for LANG and LC_ALL without any locale error
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_base.pp, lines: "26-32", text: "source => 'puppet:///modules/puppet_infrastructure/locale/locale',"}
+      - {path: files/locale/locale, sha256: "26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb"}
+    probe: |
+      test -L /etc/default/locale && echo link || sha256sum /etc/default/locale | cut -d' ' -f1
+      env -i /bin/sh -c 'set -a; . /etc/default/locale; set +a; locale 2>&1 >/dev/null; echo "LANG=$LANG LC_ALL=$LC_ALL"'
+    expect: {rc: 0, stdout: "\\A26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb\\nLANG=en_US\\.UTF-8 LC_ALL=en_US\\.UTF-8\\n\\Z"}
+
+  - id: mypython-runs-python-3
+    what: bin/mypython links to /usr/bin/python3 and runs it
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_base.pp, lines: "42-47", text: "$mypython_target = '/usr/bin/python3'"}
+      - {path: manifests/filesystem_base.pp, lines: "50-54", text: "file {\"${bindir}/mypython\":"}
+    probe: |
+      readlink /opt/puppet-infrastructure/bin/mypython
+      /opt/puppet-infrastructure/bin/mypython -c 'import sys; print("python", sys.version_info[0])'
+    expect: {rc: 0, stdout: "\\A/usr/bin/python3\\npython 3\\n\\Z"}
+
+  - id: the-syslog-mode-drifts
+    what: setup for the next check, the syslog file made world-readable by hand (drift)
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_base.pp, lines: "56-63", text: "mode   => $syslog_mode,"}
+    mutates: chmod 0644 /var/log/syslog on the node
+    probe: |
+      chmod 0644 /var/log/syslog
+    effect: |
+      stat -c '%a' /var/log/syslog
+      test -L /opt/puppet-infrastructure/bin/mypython && echo class-applied
+    expect: {rc: 0, stdout: "\\A644\\nclass-applied\\n\\Z"}
+
+  - id: the-next-agent-run-restores-the-syslog-mode
+    what: after the node's agent run, /var/log/syslog is back to syslog:adm u=rw,g=r,o= (0640)
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_base.pp, lines: "42-47", text: "$syslog_group    = 'adm'"}
+      - {path: manifests/filesystem_base.pp, lines: "56-63", text: "mode   => $syslog_mode,"}
+      - {path: manifests/filesystem_base.pp, lines: "7", text: "String $syslog_mode            = 'u=rw,g=r,o=',"}
+    mutates: none beyond reading the file's mode (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      stat -c '%U:%G %a' /var/log/syslog
+      test -L /opt/puppet-infrastructure/bin/mypython && echo class-applied
+    expect: {rc: 0, stdout: "\\Asyslog:adm 640\\nclass-applied\\n\\Z"}
