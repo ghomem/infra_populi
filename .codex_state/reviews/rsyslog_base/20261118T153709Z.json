@@ -1,0 +1,98 @@
+{
+ "schema": 1,
+ "class": "rsyslog_base",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-18T15:37:09Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "e6e1b1b17a52",
+ "migrate_subject": "P8: migrate puppet_infrastructure::rsyslog_base",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit e6e1b1b17a52; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/rsyslog_base.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `rsyslog_base Done [from: release-0.9.10; local change: rsyslog restarts when a TLS file changes]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 5 catalog events; COVERAGE puppet_infrastructure::rsyslog_base: 7 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-2): the 2-line migration header only (local change policy B + 'Module dependencies: none.'); the baseline's own comments at lines 1-2 are kept verbatim below it",
+   "DIFF A hunk 2 (baseline rsyslog_base.pp:79): service rsyslog subscribe => File['/etc/rsyslog.d/tls'] becomes File['/etc/rsyslog.d/tls', '/etc/rsyslog.d/tls/ca.pem', \"/etc/rsyslog.d/tls/${certname}.pem\", \"/etc/rsyslog.d/tls/${certname}.key\"]; the three added titles are exactly the file resources the baseline declares (lines 49-71), the original reference is kept, no resource/attribute/default changed otherwise. This is exactly row #1 of rules/local_changes.md and HQ 2026-11-18 batch-10 ruling 5 (policy B extended to manifests by ruling 4), matching the baseline comment 'reload it whenever the TLS files change'; tracker marker '; local change: rsyslog restarts when a TLS file changes' matches; no other non-translation hunk",
+   "DIFF B: re-migration replaces the earlier 'validated unchanged' header line and adds the same subscribe change; no other content changed; harness GREEN, run 2 no events, 7 concrete resources covered"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 3,
+  "removed": 1,
+  "non_comment_changes": 2,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest, plus one local change (policy B, HQ batch-10 ruling 5; rules/local_changes.md #1): rsyslog also subscribes to the three TLS files, so a renewed certificate restarts it, as the comment on the service says.",
+  "# Module dependencies: none."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 5,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::rsyslog_base: 7 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 61.399,
+   "master_check_s": 0.576,
+   "poweroff_s": 1.38,
+   "restore_s": 0.519,
+   "boot_to_ssh_s": 19.152,
+   "apt_update_s": 39.097,
+   "verify_s": 0.675,
+   "nic1_rx_bytes": 13080312
+  },
+  "log": ".codex_state/logs/reviews/rsyslog_base.20261118T153431Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "ubuntu"
+}
