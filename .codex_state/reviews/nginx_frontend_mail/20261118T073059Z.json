@@ -1,0 +1,100 @@
+{
+ "schema": 1,
+ "class": "nginx_frontend_mail",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-18T07:30:59Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "7d1d4c12bc49",
+ "migrate_subject": "P8: migrate puppet_infrastructure::nginx_frontend_mail",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 7d1d4c12bc49; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `nginx_frontend_mail Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppet-nginx', '8.4.0'), ('puppet-nginx', '8.4.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 35 catalog events; run 2: 1 event(s) only from expected_run2_events Notify[Generated Upstream members for *] [own: Notify[Generated Upstream members for *]; inherited: none] (judge the header justification); COVERAGE puppet_infrastructure::nginx_frontend_mail: 74 concrete resources (+57 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-3): 3-line migration header comment only (purpose, puppet-nginx 8.4.0 dependency, expected run-2 events); no code.",
+   "DIFF A hunk 2 (smtps_${domain} mailhost, line 81): raw_prepend ['proxy_smtp_auth          on;'] -> proxy_smtp_auth => 'on'. Module-API translation, same value: puppet-nginx 8.4.0 mailhost.pp:165 declares Enum['on','off'] $proxy_smtp_auth = 'off' and mailhost_common.epp:27-29 renders 'proxy_smtp_auth <value>;' unconditionally when nginx >= 1.19.4 (node has 1.24.0), so the raw line would be a duplicate directive. Node result: /etc/nginx/conf.mail.d/smtps_p8test.example.com.conf:8 holds exactly one 'proxy_smtp_auth on;', nginx -t ok. No resource added/removed/retitled, all other attributes unchanged.",
+   "DIFF A hunk 3 ($smtp_helo mailhost, line 92): raw_prepend ['proxy_smtp_auth          off;'] -> proxy_smtp_auth => 'off'. Same translation, same value; node p8test.example.com.conf:8 holds exactly one 'proxy_smtp_auth off;'. The imaps mailhost gets the module's own default 'off', which is also nginx's default, so the effective config is unchanged.",
+   "Run-2 justification holds: Notify['Generated Upstream members for ${title} are: ...'] is declared by nginx_frontend_domain.pp:256, identical at baseline cf477c6, and reached through this class's unchanged puppet_infrastructure::nginx_frontend_domain { $domain: } (line 48, Array backend_hosts_and_ports). A notify resource reports an event on every run by design, so the migration did not cause it. DIFF B is identical to DIFF A; the only later commit (c893592) touches only .codex_state/migration_order.md."
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 5,
+  "removed": 6,
+  "non_comment_changes": 8,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: raw_prepend 'proxy_smtp_auth on;' / 'off;' becomes the mailhost parameter proxy_smtp_auth, which puppet-nginx 8.4.0 renders itself (the raw line was a second directive nginx refuses).",
+  "# Module dependencies: puppet-nginx 8.4.0 (nginx::resource::mailhost, nginx::resource::streamhost, nginx::resource::server).",
+  "# Expected run-2 events: Notify[Generated Upstream members for *] \u2014 nginx_frontend_domain's debug notify (nginx_frontend_domain.pp:256), declared through this class, reports on every agent run without changing the node."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 35,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::nginx_frontend_mail: 74 concrete resources (+57 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 20.957,
+   "master_check_s": 0.286,
+   "poweroff_s": 0.881,
+   "restore_s": 0.254,
+   "boot_to_ssh_s": 12.517,
+   "apt_update_s": 6.678,
+   "verify_s": 0.341,
+   "nic1_rx_bytes": 10781267
+  },
+  "log": ".codex_state/logs/reviews/nginx_frontend_mail.20261118T072716Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": "RUN2_EXPECTED_EVENTS: 1 from Notify[Generated Upstream members for *] [own: Notify[Generated Upstream members for *]; inherited: none] (plan"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "ubuntu"
+}
