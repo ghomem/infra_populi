@@ -1,4 +1,4 @@
-# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Puppet 8 migration: release-0.9.10 manifest, plus one local change (policy B, HQ batch-10 ruling 6; rules/local_changes.md #2): the backend binds 127.0.0.1:8080, nginx's only upstream, and the unit file notifies the service so a running master is rebound.
 # Module dependencies: none of its own; through puppet_infrastructure::nginx_frontend: puppet-nginx 8.4.0 (nginx::resource::*), puppetlabs-host_core 1.3.0 (vendored with Puppet 8.24.2; host).
 # Expected run-2 events: Notify[Generated Upstream members for *] — declared by the puppet_infrastructure::nginx_frontend_domain that the puppet_infrastructure::nginx_frontend this class declares declares (baseline `notify { ...: loglevel => 'debug' }`); a notify reports its message on every run.
 ### Purpose ########
@@ -172,6 +172,7 @@ class puppet_infrastructure::hashman_web (
     owner   => 'root',
     group   => 'root',
     content => template('puppet_infrastructure/hashman/hashman.service.erb'),
+    notify  => Service['hashman'],
   }
 
   package { [ 'gunicorn', 'python3-flask' ]: ensure => present, }
