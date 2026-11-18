@@ -1,0 +1,40 @@
+{
+ "class": "sysmon_base",
+ "at": "20261118T211242Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-latency-check-times-a-write: check_dd_latency.sh times a 1M dd oflag=dsync write (SIZE=1M for FILE_SIZE 1), sets WARNING when RESULT>=WARN_SEC and CRITICAL when RESULT>=CRIT_SEC, prints \"$STATE - ...\", rm -f the zero.img.$$ file and exits $status; so 1 5 10 gives OK rc 0, 0 0 gives CRITICAL rc 2 (>=0 always true), and no zero.img.* stays in /tmp, exactly as expected",
+  "the-reboot-check-says-ok: check_reboot_required.sh prints 'OK - No reboot required' and exits 0 unless /var/run/reboot-required exists, which it does not on the freshly applied node; probe and expect match the script verbatim",
+  "the-file-handle-check-reports-the-kernel-counts: check_file_handles.sh copies /proc/sys/fs/file-nr, echoes 'OK - ' plus the three fields (unquoted echo collapses the tabs to spaces) and '| f_handle_used=<field 1>;;;;<field 3>', exit 0; the probe's regex requires exactly that with field 3 read from the kernel, so it tests what the script declares",
+  "purpose gap: Tested on the node: installation (root 0755, module bytes, mypython shebang), the Puppet check's OK, UNKNOWN under the run lock and CRITICAL on agent exit 1 (disabled agent), reboot OK/WARNING, file-handle counts, netstat listen/established/remote-IP counts, package count OK/WARNING and the stale-list alarm, bandwidth OK/WARNING/CRITICAL (peer traffic), dd latency OK/CRITICAL, CPU OK/CRITICAL, memory OK/CRITICAL, OS release, certificate expiry wording OK/WARNING, Elasticsearch Unknown/OK/Critical; RHEL branches honestly uncovered (rhel9); the header's 'zimbra' claim has no code, rightly left out. GAP: nagios-puppet.sh has a second CRITICAL branch, 'if [ $RC -gt 2 ]' (puppet agent --test exit 4 or 6, i.e. resources that failed during the run, the main failure a Puppet monitor exists to catch); the outcome row narrows 'fails otherwise' to the disabled agent (exit 1 branch) and no check reaches the -gt 2 branch, nor is it listed uncovered, although the lab can exercise it with a node-local mutating check (e.g. drift a managed file's mode and chattr +i it so the agent's fix fails, then undo). Secondary: the Elasticsearch stand-in answers every POST without recording it, so the outcome's 'asks localhost:9200 for matching sshd events' (URL /_search?size=10, the query_string and received_at range in the body) is not probed; the stand-in could record the request."
+ ],
+ "review_s": 262.5,
+ "check_file_sha256": "cf702b0fc58993b615fe9c86c4c8690e9e5c1908fc320cfe94e14451ac5ea880",
+ "reviewer_result": "20261118T210820Z-reviewer",
+ "author_result": "20261118T210322Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "fbf6e1db-8fae-4546-b5cb-f9af8e7ab53c",
+   "boot_id_at_end": "fbf6e1db-8fae-4546-b5cb-f9af8e7ab53c",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "cc9555cc-5d52-4a44-9d55-bce3b3371d42",
+   "boot_id_at_end": "cc9555cc-5d52-4a44-9d55-bce3b3371d42",
+   "fresh": true
+  }
+ }
+}
