@@ -1,0 +1,115 @@
+{
+ "schema": 1,
+ "class": "hashman_web",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-18T09:41:56Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "63172fdc9764",
+ "migrate_subject": "P8: migrate puppet_infrastructure::hashman_web",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 63172fdc9764; 435 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `hashman_web Done [from: release-0.9.10; mock-apply: site logo files]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppet-nginx', '8.4.0'), ('puppetlabs-host_core', '1.3.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 98 catalog events; run 2: 1 event(s) only from expected_run2_events Notify[Generated Upstream members for *] [own: Notify[Generated Upstream members for *]; inherited: none] (judge the header justification); COVERAGE puppet_infrastructure::hashman_web: 63 concrete resources (+45 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (3 added comment lines: 'validated unchanged', module dependencies, expected run-2 events); diff_summary non_comment_changes=0; DIFF B identical (the migrate commit added only those 3 header lines)",
+   "run-2 event Notify[Generated Upstream members for *]: justified by upstream design - hashman_web passes backend_hosts_and_ports => ['127.0.0.1:8080'] (an Array) to nginx_frontend, which declares nginx_frontend_domain {$domain:} (baseline nginx_frontend.pp:280); the Array branch of baseline nginx_frontend_domain.pp:252 declares notify {\"Generated Upstream members for ${title} are: ...\": loglevel => 'debug'}, and a notify resource emits an event on every run; not caused by the migration"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 3,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependencies: none of its own; through puppet_infrastructure::nginx_frontend: puppet-nginx 8.4.0 (nginx::resource::*), puppetlabs-host_core 1.3.0 (vendored with Puppet 8.24.2; host).",
+  "# Expected run-2 events: Notify[Generated Upstream members for *] \u2014 declared by the puppet_infrastructure::nginx_frontend_domain that the puppet_infrastructure::nginx_frontend this class declares declares (baseline `notify { ...: loglevel => 'debug' }`); a notify reports its message on every run."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 98,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::hashman_web: 63 concrete resources (+45 defined-type instances)"
+  ],
+  "revert": {
+   "node": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "total_s": 19.404,
+   "master_check_s": 0.282,
+   "poweroff_s": 0.851,
+   "restore_s": 0.258,
+   "boot_to_ssh_s": 12.972,
+   "apt_update_s": 4.7,
+   "verify_s": 0.341,
+   "nic1_rx_bytes": 10769308
+  },
+  "log": ".codex_state/logs/reviews/hashman_web.20261118T093900Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": "RUN2_EXPECTED_EVENTS: 1 from Notify[Generated Upstream members for *] [own: Notify[Generated Upstream members for *]; inherited: none] (plan"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "puppetserver",
+ "mock_apply": "site logo files (node fixture hashman_master_standin: behaviour NOT verified)",
+ "node_fixture": {
+  "name": "hashman_master_standin",
+  "header": [
+   "# MOCK-APPLY node fixture `hashman_master_standin` (HQ 2026-10-27 ruling 7) for hashman_web: the site's logo files.",
+   "# hashman_web copies the logos from the paths in Hiera; the lab Hiera (the upstream example common.yaml) sets",
+   "# hashman::companylogo / hashman::companylogomail to '/path/to/logo.png' / '/path/to/logo-email.png', local files of",
+   "# the master that are the site's own images. Placeholder content stands in for them.",
+   "# (2026-11-17, HQ ruling 2: the code-tree directory left this fixture; the agent package ships it. 2026-11-18, HQ ruling",
+   "# C2: hashman_web runs on the master-role node p8lab-puppetserver, so the master itself is no longer a stand-in; the",
+   "# web interface, logins and password changes are verified end to end there. Only the images remain placeholders.)",
+   "# Not verified with this fixture: that the site's real images render.",
+   "# Lifted by: the site's logo files (a production read, Salatiel's); no lab node can lift it."
+  ],
+  "resources": [],
+  "scope_evidence": "hashman_master_standin declares File['/path'] and File['/path/to'] (root-owned 0755 directories) and File['/path/to/logo.png'], File['/path/to/logo-email.png'] (root 0644 placeholder content): exactly the parents and the two site logo source files that the lab Hiera hashman::companylogo/companylogomail point at, which the class's logo File resources read via source =>; it declares no resource of the class (the class manages ${hashmandir}/httpserver/static/img/logo*.png, not /path/to/*) and nothing beyond the stated logo-file stand-in"
+ }
+}
