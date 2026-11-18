@@ -1,0 +1,40 @@
+{
+ "class": "hashman_web",
+ "at": "20261118T164319Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "admin-adds-the-user-and-assigns-its-role / interface.py.erb:90: useradd writes the user hash plus email, cname, company, smb, ppsigs, ppwrapped and key entries (7 besides the hash), then expirepw (EXPIREPREFIX '!' after '$', config.py.erb:59) and lockpw (LOCKPREFIX '!'). pp_auth SILENT skips mail; unlock lstrips the leading '!'. So the effect's 1 hash line '$!6$' plus 7 entries, and the role line from interface.py.erb:343 are exactly what the code produces",
+  "admin-adds-the-user-and-assigns-its-role / hashman_base.pp:18: dbdir = lookup('hashman::dbdir'), which the lab Hiera sets to %{puppet::manifdir}/01_hashman/; DBFILE_USER is DBDIR/hashes.pp (config.py.erb:29), so the effect reads the database where the class's code writes it",
+  "backend-serves-the-portal / httpserver.py.erb:27-28: TITLE = customname + ' @ ' + COMPANY, rendered by index() (lines 111-113). With the lab Hiera (customname 'Hashman', company 'My Company') the title is 'Hashman @ My Company', which the curl to 127.0.0.1:8080/ expects",
+  "purpose covered: The stated purpose matches the manifest header ('web interface to Hashman') and code: the gunicorn/Flask backend, the nginx_frontend over TLS, logos and the unit. The checks test the job end to end: an admin adds a user via the CLI, the user logs in and changes the password in a real browser on the peer through nginx, the DB record verifies only the new password, the peer's agent run against the master applies the user and PAM accepts the new password and refuses the old one. They also cover the /checkpwd API (OK/NOK mismatch), the 127.0.0.1-only bind (refused from the peer; drift corrected by the next agent run, local change #2) and the Hiera-sourced logos. The uncovered reasons hold. Mail (reqhelp/notify) cannot be delivered because the lab relay is fake. /sign and /verify need ${hashmandir}/ssl/hashman-key.pem, which no baseline manifest deploys: hashman_base sources only common/hashman_utils.py, and files/hashman/ssl holds only an uninstalled pubkey. Session expiry (server-side, and the client-side timer in next.html.erb:210, both gated by hashman::active_session_expiration) is off, because the lab Hiera leaves the default 'False'. Not tested and minor: the web login refusing a wrong password (pp_auth extauth from hashman_base)."
+ ],
+ "review_s": 375.1,
+ "check_file_sha256": "17404af4e28abe485fd14a4231297f2a4635aee3e238faa88e19194357e20459",
+ "reviewer_result": "20261118T163704Z-reviewer",
+ "author_result": "20261118T163022Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "boot_id": "51922de3-3aec-4b66-8ad2-d91a5f720d30",
+   "boot_id_at_end": "51922de3-3aec-4b66-8ad2-d91a5f720d30",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "92f3366e-622a-4320-8c87-bf0753ce4da1",
+   "boot_id_at_end": "92f3366e-622a-4320-8c87-bf0753ce4da1",
+   "fresh": true
+  }
+ }
+}
