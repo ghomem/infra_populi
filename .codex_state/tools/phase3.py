@@ -257,7 +257,7 @@ def probe_problems(probe: str, mutating: bool = False, allow: str | None = None)
     """`allow`: the one other host a peer probe may name, the class node's host-only address."""
     rules = FORBIDDEN[:HOST_RULES] if mutating else FORBIDDEN
     if allow:
-        probe = re.sub(rf"(?<![\d.]){re.escape(allow)}(?![\d.])", "<class-node>", probe)
+        probe = re.sub(rf"(?<![\d.]){re.escape(allow)}(?![\d.])", "CLASS_NODE", probe)  # no angle brackets: `>` reads as a redirect
     out = [f"probe {why}: {pat.pattern}" for pat, why in rules if pat.search(probe)]
     if LOCAL_SSH.search(probe) and not LOCAL_TARGET.search(probe):
         out.append("probe uses ssh to a host other than the node itself (127.0.0.1/localhost)")

@@ -965,3 +965,14 @@ def test_the_run_records_each_outcome_with_its_checks(p3, lab):
     assert p3.run("run", CLS).returncode == 0
     record, _ = p3.result()
     assert record["outcomes"] == [{"outcome": "a daily snapshot of the directory exists", "checks": ["conf"], "passed": True}]
+
+
+def test_a_read_only_peer_probe_may_name_the_class_node_before_a_port():
+    # 2026-11-18: the placeholder for the allowed address was "<class-node>", whose `>` read as a file redirect in
+    # `--resolve name:443:<address>` (hashman_web's peer check)
+    import sys
+    sys.path.insert(0, str(TOOLS))
+    import phase3
+    probe = "curl -sk --resolve puppet.example.com:443:192.168.56.26 https://puppet.example.com/ | head -1"
+    assert phase3.probe_problems(probe, allow="192.168.56.26") == []
+    assert phase3.probe_problems(probe.replace("192.168.56.26", "192.168.56.10"), allow="192.168.56.26")
