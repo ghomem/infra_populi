@@ -22,21 +22,34 @@ peer:
   kind: ubuntu2
   why: what a firewall lets in, limits or drops can only be seen from other machines on the network
 node_agent:
-  after: an-unmanaged-rule-is-added
-  why: the class purges firewall rules it does not manage, which only its next agent run can show
+  after: [an-unmanaged-rule-is-added, the-flush-script-clears-every-rule]
+  why: >-
+    the class purges firewall rules it does not manage, and rebuilds its rules after the flush its WARNING asks for;
+    only its next agent run can show either
 outcomes:
-  - outcome: INPUT and FORWARD drop by default; the SSH whitelist and limits are in place
-    from: manifests/firewall_secure_extra.pp:77-84, 135-155
+  # Correction round 1 (2026-11-18, review 20261118T172004Z): the SSH limits, the flush script and the RST limit
+  # became behaviour checks; the mangle rows now say which rule each packet met (measured by hand on the applied node).
+  - outcome: INPUT and FORWARD drop by default; the Hiera whitelist and the acl reach SSH unlimited
+    from: manifests/firewall_secure_extra.pp:72-84, 134-137
     checks: [policies-and-ssh-rules]
-  - outcome: invalid packets, new packets without SYN, suspicious MSS, bogus TCP flag combinations and fragments are dropped before routing
+  - outcome: SSH from a host on no list is limited against brute force (overall 20 a minute with a burst of 5, 8 held per host, 15 new a minute per host)
+    from: manifests/firewall_secure_extra.pp:129-132, 144-155
+    checks: [an-ssh-burst-is-cut-at-the-overall-limit, held-ssh-connections-stop-at-eight, new-ssh-connections-stop-at-fifteen-a-minute]
+  - outcome: invalid packets (bogus flag combinations such as SYN+FIN, out-of-connection RSTs) and new packets without SYN are dropped before routing
     from: manifests/firewall_secure_extra.pp:157-185
-    checks: [mangle-anti-ddos-rules, the-mangle-counters-are-zeroed, bogus-flag-and-rst-packets-are-sent, the-invalid-rule-dropped-them]
+    checks: [mangle-anti-ddos-rules, the-mangle-counters-are-zeroed, bogus-packets-are-sent, the-invalid-and-not-syn-rules-dropped-them]
+  - outcome: SYN packets with an MSS outside 536-65535 are dropped (rule 503)
+    from: manifests/firewall_secure_extra.pp:165-166
+    uncovered: {why: "needs a SYN with a chosen MSS option; hping3 cannot set TCP options and the peer's baseline has no packet-crafting tool", lifted_by: ubuntu2}
+  - outcome: fragmented packets are dropped (rule 518)
+    from: manifests/firewall_secure_extra.pp:184-185
+    uncovered: {why: "measured on the applied node: 5 fragmented SYNs from the peer were counted by neither 518 nor 501; which rule, if any, sees fragments is a lead in escalations/firewall_secure_extra.behaviour.md, not a check yet", lifted_by: ubuntu}
   - outcome: ICMP echo requests are limited to 2 per second
     from: manifests/firewall_secure_extra.pp:87-99
     checks: [icmp-echo-is-rate-limited]
-  - outcome: an RST flood (RST packets outside any connection) is dropped before routing
-    from: manifests/firewall_secure_extra.pp:159-160, 187-190
-    checks: [bogus-flag-and-rst-packets-are-sent, the-invalid-rule-dropped-them]
+  - outcome: RST packets above 2 a second (burst 2) are dropped
+    from: manifests/firewall_secure_extra.pp:187-190
+    checks: [the-rst-counters-are-recorded, three-connections-are-reset-at-once, the-rst-limit-dropped-the-third]
   - outcome: only whitelisted sources reach the listed service, through the side chain
     from: manifests/firewall_secure_extra.pp:192-224, 252
     checks: [a-service-listens, the-service-is-reached-only-from-the-whitelist]
@@ -44,11 +57,14 @@ outcomes:
     from: manifests/firewall_secure_extra.pp:225-250
     checks: [a-whitelisted-source-is-held-to-the-connection-limit, a-whitelisted-source-is-held-to-the-new-connection-rate]
   - outcome: a blacklisted source is dropped outright, SSH and ICMP included
-    from: manifests/firewall_secure_extra.pp:125-127
+    from: manifests/firewall_secure_extra.pp:25, 125-127
     checks: [a-blacklisted-source-gets-nothing]
   - outcome: rules Puppet does not manage are purged at the next agent run
     from: manifests/firewall_secure_extra.pp:79-84
     checks: [an-unmanaged-rule-is-added, the-next-agent-run-purges-the-unmanaged-rule]
+  - outcome: the flush script the WARNING asks for clears every rule, and the next agent run rebuilds the class's firewall
+    from: manifests/firewall_secure_extra.pp:11-13, 63-70
+    checks: [the-flush-script-clears-every-rule, the-next-agent-run-rebuilds-the-firewall]
   - outcome: sources from whitelisted countries reach the services (country_whitelist, src_cc)
     from: manifests/firewall_secure_extra.pp:203-206
     uncovered: {why: "the geoip match (xt_geoip) is not on Ubuntu 24.04 without xtables-addons and a GeoIP database, which no class installs; whether production sets country_whitelist is a production read", lifted_by: ubuntu}
@@ -143,24 +159,42 @@ checks:
       cat /run/p8test-fwx/held.txt
     expect: {rc: 0, stdout: "\\A3\\n\\Z"}
 
+  # 2026-11-18 authoring correction (run 3, 20261118T172550Z; it passed in run 2): 10 `nc -z -w1` started from a shell
+  # loop let 6 in, because a dropped SYN is retransmitted after about 1 s, when the limit has refilled. Ten SYNs sent
+  # at once measure the connection limit (3) instead (measured by hand: 3, 2, 1 in). The probe now makes 20 paced
+  # attempts (one every 0.1 s, each waiting 80 ms, under the retransmission, then closed) and bounds the count by the
+  # measured duration (by hand: 8 in 2164 ms, 9 in 2410 ms, 10 in 2856 ms).
   - id: a-whitelisted-source-is-held-to-the-new-connection-rate
     what: >-
-      from the whitelisted address, 10 simultaneous new connections to the service: the rate limit (2 per second,
-      iptables' default burst 5) lets 5 through and drops the rest
+      from the whitelisted address, 20 new connections to the service, one every 0.1 s: the rate limit (2 a second,
+      iptables' default burst 5) lets in at least 5 and at most 5 plus 2 per second of the measured duration (rounded
+      up) plus 1, and drops the rest
     control: negative
     host: peer
     derived_from:
       - {path: manifests/firewall_secure_extra.pp, lines: "230-250", text: "limit   => \"${ddos_limit_per_time_unit}/${ddos_limit_time_unit}\","}
-    mutates: after 3 s (the limit refills), 10 parallel TCP connects from the peer's +100 address to the service, closed at once; counts in /run/p8test-fwx/rate.txt
+    mutates: after 3 s (the limit refills), 20 TCP connection attempts from the peer's +100 address to the service, one every 0.1 s, each closed after at most 80 ms; the count and duration go to /run/p8test-fwx/rate.txt
     probe: |
       a=$(ip -4 -o addr show enp0s8 | awk '{print $4}' | cut -d/ -f1 | head -1); w=${a%.*}.$(( ${a##*.} + 100 ))
       sleep 3
-      for i in $(seq 10); do (nc -z -w1 -s "$w" 192.168.56.20 8888 >/dev/null 2>&1 && echo in || echo dropped) & done > /run/p8test-fwx/rate.raw
-      wait
-      sort /run/p8test-fwx/rate.raw | uniq -c | awk '{print $2, $1}' > /run/p8test-fwx/rate.txt
+      python3 - "$w" > /run/p8test-fwx/rate.txt <<'PY'
+      import socket, select, sys, time
+      got, t0 = 0, time.monotonic()
+      for _ in range(20):
+          start = time.monotonic()
+          s = socket.socket(); s.setblocking(False); s.bind((sys.argv[1], 0)); s.connect_ex(("192.168.56.20", 8888))
+          _, w, _ = select.select([], [s], [], 0.08)
+          if w and s.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR) == 0:
+              got += 1
+          s.close()
+          time.sleep(max(0, 0.1 - (time.monotonic() - start)))
+      print(f"in {got} of 20 in {int((time.monotonic() - t0) * 1000)} ms")
+      PY
     effect: |
       cat /run/p8test-fwx/rate.txt
-    expect: {rc: 0, stdout: "\\Adropped 5\\nin 5\\n\\Z"}
+      read _ n _ _ _ t _ < /run/p8test-fwx/rate.txt
+      [ -n "$n" ] && [ -n "$t" ] && [ "$n" -ge 5 ] && [ "$n" -lt 20 ] && [ "$n" -le $(( 5 + 2 * ((t + 999) / 1000) + 1 )) ] && echo limited || echo "not limited"
+    expect: {rc: 0, stdout: "\\Ain \\d+ of 20 in \\d+ ms\\nlimited\\n\\Z"}
 
   - id: a-blacklisted-source-gets-nothing
     what: from the blacklisted address (+150), ping and SSH to the node are dropped
@@ -181,25 +215,90 @@ checks:
 
   - id: icmp-echo-is-rate-limited
     what: >-
-      a ping flood from the peer's primary address (20 requests 0.05 s apart) gets at most 2 per second past
-      iptables' default burst of 5: between 5 and 8 replies
+      a ping flood from the peer's primary address (20 requests 0.05 s apart) is cut: at least 2 replies and at most
+      the burst of 5 plus 2 per second of the flood's measured duration (rounded up) plus 1
     control: negative
     host: peer
     derived_from:
       - {path: manifests/firewall_secure_extra.pp, lines: "87-99", text: "limit  => '2/sec',"}
-    mutates: 20 echo requests from the peer's primary address to the class node, 0.05 s apart; the reply count goes to /run/p8test-fwx/icmp.txt
+    mutates: 20 echo requests from the peer's primary address to the class node, 0.05 s apart; ping's summary line goes to /run/p8test-fwx/icmp.txt
     probe: |
-      ping -c20 -i0.05 -W1 -q 192.168.56.20 2>/dev/null | sed -n 's/.* \([0-9]*\) received.*/\1/p' > /run/p8test-fwx/icmp.txt
+      install -d -m 0700 /run/p8test-fwx
+      sleep 3
+      ping -c20 -i0.05 -W1 -q 192.168.56.20 2>&1 | grep 'packets transmitted' > /run/p8test-fwx/icmp.txt
     effect: |
-      n=$(cat /run/p8test-fwx/icmp.txt); [ -n "$n" ] && [ "$n" -ge 5 ] && [ "$n" -le 8 ] && echo "limited: $n"
-    expect: {rc: 0, stdout: "\\Alimited: [5-8]\\n\\Z"}
+      cat /run/p8test-fwx/icmp.txt
+      n=$(sed -n 's/.* \([0-9]*\) received.*/\1/p' /run/p8test-fwx/icmp.txt); t=$(sed -n 's/.*time \([0-9]*\)ms.*/\1/p' /run/p8test-fwx/icmp.txt)
+      [ -n "$n" ] && [ -n "$t" ] && [ "$n" -ge 2 ] && [ "$n" -le $(( 5 + 2 * ((t + 999) / 1000) + 1 )) ] && echo limited || echo "not limited"
+    expect: {rc: 0, stdout: "\\A20 packets transmitted, \\d+ received.*\\nlimited\\n\\Z"}
+
+  # 2026-11-18 correction round 1 (review 20261118T172004Z): the ICMP check failed in the reviewer's run and printed
+  # nothing; it now prints ping's summary and bounds the replies by the flood's measured duration, after 3 s of refill.
+
+  # RST limit, added in correction round 1: three connections from the whitelisted address are reset at once (3 RSTs
+  # inside connections, which conntrack does not mark INVALID); rule 519 accepts 2 a second with a burst of 2 and rule
+  # 520 drops the rest, so the third RST should be dropped. Counters are compared before and after (iptables -Z on
+  # INPUT fails on this nf_tables backend: "RULE_REPLACE failed").
+  - id: the-rst-counters-are-recorded
+    what: setup for the RST limit check, rule 519's and 520's packet counters recorded on the node
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "187-190", text: "firewall { '519 limit RST tcp packets': chain => 'INPUT', proto => 'tcp', limit => '2/sec', burst => '2', tcp_flags => 'RST RST', action => 'accept', }"}
+    mutates: writes rule 519's and 520's packet counters to /run/p8test-fwx/rst-before on the node
+    probe: |
+      install -d -m 0700 /run/p8test-fwx
+      iptables -v -x -L INPUT -n | awk '/519 limit RST tcp packets \*\// {a=$1} /520 limit RST tcp packets \(default/ {b=$1} END {print a, b}' > /run/p8test-fwx/rst-before
+    effect: |
+      cat /run/p8test-fwx/rst-before
+    expect: {rc: 0, stdout: "\\A\\d+ \\d+\\n\\Z"}
+
+  - id: three-connections-are-reset-at-once
+    what: setup for the next check, the peer opens 3 connections to the service from the whitelisted address and resets them at once
+    control: negative
+    host: peer
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "187-190", text: "firewall { '520 limit RST tcp packets (default behavior)': chain => 'INPUT', proto => 'tcp', tcp_flags => 'RST RST', action => 'drop', }"}
+    mutates: >-
+      after 3 s (the service's rate limit refills), 3 TCP connections from the peer's +100 address to the class node's
+      service, closed together with SO_LINGER 0 (one RST each); the result goes to /run/p8test-fwx/rst.txt
+    probe: |
+      a=$(ip -4 -o addr show enp0s8 | awk '{print $4}' | cut -d/ -f1 | head -1); w=${a%.*}.$(( ${a##*.} + 100 ))
+      sleep 3
+      python3 - "$w" > /run/p8test-fwx/rst.txt <<'PY'
+      import socket, struct, sys, time
+      socks = []
+      for _ in range(3):
+          s = socket.socket(); s.bind((sys.argv[1], 0)); s.settimeout(3); s.connect(("192.168.56.20", 8888)); socks.append(s)
+      time.sleep(0.5)
+      for s in socks:
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+      for s in socks:
+          s.close()
+      print("3 connections reset")
+      PY
+    effect: |
+      cat /run/p8test-fwx/rst.txt
+    expect: {rc: 0, stdout: "\\A3 connections reset\\n\\Z"}
+
+  - id: the-rst-limit-dropped-the-third
+    what: on the node, of the 3 RSTs sent at once, rule 519 accepted 2 (its burst) and rule 520 dropped 1
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "187-190", text: "limit => '2/sec', burst => '2', tcp_flags => 'RST RST', action => 'accept', }"}
+    mutates: none beyond reading the rule counters (declared mutating so it runs after the peer's resets)
+    probe: |
+      true
+    effect: |
+      read a0 b0 < /run/p8test-fwx/rst-before
+      iptables -v -x -L INPUT -n | awk -v a0="$a0" -v b0="$b0" '/519 limit RST tcp packets \*\// {a=$1} /520 limit RST tcp packets \(default/ {b=$1} END {printf "accepted by the limit: %d, dropped beyond it: %d\n", a-a0, b-b0}'
+    expect: {rc: 0, stdout: "\\Aaccepted by the limit: 2, dropped beyond it: 1\\n\\Z"}
 
   # 2026-11-18 authoring correction (run 1, 20261118T165605Z): conntrack classes a SYN+FIN packet and an RST outside
   # any connection as INVALID, so rule 501 (ctstate INVALID, first of the mangle drops) drops them, and 505 and the RST
   # limit (519/520 in INPUT) never see them (verified by hand on the applied node: 501 counted exactly 5 SYN+FIN and 50
   # RST packets; 505, 519 and 520 counted 0). The check now zeroes the mangle counters first and reads rule 501.
   - id: the-mangle-counters-are-zeroed
-    what: setup for the next two checks, the mangle table's packet counters zeroed on the node
+    what: setup for the mangle counter check, the mangle table's packet counters zeroed on the node
     control: negative
     derived_from:
       - {path: manifests/firewall_secure_extra.pp, lines: "159-160", text: "firewall { '501 drop invalid packets': chain => 'PREROUTING', table => 'mangle', ctstate => 'INVALID', action => 'drop', }"}
@@ -210,35 +309,106 @@ checks:
       iptables -t mangle -v -x -L PREROUTING -n | awk '/501 drop invalid packets/ {print $1; exit}'
     expect: {rc: 0, stdout: "\\A0\\n\\Z"}
 
-  - id: bogus-flag-and-rst-packets-are-sent
-    what: setup for the next check, 5 SYN+FIN packets and an RST flood of 50 sent by the peer to the node's port 22
+  - id: bogus-packets-are-sent
+    what: setup for the next check, 5 SYN+FIN packets, an RST flood of 50 and 5 stray ACKs sent by the peer to the node's port 22
     control: negative
     host: peer
     timeout: 300
     derived_from:
-      - {path: manifests/firewall_secure_extra.pp, lines: "170", text: "firewall { '505 drop packets bogus tcp flags': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => 'FIN,SYN FIN,SYN',"}
-      - {path: manifests/firewall_secure_extra.pp, lines: "187-190", text: "firewall { '520 limit RST tcp packets (default behavior)': chain => 'INPUT', proto => 'tcp', tcp_flags => 'RST RST', action => 'drop', }"}
-    mutates: installs hping3 on the peer, then sends 5 SYN+FIN packets and 50 RST packets (2 ms apart) from its primary address to the class node's port 22; the number hping3 sent goes to /run/p8test-fwx/sent.txt
+      - {path: manifests/firewall_secure_extra.pp, lines: "159-160", text: "firewall { '501 drop invalid packets': chain => 'PREROUTING', table => 'mangle', ctstate => 'INVALID', action => 'drop', }"}
+      - {path: manifests/firewall_secure_extra.pp, lines: "162-163", text: "-> firewall { '502 drop new packets not syn': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => '! FIN,SYN,RST,ACK SYN', ctstate => 'NEW', action => 'drop', }"}
+    mutates: installs hping3 on the peer, then sends 5 SYN+FIN packets, 50 RST packets (2 ms apart) and 5 ACK packets outside any connection from its primary address to the class node's port 22; the numbers hping3 sent go to /run/p8test-fwx/sent.txt
     probe: |
       install -d -m 0700 /run/p8test-fwx
       DEBIAN_FRONTEND=noninteractive apt-get -qq -y install hping3 >/dev/null 2>&1
-      { hping3 -q -c 5 -S -F -p 22 192.168.56.20 2>&1; hping3 -q -c 50 -i u2000 -R -p 22 192.168.56.20 2>&1; } | sed -n 's/^\([0-9]*\) packets transmitted.*/\1/p' | paste -sd' ' > /run/p8test-fwx/sent.txt
+      { hping3 -q -c 5 -S -F -p 22 192.168.56.20 2>&1; hping3 -q -c 50 -i u2000 -R -p 22 192.168.56.20 2>&1; hping3 -q -c 5 -A -p 22 192.168.56.20 2>&1; } | sed -n 's/^\([0-9]*\) packets transmitted.*/\1/p' | paste -sd' ' > /run/p8test-fwx/sent.txt
     effect: |
       cat /run/p8test-fwx/sent.txt
-    expect: {rc: 0, stdout: "\\A5 50\\n\\Z"}
+    expect: {rc: 0, stdout: "\\A5 50 5\\n\\Z"}
 
-  - id: the-invalid-rule-dropped-them
-    what: on the node, rule 501 (ctstate INVALID, mangle PREROUTING) counted at least the 55 packets the peer sent
+  - id: the-invalid-and-not-syn-rules-dropped-them
+    what: >-
+      on the node, rule 501 (ctstate INVALID) counted at least the 55 SYN+FIN and RST packets, and rule 502 (new
+      without SYN) at least the 5 stray ACKs (correction round 1: rule 502 measured by hand, 5 of 5)
     control: negative
     derived_from:
       - {path: manifests/firewall_secure_extra.pp, lines: "159-160", text: "firewall { '501 drop invalid packets': chain => 'PREROUTING', table => 'mangle', ctstate => 'INVALID', action => 'drop', }"}
+      - {path: manifests/firewall_secure_extra.pp, lines: "162-163", text: "-> firewall { '502 drop new packets not syn': chain => 'PREROUTING', table => 'mangle', proto => 'tcp', tcp_flags => '! FIN,SYN,RST,ACK SYN', ctstate => 'NEW', action => 'drop', }"}
     mutates: none beyond reading the rule counters (declared mutating so it runs after the peer sent the packets)
     probe: |
       true
     effect: |
       n=$(iptables -t mangle -v -x -L PREROUTING -n | awk '/501 drop invalid packets/ {print $1; exit}')
+      m=$(iptables -t mangle -v -x -L PREROUTING -n | awk '/502 drop new packets not syn/ {print $1; exit}')
+      echo "rule 501: ${n:-absent}, rule 502: ${m:-absent}"
       [ -n "$n" ] && [ "$n" -ge 55 ] && echo "invalid packets dropped: at least 55"
-    expect: {rc: 0, stdout: "\\Ainvalid packets dropped: at least 55\\n\\Z"}
+      [ -n "$m" ] && [ "$m" -ge 5 ] && echo "new packets without SYN dropped: at least 5"
+    expect: {rc: 0, stdout: "\\Arule 501: \\d+, rule 502: \\d+\\ninvalid packets dropped: at least 55\\nnew packets without SYN dropped: at least 5\\n\\Z"}
+
+  # SSH brute-force limits, added in correction round 1 (the same rules and numbers as firewall_secure, whose set
+  # measured them): each check first waits 61 s so the previous check's 60 s recent window and the overall limit
+  # clear; held connections end by `timeout` (netcat-openbsd keeps a connection open after its input ends).
+  - id: an-ssh-burst-is-cut-at-the-overall-limit
+    what: >-
+      20 simultaneous new SSH connections from the peer's primary address (on no list): the overall limit (20 a
+      minute, iptables' default burst of 5) lets 5 through and the rest are dropped
+    control: negative
+    host: peer
+    timeout: 150
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "132", text: "$overlim_minute='20'   # overall limit for new connections per minute"}
+      - {path: manifests/firewall_secure_extra.pp, lines: "153-154", text: "firewall { '116 SSH LIMIT_OVERALL':      chain => 'LIMIT_OVERALL',    proto => tcp, dport => $ssh_port, limit           => \"${overlim_minute}/min\", action => 'accept' }"}
+    mutates: after 61 s, 20 parallel TCP connects from the peer's primary address to the class node's port 22; counts in /run/p8test-fwx/burst.txt on the peer
+    probe: |
+      sleep 61
+      for i in $(seq 20); do (nc -z -w2 192.168.56.20 22 >/dev/null 2>&1 && echo in || echo dropped) & done > /run/p8test-fwx/burst.raw
+      wait
+      sort /run/p8test-fwx/burst.raw | uniq -c | awk '{print $2, $1}' > /run/p8test-fwx/burst.txt
+    effect: |
+      cat /run/p8test-fwx/burst.txt
+    expect: {rc: 0, stdout: "\\Adropped 15\\nin 5\\n\\Z"}
+
+  - id: held-ssh-connections-stop-at-eight
+    what: >-
+      from the peer's primary address, new SSH connections one every 4 s (slower than the overall limit refills), each
+      held open: the per-host connection limit lets 8 stay established and drops the 9th and 10th
+    control: negative
+    host: peer
+    timeout: 240
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "130", text: "$indilim='8'           # limit for individual IP simultaneous connections"}
+      - {path: manifests/firewall_secure_extra.pp, lines: "149", text: "-> firewall { '112 SSH connlimit':          chain => 'LIMIT_INDIVIDUAL', proto => tcp, dport => $ssh_port, connlimit_above => $indilim, action => 'drop', }"}
+    mutates: >-
+      after 61 s, 10 SSH connections from the peer's primary address to the class node, one every 4 s, each ended
+      after 50 s; the established count goes to /run/p8test-fwx/held-ssh.txt on the peer
+    probe: |
+      sleep 61
+      for i in $(seq 10); do (timeout 50 nc 192.168.56.20 22 </dev/null >/dev/null 2>&1) & sleep 4; done
+      sleep 1
+      ss -tnH state established '( dport = :22 and dst 192.168.56.20 )' | wc -l > /run/p8test-fwx/held-ssh.txt
+      wait
+    effect: |
+      cat /run/p8test-fwx/held-ssh.txt
+    expect: {rc: 0, stdout: "\\A8\\n\\Z"}
+
+  - id: new-ssh-connections-stop-at-fifteen-a-minute
+    what: >-
+      from the peer's primary address, closed SSH connections one every 3.5 s (within the overall limit): the per-host
+      recent limit (15 new in 60 s) lets the first 14 through and drops from the 15th on
+    control: negative
+    host: peer
+    timeout: 200
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "131", text: "$indilim_minute='15'   # limit individual IP new connections attempts per minute"}
+      - {path: manifests/firewall_secure_extra.pp, lines: "151", text: "recent          => 'update', rseconds => '60', rhitcount => $indilim_minute, action => 'drop' }"}
+    mutates: after 61 s, 18 TCP connects from the peer's primary address to the class node's port 22, one every 3.5 s; the sequence goes to /run/p8test-fwx/spaced.txt on the peer
+    probe: |
+      sleep 61
+      for i in $(seq 18); do nc -z -w2 192.168.56.20 22 >/dev/null 2>&1 && echo in || echo dropped; sleep 3.5; done > /run/p8test-fwx/spaced.raw
+      uniq -c /run/p8test-fwx/spaced.raw | awk '{print $2, $1}' > /run/p8test-fwx/spaced.txt
+    effect: |
+      cat /run/p8test-fwx/spaced.txt
+    expect: {rc: 0, stdout: "\\Ain 14\\ndropped 4\\n\\Z"}
 
   - id: an-unmanaged-rule-is-added
     what: setup for the purge check, a rule Puppet does not manage added to INPUT by hand
@@ -264,3 +434,35 @@ checks:
       iptables -S INPUT | grep -c p8test-rogue
       iptables -S WHITELIST_SIDE_CHAIN | grep -c -- '524 drop all traffic in the side chain'
     expect: {rc: 0, stdout: "\\A0\\n1\\n\\Z"}
+
+  # Flush script, added in correction round 1: the class's WARNING (lines 11-13) asks for it after any input change.
+  - id: the-flush-script-clears-every-rule
+    what: the installed flush script (root 0755, the module's file) leaves no rule and every policy ACCEPT, so SSH stays up
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "63-70", text: "source  => 'puppet:///modules/puppet_infrastructure/iptables/iptables-flush.sh',"}
+      - {path: files/iptables/iptables-flush.sh, sha256: "af2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935"}
+    mutates: runs /opt/puppet-infrastructure/bin/iptables-flush.sh on the node (every IPv4 and IPv6 rule and chain removed, policies ACCEPT)
+    probe: |
+      /opt/puppet-infrastructure/bin/iptables-flush.sh
+    effect: |
+      f=/opt/puppet-infrastructure/bin/iptables-flush.sh
+      stat -c '%U:%G %a' "$f"; sha256sum "$f" | cut -d' ' -f1
+      for t in filter mangle nat; do iptables -t "$t" -S | grep -c '^-A'; done | paste -sd' '
+      iptables -S | grep -E '^-P (INPUT|FORWARD) '
+    expect: {rc: 0, stdout: "\\Aroot:root 755\\naf2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935\\n0 0 0\\n-P INPUT ACCEPT\\n-P FORWARD ACCEPT\\n\\Z"}
+
+  - id: the-next-agent-run-rebuilds-the-firewall
+    what: after the node's agent run, the policies drop again and the anti-DDoS, whitelist and side-chain rules are back
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "83-84", text: "firewallchain { 'INPUT:filter:IPv4':   ensure => present, purge => true, policy => drop   }"}
+      - {path: manifests/firewall_secure_extra.pp, lines: "252", text: "firewall { '524 drop all traffic in the side chain': chain => 'WHITELIST_SIDE_CHAIN', action => 'drop', }"}
+    mutates: none beyond reading the rules (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      iptables -S | grep -E '^-P (INPUT|FORWARD) '
+      iptables -t mangle -S PREROUTING | grep -c -E -- '--comment "5(0[1-9]|1[0-8]) [^"]*" -j DROP'
+      iptables -S WHITELIST_SIDE_CHAIN | grep -c -- '524 drop all traffic in the side chain'
+    expect: {rc: 0, stdout: "\\A-P INPUT DROP\\n-P FORWARD DROP\\n18\\n1\\n\\Z"}
