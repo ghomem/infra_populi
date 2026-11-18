@@ -886,3 +886,12 @@ def test_a_node_agent_needs_a_mutating_anchor(p3):
     p3.write(check_set(check("conf", "probe-conf"), node_agent={"after": "conf", "why": "x" * 25}))
     proc = p3.run("validate", CLS)
     assert proc.returncode == 2 and "node_agent.after must name a mutating check" in proc.stderr
+
+
+def test_only_a_mutating_action_may_take_a_longer_timeout(p3):
+    p3.write(check_set(check("conf", "probe-conf"), mutating(timeout=300)))
+    assert p3.run("validate", CLS).returncode == 0
+    for bad in (check("conf2", "probe", timeout=300), mutating("m2", timeout=900), mutating("m3", timeout="5")):
+        p3.write(check_set(check("conf", "probe-conf"), bad))
+        proc = p3.run("validate", CLS)
+        assert proc.returncode == 2 and "timeout (seconds, 1-600)" in proc.stderr, proc.stderr

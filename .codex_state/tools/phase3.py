@@ -56,6 +56,7 @@ Check file .codex_state/checks/<class>.yml:
       probe: <shell, run as root on the node via `ssh <node> sudo -n bash -s`>
       expect: {rc: 0, stdout: <regex, re.M>, stdout_not: <regex>}   # rc defaults to 0
       # opt-in MUTATING check (HQ 2026-11-10): `probe` is an action that changes the node; the evidence is its effect
+      # (`timeout: N`, 1-600 s, lets the action outlast the 120 s probe limit, e.g. to wait out a rate-limit window)
       mutates: <what the action changes on the node, declared>
       effect: <read-only shell; `expect` is matched against ITS output, never the action's>
       # MISMATCH control (HQ 2026-11-16): the same probe with ONE value deliberately wrong; it must FAIL `expect` on the
@@ -357,6 +358,9 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
         if any(isinstance(k, bool) for k in c):
             problems.append(f"{where}: a key read as a boolean (YAML 1.1 `on:`/`yes:`/`no:`); a peer probe is `host: peer`")
         mutating = "mutates" in c
+        # 2026-11-18: an action that must first wait out a protocol window (e.g. a 60 s rate-limit) may run longer
+        if "timeout" in c and (not mutating or not isinstance(c["timeout"], int) or not 1 <= c["timeout"] <= 600):
+            problems.append(f"{where}: timeout (seconds, 1-600) is for a mutating check's action only")
         on = c.get("host", "node")
         allow = None
         if on not in ("node", "peer"):
@@ -585,8 +589,9 @@ def on_peer(script: str, timeout: int = PROBE_TIMEOUT) -> tuple[int, str, str]:
         return 124, "", f"probe timed out after {timeout}s"
 
 
-def on_host(check: dict, script: str) -> tuple[int, str, str]:
-    return on_peer(script) if check.get("host") == "peer" else on_node(script)
+def on_host(check: dict, script: str, timeout: int = 0) -> tuple[int, str, str]:
+    t = timeout or PROBE_TIMEOUT
+    return on_peer(script, timeout=t) if check.get("host") == "peer" else on_node(script, timeout=t)
 
 
 def fetch_node_files(paths: list[str]) -> None:
@@ -624,7 +629,7 @@ def run_probe(check: dict, act: bool = False) -> dict:
     """Read-only checks run `probe`. A mutating check runs its `effect` only — preceded by the action when `act`."""
     action = None
     if "mutates" in check and act:
-        arc, aout, aerr = on_host(check, check["probe"])
+        arc, aout, aerr = on_host(check, check["probe"], timeout=check.get("timeout", 0))
         action = {"mutates": check["mutates"], "rc": arc, "stdout": aout[-1000:], "stderr": aerr[-500:]}
     rc, out, err = on_host(check, check["effect"] if "mutates" in check else check["probe"])
     passed = meets(check, rc, out)
