@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.filesystem_sec"><testsuite name="phase3.filesystem_sec.clean" tests="4" failures="0"><testcase classname="phase3.filesystem_sec.clean" name="restricted-commands-belong-to-the-sudo-group" /><testcase classname="phase3.filesystem_sec.clean" name="only-the-sudo-group-can-run-them" /><testcase classname="phase3.filesystem_sec.clean" name="a-restricted-command-is-opened-by-hand" /><testcase classname="phase3.filesystem_sec.clean" name="the-next-agent-run-restricts-it-again" /></testsuite><testsuite name="phase3.filesystem_sec.applied" tests="4" failures="2"><testcase classname="phase3.filesystem_sec.applied" name="restricted-commands-belong-to-the-sudo-group" /><testcase classname="phase3.filesystem_sec.applied" name="only-the-sudo-group-can-run-them"><failure message="check failed after the class was applied (finding)">rc 0
+p8testuser wget runs
+p8testuser curl runs
+p8testuser sftp runs
+p8testuser scp runs
+p8testuser ssh runs
+p8testsudo wget runs
+p8testsudo curl runs
+p8testsudo sftp runs
+p8testsudo scp runs
+p8testsudo ssh runs
+
+</failure></testcase><testcase classname="phase3.filesystem_sec.applied" name="a-restricted-command-is-opened-by-hand" /><testcase classname="phase3.filesystem_sec.applied" name="the-next-agent-run-restricts-it-again"><failure message="check failed after the class was applied (finding)">rc 0
+root:sudo 750
+runs
+
+</failure></testcase></testsuite></testsuites>

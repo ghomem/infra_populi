@@ -60,6 +60,8 @@ checks:
       cat /run/p8test-sec/run.txt
     expect: {rc: 0, stdout: "\\Ap8testuser wget denied\\np8testuser curl denied\\np8testuser sftp denied\\np8testuser scp denied\\np8testuser ssh denied\\np8testsudo wget runs\\np8testsudo curl runs\\np8testsudo sftp runs\\np8testsudo scp runs\\np8testsudo ssh runs\\n\\Z"}
 
+  # 2026-11-18 authoring correction (run 1, 20261118T124148Z, INVALID): on the clean node wget is 0755 and the fixture
+  # account does not exist, so the drift effect matched there too; it now also shows curl still restricted by the class.
   - id: a-restricted-command-is-opened-by-hand
     what: setup for the next check, wget made executable by everyone by hand (drift)
     control: negative
@@ -71,7 +73,8 @@ checks:
     effect: |
       stat -c '%a' /usr/bin/wget
       runuser -u p8testuser -- /usr/bin/wget -V </dev/null >/dev/null 2>&1; [ $? = 126 ] && echo denied || echo runs
-    expect: {rc: 0, stdout: "\\A755\\nruns\\n\\Z"}
+      stat -c 'curl %G %a' /usr/bin/curl
+    expect: {rc: 0, stdout: "\\A755\\nruns\\ncurl sudo 750\\n\\Z"}
 
   - id: the-next-agent-run-restricts-it-again
     what: after the node's agent run, wget is root:sudo 0750 again and the ordinary account is denied again
