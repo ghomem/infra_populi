@@ -178,6 +178,9 @@ Behaviour checks per class in `.codex_state/checks/<class>.yml` (advisor-authore
   verdict (`verdict`) in `checks/reviews/<class>/`.
 - Phase 1 metrics are not touched: harness events go to `logs/phase3-metrics`.
 - Pilots: backup_rsnapshot, ssh_secure, nginx_static_domain (run 2026-11-16, all pass).
+- Effective attributes (HQ batch-11 ruling 4): before writing an expectation about a firewall rule, take the rule's
+  effective attributes from the compiled catalog, including module defaults such as the protocol (`proto` defaults
+  to tcp), not from the manifest's text.
 - Mismatch controls (HQ 2026-11-16): a probe that takes a tool's verdict on a name/user/key/cipher/vhost needs a
   `mismatch` (one value deliberately wrong) that must FAIL after apply, or the set is INVALID.
 - In the loop from batch 4 (skill step 5b): after the reviewer PASS, write and run the class's check set, or declare

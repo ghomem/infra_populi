@@ -2017,3 +2017,25 @@ snapshot list, record.
   number of statements that turn the condition on, read from the fleet by names and counts only. Classes with 0 go to
   the end of the backfill order.
 - Evidence: escalations/firewall_secure_extra.behaviour.md; batch report escalations/batch-2026-11-18-11.md.
+
+## 2026-11-18 — HQ rulings on batch 11 (firewall_secure_extra)
+1. **Blacklist: fix it, option A.** A blacklist that lets a listed address in does not achieve the class's purpose.
+   - Number the drop ahead of every accept, including the established rule.
+   - The baseline describes a blacklist of addresses (line 25: "list of strings containing source IPs to be dropped
+     unconditionally"), so the drop covers all protocols, not the module's TCP default.
+   - Recorded as a local change, with before and after evidence: a blacklisted peer is refused, and a non-listed peer
+     is unaffected.
+   - Implementation: puppetlabs-firewall 8.3.0 orders a chain's managed rules by a plain string sort of their titles
+     (provider `insert_order`, `rules.sort`). A title beginning `00 ` sorts before every `000 …` title and every
+     other numbered title, so the rule becomes `00 grounding naughty boys: <ip>` with `proto => 'all'`.
+2. **RST limit: no fix.** The protective effect holds through other rules (501). It is listed in the approval report
+   as an unreachable rule, and added to the Phase 5 backlog (rules/phase5_backlog.md #7).
+3. **Check set:** a third round runs together with fix 1, and it is the last. If it fails review again, escalate with
+   the reviewer's reasons verbatim and move on.
+4. **Authoring rule for firewall classes:** take each rule's effective attributes from the compiled catalog, including
+   module defaults such as the protocol, before writing an expectation (CLAUDE.md "Phase 3 checks"; skill step 5b).
+5. **Restart batch 2 in the re-derived order.** firewall_secure_extra goes at the end of this batch, not the end of
+   the backfill. The batch is the 10 classes without a check set, by production use under the corrected count:
+   firewall_ipv6_drop (done), node_base, sysmon_base, ssl_base, ssl_nginx_domain, nginx_default_removal,
+   nginx_frontend_domain, nginx_frontend, docker_container, firewall_secure_extra. puppet_boot_run (1 statement) moves
+   to a later batch.

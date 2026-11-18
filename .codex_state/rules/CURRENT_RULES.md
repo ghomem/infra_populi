@@ -2,7 +2,14 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-113 entries; 6 marked superseded (in whole or part); newest first.
+114 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-18 — HQ rulings on batch 11 (firewall_secure_extra)
+- 1. **Blacklist: fix it, option A.** A blacklist that lets a listed address in does not achieve the class's purpose.
+- 2. **RST limit: no fix.** The protective effect holds through other rules (501). It is listed in the approval report
+- 3. **Check set:** a third round runs together with fix 1, and it is the last. If it fails review again, escalate with
+- 4. **Authoring rule for firewall classes:** take each rule's effective attributes from the compiled catalog, including
+- 5. **Restart batch 2 in the re-derived order.** firewall_secure_extra goes at the end of this batch, not the end of
 
 ## 2026-11-18 — Backfill order: a conditional declaration counts only the statements that turn it on
 - (no numbered/Rule/Decision lines; read the entry)
