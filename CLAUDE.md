@@ -145,6 +145,12 @@ validated end-to-end) / `.reimplemented.pp`. Both filename and header must say w
 The escalation bar above is PHASE 1 (syntax-only). "Any behaviour change" is a stop trigger BECAUSE
 this phase is syntax-only. It is expected to be re-derived at the Phase 2/3 transition — do not carry
 it forward unchanged.
+Purpose fixes (HQ 2026-11-18 policy B): improving a class's templates, files or scripts so it achieves its purpose on
+the target release (Ubuntu 24.04) needs no per-item ruling. The change must be driven by a behaviour check that fails
+before and passes after, must be minimal, must be listed in `.codex_state/rules/local_changes.md` with its evidence,
+and must be reviewer-verified. Escalate when a fix changes a class interface, removes functionality, or has more than
+one reasonable design. Syntax-only stays the default where no check demands a change. Phase 1 exit is behaviour
+approval of every active class (DESIGN_DECISIONS 2026-11-18 "HQ rulings on round 9", C).
 
 ## Phase 3 checks (ruling 11, 2026-10-27; runner built for HQ batch-3 acceptance B)
 Behaviour checks per class in `.codex_state/checks/<class>.yml` (advisor-authored, advisor-only), run by
