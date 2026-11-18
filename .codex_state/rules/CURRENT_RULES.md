@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-111 entries; 6 marked superseded (in whole or part); newest first.
+112 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-18 — HQ batch-10 ruling 8 answered: postfix_smtp_node on the Hashman master
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-18 — HQ rulings on batch 10 (accepted: 90 done; Hashman verified end to end; 16/16 RedHat branches)
 - 1. **Start rule for the backfill** (replaces the limit of three):

@@ -1991,3 +1991,15 @@ snapshot list, record.
     Nothing now.
 12. **Order unchanged:** backfill in batches of 10 by production use, then the approval report, then the test-suite
     design note, then the rename.
+
+## 2026-11-18 — HQ batch-10 ruling 8 answered: postfix_smtp_node on the Hashman master
+- **Count:** 1 production node statement declares hashman_web, and the same statement declares postfix_smtp_node
+  (both: 1).
+- **Method:** fleet_class_usage.md's: one node statement per file, every group except deleted/ and tests/, and a class
+  counts if declared directly, through a meaningful_puppet class or through a puppet_infrastructure composite; passwd/
+  is never read. Names and counts only.
+- **Cross-check:** the per-class counts (hashman_web 1, postfix_smtp_node 3) match the committed fleet table. The
+  script counted 38 production statements, against the 37 implied by that table's method note (47 parsed, minus 9
+  deleted and 1 test). The two class counts do not depend on that difference.
+- **Result:** production's Hashman master composes the MTA that Hashman's mail needs, which is the lab composition
+  (hashman_base's required_base postfix_smtp_node). No documentation-list entry is needed.
