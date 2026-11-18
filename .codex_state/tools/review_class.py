@@ -13,6 +13,11 @@ prints commit authors or commit bodies (rule 9: the reviewer does not learn who 
       Combines the latest draft with the reviewer's faithfulness judgement and writes the persisted
       verdict .codex_state/reviews/<class>/<UTC>.json (tracked, append-only). Prints the report.
       --fixture-scope is required when the class went GREEN on a mock-apply node fixture (HQ batch-7 ruling 2).
+  check <class> --node KIND / verdict <class> --node KIND ... (HQ batch-8 ruling 6: a verdict per node, the RedHat
+      branches on rhel9): the same review on another lab node of nodes.yml. Refused when the plan pins the class to a
+      different node. The harness, the fixtures check (per-node params first) and the node identities follow KIND
+      (P8_NODE); the draft records the node and the verdict must use a draft of the same node. The verdict goes to
+      .codex_state/reviews/<class>/nodes/<KIND>/<UTC>.json, beside (never replacing) the class's own verdicts.
 
 Verdict PASS = every mechanical check ok AND faithful ok. Checks: git, scope, provenance, records,
 header_modules, comments_preserved, syntax, fixtures, idempotent.
@@ -23,6 +28,7 @@ from __future__ import annotations
 import datetime as dt
 import difflib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -589,8 +595,27 @@ def decide(checks: dict, faithful: str, justify_run1: str | None) -> str:
     return "PASS" if faithful == "ok" else "FAIL"
 
 
+def node_option(cls: str, argv: list[str]) -> str | None:
+    """`--node KIND`: validated, exported as P8_NODE for every node lookup and the harness; None without it."""
+    if "--node" not in argv:
+        return None
+    i = argv.index("--node")
+    kind = argv[i + 1] if i + 1 < len(argv) else ""
+    import gen_migration_order as gen  # noqa: PLC0415
+    import nodes  # noqa: PLC0415
+    inventory = nodes.load()["nodes"]
+    if kind not in inventory or inventory[kind]["status"] != "active":
+        raise SystemExit(f"ERROR: --node {kind!r} is not an active node kind of nodes.yml")
+    planned = (getattr(gen.parse_plan().get(cls), "node", "") or "")
+    if planned and planned != kind:
+        raise SystemExit(f"ERROR: the plan pins {cls} to node {planned}; --node {kind} would review it elsewhere")
+    os.environ["P8_NODE"] = kind
+    return kind
+
+
 def cmd_check(argv: list[str]) -> int:
     cls = argv[0]
+    kind = node_option(cls, argv)
     if "--fresh" in argv:
         error = fresh_usage_error(cls)
         if error:
@@ -600,13 +625,15 @@ def cmd_check(argv: list[str]) -> int:
             return 2
     started = dt.datetime.now(dt.timezone.utc)
     data = run_checks(cls, harness="--no-harness" not in argv)
+    data["node"] = node_kind(cls)
+    data["node_option"] = kind
     data["check_s"] = round((dt.datetime.now(dt.timezone.utc) - started).total_seconds(), 1)
     data["checked_at"] = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     DRAFTS.mkdir(parents=True, exist_ok=True)
     draft = DRAFTS / f"{cls}.{data['checked_at'].replace(':', '').replace('-', '')}.draft.json"
     draft.write_text(json.dumps(data, indent=1))
     print(f"REVIEW CHECKS {cls} (baseline {data['baseline']}; migrate commit {data.get('migrate_commit')}: "
-          f"{data.get('migrate_subject')})")
+          f"{data.get('migrate_subject')}) on node {data['node']}")
     for name in CHECKS:
         if name in data["checks"]:
             ch = data["checks"][name]
@@ -631,6 +658,10 @@ def cmd_check(argv: list[str]) -> int:
 
 def cmd_verdict(argv: list[str]) -> int:
     cls, rest = argv[0], argv[1:]
+    kind = node_option(cls, rest)
+    if kind:
+        i = rest.index("--node")
+        rest = rest[:i] + rest[i + 2:]
     faithful, evidence, justify, scope = None, [], None, None
     i = 0
     while i < len(rest):
@@ -648,6 +679,9 @@ def cmd_verdict(argv: list[str]) -> int:
     if faithful not in ("ok", "fail") or not evidence:
         raise SystemExit("ERROR: verdict needs --faithful ok|fail and at least one --evidence")
     draft = json.loads(latest_draft(cls).read_text())
+    if draft.get("node_option") != kind:
+        raise SystemExit(f"ERROR: the latest draft of {cls} was checked with --node {draft.get('node_option')}, not "
+                         f"--node {kind}; run `check {cls}{' --node ' + kind if kind else ''}` first")
     if draft.get("node_fixture") and not scope:
         raise SystemExit(f"ERROR: {cls} went GREEN on node fixture {draft['node_fixture']['name']} (mock-apply): the "
                          "verdict needs --fixture-scope \"<what each fixture resource does and that it stays within the "
@@ -660,15 +694,17 @@ def cmd_verdict(argv: list[str]) -> int:
               "migrate_subject": draft.get("migrate_subject"), "checks": checks,
               "faithful": {"status": faithful, "evidence": evidence}, "justify_run1": justify,
               "diff_summary": draft.get("diff_summary"), "header": draft.get("header"),
-              "harness": draft.get("harness"), "pregate_versions": draft.get("pregate_versions")}
+              "harness": draft.get("harness"), "pregate_versions": draft.get("pregate_versions"),
+              "node": draft.get("node")}
     if draft.get("node_fixture"):
         record["mock_apply"] = draft.get("mock_apply")
         record["node_fixture"] = {**draft["node_fixture"], "scope_evidence": scope}
-    VERDICTS.joinpath(cls).mkdir(parents=True, exist_ok=True)
-    path = VERDICTS / cls / f"{record['reviewed_at'].replace(':', '').replace('-', '')}.json"
+    where = VERDICTS / cls / "nodes" / kind if kind else VERDICTS / cls
+    where.mkdir(parents=True, exist_ok=True)
+    path = where / f"{record['reviewed_at'].replace(':', '').replace('-', '')}.json"
     path.write_text(json.dumps(record, indent=1) + "\n")
     print(f"VERDICT: {verdict}")
-    print(f"class: {cls}")
+    print(f"class: {cls}" + (f" (node {kind})" if kind else ""))
     print("checks: " + " ".join(f"{n}={checks.get(n, {}).get('status', 'missing')}" for n in CHECKS)
           + f" faithful={faithful}")
     print("evidence:")
@@ -682,6 +718,8 @@ def cmd_verdict(argv: list[str]) -> int:
     if scope:
         print(f"  fixture-scope: {scope}"[:900])
     print(f"persisted: {path.relative_to(REPO)}")
+    if kind:  # a per-node verdict (HQ batch-8 ruling 6) is not a Phase 1 attempt: no metrics event
+        return 0
     # step 3.4: metrics event (the reviewer never reads .codex_state/runs/ or the event log)
     failed = [n for n in CHECKS if checks.get(n, {}).get("status") != "ok"] + ([] if faithful == "ok" else ["faithful"])
     subprocess.run([sys.executable, str(TOOLS / "metrics.py"), "event", cls, "review",

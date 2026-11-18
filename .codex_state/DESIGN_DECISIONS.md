@@ -1738,3 +1738,24 @@ snapshot list, record.
 
   It keyscans nothing and quotes no fingerprint. The re-keying that follows reads the new key over the verified
   session and matches it with a keyscan at the new address, as for kubuntu. 4 tests.
+
+## 2026-11-18 — A reviewer verdict per node (HQ batch-8 ruling 6: the RedHat branches on rhel9)
+- **Which classes:** 16 done classes have OS-specific branches (RedHat/os family/os name). They are caching_nameserver,
+  filesystem_base, filesystem_sec, hello_world_flask_common, nginx_base, nginx_frontend, nginx_frontend_domain,
+  nginx_static_domain, node_base, packages_base, postfix_smtp_node, rsyslog_base, ssh_secure, ssl_base, sysmon_base
+  and user_sudoer. Their Phase 1 verdicts ran on the Ubuntu node only.
+- **Built:** `review_class.py check|verdict <class> --node <kind>`, and the reviewer's spawn form
+  `<class> --node <kind>`. The spawn-message rule gains that form.
+  - It refuses a node that is not active, and a class the plan pins to another node.
+  - It exports P8_NODE, which nodes.select already honours after the plan column, so the harness (revert-first),
+    the per-node params and the node identities all follow it.
+  - The draft records the node. A verdict must use a draft made with the same `--node`, and a plain verdict never
+    takes a per-node draft.
+  - The verdict goes to `reviews/<class>/nodes/<kind>/<UTC>.json` and records the node. gen_migration_order and
+    status read `reviews/<class>/*.json` only, so a per-node verdict never stands in for the class's Phase 1
+    verdict. It writes no metrics event, because it is not a Phase 1 attempt.
+- **What follows from a result:**
+  - A RedHat-branch FAIL is reported as a finding on that node (an escalation), not a re-migration, unless the
+    reviewer finds the migrated code at fault.
+  - A class that needs RedHat-specific params gets params/rhel9/<class>.json.
+- **Tests:** 5.

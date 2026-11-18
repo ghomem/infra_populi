@@ -320,3 +320,48 @@ def test_node_identities_count_device_backed_nics_only(monkeypatch):
     monkeypatch.setattr(rc.subprocess, "run", fake_run)
     assert rc.node_identities("openvpn_server") == ({"enp0s3", "enp0s8"}, {"salatiel"})
     assert "/device" in calls[0][-1]
+
+
+# HQ batch-8 ruling 6: a verdict per node (the RedHat branches on rhel9)
+def test_a_per_node_verdict_is_kept_beside_the_class_verdicts(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("P8_NODE", "")  # registers P8_NODE so pytest restores it: node_option exports it
+    monkeypatch.delenv("P8_NODE")
+    drafts, verdicts = tmp_path / "drafts", tmp_path / "reviews"
+    drafts.mkdir()
+    monkeypatch.setattr(rc, "DRAFTS", drafts)
+    monkeypatch.setattr(rc, "VERDICTS", verdicts)
+    monkeypatch.setattr(rc, "REPO", tmp_path)
+    (drafts / "x.20261118T000000Z.draft.json").write_text(json.dumps(
+        {"class": "x", "baseline": "release-0.9.10 (cf477c6)", "checks": all_ok(), "migrate_commit": "abc",
+         "node": "rhel9", "node_option": "rhel9"}))
+    with pytest.raises(SystemExit, match="checked with --node rhel9, not --node None"):
+        rc.main(["verdict", "x", "--faithful", "ok", "--evidence", "e"])  # a plain verdict never takes a node draft
+    assert rc.main(["verdict", "x", "--node", "rhel9", "--faithful", "ok", "--evidence", "RedHat branch: e"]) == 0
+    assert "class: x (node rhel9)" in capsys.readouterr().out
+    assert list((verdicts / "x").glob("*.json")) == []  # the class's own verdicts are untouched
+    (saved,) = list((verdicts / "x" / "nodes" / "rhel9").glob("*.json"))
+    assert json.loads(saved.read_text())["node"] == "rhel9" and json.loads(saved.read_text())["verdict"] == "PASS"
+    import os
+    events = Path(os.environ["P8_METRICS_DIR"]) / "events.jsonl"
+    assert not events.exists() or "review" not in events.read_text()  # not a Phase 1 attempt
+
+
+@pytest.mark.parametrize("cls,kind,message", [
+    ("user_kde_lock_screen", "rhel9", "the plan pins user_kde_lock_screen to node kubuntu"),
+    ("ssh_secure", "puppetserver", "is not an active node kind"),
+    ("ssh_secure", "nope", "is not an active node kind"),
+])
+def test_the_node_option_is_refused_where_it_would_mislead(monkeypatch, cls, kind, message):
+    monkeypatch.setenv("P8_NODE", "")  # registers P8_NODE so pytest restores it: node_option exports it
+    monkeypatch.delenv("P8_NODE")
+    with pytest.raises(SystemExit, match=message):
+        rc.node_option(cls, ["--node", kind])
+
+
+def test_the_node_option_exports_the_node(monkeypatch):
+    monkeypatch.setenv("P8_NODE", "")  # registers P8_NODE so pytest restores it: node_option exports it
+    monkeypatch.delenv("P8_NODE")
+    import os
+    assert rc.node_option("ssh_secure", ["--node", "rhel9"]) == "rhel9" and os.environ["P8_NODE"] == "rhel9"
+    assert rc.node_kind("ssh_secure") == "rhel9"  # every node lookup of the review follows it
+    assert rc.node_option("ssh_secure", []) is None
