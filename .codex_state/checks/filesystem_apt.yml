@@ -90,16 +90,17 @@ checks:
         [ -n "$old" ] && dpkg-query -W "$p" >/dev/null 2>&1 && break
         old=""
       done
-      [ -n "$old" ] || { echo "no package with an older archive version" > /run/p8test-apt/upgrade.txt; exit 0; }
+      [ -n "$old" ] || { echo "no package with an older archive version" > /run/p8test-apt/upgrade.none; exit 0; }
       DEBIAN_FRONTEND=noninteractive apt-get -qq -y --allow-downgrades install "$p=$old" >/dev/null 2>&1
       before=$(dpkg-query -W -f '${Version}' "$p")
       out=$(/opt/puppet-infrastructure/bin/apt-update-pkg.sh "$p" 2>&1)
-      after=$(dpkg-query -W -f '${Version}' "$p")
-      { [ "$before" = "$old" ] && echo "downgraded to the archive's older version"
-        [ "$after" = "$cand" ] && echo "upgraded to the candidate"
-        printf '%s\n' "$out" | grep -q "^package $p updated to version $cand$" && echo "wrapper reported the update"; } > /run/p8test-apt/upgrade.txt
+      printf '%s\n' "$out" | grep -q "^package $p updated to version $cand$" && reported=yes || reported=no
+      printf 'p=%s\ncand=%s\nold=%s\nbefore=%s\nreported=%s\n' "$p" "$cand" "$old" "$before" "$reported" > /run/p8test-apt/upgrade.vars
     effect: |
-      cat /run/p8test-apt/upgrade.txt
+      . /run/p8test-apt/upgrade.vars
+      [ -n "$old" ] && [ "$before" = "$old" ] && echo "downgraded to the archive's older version"
+      [ "$(dpkg-query -W -f '${Version}' "$p")" = "$cand" ] && echo "upgraded to the candidate"
+      [ "$reported" = yes ] && echo "wrapper reported the update"
     expect: {rc: 0, stdout: "\\Adowngraded to the archive's older version\\nupgraded to the candidate\\nwrapper reported the update\\n\\Z"}
 
   - id: the-daily-job-lists-relevant-updates
@@ -148,19 +149,23 @@ checks:
         [ -n "$old" ] && dpkg-query -W "$p" >/dev/null 2>&1 && break
         old=""
       done
-      [ -n "$old" ] || { echo "no package with an older archive version" > /run/p8test-apt/relevant.txt; exit 0; }
+      [ -n "$old" ] || { echo "no package with an older archive version" > /run/p8test-apt/relevant.none; exit 0; }
       DEBIAN_FRONTEND=noninteractive apt-get -qq -y --allow-downgrades install "$p=$old" >/dev/null 2>&1
       printf '%s\n' "$p" > /var/lib/apt-check-updates/list
       before=$(dpkg-query -W -f '${Version}' "$p")
       out=$(/opt/puppet-infrastructure/bin/apt-update-relevant.sh 2>&1)
-      after=$(dpkg-query -W -f '${Version}' "$p")
-      { [ "$before" = "$old" ] && echo "on the list one version behind"
-        [ "$after" = "$cand" ] && echo "upgraded to the candidate"
-        printf '%s\n' "$out" | grep -q "^package $p updated to version $cand$" && echo "reported through the wrapper"; } > /run/p8test-apt/relevant.txt
+      printf '%s\n' "$out" | grep -q "^package $p updated to version $cand$" && reported=yes || reported=no
+      printf 'p=%s\ncand=%s\nold=%s\nbefore=%s\nreported=%s\n' "$p" "$cand" "$old" "$before" "$reported" > /run/p8test-apt/relevant.vars
     effect: |
-      cat /run/p8test-apt/relevant.txt
+      . /run/p8test-apt/relevant.vars
+      [ -n "$old" ] && [ "$before" = "$old" ] && echo "on the list one version behind"
+      [ "$(dpkg-query -W -f '${Version}' "$p")" = "$cand" ] && echo "upgraded to the candidate"
+      [ "$reported" = yes ] && echo "reported through the wrapper"
     expect: {rc: 0, stdout: "\\Aon the list one version behind\\nupgraded to the candidate\\nreported through the wrapper\\n\\Z"}
 
+  # 2026-11-18 derivation correction (after filesystem_yum's review 20261118T131226Z, same pattern): the run checks
+  # computed their evidence (versions after the run, the pending-upgrade count) inside the action; the actions now
+  # record only what they changed and what the wrapper reported, and each effect reads the node's state itself.
   # 2026-11-18 purpose correction (review 20261118T122159Z): the surface, kernel and full update scripts were checked
   # as installed files only; the next three checks run each one (the full update last, as it upgrades everything).
   - id: the-surface-script-updates-an-outdated-surface-package
@@ -184,16 +189,17 @@ checks:
         [ -n "$old" ] && dpkg-query -W "$p" >/dev/null 2>&1 && break
         old=""
       done
-      [ -n "$old" ] || { echo "no surface package with an older archive version" > /run/p8test-apt/surface.txt; exit 0; }
+      [ -n "$old" ] || { echo "no surface package with an older archive version" > /run/p8test-apt/surface.none; exit 0; }
       DEBIAN_FRONTEND=noninteractive apt-get -qq -y --allow-downgrades install "$p=$old" >/dev/null 2>&1
       before=$(dpkg-query -W -f '${Version}' "$p")
       out=$(/opt/puppet-infrastructure/bin/apt-update-surface.sh 2>&1)
-      after=$(dpkg-query -W -f '${Version}' "$p")
-      { [ "$before" = "$old" ] && echo "surface package one version behind"
-        [ "$after" = "$cand" ] && echo "upgraded to the candidate"
-        printf '%s\n' "$out" | grep -q "^package $p updated to version $cand$" && echo "reported through the wrapper"; } > /run/p8test-apt/surface.txt
+      printf '%s\n' "$out" | grep -q "^package $p updated to version $cand$" && reported=yes || reported=no
+      printf 'p=%s\ncand=%s\nold=%s\nbefore=%s\nreported=%s\n' "$p" "$cand" "$old" "$before" "$reported" > /run/p8test-apt/surface.vars
     effect: |
-      cat /run/p8test-apt/surface.txt
+      . /run/p8test-apt/surface.vars
+      [ -n "$old" ] && [ "$before" = "$old" ] && echo "surface package one version behind"
+      [ "$(dpkg-query -W -f '${Version}' "$p")" = "$cand" ] && echo "upgraded to the candidate"
+      [ "$reported" = yes ] && echo "reported through the wrapper"
     expect: {rc: 0, stdout: "\\Asurface package one version behind\\nupgraded to the candidate\\nreported through the wrapper\\n\\Z"}
 
   - id: the-kernel-script-brings-the-kernel-metapackage-up-to-date
@@ -206,12 +212,11 @@ checks:
     mutates: runs apt-update-kernel.sh on the node (an --only-upgrade install of the kernel metapackage, if newer); the result goes to /run/p8test-apt/kernel.txt
     probe: |
       install -d -m 0700 /run/p8test-apt
-      /opt/puppet-infrastructure/bin/apt-update-kernel.sh >/dev/null 2>&1; rc=$?
-      m=$(dpkg -l 'linux-image-*' | awk '/^ii/ && $2 !~ /-[0-9]+\.[0-9]+\.[0-9]/ {print $2}')
-      { echo "rc=$rc"
-        [ -n "$m" ] && [ "$(dpkg-query -W -f '${Version}' "$m")" = "$(apt-cache policy "$m" | awk '/Candidate:/ {print $2}')" ] && echo "metapackage at the candidate"; } > /run/p8test-apt/kernel.txt
+      /opt/puppet-infrastructure/bin/apt-update-kernel.sh >/dev/null 2>&1; echo "rc=$?" > /run/p8test-apt/kernel.txt
     effect: |
       cat /run/p8test-apt/kernel.txt
+      m=$(dpkg -l 'linux-image-*' | awk '/^ii/ && $2 !~ /-[0-9]+\.[0-9]+\.[0-9]/ {print $2}')
+      [ -n "$m" ] && [ "$(dpkg-query -W -f '${Version}' "$m")" = "$(apt-cache policy "$m" | awk '/Candidate:/ {print $2}')" ] && echo "metapackage at the candidate"
     expect: {rc: 0, stdout: "\\Arc=0\\nmetapackage at the candidate\\n\\Z"}
 
   - id: the-full-update-script-leaves-nothing-to-upgrade
@@ -225,8 +230,8 @@ checks:
     probe: |
       install -d -m 0700 /run/p8test-apt
       /opt/puppet-infrastructure/bin/apt-update-dist.sh >/dev/null 2>&1; echo "rc=$?" > /run/p8test-apt/dist.txt
-      apt-get -s dist-upgrade | grep -E '^[0-9]+ upgraded' >> /run/p8test-apt/dist.txt
     effect: |
       cat /run/p8test-apt/dist.txt
+      apt-get -s dist-upgrade | grep -E '^[0-9]+ upgraded' 
     expect: {rc: 0, stdout: "\\Arc=0\\n0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded\\.\\n\\Z"}
 
