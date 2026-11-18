@@ -1,6 +1,6 @@
 # Puppet 8 migration: release-0.9.10 manifest validated unchanged.
 # Module dependency: puppetlabs-apt 11.3.2.
-# Expected run-2 events: Exec[apt_update] — upstream's `class { 'apt': update => { frequency => 'always' } }` (this file, comment above it) makes the apt module run apt update on every agent run (its update.pp turns 'always' into refreshonly => false).
+# Expected run-2 events: Exec[apt_update]; Exec[dnf-makecache]. Exec[apt_update] — upstream's `class { 'apt': update => { frequency => 'always' } }` (this file, comment above it) makes the apt module run apt update on every agent run (its update.pp turns 'always' into refreshonly => false). Exec[dnf-makecache] — on RedHat, packages_base's `exec { 'dnf-makecache': refreshonly => false }` ("this line is needed to make sure apt-get update or dnf-makecache runs on each puppet run") runs on every agent run by upstream design.
 ### Purpose ########
 # This class provides the minimum set of packages for a generic Ubuntu node
 class puppet_infrastructure::packages_base (
