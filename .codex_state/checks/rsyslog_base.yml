@@ -1,0 +1,102 @@
+# Phase 3 checks for puppet_infrastructure::rsyslog_base (class; node ubuntu). Fixture (params, never committed):
+# ssldir_override /etc/puppetlabs/puppet/ssl (the OpenVox agent's ssldir; the default /var/lib/puppet/ssl of the pre-AIO
+# packages does not exist on the node). The node's
+# certname is its host name. Probes read the node's own files and rsyslog; the use of this material by a forwarding
+# client and a TLS server is tested end to end in rsyslog_client's and rsyslog_server's sets.
+class: rsyslog_base
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 2
+  notes: "About 10:28Z to 10:31Z 2026-11-18 (scratch file times, overlapping rsyslog_client's), outside the worktree while firewall_secure's review ran."
+purpose: >-
+  The shared rsyslog setup of log servers and clients: rsyslog with its GnuTLS driver installed and running, and the
+  node's Puppet CA, certificate and key copied where rsyslog (which drops to the syslog user) can read them for TLS; rsyslog is kept running.
+uncovered:
+  - what: the RedHat branch (a syslog user and group with uid/gid 0)
+    why: these checks run on the Ubuntu node, where the syslog account exists already
+    lifted_by: rhel9
+node_agent:
+  after: rsyslog-is-stopped
+  why: the class keeps rsyslog running, which only its next agent run after a stop can show
+checks:
+  - id: rsyslog-and-its-tls-driver-are-installed-and-running
+    what: rsyslog and rsyslog-gnutls are installed, the gtls network stream driver is present, rsyslog runs and is enabled
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_base.pp, lines: "10-12", text: "package { ['rsyslog', 'rsyslog-gnutls']:"}
+      - {path: manifests/rsyslog_base.pp, lines: "75-80", text: "service { 'rsyslog':"}
+    probe: |
+      dpkg-query -W -f '${Package} ${Status}\n' rsyslog rsyslog-gnutls
+      ls /usr/lib/*/rsyslog/lmnsd_gtls.so | wc -l
+      systemctl is-active rsyslog; systemctl is-enabled rsyslog
+    expect: {rc: 0, stdout: "\\Arsyslog install ok installed\\nrsyslog-gnutls install ok installed\\n1\\nactive\\nenabled\\n\\Z"}
+
+  - id: the-tls-files-are-the-nodes-puppet-identity
+    what: >-
+      /etc/rsyslog.d/tls holds the node's Puppet CA, certificate and key byte for byte, owned by syslog with the key
+      0600, and the certificate verifies against that CA
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_base.pp, lines: "32-35", text: "$ssldir = $ssldir_override ? {"}
+      - {path: manifests/rsyslog_base.pp, lines: "49-71", text: "source  => \"${ssldir}/private_keys/${certname}.pem\","}
+    probe: |
+      s=/etc/puppetlabs/puppet/ssl; c=$(hostname); t=/etc/rsyslog.d/tls
+      cmp -s $s/certs/ca.pem $t/ca.pem && cmp -s $s/certs/$c.pem $t/$c.pem && cmp -s $s/private_keys/$c.pem $t/$c.key && echo same-as-puppet
+      stat -c '%U:%G %a' $t $t/ca.pem $t/$c.pem $t/$c.key
+      openssl verify -CAfile $t/ca.pem $t/$c.pem | sed 's/^.*: //'
+    mismatch:
+      varies: the CA (the system bundle instead of the copied Puppet CA), which did not sign the node's certificate
+      probe: |
+        s=/etc/puppetlabs/puppet/ssl; c=$(hostname); t=/etc/rsyslog.d/tls
+        cmp -s $s/certs/ca.pem $t/ca.pem && cmp -s $s/certs/$c.pem $t/$c.pem && cmp -s $s/private_keys/$c.pem $t/$c.key && echo same-as-puppet
+        stat -c '%U:%G %a' $t $t/ca.pem $t/$c.pem $t/$c.key
+        openssl verify -CAfile /etc/ssl/certs/ca-certificates.crt $t/$c.pem 2>&1 | tail -1 | sed 's/^.*: //'
+    expect: {rc: 0, stdout: "\\Asame-as-puppet\\nsyslog:syslog 755\\nsyslog:syslog 644\\nsyslog:syslog 644\\nsyslog:syslog 600\\nOK\\n\\Z"}
+
+  - id: rsyslog-can-read-the-key-as-the-user-it-runs-as
+    what: >-
+      rsyslog drops its privileges to the syslog user (Ubuntu's rsyslog.conf), and that user can read the key and
+      certificate it needs for TLS
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_base.pp, lines: "65-71", text: "file { \"/etc/rsyslog.d/tls/${certname}.key\":"}
+      - {path: manifests/rsyslog_base.pp, lines: "41-47", text: "owner   => 'syslog',"}
+    probe: |
+      grep -E '^\$PrivDropToUser ' /etc/rsyslog.conf
+      ps -o user= -C rsyslogd | sort -u
+      c=$(hostname)
+      runuser -u syslog -- openssl pkey -in /etc/rsyslog.d/tls/$c.key -noout 2>/dev/null && echo key-readable-by-syslog
+    mismatch:
+      varies: the user (nobody instead of syslog), whom the key's 0600 syslog ownership must keep out
+      probe: |
+        grep -E '^\$PrivDropToUser ' /etc/rsyslog.conf
+        ps -o user= -C rsyslogd | sort -u
+        c=$(hostname)
+        runuser -u nobody -- openssl pkey -in /etc/rsyslog.d/tls/$c.key -noout 2>/dev/null && echo key-readable-by-syslog
+    expect: {rc: 0, stdout: "\\A\\$PrivDropToUser syslog\\nsyslog\\nkey-readable-by-syslog\\n\\Z"}
+
+  - id: rsyslog-is-stopped
+    what: setup for the next check, rsyslog stopped by hand (drift)
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_base.pp, lines: "75-80", text: "ensure    => running,"}
+    mutates: stops the rsyslog service on the node (systemctl stop rsyslog)
+    probe: |
+      systemctl stop rsyslog
+    effect: |
+      systemctl is-active rsyslog
+    expect: {rc: 3, stdout: "\\Ainactive\\n\\Z"}
+
+  - id: the-next-agent-run-starts-rsyslog-again
+    what: after the node's agent run, rsyslog runs again (the class keeps it running), with its TLS material in place
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_base.pp, lines: "75-80", text: "ensure    => running,"}
+    mutates: none beyond reading the service state (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      systemctl is-active rsyslog
+      test -s "/etc/rsyslog.d/tls/$(hostname).key" && echo tls-in-place
+    expect: {rc: 0, stdout: "\\Aactive\\ntls-in-place\\n\\Z"}
