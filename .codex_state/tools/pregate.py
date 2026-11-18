@@ -155,11 +155,16 @@ def declared_classes(manifest: str) -> set[str]:
 
 
 def declared_packages(manifest: str) -> set[str]:
-    """Titles of `package { 'x': }` / `package { ['x', 'y']: }` resources (literal titles only)."""
+    """Titles of `package { 'x': }` / `package { ['x', 'y']: }` resources, and of `package { $v: }` where the same
+    manifest assigns `$v` one literal string or list (openvpn_domain's `$dependencies`, 2026-11-17). Literals only."""
     code = strip_comments(manifest)
     names: set[str] = set()
     for title in re.findall(r"package\s*\{\s*(\[[^\]]*\]|'[^']+'|\"[^\"]+\")\s*:", code):
         names.update(re.findall(r"['\"]([^'\"$]+)['\"]", title))
+    for var in re.findall(r"package\s*\{\s*\$([a-z_][a-z0-9_]*)\s*:", code):
+        assigned = re.findall(rf"\${var}\s*=\s*(\[[^\]]*\]|'[^']+'|\"[^\"]+\")", code)
+        if len(assigned) == 1:  # one literal assignment: unambiguous
+            names.update(re.findall(r"['\"]([^'\"$]+)['\"]", assigned[0]))
     return names
 
 

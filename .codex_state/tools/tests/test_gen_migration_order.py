@@ -240,7 +240,8 @@ def test_repo_node_fixtures_exist_for_the_planned_classes(gen):
     assert rows["node_base_desktop"].node_fixture == "puppet_agent_standin"  # Service['puppet'] without a daemon
     assert rows["openvpn_nm_connection"].node_fixture == "p8test_vpn_ca"  # the CA file it requires, never declares
     assert rows["mount_shares_desktop"].node_fixture == "p8test_desktop_home"  # the user's ~/Desktop, never declared
-    assert sum(1 for r in rows.values() if r.node_fixture) == 11
+    assert rows["openvpn_domain"].node_fixture == "p8test_domain_dns"  # the lab domain's DNS (the DC p8lab-dc)
+    assert sum(1 for r in rows.values() if r.node_fixture) == 12
 
 
 def test_expected_run2_events_parse(gen):

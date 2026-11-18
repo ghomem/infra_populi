@@ -502,3 +502,13 @@ def test_a_hash_inside_a_string_is_not_a_comment():
                 "  file { '/etc/x': }\n  package { 'p': }\n}\n")
     found = pregate.resource_types(manifest)
     assert {"file", "package"} <= found
+
+
+
+def test_declared_packages_resolves_a_variable_assigned_one_literal_list():
+    # openvpn_domain: $dependencies = ['samba', ...]; package { $dependencies: } (2026-11-17)
+    text = "$deps = ['samba','winbind']\n  package { $deps:\n    ensure => installed,\n  }\n"
+    assert pregate.declared_packages(text) == {"samba", "winbind"}
+    twice = "$deps = ['a']\nif $x { $deps = ['b'] }\npackage { $deps: }\n"  # ambiguous: two assignments
+    assert pregate.declared_packages(twice) == set()
+    assert pregate.declared_packages("package { $from_hiera: }\n") == set()  # no literal assignment
