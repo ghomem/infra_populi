@@ -1,0 +1,33 @@
+{
+ "class": "ssl_base",
+ "at": "20261118T212404Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-key-is-private-and-matches-the-certificate: ssl_base.pp:77-78 put the non-Let's-Encrypt key at ${ssl_private_dir}/${myprefix}.key (/etc/ssl/private/p8test.key on Ubuntu, fixture prefix p8test) and 85-92 set mode 0600 with owner/group at their root defaults; the probe reads exactly that path, root:root 600, and that its public key is the bundle's first (leaf) certificate's; the mismatch swaps only the compared certificate for the issuer's, which must change the verdict",
+  "the-bundle-is-the-leaf-then-its-issuer: ssl_base.pp:79-81 name the bundle ${ssl_certs_dir}/${myprefix}.${myservice}.bundle.crt (/etc/ssl/certs/p8test.nginx.bundle.crt), 100-107 mode 0644 root:root, 109-119 order the .crt fragment 01 before the .intermediate.crt fragment 02; the probe checks 2 certificates, CN p8test.invalid then the throwaway CA, and the first verifies against the second; the mismatch changes only the trust anchor to the system CA bundle, which did not sign the leaf, so verify must fail",
+  "the-agent-run-restores-both-and-restarts-the-service-once: ssl_base.pp:10 (header: service restarted on certificate change) and 100-107 (concat notify => Service[$myservicename]) plus 85-92 (key file notify); after the drift check appended a line to both files, the effect sees neither drift line, a new nginx MainPID and exactly one 'Started nginx.service' after the noted cursor, which is Puppet's one coalesced refresh for two notifying changes; the read-only effect shows the result, the action is 'true'; the setup check's mutates declares all it changes (/run/p8test-ssl/before, the two appends)",
+  "purpose gap: Covered on Ubuntu with the default (non-Let's-Encrypt) fixture: the key at /etc/ssl/private/p8test.key 0600 matching the leaf, the bundle 0644 leaf-then-issuer that verifies, and one nginx restart for a key plus bundle change (all pass in my run 20261118T212139Z-reviewer). The RedHat row (lifted_by rhel9) is honest, and the owner/group/warning-notify row is honest: at cf477c6 the only consumers, ssl_nginx, ssl_nginx_domain and ssl_postfix, pass no owner or group and only nginx or postfix. GAP: the Let's Encrypt row's reason is not true. It says 'no check set in this repository checks these file names or their order', but .codex_state/checks/nginx_frontend_mail.yml (fixture letsencrypt_certificate true, which reaches ssl_base through ssl_nginx_domain at nginx_frontend_mail.pp:26-29) check smtps-and-imaps-serve-the-frontend-certificate reads /etc/ssl/certs/p8test.nginx.bundle.pem (lines 77-80) and requires 465/993 to serve its first certificate. nginx loads p8test-key.pem against that first certificate, so that check partly exercises the Let's Encrypt file names and the leaf-first order. What no set checks is the -chain.pem second certificate, the modes and owners, and the restart. The row needs to say what is covered elsewhere and what is not, neither overclaiming (round 1) nor underclaiming (now). Its single-fixture reason, and that the lab's ubuntu node could lift the rest, are true."
+ ],
+ "review_s": 145.8,
+ "check_file_sha256": "d58a6fd74067c1ecba0a1e880d8ccb43b672c7929bd5755e01c362f1c4508883",
+ "reviewer_result": "20261118T212139Z-reviewer",
+ "author_result": "20261118T211943Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "fdab5e77-cca4-48a6-8004-0e04a6086807",
+   "boot_id_at_end": "fdab5e77-cca4-48a6-8004-0e04a6086807",
+   "fresh": true
+  }
+ }
+}
