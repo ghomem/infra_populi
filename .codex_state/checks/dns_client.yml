@@ -1,13 +1,19 @@
 # Phase 3 checks for puppet_infrastructure::dns_client (class; node ubuntu). Fixture (params, never committed; changed
-# 2026-11-18 for these checks): nameservers [10.0.2.3], the VirtualBox NAT resolver every lab VM reaches. The clean node
-# has a static /etc/resolv.conf naming 1.1.1.1 and 8.8.8.8, so the fixture's single, different server makes the class's
-# effect visible. saz-resolv_conf 8.0.1 renders the file. Probes read the node's own resolver and query through it.
+# 2026-11-18 for these checks): nameservers [10.0.2.3, 1.1.1.1], the VirtualBox NAT resolver every lab VM reaches,
+# then a public one. The clean node has a static /etc/resolv.conf naming 1.1.1.1 and 8.8.8.8, so the fixture's list,
+# order and exclusion of 8.8.8.8 make the class's effect visible.
+# 2026-11-18 purpose correction (review 20261118T114959Z): the single-server fixture could not show order or "only
+# those", and the empty-list guard was not listed; the fixture now has two servers and the guard is listed below. saz-resolv_conf 8.0.1 renders the file. Probes read the node's own resolver and query through it.
 class: dns_client
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
   minutes: 2
   notes: "About 10:29Z to 10:31Z 2026-11-18 (scratch file times), outside the worktree while firewall_secure's review ran (baseline class and saz-resolv_conf 8.0.1's template read).; the drift-and-restore pair added at 11:43:54Z in one command after the rsyslog_base purpose review"
+uncovered:
+  - what: an empty list (`if ($nameservers != [])`, line 8) leaves the node's resolver untouched
+    why: one set holds one fixture, and this one sets servers; the empty-list variant is a second fixture on the same node
+    lifted_by: ubuntu
 purpose: >-
   Points the node's resolver at the given DNS servers, and only those, and keeps it so, so that names resolve through them.
 node_agent:
@@ -21,12 +27,12 @@ checks:
       - {path: manifests/dns_client.pp, lines: "8-12", text: "nameservers => $nameservers"}
     probe: |
       grep -E '^nameserver ' /etc/resolv.conf
-    expect: {rc: 0, stdout: "\\Anameserver 10\\.0\\.2\\.3\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Anameserver 10\\.0\\.2\\.3\\nnameserver 1\\.1\\.1\\.1\\n\\Z"}
 
   - id: names-resolve-through-the-given-server
     what: >-
       a lookup through the system resolver configuration (dig without a server) is answered, and the answer comes from
-      the given server
+      the first given server
     control: negative
     derived_from:
       - {path: manifests/dns_client.pp, lines: "1-2", text: "# This class configures the DNS servers for the client"}
@@ -53,10 +59,10 @@ checks:
       echo 'nameserver 9.9.9.9' >> /etc/resolv.conf
     effect: |
       grep -E '^nameserver ' /etc/resolv.conf
-    expect: {rc: 0, stdout: "\\Anameserver 10\\.0\\.2\\.3\\nnameserver 9\\.9\\.9\\.9\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Anameserver 10\\.0\\.2\\.3\\nnameserver 1\\.1\\.1\\.1\\nnameserver 9\\.9\\.9\\.9\\n\\Z"}
 
   - id: the-next-agent-run-keeps-only-the-given-servers
-    what: after the node's agent run, /etc/resolv.conf names only the given server again
+    what: after the node's agent run, /etc/resolv.conf names only the given servers again, in order
     control: negative
     derived_from:
       - {path: manifests/dns_client.pp, lines: "8-12", text: "class { 'resolv_conf':"}
@@ -65,5 +71,5 @@ checks:
       true
     effect: |
       grep -E '^nameserver ' /etc/resolv.conf
-    expect: {rc: 0, stdout: "\\Anameserver 10\\.0\\.2\\.3\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Anameserver 10\\.0\\.2\\.3\\nnameserver 1\\.1\\.1\\.1\\n\\Z"}
 
