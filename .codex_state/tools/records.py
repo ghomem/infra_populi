@@ -16,7 +16,7 @@
                                         boot of the LATEST revert with no agent run in between, else 1.
   records.py header-check <class>       exit 0 if the manifest gained a migration header naming its
                                         module dependencies (or `none`) versus the baseline, else 1.
-  records.py tracker-set <class> [--defect SHORT] [--local-change SHORT] [--mock-apply SHORT]
+  records.py tracker-set <class> [--defect SHORT] [--mock-apply SHORT] [--shrink-local-changes]
       Rewrites the class's migrated_classes.txt line to `<class> Done [from: <baseline>]` or
       `<class> Done [from: <baseline>; upstream defect fixed: SHORT]` (HQ checkpoint-1 ruling 3).
   records.py code-unchanged <class>     exit 0 if the class's code equals HEAD's (comment-only change).
@@ -243,9 +243,25 @@ def cmd_header_check(cls: str) -> int:
     return 0
 
 
+def local_marker(cls: str, current: str, rows: list[int], shrink: bool) -> str:
+    """The `local changes` marker for the class's rows in rules/local_changes.md (HQ batch-12 ruling 4): the row
+    numbers, generated, so the marker grows with the list. It never loses a number without `shrink`. A legacy
+    free-text marker is replaced by the numbers."""
+    listed = generator.local_change_numbers(current)
+    lost = [n for n in listed or [] if n not in rows]
+    if lost and not shrink:
+        raise SystemExit(f"ERROR: the tracker marker for {cls} lists {', '.join(f'#{n}' for n in lost)}, which "
+                         "rules/local_changes.md no longer gives the class; a marker shrinks only with "
+                         "--shrink-local-changes")
+    if current and listed is None and not rows and not shrink:
+        raise SystemExit(f"ERROR: the tracker carries `local change: {current}` for {cls} but rules/local_changes.md "
+                         "has no row for it; removing the marker needs --shrink-local-changes")
+    return ", ".join(f"#{n}" for n in rows)
+
+
 def tracker_text(text: str, cls: str, base_name: str, defect: str, mock: str = "", local: str = "") -> str:
     marker = (f"[from: {base_name}" + (f"; upstream defect fixed: {defect}" if defect else "")
-              + (f"; local change: {local}" if local else "") + (f"; mock-apply: {mock}" if mock else "") + "]")
+              + (f"; local changes: {local}" if local else "") + (f"; mock-apply: {mock}" if mock else "") + "]")
     new_line = f"{cls} Done {marker}"
     want = generator.TrackerEntry(cls, True, base_name, defect, mock, local_change=local)
     if generator.parse_tracker_line(new_line) != want:
@@ -266,25 +282,25 @@ def tracker_text(text: str, cls: str, base_name: str, defect: str, mock: str = "
 def cmd_tracker_set(cls: str, argv: list[str]) -> int:
     defect = argv[argv.index("--defect") + 1].strip() if "--defect" in argv else ""
     mock = argv[argv.index("--mock-apply") + 1].strip() if "--mock-apply" in argv else ""
-    local = argv[argv.index("--local-change") + 1].strip() if "--local-change" in argv else ""
+    if "--local-change" in argv:
+        raise SystemExit("ERROR: --local-change is gone (HQ batch-12 ruling 4): the marker lists the class's rows of "
+                         "rules/local_changes.md and is generated on every record")
+    shrink = "--shrink-local-changes" in argv
     fixture = generator.parse_plan().get(cls)
     standin = bool(fixture and fixture.node_fixture) and fixture.node_fixture not in review_class.test_asset_fixtures()
     if bool(mock) != standin:
         raise SystemExit(f"ERROR: --mock-apply is required exactly when the plan gives {cls} a stand-in node_fixture "
                          f"(plan: {fixture.node_fixture if fixture else None!r}; test assets: rules/test_asset_fixtures.txt)")
-    if local and review_class.local_change_entry(cls) is None:
-        raise SystemExit(f"ERROR: --local-change needs a row for {cls} in .codex_state/rules/local_changes.md (policy B)")
     current = generator.read_tracker(TRACKER).get(cls)
+    local = local_marker(cls, current.local_change if current is not None else "",
+                         review_class.local_change_numbers(cls), shrink)
     if current is not None and current.defect_fixed and current.defect_fixed != defect:
         # 2026-11-17: a --fix without --defect silently dropped linux_policies_user's ruled-defect marker
         raise SystemExit(f"ERROR: the tracker carries `upstream defect fixed: {current.defect_fixed}` for {cls}; repeat "
                          f"--defect \"{current.defect_fixed}\" (a different marker needs a ruled upstream_defects.md change)")
     base_name = baseline.for_class(cls).name
-    if current is not None and current.local_change and current.local_change != local:
-        raise SystemExit(f"ERROR: the tracker carries `local change: {current.local_change}` for {cls}; repeat "
-                         f"--local-change \"{current.local_change}\"")
     TRACKER.write_text(tracker_text(TRACKER.read_text(encoding="utf-8"), cls, base_name, defect, mock, local))
-    extra = (f"; upstream defect fixed: {defect}" if defect else "") + (f"; local change: {local}" if local else "") \
+    extra = (f"; upstream defect fixed: {defect}" if defect else "") + (f"; local changes: {local}" if local else "") \
         + (f"; mock-apply: {mock}" if mock else "")
     print(f"TRACKER {cls} Done [from: {base_name}{extra}]")
     return 0

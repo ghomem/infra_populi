@@ -197,6 +197,19 @@ def local_change_entry(cls: str, path: Path | None = None) -> str | None:
     return " | ".join(rows) or None
 
 
+def local_change_numbers(cls: str, path: Path | None = None) -> list[int]:
+    """The numbers of the class's rows in rules/local_changes.md, in file order (HQ batch-12 ruling 4)."""
+    path = path or STATE / "rules" / "local_changes.md"
+    if not path.is_file():
+        return []
+    out = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if line.startswith("|") and len(cells) >= 3 and cells[1] == cls and cells[0].isdigit():
+            out.append(int(cells[0]))
+    return out
+
+
 def defect_entry(cls: str, path: Path | None = None) -> dict | None:
     """The class's entry in .codex_state/upstream_defects.md: {'status', 'change'} or None."""
     path = path or STATE / "upstream_defects.md"
@@ -475,9 +488,14 @@ def run_checks(cls: str, harness: bool) -> dict:
         if entry is not None and entry.done and entry.local_change:
             out["local_change"] = entry.local_change
             row_text = local_change_entry(cls)
+            listed = generator.local_change_numbers(entry.local_change)
+            rows = local_change_numbers(cls)
             if row_text is None:
-                rec.append(f"marker says `local change: {entry.local_change}` but rules/local_changes.md has no row "
+                rec.append(f"marker says `local changes: {entry.local_change}` but rules/local_changes.md has no row "
                            "for the class")
+            elif listed != rows:
+                rec.append(f"marker lists `{entry.local_change}` but rules/local_changes.md has rows "
+                           f"{', '.join(f'#{n}' for n in rows)} for the class (HQ batch-12 ruling 4: generated numbers)")
             else:
                 out["local_change_row"] = row_text
         if entry is not None and entry.done and entry.from_ref == base.name and entry.defect_fixed:

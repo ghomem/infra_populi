@@ -89,8 +89,10 @@ class MigrationCommit:
 @dataclass(frozen=True)
 class TrackerEntry:
     """One migrated_classes.txt line. Marker grammar (HQ checkpoint-1 ruling 3):
-    `[from: <ref>]` or `[from: <ref>; upstream defect fixed: <short>]`, then optionally `; local change: <short>`
-    (a purpose fix under policy B, HQ 2026-11-18, listed in rules/local_changes.md) and `; mock-apply: <short>`."""
+    `[from: <ref>]` or `[from: <ref>; upstream defect fixed: <short>]`, then optionally `; local changes: #N[, #M...]`
+    (purpose fixes under policy B, HQ 2026-11-18: the numbers of the class's rows in rules/local_changes.md, generated
+    by records.py, HQ batch-12 ruling 4; the legacy free-text `; local change: <short>` still parses) and
+    `; mock-apply: <short>`."""
 
     name: str
     done: bool
@@ -302,7 +304,7 @@ TRACKER_LINE = re.compile(
     r"(?:(?P<name>[A-Za-z0-9_]+)(?:(?P<done> Done)| Retired \[reason: (?P<retired>[^\]\[]+?)\])?"
     r"|Done (?P<name2>[A-Za-z0-9_]+))"
     r"(?: \[from: (?P<ref>[A-Za-z0-9._-]+)(?:; upstream defect fixed: (?P<defect>[^\]\[;]+?))?"
-    r"(?:; local change: (?P<local>[^\]\[;]+?))?"
+    r"(?:; local changes?: (?P<local>[^\]\[;]+?))?"
     r"(?:; mock-apply: (?P<mock>[^\]\[;]+?))?\])?"
 )
 
@@ -889,3 +891,13 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+LOCAL_NUMBERS = re.compile(r"#(\d+)(?:, #(\d+))*")
+
+
+def local_change_numbers(marker: str) -> list[int] | None:
+    """The row numbers a `local changes: #N, #M` marker lists; None for an empty or legacy free-text marker."""
+    if not marker or not LOCAL_NUMBERS.fullmatch(marker):
+        return None
+    return [int(n) for n in re.findall(r"#(\d+)", marker)]

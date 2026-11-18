@@ -6,9 +6,11 @@
 # tracker, and the standing composite compiles still match their expectations. Then it writes the
 # tracker marker, commits, regenerates the order file, commits that, and pushes.
 #
-# Usage: record_green.sh <class> [--defect "<short>"] [--local-change "<short>"] [--mock-apply "<short>"] [--fix "<what>"] [--no-push]
-#   --local-change  marker `; local change: <short>` — a purpose fix under policy B (HQ 2026-11-18); needs the class's
-#                 row in .codex_state/rules/local_changes.md (the reviewer allows exactly that change).
+# Usage: record_green.sh <class> [--defect "<short>"] [--mock-apply "<short>"] [--fix "<what>"] [--shrink-local-changes] [--no-push]
+#   The marker `; local changes: #N[, #M]` is generated on every record from the class's rows in
+#   .codex_state/rules/local_changes.md (policy B purpose fixes; HQ batch-12 ruling 4): it grows with the list, and
+#   the reviewer allows exactly the listed changes.
+#   --shrink-local-changes  lets the generated marker lose a number (a row removed); without it a shrink is refused.
 #   --mock-apply  marker `; mock-apply: <short>` — required exactly when the plan gives the class a node_fixture
 #                 (HQ 2026-10-27 ruling 7: GREEN on synthetic service paths; behaviour unverified).
 #   --defect   tracker marker `[from: <baseline>; upstream defect fixed: <short>]` (HQ ck1 ruling 3);
@@ -35,12 +37,13 @@ refuse() { echo "RECORD REFUSED: $*" >&2; exit 1; }
 CLS="${1#puppet_infrastructure::}"
 shift
 [[ "$CLS" =~ ^[a-z][a-z0-9_]*$ ]] || refuse "invalid class name '${CLS}'"
-DEFECT="" MOCK="" FIX="" LOCAL="" PUSH=1
+DEFECT="" MOCK="" FIX="" SHRINK=0 PUSH=1
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --defect) DEFECT="${2:-}"; [[ -n "$DEFECT" ]] || refuse "--defect needs a short description"; shift 2 ;;
     --mock-apply) MOCK="${2:-}"; [[ -n "$MOCK" ]] || refuse "--mock-apply needs a short description"; shift 2 ;;
-    --local-change) LOCAL="${2:-}"; [[ -n "$LOCAL" ]] || refuse "--local-change needs a short description"; shift 2 ;;
+    --local-change) refuse "--local-change is gone: the marker is generated from .codex_state/rules/local_changes.md (HQ batch-12 ruling 4)" ;;
+    --shrink-local-changes) SHRINK=1; shift ;;
     --fix) FIX="${2:-}"; [[ -n "$FIX" ]] || refuse "--fix needs a short description"; shift 2 ;;
     --no-push) PUSH=0; shift ;;
     *) refuse "unknown argument '$1'" ;;
@@ -96,7 +99,7 @@ fi
 tracker_args=()
 [[ -z "$DEFECT" ]] || tracker_args+=(--defect "$DEFECT")
 [[ -z "$MOCK" ]] || tracker_args+=(--mock-apply "$MOCK")
-[[ -z "$LOCAL" ]] || tracker_args+=(--local-change "$LOCAL")
+[[ "$SHRINK" -eq 0 ]] || tracker_args+=(--shrink-local-changes)
 "${RECORDS[@]}" tracker-set "$CLS" "${tracker_args[@]}" || refuse "tracker marker rejected"
 for path in "${allowed[@]}"; do
   if [[ -n "$(git status --porcelain -- "$path")" ]]; then git add -- "$path"; fi

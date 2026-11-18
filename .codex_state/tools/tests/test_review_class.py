@@ -385,5 +385,33 @@ def test_local_change_rows_and_test_asset_fixtures(tmp_path):
 def test_tracker_text_writes_a_local_change_marker():
     import records
     out = records.tracker_text("rsyslog_base Done [from: release-0.9.10]\n", "rsyslog_base", "release-0.9.10", "",
-                               local="restarts on TLS file changes")
-    assert out == "rsyslog_base Done [from: release-0.9.10; local change: restarts on TLS file changes]\n"
+                               local="#1")
+    assert out == "rsyslog_base Done [from: release-0.9.10; local changes: #1]\n"
+
+
+def test_local_change_numbers_are_the_class_rows(tmp_path):
+    # HQ batch-12 ruling 4: the tracker marker lists the numbers of the class's rows in rules/local_changes.md
+    lc = tmp_path / "local_changes.md"
+    lc.write_text("| # | class | change | check | reviewer | date |\n|---|---|---|---|---|---|\n"
+                  "| 3 | sysmon_base | net-tools | a | b | 2026-11-18 |\n| 4 | sysmon_base | lock notice | a | b | 2026-11-18 |\n"
+                  "| 5 | firewall_secure_extra | blacklist | a | b | 2026-11-18 |\n")
+    assert rc.local_change_numbers("sysmon_base", lc) == [3, 4]
+    assert rc.local_change_numbers("hashman_web", lc) == []
+    assert rc.local_change_numbers("x", tmp_path / "missing.md") == []
+
+
+def test_local_marker_grows_and_never_shrinks_without_the_flag():
+    import records
+    assert records.local_marker("c", "", [3], False) == "#3"
+    assert records.local_marker("c", "#3", [3, 4], False) == "#3, #4"
+    with pytest.raises(SystemExit, match="shrinks only with --shrink-local-changes"):
+        records.local_marker("c", "#3, #4", [3], False)
+    assert records.local_marker("c", "#3, #4", [3], True) == "#3"
+
+
+def test_local_marker_replaces_legacy_text_and_guards_its_removal():
+    import records
+    assert records.local_marker("c", "net-tools installed for the connection checks", [3, 4], False) == "#3, #4"
+    with pytest.raises(SystemExit, match="needs --shrink-local-changes"):
+        records.local_marker("c", "backend bound to 127.0.0.1", [], False)
+    assert records.local_marker("c", "backend bound to 127.0.0.1", [], True) == ""

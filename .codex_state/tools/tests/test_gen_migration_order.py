@@ -343,3 +343,13 @@ def test_local_change_marker_grammar(gen):
     assert e.local_change == "restarts on TLS file changes" and e.defect_fixed == "" and e.mock_apply == ""
     e = gen.parse_tracker_line("x Done [from: release-0.9.10; upstream defect fixed: d; local change: l; mock-apply: m]")
     assert (e.defect_fixed, e.local_change, e.mock_apply) == ("d", "l", "m")
+
+
+def test_local_changes_marker_lists_row_numbers(gen):
+    # HQ batch-12 ruling 4: `; local changes: #N, #M`, generated; the legacy free-text form still parses
+    e = gen.parse_tracker_line("sysmon_base Done [from: release-0.9.10; local changes: #3, #4]")
+    assert e.local_change == "#3, #4" and gen.local_change_numbers(e.local_change) == [3, 4]
+    e = gen.parse_tracker_line("x Done [from: release-0.9.10; upstream defect fixed: d; local changes: #5; mock-apply: m]")
+    assert (e.defect_fixed, e.local_change, e.mock_apply) == ("d", "#5", "m")
+    assert gen.local_change_numbers("restarts on TLS file changes") is None
+    assert gen.local_change_numbers("") is None
