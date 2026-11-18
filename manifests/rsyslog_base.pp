@@ -1,4 +1,4 @@
-# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Puppet 8 migration: release-0.9.10 manifest, plus one local change (policy B, HQ batch-10 ruling 5; rules/local_changes.md #1): rsyslog also subscribes to the three TLS files, so a renewed certificate restarts it, as the comment on the service says.
 # Module dependencies: none.
 # Shared rsyslog setup for both server and client nodes.
 # Installs rsyslog + GnuTLS and copies Puppet TLS material so rsyslog can use it.
@@ -78,6 +78,6 @@ class puppet_infrastructure::rsyslog_base (
     ensure    => running,
     enable    => true,
     provider  => 'systemd',
-    subscribe => File['/etc/rsyslog.d/tls'],
+    subscribe => File['/etc/rsyslog.d/tls', '/etc/rsyslog.d/tls/ca.pem', "/etc/rsyslog.d/tls/${certname}.pem", "/etc/rsyslog.d/tls/${certname}.key"],
   }
 }
