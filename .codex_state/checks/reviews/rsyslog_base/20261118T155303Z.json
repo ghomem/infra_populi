@@ -1,0 +1,33 @@
+{
+ "class": "rsyslog_base",
+ "at": "20261118T155303Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "rsyslog-and-its-tls-driver-are-installed-and-running: baseline 10-12 installs rsyslog + rsyslog-gnutls and 75-80 declares service rsyslog ensure running, enable true; the probe reads both packages' dpkg status, the gtls driver rsyslog-gnutls ships, is-active and is-enabled, so the expected values are what those lines produce",
+  "rsyslog-is-stopped: 75-80 ensure => running; the action (systemctl stop syslog.socket rsyslog) is a drift setup that mutates declares in full (the socket is stopped too so that only the class can start rsyslog again), and the read-only effect (is-active = inactive, rc 3) shows the action's result rather than the action's own output; the next agent run corrected it (Service[rsyslog] ensure stopped->running)",
+  "the-tls-files-are-the-nodes-puppet-identity: 32-35 resolve ssldir to the params fixture override /etc/puppetlabs/puppet/ssl, 49-71 copy certs/ca.pem, certs/<certname>.pem and private_keys/<certname>.pem to /etc/rsyslog.d/tls owned syslog:syslog with 0644/0644/0600 and the dir 0755 (41-47); the probe compares exactly those bytes and modes (certname = the node's host name, puppet8node) and openssl-verifies the Puppet cert against the copied Puppet CA, which signed it; the mismatch varies only the CA file (the system bundle, which did not sign the cert), so the verdict must change, and it failed after apply as required",
+  "purpose covered: Purpose (shared rsyslog base: rsyslog + GnuTLS installed and running, the node's Puppet CA/cert/key copied where the syslog user rsyslog drops to can read them, rsyslog kept running and restarted on TLS changes) matches the baseline header comments and code. Checks test: packages + gtls driver + running/enabled; the copied files byte-identical to the Puppet identity with owner/modes and a verifying chain; rsyslog actually dropping to syslog, syslog able to read the key and nobody not (mismatch); a stopped rsyslog started by the next agent run; TLS directory drift corrected and rsyslog restarted (new PID); a TLS file change (renewal) restored and rsyslog restarted exactly once (journal start count, under local change #1, which subscribes the service to the three files; agent run showed Service refresh triggered from the ca.pem change). Uncovered, honestly stated: the RedHat syslog user/group (uid/gid 0, lines 14-28), lifted by rhel9. Not exercised and stated in the file header: the default ssldir /var/lib/puppet/ssl (pre-AIO path that does not exist on the OpenVox node), so the params override is used. Use of the material by a TLS client/server is left to rsyslog_client/rsyslog_server sets, which is outside this class. Reviewer run 20261118T155022Z: CLEAN all 9 negatives failed, APPLIED ALL_PASS, no findings."
+ ],
+ "review_s": 161.8,
+ "check_file_sha256": "d954f5dcae58bb7e3f59761152052dbf9a6446c579991770a7ddaddbd7cd600b",
+ "reviewer_result": "20261118T155022Z-reviewer",
+ "author_result": "20261118T153820Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "d23c6f0f-260f-4a49-a265-90db70a13532",
+   "boot_id_at_end": "d23c6f0f-260f-4a49-a265-90db70a13532",
+   "fresh": true
+  }
+ }
+}
