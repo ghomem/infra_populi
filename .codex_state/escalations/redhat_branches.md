@@ -53,3 +53,24 @@ migration defects: the reviewer found the migrated code faithful, and neither fa
   3. A ruled code change: require Class['puppet_infrastructure::extra_packages_el'] on RedHat. This changes behaviour.
 - **Recommendation:** 1 (it changes no code; the dependency is real on RedHat). 0 production node statements declare
   hello_world_flask_common (fleet_class_usage.md).
+
+## Resolution (HQ 2026-11-18 ruling A2): 16 of 16 PASS on rhel9
+- **The ruling:** no class changes. The plan's required_base becomes node-kind-aware, as production composes these
+  classes under node_base. Its condition was to stop and show HQ the line if a class's own code forced the dependency
+  regardless of OS. Neither class does:
+  - sysmon_base's `/usr/lib64/nagios/plugins/check_cpu.py` and `check_mem.pl` require only
+    `Class['puppet_infrastructure::packages_base']`.
+  - hello_world_flask_common declares its two packages and names no repository.
+- **Built (ffda52e):** required_base entries take an OS-family qualifier, `<class> [Debian]` / `<class> [RedHat]`. The
+  harness, the reviewer, pregate and orientation resolve them for the target node's family.
+  - sysmon_base: `filesystem_base, packages_base, filesystem_lib64 [Debian]`;
+  - hello_world_flask_common and hello_world_flask (which includes it): `filesystem_base, extra_packages_el [RedHat]`.
+- **Evidence:**
+  - revert-first harness GREEN on rhel9 for both classes (2026-11-18);
+  - reviewer verdicts per node PASS: `reviews/sysmon_base/nodes/rhel9/20261118T080256Z.json` and
+    `reviews/hello_world_flask_common/nodes/rhel9/20261118T080631Z.json`.
+
+  On Ubuntu nothing changes: the qualified entries resolve to the same lists as before (Debian keeps
+  filesystem_lib64; extra_packages_el is RedHat-only).
+- **Also corrected:** hello_world_flask_common's header named release-0.9.8. It was fixed with `record_green.sh --fix`
+  and re-reviewed.
