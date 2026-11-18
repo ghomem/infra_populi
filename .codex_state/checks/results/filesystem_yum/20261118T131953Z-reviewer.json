@@ -1,0 +1,104 @@
+{
+ "class": "filesystem_yum",
+ "role": "reviewer",
+ "at": "20261118T131953Z",
+ "runner": "31f1134",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "fa07dc7231457a76d65b411043282cd65b0a999e91dfa884ddbb8781247f26d2",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "update-scripts-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 1: cd: /opt/puppet-infrastructure/bin: No such file or directory\nstat: cannot statx 'yum-update-surface.sh': No such file or directory\nstat: cannot statx 'yum-update-dist.sh': No such file or directory\nsha256sum: yum-update-surface.sh: No such file or directory\nsha256sum: yum-update-dist.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-surface-script-brings-the-exposed-packages-up-to-date",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "errors for installed packages: 0\npending rc=100\n",
+   "stderr": "tail: cannot open '/run/p8test-yum/surface.txt' for reading: No such file or directory\nsed: can't read /run/p8test-yum/surface.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-full-update-script-leaves-nothing-to-update",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "pending rc=100\n",
+   "stderr": "cat: /run/p8test-yum/dist.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "sh]/ensure: defined content as '{sha256}bd37299aae40c6109f00a550093d5149266f1f5a4a3b3186a1f2fad514ea8c77'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_yum/File[/opt/puppet-infrastructure/bin/yum-update-dist.sh]/ensure: defined content as '{sha256}70fdcab7adbf19055578358a3b9d1d6b1baf27b7f179eb236175e629d9c60f6e'\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 0.29 seconds\u001b[0m\nRUN1_EVENTS: 10 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795008071'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.22 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::filesystem_yum: 2 concrete resources (+0 defined-type instances)\n  File[/opt/puppet-infrastructure/bin/yum-update-surface.sh]\n  File[/opt/puppet-infrastructure/bin/yum-update-dist.sh]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP filesystem_yum a5ec55cbdb0a\n"
+ },
+ "applied": [
+  {
+   "id": "update-scripts-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "yum-update-surface.sh root 755\nyum-update-dist.sh root 755\nbd37299aae40c6109f00a550093d5149266f1f5a4a3b3186a1f2fad514ea8c77\n70fdcab7adbf19055578358a3b9d1d6b1baf27b7f179eb236175e629d9c60f6e\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-surface-script-brings-the-exposed-packages-up-to-date",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc=0\nerrors for installed packages: 0\npending rc=0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs /opt/puppet-infrastructure/bin/yum-update-surface.sh on the node (yum update -y of openssh-server, openssh, nginx, openssl, ca-certificates, httpd: installed ones are updated, the others are skipped by yum); its output goes to /run/p8test-yum/surface.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-full-update-script-leaves-nothing-to-update",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc=0\npending rc=0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs /opt/puppet-infrastructure/bin/yum-update-dist.sh on the node (yum update -y of every package); the result goes to /run/p8test-yum/dist.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.6,
+ "node": "rhel9",
+ "nodes": {
+  "node": {
+   "kind": "rhel9",
+   "snapshot": "P8LAB_RHEL9_BASELINE_v1",
+   "boot_id": "80f8aabf-2bfa-46d8-a010-6c8144e445f3",
+   "boot_id_at_end": "80f8aabf-2bfa-46d8-a010-6c8144e445f3",
+   "fresh": true
+  }
+ },
+ "duration_s": 323.3
+}
