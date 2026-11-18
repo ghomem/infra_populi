@@ -1,0 +1,98 @@
+{
+ "schema": 1,
+ "class": "node_base",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-18T03:24:41Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "39583cc462e9",
+ "migrate_subject": "P8: migrate puppet_infrastructure::node_base",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 39583cc462e9; 620 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `node_base Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-ntp', '11.2.0'), ('puppet-chrony', '6.0.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 70 catalog events; run 2: 1 event(s) only from expected_run2_events Exec[apt_update] Exec[dnf-makecache] [own: Exec[apt_update], Exec[dnf-makecache]; inherited: none] (judge the header justification); COVERAGE puppet_infrastructure::node_base: 90 concrete resources (+4 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (3 added comment lines: 'release-0.9.10 manifest validated unchanged', module deps puppetlabs-ntp 11.2.0 / puppet-chrony 6.0.0, expected run-2 events); non_comment_changes=0; no baseline comment removed. DIFF B's migrate-commit header listed only Exec[apt_update]; the later header-only extension adding Exec[dnf-makecache] is comment-only.",
+   "Run-2 justification verified independently against baseline cf477c6 manifests/packages_base.pp: node_base (line 52) declares class puppet_infrastructure::packages_base; on RedHat that class declares exec { 'dnf-makecache': command => 'dnf makecache', refreshonly => false } with no unless/onlyif/creates, under the upstream comment 'this line is needed to make sure apt-get update or dnf-makecache runs on each puppet run' - so it fires every agent run by upstream design, not the migration (packages_base at HEAD is also baseline + header only). Exec[apt_update] is the non-RedHat branch (class { 'apt': update => { frequency => 'always' } }) and does not apply on rhel9; run 2 had 1 event, within expected_run2_events."
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 3,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependencies: puppetlabs-ntp 11.2.0 (non-RedHat), puppet-chrony 6.0.0 (RedHat).",
+  "# Expected run-2 events: Exec[apt_update]; Exec[dnf-makecache]. Exec[apt_update] \u2014 node_base declares packages_base, whose `class { 'apt': update => { frequency => 'always' } }` runs apt update on every agent run by upstream design (justified on packages_base). Exec[dnf-makecache] \u2014 the same packages_base declaration runs dnf makecache on every agent run on RedHat (justified on packages_base)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 70,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::node_base: 90 concrete resources (+4 defined-type instances)"
+  ],
+  "revert": {
+   "node": "rhel9",
+   "snapshot": "P8LAB_RHEL9_BASELINE_v1",
+   "total_s": 74.487,
+   "master_check_s": 0.569,
+   "poweroff_s": 1.365,
+   "restore_s": 0.513,
+   "boot_to_ssh_s": 23.287,
+   "apt_update_s": 48.017,
+   "verify_s": 0.736,
+   "nic1_rx_bytes": 135920974
+  },
+  "log": ".codex_state/logs/reviews/node_base.20261118T032002Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": "RUN2_EXPECTED_EVENTS: 1 from Exec[apt_update] Exec[dnf-makecache] [own: Exec[apt_update], Exec[dnf-makecache]; inherited: none] (plan"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "rhel9"
+}
