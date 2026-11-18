@@ -1939,3 +1939,11 @@ snapshot list, record.
 - **Where things stand:** status shows 41 none, 3 stale (the pilot sets, which gained their purpose here), 46
   unjudged, of 90 done. The backfill re-judges them all in batches of 10 under the start rule (D3).
 - **Tests:** 3 new; the pinned verdict shape gains `purpose`.
+
+## 2026-11-18 — Runner: `node_agent`, an agent run on the class's node after a drift-making check (backfill)
+- **Why:** many classes exist to correct drift: purge firewall rules they do not manage, restore a file's content or
+  mode. A behaviour check can show that only if the class runs again after the drift. Probes keep the Puppet ban.
+- **What:** `node_agent: {after: <mutating check id>, why}`. Right after the named mutating check (its action makes the
+  drift), the runner makes one agent run on the class's node, as the harness and the session do. The exit code and
+  changed resources go under `node_agent`; the checks after it judge the correction. 2 tests.
+- **For HQ acceptance** with the other runner capabilities of this round (peer_agent, refreshed peer files).

@@ -856,3 +856,33 @@ def test_a_review_before_the_purpose_judgement_leaves_the_set_unjudged(p3):
     del old["checks"]["purpose"]  # as every review before 2026-11-18 was written
     path.write_text(json.dumps(old))
     assert state_of(p3, CLS)[1:3] == ["unjudged", "the review predates the purpose judgement"]
+
+
+# ------------------------------------------------------------------ node agent run (2026-11-18: drift correction)
+
+def test_a_node_agent_run_follows_its_anchor_and_is_recorded(p3, lab):
+    p3.write(check_set(check("conf", "probe-conf"),
+                       mutating("rogue-rule", action="act-rogue", effect="eff-rogue", mutates="adds an unmanaged rule"),
+                       mutating("rogue-purged", action="true", effect="eff-purged", mutates="none beyond reading"),
+                       node_agent={"after": "rogue-rule", "why": "the class purges what it does not manage on its run"}))
+    p3.probe_rule("probe-conf", FAIL, OK)
+    lab.world["read_stdin"] = True
+    lab.world["ssh"].insert(0, {"match": "act-rogue", "stdout": "", "rc": 0})
+    p3.probe_rule("eff-rogue", FAIL, OK)
+    p3.probe_rule("eff-purged", FAIL, OK)
+    lab.world["ssh"].insert(0, {"match": r"puppet agent -t --detailed-exitcodes", "stdout":
+                                "Notice: /Stage[main]/X/Firewall[9999 rogue]/ensure: removed\nAGENT_RC=2\n"})
+    proc = p3.run("run", CLS)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    record, _ = p3.result()
+    assert record["node_agent"]["rc"] == 2 and len(record["node_agent"]["events"]) == 1
+    sent = [json.loads(l) for l in (lab.calls_path.parent / "calls.jsonl.stdin").read_text().splitlines()]
+    order = [("agent" if "puppet agent" in s[2] else next(m for m in ("act-rogue", "eff-rogue", "eff-purged") if m in s[2]))
+             for s in sent if any(m in s[2] for m in ("act-rogue", "eff-rogue", "eff-purged", "puppet agent"))]
+    assert order == ["eff-rogue", "eff-purged", "act-rogue", "eff-rogue", "agent", "eff-purged"]
+
+
+def test_a_node_agent_needs_a_mutating_anchor(p3):
+    p3.write(check_set(check("conf", "probe-conf"), node_agent={"after": "conf", "why": "x" * 25}))
+    proc = p3.run("validate", CLS)
+    assert proc.returncode == 2 and "node_agent.after must name a mutating check" in proc.stderr

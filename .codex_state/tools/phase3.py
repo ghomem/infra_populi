@@ -86,6 +86,11 @@ Check file .codex_state/checks/<class>.yml:
       # autosign.conf names it), from its own confdir /etc/p8test-agent/<certname> (own ssldir, vardir, rundir), so the
       # peer's identity toward the lab master is untouched. Its exit code and changes are recorded under `peer_agent`;
       # the checks after it judge what it applied. A runner step, never a probe (probes keep the Puppet ban).
+  node_agent: {after: <id of a mutating check>, why: <why an agent run after that change is the evidence>}
+      # NODE AGENT RUN (2026-11-18, the backfill: a class whose purpose includes correcting drift, e.g. purging rules it
+      # does not manage): right after the named mutating check (whose action made the drift), the runner makes one
+      # agent run on the class's node, as the harness does. Its exit code and changes go under `node_agent`; the checks
+      # after it judge whether the drift was corrected. A runner step, never a probe (probes keep the Puppet ban).
 
 Probe rules (validate): the node is the only host — no other host name or address, no ssh/scp/sftp/rsync except to
 the node itself (127.0.0.1/localhost), never Puppet (agent/apply/resource); read-only — no service or package state
@@ -324,6 +329,8 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
         problems += session_problems(cls, data["session"])
     if "peer_agent" in data:
         problems += peer_agent_problems(cls, data["peer_agent"], data)
+    if "node_agent" in data:
+        problems += node_agent_problems(data["node_agent"], data)
     checks = data.get("checks")
     if not isinstance(checks, list) or not checks:
         return problems + ["no checks"], data, raw
@@ -518,6 +525,18 @@ def peer_agent_problems(cls: str, block, data: dict) -> list[str]:
     if "puppet-server" not in node.get("capabilities", []):
         out.append(f"peer_agent: the class's node {node['kind']} lacks the capability 'puppet-server'")
     return out
+
+
+NODE_AGENT_KEYS = {"after", "why"}
+
+
+def node_agent_problems(block, data: dict) -> list[str]:
+    if not isinstance(block, dict) or set(block) != NODE_AGENT_KEYS or len(str(block.get("why", ""))) < 20:
+        return ["node_agent takes after and why (>= 20 characters)"]
+    mutating = [c.get("id") for c in data.get("checks") or [] if isinstance(c, dict) and "mutates" in c]
+    if block["after"] not in mutating:
+        return ["node_agent.after must name a mutating check of the set (the run follows its action)"]
+    return []
 
 
 def peer_agent_run(cls: str, certname: str) -> dict:
@@ -832,6 +851,10 @@ def run_locked(cls: str, data: dict, record: dict, finish) -> int:
         record["applied"].append(r)
         print(f"  {'pass' if r['passed'] else 'FAIL'} {check['id']} (mutating: {check['mutates']}; "
               f"action rc {r['action']['rc']}, judged on the effect)")
+        if data.get("node_agent", {}).get("after") == check["id"]:
+            run = agent_run()
+            record["node_agent"] = run
+            print(f"  node agent run: rc {run['rc']}, {len(run['events'])} changed")
         if data.get("peer_agent", {}).get("after") == check["id"]:
             run = peer_agent_run(cls, data["peer_agent"]["certname"])
             record["peer_agent"] = run
