@@ -1895,3 +1895,29 @@ snapshot list, record.
   - 3 tests.
 - **For HQ acceptance:** a new capability of the behaviour runner, like the peer and session modes. It lets C2's last
   step ("another node accepts the new password after its agent run") be a check.
+
+## 2026-11-18 — Hashman on the master-role node: a local MTA, ubuntu2 v2 with a browser, fresh handover files (C2)
+- **The plan:** hashman_base and hashman_web are tested on node puppetserver.
+  - hashman_web is GREEN there: revert-first, 98 events, run 2 only the expected Notify.
+  - The master gained the node file manifests/nodes/p8lab-puppetserver.pp (the lab nodes' skeleton).
+- **hashman_base needs a local MTA. Its code requires it; hashman_base declares none.**
+  - libhashman/mailutils.py sends every notification through `smtplib.SMTP('127.0.0.1')`, including the team
+    notice after useradd, even with SILENT.
+  - Without an MTA, useradd wrote the user and then died with ConnectionRefusedError, leaving its lock directory
+    /tmp/pp_auth.lock behind. Every later command refused ("could not acquire a lock"), and so would the web page.
+  - The required_base of hashman_base gains postfix_smtp_node, the module's class for sending mail from a node (4
+    direct production declarations). With it, useradd, unlock and printinfo all succeed. The master_fixtures hiera
+    section adds the obviously fake relay keys for p8lab-puppetserver (13 values).
+  - **For Salatiel:** whether production's master is one of postfix_smtp_node's direct declarations is a production
+    read.
+  - The stale lock after a mail failure is a robustness defect of the baseline. It does not stop the purpose while an
+    MTA runs, so it goes to the Phase 5 triage.
+- **ubuntu2 baseline v2 (P8LAB_UBUNTU2_BASELINE_v2):** v1 plus test tooling only, installed once instead of
+  downloaded on every run. nodes.yml points at v2; v1 stays.
+  - pamtester and python3-venv;
+  - /opt/p8test-browser, a venv with playwright 1.64.1 (2026-10-22) and Chromium headless shell 156.0.8078.4 with its
+    system dependencies.
+- **Runner:** peer.files are read again before each mutating peer check, so a file a node action wrote just before
+  reaches the peer. Hashman's admin step on the node produces the initial password the peer's browser needs. 1 test.
+- **For the 26.04 pass:** hashman imports Python's `crypt` (DeprecationWarning on 24.04's 3.12; the module is gone in
+  3.13). On 26.04 it stops the class's purpose.

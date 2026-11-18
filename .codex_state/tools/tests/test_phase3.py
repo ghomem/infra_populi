@@ -793,3 +793,29 @@ def test_the_peer_agent_run_stays_out_of_probes():
     sys.path.insert(0, str(TOOLS))
     import phase3
     assert phase3.probe_problems("timeout 900 /opt/puppetlabs/bin/puppet agent -t --confdir /etc/p8test-agent/x")
+
+
+def test_a_file_a_node_action_writes_reaches_the_next_peer_check(p3, lab, tmp_path):
+    # 2026-11-18 (hashman): the admin's action on the node writes the initial password; the peer's browser needs it
+    labvm = tmp_path / "labvm.sh"
+    labvm.write_text("#!/bin/sh\necho \"labvm $*\" >> \"$(dirname \"$0\")/log\"\n")
+    labvm.chmod(0o755)
+    p3.write(check_set(check("conf", "probe-conf"),
+                       mutating("admin-adds", action="act-admin", effect="eff-admin", mutates="adds the fixture user"),
+                       mutating("peer-uses", action="act-peer", effect="eff-peer", host="peer",
+                                mutates="logs the fixture user in from the peer"),
+                       peer={**PEER, "files": ["/run/p8test-x/initial"]}))
+    p3.probe_rule("probe-conf", FAIL, OK)
+    lab.world["read_stdin"] = True
+    lab.world["ssh"].insert(0, {"match": "act-admin", "stdout": "", "rc": 0})
+    lab.world["ssh"].insert(0, {"match": "act-peer", "stdout": "", "rc": 0})
+    p3.probe_rule("eff-admin", FAIL, OK)
+    p3.probe_rule("eff-peer", FAIL, OK)
+    # clean phase, before the applied phase, before the peer check: empty, empty, then written by the node action
+    lab.world["ssh"].insert(0, {"match": "base64 -w0 /run/p8test-x/initial", "outputs": [
+        {"rc": 0, "stdout": "\n"}, {"rc": 0, "stdout": "\n"}, {"rc": 0, "stdout": "aW5pdGlhbAo=\n"}]})
+    proc = p3.run("run", CLS, P8_PHASE3_LABVM=str(labvm))
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    sent = [json.loads(l) for l in (lab.calls_path.parent / "calls.jsonl.stdin").read_text().splitlines()]
+    act_peer = next(s for s in sent if "act-peer" in s[2])
+    assert "aW5pdGlhbAo=" in act_peer[2] and "/run/p8test-from-node/initial" in act_peer[2]

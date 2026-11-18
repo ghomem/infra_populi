@@ -65,7 +65,8 @@ Check file .codex_state/checks/<class>.yml:
       # PEER node (HQ 2026-11-17 ruling 1, the VPN client): reverted with the node under the same lab lock, powered off
       # after the run. Its probes keep every host rule except that they may name the class node's host-only address
       # (nodes.yml), the only other host they reach. `files` are read from the node (empty in the clean phase) and
-      # handed to every peer probe under /run/p8test-from-node/<basename> (the runner writes them on the peer).
+      # handed to every peer probe under /run/p8test-from-node/<basename> (the runner writes them on the peer); read
+      # again before each mutating peer check, so a file a node action wrote just before reaches the peer.
   session: {user: <p8test* account the applied class creates>, desktop: plasma, why: <why the behaviour needs a login>}
       # DESKTOP SESSION (2026-11-17, HQ batch-8 ruling 5: the KDE checks on kubuntu): for behaviour that a class applies
       # only while the user is logged in (an exec guarded by `who`, the user's session D-Bus). Needs a node with the
@@ -815,6 +816,9 @@ def run_locked(cls: str, data: dict, record: dict, finish) -> int:
                                       "passed": False, "not_run": reason, "rc": None, "stdout": "", "stderr": ""})
             print(f"  SKIP {check['id']} (mutating; {reason})")
             continue
+        if check.get("host") == "peer" and record.get("peer"):
+            # a node action may have just written a handed-over file (2026-11-18: hashman's initial password)
+            fetch_node_files(data["peer"].get("files") or [])
         r = run_probe(check, act=True)
         record["applied"].append(r)
         print(f"  {'pass' if r['passed'] else 'FAIL'} {check['id']} (mutating: {check['mutates']}; "

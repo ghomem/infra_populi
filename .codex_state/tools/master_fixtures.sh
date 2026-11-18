@@ -136,6 +136,9 @@ puppet8node::postfix_smtp_node::relaypass: 'p8test-not-a-secret'
 # postfix_smtp_node looks its relay account up under the node's host name; the rhel9 pass runs it on p8lab-rhel9.
 p8lab-rhel9::postfix_smtp_node::relayuser: 'p8test-relay'
 p8lab-rhel9::postfix_smtp_node::relaypass: 'p8test-not-a-secret'
+# The master-role node p8lab-puppetserver has a local MTA for hashman's mail (HQ 2026-11-18 ruling C2).
+p8lab-puppetserver::postfix_smtp_node::relayuser: 'p8test-relay'
+p8lab-puppetserver::postfix_smtp_node::relaypass: 'p8test-not-a-secret'
 # rsyslog_server does `include puppet_infrastructure::rsyslog_base`, whose default ssldir is the pre-AIO
 # /var/lib/puppet/ssl; the lab's agents keep theirs at the OpenVox default (rsyslog_client passes the same value).
 puppet_infrastructure::rsyslog_base::ssldir_override: '/etc/puppetlabs/puppet/ssl'
