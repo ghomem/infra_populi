@@ -1,0 +1,40 @@
+{
+ "class": "firewall_ipv6_drop",
+ "at": "20261118T165453Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "another-host-cannot-reach-the-node-over-ipv6-but-can-over-ipv4: firewall_ipv6_drop.pp:8-13 declares an ip6tables INPUT rule with proto all and action drop, so ICMPv6 and TCP 22 to the node's link-local address from a peer on the link must both be dropped; the rules are ip6tables-only (header lines 1-2: an IPv6 add-on to firewall_secure), so IPv4 SSH to 192.168.56.20 must still connect. Expect (icmpv6 dropped / ssh over ipv6 dropped / ssh over ipv4 in) is exactly what the lines produce; on the clean node it fails (no handed-over address, and sshd answers on [::]:22)",
+  "the-forward-drop-rule-counted-the-routed-packets: firewall_ipv6_drop.pp:14-19 declares an ip6tables FORWARD drop for all protocols, titled '601 Drop ALL IPv6 - FORWARD'. With forwarding on and an on-link route for 2001:db8:99::/64 on the node, the peer's 5 pings to that prefix go through the node's FORWARD chain and never reach INPUT, so the 601 rule counter must be at least 5. That counter is the direct evidence of the drop and reads the rule by its baseline title; it fails on the clean node, where the rule is absent",
+  "another-host-routes-ipv6-through-the-node: setup for the FORWARD check, cited to lines 14-19. The peer adds a static neighbour entry for the node (the class's INPUT drop also drops neighbour discovery), a ULA source and a route via the node's link-local address, then sends 5 pings. The expect '5 packets transmitted, 0 received' only shows the packets were sent and none came back. By itself it would also hold without the rule (2001:db8:99::1 does not exist), but the set does not rely on it alone: the 601 counter check carries the proof. The declared mutations match the probe exactly",
+  "purpose covered: Purpose (drop all IPv6 in to and forwarded through the node, as an IPv6 add-on to firewall_secure, with IPv4 unaffected) matches the header and the class's only two resources (pp:8-19). The outcomes table maps all three outcomes. 1) the rules' presence and shape: ip6tables -S shows INPUT and FORWARD -j DROP. 2) inbound IPv6 from a real peer on the link (ping, SSH) is dropped while IPv4 SSH gets through. 3) forwarded IPv6: real routed packets from the peer are counted by the 601 FORWARD drop. So the checks exercise the class doing its job from another machine, not only rule presence. Nothing is left uncovered that the lab can exercise: the class declares no OUTPUT rule, no persistence and no parameters; persistence belongs to the firewall base class. My run: clean phase valid (all 5 negatives failed), applied phase ALL_PASS (20261118T165218Z-reviewer.json)"
+ ],
+ "review_s": 155.4,
+ "check_file_sha256": "ae7a3ba98cb961294d02f56c6eac29e046bebe3f4b1d5480abd164a1676ffbce",
+ "reviewer_result": "20261118T165218Z-reviewer",
+ "author_result": "20261118T164910Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "b8e72016-02bf-41bd-8395-c7d510046380",
+   "boot_id_at_end": "b8e72016-02bf-41bd-8395-c7d510046380",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "5a2d005b-dd65-46d4-acdf-cde78549b429",
+   "boot_id_at_end": "5a2d005b-dd65-46d4-acdf-cde78549b429",
+   "fresh": true
+  }
+ }
+}
