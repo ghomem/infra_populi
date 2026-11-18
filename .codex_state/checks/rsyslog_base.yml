@@ -161,17 +161,18 @@ checks:
 
   # 2026-11-18 (HQ batch-10 ruling 5, policy B): the renewal case, formerly uncovered, is a check now. It fails on the
   # baseline (the service subscribes to the directory only) and passes after the local change (rules/local_changes.md).
-  # 2026-11-18 authoring correction (run 4, 20261118T151822Z): the noted time contains a space and was written
-  # unquoted, so sourcing the file failed; the values are quoted now.
+  # 2026-11-18 authoring corrections: run 4 (20261118T151822Z), the noted time was unquoted; run 5
+  # (20261118T152241Z), a one-second --since window counted the previous check's restart. The check now notes rsyslog's
+  # journal cursor and counts starts after it.
   - id: a-tls-file-changes
     what: setup for the next check, the copied CA file changed by hand (as a renewal changes it), with rsyslog's process id and the time noted
     control: negative
     derived_from:
       - {path: manifests/rsyslog_base.pp, lines: "49-55", text: "file { '/etc/rsyslog.d/tls/ca.pem':"}
-    mutates: notes rsyslog's main PID and the time in /run/p8test-rsyslog/before, then appends a comment line to /etc/rsyslog.d/tls/ca.pem on the node
+    mutates: notes rsyslog's main PID and its journal cursor in /run/p8test-rsyslog/before, then appends a comment line to /etc/rsyslog.d/tls/ca.pem on the node
     probe: |
       install -d -m 0700 /run/p8test-rsyslog
-      printf "pid='%s'\nsince='%s'\n" "$(systemctl show -p MainPID --value rsyslog)" "$(date '+%Y-%m-%d %H:%M:%S')" > /run/p8test-rsyslog/before
+      printf "pid='%s'\ncursor='%s'\n" "$(systemctl show -p MainPID --value rsyslog)" "$(journalctl -u rsyslog -n 0 --show-cursor --no-pager -q | sed -n 's/^-- cursor: //p')" > /run/p8test-rsyslog/before
       echo '# p8test drift' >> /etc/rsyslog.d/tls/ca.pem
     effect: |
       grep -c '^# p8test drift$' /etc/rsyslog.d/tls/ca.pem
@@ -194,6 +195,6 @@ checks:
       . /run/p8test-rsyslog/before
       now=$(systemctl show -p MainPID --value rsyslog)
       [ -n "$now" ] && [ "$now" != 0 ] && [ "$now" != "$pid" ] && echo restarted
-      journalctl -u rsyslog --since "$since" --no-pager -q | grep -c 'Started rsyslog.service'
+      journalctl -u rsyslog --after-cursor "$cursor" --no-pager -q | grep -c 'Started rsyslog.service'
     expect: {rc: 0, stdout: "\\Aca-restored\\nrestarted\\n1\\n\\Z"}
 

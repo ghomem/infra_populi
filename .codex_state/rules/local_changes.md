@@ -12,3 +12,4 @@ one reasonable design. Advisor-only file.
 
 | # | class | change (file:line) | check failing before → passing after | reviewer | date |
 |---|---|---|---|---|---|
+| 1 | rsyslog_base | `subscribe => File['/etc/rsyslog.d/tls']` becomes a subscribe to the directory and the three TLS files, ca.pem, `${certname}.pem` and `${certname}.key` (rsyslog_base.pp:79 at the baseline); HQ batch-10 ruling 5 | the-agent-run-restores-the-file-and-restarts-rsyslog-once: FAIL before (results/rsyslog_base/20261118T152601Z-author: the CA restored, 0 rsyslog starts); after: pending | pending | 2026-11-18 |
