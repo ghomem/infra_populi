@@ -1,0 +1,147 @@
+# Phase 3 checks for puppet_infrastructure::firewall_secure (class; node ubuntu; required_base per plan). Fixture
+# (params, never committed): acl [the laptop's host-only address, the harness's SSH source]; ssh_port 22, strict
+# false, strict_purge true and ignore_patterns [] at their defaults; the lab Hiera's firewall::whitelist ['127.0.0.1'].
+# The peer (ubuntu2) is a host on no list: it sees the firewall as any other machine on the network does. Node probes
+# name no other host; peer probes name only the class node's host-only address.
+class: firewall_secure
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 14
+  notes: "Wall clock 10:12Z to 10:26Z 2026-11-18: the class applied once and its live rules read, the peer tests prototyped by hand (5 of 20 burst connections accepted), then written outside the worktree."
+purpose: >-
+  A base firewall: INPUT and FORWARD drop by default, OUTPUT stays open, ICMP and SSH are let in, whitelisted hosts
+  reach SSH freely and other hosts are rate-limited against brute force; rules Puppet does not manage are purged.
+peer:
+  kind: ubuntu2
+  why: what a firewall lets in or drops can only be seen from another machine on the network
+node_agent:
+  after: an-unmanaged-rule-is-added
+  why: the class purges firewall rules it does not manage, which only its next agent run can show
+checks:
+  - id: default-policies-drop-input-and-forward
+    what: INPUT and FORWARD drop by default, OUTPUT accepts
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "49-50", text: "firewallchain { 'INPUT:filter:IPv4':   ensure => present, purge => true, policy => drop }"}
+    probe: |
+      iptables -S | grep -E '^-P (INPUT|FORWARD|OUTPUT) '
+    expect: {rc: 0, stdout: "\\A-P INPUT DROP\\n-P FORWARD DROP\\n-P OUTPUT ACCEPT\\n\\Z"}
+
+  - id: whitelist-is-the-hiera-list-plus-the-acl
+    what: SSH from each whitelisted address (lab Hiera 127.0.0.1, the acl's laptop address) is accepted before any limit
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "31-34", text: "$mylist = unique ( flatten( [ $whitelist, $acl ] ) )"}
+      - {path: manifests/firewall_secure.pp, lines: "82-83", text: "firewall { \"100 SSH whitelist ${ip}\":  chain => 'INPUT', proto  => 'tcp', dport  => $ssh_port, source => $ip,"}
+    probe: |
+      iptables -S INPUT | grep -- '--comment "100 SSH whitelist' | grep -o -E -- '-s [0-9./]+ .*-j ACCEPT$' | sed -E 's/ -p tcp.*//'
+    expect: {rc: 0, stdout: "\\A-s 127\\.0\\.0\\.1/32\\n-s 192\\.168\\.56\\.1/32\\n\\Z"}
+
+  - id: the-running-rules-are-saved-for-the-next-boot
+    what: the saved rule set the boot loads (netfilter-persistent, enabled) equals the running one
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "37", text: "resources { 'firewall': purge => $strict_purge }"}
+      - {path: manifests/firewall_secure.pp, lines: "55", text: "firewall { '000 accept all icmp':"}
+    probe: |
+      systemctl is-enabled netfilter-persistent
+      norm() { grep -v -E '^(#|:)' | sed -E 's/ \[[0-9]+:[0-9]+\]//'; }
+      diff <(iptables-save -t filter | norm) <(norm < /etc/iptables/rules.v4) >/dev/null && echo saved-equals-running
+      grep -c -- '--comment "11[0-7] SSH' /etc/iptables/rules.v4
+    expect: {rc: 0, stdout: "\\Aenabled\\nsaved-equals-running\\n8\\n\\Z"}
+
+  - id: flush-script-installed
+    what: the emergency flush script is installed root-owned 0755 as the module's file
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "21-27", text: "source  => 'puppet:///modules/puppet_infrastructure/iptables/iptables-flush.sh',"}
+      - {path: files/iptables/iptables-flush.sh, sha256: "af2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935"}
+    probe: |
+      stat -c '%U %a' /opt/puppet-infrastructure/bin/iptables-flush.sh
+      sha256sum /opt/puppet-infrastructure/bin/iptables-flush.sh | cut -d' ' -f1
+    expect: {rc: 0, stdout: "\\Aroot 755\\naf2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935\\n\\Z"}
+
+  - id: a-service-the-firewall-does-not-allow-is-listening
+    what: setup for the next check, a TCP service on port 8888 of the node, listening on every address
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "49-50", text: "firewallchain { 'INPUT:filter:IPv4':   ensure => present, purge => true, policy => drop }"}
+    mutates: starts a transient unit p8test-listener (python3 -m http.server 8888 on 0.0.0.0) on the node
+    probe: |
+      systemd-run --unit p8test-listener -q python3 -m http.server 8888 --bind 0.0.0.0
+      sleep 2
+    effect: |
+      ss -ltnH 'sport = :8888' | awk '{print $4}'
+    expect: {rc: 0, stdout: "\\A0\\.0\\.0\\.0:8888\\n\\Z"}
+
+  - id: another-host-gets-icmp-and-ssh-but-not-other-ports
+    what: >-
+      from the peer, a host on no list: ping and an SSH connection get through, a connection to the listening port
+      8888 does not (dropped by the INPUT policy)
+    control: negative
+    host: peer
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "55-58", text: "firewall { '000 accept all icmp':"}
+      - {path: manifests/firewall_secure.pp, lines: "94", text: "firewall { '110 SSH LIMIT_INDIVIDUAL':   chain => 'INPUT', proto => tcp, dport => $ssh_port,"}
+      - {path: manifests/firewall_secure.pp, lines: "49-50", text: "firewallchain { 'INPUT:filter:IPv4':   ensure => present, purge => true, policy => drop }"}
+    mutates: three connection attempts from the peer to the class node (ICMP, TCP 22, TCP 8888); results in /run/p8test-firewall/reach.txt on the peer
+    probe: |
+      install -d -m 0700 /run/p8test-firewall
+      {
+        ping -c2 -W2 -q 192.168.56.20 >/dev/null 2>&1 && echo "icmp in" || echo "icmp dropped"
+        nc -z -w2 192.168.56.20 22 >/dev/null 2>&1 && echo "ssh in" || echo "ssh dropped"
+        nc -z -w2 192.168.56.20 8888 >/dev/null 2>&1 && echo "8888 in" || echo "8888 dropped"
+      } > /run/p8test-firewall/reach.txt
+    effect: |
+      cat /run/p8test-firewall/reach.txt
+    expect: {rc: 0, stdout: "\\Aicmp in\\nssh in\\n8888 dropped\\n\\Z"}
+
+  - id: a-burst-of-new-ssh-connections-is-cut-at-the-limit
+    what: >-
+      20 simultaneous new SSH connections from the peer (not whitelisted): the overall limit (20/min, iptables'
+      default burst of 5) lets 5 through and the rest are dropped
+    control: negative
+    host: peer
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "77-79", text: "$overlim_minute='20'   # overall limit for new connections per minute"}
+      - {path: manifests/firewall_secure.pp, lines: "100", text: "firewall { '116 SSH LIMIT_OVERALL':      chain => 'LIMIT_OVERALL', proto => tcp, dport => $ssh_port, limit => \"${overlim_minute}/min\""}
+      - {path: manifests/firewall_secure.pp, lines: "101", text: "firewall { '117 SSH DROP':               chain => 'LIMIT_OVERALL', proto => tcp, dport => $ssh_port,"}
+    mutates: >-
+      after 61 s (the 60 s recent window of the previous check expires and the limit refills), 20 parallel TCP connects
+      from the peer to the class node's port 22; counts in /run/p8test-firewall/burst.txt on the peer
+    probe: |
+      install -d -m 0700 /run/p8test-firewall
+      sleep 61
+      for i in $(seq 20); do (nc -z -w2 192.168.56.20 22 >/dev/null 2>&1 && echo in || echo dropped) & done > /run/p8test-firewall/burst.raw
+      wait
+      sort /run/p8test-firewall/burst.raw | uniq -c | awk '{print $2, $1}' > /run/p8test-firewall/burst.txt
+    effect: |
+      cat /run/p8test-firewall/burst.txt
+    expect: {rc: 0, stdout: "\\Adropped 15\\nin 5\\n\\Z"}
+
+  - id: an-unmanaged-rule-is-added
+    what: setup for the purge check, a rule Puppet does not manage added to INPUT by hand
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "37", text: "resources { 'firewall': purge => $strict_purge }"}
+    mutates: appends `-A INPUT -s 10.255.255.1/32 -m comment --comment p8test-rogue -j ACCEPT` on the node
+    probe: |
+      iptables -A INPUT -s 10.255.255.1/32 -m comment --comment p8test-rogue -j ACCEPT
+    effect: |
+      iptables -S INPUT | grep -c p8test-rogue
+    expect: {rc: 0, stdout: "\\A1\\n\\Z"}
+
+  - id: the-next-agent-run-purges-the-unmanaged-rule
+    what: after the node's agent run, the hand-added rule is gone and the policies stand
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "37", text: "resources { 'firewall': purge => $strict_purge }"}
+      - {path: manifests/firewall_secure.pp, lines: "49-50", text: "firewallchain { 'INPUT:filter:IPv4':   ensure => present, purge => true, policy => drop }"}
+    mutates: none beyond reading the rules (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      iptables -S INPUT | grep -c p8test-rogue
+      iptables -S | grep -E '^-P INPUT '
+    expect: {rc: 0, stdout: "\\A0\\n-P INPUT DROP\\n\\Z"}
