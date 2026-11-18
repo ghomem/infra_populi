@@ -16,6 +16,7 @@ findings are told apart from new ones. Tool versions are printed on every run.
 from __future__ import annotations
 
 import io
+import os
 import json
 import re
 import subprocess
@@ -365,12 +366,14 @@ def path_items(manifest: str, hiera: dict) -> tuple[set[str], list[tuple[str, st
 def base_closure(cls: str) -> list[str]:
     import gen_migration_order as gen  # noqa: PLC0415
     rows, seen, todo = gen.parse_plan(), [], [cls]
+    # ruling A2: the closure as the harness applies it on the class's node (qualified entries follow its OS family)
+    family = gen.node_family((rows[cls].node if cls in rows else "") or os.environ.get("P8_NODE", ""))
     while todo:
         c = todo.pop()
         if c in seen or c not in rows:
             continue
         seen.append(c)
-        todo.extend(rows[c].required_base)
+        todo.extend(rows[c].bases_for(family))
     return seen
 
 

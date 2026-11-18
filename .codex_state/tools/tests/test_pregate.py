@@ -303,7 +303,8 @@ def probe_repo(tmp_path, monkeypatch, manifests, plan):
     (repo / ".codex_state" / "rules").mkdir(parents=True)
     for name, text in manifests.items():
         (repo / "manifests" / f"{name}.pp").write_text(text)
-    rows = {n: type("R", (), {"required_base": tuple(b), "required_external": tuple(e), "node_fixture": fx})()
+    rows = {n: type("R", (), {"required_base": tuple(b), "required_external": tuple(e), "node_fixture": fx, "node": "",
+                              "bases_for": lambda self, family, b=tuple(b): b})()
             for n, (b, e, *rest) in plan.items() for fx in [rest[0] if rest else ""]}
     import gen_migration_order
     monkeypatch.setattr(gen_migration_order, "parse_plan", lambda: rows)

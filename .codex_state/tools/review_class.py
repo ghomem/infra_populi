@@ -317,12 +317,17 @@ def json_strings(value, path="") -> list[tuple[str, str]]:
 def expanded_classes(cls: str) -> list[str]:
     seen, order = set(), []
 
+    family = ""  # the reviewed class's node family; its bases are expanded for that node (ruling A2)
+
     def visit(name: str):
+        nonlocal family
         if name in seen:
             return
         seen.add(name)
-        data = json.loads(subprocess.run([sys.executable, str(STATE / "gen_migration_order.py"), "--classify", name],
+        data = json.loads(subprocess.run([sys.executable, str(STATE / "gen_migration_order.py"), "--classify", name,
+                                          *(["--os-family", family] if family else [])],
                                          capture_output=True, text=True, check=True).stdout)
+        family = family or data["required_base_os_family"]
         for b in data["required_base"]:
             visit(b)
         order.append((name, data))

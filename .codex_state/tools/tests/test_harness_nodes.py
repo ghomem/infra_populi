@@ -98,3 +98,17 @@ def test_a_debian_only_external_is_still_declared_on_ubuntu(lab):
     proc = lab.run([SCRIPT, "--render-only", "puppet_infrastructure::nginx_base"])
     assert "not declared: Debian-only" not in proc.stdout + proc.stderr
     assert "apt" in proc.stdout
+
+
+# HQ 2026-11-18 ruling A2: a required_base entry qualified [Debian] is applied on Ubuntu only.
+def test_a_debian_qualified_base_is_not_applied_on_a_redhat_target(lab, rhel):
+    proc = lab.run([SCRIPT, "--node", "rhel9", "--render-only", "puppet_infrastructure::sysmon_base"], env=rhel)
+    assert proc.returncode == 0, proc.stderr
+    assert "puppet_infrastructure::packages_base" in proc.stdout
+    assert "puppet_infrastructure::filesystem_lib64" not in proc.stdout
+
+
+def test_a_debian_qualified_base_is_applied_on_ubuntu(lab):
+    proc = lab.run([SCRIPT, "--render-only", "puppet_infrastructure::sysmon_base"])
+    assert proc.returncode == 0, proc.stderr
+    assert "puppet_infrastructure::filesystem_lib64" in proc.stdout

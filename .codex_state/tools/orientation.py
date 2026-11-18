@@ -34,7 +34,7 @@ def plan_line(row: generator.ClassRow) -> str:
     if row.title:
         fields.append(f"title={row.title}")
     fields += [f"internal_deps={','.join(row.internal_deps) or '-'}",
-               f"required_base={','.join(row.required_base) or '-'}",
+               f"required_base={','.join(f'{n} [{o}]' if o else n for n, o in row.required_base_spec) or '-'}",
                f"required_external={','.join(row.required_external) or '-'}"]
     if row.owner_validated:
         fields.append(f"owner_validated={row.owner_validated}")

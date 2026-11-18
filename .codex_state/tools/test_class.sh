@@ -109,8 +109,11 @@ classify_target() {
 
   [[ -n "$short" ]] || die "Classification lookup failed for class '${requested}': empty class name"
 
+  local family
+  family="$(target_os_family)"
   set +e
-  raw="$(python3 "$CLASSIFIER" --classify "$short" 2>&1)"
+  # HQ 2026-11-18 ruling A2: required_base entries qualified [Debian]/[RedHat] follow the target node's OS family.
+  raw="$(python3 "$CLASSIFIER" --classify "$short" ${family:+--os-family "$family"} 2>&1)"
   rc=$?
   set -e
   if [[ $rc -ne 0 ]]; then

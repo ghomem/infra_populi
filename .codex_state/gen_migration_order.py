@@ -67,6 +67,13 @@ class ClassRow:
     node_fixture: str = ""
     expected_run2_events: tuple[str, ...] = ()
     node: str = ""  # lab node kind (.codex_state/lab/nodes.yml); empty = the inventory's default
+    # HQ 2026-11-18 ruling A2: every required_base entry with its OS-family qualifier ("" = every family). The
+    # `required_base` field above is this list resolved for the row's own lab node.
+    required_base_spec: tuple[tuple[str, str], ...] = ()
+
+    def bases_for(self, family: str) -> tuple[str, ...]:
+        """required_base as the harness applies it on a node of this Facter os.family."""
+        return tuple(name for name, only in self.required_base_spec if not only or only == family)
 
     @property
     def sort_key(self) -> tuple[int, int, int, str]:
@@ -129,6 +136,27 @@ def lab_node_kinds() -> set[str]:
         return set()
     import yaml  # noqa: PLC0415
     return set((yaml.safe_load(path.read_text()) or {}).get("nodes", {}))
+
+
+OS_FAMILIES = ("Debian", "RedHat")
+BASE_ENTRY = re.compile(r"([a-z][a-z0-9_]*)(?:\s*\[(" + "|".join(OS_FAMILIES) + r")\])?")
+
+
+def lab_node_families() -> tuple[dict[str, str], str]:
+    """({kind: os_family}, default kind) of the lab node inventory; ({}, "") without one."""
+    path = Path(os.environ.get("P8_NODES") or SCRIPT_DIR / "lab" / "nodes.yml")
+    if not path.is_file():
+        return {}, ""
+    import yaml  # noqa: PLC0415
+    data = yaml.safe_load(path.read_text()) or {}
+    return {k: v.get("os_family", "") for k, v in data.get("nodes", {}).items()}, data.get("default", "")
+
+
+def node_family(kind: str) -> str:
+    """Facter os.family of a lab node kind ("" = the inventory default). Without an inventory: Debian, the family of
+    the Ubuntu node every plan projection (internal_deps) is written for."""
+    families, default = lab_node_families()
+    return families.get(kind or default, "") or "Debian"
 
 
 def parse_plan() -> dict[str, ClassRow]:
@@ -202,9 +230,12 @@ def parse_plan() -> dict[str, ClassRow]:
 
         title = cells[title_index] if title_index is not None else ""
         required_base_cell = cells[required_base_index] if required_base_index is not None else ""
-        required_base = tuple(
-            base.strip() for base in required_base_cell.split(",") if base.strip()
-        )
+        required_base_spec = []
+        for entry in (b.strip() for b in required_base_cell.split(",") if b.strip()):
+            match = BASE_ENTRY.fullmatch(entry)
+            if not match:
+                fail(f"invalid required_base entry for {name}: {entry!r} (want <class> or <class> [Debian|RedHat])")
+            required_base_spec.append((match[1], match[2] or ""))
         required_external_cell = (
             cells[required_external_index] if required_external_index is not None else ""
         )
@@ -230,6 +261,8 @@ def parse_plan() -> dict[str, ClassRow]:
         node = cells[node_index] if node_index is not None else ""
         if node and node not in node_kinds:
             fail(f"node for {name} is not a kind in .codex_state/lab/nodes.yml: {node!r}")
+        family = node_family(node)
+        required_base = tuple(n for n, only in required_base_spec if not only or only == family)
         rows[name] = ClassRow(
             name=name,
             complexity=parse_int(cells[indexes["complexity"]], "complexity", name),
@@ -245,6 +278,7 @@ def parse_plan() -> dict[str, ClassRow]:
             node_fixture=node_fixture,
             expected_run2_events=expected_run2,
             node=node,
+            required_base_spec=tuple(required_base_spec),
         )
 
     if not rows:
@@ -753,12 +787,17 @@ def next_class_name(pending_order: list[ClassRow], remigrations: list[tuple[str,
     return f"{PREFIX}{sink[0]} (re-migration)" if sink else "all migrated"
 
 
-def classify(class_name: str) -> None:
+def classify(class_name: str, os_family: str = "") -> None:
+    """required_base is resolved for `os_family` (the harness passes its target's), else for the node the class is
+    tested on: the plan's node column, then P8_NODE, then the inventory default (nodes.select's order)."""
     rows = parse_plan()
     name = class_name.removeprefix(PREFIX)
     row = rows.get(name)
     if row is None:
         fail(f"class not found in migration_plan.md: {class_name}")
+    if os_family and os_family not in OS_FAMILIES:
+        fail(f"--os-family must be one of {', '.join(OS_FAMILIES)}: {os_family!r}")
+    family = os_family or node_family(row.node or os.environ.get("P8_NODE", ""))
 
     print(
         json.dumps(
@@ -766,7 +805,9 @@ def classify(class_name: str) -> None:
                 "name": row.name,
                 "resource_type": row.resource_type,
                 "title": row.title,
-                "required_base": row.required_base,
+                "required_base": list(row.bases_for(family)),
+                "required_base_os_family": family,
+                "required_base_spec": [f"{n} [{only}]" if only else n for n, only in row.required_base_spec],
                 "required_external": row.required_external,
                 "owner_validated": row.owner_validated,
                 "node_fixture": row.node_fixture,
@@ -783,7 +824,10 @@ def main() -> None:
         if len(args) == 2 and args[0] == "--classify":
             classify(args[1])
             return
-        fail(f"usage: {Path(sys.argv[0]).name} [--classify <class_short_name>]")
+        if len(args) == 4 and args[0] == "--classify" and args[2] == "--os-family":
+            classify(args[1], args[3])
+            return
+        fail(f"usage: {Path(sys.argv[0]).name} [--classify <class_short_name> [--os-family Debian|RedHat]]")
 
     rows = parse_plan()
     migrations = git_migrations()

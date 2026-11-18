@@ -291,3 +291,47 @@ def test_plan_node_column_names_a_lab_node_kind(gen, tmp_path, monkeypatch):
     plan.write_text("".join(lines))
     with pytest.raises(SystemExit):
         gen.parse_plan()
+
+
+def test_required_base_os_family_qualifier(gen):
+    """HQ 2026-11-18 ruling A2: production composes these classes under node_base, which includes filesystem_lib64 on
+    Debian only and extra_packages_el (through packages_base) on RedHat only; the harness follows the target's family."""
+    rows = gen.parse_plan()
+    sysmon = rows["sysmon_base"]
+    assert sysmon.bases_for("Debian") == ("filesystem_base", "packages_base", "filesystem_lib64")
+    assert sysmon.bases_for("RedHat") == ("filesystem_base", "packages_base")
+    assert sysmon.required_base == sysmon.bases_for("Debian")  # its lab node is the Ubuntu default
+    for name in ("hello_world_flask_common", "hello_world_flask"):
+        assert "extra_packages_el" in rows[name].bases_for("RedHat")
+        assert "extra_packages_el" not in rows[name].required_base
+    assert {n for n, r in rows.items() for _, only in r.required_base_spec if only} == {
+        "sysmon_base", "hello_world_flask_common", "hello_world_flask"}
+
+
+def test_required_base_qualifier_must_name_an_os_family(gen, tmp_path, monkeypatch):
+    text = gen.PLAN_PATH.read_text()
+    plan = tmp_path / "plan.md"
+    plan.write_text(text.replace("packages_base, filesystem_lib64 [Debian]", "packages_base, filesystem_lib64 [Suse]"))
+    monkeypatch.setattr(gen, "PLAN_PATH", plan)
+    with pytest.raises(SystemExit):
+        gen.parse_plan()
+
+
+def test_classify_resolves_required_base_for_the_os_family(monkeypatch):
+    import json
+    import os
+    import subprocess
+
+    def classify(*extra, env=None):
+        return subprocess.run([sys.executable, str(GEN), "--classify", "sysmon_base", *extra], capture_output=True,
+                              text=True, env={**os.environ, **(env or {})})
+
+    monkeypatch.delenv("P8_NODE", raising=False)
+    plain = json.loads(classify(env={"P8_NODE": ""}).stdout)
+    assert plain["required_base_os_family"] == "Debian" and "filesystem_lib64" in plain["required_base"]
+    assert "filesystem_lib64 [Debian]" in plain["required_base_spec"]
+    redhat = json.loads(classify("--os-family", "RedHat").stdout)
+    assert redhat["required_base"] == ["filesystem_base", "packages_base"]
+    by_node = json.loads(classify(env={"P8_NODE": "rhel9"}).stdout)  # review_class --node rhel9 exports P8_NODE
+    assert by_node["required_base_os_family"] == "RedHat" and "filesystem_lib64" not in by_node["required_base"]
+    assert classify("--os-family", "Suse").returncode != 0
