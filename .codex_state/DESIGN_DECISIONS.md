@@ -2098,3 +2098,23 @@ snapshot list, record.
 4. **A composite checks a component's finding on a value the composite itself passes.** network_vpn passes its own
    default cipher to openvpn_server, so network_vpn's set carries the cipher check too and its state shows the
    finding. What the composite only inherits (compression) stays with the component's set.
+
+## 2026-11-19 — HQ rulings on batch 14
+1. **openvpn_server and network_vpn, cipher: option A approved.** The class's cipher is added to the server's accepted
+   list (data-ciphers), so existing clients keep connecting, and clients that negotiate a stronger cipher keep doing so.
+   It is a local change, with the before-and-after check: a client offering only that cipher connects.
+2. **Compression: option F approved, no change.** The one-way behaviour goes into the approval report and the
+   documentation list: clients should drop compression at the cutover.
+3. **ssh_secure:** restore the idle disconnect with sshd's own idle-timeout settings on OpenSSH versions that have
+   them (9.2 and later, so Ubuntu 24.04), set from the class's existing timeout value.
+   - Where the OpenSSH version lacks them (RHEL 9), it is recorded as not enforced there, with no shell workaround.
+   - If the analysis finds a reason this does not work, hold the class and show HQ instead.
+4. **network_dhcp and network_static:** they stay escalated until Salatiel answers how the production VPN servers'
+   network is configured. No change yet.
+5. **caching_nameserver on hosts without IPv6:** keep the IPv4-only fixture for the lab and make no class change now.
+   It is recorded as a condition in the approval report, and becomes a finding only if Salatiel confirms a production
+   host lacks IPv6.
+6. **Lab IPv6:** no baseline change. It is handled per class with fixtures.
+7. **Mirror fallback:** allowed only when the primary archive fails, for that run only, recorded in the run record,
+   and never written into a baseline.
+8. **Go:** batch 5 starts with user_base.

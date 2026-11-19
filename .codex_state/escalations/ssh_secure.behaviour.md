@@ -1,5 +1,7 @@
 # ssh_secure — behaviour finding: the idle-session timeout no longer acts (2026-11-19)
 
+**HQ ruling (batch 14, 2026-11-19):** restore the idle disconnect with sshd's own idle-timeout settings where OpenSSH has them (9.2 and later, so Ubuntu 24.04), set from the class's existing timeout value; where it lacks them (RHEL 9) record it as not enforced, no shell workaround. If the analysis finds a reason this does not work, hold the class and show HQ. The text below is the escalation as sent.
+
 Status: OPEN, for HQ. The reviewer reproduced it (checks/reviews/ssh_secure/20261119T022504Z.json, set PASS with this
 finding, purpose covered after one correction). Escalated for this class under HQ batch-12 ruling 5: a finding whose fix has more than one
 reasonable design. The run continues with the next class.

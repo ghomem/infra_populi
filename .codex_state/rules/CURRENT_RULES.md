@@ -2,7 +2,17 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-116 entries; 6 marked superseded (in whole or part); newest first.
+117 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-19 — HQ rulings on batch 14
+- 1. **openvpn_server and network_vpn, cipher: option A approved.** The class's cipher is added to the server's accepted
+- 2. **Compression: option F approved, no change.** The one-way behaviour goes into the approval report and the
+- 3. **ssh_secure:** restore the idle disconnect with sshd's own idle-timeout settings on OpenSSH versions that have
+- 4. **network_dhcp and network_static:** they stay escalated until Salatiel answers how the production VPN servers'
+- 5. **caching_nameserver on hosts without IPv6:** keep the IPv4-only fixture for the lab and make no class change now.
+- 6. **Lab IPv6:** no baseline change. It is handled per class with fixtures.
+- 7. **Mirror fallback:** allowed only when the primary archive fails, for that run only, recorded in the run record,
+- 8. **Go:** batch 5 starts with user_base.
 
 ## 2026-11-19 — Backfill batch 4: the peer's address for node scripts, the lab's IPv6 and named, holds on the uplink
 - 1. **Node scripts get `P8_PEER_ADDR`** (phase3.py, commit e85d826, tested).

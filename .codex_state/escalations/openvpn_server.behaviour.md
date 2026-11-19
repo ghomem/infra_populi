@@ -1,5 +1,7 @@
 # openvpn_server — behaviour findings: the class's cipher is refused, and the server sends uncompressed (2026-11-19)
 
+**HQ ruling (batch 14, 2026-11-19):** cipher option A approved, a local change with the before-and-after check (a client offering only the class's cipher connects); compression option F, no change, recorded in the approval report and the documentation list (clients should drop compression at the cutover). The text below is the escalation as sent.
+
 Status: OPEN, for HQ (network_vpn shares finding 1: escalations/network_vpn.behaviour.md). The reviewer reproduced both findings on fresh nodes (checks/reviews/openvpn_server/20261119T114553Z.json,
 set PASS with these findings, purpose covered; reviewer run results/openvpn_server/20261119T113917Z-reviewer).
 Escalated for this class under HQ batch-12 ruling 5: each finding's fix has more than one reasonable design. The run

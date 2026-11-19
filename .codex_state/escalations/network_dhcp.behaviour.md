@@ -1,5 +1,7 @@
 # network_dhcp — behaviour finding: the DHCP interface is never brought up on Ubuntu 24.04 (2026-11-19)
 
+**HQ ruling (batch 14, 2026-11-19):** stays escalated, with network_static, until Salatiel answers how the production VPN servers' network is configured. No change yet. The text below is the escalation as sent.
+
 Status: OPEN, for HQ. The reviewer reproduced it and confirmed that ifupdown-extra does not depend on ifupdown
 (checks/reviews/network_dhcp/20261119T045534Z.json, set PASS with this finding, purpose covered). Escalated for this class under HQ batch-12 ruling 5: a finding whose fix has more than one
 reasonable design. The run continues with the next class.
