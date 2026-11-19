@@ -1,5 +1,7 @@
 # network_vpn — behaviour finding: a client on the class's cipher is refused (2026-11-19)
 
+**Status: CLOSED 2026-11-19.** Fixed by openvpn_server's local change #7: network_vpn 20261119T161918Z-author ALL_PASS, review PASS 20261119T162939Z with no findings.
+
 **HQ ruling (batch 14, 2026-11-19):** fixed through openvpn_server's local change (cipher option A); this set's check is the after evidence. The text below is the escalation as sent.
 
 Status: OPEN, for HQ, together with escalations/openvpn_server.behaviour.md: the same cause and the same fix.
