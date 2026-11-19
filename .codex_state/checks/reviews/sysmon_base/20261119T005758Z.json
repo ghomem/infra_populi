@@ -1,0 +1,40 @@
+{
+ "class": "sysmon_base",
+ "at": "20261119T005758Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-checks-are-installed: manifests/sysmon_base.pp:22-29 declare nagios-puppet.sh root:root 0755 from the module's file; the probe's first stat line expects root:root 755, and the content is rightly not hashed against the baseline because local change #4 (rules/local_changes.md) edits that file, while the other scripts are compared by their baseline sha256",
+  "the-elastic-check-is-unknown-without-elasticsearch: elastic_query_check.py (whole file) posts to http://localhost:9200/_search and on any exception prints PRINT_UNKOWN ('Unknown') then the exception and exits EXIT_UNKOWN (3); with nothing on 9200 urllib raises '<urlopen error [Errno 111] Connection refused>', exactly what the probe expects (rc=3)",
+  "the-connection-checks-count-real-connections: check_netstat_conns.sh (whole file) counts netstat -an tcp LISTEN and ESTABLISHED lines into tcp_listen=/tcp_established= perfdata; sshd listening and the runner's SSH session make both non-zero, and check_netstat_cip.sh 22 counts the non-loopback remote IPs on :22 (num_of_ips); the third line asserts netstat exists (net-tools, local change #3)",
+  "purpose covered: Purpose matches the manifest (13 file resources installing node-side Nagios plugins; the header's 'zimbra' has no code, and the computed $packagename is unused). The outcomes table maps every resource. My run ALL_PASS, 22 checks: each script is executed as a monitoring server would and its status line and exit code checked, including the alarm paths: Puppet check OK / UNKNOWN under the run lock / CRITICAL when disabled / CRITICAL on a failed resource (agent exit 4 or 6); reboot OK and WARNING; package count OK, WARNING, stale-list alarm; bandwidth OK, WARNING, and CRITICAL with traffic from the ubuntu2 peer; latency OK and CRITICAL; CPU OK and CRITICAL under load; memory OK and CRITICAL; TLS cert OK and WARNING against a real local TLS server; Elasticsearch Unknown, OK, Critical with ordered events, and the request path/query recorded by a stand-in. File-handle, OS and netstat scripts have no alarm branch in the baseline, so OK with real counts is their full behaviour. Not exercised: some intermediate WARNING branches (memory, CPU, latency) and the cert CRITICAL, which are the same comparison code as the tested branches. The RedHat package-count branch and RedHat install are honestly uncovered, lifted_by rhel9. Mutating checks declare their changes (agent runs, locks, chattr, stand-in servers, peer pings) and are judged on read-only effects."
+ ],
+ "review_s": 238.7,
+ "check_file_sha256": "eff44846477e4ead42e192219be34d92814662c1449d8a84b01342f8c7b1bbd2",
+ "reviewer_result": "20261119T005400Z-reviewer",
+ "author_result": "20261119T004846Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "b6d6220f-44cc-4f85-8b77-bb5219aad1b3",
+   "boot_id_at_end": "b6d6220f-44cc-4f85-8b77-bb5219aad1b3",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "28684bfc-0439-4919-bae7-0ace12c1cf51",
+   "boot_id_at_end": "28684bfc-0439-4919-bae7-0ace12c1cf51",
+   "fresh": true
+  }
+ }
+}

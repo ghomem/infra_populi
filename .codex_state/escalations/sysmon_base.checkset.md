@@ -1,6 +1,10 @@
 # sysmon_base — check set escalated after two correction rounds (2026-11-18)
 
-Status: OPEN, for HQ. Under backfill start rule 1, a set that cannot reach PASS after two correction rounds is
+Status: CLOSED (2026-11-19). Round 3, run under HQ batch-12 ruling 3, passed review 20261119T005758Z: purpose
+covered, reproduced, no findings. It added the failed-resource CRITICAL branch (agent exit 6) and the Elasticsearch
+request recorded by the stand-in.
+
+Earlier status (2026-11-18): OPEN, for HQ. Under backfill start rule 1, a set that cannot reach PASS after two correction rounds is
 escalated, and the run continues.
 
 There are no behaviour findings. Every review reproduced the author's runs, and every `derived_from` was ok. The last
