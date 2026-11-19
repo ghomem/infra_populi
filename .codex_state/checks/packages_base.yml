@@ -83,6 +83,9 @@ checks:
       awk '/^  Exec\[apt_update\]:$/ {f=1; next} f && /^  [^ ]/ {f=0} f && /^    changed: true$/ {c++} END {print c+0}' /opt/puppetlabs/puppet/cache/state/last_run_report.yaml
     expect: {rc: 0, stdout: "\\A1\\n\\Z"}
 
+  # 2026-11-19 authoring correction (run 20261119T011742Z): Puppet 8 leaves unchanged resources out of the run report
+  # (exclude_unchanged_resources true, read on the node), so the exec is looked for in the catalog's resource list and
+  # its absence from the report means it made no change.
   - id: the-update-package-lists-exec-never-runs
     what: >-
       the exec update-package-lists is in the catalog but did not run in the last agent run: it is refreshonly and
@@ -95,7 +98,6 @@ checks:
       - {path: manifests/packages_base.pp, lines: "36-40", text: "refreshonly => true"}
       - {path: manifests/packages_base.pp, lines: "49", text: "Exec['update-package-lists'] ~> Package[$package_list]"}
     probe: |
-      r=/opt/puppetlabs/puppet/cache/state/last_run_report.yaml
-      p8_count '^  Exec\[update-package-lists\]:$' "$r"
-      awk '/^  Exec\[update-package-lists\]:$/ {f=1; next} f && /^  [^ ]/ {f=0} f && /^    changed: true$/ {c++} END {print c+0}' "$r"
+      p8_count '^exec\[update-package-lists\]$' /opt/puppetlabs/puppet/cache/state/resources.txt
+      p8_count '^  Exec\[update-package-lists\]:$' /opt/puppetlabs/puppet/cache/state/last_run_report.yaml
     expect: {rc: 0, stdout: "\\A1\\n0\\n\\Z"}
