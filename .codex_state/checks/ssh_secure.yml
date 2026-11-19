@@ -11,6 +11,13 @@
 # 2026-11-19, local change #8 (HQ batch-14 ruling 3): sshd's own idle timeouts (ChannelTimeout session=, Unused-
 # ConnectionTimeout) are set from client_alive_interval on OpenSSH 9.2+; the idle check's expectation is unchanged
 # (ended), its wording and the idle outcome name the new mechanism, and RHEL 9 is a row of its own (not enforced).
+# Correction the same day (run 20261119T164515Z: still-connected): my value `session=` matched no channel type; on
+# OpenSSH 9.6 they are session:command, session:shell and session:subsystem:... (sshd_config(5) on the node, whose
+# example is `session:*=5m`). With `session:*=10s`, measured on the applied node: an idle command session ended after
+# 11 s, an idle interactive shell after 10 s, and a session printing every 5 s ran its 21 s. The real timeout also cut
+# the lab's own silent SSH session to the node (exit 255), so the params fixture moved from 10 to 30 s (room for the
+# harness's agent runs), and the idle check runs its test session detached, 60 s silent, with the probe printing while
+# it waits; it now also checks the session ended within 30 to 45 s, not merely at some point.
 class: ssh_secure
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -146,13 +153,13 @@ checks:
     expect: {rc: 0, stdout: "\\Apermitrootlogin no\\n\\Z"}
 
   - id: client-alive
-    what: ClientAliveInterval as given (10 in this fixture; 14400 by default) with ClientAliveCountMax 0
+    what: ClientAliveInterval as given (30 in this fixture; 14400 by default) with ClientAliveCountMax 0
     control: negative
     derived_from:
       - {path: manifests/ssh_secure.pp, lines: "5", text: "Integer $client_alive_interval   = 14400,"}
       - {path: manifests/ssh_secure.pp, lines: "75-76", text: "'ClientAliveCountMax'     => '0',"}
     probe: sshd -T 2>/dev/null | grep -E '^clientalive' | sort
-    expect: {rc: 0, stdout: "\\Aclientalivecountmax 0\\nclientaliveinterval 10\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Aclientalivecountmax 0\\nclientaliveinterval 30\\n\\Z"}
 
   - id: allow-groups
     what: only members of sudo (Debian admin group), naemon and ssh_in may log in
@@ -304,17 +311,25 @@ checks:
 
   - id: an-idle-session-is-ended-after-the-interval
     what: >-
-      a session that sends nothing for 30 s is ended by the server after the 10 s interval (sshd's idle timeouts from
-      client_alive_interval, local change #8), so its remote command never prints
+      a session that sends nothing for 60 s is ended by the server once the 30 s interval has passed (30 to 45 s; sshd's
+      idle timeouts from client_alive_interval, local change #8), so its remote command never prints
     control: negative
-    timeout: 120
+    timeout: 180
     derived_from:
       - {path: manifests/ssh_secure.pp, lines: "75-76", text: "'ClientAliveInterval'     => $client_alive_interval,"}
-    mutates: one SSH session over loopback as p8testin, idle for up to 30 s; the outcome goes to /run/p8test-ssh/idle.txt
+    mutates: >-
+      one SSH session over loopback as p8testin, idle for up to 60 s, run detached as transient unit p8test-ssh-idle
+      (the runner's own session to the node would itself be cut if it stayed silent that long); the outcome goes to
+      /run/p8test-ssh/idle.txt, and the probe prints a line every 5 s while it waits
     probe: |
+      rm -f /run/p8test-ssh/idle.txt
+      cat > /run/p8test-ssh/idle.sh <<'T'
       start=$(date +%s)
-      out=$(timeout 60 ssh -n -i /run/p8test-ssh/key -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=0 p8testin@127.0.0.1 'sleep 30; echo still-connected' 2>/dev/null)
+      out=$(timeout 90 ssh -n -i /run/p8test-ssh/key -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=0 p8testin@127.0.0.1 'sleep 60; echo still-connected' 2>/dev/null)
       echo "${out:-ended} after $(( $(date +%s) - start ))s" > /run/p8test-ssh/idle.txt
+      T
+      systemd-run --unit p8test-ssh-idle -q bash /run/p8test-ssh/idle.sh
+      for i in $(seq 30); do [ -s /run/p8test-ssh/idle.txt ] && break; echo waiting; sleep 5; done
     effect: |
-      sed 's/after [0-9]*s/after Ns/' /run/p8test-ssh/idle.txt
-    expect: {rc: 0, stdout: "\\Aended after Ns\\n\\Z"}
+      awk '{t=$3; sub(/s$/, "", t); print $1 " " ((t + 0 < 30 || 45 < t + 0) ? "after " t "s" : "within the interval window")}' /run/p8test-ssh/idle.txt
+    expect: {rc: 0, stdout: "\\Aended within the interval window\\n\\Z"}
