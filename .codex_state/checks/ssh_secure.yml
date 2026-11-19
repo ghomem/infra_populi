@@ -197,6 +197,10 @@ checks:
       rc: 0
       stdout: "\\Ahostbasedauthentication no\\nignorerhosts yes\\nlogingracetime 120\\nloglevel INFO\\npermitemptypasswords no\\nport 22\\nprintlastlog yes\\npubkeyauthentication yes\\nstrictmodes yes\\nsyslogfacility AUTH\\ntcpkeepalive yes\\nx11displayoffset 10\\n\\Z"
 
+  # 2026-11-19 authoring corrections (run 20261119T015853Z): the key's base64 holds + and /, which an extended regex
+  # reads as operators, so the key is now matched literally (grep -F); and ssh read the rest of the probe's own script
+  # from its standard input (the runner feeds scripts to bash -s), so the lines after it never ran; every ssh in the
+  # set now runs with -n.
   - id: login-test-accounts-and-key
     what: setup for the login checks, two fixture accounts with one throwaway key, p8testin in ssh_in and p8testout in no allowed group, and the key for root too
     control: negative
@@ -219,7 +223,7 @@ checks:
     effect: |
       id -nG p8testin | tr ' ' '\n' | p8_count '^ssh_in$'
       id -nG p8testout | tr ' ' '\n' | p8_count '^(sudo|naemon|ssh_in)$'
-      p8_count "$(cut -d' ' -f2 /run/p8test-ssh/key.pub)" /root/.ssh/authorized_keys
+      grep -cF -- "$(cut -d' ' -f2 /run/p8test-ssh/key.pub)" /root/.ssh/authorized_keys || true
     expect: {rc: 0, stdout: "\\A1\\n0\\n1\\n\\Z"}
 
   - id: a-key-login-in-an-allowed-group-works
@@ -231,7 +235,7 @@ checks:
     probe: |
       true
     effect: |
-      ssh -i /run/p8test-ssh/key -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 p8testin@127.0.0.1 'echo logged-in-as-$(id -un)' 2>/dev/null
+      ssh -n -i /run/p8test-ssh/key -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 p8testin@127.0.0.1 'echo logged-in-as-$(id -un)' 2>/dev/null
     expect: {rc: 0, stdout: "\\Alogged-in-as-p8testin\\n\\Z"}
 
   - id: a-key-login-outside-the-allowed-groups-is-refused
@@ -243,7 +247,7 @@ checks:
     probe: |
       true
     effect: |
-      ssh -i /run/p8test-ssh/key -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 p8testout@127.0.0.1 true 2>&1 | grep -o 'Permission denied ([a-z,-]*)'
+      ssh -n -i /run/p8test-ssh/key -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 p8testout@127.0.0.1 true 2>&1 | grep -o 'Permission denied ([a-z,-]*)'
       id p8testout >/dev/null && echo account-exists
     expect: {rc: 0, stdout: "\\APermission denied \\(publickey\\)\\naccount-exists\\n\\Z"}
 
@@ -257,8 +261,8 @@ checks:
       true
     effect: |
       o='-o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5'
-      ssh $o -o PreferredAuthentications=password -o PubkeyAuthentication=no p8testin@127.0.0.1 true 2>&1 | grep -o 'Permission denied ([a-z,-]*)'
-      ssh $o -i /run/p8test-ssh/key root@127.0.0.1 true 2>&1 | grep -o 'Permission denied ([a-z,-]*)'
+      ssh -n $o -o PreferredAuthentications=password -o PubkeyAuthentication=no p8testin@127.0.0.1 true 2>&1 | grep -o 'Permission denied ([a-z,-]*)'
+      ssh -n $o -i /run/p8test-ssh/key root@127.0.0.1 true 2>&1 | grep -o 'Permission denied ([a-z,-]*)'
     expect: {rc: 0, stdout: "\\APermission denied \\(publickey\\)\\nPermission denied \\(publickey\\)\\n\\Z"}
 
   - id: an-idle-session-is-ended-after-the-interval
@@ -272,7 +276,7 @@ checks:
     mutates: one SSH session over loopback as p8testin, idle for up to 30 s; the outcome goes to /run/p8test-ssh/idle.txt
     probe: |
       start=$(date +%s)
-      out=$(timeout 60 ssh -i /run/p8test-ssh/key -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=0 p8testin@127.0.0.1 'sleep 30; echo still-connected' 2>/dev/null)
+      out=$(timeout 60 ssh -n -i /run/p8test-ssh/key -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=0 p8testin@127.0.0.1 'sleep 30; echo still-connected' 2>/dev/null)
       echo "${out:-ended} after $(( $(date +%s) - start ))s" > /run/p8test-ssh/idle.txt
     effect: |
       sed 's/after [0-9]*s/after Ns/' /run/p8test-ssh/idle.txt
