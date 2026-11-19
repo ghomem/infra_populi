@@ -1,0 +1,34 @@
+{
+ "class": "backup_rsnapshot_pre",
+ "at": "20261119T184233Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "rdiff-installed: files/backups/rdiff.sh whole file (sha256 b45b5e66...) is the source of manifest lines 16-21 (mode 0755, root:root, bindir = filesystem::bindir = /opt/puppet-infrastructure/bin); the probe's stat + sha256sum on the deployed file test exactly that",
+  "rdiff-pages-the-pairs-in-interactive-mode: rdiff.sh:55-58 sets INTERACTIVE=1 when $2 is not a directory ('INTERACTIVE' is not); lines 111-118 then echo 'press ENTER for next difference' + read once per pair and 'Done!' at the end; with three snapshots sort -V gives 2 pairs (LIM=1, seq 0 1), so 2 prompts, last line Done!, exit $E_OK=0; clear (line 93) only writes to stderr without a terminal, which the action discards; the effect reads the saved output, not the action's own output",
+  "rdiff-reports-what-changed-between-snapshots: rdiff.sh:34-42 runs diff -qr DIR_B DIR_A and sed turns ' and ./' into ' ./'; lines 64-108 pair sorted ./daily.0 ./daily.1 ./daily.2 as (daily.1,daily.0) then (daily.2,daily.1) with the '-------------------- X -> Y --------------------' separator; diff -qr lists entries in name order, so 'Only in ./daily.0: added.txt' then 'Files ./daily.1/changed.txt ./daily.0/changed.txt differ', then changed.txt differ and 'Only in ./daily.2: removed.txt'; same.txt is identical and absent; the grep excludes the '/---' end separators; expected exactly what the code produces",
+  "purpose covered: The header comment names a 'backup_base_rsync defined type' that does not exist at cf477c6; the only consumer of /etc/rsnapshot.d is the backup_rsnapshot define (backup_rsnapshot.pp:5), and node-examples backups01/03 include this class beside it, so the stated purpose (prerequisites for backup_rsnapshot) is right. The outcomes table holds every outcome of the 23-line manifest and rdiff.sh: rsnapshot installed and answering -V; /etc/rsnapshot.d root:root, 755 in effect (0644 declared, Puppet adds search bits to a directory where read is set); rdiff.sh deployed byte-identical 0755; rdiff.sh's job run as behaviour on three planted snapshots (walk across two pairs, order, changed/added/removed files, identical file not reported); interactive mode paged with ENTERs on stdin (2 prompts, Done!, rc 0). The one uncovered outcome (rsnapshot driven from /etc/rsnapshot.d) is truly backup_rsnapshot's behaviour, tested by backup_rsnapshot.yml (configtest, -t daily, a real rsnapshot daily) with this class as its plan required_base. Not tested: rdiff.sh's usage error path (no or non-directory argument -> usage line, exit 1, lines 27-32, 47-53), argument handling rather than the reporting purpose. My run: CLEAN all 6 negatives failed, APPLIED all 6 passed (ALL_PASS, 20261119T184035Z-reviewer)."
+ ],
+ "review_s": 118.8,
+ "check_file_sha256": "22a43a60e062012be98f2e7cd3399ea91abba8593437839af51f1d707e96f00f",
+ "reviewer_result": "20261119T184035Z-reviewer",
+ "author_result": "20261119T183800Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "f8d84115-126c-4ecd-b4aa-b513695891ab",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "f8d84115-126c-4ecd-b4aa-b513695891ab",
+   "fresh": true
+  }
+ }
+}
