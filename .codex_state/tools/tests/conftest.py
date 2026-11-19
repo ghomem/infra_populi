@@ -50,6 +50,10 @@ if name == "VBoxManage":
         save()
     elif args[:1] == ["startvm"]:
         vms[args[1]]["state"] = "running"; save()
+    elif args[:2] == ["list", "runningvms"]:  # lab_sleep_guard.sh
+        for name, vm in sorted(vms.items()):
+            if vm["state"] == "running":
+                print(f'"{name}" {{00000000-0000-0000-0000-{abs(hash(name)) % 10**12:012d}}}')
     elif args[:1] == ["controlvm"] and args[2] == "acpipowerbutton":
         if world.get("acpi_works", True):
             vms[args[1]]["state"] = "poweroff"; save()
@@ -180,6 +184,9 @@ class FakeLab:
             "P8_SSH_CONTROL_DIR": str(self.root / "ssh-cm"),
             "P8_REVERT_RECORD": str(self.root / "node_revert.json"),
             "P8_LAB_LOCK": str(self.root / "lab.lock"),
+            "P8_SLEEP_GUARD_PID": str(self.root / "sleep_guard.pid"),
+            "P8_SLEEP_GUARD_POLL": "0.2",
+            "P8_NO_SLEEP_GUARD": "1",  # no tool under test starts a guard; test_lab_sleep_guard.py clears it
         })
         env.update(kw.pop("env", {}))
         return subprocess.run(argv, capture_output=True, text=True, env=env, timeout=60,

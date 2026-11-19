@@ -122,6 +122,8 @@ case "$verb" in
     ((left_mb >= MIN_FREE_MB)) ||
       refuse "starting '$name' (${vm_mb} MB) would leave ${left_mb} MB free on the laptop; the floor is ${MIN_FREE_MB} MB"
     VBoxManage startvm "$name" --type headless || refuse "VBoxManage startvm failed"
+    # Sleep is blocked for as long as a lab VM runs (2026-11-19); without logind's inhibitor this only warns.
+    "$(dirname "$(readlink -f "$0")")/lab_sleep_guard.sh" ensure || echo "WARNING: the lab sleep guard did not start" >&2
     echo "LAB_VM started ${name} (${left_mb} MB left free)"
     ;;
   stop)

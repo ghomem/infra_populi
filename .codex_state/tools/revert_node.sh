@@ -192,8 +192,15 @@ now_ms() {
   printf '%s\n' "$((us / 1000))"
 }
 
+# Sleep is blocked for as long as a lab VM runs (lab_sleep_guard.sh, 2026-11-19); a laptop without logind's inhibitor
+# only warns.
+guard_sleep() {
+  "${TOOLS_DIR}/lab_sleep_guard.sh" ensure || echo "WARNING: the lab sleep guard did not start" >&2
+}
+
 t_start="$(now_ms)"
 require_master_running
+guard_sleep
 t_master="$(now_ms)"
 
 if ! node_state="$(vm_state "$NODE_VM")"; then
@@ -251,6 +258,7 @@ t_restore="$(now_ms)"
 printf 'Starting node VM %q headless...\n' "$NODE_VM"
 VBoxManage startvm "$NODE_VM" --type headless ||
   fail "Could not start node VM '$NODE_VM'."
+guard_sleep
 
 wait_ssh() {
   local alias="$1" ssh_deadline=$((SECONDS + SSH_TIMEOUT_SECONDS))
