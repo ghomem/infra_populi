@@ -3,6 +3,8 @@
 # at their defaults (root, 23, 0). Required base (plan): backup_rsnapshot_pre (rsnapshot package, /etc/rsnapshot.d),
 # filesystem_base. Read-only probes, except daily-backup-executes (opt-in mutating: one real `rsnapshot daily`,
 # judged on the snapshot it leaves). `rsnapshot -t` in daily-plan is test mode (prints, executes nothing).
+# Outcomes table added 2026-11-19 (backfill batch 5, HQ batch-10 rulings 2 and C1), with retention as behaviour: eight
+# more daily runs after the first must leave exactly ndays (7) snapshots, daily.0 to daily.6.
 class: backup_rsnapshot
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -16,9 +18,30 @@ authoring:
     destination as `daily.0//etc`; the expectation demanded ` /etc /opt/...`. The new regex accepts the trailing
     slash and asserts the destination ends in `etc` (template line 12 `./<%= @prefix %>`). 0.5 min. Shared research for the three pilots (baselines, fixtures, read-only look at the clean node's
     sshd/tools, fixture certificate type), 15:52-15:57Z, is reported once in the pilot report.
+    Outcomes table and the retention check 2026-11-19: written and validated at 17:19:50Z (the edit's own date; the
+    reading of the set and the template before it was not timed).
 purpose: >-
   Simple rsnapshot-based generic backups: a configuration per title and a daily cron run that snapshots the configured
   directory into the snapshot root, so its files can be restored from there.
+outcomes:
+  - outcome: a per-title rsnapshot configuration, 0644 root:root, rendered from the parameters and accepted by rsnapshot
+    from: manifests/backup_rsnapshot.pp:5-11; templates/backup/rsnapshot.conf.erb:4, 7, 12, 23
+    checks: [conf-file-mode, conf-rendered-values, conf-syntax]
+  - outcome: root's crontab runs `rsnapshot -c <conf> daily` at 23:00, which rsyncs the backup point into the snapshot root
+    from: manifests/backup_rsnapshot.pp:3, 13-19
+    checks: [cron-daily-2300, daily-plan]
+  - outcome: a run takes a daily snapshot holding a byte-identical copy of the backup point, so its files can be restored from there
+    from: manifests/backup_rsnapshot.pp:1-2, 14; templates/backup/rsnapshot.conf.erb:4, 12
+    checks: [daily-backup-executes]
+  - outcome: retention keeps exactly ndays daily snapshots, rotating the oldest away
+    from: templates/backup/rsnapshot.conf.erb:7
+    checks: [daily-retention-keeps-ndays]
+  - outcome: cron itself firing at 23:00
+    from: manifests/backup_rsnapshot.pp:13-19
+    uncovered: {why: "a run would have to wait for 23:00; the crontab entry is checked and its exact command is run by hand", lifted_by: ubuntu}
+  - outcome: other users, times, backup points, prefixes or retention counts
+    from: manifests/backup_rsnapshot.pp:3
+    uncovered: {why: "parameter variants (one set holds one params fixture); untested", lifted_by: ubuntu}
 checks:
   - id: conf-file-mode
     what: the per-title rsnapshot config exists at /etc/rsnapshot.d/rsnapshot-<title>.conf, 0644 root:root
@@ -86,3 +109,19 @@ checks:
       test -n "$f" || { echo "no snapshot of /etc/hostname under daily.0"; exit 1; }
       cmp -s "$f" /etc/hostname && echo "daily.0 holds /etc ($f)"
     expect: {rc: 0, stdout: "^daily\\.0 holds /etc \\(/opt/puppet-infrastructure/backup/daily\\.0/.*etc/hostname\\)$"}
+
+  - id: daily-retention-keeps-ndays
+    what: >-
+      after eight more daily runs (nine in all), exactly ndays (7) daily snapshots remain, daily.0 to daily.6: the
+      oldest were rotated away
+    control: negative
+    timeout: 300
+    derived_from:
+      - {path: templates/backup/rsnapshot.conf.erb, lines: "7", text: "retain\tdaily\t<%= @ndays %>"}
+      - {path: manifests/backup_rsnapshot.pp, lines: "14", text: "/usr/bin/rsnapshot -c ${myconffile} daily"}
+    mutates: runs `rsnapshot daily` eight more times (the snapshots rotate under /opt/puppet-infrastructure/backup)
+    probe: |
+      for i in $(seq 8); do /usr/bin/rsnapshot -c /etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf daily >/dev/null 2>&1 || echo "run $i failed"; done
+    effect: |
+      ls -1 /opt/puppet-infrastructure/backup | sort -V | tr '\n' ' '; echo
+    expect: {rc: 0, stdout: "\\Adaily\\.0 daily\\.1 daily\\.2 daily\\.3 daily\\.4 daily\\.5 daily\\.6 \\n\\Z"}
