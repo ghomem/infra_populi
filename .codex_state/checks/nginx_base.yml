@@ -11,6 +11,34 @@ fixture: defaults
 authoring:
   minutes: 0.6
   notes: "Wall clock 20:53:45Z to 20:54:18Z 2026-11-17, write to valid (no lab run active); the baseline manifest and puppet-nginx 8.4.0's nginx.conf.erb, config.pp and params.pp were read before the clock started."
+purpose: >-
+  The common nginx base of every web frontend: nginx installed and running from the distribution's package with a
+  valid configuration (dynamic modules loaded once), auto worker processes, no version in the Server header, the
+  site's two log formats, and a strong Diffie-Hellman group kept private, plus ad-hoc configuration when given.
+# Purpose and outcomes table added 2026-11-19 (backfill batch 3, HQ batch-10 rulings 2 and C1), with the Server
+# header (server_tokens off) checked as behaviour and the default absence of the ad-hoc file.
+outcomes:
+  - outcome: nginx is installed and runs with a configuration that passes nginx -t, dynamic modules loaded once
+    from: manifests/nginx_base.pp:80-110
+    checks: [nginx-config-valid, a-dynamic-module-is-loaded-once-and-nginx-runs]
+  - outcome: worker processes are auto, and nginx sends no version in its Server header (server_tokens off)
+    from: manifests/nginx_base.pp:82-84
+    checks: [workers-auto-and-server-tokens-off, the-server-header-names-no-version]
+  - outcome: the main and compact log formats are defined for the servers to use
+    from: manifests/nginx_base.pp:63-74
+    checks: [log-formats-main-and-compact]
+  - outcome: the Diffie-Hellman group /etc/nginx/dhparams.pem has dh_params_bits (2048) bits and is readable by owner and group only
+    from: manifests/nginx_base.pp:36, 136-145
+    checks: [dh-group-2048-bits-not-world-readable]
+  - outcome: with no ad-hoc configuration given, the ad-hoc file is absent
+    from: manifests/nginx_base.pp:112-127
+    checks: [no-ad-hoc-file-by-default]
+  - outcome: the stream block logs nothing (stream_access_log off, HQ 2026-11-18 ruling A1, a module-compatibility change in class_rulings.txt)
+    from: class_rulings.txt (nginx_base, ruling A1)
+    uncovered: {why: "the stream block exists only when a stream server is declared; this fixture declares none. Exercised elsewhere: nginx_frontend_mail's set checks access_log off in the stream block (review PASS)", lifted_by: ubuntu}
+  - outcome: ad-hoc configuration, my_configs overrides, additional log formats and another DH size
+    from: manifests/nginx_base.pp:36-40, 112-127
+    uncovered: {why: "fixture variants (one set holds one fixture, the defaults); untested", lifted_by: ubuntu}
 checks:
   - id: nginx-config-valid
     what: the nginx configuration the class produces passes `nginx -t`
@@ -73,3 +101,26 @@ checks:
       nginx -t 2>&1 | grep -c 'test is successful'
       systemctl is-active nginx
     expect: {rc: 0, stdout: "\\A1\\n1\\n1\\nactive\\n\\Z"}
+
+  - id: the-server-header-names-no-version
+    what: a request to nginx gets a Server header that says nginx and no version
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "84", text: "server_tokens     => 'off',"}
+    probe: |
+      curl -s -o /dev/null -D - --max-time 5 http://127.0.0.1/ | tr -d '\r' | grep -i '^server:'
+    mismatch:
+      varies: the header's expected value is checked against nginx -v's version string instead (which server_tokens off must keep out)
+      probe: |
+        curl -s -o /dev/null -D - --max-time 5 http://127.0.0.1/ | tr -d '\r' | grep -i '^server:' | sed "s|\$|/$(nginx -v 2>&1 | sed 's|.*nginx/||')|"
+    expect: {rc: 0, stdout: "\\AServer: nginx\\n\\Z"}
+
+  - id: no-ad-hoc-file-by-default
+    what: with no ad-hoc configuration given, /etc/nginx/conf.d/puppet_infrastructure.conf does not exist
+    control: invariant
+    why_invariant: the clean node has no nginx and so no such file, and with ad_hoc_configs empty the class keeps it absent
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "112-114", text: "$config_ensure = 'absent'"}
+    probe: |
+      test -e /etc/nginx/conf.d/puppet_infrastructure.conf && echo present || echo absent
+    expect: {rc: 0, stdout: "\\Aabsent\\n\\Z"}
