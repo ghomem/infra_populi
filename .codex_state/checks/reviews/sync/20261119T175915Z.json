@@ -1,0 +1,42 @@
+{
+ "class": "sync",
+ "at": "20261119T175915Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-script-mirrors-the-remote-dir @ manifests/sync.pp:24: the line builds ' --bwlimit=${bwlimit_mbyteps_str}m', which for the fixture's 10 Mbit/s is 1.19 MiB/s (10e6/(8*1048576)=1.192, sprintf %.2f); two hosts x 6 MiB of /dev/urandom (incompressible, no -z) through it need about 10.1 s, so the >=9 s 'limited' threshold tests the limit the line declares; the line (with erb 24-31, TARGETDIR=$LOCALDIR/$HOST$SUFFIX per host) also supports the two per-host mirror directories expected",
+  "bandwidth-limit-converted @ templates/backup/sync.sh.erb:17: BWLIMIT_OPT=\"<%= @bwlimit_opt %>\" renders the manifest's ' --bwlimit=1.19m' verbatim with its leading space; the grep and expect BWLIMIT_OPT=\" --bwlimit=1.19m\" plus RSYNCOPTS line 24 are exactly what the template produces under the params fixture",
+  "bandwidth-limit-converted @ manifests/sync.pp:19: $bwlimit_mbitps_float*1000*1000/(8*1024*1024) with 10.0 gives 1.1920929, which line 21's sprintf('%.2f') makes 1.19; the expected --bwlimit=1.19m is what the code computes for bwlimit_mbitps 10 (default branch of the case, not the 0 branch)",
+  "purpose covered: Purpose matches the baseline header (sync.pp:1, 'simple multi host remote to local daily synchronization') and the template. The checks test the class doing its job: the installed script (root:root 0755, parameters, bash -n), the crontab entry 17 3 * * * for the local user, then the script run by hand as root against the peer ubuntu2 over ssh as p8testuser for two listed hosts (both pinned to the peer), each mirrored into its own <localdir>/<host><suffix> with identical content, the 1.19 MiB/s limit observed as >=9 s for 12 MiB, and rsync --delete removing a file the remote dropped on the next run in both mirrors; the port is parsed from host:port and used by ssh -p (22). Mutating actions declare their changes (key, /etc/hosts pin, peer account and data, script runs) and the effects read resulting state. Uncovered honestly: cron actually firing at 03:17 (time-bound; the entry is checked and its command run), and parameter variants (non-22 port, bwlimit 0 branch, non-root local user) of a one-fixture set. The prerequisite key exchange is outside the class (template comment lines 3-5) and is set up as fixture."
+ ],
+ "review_s": 171.0,
+ "check_file_sha256": "49edae654aad69c4bf545647014c612538a180cdbd8245efc9ecf987f07abeb7",
+ "reviewer_result": "20261119T175625Z-reviewer",
+ "author_result": "20261119T175300Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "e1f75d54-bda0-476a-b3f0-e8cb94f32edc",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "e1f75d54-bda0-476a-b3f0-e8cb94f32edc",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "c3ed422e-2bca-451e-9556-21515bf467fb",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "c3ed422e-2bca-451e-9556-21515bf467fb",
+   "fresh": true
+  }
+ }
+}
