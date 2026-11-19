@@ -89,3 +89,19 @@ def test_take_still_checks_a_running_masters_clock(lab):
     lab.world["ssh"].insert(0, {"match": r"puppet8master date -u", "clock": 300})
     proc = lock(lab, "take", str(os.getpid()), "revert")
     assert proc.returncode == 1 and "clocks disagree" in proc.stderr
+
+
+# 2026-11-19: the first VBoxManage call after a crash starts a VBoxSVC that outlives it; one started under the mutex
+# inherited its descriptor and held it, and the next release waited forever. Commands under the mutex get it closed.
+def test_commands_run_under_the_mutex_do_not_inherit_its_descriptor(lab, tmp_path):
+    lab.world["vms"]["Ubuntu24-puppet8-Master"]["state"] = "poweroff"
+    lab.world["ssh"].insert(0, {"match": r"puppet8master date -u", "rc": 255})
+    shim, log = tmp_path / "shim", tmp_path / "fd.log"
+    shim.mkdir()
+    vbox = shim / "VBoxManage"
+    vbox.write_text(f'#!/bin/sh\n[ -e /proc/$$/fd/8 ] && echo fd8-open >> {log} || echo fd8-closed >> {log}\n'
+                    f'exec "{lab.bin / "VBoxManage"}" "$@"\n')
+    vbox.chmod(0o755)
+    proc = lab.run([LOCK, "take", str(os.getpid()), "revert"], env={"PATH": f"{shim}:{lab.bin}:{os.environ['PATH']}"})
+    assert proc.returncode == 0, proc.stderr
+    assert log.read_text() == "fd8-closed\n"

@@ -19,6 +19,8 @@
 # up: revert_node.sh after its boot, test_class.sh before run 1. A master VM that is not running has no clock to read
 # (2026-11-19: both VMs crashed on a laptop resume and were powered off; the lock then refused the very revert that
 # starts the master): `take` skips it, and revert_node.sh checks the master's clock right after starting it.
+# Every command run under the mutex closes its descriptor (8>&-): the first `VBoxManage showvminfo` after the crash
+# started a VBoxSVC that inherited it and held the mutex, so the next release waited forever (2026-11-19).
 # P8_LAB_LOCK overrides the lock path, P8_CLOCK_HOSTS the hosts checked at take, P8_MASTER_VM the master's VM (tests).
 set -euo pipefail
 
@@ -40,9 +42,9 @@ case "${1:-}" in
     fi
     read -ra clock_hosts <<<"${P8_CLOCK_HOSTS-puppet8master}"
     clock_check="$(dirname "$(readlink -f "$0")")/clock_check.py"
-    if [[ ${#clock_hosts[@]} -gt 0 ]] && ! "$clock_check" "${clock_hosts[@]}" >/dev/null 2>"${LOCK}.clock"; then
+    if [[ ${#clock_hosts[@]} -gt 0 ]] && ! "$clock_check" "${clock_hosts[@]}" >/dev/null 2>"${LOCK}.clock" 8>&-; then
       # A master VM that is not running has no clock to read: drop it and check the other hosts (if any) again.
-      master_state="$(VBoxManage showvminfo "${P8_MASTER_VM:-Ubuntu24-puppet8-Master}" --machinereadable 2>/dev/null |
+      master_state="$(VBoxManage showvminfo "${P8_MASTER_VM:-Ubuntu24-puppet8-Master}" --machinereadable 2>/dev/null 8>&- |
         sed -n 's/^VMState="\(.*\)"$/\1/p')" || master_state=""
       kept=()
       if [[ -n "$master_state" && "$master_state" != "running" ]]; then
@@ -50,7 +52,7 @@ case "${1:-}" in
         echo "lab_lock: the master VM is ${master_state}: its clock is checked once it runs (revert_node.sh)" >&2
       fi
       if [[ -z "$master_state" || "$master_state" == "running" ]] ||
-        { [[ ${#kept[@]} -gt 0 ]] && ! "$clock_check" "${kept[@]}" >/dev/null 2>"${LOCK}.clock"; }; then
+        { [[ ${#kept[@]} -gt 0 ]] && ! "$clock_check" "${kept[@]}" >/dev/null 2>"${LOCK}.clock" 8>&-; }; then
         cat "${LOCK}.clock" >&2
         echo "the lab's clocks disagree with the laptop's (above); not taking the lab lock" >&2
         exit 1
