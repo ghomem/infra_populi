@@ -1,0 +1,33 @@
+{
+ "class": "filesystem_lib64",
+ "at": "20261119T032255Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "a-plugin-runs-by-its-redhat-path @ manifests/filesystem_lib64.pp:11-15: the lines make /usr/lib64/nagios/ a link to /usr/lib/nagios; the effect runs check_disk by /usr/lib64/nagios/plugins/check_disk and expects DISK OK, which can only succeed if the link resolves into Ubuntu's /usr/lib/nagios/plugins (clean node: no link, effect failed as the negative control requires). mutates declares the only change (apt install of monitoring-plugins-basic, output discarded); the action stands in for packages_base's Debian plugin install (baseline packages_base.pp:26 monitoring-plugins-standard, which pulls -basic where check_disk lives), and the evidence is the plugin's own result, not the install's output",
+  "lib64-nagios-is-a-link-to-lib-nagios @ manifests/filesystem_lib64.pp:11-15: ensure link + target '/usr/lib/nagios' is exactly what readlink /usr/lib64/nagios = /usr/lib/nagios asserts; the stat line asserts lines 5-9 (/usr/lib64/ directory, owner/group root); under defaults (class has no parameters) the code produces exactly these values",
+  "a-plugin-runs-by-its-redhat-path @ manifests/filesystem_lib64.pp:1-2: the header states the purpose (Ubuntu-only compatibility for nagios plugin invocation); invoking a real Ubuntu plugin by the RedHat-style /usr/lib64 path tests exactly that invocation compatibility",
+  "purpose covered: The class's whole manifest is two file resources (root-owned /usr/lib64 directory, /usr/lib64/nagios link to /usr/lib/nagios) plus its purpose comment; no templates, files or parameters. The outcomes table lists both: the structural outcome (stat + readlink) and the functional one (a plugin invoked by its /usr/lib64/nagios/plugins path runs and returns DISK OK after the Ubuntu plugins are installed as packages_base does in production). Both are lab-exercisable and both are tested; nothing is left uncovered, and no mismatch control is required (no probe takes a tool's verdict on a name/user/key/cipher/vhost). sysmon_base's plugin files written through the link are that class's outcome, not this one's. My reviewer run: clean phase both negatives failed, applied phase both passed (ALL_PASS)."
+ ],
+ "review_s": 80.6,
+ "check_file_sha256": "a17efa38e56d7af977cd6bd022b42fbd6a3f25ad9ae1711544721eb3f23dedd4",
+ "reviewer_result": "20261119T032135Z-reviewer",
+ "author_result": "20261119T031902Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "55ded74f-d369-4c28-9b4f-1204d325e171",
+   "boot_id_at_end": "55ded74f-d369-4c28-9b4f-1204d325e171",
+   "fresh": true
+  }
+ }
+}
