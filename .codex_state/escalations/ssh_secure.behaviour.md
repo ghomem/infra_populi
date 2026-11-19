@@ -1,6 +1,7 @@
 # ssh_secure — behaviour finding: the idle-session timeout no longer acts (2026-11-19)
 
-Status: OPEN, for HQ. Escalated for this class under HQ batch-12 ruling 5: a finding whose fix has more than one
+Status: OPEN, for HQ. The reviewer reproduced it (checks/reviews/ssh_secure/20261119T022504Z.json, set PASS with this
+finding, purpose covered after one correction). Escalated for this class under HQ batch-12 ruling 5: a finding whose fix has more than one
 reasonable design. The run continues with the next class.
 
 ## What the class means to do

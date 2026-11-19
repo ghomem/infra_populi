@@ -1,0 +1,37 @@
+{
+ "class": "ssh_secure",
+ "at": "20261119T022504Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "ciphers-exact: baseline line 60 passes $ciphers (default at line 11, untouched by the params fixture) to ssh::server as Ciphers; the probe reads sshd -T's effective ciphers line and expects exactly that five-cipher list in order, which the code produces",
+  "login-test-accounts-and-key: lines 35-38 declare group ssh_in; the setup's effect checks that p8testin and root are in ssh_in, which only works once the class has created the group (on the clean node usermod -aG ssh_in fails, so the negative control holds). It also checks that p8testother is in the Hiera group and p8testout is in none of sudo/naemon/p8testgroup/ssh_in. mutates declares the key, the group, the three accounts, root in ssh_in and the key appended to root's authorized_keys; the effect reads group membership and authorized_keys, not the action's own output",
+  "allow-groups: lines 20-23 give admin_group sudo on the default (Debian) branch; with line 41 (lookup of ${clientcert}::ssh::othergroups, lab Hiera fixture p8testgroup, joined with ' ssh_in') and line 79, AllowGroups is 'sudo naemon p8testgroup ssh_in', which the expect matches word by word. Cosmetic: the check's 'what' text and one file-header sentence ('No Hiera key ... so AllowGroups = sudo naemon  ssh_in') are stale since the 2026-11-19 Hiera fixture; the expect is right",
+  "mismatch controls (kex/cipher/mac negotiation): each one changes only the offered algorithm to the class's own value (dh-gex-sha256 / aes256-gcm / hmac-sha2-256 with aes256-ctr), so negotiation succeeds and the 'no matching ...' expectation must fail. All three failed after apply, as required",
+  "finding an-idle-session-is-ended-after-the-interval: reproduced. With ClientAliveInterval 10 and ClientAliveCountMax 0 (lines 75-76, params fixture), a loopback session running 'sleep 30; echo still-connected' printed 'still-connected after Ns', so sshd did not end the idle session. On OpenSSH 9.6p1, ClientAliveCountMax 0 turns termination off instead of ending the session after one interval. The probe tests the baseline's intent correctly (no client data for 30 s > 10 s); this is not an authoring error",
+  "purpose covered: The purpose (sshd hardened with restricted kex/ciphers/MACs and login rules) matches the class header ('sshd management class with improved security settings') and the baseline code. The checks test it by behaviour, not only by configuration. (1) Negotiation: a client offering an algorithm outside the class's lists is refused, with mismatch controls. (2) Key logins: work for ssh_in and for the Hiera othergroups group; refused for a user in no allowed group who has the same key. (3) Password auth is not offered, and root is refused by PermitRootLogin while in an allowed group (ROOT LOGIN REFUSED in the journal). (4) Idle-session termination is exercised (finding). (5) Host-key order, the moduli file content/mode and the remaining hardening values are checked through sshd -T. That a member of sudo/naemon can log in rests on the AllowGroups read plus the same mechanism the two login checks prove; it is not probed separately. Uncovered, honestly stated: Protocol 2 / UsePrivilegeSeparation are ignored by OpenSSH >= 7.5, so no node lifts them (lifted_by 'ubuntu' is nominal). The RedHat branch (sshd/wheel) is lifted by the active rhel9 node in nodes.yml"
+ ],
+ "review_s": 158.1,
+ "check_file_sha256": "66f958edbe8fe0d4dc7ba3d27c9dfc3d267a135a4e9d8bfea61118eb870d485f",
+ "reviewer_result": "20261119T022226Z-reviewer",
+ "author_result": "20261119T021951Z-author",
+ "findings": [
+  "an-idle-session-is-ended-after-the-interval"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "08aa21aa-9a45-4da8-8782-ea8d8d92c69f",
+   "boot_id_at_end": "08aa21aa-9a45-4da8-8782-ea8d8d92c69f",
+   "fresh": true
+  }
+ }
+}
