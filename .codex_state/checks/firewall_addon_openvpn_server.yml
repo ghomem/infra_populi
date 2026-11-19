@@ -18,6 +18,12 @@ purpose: >-
 # the node as behaviour: two network namespaces stand for the LAN behind the bridge (p8testlan, through veth p8test1,
 # 10.252.1.0/24) and the WAN (p8testwan, through veth p8test0, 10.252.0.0/24), and a stand-in for the base firewall's
 # FORWARD default drop is appended after the class's rules. Everything stays on the node.
+# Correction round 1 (2026-11-19, review 20261119T050053Z FAIL on purpose): the hairpin outcome (rule 204) was marked
+# uncovered for a reason of this set's own fixture (one client on a veth), not a lab limit. p8test1 is now a Linux
+# bridge holding two subnets (10.252.1.0/24 and 10.252.2.0/24) with a client namespace in each; a connection between
+# them is routed by the node in and back out of p8test1, which only rule 204 accepts ahead of the stand-in drop. The
+# client namespaces ignore ICMP redirects so the flow stays routed through the node. br_netfilter is not loaded on
+# the clean node (lsmod), so bridged frames do not traverse iptables.
 outcomes:
   - outcome: traffic from the bridge to the WAN is forwarded and leaves masqueraded behind the server's WAN address
     from: manifests/firewall_addon_openvpn_server.pp:15-17, 21
@@ -30,7 +36,7 @@ outcomes:
     checks: [ipv4-forwarding-on-and-persistent]
   - outcome: traffic that enters the bridge and leaves it again (hairpin) is forwarded
     from: manifests/firewall_addon_openvpn_server.pp:19
-    uncovered: {why: "the rule is checked as installed (forward-bridge-loopback), but a hairpin needs two clients behind one bridge whose traffic the server routes back out the same bridge, and the fixture's bridge interface is a veth with one client; untested as behaviour", lifted_by: ubuntu}
+    checks: [forward-bridge-loopback, a-lan-and-a-wan-behind-the-node, a-lan-host-reaches-another-subnet-on-the-bridge, the-forward-rules-counted-the-flows]
   - outcome: client isolation (client_isolation)
     from: manifests/firewall_addon_openvpn_server.pp:4-5, 11
     uncovered: {why: "the parameter is declared but no code uses it (the class's own warning: still to be implemented); there is no behaviour to test", lifted_by: ubuntu}
@@ -79,25 +85,35 @@ checks:
 
   - id: a-lan-and-a-wan-behind-the-node
     what: >-
-      setup for the forwarding checks: a LAN namespace behind p8test1 and a WAN namespace behind p8test0, a TCP server
-      on each side, and the stand-in FORWARD drop appended after the class's rules
+      setup for the forwarding checks: a bridge p8test1 with two LAN client namespaces in two subnets, a WAN namespace
+      behind p8test0, TCP servers on the WAN and on both LAN clients, and the stand-in FORWARD drop appended after the
+      class's rules
     control: negative
     derived_from:
       - {path: manifests/firewall_addon_openvpn_server.pp, lines: "1-2", text: "# This class provides necessary firewall configurations for openvpn servers"}
     mutates: >-
-      creates namespaces p8testlan and p8testwan with veth pairs p8test1/p8testlanif (10.252.1.1/24 node,
-      10.252.1.2/24 LAN, default route via the node) and p8test0/p8testwanif (10.252.0.1/24 node, 10.252.0.2/24 WAN,
-      a route to the LAN via the node); starts transient units p8test-wansrv (TCP 10.252.0.2:8080, answers with the
-      client address it sees) and p8test-lansrv (TCP 10.252.1.2:8081); appends `-A FORWARD -i p8test0 -m comment
-      --comment p8test-default-drop -j DROP` and the same for -i p8test1
+      creates bridge p8test1 (10.252.1.1/24 and 10.252.2.1/24 on the node) with ports p8testlanA and p8testlanB,
+      namespaces p8testlan (veth p8testlanif 10.252.1.2/24, default route via 10.252.1.1) and p8testlan2 (veth
+      p8testlan2if 10.252.2.2/24, default route via 10.252.2.1), both with accept_redirects 0 inside the namespace;
+      namespace p8testwan with veth pair p8test0/p8testwanif (10.252.0.1/24 node, 10.252.0.2/24 WAN, a route to
+      10.252.1.0/24 via the node); starts transient units p8test-wansrv (TCP 10.252.0.2:8080, answers with the client
+      address it sees), p8test-lansrv (TCP 10.252.1.2:8081) and p8test-lan2srv (TCP 10.252.2.2:8082); appends `-A
+      FORWARD -i p8test0 -m comment --comment p8test-default-drop -j DROP` and the same for -i p8test1
     probe: |
-      ip netns add p8testlan; ip netns add p8testwan
-      ip link add p8test1 type veth peer name p8testlanif; ip link set p8testlanif netns p8testlan
+      ip netns add p8testlan; ip netns add p8testlan2; ip netns add p8testwan
+      ip link add p8test1 type bridge
+      ip link add p8testlanA type veth peer name p8testlanif; ip link set p8testlanif netns p8testlan
+      ip link add p8testlanB type veth peer name p8testlan2if; ip link set p8testlan2if netns p8testlan2
+      ip link set p8testlanA master p8test1; ip link set p8testlanB master p8test1
+      ip link set p8testlanA up; ip link set p8testlanB up
       ip link add p8test0 type veth peer name p8testwanif; ip link set p8testwanif netns p8testwan
-      ip addr add 10.252.1.1/24 dev p8test1; ip link set p8test1 up
+      ip addr add 10.252.1.1/24 dev p8test1; ip addr add 10.252.2.1/24 dev p8test1; ip link set p8test1 up
       ip addr add 10.252.0.1/24 dev p8test0; ip link set p8test0 up
       ip netns exec p8testlan ip addr add 10.252.1.2/24 dev p8testlanif; ip netns exec p8testlan ip link set p8testlanif up
       ip netns exec p8testlan ip route add default via 10.252.1.1
+      ip netns exec p8testlan2 ip addr add 10.252.2.2/24 dev p8testlan2if; ip netns exec p8testlan2 ip link set p8testlan2if up
+      ip netns exec p8testlan2 ip route add default via 10.252.2.1
+      for n in p8testlan p8testlan2; do ip netns exec "$n" sysctl -q -w net.ipv4.conf.all.accept_redirects=0 net.ipv4.conf.default.accept_redirects=0; done
       ip netns exec p8testwan ip addr add 10.252.0.2/24 dev p8testwanif; ip netns exec p8testwan ip link set p8testwanif up
       ip netns exec p8testwan ip route add 10.252.1.0/24 via 10.252.0.1
       systemd-run --unit p8test-wansrv -q ip netns exec p8testwan python3 -c "import socket; s=socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); s.bind(('10.252.0.2', 8080)); s.listen(5)
@@ -106,13 +122,17 @@ checks:
       systemd-run --unit p8test-lansrv -q ip netns exec p8testlan python3 -c "import socket; s=socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); s.bind(('10.252.1.2', 8081)); s.listen(5)
       while True:
           c, a = s.accept(); c.close()"
+      systemd-run --unit p8test-lan2srv -q ip netns exec p8testlan2 python3 -c "import socket; s=socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); s.bind(('10.252.2.2', 8082)); s.listen(5)
+      while True:
+          c, a = s.accept(); c.close()"
       iptables -A FORWARD -i p8test0 -m comment --comment p8test-default-drop -j DROP
       iptables -A FORWARD -i p8test1 -m comment --comment p8test-default-drop -j DROP
       sleep 1
     effect: |
-      for u in p8test-wansrv p8test-lansrv; do p8_service "$u" | cut -d' ' -f1; done
+      for u in p8test-wansrv p8test-lansrv p8test-lan2srv; do p8_service "$u" | cut -d' ' -f1; done
       iptables -S FORWARD | p8_count 'p8test-default-drop'
-    expect: {rc: 0, stdout: "\\Aactive\\nactive\\n2\\n\\Z"}
+      ip -o link show master p8test1 | p8_count 'p8testlan[AB]'
+    expect: {rc: 0, stdout: "\\Aactive\\nactive\\nactive\\n2\\n2\\n\\Z"}
 
   - id: a-lan-host-reaches-the-wan-masqueraded
     what: the LAN host connects to the WAN server through the node, and the server sees the node's WAN address (10.252.0.1), not the LAN host's
@@ -148,8 +168,26 @@ checks:
           print('no connection')"
     expect: {rc: 0, stdout: "\\Awan-present\\nno connection\\n\\Z"}
 
+  - id: a-lan-host-reaches-another-subnet-on-the-bridge
+    what: >-
+      the LAN client in 10.252.1.0/24 connects to the one in 10.252.2.0/24; the node routes the flow in and back out
+      of the bridge p8test1 (a hairpin), over the stand-in drop of traffic arriving on p8test1
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_openvpn_server.pp, lines: "19", text: "firewall { '204 allow flow loopback on br0':        chain => 'FORWARD', iniface => $lan_bridge_iface, outiface => $lan_bridge_iface, proto => 'all', action => 'accept' }"}
+    mutates: none beyond one TCP connection from p8testlan to p8testlan2 (declared mutating so it runs after the setup)
+    probe: |
+      true
+    effect: |
+      ip netns exec p8testlan python3 -c "import socket
+      try:
+          socket.create_connection(('10.252.2.2', 8082), 3); print('connected')
+      except OSError:
+          print('no connection')"
+    expect: {rc: 0, stdout: "\\Aconnected\\n\\Z"}
+
   - id: the-forward-rules-counted-the-flows
-    what: on the node, rule 202 (bridge to WAN), rule 203 (replies into the bridge) and rule 205 (masquerade) counted packets, and the stand-in drop counted the WAN host's attempt
+    what: on the node, rule 202 (bridge to WAN), rule 203 (replies into the bridge), rule 204 (the hairpin) and rule 205 (masquerade) counted packets, and the stand-in drop counted the WAN host's attempt
     control: negative
     derived_from:
       - {path: manifests/firewall_addon_openvpn_server.pp, lines: "17-21", text: "firewall {'205 performing nat':"}
@@ -157,6 +195,6 @@ checks:
     probe: |
       true
     effect: |
-      iptables -v -x -L FORWARD -n | awk '/202 allow flow/ {a=$1} /203 allow flow/ {b=$1} /p8test-default-drop/ {c+=$1} END {print "202: " (a+0 != 0 ? "counted" : "zero"); print "203: " (b+0 != 0 ? "counted" : "zero"); print "stand-in drop: " (c+0 != 0 ? "counted" : "zero")}'
+      iptables -v -x -L FORWARD -n | awk '/202 allow flow/ {a=$1} /203 allow flow/ {b=$1} /204 allow flow/ {h=$1} /p8test-default-drop/ {c+=$1} END {print "202: " (a+0 != 0 ? "counted" : "zero"); print "203: " (b+0 != 0 ? "counted" : "zero"); print "204: " (h+0 != 0 ? "counted" : "zero"); print "stand-in drop: " (c+0 != 0 ? "counted" : "zero")}'
       iptables -t nat -v -x -L POSTROUTING -n | awk '/205 performing nat/ {n=$1} END {print "205: " (n+0 != 0 ? "counted" : "zero")}'
-    expect: {rc: 0, stdout: "\\A202: counted\\n203: counted\\nstand-in drop: counted\\n205: counted\\n\\Z"}
+    expect: {rc: 0, stdout: "\\A202: counted\\n203: counted\\n204: counted\\nstand-in drop: counted\\n205: counted\\n\\Z"}
