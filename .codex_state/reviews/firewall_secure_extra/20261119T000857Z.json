@@ -1,0 +1,100 @@
+{
+ "schema": 1,
+ "class": "firewall_secure_extra",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-19T00:08:57Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "c31cfaa45c71",
+ "migrate_subject": "P8: migrate puppet_infrastructure::firewall_secure_extra",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit c31cfaa45c71; 18 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/firewall_secure_extra.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `firewall_secure_extra Done [from: release-0.9.10; local changes: #5]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-firewall', '8.3.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 57 catalog events; COVERAGE puppet_infrastructure::firewall_secure_extra: 50 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A :1-2: two-line migration header (purpose + puppetlabs-firewall 8.3.0) only added comment lines; no baseline comment removed (comments_preserved ok).",
+   "DIFF A every action => 'accept'/'drop'/'reject' -> jump => same value (ICMP 000 rules, 001-003, 100 SSH whitelist, 110-117, 501-520, 521-524, 123123123 forward/internal, 555 open ports): puppetlabs-firewall 8 attribute rename, values and titles unchanged.",
+   "DIFF A $indilim='8'->8, $indilim_minute='15'->15, rseconds '60'->60, burst '2'->2, connlimit_above $ddos_limit -> Integer($ddos_limit, 10) (String param, default '100'): firewall 8.3.0 types burst/rseconds/rhitcount Optional[Integer[1]], connlimit_above Optional[Integer] (verified in the master's lib/puppet/type/firewall.rb), same numeric values; $overlim_minute stays a string used only in interpolation.",
+   "DIFF A ip_blacklist loop (baseline :125-127): title '666 grounding naughty boys' -> '00 grounding naughty boys', proto => 'all' added, plus two comment lines = exactly local change #5 (HQ batch-11 ruling 1). Verified: firewall 8.3.0 provider insert_order uses rules.sort (string sort, provider/firewall/firewall.rb:1062/1085) so '00 ' sorts before every '000 ...'; type proto default is 'tcp' (type :281-283). Both parts are minimal for check a-blacklisted-source-gets-nothing: before (20261118T180625Z-author) both 'icmp from blacklisted in' (needs proto all) and 'ssh from blacklisted in' (needs ordering before 003 established / 100 whitelist); after (20261118T223957Z-author) both dropped and unlisted still in. No other non-translation hunk.",
+   "DIFF B (re-migration c31cfaa): only header line rewritten and the blacklist rule changed 666->00 with proto all + comment; earlier migrated content otherwise unchanged, DIFF A carries the whole claim."
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 52,
+  "removed": 48,
+  "non_comment_changes": 96,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: preserve release-0.9.10 rules using jump and integer numeric attributes; retain parameter defaults; plus one local change (policy B, HQ batch-11 ruling 1; rules/local_changes.md #5): the blacklist drop is titled 00 so it comes before every accept, and it covers all protocols, as the parameter's comment describes a blacklist of addresses.",
+  "# Module dependency: puppetlabs-firewall 8.3.0."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 57,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::firewall_secure_extra: 50 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 50.945,
+   "master_check_s": 0.28,
+   "poweroff_s": 0.829,
+   "restore_s": 0.241,
+   "boot_to_ssh_s": 13.109,
+   "apt_update_s": 36.159,
+   "verify_s": 0.327,
+   "nic1_rx_bytes": 13107386
+  },
+  "log": ".codex_state/logs/reviews/firewall_secure_extra.20261119T000641Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "ubuntu"
+}
