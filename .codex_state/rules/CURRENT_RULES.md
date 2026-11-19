@@ -2,7 +2,16 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-114 entries; 6 marked superseded (in whole or part); newest first.
+115 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-18 — HQ rulings on batch 12
+- 1. **Rule 518 (firewall_secure_extra, TCP fragments):** the same handling as the RST limit (Phase 5 backlog #8,
+- 2. **firewall_secure_extra's set: one more round, the last for this class.**
+- 3. **sysmon_base's set:** run round 3, since the failed-run CRITICAL path is the core of the class's purpose.
+- 4. **Markers:** the tracker marker lists local-change numbers generated from rules/local_changes.md. record_green
+- 5. **Run rule, amended so the backfill does not wait on HQ:**
+- 6. **Probe helpers:** half of the first drafts failed on probe mechanics. A small tested helper library (count, port,
+- 7. **Continue with batch 3 and onward,** by production use under the corrected count, mixing classes with no set and
 
 ## 2026-11-18 — HQ rulings on batch 11 (firewall_secure_extra)
 - 1. **Blacklist: fix it, option A.** A blacklist that lets a listed address in does not achieve the class's purpose.

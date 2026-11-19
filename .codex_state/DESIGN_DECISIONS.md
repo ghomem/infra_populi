@@ -2039,3 +2039,32 @@ snapshot list, record.
    firewall_ipv6_drop (done), node_base, sysmon_base, ssl_base, ssl_nginx_domain, nginx_default_removal,
    nginx_frontend_domain, nginx_frontend, docker_container, firewall_secure_extra. puppet_boot_run (1 statement) moves
    to a later batch.
+
+## 2026-11-18 — HQ rulings on batch 12
+1. **Rule 518 (firewall_secure_extra, TCP fragments):** the same handling as the RST limit (Phase 5 backlog #8,
+   approval report). **Standing rule:** a rule proven unreachable, whose protection is shown to hold elsewhere or is
+   not needed, is recorded (approval report, Phase 5 backlog) without a ruling. If the protection does not hold, it
+   is a finding.
+2. **firewall_secure_extra's set: one more round, the last for this class.**
+   - First find which rule took the eighth held connection, from the rule counters before and after.
+   - If the cause is the test, fix the test.
+   - Only if the counters show a legitimate interaction may the expectation become "7 or 8 held, the 9th and 10th
+     dropped".
+   - Whatever the result, the class then goes to the approval report as it stands.
+3. **sysmon_base's set:** run round 3, since the failed-run CRITICAL path is the core of the class's purpose.
+   Correction rounds are capped at **three for classes used in production** and **two for the rest**.
+4. **Markers:** the tracker marker lists local-change numbers generated from rules/local_changes.md. record_green
+   regenerates it when the list grows, and a marker never shrinks without an explicit flag (`--shrink-local-changes`).
+   Tested.
+5. **Run rule, amended so the backfill does not wait on HQ:**
+   - an escalated check set does not hold the run;
+   - nor does a finding with one clear fix under policy B;
+   - a finding with more than one reasonable design is escalated for that class, and the run continues with the next
+     class;
+   - only a Phase 1 FAIL or a discovered false PASS stops everything.
+6. **Probe helpers:** half of the first drafts failed on probe mechanics. A small tested helper library (count, port,
+   HTTP, service state, file digest, connection hold) is used wherever a helper fits. It will become part of the
+   public test suite: `.codex_state/tools/probe_helpers.sh`, prepended by phase3.py to every node and peer script, with
+   mutating helpers refused outside a check's action.
+7. **Continue with batch 3 and onward,** by production use under the corrected count, mixing classes with no set and
+   classes whose set is unjudged.

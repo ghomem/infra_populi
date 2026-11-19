@@ -72,7 +72,8 @@ pregate are fine.
 5b. BEHAVIOUR (Phase 3 in the loop, HQ 2026-11-16) — after the reviewer PASS, before METRICS. It never blocks or
    changes the Phase 1 record, and the budget counts Phase 1 PASSes only.
    - Author `.codex_state/checks/<class>.yml` from the BASELINE (CLAUDE.md "Phase 3 checks"). For a firewall rule,
-     take its effective attributes from the compiled catalog, module defaults included (HQ batch-11 ruling 4):
+     take its effective attributes from the compiled catalog, module defaults included (HQ batch-11 ruling 4). Use the
+     probe helpers of `.codex_state/tools/probe_helpers.sh` wherever one fits (HQ batch-12 ruling 6):
      - every check with its derived_from lines;
      - negative controls;
      - a `mismatch` control wherever a probe hands a name/user/key/cipher/vhost to a tool and takes its verdict;

@@ -151,11 +151,20 @@ before and passes after, must be minimal, must be listed in `.codex_state/rules/
 and must be reviewer-verified. Escalate when a fix changes a class interface, removes functionality, or has more than
 one reasonable design. Syntax-only stays the default where no check demands a change. Phase 1 exit is behaviour
 approval of every active class (DESIGN_DECISIONS 2026-11-18 "HQ rulings on round 9", C). Policy B covers manifest
-changes too (HQ batch-10 ruling 4), recorded with `record_green.sh --local-change "<short>"` and a local_changes.md row.
+changes too (HQ batch-10 ruling 4), recorded with a local_changes.md row; `record_green.sh` generates the tracker
+marker `local changes: #N[, #M]` from those rows and never shrinks it without `--shrink-local-changes` (HQ batch-12
+ruling 4).
 Check sets list the purpose as observable outcomes in an `outcomes:` table, each mapped to checks or `uncovered`
 (ruling 2). Times and numbers in sets, records and reports are measured or absent, never estimated (ruling 3).
-Backfill start rule (ruling 1): a corrected and re-reviewed check-set FAIL does not stop the run; a behaviour finding
-or a Phase 1 FAIL does; a set still failing after two correction rounds is escalated and the run continues.
+Run rule (HQ batch-12 ruling 5, amending batch-10 ruling 1):
+- An escalated check set does not hold the run, and neither does a finding with one clear fix under policy B.
+- A finding with more than one reasonable design is escalated for that class, and the run continues with the next
+  class.
+- Only a Phase 1 FAIL or a discovered false PASS stops everything.
+- Correction rounds are capped at three for classes used in production and two for the rest (batch-12 ruling 3);
+  past the cap the set is escalated.
+- A rule proven unreachable, whose protection is shown to hold elsewhere or is not needed, is recorded (approval report,
+  Phase 5 backlog) without a ruling; if the protection does not hold, it is a finding (batch-12 ruling 1).
 
 ## Phase 3 checks (ruling 11, 2026-10-27; runner built for HQ batch-3 acceptance B)
 Behaviour checks per class in `.codex_state/checks/<class>.yml` (advisor-authored, advisor-only), run by
@@ -181,6 +190,9 @@ Behaviour checks per class in `.codex_state/checks/<class>.yml` (advisor-authore
 - Effective attributes (HQ batch-11 ruling 4): before writing an expectation about a firewall rule, take the rule's
   effective attributes from the compiled catalog, including module defaults such as the protocol (`proto` defaults
   to tcp), not from the manifest's text.
+- Probe helpers (HQ batch-12 ruling 6): `.codex_state/tools/probe_helpers.sh` is prepended to every node and peer
+  script; use a helper wherever one fits (p8_count, p8_listening, p8_tcp, p8_http, p8_service, p8_digest, p8_rc, p8_tls,
+  p8_established; p8_hold only in a check's action).
 - Mismatch controls (HQ 2026-11-16): a probe that takes a tool's verdict on a name/user/key/cipher/vhost needs a
   `mismatch` (one value deliberately wrong) that must FAIL after apply, or the set is INVALID.
 - In the loop from batch 4 (skill step 5b): after the reviewer PASS, write and run the class's check set, or declare
