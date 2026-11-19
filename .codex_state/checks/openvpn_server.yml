@@ -8,16 +8,47 @@
 # The peer reaches 203.0.113.50 (a local address of the node) through a host route via the node's host-only address.
 # The client filters the pushed redirect-gateway (it is checked as received): applied, it would send the peer's route
 # to the server through NIC1's NAT gateway instead of the host-only path.
+# Purpose and outcomes table added 2026-11-19 (backfill batch 4, HQ batch-10 rulings 2 and C1), with client isolation
+# as behaviour: a second client, in network namespace p8vpn2 on the peer (masqueraded out through the peer's own
+# address) and logged in as a second account (one account per client: username_as_common_name without duplicate-cn
+# would drop the first session), reaches the server side but not the first client. The networking side (ifupdown and
+# the networking service enabled, the bridge's stanza) gets a check of its own.
+# The interfaces file's rendering was read on an applied node first (2026-11-19, harness apply): one auto line names
+# br0 lo lo:0 p8test0 (p8test0 from network_dhcp's base), then "iface br0 inet static", "address 192.0.2.1", and
+# indented options with "bridge_ports lo:0".
 class: openvpn_server
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
   minutes: 0.7
-  notes: "Wall clock 13:53:31Z to 13:54:10Z 2026-11-17 (no lab run active; baseline manifest and the module's rendered config format read)."
+  notes: "Wall clock 13:53:31Z to 13:54:10Z 2026-11-17 (no lab run active; baseline manifest and the module's rendered config format read). Extended 2026-11-19 (purpose, outcomes, networking at boot, client isolation with a second client): 06:09:14Z to 06:19:11Z (date at the start of reading the set and at validation after the rendering was measured), including one harness apply of the class; the first authoring's minutes above are kept."
 peer:
   kind: ubuntu2
   why: the VPN client must be a second machine on the lab network that connects to the server node over UDP
   files: [/etc/openvpn/keys/ca.crt]
+purpose: >-
+  An OpenVPN server that bridges its clients onto a LAN bridge: clients authenticate with a local account (PAM, no
+  client certificate), get an address from the bridge's pool and the pushed routes and DNS, reach the server's LAN
+  side, cannot reach each other (client isolation), and the bridge is configured to come back at boot.
+outcomes:
+  - outcome: the server listens on UDP 1194 at the bound address with the bridged tap0, the pool, PAM auth and the renegotiation interval
+    from: manifests/openvpn_server.pp:117-121, 157-187
+    checks: [server-listens-on-the-bound-address, server-config-rendered]
+  - outcome: the bridge carries the LAN address with tap0 as a port, and is set up through ifupdown with the networking service enabled (boot)
+    from: manifests/openvpn_server.pp:35-41, 73-115, 174, 202-209
+    checks: [bridge-holds-the-lan-address-and-tap0, networking-brings-up-the-bridge-at-boot]
+  - outcome: a client with a local account connects, gets a pool address and the pushed options, and reaches the server's LAN side
+    from: manifests/openvpn_server.pp:124-154, 162-185, 196-200
+    checks: [vpn-account-on-the-server, client-connects-gets-a-pool-address-and-reaches-the-server-side]
+  - outcome: a wrong password is refused
+    from: manifests/openvpn_server.pp:169
+    checks: [wrong-password-rejected]
+  - outcome: clients cannot reach each other (client isolation, the default)
+    from: manifests/openvpn_server.pp:25, 43-45, 211
+    checks: [client-isolation-on-the-bridge, a-second-vpn-account, a-second-client-reaches-the-server-side-but-not-the-first]
+  - outcome: the variants force_ifupdown, client_isolation false, compression none, another cipher or DNS server
+    from: manifests/openvpn_server.pp:18-30, 50-70
+    uncovered: {why: "parameter variants (one set holds one params fixture, which keeps their defaults); untested", lifted_by: ubuntu}
 checks:
   - id: server-listens-on-the-bound-address
     what: the OpenVPN server listens on UDP 1194 at the `local` address
@@ -61,6 +92,21 @@ checks:
     probe: |
       sysctl -n net.ipv4.conf.br0.proxy_arp_pvlan
     expect: {rc: 0, stdout: "\\A0\\n\\Z"}
+
+  - id: networking-brings-up-the-bridge-at-boot
+    what: >-
+      ifupdown is installed, the networking service (which reads /etc/network/interfaces at boot) is enabled, and the
+      interfaces file declares br0 static with lan_static_ip and bridge port lan_iface
+    control: negative
+    derived_from:
+      - {path: manifests/openvpn_server.pp, lines: "35-41", text: "package { [ 'ifupdown', 'bridge-utils']: ensure => present }"}
+      - {path: manifests/openvpn_server.pp, lines: "100-115", text: "bridge_ports    => $lan_iface,"}
+    probe: |
+      dpkg-query -W -f '${Package} ${Status}\n' ifupdown
+      systemctl is-enabled networking
+      p8_count '^auto( .+)? br0( |$)' /etc/network/interfaces
+      grep -E '^(iface br0 inet static|address 192\.0\.2\.1|\s+bridge_ports lo:0)$' /etc/network/interfaces | sed 's/^\s*//'
+    expect: {rc: 0, stdout: "\\Aifupdown install ok installed\\nenabled\\n1\\niface br0 inet static\\naddress 192\\.0\\.2\\.1\\nbridge_ports lo:0\\n\\Z"}
 
   - id: vpn-account-on-the-server
     what: a local account exists on the server for PAM authentication (setup for the client checks)
@@ -120,3 +166,54 @@ checks:
       grep -c 'AUTH_FAILED' /run/p8vpn-bad/client.log
       grep -c 'Initialization Sequence Completed' /run/p8vpn-bad/client.log || true
     expect: {rc: 0, stdout: "\\A[1-9]\\d*\\n0\\n\\Z"}
+
+  - id: a-second-vpn-account
+    what: a second local account on the server for the second client (setup for the isolation check)
+    control: negative
+    derived_from:
+      - {path: manifests/openvpn_server.pp, lines: "168", text: "username_as_common_name  => true,"}
+    mutates: creates the local account p8vpnuser2 on the server node with the fake password p8test-vpn2-not-a-secret
+    probe: |
+      useradd -M -s /usr/sbin/nologin p8vpnuser2 && echo 'p8vpnuser2:p8test-vpn2-not-a-secret' | chpasswd
+    effect: |
+      getent passwd p8vpnuser2 | cut -d: -f1
+    expect: {rc: 0, stdout: "\\Ap8vpnuser2\\n\\Z"}
+
+  - id: a-second-client-reaches-the-server-side-but-not-the-first
+    what: >-
+      a second client, in a network namespace on the peer, connects as p8vpnuser2, gets a pool address and reaches
+      lan_static_ip, but gets no answer from the first client's pool address (client isolation)
+    control: negative
+    host: peer
+    timeout: 180
+    derived_from:
+      - {path: manifests/openvpn_server.pp, lines: "43-45", text: "$proxy_arp = Numeric(!$client_isolation)"}
+      - {path: manifests/openvpn_server.pp, lines: "25", text: "Boolean $client_isolation = true,"}
+    mutates: >-
+      on the peer: creates network namespace p8vpn2 joined to the peer by veth p8vpn2a (10.253.0.1/30) / p8vpn2b
+      (10.253.0.2/30, default route via 10.253.0.1), turns on IPv4 forwarding and masquerades 10.253.0.0/30 in the
+      peer's nat POSTROUTING, writes a client config and the p8vpnuser2 credentials under /run/p8vpn2 and starts a
+      second openvpn client daemon inside the namespace
+    probe: |
+      ip netns add p8vpn2
+      ip link add p8vpn2a type veth peer name p8vpn2b
+      ip link set p8vpn2b netns p8vpn2
+      ip addr add 10.253.0.1/30 dev p8vpn2a; ip link set p8vpn2a up
+      ip netns exec p8vpn2 ip addr add 10.253.0.2/30 dev p8vpn2b
+      ip netns exec p8vpn2 ip link set p8vpn2b up; ip netns exec p8vpn2 ip link set lo up
+      ip netns exec p8vpn2 ip route add default via 10.253.0.1
+      sysctl -q -w net.ipv4.ip_forward=1
+      iptables -t nat -A POSTROUTING -s 10.253.0.0/30 -m comment --comment p8test-vpn2 -j MASQUERADE
+      mkdir -p /run/p8vpn2
+      printf 'p8vpnuser2\np8test-vpn2-not-a-secret\n' > /run/p8vpn2/auth
+      sed 's#/run/p8vpn/auth#/run/p8vpn2/auth#' /run/p8vpn/client.conf > /run/p8vpn2/client.conf
+      ip netns exec p8vpn2 openvpn --config /run/p8vpn2/client.conf --daemon --log /run/p8vpn2/client.log --writepid /run/p8vpn2/pid
+      for i in $(seq 40); do grep -q -e 'Initialization Sequence Completed' -e 'AUTH_FAILED' /run/p8vpn2/client.log && break; sleep 1; done
+    effect: |
+      grep -c 'Initialization Sequence Completed' /run/p8vpn2/client.log
+      first=$(ip -4 -br addr show "$(ip -br link | awk '$1 ~ /^tap/ {print $1; exit}')" | awk '{print $3}' | cut -d/ -f1)
+      second=$(ip netns exec p8vpn2 ip -4 -br addr | awk '$1 ~ /^tap/ {print $3; exit}' | cut -d/ -f1)
+      [ -n "$first" ] && [ -n "$second" ] && [ "$first" != "$second" ] && echo two-pool-addresses
+      ip netns exec p8vpn2 ping -c 2 -W 2 192.0.2.1 >/dev/null && echo second-reaches-server-side
+      ip netns exec p8vpn2 ping -c 3 -W 2 "$first" >/dev/null && echo second-reaches-first || echo first-unreachable
+    expect: {rc: 0, stdout: "\\A1\\ntwo-pool-addresses\\nsecond-reaches-server-side\\nfirst-unreachable\\n\\Z"}
