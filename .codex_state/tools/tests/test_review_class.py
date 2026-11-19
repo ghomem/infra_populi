@@ -415,3 +415,44 @@ def test_local_marker_replaces_legacy_text_and_guards_its_removal():
     with pytest.raises(SystemExit, match="needs --shrink-local-changes"):
         records.local_marker("c", "backend bound to 127.0.0.1", [], False)
     assert records.local_marker("c", "backend bound to 127.0.0.1", [], True) == ""
+
+
+# HQ batch-15 ruling 2: a class with a local change gets its Phase 1 PASS only once the change's after-check passed,
+# on the class's current code.
+def after_fixture(tmp_path, row_check, results):
+    lc = tmp_path / "local_changes.md"
+    lc.write_text("| # | class | change | check | reviewer | date |\n|---|---|---|---|---|---|\n"
+                  f"| 9 | p8cls | x | {row_check} | pending | 2026-11-19 |\n")
+    rdir = tmp_path / "results" / "p8cls"
+    rdir.mkdir(parents=True)
+    for name, (runner, passed) in results.items():
+        (rdir / f"{name}.json").write_text(json.dumps({"runner": runner, "applied": [
+            {"id": i, "passed": p} for i, p in passed.items()]}))
+    return lc, tmp_path / "results"
+
+
+GOOD = "chk-a and chk-b: FAIL before (x); PASS after (results/p8cls/20261119T100000Z-author: ok)"
+
+
+def test_a_local_change_whose_after_check_passed_on_the_current_code_is_accepted(tmp_path):
+    lc, res = after_fixture(tmp_path, GOOD, {"20261119T100000Z-author": ("c1", {"chk-a": True, "chk-b": True})})
+    assert rc.local_change_after_problems("p8cls", ["m.pp"], lc, res, changed=lambda r, f: False) == []
+
+
+@pytest.mark.parametrize("row, results, changed, message", [
+    ("chk-a: FAIL before (x); PASS after: pending", {}, False, "names no after result"),
+    (GOOD, {"20261119T090000Z-author": ("c1", {"chk-a": True, "chk-b": True})}, False, "does not exist"),
+    (GOOD, {"20261119T100000Z-author": ("c1", {"chk-a": True, "chk-b": False})}, False, "check chk-b did not pass in"),
+    (GOOD, {"20261119T100000Z-author": ("c1", {"chk-a": True, "chk-b": True})}, True, "changed since"),
+    (GOOD, {"20261119T100000Z-author": ("c1", {"chk-a": True, "chk-b": True}),
+            "20261119T110000Z-reviewer": ("c2", {"chk-a": False, "chk-b": True})}, False, "latest result"),
+])
+def test_a_local_change_without_a_current_passing_after_check_is_refused(tmp_path, row, results, changed, message):
+    lc, res = after_fixture(tmp_path, row, results)
+    problems = rc.local_change_after_problems("p8cls", ["m.pp"], lc, res, changed=lambda r, f: changed)
+    assert any(message in p for p in problems), problems
+
+
+def test_the_after_check_gate_ignores_other_classes_rows(tmp_path):
+    lc, res = after_fixture(tmp_path, "chk-a: PASS after: pending", {})
+    assert rc.local_change_after_problems("another", ["m.pp"], lc, res, changed=lambda r, f: False) == []

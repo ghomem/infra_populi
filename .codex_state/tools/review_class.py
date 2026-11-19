@@ -210,6 +210,63 @@ def local_change_numbers(cls: str, path: Path | None = None) -> list[int]:
     return out
 
 
+AFTER_RE = re.compile(r"PASS after \((?:checks/)?results/([a-z0-9_]+)/(\d{8}T\d{6}Z)-(author|reviewer)")
+
+
+def local_change_after_problems(cls: str, class_files: list[str], path: Path | None = None,
+                                results: Path | None = None, changed=None) -> list[str]:
+    """HQ batch-15 ruling 2: a class carrying a local change gets its Phase 1 PASS only once the change's after-check has
+    passed. Each of the class's rows must name its after result, that result must exist with every check the row names
+    passed, and the class's latest result (author or reviewer) must have run on the current code (no class file changed
+    between its runner commit and HEAD) with those checks passed too: a later change may not ride on an earlier after
+    result. `changed(runner, files)` says whether any of the files differ from HEAD (git by default)."""
+    path = path or STATE / "rules" / "local_changes.md"
+    results = results or STATE / "checks" / "results"
+    if changed is None:
+        def changed(runner: str, files: list[str]) -> bool:
+            return subprocess.run(["git", "-C", str(REPO), "diff", "--quiet", runner, "HEAD", "--", *files],
+                                  capture_output=True).returncode != 0
+    problems = []
+    if not path.is_file():
+        return problems
+    for line in path.read_text(encoding="utf-8").splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if not (line.startswith("|") and len(cells) >= 4 and cells[1] == cls and cells[0].isdigit()):
+            continue
+        n, check_col = cells[0], cells[3]
+        m = AFTER_RE.search(check_col)
+        if not m:
+            problems.append(f"local change #{n} names no after result (`PASS after (results/...)`): its after-check "
+                            "must pass before the Phase 1 PASS (HQ batch-15 ruling 2)")
+            continue
+        ids = [i.strip() for i in re.split(r"\s+and\s+|,\s*", check_col.split(":", 1)[0]) if i.strip()]
+        res = results / m.group(1) / f"{m.group(2)}-{m.group(3)}.json"
+        if not res.is_file():
+            problems.append(f"local change #{n}: its after result results/{m.group(1)}/{res.name} does not exist")
+            continue
+        data = json.loads(res.read_text(encoding="utf-8"))
+        passed = {r["id"]: r.get("passed") for r in data.get("applied", [])}
+        for check_id in ids:
+            if passed.get(check_id) is not True:
+                problems.append(f"local change #{n}: check {check_id} did not pass in {res.name}")
+        latest = max((p for p in res.parent.glob("*.json") if p.stem.endswith(("-author", "-reviewer"))),
+                     key=lambda p: p.name[:16])
+        last = json.loads(latest.read_text(encoding="utf-8"))
+        runner = last.get("runner")
+        if not runner:
+            problems.append(f"local change #{n}: the latest result {latest.name} records no runner commit")
+        elif changed(runner, class_files):
+            problems.append(f"local change #{n}: the latest result {latest.name} ran on {runner}, and the class's files "
+                            "changed since: run the after-check on the current code")
+        else:
+            now = {r["id"]: r.get("passed") for r in last.get("applied", [])}
+            for check_id in ids:
+                if now.get(check_id) is not True:
+                    problems.append(f"local change #{n}: check {check_id} did not pass in the latest result "
+                                    f"{latest.name} on the current code")
+    return problems
+
+
 def defect_entry(cls: str, path: Path | None = None) -> dict | None:
     """The class's entry in .codex_state/upstream_defects.md: {'status', 'change'} or None."""
     path = path or STATE / "upstream_defects.md"
@@ -498,6 +555,9 @@ def run_checks(cls: str, harness: bool) -> dict:
                            f"{', '.join(f'#{n}' for n in rows)} for the class (HQ batch-12 ruling 4: generated numbers)")
             else:
                 out["local_change_row"] = row_text
+                after = local_change_after_problems(cls, class_paths(cls, base))
+                rec.extend(after)
+                out["local_change_after"] = after or "every row's after-check passed on the current code"
         if entry is not None and entry.done and entry.from_ref == base.name and entry.defect_fixed:
             out["defect_fixed"] = entry.defect_fixed
             ruled = defect_entry(cls)

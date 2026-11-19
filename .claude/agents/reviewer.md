@@ -49,7 +49,10 @@ Steps, all required:
      the LOCAL CHANGE rows (you may read that file and the result files its rows name). DIFF A may then also contain
      exactly those changes: no more, no less. Judge that each is the minimal change for the failing check its row
      cites; any other non-translation hunk still FAILs. A marker without rows, or one whose numbers differ from the
-     class's rows, fails `records` mechanically.
+     class's rows, fails `records` mechanically. So does a row whose after-check has not passed on the class's current
+     code (HQ batch-15 ruling 2: the Phase 1 PASS comes only once the change's after-check passed): the tool confirms the
+     row's after result exists with its checks passed, and that the class's latest result ran on the current code with
+     them passed.
    - A node fixture listed in `.codex_state/rules/test_asset_fixtures.txt` is a test asset (e.g. placeholder site
      images), not a stand-in (HQ 2026-11-18 ruling 9): the class carries no mock-apply marker; judge with
      `--fixture-scope` that the fixture only supplies that asset.
