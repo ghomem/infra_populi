@@ -1,0 +1,34 @@
+{
+ "class": "user",
+ "at": "20261119T181328Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-given-key-is-pushed @ manifests/user_base.pp:94: 'if ( $ignorekey == false )' with user_base's default ignorekey=false (user.pp:6/8 cannot pass ignorekey) declares the ssh_authorized_key; the probe reads ~/.ssh/authorized_keys and expects exactly one ssh-rsa line carrying an RSA body (the fixture mykey starts AAAAB3NzaC1yc2EAAAADAQAB, >200 chars, no '!' in the hash so no userlocked/emptykey placeholder) \u2014 supported",
+  "the-given-key-is-pushed @ manifests/user_base.pp:96-99: ssh_authorized_key '${myusername}@puppet' with user, type 'ssh-rsa', key $sshkey -> the expected line 'ssh-rsa <key> p8testuser@puppet' is exactly what this resource writes for title p8testuser; 'only key' holds on a fresh account (purge_ssh_keys true, l.72) \u2014 supported",
+  "user-and-own-primary-group @ manifests/user_base.pp:26: '$myprimary = $title' applies because user.pp's default mygrouplist is [] (the fixture sets none); gid => $myprimary, comment => $myname ('P8 Test User'), home /home/<title> (myhome ''), shell /bin/bash default -> the probe's passwd fields and primary-group name p8testuser are what the code produces \u2014 supported",
+  "purpose gap: Tested (reviewer run 20261119T181125Z, ALL_PASS, clean-phase negatives all failed): the account with own primary group, comment, home (created, owned), shell and no other group; the fixture SHA-512 hash in shadow and, as behaviour, su with the test password succeeds and a wrong one is refused; the given key is the only authorized key, in a user-owned 700/600 .ssh; no ecryptfs file written. The purpose ('a normal user not belonging to any special groups', user.pp:1-2) is read right. GAP: the 'uncovered' row for user_base's own behaviour (from user.pp:5,8) gives the reason \"checked in user_base's set\" for 'locked or keyless placeholders, group lists, home mode, shell', but .codex_state/checks/user_base.yml:45-47 lists exactly those as uncovered ('parameter variants (one set holds one params fixture); untested') \u2014 only the key purge and the empty-hash refusal are covered there (the refusal by a compile-only run, not a check). The reason is untrue for the variants, which the wrapper does pass on (mygrouplist, myhome, myhomemode, user_shell at user.pp:6-8) and which the ubuntu lab node can exercise; the row must say they are untested and why. Also missing from the table: a login with the pushed key (user_base.yml:42-44 lists it as uncovered with its reason; user's set, whose purpose includes the pushed key, has no row for it)."
+ ],
+ "review_s": 123.9,
+ "check_file_sha256": "05a88b27840a8fd7e022e14644e192a1ad420508286f611b51c1878fc8ec2d32",
+ "reviewer_result": "20261119T181125Z-reviewer",
+ "author_result": "20261119T180849Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "f54d30cd-e9b1-4d6e-a223-6c02b38167eb",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "f54d30cd-e9b1-4d6e-a223-6c02b38167eb",
+   "fresh": true
+  }
+ }
+}
