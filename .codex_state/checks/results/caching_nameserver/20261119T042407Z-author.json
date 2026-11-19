@@ -1,0 +1,246 @@
+{
+ "class": "caching_nameserver",
+ "role": "author",
+ "at": "20261119T042407Z",
+ "runner": "2e81a0a",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "ef4e5b7c0fdec655becbbab89bd1d8d7eb5105136c656e39111d8e567ab1c009",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "named-runs-with-a-valid-configuration",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "inactive\n0\n",
+   "stderr": "dpkg-query: no packages found matching bind9\nbash: line 98: named-checkconf: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "the-node-resolves-through-it-and-the-cache-answers-again",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-peer-adds-an-allowed-and-an-outside-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "1\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "an-allowed-client-is-answered-and-an-outside-one-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "+100: \n+150: \n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-options-drift",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /run/p8test-bind/before: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-options-and-restarts-named-once",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "bash: line 97: /run/p8test-bind/before: No such file or directory\nFailed to seek to cursor: Invalid argument\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "tions]/group: group changed 'bind' to 'root'\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]: Scheduling refresh of Service[named]\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]: Scheduling refresh of Service[named]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/Service[named]: Triggered 'refresh' from 2 events\u001b[0m\n\u001b[mNotice: Applied catalog in 8.61 seconds\u001b[0m\nRUN1_EVENTS: 3 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795062328'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.34 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::caching_nameserver: 3 concrete resources (+0 defined-type instances)\n  Package[bind]\n  Service[named]\n  File[/etc/bind/named.conf.options]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP caching_nameserver 7c1b207eecf9\n"
+ },
+ "applied": [
+  {
+   "id": "named-runs-with-a-valid-configuration",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "bind9 install ok installed\nactive\nconfig-valid\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-node-resolves-through-it-and-the-cache-answers-again",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond two DNS questions to 127.0.0.1 (declared mutating so it runs after the reach setup)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-peer-adds-an-allowed-and-an-outside-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "3\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "adds the peer's host-only address + 100 and + 150 (/24) to its host-only NIC",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "an-allowed-client-is-answered-and-an-outside-one-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "+100: status: SERVFAIL\n+150: status: REFUSED\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond two DNS questions from the peer to the class node (declared mutating so it runs after the addresses are added)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-options-drift",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nnoted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "notes named's main PID and journal cursor in /run/p8test-bind/before, then appends a comment line to /etc/bind/named.conf.options on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-the-options-and-restarts-named-once",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\nrestarted\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the file, named's state and its journal (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [
+  "the-node-resolves-through-it-and-the-cache-answers-again",
+  "an-allowed-client-is-answered-and-an-outside-one-refused"
+ ],
+ "not_run": [],
+ "outcome": "FINDINGS",
+ "authoring_minutes": 1.2,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "cf8c6fae-dc0e-48f4-a674-66ca1c54d8ac",
+   "boot_id_at_end": "cf8c6fae-dc0e-48f4-a674-66ca1c54d8ac",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "d85bcc9f-d39b-49fd-b5ae-4ad0a911c790",
+   "boot_id_at_end": "d85bcc9f-d39b-49fd-b5ae-4ad0a911c790",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "node_agent": {
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]/content:",
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]/content:",
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]/content: content changed '{sha256}259acae31ec4ad1901fea1aebbe7d5d1eaef45922c34d52110328fd678907089' to '{sha256}262ba67c0707c87cb61010624d2407bb94fe6882a76e9cf5e0fe65d78feab02d' (corrective)\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/Service[named]: Triggered 'refresh' from 1 event\u001b[0m"
+  ],
+  "tail": "CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795062350'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]/content: \n--- /etc/bind/named.conf.options\t2026-11-19 04:25:43.241655557 +0000\n+++ /tmp/puppet-file20261119-2182-rqsgak\t2026-11-19 04:25:51.156226469 +0000\n@@ -13,4 +13,3 @@\n logging {\n         category default { default_syslog; };\n };\n-// p8test drift\n\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]/content: \n\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]/content: content changed '{sha256}259acae31ec4ad1901fea1aebbe7d5d1eaef45922c34d52110328fd678907089' to '{sha256}262ba67c0707c87cb61010624d2407bb94fe6882a76e9cf5e0fe65d78feab02d' (corrective)\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]: Scheduling refresh of Service[named]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/Service[named]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.51 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "outcomes": [
+  {
+   "outcome": "bind9 is installed and named runs with a configuration named-checkconf accepts",
+   "checks": [
+    "named-runs-with-a-valid-configuration"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the node itself gets recursive answers from 127.0.0.1, and a repeated question is answered from the cache",
+   "checks": [
+    "the-node-resolves-through-it-and-the-cache-answers-again"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "a client in an allowed network gets answers; a client outside them is refused",
+   "checks": [
+    "the-peer-adds-an-allowed-and-an-outside-address",
+    "an-allowed-client-is-answered-and-an-outside-one-refused"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "a changed options file is restored by the next agent run, which restarts named once",
+   "checks": [
+    "the-options-drift",
+    "the-agent-run-restores-the-options-and-restarts-named-once"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the RedHat branch (package bind, /etc/named.conf, /var/named)",
+   "uncovered": {
+    "why": "the RedHat branch; this set runs on the plan's Ubuntu node",
+    "lifted_by": "rhel9"
+   }
+  }
+ ],
+ "duration_s": 103.9
+}

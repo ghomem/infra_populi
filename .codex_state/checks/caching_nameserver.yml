@@ -1,0 +1,132 @@
+# Phase 3 checks for puppet_infrastructure::caching_nameserver (class; node ubuntu; no required base). Fixture (params,
+# never committed): allowed_networks ["192.168.56.0/25"], which holds the node's host-only address (.20) and the peer's
+# +100 address (.124) and leaves out the peer's +150 address (.174). The template uses the list both for listen-on
+# (bind listens on its local addresses that match) and for allow-query and allow-query-cache. The peer (ubuntu2) asks
+# from inside and from outside the list; peer probes name only the class node's host-only address and compute their
+# own addresses. Recursion goes out through the lab's NAT uplink.
+class: caching_nameserver
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 1.2
+  notes: "04:06:31Z to 04:07:42Z 2026-11-19 (date at the start of reading the baseline and at validation), outside the worktree while filesystem_yum's review ran; not prototyped on a node."
+purpose: >-
+  A caching nameserver with bind: it resolves names recursively for the node itself and for the allowed networks,
+  answers repeated questions from its cache, and refuses everyone else; a changed configuration restarts it.
+peer:
+  kind: ubuntu2
+  why: who may query the nameserver can only be seen from other machines on the network
+node_agent:
+  after: the-options-drift
+  why: the options file notifies named, which only the next agent run after a change to it can show
+outcomes:
+  - outcome: bind9 is installed and named runs with a configuration named-checkconf accepts
+    from: manifests/caching_nameserver.pp:15-31
+    checks: [named-runs-with-a-valid-configuration]
+  - outcome: the node itself gets recursive answers from 127.0.0.1, and a repeated question is answered from the cache
+    from: manifests/caching_nameserver.pp:1-2; templates/bind/named.conf.options.erb:3, 9-10
+    checks: [the-node-resolves-through-it-and-the-cache-answers-again]
+  - outcome: a client in an allowed network gets answers; a client outside them is refused
+    from: manifests/caching_nameserver.pp:4-5; templates/bind/named.conf.options.erb:3, 9-10
+    checks: [the-peer-adds-an-allowed-and-an-outside-address, an-allowed-client-is-answered-and-an-outside-one-refused]
+  - outcome: a changed options file is restored by the next agent run, which restarts named once
+    from: manifests/caching_nameserver.pp:33-39
+    checks: [the-options-drift, the-agent-run-restores-the-options-and-restarts-named-once]
+  - outcome: the RedHat branch (package bind, /etc/named.conf, /var/named)
+    from: manifests/caching_nameserver.pp:7-14
+    uncovered: {why: "the RedHat branch; this set runs on the plan's Ubuntu node", lifted_by: rhel9}
+checks:
+  - id: named-runs-with-a-valid-configuration
+    what: bind9 is installed, named is active, and named-checkconf accepts the configuration with the class's options file
+    control: negative
+    derived_from:
+      - {path: manifests/caching_nameserver.pp, lines: "23-31", text: "service { $service_name:"}
+      - {path: manifests/caching_nameserver.pp, lines: "33-39", text: "content => template('puppet_infrastructure/bind/named.conf.options.erb'),"}
+    probe: |
+      dpkg-query -W -f '${Package} ${Status}\n' bind9
+      p8_service named | cut -d' ' -f1
+      named-checkconf && echo config-valid
+      p8_count 'allow-query-cache' /etc/bind/named.conf.options
+    expect: {rc: 0, stdout: "\\Abind9 install ok installed\\nactive\\nconfig-valid\\n1\\n\\Z"}
+
+  - id: the-node-resolves-through-it-and-the-cache-answers-again
+    what: >-
+      a question from the node to 127.0.0.1 gets a recursive answer (NOERROR, with an address), and the same question
+      asked again is answered with a lower TTL, from the cache
+    control: negative
+    derived_from:
+      - {path: manifests/caching_nameserver.pp, lines: "1-2", text: "# This class provides a caching nameserver server using bind"}
+    mutates: none beyond two DNS questions to 127.0.0.1 (declared mutating so it runs after the reach setup)
+    probe: |
+      true
+    effect: |
+      first=$(dig +tries=2 +time=5 @127.0.0.1 www.debian.org A +noall +answer +comments)
+      echo "$first" | grep -o 'status: [A-Z]*'
+      t1=$(echo "$first" | awk '$4 == "A" {print $2; exit}')
+      sleep 2
+      t2=$(dig @127.0.0.1 www.debian.org A +noall +answer | awk '$4 == "A" {print $2; exit}')
+      [ -n "$t1" ] && [ -n "$t2" ] && [ "$t2" -lt "$t1" ] && echo "answered again from the cache"
+    expect: {rc: 0, stdout: "\\Astatus: NOERROR\\nanswered again from the cache\\n\\Z"}
+
+  - id: the-peer-adds-an-allowed-and-an-outside-address
+    what: setup for the next check, the peer's +100 address (inside 192.168.56.0/25) and +150 address (outside it) on its host-only NIC
+    control: negative
+    host: peer
+    derived_from:
+      - {path: manifests/caching_nameserver.pp, lines: "4-5", text: "class puppet_infrastructure::caching_nameserver ( Array $allowed_networks = [] ){"}
+    mutates: adds the peer's host-only address + 100 and + 150 (/24) to its host-only NIC
+    probe: |
+      a=$(ip -4 -o addr show enp0s8 | awk '{print $4}' | cut -d/ -f1 | head -1)
+      ip addr add "${a%.*}.$(( ${a##*.} + 100 ))/24" dev enp0s8 2>/dev/null || true
+      ip addr add "${a%.*}.$(( ${a##*.} + 150 ))/24" dev enp0s8 2>/dev/null || true
+    effect: |
+      ip -4 -o addr show enp0s8 | wc -l
+    expect: {rc: 0, stdout: "\\A3\\n\\Z"}
+
+  - id: an-allowed-client-is-answered-and-an-outside-one-refused
+    what: from the peer, a question from its +100 address (in the allowed network) is answered, one from its +150 address (outside it) is refused
+    control: negative
+    host: peer
+    derived_from:
+      - {path: templates/bind/named.conf.options.erb, lines: "9-10", text: "allow-query     { localhost;"}
+    mutates: none beyond two DNS questions from the peer to the class node (declared mutating so it runs after the addresses are added)
+    probe: |
+      true
+    effect: |
+      a=$(ip -4 -o addr show enp0s8 | awk '{print $4}' | cut -d/ -f1 | head -1)
+      for n in 100 150; do
+        s="${a%.*}.$(( ${a##*.} + n ))"
+        echo "+$n: $(dig +tries=1 +time=5 -b "$s" @192.168.56.20 www.debian.org A +noall +comments | grep -o 'status: [A-Z]*' | head -1)"
+      done
+    expect: {rc: 0, stdout: "\\A\\+100: status: NOERROR\\n\\+150: status: REFUSED\\n\\Z"}
+
+  - id: the-options-drift
+    what: setup for the next check, the options file changed by hand, with named's process id and journal cursor noted
+    control: negative
+    derived_from:
+      - {path: manifests/caching_nameserver.pp, lines: "33-39", text: "notify  => Service[ $service_name ],"}
+    mutates: notes named's main PID and journal cursor in /run/p8test-bind/before, then appends a comment line to /etc/bind/named.conf.options on the node
+    probe: |
+      install -d -m 0700 /run/p8test-bind
+      printf "pid='%s'\ncursor='%s'\n" "$(systemctl show -p MainPID --value named)" "$(journalctl -u named.service -n 0 --show-cursor --no-pager -q | sed -n 's/^-- cursor: //p')" > /run/p8test-bind/before
+      echo '// p8test drift' >> /etc/bind/named.conf.options
+    effect: |
+      p8_count '^// p8test drift$' /etc/bind/named.conf.options
+      grep -q "^pid='[1-9]" /run/p8test-bind/before && echo noted
+    expect: {rc: 0, stdout: "\\A1\\nnoted\\n\\Z"}
+
+  - id: the-agent-run-restores-the-options-and-restarts-named-once
+    what: after the node's agent run, the options file is restored and named was restarted exactly once (a new main PID; one start in its journal since the change)
+    control: negative
+    derived_from:
+      - {path: manifests/caching_nameserver.pp, lines: "33-39", text: "notify  => Service[ $service_name ],"}
+    mutates: none beyond reading the file, named's state and its journal (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      p8_count '^// p8test drift$' /etc/bind/named.conf.options
+      . /run/p8test-bind/before
+      now=$(systemctl show -p MainPID --value named)
+      [ -n "$now" ] && [ "$now" != 0 ] && [ "$now" != "$pid" ] && echo restarted
+      journalctl -u named.service --after-cursor "$cursor" --no-pager -q | p8_count 'Started named.service'
+    expect: {rc: 0, stdout: "\\A0\\nrestarted\\n1\\n\\Z"}
