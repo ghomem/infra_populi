@@ -15,12 +15,20 @@
 # default cipher (openvpn_cipher AES-256-CBC, :25, :57), so a client that offers only it is checked here too, last (it
 # stops the first client). The data channel's compression is openvpn_server's default, not passed by this class: it
 # stays with openvpn_server's set, where it is a finding.
+# Authoring correction 2026-11-19 (run 20261119T115047Z, `the-client-resolves-...` got SERVFAIL for www.debian.org
+# while the WAN path passed): measured on the applied node, named answered SERVFAIL in 0.3 s because the lookup
+# "exceeded max queries ... (max-recursion-queries, ... maxqueries=50)"; 49 of those queries were IPv6 attempts that
+# failed at once ("network unreachable": the lab NAT has no IPv6, and the fixture had only removed the route). Run with
+# -4, the same configuration resolved www.kernel.org, www.debian.org, www.wikipedia.org and example.org (NOERROR in
+# 0.14-0.67 s); disabling IPv6 on the host did not stop the attempts. The lab fixture therefore tells named the network
+# is IPv4-only (-4 in /etc/default/named, a file no composed class manages). Whether an IPv4-only production host
+# meets the same limit is a question for HQ (batch-4 report), not something this lab can show.
 class: network_vpn
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
   minutes: 0.7
-  notes: "Wall clock 14:26:22Z to 14:27:05Z 2026-11-17 (no lab run active; the four composed classes, the bind template and the rendered firewall rule format read). Extended 2026-11-19 (purpose, outcomes, recursion and the WAN path as behaviour over stand-in drops): 06:25:23Z to 06:26:32Z 2026-11-19 (date at the start of reading the set and at validation), outside the worktree while openvpn_server's review ran, not prototyped on a node; the first authoring's minutes above are kept. The cipher check added 2026-11-19: written and validated 11:49:28Z to 11:49:29Z (the edit's own dates; the reading of network_vpn.pp:25, 57 before it was not timed)."
+  notes: "Wall clock 14:26:22Z to 14:27:05Z 2026-11-17 (no lab run active; the four composed classes, the bind template and the rendered firewall rule format read). Extended 2026-11-19 (purpose, outcomes, recursion and the WAN path as behaviour over stand-in drops): 06:25:23Z to 06:26:32Z 2026-11-19 (date at the start of reading the set and at validation), outside the worktree while openvpn_server's review ran, not prototyped on a node; the first authoring's minutes above are kept. The cipher check added 2026-11-19: written and validated 11:49:28Z to 11:49:29Z (the edit's own dates; the reading of network_vpn.pp:25, 57 before it was not timed). Authoring correction 2026-11-19 (the lab IPv6 fixture): investigated 11:58:05Z to 12:02:42Z on the applied node (the commands' own dates), written 12:02:42Z and tested on the node 12:03:11Z."
 peer:
   kind: ubuntu2
   why: the VPN client must be a second machine that connects over UDP and resolves through the VPN's nameserver
@@ -106,26 +114,28 @@ checks:
 
   - id: the-lab-nat-ipv6-route-is-removed
     what: >-
-      lab-environment fixture for the resolution check: the NAT interface's IPv6 default route (learned by router
-      advertisement, reaching no internet) is gone and named, restarted, resolves over IPv4
+      lab-environment fixture for the resolution check: the lab NAT has no IPv6, so its IPv6 default route (learned by
+      router advertisement, reaching no internet) is removed and named runs IPv4-only (-4), then resolves
     control: negative
     timeout: 150
     derived_from:
       - {path: manifests/caching_nameserver.pp, lines: "28-31", text: "ensure  => 'running',"}
     mutates: >-
       sets net.ipv6.conf.enp0s3.accept_ra to 0, deletes the IPv6 default route on enp0s3 (the VirtualBox NAT
-      interface), restarts named and waits up to 90 s until it resolves example.com (a name the checks do not ask;
+      interface), sets OPTIONS="-u bind -4" in /etc/default/named (the Ubuntu default is "-u bind"), restarts named and waits up to 90 s until it resolves example.com (a name the checks do not ask;
       measured for caching_nameserver's set 2026-11-19)
     probe: |
       sysctl -q -w net.ipv6.conf.enp0s3.accept_ra=0
       ip -6 route del default dev enp0s3 2>/dev/null || true
+      sed -i 's/^OPTIONS="-u bind"$/OPTIONS="-u bind -4"/' /etc/default/named
       systemctl restart named
       for i in $(seq 30); do dig +time=2 +tries=1 @127.0.0.1 example.com A +noall +comments | grep -q 'status: NOERROR' && break; sleep 3; done
     effect: |
       ip -6 route show default dev enp0s3 | wc -l
+      tr '\0' ' ' < "/proc/$(systemctl show -p MainPID --value named)/cmdline" | p8_count ' -4( |$)'
       p8_service named | cut -d' ' -f1
       dig +time=3 +tries=1 @127.0.0.1 example.com A +noall +comments | grep -o 'status: [A-Z]*'
-    expect: {rc: 0, stdout: "\\A0\\nactive\\nstatus: NOERROR\\n\\Z"}
+    expect: {rc: 0, stdout: "\\A0\\n1\\nactive\\nstatus: NOERROR\\n\\Z"}
 
   - id: a-wan-host-and-default-drops
     what: >-
