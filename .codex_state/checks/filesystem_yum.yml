@@ -12,6 +12,17 @@ authoring:
 purpose: >-
   Yum update helpers for RedHat-family servers: a surface script that updates the exposed packages (ssh, TLS, web
   servers) one by one, and a full update script.
+# Outcomes table added 2026-11-19 (backfill batch 4, HQ batch-10 ruling 2).
+outcomes:
+  - outcome: the two update scripts are installed root-owned 0755 as the module's files
+    from: manifests/filesystem_yum.pp:8-24
+    checks: [update-scripts-installed]
+  - outcome: the surface script brings the exposed packages up to date
+    from: manifests/filesystem_yum.pp:8-15
+    checks: [the-surface-script-brings-the-exposed-packages-up-to-date]
+  - outcome: the full update script leaves nothing to update
+    from: manifests/filesystem_yum.pp:17-24
+    checks: [the-full-update-script-leaves-nothing-to-update]
 checks:
   - id: update-scripts-installed
     what: both scripts are installed root-owned 0755, byte for byte the module's files
