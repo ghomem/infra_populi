@@ -1,0 +1,42 @@
+{
+ "class": "firewall_ipv6_drop_policy_desktop",
+ "at": "20261119T191217Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "another-host-cannot-reach-the-node-over-ipv6-but-can-over-ipv4: line 4 (IPv6 INPUT closed by default) with line 22 (INPUT:filter:IPv6 policy drop, purge) means a peer on the link gets no ICMPv6 or TCP/22 answer over IPv6 at the node's link-local address, while IPv4 (not managed by this class) still reaches sshd; the probe makes exactly these three attempts from ubuntu2 and the effect only reads their recorded results; failed on the clean node, passed applied",
+  "policies-and-the-lo-rule: lines 21-22 declare DROP policies on FORWARD and INPUT IPv6 with purge, and lines 13-19 the single INPUT rule (-i lo, proto all, accept, ip6tables); purge leaves no other rule, so the exact ip6tables -S INPUT/FORWARD output expected (-P INPUT DROP, the lo ACCEPT rule with its comment, -P FORWARD DROP, nothing else) is what the code produces",
+  "the-forward-policy-counted-the-routed-packets: line 21 sets the IPv6 FORWARD policy to drop; after the node turns forwarding on (declared in the-node-publishes-its-link-local-address) and the peer routes 5 pings to 2001:db8:99::1 via the node (0 received), the policy DROP packet counter must be >=5; the action is a no-op and the effect reads the counter, not its own output; on the clean node the policy is ACCEPT so the sed match is empty and it fails",
+  "purpose covered: Purpose (manifest header lines 1-7 and code lines 13-22): IPv6 INPUT and FORWARD closed by default, ::1 on lo allowed, unmanaged IPv6 rules purged. Tested: the exact policies and lo rule; ping and TCP to ::1 work under the DROP policy; a peer on the link is refused over IPv6 (ICMPv6 and SSH) while IPv4 SSH still works; packets routed through the node are dropped by the FORWARD policy (counter >=5, 0 received on the peer); hand-planted IPv6 rules in INPUT and FORWARD are removed by the next agent run with the lo rule and both policies kept. Left out: the desktop login itself using ::1 (header lines 5-7), honestly uncovered because the plan's ubuntu node has no desktop session, liftable on the kubuntu node kind (active in nodes.yml); the ::1 mechanism it relies on is checked. The mutating checks each declare their full change (forwarding sysctl, on-link route, /run files; peer neighbour entry, ULA address, route, pings; the planted rules), and the peer probes use the set's declared ubuntu2 peer."
+ ],
+ "review_s": 174.2,
+ "check_file_sha256": "a39d15d165de803fab4b2915c5cffb93a4bee5113dfd189419dddba9b3448623",
+ "reviewer_result": "20261119T190923Z-reviewer",
+ "author_result": "20261119T190532Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "4fc4e918-e6b4-4221-bad2-b45d3fa153a6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "4fc4e918-e6b4-4221-bad2-b45d3fa153a6",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "4ba366d8-c879-41a9-a41b-f828391cb464",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "4ba366d8-c879-41a9-a41b-f828391cb464",
+   "fresh": true
+  }
+ }
+}
