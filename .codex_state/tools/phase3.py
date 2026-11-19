@@ -333,6 +333,18 @@ def uncovered_problems(u, where: str, strict: bool) -> list[str]:
     return out
 
 
+def open_uncovered(cls: str) -> int:
+    """The class's open uncovered rows: outcomes of its set that no check probes yet (HQ batch-15 follow-up 3: status.py
+    and the approval report show the count). 0 without a set or with an unreadable one."""
+    path = phase3_dir() / f"{cls}.yml"
+    try:
+        data = yaml.safe_load(path.read_bytes()) if path.is_file() else None
+    except yaml.YAMLError:
+        return 0
+    rows = (data or {}).get("outcomes") or [] if isinstance(data, dict) else []
+    return sum(1 for r in rows if isinstance(r, dict) and "uncovered" in r)
+
+
 def approved_unchanged(cls: str, raw: bytes) -> bool:
     """HQ batch-15 ruling 3's scope: a set whose latest review passed it as it stands keeps the earlier uncovered rule
     until the scheduled sweep; a new or changed set meets the new rule at once."""

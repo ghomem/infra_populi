@@ -1109,3 +1109,16 @@ def test_an_approved_unchanged_set_keeps_the_earlier_rule_until_the_sweep(p3):
     proc = p3.run("validate", CLS)
     assert proc.returncode == 2 and "lifted_by and evidence" in proc.stderr
 
+
+
+# HQ batch-15 follow-up 3: status.py and the approval report show each class's open uncovered rows.
+def test_open_uncovered_counts_the_uncovered_outcomes(tmp_path, monkeypatch):
+    import sys
+    sys.path.insert(0, str(TOOLS))
+    import phase3
+    monkeypatch.setenv("P8_PHASE3_DIR", str(tmp_path))
+    (tmp_path / "x.yml").write_text(yaml.safe_dump({"outcomes": [
+        {"outcome": "a", "checks": ["c"]}, {"outcome": "b", "uncovered": {"why": "w"}}, {"outcome": "c", "uncovered": {}}]}))
+    (tmp_path / "broken.yml").write_text("outcomes: [unclosed\n")
+    assert phase3.open_uncovered("x") == 2
+    assert phase3.open_uncovered("missing") == 0 and phase3.open_uncovered("broken") == 0

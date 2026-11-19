@@ -135,11 +135,15 @@ def main() -> None:
         counts[b] = counts.get(b, 0) + 1
     print("Behaviour (Phase 3, separate from the Phase 1 record): "
           + " / ".join(f"{counts[k]} {k}" for k in sorted(counts)) + f" (of {len(done)} done)")
+    # HQ batch-15 follow-up 3: the open uncovered rows per class (outcomes no check probes yet)
+    uncovered = {name: phase3.open_uncovered(name) for name in sorted(done)}
+    print(f"Uncovered rows (outcomes no check probes yet): {sum(uncovered.values())} open in "
+          f"{sum(1 for n in uncovered.values() if n)} classes; the ruling-3 sweep: `phase3.py sweep`")
 
     print("\nDone classes by verification state (derived from .codex_state/reviews/)")
     stand_in_names = {name for name, _, _ in stand_in}
     print_table(
-        ("class", "state", "tracker marker", "latest v2 verdict", "behaviour"),
+        ("class", "state", "tracker marker", "latest v2 verdict", "behaviour", "uncovered"),
         [
             (
                 f"{generator.PREFIX}{name}",
@@ -147,6 +151,7 @@ def main() -> None:
                 marker(tracker.get(name)),
                 "PASS" if state == VERIFIED else failing_checks(verdict),
                 behaviour[name],
+                str(uncovered[name]),
             )
             for name, (state, verdict) in sorted(states.items(), key=lambda item: (item[1][0] != VERIFIED, item[0]))
         ],
