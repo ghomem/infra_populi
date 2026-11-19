@@ -1,0 +1,33 @@
+{
+ "class": "extra_packages_el",
+ "at": "20261119T035801Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "epel-release-installed: manifests/extra_packages_el.pp:6-10 runs dnf install of epel-release-latest-${os_major_version}.noarch.rpm guarded by rpm -q epel-release; on the RHEL 9.5 node that yields epel-release version 9, and the probe expects exactly 'epel-release 9' plus the epel repo enabled (the release package ships epel.repo enabled). Failed clean, passed applied in my run.",
+  "baseos-appstream-still-enabled: lines 13-16 only run subscription-manager repos --enable for codeready-builder-for-rhel-9-x86_64-rpms (unless grep on --list-enabled); nothing in the class disables a repository, so BaseOS and AppStream enabled at the registered baseline must stay enabled. why_invariant is plausible; passed on both clean and applied node.",
+  "an-epel-package-installs-from-epel: lines 6-11 make EPEL the source the class exists for; the action (dnf install htop, output discarded) is a consumer use of that repo, and the read-only effect (repoquery --installed from_repo) shows the result, not the action's output. htop is EPEL-only on RHEL 9 (dnf history on the node: htop-3.3.0-1.el9 @epel). mutates says 'installs htop with dnf'; dnf also pulled hwloc-libs from BaseOS (and ninja-build pulled emacs-filesystem/vim-filesystem) as normal dependency resolution of that install, on a node reverted after every run.",
+  "purpose covered: Purpose (EPEL for the node's major version and CodeReady Builder enabled so packages from either install, base repos untouched) matches the whole 21-line baseline manifest and its two header comments (lines 6, 13). Checks test it as behaviour, not just state: epel-release 9 installed + epel repo enabled, CRB enabled in subscription-manager and dnf, an EPEL-only package (htop) and a CRB package (ninja-build) actually install with dnf recording epel / codeready-builder-for-rhel-9-x86_64-rpms as source, and BaseOS/AppStream still enabled. The EPEL-before-CRB require ordering has no separate observable outcome. Left out: RHEL 8 (lines 3-4 derive the version from facts), honestly uncovered because nodes.yml has no RHEL 8 kind; its lifted_by names rhel9 only because the validator requires an existing kind - the why states the truth. Other architectures than x86_64 are likewise not available in the lab."
+ ],
+ "review_s": 233.2,
+ "check_file_sha256": "99db113bcebc576ed54cda2c636de9698c2bbabd11b84e38872d4836922bb9e2",
+ "reviewer_result": "20261119T035408Z-reviewer",
+ "author_result": "20261119T034944Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "rhel9",
+   "snapshot": "P8LAB_RHEL9_BASELINE_v1",
+   "boot_id": "86d46469-d609-4589-bf81-6212a1f64e19",
+   "boot_id_at_end": "86d46469-d609-4589-bf81-6212a1f64e19",
+   "fresh": true
+  }
+ }
+}
