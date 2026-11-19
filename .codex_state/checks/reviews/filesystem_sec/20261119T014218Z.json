@@ -1,0 +1,33 @@
+{
+ "class": "filesystem_sec",
+ "at": "20261119T014218Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "only-the-sudo-group-can-run-them @ manifests/filesystem_sec.pp:15-19: file { $restricted_cmds: owner root, group $restricted_group, mode $restricted_mode } with the fixture's mode 0750 and group '' (sudo on Ubuntu) means group members may execute and others may not; the probe runs wget/curl/sftp/scp/ssh -V as a non-member (expects denied) and as a sudo member (expects runs), the effect file shows the result, not the action's output; mutates declares the two accounts and /run/p8test-sec/run.txt",
+  "only-the-sudo-group-can-run-them @ manifests/filesystem_sec.pp:1-2: the purpose comment 'restricting a certain set of commands to a certain group' is exactly what the denied/runs pair tests (the member/non-member pair also acts as the built-in contrast a mismatch control would give)",
+  "restricted-commands-belong-to-the-sudo-group @ manifests/filesystem_sec.pp:3: restricted_mode defaults to '0750' (fixture also 0750) and lines 7-13 pick 'sudo' for a non-RedHat node when restricted_group is ''; stat expecting root:sudo 750 on the five regular-file commands is what lines 3, 7-13 and 15-19 produce",
+  "purpose gap: The checks test root:sudo 0750 and the deny/allow split on the five installed regular-file commands (wget, curl, sftp, scp, ssh) and that an agent run re-restricts a hand-opened wget; RedHat wheel and custom group/mode are honestly uncovered. GAP: the fixture's list also holds /bin/nc, /usr/bin/telnet and /usr/bin/ftp, which are installed on the lab node as symlinks; the outcomes table states 'the listed commands belong to root and the restricted group, mode 0750' and 'only members of the restricted group can run them' for the whole list, yet no check probes these three and no uncovered entry names them (only the header comment mentions links). The lab CAN exercise them: on the applied node after my run, /bin/nc -> /usr/bin/nc.openbsd root:root 755, /usr/bin/telnet -> /usr/bin/inetutils-telnet root:root 755, /usr/bin/ftp -> /usr/bin/tnftp root:root 755 (the links themselves root:sudo 777), so a non-member can very likely still run nc/telnet/ftp; the set should probe them (expect a finding) or list them as uncovered with the honest reason. The uninstalled entries (netstat, lynx, traceroute, make, pip, gcc) are not created by a file resource without ensure, also unstated in the outcomes table."
+ ],
+ "review_s": 108.1,
+ "check_file_sha256": "6e86d755377fae0c70486e538b632e5194fd9f39409f88443a3b2473fec22ec2",
+ "reviewer_result": "20261119T014030Z-reviewer",
+ "author_result": "20261119T013824Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "b15141bc-b69d-4f2c-a46b-8ee229c5952e",
+   "boot_id_at_end": "b15141bc-b69d-4f2c-a46b-8ee229c5952e",
+   "fresh": true
+  }
+ }
+}
