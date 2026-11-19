@@ -13,13 +13,23 @@ authoring:
 purpose: >-
   Restricts a set of commands useful to an intruder (network clients, compilers) to one group: only members of the
   restricted group (sudo on Ubuntu, wheel on RedHat) can run them, and they stay restricted.
-uncovered:
-  - what: the RedHat default group (wheel)
-    why: these checks run on the Ubuntu node
-    lifted_by: rhel9
-  - what: a custom restricted_group or restricted_mode
-    why: the fixture uses the default group and 0750; another group or mode is a second fixture on the same node
-    lifted_by: ubuntu
+# Outcomes table added 2026-11-19 (backfill batch 3, HQ batch-10 ruling 2); the set-level uncovered list moved into it.
+outcomes:
+  - outcome: the listed commands belong to root and the restricted group (sudo by default on Ubuntu), mode 0750
+    from: manifests/filesystem_sec.pp:3-19
+    checks: [restricted-commands-belong-to-the-sudo-group]
+  - outcome: only members of the restricted group can run them
+    from: manifests/filesystem_sec.pp:1-2, 15-19
+    checks: [only-the-sudo-group-can-run-them]
+  - outcome: a command opened by hand is restricted again by the next agent run
+    from: manifests/filesystem_sec.pp:15-19
+    checks: [a-restricted-command-is-opened-by-hand, the-next-agent-run-restricts-it-again]
+  - outcome: the RedHat default group (wheel)
+    from: manifests/filesystem_sec.pp:7-9
+    uncovered: {why: "the RedHat branch; this set runs on the plan's Ubuntu node", lifted_by: rhel9}
+  - outcome: a custom restricted_group or restricted_mode
+    from: manifests/filesystem_sec.pp:3
+    uncovered: {why: "a fixture variant (one set holds one fixture, and this one uses the default group and 0750); node_base passes the lab Hiera's group to this define, and node_base's check the-tools-are-restricted-to-the-hiera-group (review PASS 20261118T194756Z) shows it, which is again sudo", lifted_by: ubuntu}
 node_agent:
   after: a-restricted-command-is-opened-by-hand
   why: the class keeps the commands restricted, which its next agent run after a hand change shows
