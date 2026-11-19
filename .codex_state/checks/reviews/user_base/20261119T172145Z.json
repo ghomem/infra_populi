@@ -1,0 +1,34 @@
+{
+ "class": "user_base",
+ "at": "20261119T172145Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "user-and-own-primary-group @ manifests/user_base.pp:35-37: group { $myusername: ensure => present } plus gid => $myprimary (63-74) make the same-named group the user's primary group; the probe resolves the passwd gid to its group name and expects p8testuser, under the params fixture (title p8testuser)",
+  "user-and-own-primary-group @ manifests/user_base.pp:25-31: with the fixture's default mygrouplist [] the branch sets $myprimary = $title, so the expected primary group p8testuser is what the code produces; comment/home/shell in the same expect follow from myname 'P8 Test User', myhome '' -> /home/p8testuser (8-15) and user_shell default /bin/bash",
+  "the-password-logs-in-and-a-wrong-one-is-refused @ manifests/user_base.pp:63-72: password => $myhash sets the fixture hash; I recomputed it (SHA-512, salt p8testsalt, password p8test-user-not-a-secret) and it equals the params myhash, so su with that password must succeed and the wrong one (the in-probe mismatch, a value whose change must change PAM's verdict) must be refused; mutates declares the two su attempts as nobody and the result file under /run, and the effect is the logged-in id -un output, not the action's echo; the fixture key's fingerprint (3072 SHA256:c3nO5X...d4/E) also matches the pushed-key expects",
+  "purpose gap: The checks test the account (own primary group, comment, home created and owned, shell, no supplementary groups), the hash set and usable (su with the test password logs in, a wrong one is refused), the pushed key as the only authorized key with StrictModes-compatible owner/modes, and purge_ssh_keys removing an out-of-band key on the next agent run; reviewer run ALL_PASS, both phases. Key login, parameter variants (locked hash, empty key, group list, home/mode/shell) and the ecryptfs branch (kubuntu exists in nodes.yml) are honestly listed uncovered. GAP: the stated purpose includes 'refusing an empty one' (manifests/user_base.pp:19-22, fail() on myhash == ''), but no outcome row states it: outcome 2 cites 19-22 yet its text and its checks (password-hash-set, the-password-logs-in...) only probe a set, usable hash, and the parameter-variants uncovered row (from 4, 8-15, 24-31, 41-61, 81-91) does not include it. The empty-hash refusal must be an outcome, either checked or listed uncovered with its reason and lifting node."
+ ],
+ "review_s": 148.8,
+ "check_file_sha256": "41b99aba0f028b5bfdbaaf9c26680920a21692883f08ea4ac843adad9e3e27ef",
+ "reviewer_result": "20261119T171917Z-reviewer",
+ "author_result": "20261119T171626Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "e7de48cc-855b-42ef-94c0-0c0a138c1449",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "e7de48cc-855b-42ef-94c0-0c0a138c1449",
+   "fresh": true
+  }
+ }
+}
