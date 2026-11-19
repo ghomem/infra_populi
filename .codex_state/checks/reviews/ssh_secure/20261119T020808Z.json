@@ -1,0 +1,36 @@
+{
+ "class": "ssh_secure",
+ "at": "20261119T020808Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "fail",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "password-and-root-logins-are-refused: lines 66-68 set PasswordAuthentication no and PermitRootLogin no (defaults false at lines 6-7). The password half tests line 66: p8testin is in the allowed group ssh_in and sshd offers only 'publickey'. The root half does not test line 68. The node's sshd log for this run says 'User root from 127.0.0.1 not allowed because none of user's groups are listed in AllowGroups' (root's only group is root). So root is refused by AllowGroups (line 79), and this expectation would still hold with PermitRootLogin yes. The check cites line 68 and its 'what' claims something the probe does not test: a derivation failure. Fix: put root in an allowed group for the probe, or cite line 79 and drop the PermitRootLogin claim (root-login-off's sshd -T read remains the line-68 evidence).",
+  "password-auth-off: lines 43-47 map the default password_authentication=false (line 6; the params fixture sets only client_alive_interval) to 'no', and line 66 puts it in sshd_config. Probe 'sshd -T | grep ^passwordauthentication' expecting exactly 'passwordauthentication no' matches what the code produces.",
+  "allow-groups: lines 20-23 give admin_group 'sudo' on the Debian-family node. With no othergroups Hiera key, line 41 gives ' ssh_in', so line 79 gives 'sudo naemon  ssh_in'. The awk split on whitespace expects exactly sudo/naemon/ssh_in, which is what the code produces. It passed after apply and failed on the clean node.",
+  "finding an-idle-session-is-ended-after-the-interval: expected 'ended after Ns', but the probe saw 'still-connected after Ns'. A 30 s idle session as p8testin ran to completion despite clientaliveinterval 10 and clientalivecountmax 0 (both confirmed by the client-alive check). The node's sshd log shows no timeout disconnect for that session (sshd[2207]). This is consistent with OpenSSH >= 8.2, where ClientAliveCountMax 0 disables termination instead of killing on the first missed probe. The node runs OpenSSH_9.6p1. This is a real behaviour finding against the baseline's intent at lines 75-76, not an authoring error.",
+  "purpose gap: The stated purpose (sshd hardened; clients log in only within its restrictions) matches the header (line 2) and the code. The checks test it on the wire: the running daemon refuses curve25519, chacha20 and umac (each with a working mismatch on the class's own algorithm); a key login works for an ssh_in member; a non-member is refused with a valid key (sshd log: AllowGroups); password auth is not offered; and the idle-timeout behaviour is exercised (it is the finding). Host keys, moduli (sha256 + mode) and the remaining defaults (an invariant: OpenSSH 9.6 defaults, plausibly) are read with sshd -T or the file. Gap 1: the uncovered row lists Hiera othergroups (line 41, the issue-20 concatenation) with lifted_by rhel9. That is untrue for the othergroups half: it needs only a <certname>::ssh::othergroups key in the lab master's Hiera fixture, so the current ubuntu node can exercise it, and it is untested. Gap 2: the row 'root logins are refused' rests on a wire check where AllowGroups, not PermitRootLogin, refuses root. PermitRootLogin's own effect is only read from the configuration (sshd -T), although the lab could exercise it on the wire (root in an allowed group for the probe). The RedHat branch (rhel9, an active node in nodes.yml with os_family RedHat) and Protocol/UsePrivilegeSeparation (deprecated in 9.6; the node's log shows 'Deprecated option UsePrivilegeSeparation') are honestly uncovered."
+ ],
+ "review_s": 218.4,
+ "check_file_sha256": "c3e8c3c87d835fd8d947d44804cb70f07da4a96f607a3b066993aec61be6857c",
+ "reviewer_result": "20261119T020430Z-reviewer",
+ "author_result": "20261119T020139Z-author",
+ "findings": [
+  "an-idle-session-is-ended-after-the-interval"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "e79fc85e-d149-4b1d-a179-09e9ae6024b5",
+   "boot_id_at_end": "e79fc85e-d149-4b1d-a179-09e9ae6024b5",
+   "fresh": true
+  }
+ }
+}
