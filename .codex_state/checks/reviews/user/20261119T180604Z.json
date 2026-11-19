@@ -1,0 +1,34 @@
+{
+ "class": "user",
+ "at": "20261119T180604Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-given-key-is-pushed: user_base.pp:96-99 declares ssh_authorized_key \"${myusername}@puppet\" with user => $myusername, type => 'ssh-rsa', key => $sshkey; the probe reads p8testuser's authorized_keys and expects exactly one line 'ssh-rsa <RSA body> p8testuser@puppet', which is that resource under the fixture (title p8testuser, mykey an RSA public key body)",
+  "the-given-key-is-pushed: user_base.pp:94 'if ( $ignorekey == false )' gates the key resource; user.pp:8 never passes ignorekey, so user_base's default false applies and the key must be present. The expect also excludes the userlocked/emptykey placeholders (user_base.pp:45-59), right because the fixture hash has no '!' and mykey is non-empty",
+  "the-given-key-is-pushed: user_base.pp:98 type => 'ssh-rsa' is matched by the expected 'ssh-rsa ' line prefix; the fixture key body starts AAAAB3NzaC1yc2EAAAADAQAB, an ssh-rsa encoding, so key and type agree",
+  "purpose gap: Tested: the account with its own primary group, comment, /home/p8testuser and /bin/bash (user.pp:8, user_base.pp:26, 63-70); no supplementary groups (user.pp:6 $mygrouplist = [ ]); the home created and owned (managehome); the shadow hash, set to the fixture's $6$p8testsalt hash, which I recomputed from p8test-user-not-a-secret with openssl and got the same value; the password logs in and a wrong one is refused (su as nobody in a pty; the wrong password works as the in-check mismatch; the effect is id -un output from a shell running as p8testuser, so it shows the login's result); the key always pushed, as the only key, with the file private and owned by the user. The mutating check declares what it changes (the su attempts and /run/p8test-user/pw.txt). The uncovered row (user_base's own purge, empty-hash refusal, placeholders, variants) is honestly deferred to user_base's set. GAP: the stated purpose says 'with no ecryptfs' (the wrapper cannot pass myppsigs/myppwrapped, so user_base.pp:108-135 never declares ${ecryptdir}/wrapped-passphrase.b64 or its decoding exec). That part is in neither the outcomes table nor any check, and the lab can test it: /home/.ecryptfs/p8testuser/.ecryptfs/wrapped-passphrase.b64 and wrapped-passphrase must be absent after apply. Fix: add an outcome row for it, mapped to a check or marked uncovered with a reason."
+ ],
+ "review_s": 102.7,
+ "check_file_sha256": "b72358200879a0b9a3c572718b87e91ad0cd1d5fd1d5e5a61054a0ae0cc27d19",
+ "reviewer_result": "20261119T180422Z-reviewer",
+ "author_result": "20261119T180139Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "39ea18f8-e9ee-4a8f-baf5-373f16495a99",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "39ea18f8-e9ee-4a8f-baf5-373f16495a99",
+   "fresh": true
+  }
+ }
+}
