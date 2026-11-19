@@ -1,0 +1,33 @@
+{
+ "class": "firewall_addon_caching_nameserver",
+ "at": "20261119T044652Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "rule-1301-accepted-the-lan-client: baseline line 11 declares rule '1301 accept nameserver' (udp, iniface $lan_iface, dport $port, accept); the effect reads the INPUT packet counters (iptables -v -x -L, field 1 = pkts) and expects rule 1301 to have counted the namespace client's datagram to 53 and the stand-in drop the one to 5353 \u2014 exactly what an accept on udp/53 from p8test0 ahead of a drop produces under the params fixture (lan_iface p8test0, port default '53'); failed on the clean node (no rule 1301).",
+  "a-lan-client-a-responder-and-a-default-drop: lines 1-2 state the class provides firewall configuration for caching nameservers (a complementary rule over the base firewall's default drop); the action builds only on-node fixtures (netns p8testns, veth p8test0/p8testpeer 10.250.0.0/30, transient UDP responders on 10.250.0.1:53/:5353, an appended drop for udp 53,5353 on p8test0 after rule 1301), mutates declares all of them, and the read-only effect checks their resulting state (peer address, unit states, one drop rule), not the action's output.",
+  "the-lan-client-reaches-port-53-only: line 11 accepts udp to $port (53) arriving on $lan_iface (p8test0); the effect sends one UDP datagram from the namespace client to 10.250.0.1:53 and one to :5353 and expects '53 answered' / '5353 no answer' \u2014 the accept lets 53 through the stand-in drop while the other port, not covered by the rule, stays dropped; failed on the clean node (both dropped).",
+  "purpose covered: Purpose (lines 1-2, 11: one rule letting LAN-interface clients reach the nameserver over UDP 53 above the base firewall's drop) is stated correctly. the-nameserver-rule probes the rule text (-i p8test0 -p udp --dport 53 -j ACCEPT, i.e. interface and port restriction); the reach checks show a real client on the LAN interface getting a UDP answer on 53 through a default drop while 5353 stays dropped, and the counters attribute the pass to rule 1301. The interface restriction is checked on the rule (-i p8test0) rather than with a second client on another interface; the kernel's -i match makes that adequate. Honestly uncovered: a non-default port parameter (one fixture per set, lifted_by ubuntu); the manifest has nothing else (no TCP/53 rule at the baseline, so none is expected). All probes stay on the node."
+ ],
+ "review_s": 89.2,
+ "check_file_sha256": "b744dc0a12b2c1394c22e53b421caa5cb2e782079a7b1acde282d67bfc123990",
+ "reviewer_result": "20261119T044523Z-reviewer",
+ "author_result": "20261119T044243Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "e44c0b7b-6137-4c6a-b33d-552b3a4d2b58",
+   "boot_id_at_end": "e44c0b7b-6137-4c6a-b33d-552b3a4d2b58",
+   "fresh": true
+  }
+ }
+}
