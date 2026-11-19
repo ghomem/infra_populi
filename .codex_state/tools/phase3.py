@@ -136,6 +136,9 @@ import baseline  # noqa: E402
 
 NODE = "puppet8node"  # set per run to the class's lab node alias (nodes.yml; HQ 2026-11-16 item 2)
 PEER = None  # set per run to the peer node's alias when the set declares one (HQ 2026-11-17 ruling 1)
+# The declared peer's host-only address, handed to node scripts as P8_PEER_ADDR so a node action can aim at the peer by
+# reference (e.g. pin a name to it); node probes still may not name a lab address literally.
+PEER_ADDR = ""
 PEER_FILES: dict[str, str] = {}  # node path -> base64 content, handed to peer probes
 PROBE_TIMEOUT = 120
 PARAMS_DIR = Path(os.environ.get("P8_PARAMS_DIR") or Path.home() / ".config" / "infra_populi" / "params")
@@ -517,7 +520,8 @@ def node_boot(kind: str) -> str | None:
 def on_node(script: str, timeout: int = 0) -> tuple[int, str, str]:
     timeout = timeout or PROBE_TIMEOUT
     try:
-        proc = subprocess.run(["ssh", "-o", "BatchMode=yes", NODE, "sudo -n bash -s"], input=HELPERS + script,
+        peer_var = f"P8_PEER_ADDR={PEER_ADDR}\n" if PEER_ADDR else ""
+        proc = subprocess.run(["ssh", "-o", "BatchMode=yes", NODE, "sudo -n bash -s"], input=HELPERS + peer_var + script,
                               capture_output=True, text=True, timeout=timeout, env=node_env())
         return proc.returncode, proc.stdout, proc.stderr
     except subprocess.TimeoutExpired:
@@ -800,11 +804,13 @@ def cmd_run(cls: str, role: str) -> int:
     node = nodes.select(nodes.load(), cls=cls)
     NODE, record["node"] = node["alias"], node["kind"]
     record["nodes"] = {"node": {"kind": node["kind"], "snapshot": node.get("baseline_snapshot")}}
-    global PEER
+    global PEER, PEER_ADDR
     peer = None
+    PEER_ADDR = ""
     if "peer" in data:
         peer = {**nodes.load()["nodes"][data["peer"]["kind"]], "kind": data["peer"]["kind"]}
         PEER, record["peer"] = peer["alias"], peer["kind"]
+        PEER_ADDR = peer["hostonly_ip"]
         record["nodes"]["peer"] = {"kind": peer["kind"], "snapshot": peer.get("baseline_snapshot")}
     try:
         if peer and peer["status"] != "active":
