@@ -8,6 +8,24 @@ fixture: defaults
 authoring:
   minutes: 0.1
   notes: "Wall clock 22:03:55Z to 22:04:03Z 2026-11-16, outside the worktree while the Phase 1 review ran."
+purpose: >-
+  Makes the extra package sources of a RHEL node available: the EPEL repository for the node's major version and Red
+  Hat's CodeReady Builder repository, so packages from either can be installed, without touching the base repositories.
+# Purpose and outcomes table added 2026-11-19 (backfill batch 4, HQ batch-10 rulings 2 and C1), with installs from each
+# repository as behaviour (the set read repository state only).
+outcomes:
+  - outcome: EPEL is installed and enabled for the node's major version, and a package from it installs
+    from: manifests/extra_packages_el.pp:6-11
+    checks: [epel-release-installed, an-epel-package-installs-from-epel]
+  - outcome: CodeReady Builder is enabled for the node's major version and architecture, and a package from it installs
+    from: manifests/extra_packages_el.pp:13-19
+    checks: [codeready-builder-enabled, a-codeready-builder-package-installs-from-it]
+  - outcome: the base repositories (BaseOS, AppStream) stay enabled
+    from: manifests/extra_packages_el.pp:13-19
+    checks: [baseos-appstream-still-enabled]
+  - outcome: the same on RHEL 8
+    from: manifests/extra_packages_el.pp:3-4
+    uncovered: {why: "the lab has a RHEL 9 node only; nodes.yml has no RHEL 8 kind", lifted_by: rhel9}
 checks:
   - id: epel-release-installed
     what: the EPEL release package for the node's major version is installed and its repository is enabled
@@ -38,3 +56,29 @@ checks:
     probe: |
       subscription-manager repos --list-enabled | grep -oE 'rhel-9-for-x86_64-(baseos|appstream)-rpms' | sort
     expect: {rc: 0, stdout: "\\Arhel-9-for-x86_64-appstream-rpms\\nrhel-9-for-x86_64-baseos-rpms\\n\\Z"}
+
+  - id: an-epel-package-installs-from-epel
+    what: a package only EPEL carries (htop) installs, and dnf records EPEL as where it came from
+    control: negative
+    timeout: 300
+    derived_from:
+      - {path: manifests/extra_packages_el.pp, lines: "6-11", text: "# Install the EPEL release package for RHEL 8 or 9"}
+    mutates: installs the package htop on the node with dnf
+    probe: |
+      dnf -q -y install htop >/dev/null 2>&1
+    effect: |
+      dnf -q repoquery --installed --qf '%{name} from %{from_repo}' htop 2>/dev/null
+    expect: {rc: 0, stdout: "\\Ahtop from epel\\n\\Z"}
+
+  - id: a-codeready-builder-package-installs-from-it
+    what: a package from CodeReady Builder (ninja-build) installs, and dnf records that repository as where it came from
+    control: negative
+    timeout: 300
+    derived_from:
+      - {path: manifests/extra_packages_el.pp, lines: "13-19", text: "# Enable the CodeReady Builder repository for RHEL 8 or 9"}
+    mutates: installs the package ninja-build on the node with dnf
+    probe: |
+      dnf -q -y install ninja-build >/dev/null 2>&1
+    effect: |
+      dnf -q repoquery --installed --qf '%{name} from %{from_repo}' ninja-build 2>/dev/null
+    expect: {rc: 0, stdout: "\\Aninja-build from codeready-builder-for-rhel-9-x86_64-rpms\\n\\Z"}
