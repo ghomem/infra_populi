@@ -1,7 +1,7 @@
 # Lab uplink too slow for node reverts (2026-11-19, from 06:25Z)
 
-Status: REOPENED 2026-11-19 12:14Z, for Salatiel: Canonical's archive mirrors are unreachable from this network (see
-"Reopened" below); lab runs are on hold again. History: first held from 06:25Z (slow uplink), resolved 11:17Z
+Status: RESOLVED 2026-11-19 14:05Z (Canonical's mirrors answer again; see "Resolved again" below). Was reopened
+12:14Z: Canonical's archive mirrors unreachable from this network; lab runs were on hold. History: first held from 06:25Z (slow uplink), resolved 11:17Z
 (Salatiel: "internet should be normal").
 
 ## Evidence (measured 2026-11-19)
@@ -72,3 +72,22 @@ Status: REOPENED 2026-11-19 12:14Z, for Salatiel: Canonical's archive mirrors ar
 - **Resume:**
   1. Re-run `.codex_state/tools/revert_node.sh`; an apt update of about 10 s means it is back.
   2. Re-run `phase3.py run network_vpn` (the corrected set, commit 6bce592).
+
+## Retry and resolution (2026-11-19)
+- **12:18Z to 12:22Z (Salatiel: "try again"):**
+  - the mirrors still failed: one address connected after 1.96 s and sent nothing within 10 s, the others never
+    connected;
+  - revert_node.sh failed at apt-get update (12:19:22Z to 12:22:44Z).
+- **Other Ubuntu mirrors were fine** in the same minutes: mirrors.edge.kernel.org 740 kB/s,
+  ftp.halifax.rwth-aachen.de 569 kB/s, mirror.math.princeton.edu 190 kB/s. A lab mirror switch was offered to
+  Salatiel, not made.
+- **14:05Z (Salatiel: "check again"):** 4 of 4 archive.ubuntu.com addresses served the Release file at 355 kB/s to
+  1.1 MB/s.
+- **The first revert refused on the lab lock:** puppet8master's clock read 12:37:44Z, 5270 s behind the laptop (it
+  had stopped, presumably while the VM or the laptop was paused).
+  - Fix: `systemctl restart systemd-timesyncd` on the master, as the lock's message says. The master was not
+    restarted or powered off.
+  - Its clock then read 14:05:43Z, synchronized.
+- **The next revert succeeded:** 30.6 s, apt update 9.8 s.
+- **network_vpn 20261119T140625Z-author:** node and peer reverts both succeeded (apt 10.0 s and 9.9 s). 10 checks
+  pass; 1 finding, the cipher, as in openvpn_server.
