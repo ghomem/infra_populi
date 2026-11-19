@@ -1,0 +1,33 @@
+{
+ "class": "packages_base",
+ "at": "20261119T012718Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "package-lists-refresh-on-every-agent-run: baseline lines 11-19 declare class { 'apt': update => { frequency => 'always' } } on the non-RedHat branch; with frequency always the apt module's Exec[apt_update] is not refreshonly and runs on every agent run, so counting one 'changed: true' for Exec[apt_update] in the last run report (the harness's run 2) tests exactly that; it fails on the clean node and passed after apply",
+  "the-tools-work: lines 26-27 set the Debian list (monitoring-plugins-standard, ecryptfs-utils, aptitude, acl, ...) installed by lines 43-46; check_disk (monitoring plugins, via the standard package's basic dependency), getfacl (acl), ecryptfs-setup-private (ecryptfs-utils) and aptitude on the path are what those packages provide; the clean node lacks them (negative fails), all present and working after apply",
+  "supervisor-cloud-init-and-unattended-upgrades-are-removed: line 51 declares supervisor and cloud-init ensure absent, and lines 59-61 (unattended_upgrades default false, line 4, defaults fixture) unattended-upgrades absent on Debian; the probe treats only a dpkg status ending in ' installed' as present, so a removed package left in config-files state counts as absent, matching ensure => absent (remove, not purge); clean node has cloud-init and unattended-upgrades (fails), applied node all absent",
+  "purpose covered: Purpose (header line 2: minimum package set of a generic node) matches the baseline manifest; the outcomes table covers every part of it: the Debian list installed (dpkg status of all 7 packages) and usable (monitoring plugin, ACL read, ecryptfs helper and aptitude run or resolve), package lists refreshed every run (Exec[apt_update] changed in run 2), supervisor/cloud-init/unattended-upgrades removed, and the update-package-lists exec honestly tested as present but never running (refreshonly, and line 49 makes it notify the packages, not the reverse; the refresh comes from class apt). Left out, honestly listed: the unattended_upgrades true variant (a second fixture, lifted_by ubuntu) and the whole RedHat branch (dnf makecache, extra_packages_el, the EL list, dnf-automatic; lifted_by rhel9, a kind present in nodes.yml). iptables-persistent, vim and wget are checked installed only, which is what the class itself declares (package ensure present, no service or config)."
+ ],
+ "review_s": 137.6,
+ "check_file_sha256": "3d72521ad004487b650cece7c10028ff2c28ca12d28d8f9c266d526b347a62fa",
+ "reviewer_result": "20261119T012501Z-reviewer",
+ "author_result": "20261119T012211Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "9e52362f-7b42-4778-abd0-959cfa7a99db",
+   "boot_id_at_end": "9e52362f-7b42-4778-abd0-959cfa7a99db",
+   "fresh": true
+  }
+ }
+}
