@@ -1,0 +1,165 @@
+# Phase 3 checks for puppet_infrastructure::firewall_ipv6_drop_policy_desktop (class; plan node ubuntu; no parameters,
+# fixture defaults). Written 2026-11-19 (backfill batch 5), on the pattern of firewall_ipv6_drop's set: the peer
+# (ubuntu2) tries the node over IPv6 on the host-only link (the node hands over its link-local address and MAC; the
+# INPUT drop also drops neighbour discovery, so the peer adds a static neighbour entry) and routes IPv6 through it. This
+# variant drops by chain policy (no drop rule to count: the FORWARD policy counter is read), accepts IPv6 on lo (::1
+# must work on the node), and purges unmanaged IPv6 rules (a planted rule must be gone after an agent run).
+class: firewall_ipv6_drop_policy_desktop
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 2.4
+  notes: "18:33:32Z (date at the start of reading the manifest) to 18:35:56Z 2026-11-19 (the first valid run; a commit for backup_rsnapshot_pre ran inside that span); the FORWARD plant added at 18:54:55Z (one command's dates), outside the worktree while backup_rsnapshot_pre's review ran; the peer probes come from firewall_ipv6_drop's reviewed set; not prototyped on a node."
+peer:
+  kind: ubuntu2
+  why: what a firewall drops can only be seen from another machine on the same link
+  files: [/run/p8test-ipv6/linklocal, /run/p8test-ipv6/mac]
+node_agent:
+  after: an-unmanaged-ipv6-rule-is-planted
+  why: purge removes an IPv6 rule Puppet does not manage only on the next agent run after it appears
+purpose: >-
+  A desktop-safe IPv6 DROP policy: IPv6 INPUT and FORWARD closed by default, with IPv6 loopback explicitly allowed on
+  lo (desktop session components use ::1 during login), and no other IPv6 rule kept.
+outcomes:
+  - outcome: ip6tables INPUT and FORWARD have the DROP policy and INPUT accepts everything on lo
+    from: manifests/firewall_ipv6_drop_policy_desktop.pp:13-22
+    checks: [policies-and-the-lo-rule]
+  - outcome: IPv6 loopback works on the node (ping and TCP to ::1)
+    from: manifests/firewall_ipv6_drop_policy_desktop.pp:4-7, 13-19
+    checks: [ipv6-loopback-works]
+  - outcome: another machine on the link cannot reach the node over IPv6, while IPv4 still reaches it
+    from: manifests/firewall_ipv6_drop_policy_desktop.pp:2-4, 22
+    checks: [the-node-publishes-its-link-local-address, another-host-cannot-reach-the-node-over-ipv6-but-can-over-ipv4]
+  - outcome: IPv6 traffic forwarded through the node is dropped
+    from: manifests/firewall_ipv6_drop_policy_desktop.pp:21
+    checks: [the-node-publishes-its-link-local-address, another-host-routes-ipv6-through-the-node, the-forward-policy-counted-the-routed-packets]
+  - outcome: an IPv6 rule Puppet does not manage is removed by the next agent run
+    from: manifests/firewall_ipv6_drop_policy_desktop.pp:21-22
+    checks: [an-unmanaged-ipv6-rule-is-planted, the-agent-run-purges-it]
+  - outcome: a desktop login using ::1
+    from: manifests/firewall_ipv6_drop_policy_desktop.pp:5-7
+    uncovered: {why: "the plan's node has no desktop session; ::1 itself is checked on the node", lifted_by: kubuntu}
+checks:
+  - id: policies-and-the-lo-rule
+    what: the IPv6 INPUT and FORWARD policies are DROP, and INPUT's only rule accepts all traffic on lo
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_ipv6_drop_policy_desktop.pp, lines: "13-19", text: "firewall { '000 accept all IPv6 to lo interface':"}
+      - {path: manifests/firewall_ipv6_drop_policy_desktop.pp, lines: "21-22", text: "firewallchain { 'INPUT:filter:IPv6':   ensure => present, purge => true, policy => drop, }"}
+    probe: |
+      ip6tables -S INPUT; ip6tables -S FORWARD
+    expect: {rc: 0, stdout: "\\A-P INPUT DROP\\n-A INPUT -i lo -m comment --comment \"000 accept all IPv6 to lo interface\" -j ACCEPT\\n-P FORWARD DROP\\n\\Z"}
+
+  - id: ipv6-loopback-works
+    what: on the node, ping to ::1 is answered and a TCP connection to [::1]:22 (sshd) opens
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_ipv6_drop_policy_desktop.pp, lines: "4-7", text: "# IPv6 loopback traffic on lo. This is required on desktops because some local"}
+    probe: |
+      ip6tables -S INPUT | grep -q -- '-P INPUT DROP' || { echo "no drop policy"; exit 1; }
+      ping -6 -c2 -W2 -q ::1 >/dev/null 2>&1 && echo "ping ::1 answered" || echo "ping ::1 dropped"
+      p8_tcp ::1 22
+    expect: {rc: 0, stdout: "\\Aping ::1 answered\\nopen\\n\\Z"}
+
+  - id: the-node-publishes-its-link-local-address
+    what: setup for the peer checks, the node's IPv6 link-local address and MAC on the host-only NIC written for the peer
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_ipv6_drop_policy_desktop.pp, lines: "13-19", text: "provider => 'ip6tables',"}
+    mutates: >-
+      writes the host-only NIC's link-local address and MAC to /run/p8test-ipv6/linklocal and /run/p8test-ipv6/mac,
+      turns IPv6 forwarding on and adds an on-link route for 2001:db8:99::/64 on the host-only NIC, until the next
+      revert, so packets for that prefix are routed through FORWARD
+    probe: |
+      install -d -m 0755 /run/p8test-ipv6
+      sysctl -q -w net.ipv6.conf.all.forwarding=1
+      ip -6 route replace 2001:db8:99::/64 dev enp0s8
+      ip -6 -o addr show dev enp0s8 scope link | awk '{print $4}' | cut -d/ -f1 > /run/p8test-ipv6/linklocal
+      cat /sys/class/net/enp0s8/address > /run/p8test-ipv6/mac
+    effect: |
+      grep -c -E '^fe80::' /run/p8test-ipv6/linklocal
+      ip6tables -S INPUT | grep -c -- '-P INPUT DROP'
+    expect: {rc: 0, stdout: "\\A1\\n1\\n\\Z"}
+
+  - id: another-host-cannot-reach-the-node-over-ipv6-but-can-over-ipv4
+    what: >-
+      from the peer on the same link, an IPv6 ping and an IPv6 SSH connection to the node's link-local address are
+      dropped, while an IPv4 SSH connection to the node still gets through
+    control: negative
+    host: peer
+    derived_from:
+      - {path: manifests/firewall_ipv6_drop_policy_desktop.pp, lines: "4", text: "# It keeps IPv6 INPUT and FORWARD closed by default, but explicitly allows"}
+      - {path: manifests/firewall_ipv6_drop_policy_desktop.pp, lines: "22", text: "firewallchain { 'INPUT:filter:IPv6':   ensure => present, purge => true, policy => drop, }"}
+    mutates: three connection attempts from the peer to the class node (ICMPv6, TCP 22 over IPv6, TCP 22 over IPv4); results in /run/p8test-ipv6/reach.txt on the peer
+    probe: |
+      install -d -m 0700 /run/p8test-ipv6
+      ll=$(cat /run/p8test-from-node/linklocal)
+      {
+        [ -n "$ll" ] || echo "no link-local address handed over"
+        ping -6 -c2 -W2 -q "$ll%enp0s8" >/dev/null 2>&1 && echo "icmpv6 in" || echo "icmpv6 dropped"
+        nc -6 -z -w3 "$ll%enp0s8" 22 >/dev/null 2>&1 && echo "ssh over ipv6 in" || echo "ssh over ipv6 dropped"
+        nc -4 -z -w3 192.168.56.20 22 >/dev/null 2>&1 && echo "ssh over ipv4 in" || echo "ssh over ipv4 dropped"
+      } > /run/p8test-ipv6/reach.txt
+    effect: |
+      cat /run/p8test-ipv6/reach.txt
+    expect: {rc: 0, stdout: "\\Aicmpv6 dropped\\nssh over ipv6 dropped\\nssh over ipv4 in\\n\\Z"}
+
+  - id: another-host-routes-ipv6-through-the-node
+    what: setup for the next check, the peer sends IPv6 packets for a documentation prefix with the node as their router
+    control: negative
+    host: peer
+    derived_from:
+      - {path: manifests/firewall_ipv6_drop_policy_desktop.pp, lines: "21", text: "firewallchain { 'FORWARD:filter:IPv6': ensure => present, purge => true, policy => drop, }"}
+    mutates: >-
+      on the peer: a static neighbour entry for the node's link-local address, the unique-local source address
+      fd8e:2b3c:4d5e::24/64 on its host-only NIC, a route for 2001:db8:99::/64 via the node, and 5 pings to
+      2001:db8:99::1 through it; the ping summary goes to /run/p8test-ipv6/routed.txt
+    probe: |
+      install -d -m 0700 /run/p8test-ipv6
+      ll=$(cat /run/p8test-from-node/linklocal); mac=$(cat /run/p8test-from-node/mac)
+      ip -6 neigh replace "$ll" lladdr "$mac" dev enp0s8 nud permanent
+      ip -6 addr replace fd8e:2b3c:4d5e::24/64 dev enp0s8 nodad
+      ip -6 route replace 2001:db8:99::/64 via "$ll" dev enp0s8 src fd8e:2b3c:4d5e::24
+      ping -6 -c5 -W1 -q -I fd8e:2b3c:4d5e::24 2001:db8:99::1 2>&1 | grep -E 'packets transmitted' > /run/p8test-ipv6/routed.txt
+    effect: |
+      grep -o -E '^5 packets transmitted, 0 received' /run/p8test-ipv6/routed.txt
+    expect: {rc: 0, stdout: "\\A5 packets transmitted, 0 received\\n\\Z"}
+
+  - id: the-forward-policy-counted-the-routed-packets
+    what: the node's IPv6 FORWARD policy (DROP) counted the peer's routed packets
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_ipv6_drop_policy_desktop.pp, lines: "21", text: "policy => drop,"}
+    mutates: none beyond reading the policy counter (declared mutating so it runs after the peer sent its packets)
+    probe: |
+      true
+    effect: |
+      n=$(ip6tables -v -x -L FORWARD -n | sed -n -E 's/^Chain FORWARD \(policy DROP ([0-9]+) packets.*/\1/p')
+      [ -n "$n" ] && [ "$n" -ge 5 ] && echo "forward policy dropped the routed packets"
+    expect: {rc: 0, stdout: "\\Aforward policy dropped the routed packets\\n\\Z"}
+
+  - id: an-unmanaged-ipv6-rule-is-planted
+    what: setup for the purge check, an IPv6 rule added by hand to INPUT and one to FORWARD
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_ipv6_drop_policy_desktop.pp, lines: "22", text: "purge => true,"}
+    mutates: appends `-s fd8e:2b3c:4d5e::/64 -m comment --comment p8test-planted -j ACCEPT` to ip6tables INPUT and FORWARD
+    probe: |
+      for c in INPUT FORWARD; do ip6tables -A $c -s fd8e:2b3c:4d5e::/64 -m comment --comment p8test-planted -j ACCEPT; done
+    effect: |
+      ip6tables -S | p8_count 'p8test-planted'
+    expect: {rc: 0, stdout: "\\A2\\n\\Z"}
+
+  - id: the-agent-run-purges-it
+    what: after the node's agent run both planted rules are gone, and the lo rule and the two DROP policies remain
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_ipv6_drop_policy_desktop.pp, lines: "21-22", text: "purge => true,"}
+    mutates: none beyond reading the rules (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      ip6tables -S | p8_count 'p8test-planted'
+      ip6tables -S INPUT | p8_count '000 accept all IPv6 to lo interface'
+      ip6tables -S INPUT | head -1; ip6tables -S FORWARD | head -1
+    expect: {rc: 0, stdout: "\\A0\\n1\\n-P INPUT DROP\\n-P FORWARD DROP\\n\\Z"}
