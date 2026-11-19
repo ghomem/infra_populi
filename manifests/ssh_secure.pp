@@ -1,4 +1,4 @@
-# Puppet 8 migration: release-0.9.10 manifest; legacy fact $::osfamily -> $facts['os']['family'] only.
+# Puppet 8 migration: release-0.9.10 manifest; legacy fact $::osfamily -> $facts['os']['family'] only; local change #8: sshd's own idle timeouts on OpenSSH 9.2+.
 # Module dependency: saz-ssh 13.1.0.
 ### Purpose ########
 # This class provides sshd management class with improved security settings
@@ -54,6 +54,15 @@ class puppet_infrastructure::ssh_secure (
     $my_root_login = 'yes'
   }
 
+  # Current OpenSSH ends no idle session with ClientAliveCountMax 0 ("disables connection termination", sshd_config(5)
+  # on Ubuntu 24.04). OpenSSH 9.2 and later have sshd's own idle timeouts: set them from the same interval. An older
+  # sshd (RHEL 9) has none, and the idle disconnect is not enforced there.
+  $sshd_release = $facts['ssh_server_version_release']
+  $idle_timeouts = ($sshd_release =~ String and versioncmp($sshd_release, '9.2') >= 0) ? {
+    true    => { 'ChannelTimeout' => "session=${client_alive_interval}s", 'UnusedConnectionTimeout' => "${client_alive_interval}s" },
+    default => {},
+  }
+
   class { 'ssh::server':
     options => {
       'Protocol'                => '2' ,
@@ -79,7 +88,7 @@ class puppet_infrastructure::ssh_secure (
       'UsePrivilegeSeparation'  => 'yes' ,
       'X11DisplayOffset'        => '10' ,
       'AllowGroups'             => "${admin_group} naemon ${othergroups}" ,
-    },
+    } + $idle_timeouts,
   }
 
 }
