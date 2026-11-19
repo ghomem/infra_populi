@@ -12,6 +12,14 @@ authoring:
 purpose: >-
   An Ubuntu compatibility link: monitoring checks invoke the nagios plugins by their RedHat path /usr/lib64/nagios,
   which on Ubuntu must reach the plugins in /usr/lib/nagios.
+# Outcomes table added 2026-11-19 (backfill batch 3, HQ batch-10 ruling 2).
+outcomes:
+  - outcome: /usr/lib64/nagios is a link to /usr/lib/nagios, under a root-owned /usr/lib64
+    from: manifests/filesystem_lib64.pp:5-15
+    checks: [lib64-nagios-is-a-link-to-lib-nagios]
+  - outcome: a monitoring check invoked by its RedHat path runs the Ubuntu plugin
+    from: manifests/filesystem_lib64.pp:1-2, 11-15
+    checks: [a-plugin-runs-by-its-redhat-path]
 checks:
   - id: lib64-nagios-is-a-link-to-lib-nagios
     what: /usr/lib64 is a root-owned directory and /usr/lib64/nagios a link to /usr/lib/nagios
