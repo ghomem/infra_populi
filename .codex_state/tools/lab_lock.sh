@@ -16,8 +16,10 @@
 # (the revert inside a --revert-first harness, the harness inside a phase3 run) do not try to take it again.
 # Clocks (HQ 2026-11-17 batch-8 ruling 4): `take` refuses while the master's clock is more than a few seconds off the
 # laptop's (clock_check.py; a laptop suspend left it 2 h 26 min behind). The node's clock is checked where the node is
-# up: revert_node.sh after its boot, test_class.sh before run 1.
-# P8_LAB_LOCK overrides the lock path, P8_CLOCK_HOSTS the hosts checked at take (tests).
+# up: revert_node.sh after its boot, test_class.sh before run 1. A master VM that is not running has no clock to read
+# (2026-11-19: both VMs crashed on a laptop resume and were powered off; the lock then refused the very revert that
+# starts the master): `take` skips it, and revert_node.sh checks the master's clock right after starting it.
+# P8_LAB_LOCK overrides the lock path, P8_CLOCK_HOSTS the hosts checked at take, P8_MASTER_VM the master's VM (tests).
 set -euo pipefail
 
 LOCK="${P8_LAB_LOCK:-${HOME}/.cache/infra_populi/lab.lock}"
@@ -37,9 +39,22 @@ case "${1:-}" in
       exit 1
     fi
     read -ra clock_hosts <<<"${P8_CLOCK_HOSTS-puppet8master}"
-    if [[ ${#clock_hosts[@]} -gt 0 ]] && ! "$(dirname "$(readlink -f "$0")")/clock_check.py" "${clock_hosts[@]}" >/dev/null; then
-      echo "the lab's clocks disagree with the laptop's (above); not taking the lab lock" >&2
-      exit 1
+    clock_check="$(dirname "$(readlink -f "$0")")/clock_check.py"
+    if [[ ${#clock_hosts[@]} -gt 0 ]] && ! "$clock_check" "${clock_hosts[@]}" >/dev/null 2>"${LOCK}.clock"; then
+      # A master VM that is not running has no clock to read: drop it and check the other hosts (if any) again.
+      master_state="$(VBoxManage showvminfo "${P8_MASTER_VM:-Ubuntu24-puppet8-Master}" --machinereadable 2>/dev/null |
+        sed -n 's/^VMState="\(.*\)"$/\1/p')" || master_state=""
+      kept=()
+      if [[ -n "$master_state" && "$master_state" != "running" ]]; then
+        for h in "${clock_hosts[@]}"; do [[ "$h" == "puppet8master" ]] || kept+=("$h"); done
+        echo "lab_lock: the master VM is ${master_state}: its clock is checked once it runs (revert_node.sh)" >&2
+      fi
+      if [[ -z "$master_state" || "$master_state" == "running" ]] ||
+        { [[ ${#kept[@]} -gt 0 ]] && ! "$clock_check" "${kept[@]}" >/dev/null 2>"${LOCK}.clock"; }; then
+        cat "${LOCK}.clock" >&2
+        echo "the lab's clocks disagree with the laptop's (above); not taking the lab lock" >&2
+        exit 1
+      fi
     fi
     printf '%s %s %s\n' "$pid" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >"$LOCK"
     ;;

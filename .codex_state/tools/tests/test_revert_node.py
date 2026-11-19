@@ -357,3 +357,20 @@ def test_a_fallback_that_cannot_be_switched_fails_the_revert(lab):
     assert proc.returncode == 1 and "could not be switched to the fallback mirror" in proc.stderr
     assert sum("apt-get -q update" in l for l in ssh_lines(lab)) == 1
 
+
+
+# 2026-11-19: the lock skips a stopped master's clock, so a revert that starts the master checks it after the start.
+def test_a_master_started_by_the_revert_has_its_clock_checked(lab):
+    lab.world["vms"][MASTER]["state"] = "poweroff"
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 0, proc.stderr
+    calls = lab.calls(clock=True)
+    start = next(i for i, c in enumerate(calls) if c[:2] == ["VBoxManage", "startvm"] and MASTER in c)
+    assert any(c[0] == "ssh" and "puppet8master" in c and c[-1] == "date -u +%s.%N" for c in calls[start:])
+
+
+def test_a_master_started_with_a_wrong_clock_fails_the_revert(lab):
+    lab.world["vms"][MASTER]["state"] = "poweroff"
+    lab.world["ssh"].insert(0, {"match": r"puppet8master date -u", "clock": 300})
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 1 and "The master's clock is off" in proc.stderr

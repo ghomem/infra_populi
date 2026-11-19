@@ -73,3 +73,19 @@ def test_a_revert_first_harness_holds_one_lock_for_its_revert_and_releases_it(la
 def test_render_only_needs_no_lock(lab, held):
     proc = lab.run([str(TOOLS / "test_class.sh"), "--render-only", "puppet_infrastructure::dns_client"])
     assert "another lab run holds" not in proc.stderr
+
+
+# 2026-11-19: a powered-off master has no clock to read; the lock let no revert start it until take skipped it.
+def test_take_skips_the_clock_of_a_master_that_is_not_running(lab):
+    lab.world["vms"]["Ubuntu24-puppet8-Master"]["state"] = "poweroff"
+    lab.world["ssh"].insert(0, {"match": r"puppet8master date -u", "rc": 255})
+    proc = lock(lab, "take", str(os.getpid()), "revert")
+    assert proc.returncode == 0, proc.stderr
+    assert "the master VM is poweroff" in proc.stderr
+    assert [c for c in lab.calls("VBoxManage") if c[1] != "showvminfo"] == []  # read, never acted on
+
+
+def test_take_still_checks_a_running_masters_clock(lab):
+    lab.world["ssh"].insert(0, {"match": r"puppet8master date -u", "clock": 300})
+    proc = lock(lab, "take", str(os.getpid()), "revert")
+    assert proc.returncode == 1 and "clocks disagree" in proc.stderr

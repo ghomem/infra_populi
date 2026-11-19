@@ -61,7 +61,8 @@ def test_a_harness_refuses_before_touching_the_master_while_its_clock_is_off(lab
     skewed(lab, "puppet8master", 600.0)
     proc = lab.run([str(TOOLS / "test_class.sh"), "--compile-only", "puppet_infrastructure::dns_client"])
     assert proc.returncode == 1 and "CLOCK_SKEW puppet8master" in proc.stderr
-    assert lab.calls("rsync") == [] and lab.calls("VBoxManage") == []
+    # the master is not touched: at most its state is read (lab_lock.sh, 2026-11-19: a stopped master has no clock)
+    assert lab.calls("rsync") == [] and [c for c in lab.calls("VBoxManage") if c[1] != "showvminfo"] == []
 
 
 @pytest.mark.slow

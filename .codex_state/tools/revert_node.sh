@@ -141,10 +141,12 @@ require_master_running() {
     fail "Unable to determine the state of master VM '$MASTER_VM'; no master VM action was attempted."
   fi
 
+  local started=0
   if [[ "$state" != "running" ]]; then
     printf 'Starting master VM %q headless (current state: %s)...\n' "$MASTER_VM" "$state"
     VBoxManage startvm "$MASTER_VM" --type headless ||
       fail "Could not start master VM '$MASTER_VM' from state '$state'; no destructive master VM action was attempted."
+    started=1
   fi
 
   printf 'Waiting up to %ss for master SSH and puppetserver readiness...\n' "$SSH_TIMEOUT_SECONDS"
@@ -163,6 +165,11 @@ require_master_running() {
       service_output="${service_output//$'\r'/}"
       service_output="${service_output//$'\n'/}"
       if [[ "$service_output" == "active" ]]; then
+        # A master this revert started had no clock to check when the lab lock was taken (lab_lock.sh): check it now.
+        if ((started)); then
+          "${TOOLS_DIR}/clock_check.py" "$MASTER_SSH_ALIAS" >&2 ||
+            fail "The master's clock is off the laptop's after its start (CLOCK above); not handing the lab to a run."
+        fi
         return 0
       fi
     fi
