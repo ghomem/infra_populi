@@ -49,6 +49,8 @@ checks:
       for p in 80 443 8888; do p8_listening "$p"; done
     expect: {rc: 0, stdout: "\\A0\\.0\\.0\\.0:80\\n0\\.0\\.0\\.0:443\\n0\\.0\\.0\\.0:8888\\n\\Z"}
 
+  # 2026-11-19 authoring correction (run 20261119T041703Z): iptables -S prints a one-word comment without quotes, so
+  # the stand-in rule was not matched; the quotes are optional now.
   - id: a-default-drop-stands-in-for-the-base-firewall
     what: >-
       setup for the reach checks, the base firewall's default drop stood in by one rule appended after the class's:
@@ -60,7 +62,7 @@ checks:
     probe: |
       iptables -A INPUT -i enp0s8 -p tcp -m multiport --dports 80,443,8888 -m comment --comment p8test-default-drop -j DROP
     effect: |
-      iptables -S INPUT | grep -n -E -- '--comment "(200 accept http|201 accept https|p8test-default-drop)"' | sed -E 's/^([0-9]+):.*--comment "([^"]+)".*/\2/'
+      iptables -S INPUT | grep -n -E -- '--comment "?(200 accept http|201 accept https|p8test-default-drop)"?( |$)' | sed -E 's/^([0-9]+):.*--comment "?(200 accept http|201 accept https|p8test-default-drop)"?.*/\2/'
     expect: {rc: 0, stdout: "\\A200 accept http\\n201 accept https\\np8test-default-drop\\n\\Z"}
 
   - id: another-host-reaches-http-and-https-only

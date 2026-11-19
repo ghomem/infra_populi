@@ -1,0 +1,185 @@
+{
+ "class": "firewall_addon_web",
+ "role": "author",
+ "at": "20261119T041920Z",
+ "runner": "65725ef",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "44607f799d255d7e172f1385d585269eb7c7a05118b782592c07eb01962cd5b6",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-two-accept-rules",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "web-ports-and-another-listen",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-default-drop-stands-in-for-the-base-firewall",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "another-host-reaches-http-and-https-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "80 closed\n443 closed\n8888 closed\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-class-rules-accepted-them",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "200: zero\n201: zero\nstand-in drop: zero\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": ">\"201 accept https\", :proto=>\"tcp\", :dport=>443, :jump=>\"ACCEPT\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\", :chain=>\"INPUT\"}\u001b[0m\n\u001b[mNotice: firewall[201 accept https]: Creating: Ensuring changes to '201 accept https' persist\u001b[0m\nUnable to persist firewall rules: Execution of '/usr/sbin/service iptables-persistent save' returned 1: iptables-persistent: unrecognized service\n\u001b[mNotice: firewall[201 accept https]: Creating: Finished in 0.019310 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.15 seconds\u001b[0m\nRUN1_EVENTS: 2 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795062026'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.07 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::firewall_addon_web: 2 concrete resources (+0 defined-type instances)\n  Firewall[200 accept http]\n  Firewall[201 accept https]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP firewall_addon_web 4c799f2188b5\n"
+ },
+ "applied": [
+  {
+   "id": "the-two-accept-rules",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "200 accept http: tcp 80 ACCEPT\n201 accept https: tcp 443 ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "web-ports-and-another-listen",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0.0.0.0:80\n0.0.0.0:443\n0.0.0.0:8888\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "starts three transient units p8test-web-80, p8test-web-443 and p8test-web-8888 (python3 -m http.server on 0.0.0.0) on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-default-drop-stands-in-for-the-base-firewall",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "200 accept http\n201 accept https\np8test-default-drop\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "appends `-A INPUT -i enp0s8 -p tcp -m multiport --dports 80,443,8888 -m comment --comment p8test-default-drop -j DROP` on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "another-host-reaches-http-and-https-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "80 open\n443 open\n8888 closed\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "three TCP connection attempts from the peer to the class node (80, 443, 8888)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-class-rules-accepted-them",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "200: counted\n201: counted\nstand-in drop: counted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rule counters (declared mutating so it runs after the peer's attempts)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.8,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "c306f00d-a274-4971-aa1f-7405a0d23e3e",
+   "boot_id_at_end": "c306f00d-a274-4971-aa1f-7405a0d23e3e",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "0dda6712-f421-433d-9b47-d24966543701",
+   "boot_id_at_end": "0dda6712-f421-433d-9b47-d24966543701",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "outcomes": [
+  {
+   "outcome": "with a default drop beneath them, HTTP and HTTPS from another host get in while another port does not",
+   "checks": [
+    "web-ports-and-another-listen",
+    "a-default-drop-stands-in-for-the-base-firewall",
+    "another-host-reaches-http-and-https-only",
+    "the-class-rules-accepted-them"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the rules are TCP accepts in INPUT, numbered 200 and 201",
+   "checks": [
+    "the-two-accept-rules"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 73.2
+}
