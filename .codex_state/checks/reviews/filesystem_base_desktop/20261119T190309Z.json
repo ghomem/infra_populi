@@ -1,0 +1,34 @@
+{
+ "class": "filesystem_base_desktop",
+ "at": "20261119T190309Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "base-directories: line 21 declares mode '0644' on the three basedirs (lines 14-22, ensure directory, root:root); Puppet's file type adds search permission wherever read is set on directories, so 755 is the value the code produces; Hiera on the master resolves localdir /opt/puppet-infrastructure, bindir and etcdir to its bin and etc, matching the probed paths",
+  "the-syslog-file-drifts: lines 4-5 state rsyslog may set other permissions and puppet then changes them; the action chowns root:root and chmods 0644 (all declared in mutates, plus the /run/p8test-fsd marker dir), and the read-only effect stat shows the result before the node agent run (runner runs the agent only after this check's effect is judged)",
+  "the-agent-run-restores-the-syslog-file: lines 30-36 declare, under customize_syslog_mode (true in the params fixture), File[/var/log/syslog] owner syslog, group adm, mode $syslog_mode (default u=rw,g=r,o= = 0640); the effect expects syslog adm 640 after the marker; my run's node_agent events show exactly the class's File[/var/log/syslog] owner root->syslog, group root->adm, mode 0644->0640 (corrective), so the restore is the class's doing",
+  "purpose covered: Purpose matches the header ('basic filesystem definitions for all desktop machines') and the code: three root-owned base directories, and optional syslog file owner/mode enforcement. Tested: the directories exist root:root 755-in-effect; a script in bindir runs and a 0644 file in etcdir reads as nobody (the directories' use as stated in 'local dir for custom scripts'); syslog:adm 640 holds (invariant, rsyslog on 24.04 already sets it, why_invariant true: it passed on the clean node) and a hand-made drift is corrected by the next agent run (events attributable to the class's File resource). Uncovered, honestly: the default customize_syslog_mode=false variant and another syslog_mode, because a set carries one fixture (the runner validates fixture params|defaults only); the core purpose the lab can exercise under this fixture is tested."
+ ],
+ "review_s": 100.4,
+ "check_file_sha256": "69777143aeef5da53a324e7520d4e9e360ee706bbde226c71357d8eb2fbccfb8",
+ "reviewer_result": "20261119T190129Z-reviewer",
+ "author_result": "20261119T185842Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "f821656e-4474-4e24-8ce2-bf6d051ab533",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "f821656e-4474-4e24-8ce2-bf6d051ab533",
+   "fresh": true
+  }
+ }
+}
