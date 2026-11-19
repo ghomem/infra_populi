@@ -1,0 +1,34 @@
+{
+ "class": "ssh_secure",
+ "at": "20261119T170844Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "root-login-off: baseline :68 sets PermitRootLogin from $my_root_login, which :49-53 makes 'no' for the default root_login=false (params fixture sets only client_alive_interval=30); sshd -T 'permitrootlogin no' is exactly that effective value",
+  "password-and-root-logins-are-refused: :66 PasswordAuthentication 'no' (default false) leaves publickey as the only offered method, so a password-only attempt gets 'Permission denied (publickey)'; :68 PermitRootLogin 'no' refuses root even though the probe puts root in ssh_in (an AllowGroups member) with the valid key, and the journal line 'ROOT LOGIN REFUSED' attributes the refusal to PermitRootLogin rather than AllowGroups",
+  "an-idle-session-is-ended-after-the-interval: :75-76 ClientAliveInterval=$client_alive_interval with ClientAliveCountMax 0 states the intent that an idle session ends after the interval; with fixture 30 s the probe holds a silent loopback session (ServerAliveInterval=0, remote 'sleep 60') detached via systemd-run and expects it ended within 30-45 s; on OpenSSH 9.6 that is enforced by local change #8 (ChannelTimeout session:*=30s / UnusedConnectionTimeout, ssh_secure.pp:57-64, :91), matching local_changes.md row 8. mutates declares the session, transient unit and /run/p8test-ssh/idle.txt; the effect reads that file (the outcome), not the action's own output",
+  "purpose covered: Purpose (hardened sshd: restricted KEX/ciphers/MACs and login rules) matches the baseline header and code. Checks test the effective config (sshd -T) plus real behaviour: KEX/cipher/MAC negotiation refused for out-of-list algorithms with mismatch controls proving the class's own algorithms negotiate; key login works for ssh_in and the Hiera othergroups group, is refused for a user in no allowed group; password and root logins refused; idle session ended within the interval window; host-key order, moduli file hash/mode, ssh_in group and remaining defaults (invariant, plausibly equal to 24.04 defaults). Uncovered honestly: RHEL branch (sshd/wheel) and pre-9.2 sshd idle behaviour (lifted_by rhel9); Protocol 2 / UsePrivilegeSeparation are ignored by OpenSSH >=7.5. Not tested: a login via the sudo or naemon groups (only the AllowGroups list is read), acceptable as the mechanism is shown with two other member groups. Note: the set's header lines 7-8 still say no othergroups Hiera key exists (AllowGroups 'sudo naemon  ssh_in'), contradicting lines 3-4 and the allow-groups expectation; stale comment, and allow-groups 'what' omits p8testgroup - wording only, no effect on the checks."
+ ],
+ "review_s": 149.1,
+ "check_file_sha256": "b2c86c2cd6cb990f27fa912fa185dc4c4281124b7e2ce73d03d189f3b6a17caa",
+ "reviewer_result": "20261119T170615Z-reviewer",
+ "author_result": "20261119T170300Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "567505fe-283c-4e16-910d-e44a1e3e105a",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "567505fe-283c-4e16-910d-e44a1e3e105a",
+   "fresh": true
+  }
+ }
+}
