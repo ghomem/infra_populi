@@ -2185,3 +2185,41 @@ snapshot list, record.
    - **Checks:** on the IPv4-only node, the names that failed now resolve. The IPv6 side cannot be tested in the lab:
      record that as uncovered, with the evidence.
    - **Afterwards:** remove the approval condition once this passes.
+
+## 2026-11-19 — The lab VM crash on a laptop resume, and what it changed
+1. **The crash** (escalations/lab-vm-crash-2026-11-19.md):
+   - the laptop suspended at 20:35:48Z;
+   - on resume, at 20:38:08Z, both lab VMs went to Guru Meditation with VERR_VMX_INVALID_VMXON_PTR;
+   - kvm_intel is loaded beside VirtualBox on the laptop;
+   - no lab run was active: the runs' own inhibitors (test_class.sh, phase3.py) covered only the runs;
+   - Salatiel powered both VMs off; Salatiel is checking the KVM side.
+2. **A sleep guard** (HQ batch-15 follow-up 1): lab_sleep_guard.sh blocks sleep (logind, `--what=sleep --mode=block`)
+   for as long as any lab VM runs, and releases it when the last one stops.
+   - revert_node.sh and `lab_vm.sh start` call `ensure` (idempotent).
+   - The guard sleeps with the system's `sleep`, so a stub on PATH cannot make it spin. This happened once in the test
+     suite before the fix: leaked test guards ran with a stub `sleep`, and the load average reached 37.
+   - The stub lab opts out of guards by default.
+3. **Two defects of the lab lock** that the recovery exposed, both fixed and tested:
+   - **The clock check:** the lock refused the very revert that starts a powered-off master, because it checked the
+     master's clock first. Now `take` skips a master that is not running, and revert_node.sh checks the clock of a
+     master it started (−1.07 s measured on the resume).
+   - **The mutex:** the master-state read added for that ran under the lock's mutex and started a VBoxSVC that inherited
+     the mutex. The revert's release then waited 9 minutes, until I removed the stale mutex file. Every command under
+     the mutex now closes its descriptor (`8>&-`). The test checks the descriptor itself and fails without the fix.
+4. **The master after the restart:**
+   - puppetserver active, 8140 listening, `/status/v1/simple` HTTP 200;
+   - clock NTP-synchronized;
+   - the CA lists 8 certificates, including puppet8node and p8lab-ubuntu2;
+   - `puppet module list`: 28 modules, none invalid, and only the two expected Windows-only warnings (powershell,
+     reboot via docker; entry of line 528).
+5. **Facter and IPv6** (for caching_nameserver, HQ batch-15 ruling 6): on the lab node, Facter reports the VirtualBox
+   NAT's unique-local address fd17:625c:f037:2:a00:27ff:fe76:5ec6 with `scope6: global`, and `networking.ip6` is that
+   address. The kernel calls it scope global too.
+   - So "no global IPv6" is decided from the address (2000::/3), never from Facter's scope.
+   - The node has no 2000::/3 address, as Salatiel found on the production VPN server.
+6. **Uncovered rows, follow-up to ruling 3:**
+   - status.py and the approval report show the count of open uncovered rows per class.
+   - **Sweep order, after the backfill:**
+     1. the RedHat rows, on rhel9;
+     2. the parameter variants that production sets (names and counts from the fleet data);
+     3. the remaining variants, listed for Salatiel's acceptance, not tested one by one.

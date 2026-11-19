@@ -2,7 +2,18 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-119 entries; 6 marked superseded (in whole or part); newest first.
+120 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-19 — The lab VM crash on a laptop resume, and what it changed
+- 1. **The crash** (escalations/lab-vm-crash-2026-11-19.md):
+- 2. **A sleep guard** (HQ batch-15 follow-up 1): lab_sleep_guard.sh blocks sleep (logind, `--what=sleep --mode=block`)
+- 3. **Two defects of the lab lock** that the recovery exposed, both fixed and tested:
+- 4. **The master after the restart:**
+- 5. **Facter and IPv6** (for caching_nameserver, HQ batch-15 ruling 6): on the lab node, Facter reports the VirtualBox
+- 6. **Uncovered rows, follow-up to ruling 3:**
+- 1. the RedHat rows, on rhel9;
+- 2. the parameter variants that production sets (names and counts from the fleet data);
+- 3. the remaining variants, listed for Salatiel's acceptance, not tested one by one.
 
 ## 2026-11-19 — HQ rulings on batch 15
 - 1. **Batch 15 is accepted** (39 approved). **Not a false PASS.** The definition, for the record: a false PASS is an error
