@@ -8,6 +8,9 @@
 # `puppet8node::ssh::othergroups` on the lab master, so AllowGroups = "sudo naemon  ssh_in".
 # Effective configuration is read with `sshd -T` (what sshd will enforce, after Includes and defaults); negotiation
 # checks connect from the node to itself (127.0.0.1) and stop at algorithm negotiation or authentication — no login.
+# 2026-11-19, local change #8 (HQ batch-14 ruling 3): sshd's own idle timeouts (ChannelTimeout session=, Unused-
+# ConnectionTimeout) are set from client_alive_interval on OpenSSH 9.2+; the idle check's expectation is unchanged
+# (ended), its wording and the idle outcome name the new mechanism, and RHEL 9 is a row of its own (not enforced).
 class: ssh_secure
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -37,9 +40,12 @@ outcomes:
   - outcome: password logins and root logins are refused
     from: manifests/ssh_secure.pp:43-53, 66-68
     checks: [password-auth-off, root-login-off, login-test-accounts-and-key, password-and-root-logins-are-refused]
-  - outcome: an idle session is ended after client_alive_interval (ClientAliveCountMax 0)
+  - outcome: an idle session is ended after client_alive_interval (on OpenSSH 9.2+ by sshd's own idle timeouts, local change #8)
     from: manifests/ssh_secure.pp:5, 75-76
     checks: [client-alive, login-test-accounts-and-key, an-idle-session-is-ended-after-the-interval]
+  - outcome: on an sshd older than 9.2 (RHEL 9) the idle disconnect is not enforced (HQ batch-14 ruling 3; approval_conditions.md)
+    from: manifests/ssh_secure.pp:5, 75-76
+    uncovered: {why: "an sshd without ChannelTimeout/UnusedConnectionTimeout; this set runs on Ubuntu 24.04 (OpenSSH 9.6)", lifted_by: rhel9}
   - outcome: the host keys are offered in the given order, and the class's own moduli file is used
     from: manifests/ssh_secure.pp:9, 26-33, 58
     checks: [host-keys-in-order, moduli-file]
@@ -298,8 +304,8 @@ checks:
 
   - id: an-idle-session-is-ended-after-the-interval
     what: >-
-      a session that sends nothing for 30 s is ended by the server after the 10 s interval (ClientAliveCountMax 0), so
-      its remote command never prints
+      a session that sends nothing for 30 s is ended by the server after the 10 s interval (sshd's idle timeouts from
+      client_alive_interval, local change #8), so its remote command never prints
     control: negative
     timeout: 120
     derived_from:
