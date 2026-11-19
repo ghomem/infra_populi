@@ -22,8 +22,44 @@ peer:
   kind: ubuntu2
   why: what a firewall lets in or drops can only be seen from another machine on the network
 node_agent:
-  after: an-unmanaged-rule-is-added
-  why: the class purges firewall rules it does not manage, which only its next agent run can show
+  after: [an-unmanaged-rule-is-added, the-flush-script-clears-every-rule]
+  why: >-
+    the class purges firewall rules it does not manage, and rebuilds its rules after the emergency flush its comment
+    names; only its next agent run can show either
+# Outcomes table added 2026-11-19 (backfill batch 3, HQ batch-10 ruling 2), with three behaviour checks the table
+# showed missing (loopback, the flush script and the rebuild after it) and the held-connection check moved to the
+# probe helpers with the SSH rules' counters recorded around it (as in firewall_secure_extra's set).
+outcomes:
+  - outcome: INPUT and FORWARD drop by default and OUTPUT stays open; a port no rule allows is dropped for any other host
+    from: manifests/firewall_secure.pp:1-3, 36-51
+    checks: [default-policies-drop-input-and-forward, a-service-the-firewall-does-not-allow-is-listening, another-host-gets-icmp-and-ssh-but-not-other-ports]
+  - outcome: ICMP and SSH are let in from any host
+    from: manifests/firewall_secure.pp:2-3, 55-58, 94-101
+    checks: [another-host-gets-icmp-and-ssh-but-not-other-ports]
+  - outcome: loopback traffic is accepted (rule 001)
+    from: manifests/firewall_secure.pp:59-63
+    checks: [a-service-the-firewall-does-not-allow-is-listening, loopback-reaches-a-local-service]
+  - outcome: traffic to 127.0.0.0/8 arriving on another interface is rejected (rule 002)
+    from: manifests/firewall_secure.pp:64-69
+    uncovered: {why: "no node kind in nodes.yml would show this rule act: the same rule in firewall_secure_extra's set (2026-11-18) counted none of 3 hand-built frames from the peer to 127.0.0.1 through the node's NIC, with route_localnet 0 (the kernel drops that destination before INPUT) and with it set to 1 (unexplained); a lead in escalations/firewall_secure_extra.behaviour.md", lifted_by: ubuntu}
+  - outcome: whitelisted hosts (the Hiera list plus the acl) reach SSH without any limit
+    from: manifests/firewall_secure.pp:29-34, 81-84
+    checks: [whitelist-is-the-hiera-list-plus-the-acl, a-whitelisted-host-is-not-limited]
+  - outcome: other hosts are rate-limited against SSH brute force (overall 20 a minute with a burst of 5, 8 held per host, 15 new a minute per host)
+    from: manifests/firewall_secure.pp:76-79, 91-101
+    checks: [a-burst-of-new-ssh-connections-is-cut-at-the-limit, the-ssh-rule-counters-are-recorded, held-connections-stop-at-eight, only-the-per-host-limit-dropped-the-held-connections, new-connections-stop-at-fifteen-a-minute]
+  - outcome: rules Puppet does not manage are purged at the next agent run (strict_purge true)
+    from: manifests/firewall_secure.pp:36-37
+    checks: [an-unmanaged-rule-is-added, the-next-agent-run-purges-the-unmanaged-rule]
+  - outcome: the emergency flush script is installed, clears every rule when run, and the next agent run rebuilds the firewall
+    from: manifests/firewall_secure.pp:20-27
+    checks: [flush-script-installed, the-flush-script-clears-every-rule, the-next-agent-run-rebuilds-the-firewall]
+  - outcome: the running rules are saved for the next boot
+    from: manifests/firewall_secure.pp:55 (the rules), with the firewall module's base class (plan required_external firewall)
+    checks: [the-running-rules-are-saved-for-the-next-boot]
+  - outcome: strict mode (only listed hosts reach SSH), and strict_purge false with ignore_patterns (unmanaged rules matching a pattern kept)
+    from: manifests/firewall_secure.pp:10-12, 39-46, 86-90
+    uncovered: {why: "fixture variants (one set holds one fixture), untested: this fixture leaves strict, strict_purge and ignore_patterns at their defaults", lifted_by: ubuntu}
 checks:
   - id: default-policies-drop-input-and-forward
     what: INPUT and FORWARD drop by default, OUTPUT accepts
@@ -82,6 +118,18 @@ checks:
     effect: |
       ss -ltnH 'sport = :8888' | awk '{print $4}'
     expect: {rc: 0, stdout: "\\A0\\.0\\.0\\.0:8888\\n\\Z"}
+
+  - id: loopback-reaches-a-local-service
+    what: on the node, a connection over loopback to the port no rule allows (8888) gets through
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "59-63", text: "-> firewall { '001 accept all to lo interface':"}
+    mutates: none beyond one local connection to 127.0.0.1:8888 (declared mutating so it runs after the service starts)
+    probe: |
+      true
+    effect: |
+      p8_tcp 127.0.0.1 8888
+    expect: {rc: 0, stdout: "\\Aopen\\n\\Z"}
 
   - id: another-host-gets-icmp-and-ssh-but-not-other-ports
     what: >-
@@ -151,6 +199,19 @@ checks:
       cat /run/p8test-firewall/whitelisted.txt
     expect: {rc: 0, stdout: "\\Ain 20\\n\\Z"}
 
+  - id: the-ssh-rule-counters-are-recorded
+    what: setup for the held-connection checks, the packet counters of the SSH limit rules (112, 114, 116, 117) recorded on the node
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "96", text: "firewall { '112 SSH connlimit':"}
+    mutates: writes the counters of rules 112, 114, 116 and 117 to /run/p8test-firewall/ssh-before on the node
+    probe: |
+      install -d -m 0700 /run/p8test-firewall
+      { iptables -v -x -L LIMIT_INDIVIDUAL -n; iptables -v -x -L LIMIT_OVERALL -n; } | awk '/\/\* 11[2467] SSH/ {n=$0; sub(/.*\/\* /, "", n); print substr(n, 1, 3), $1}' > /run/p8test-firewall/ssh-before
+    effect: |
+      cut -d' ' -f1 /run/p8test-firewall/ssh-before | paste -sd' '
+    expect: {rc: 0, stdout: "\\A112 114 116 117\\n\\Z"}
+
   - id: held-connections-stop-at-eight
     what: >-
       from the unlisted address, new SSH connections opened slower than the overall limit refills (one per 4 s) and
@@ -163,18 +224,33 @@ checks:
       - {path: manifests/firewall_secure.pp, lines: "96", text: "firewall { '112 SSH connlimit':          chain => 'LIMIT_INDIVIDUAL', proto => tcp, dport => $ssh_port, connlimit_above => $indilim,"}
     mutates: >-
       after 61 s (the earlier burst's 60 s recent window expires), 10 SSH connections from the peer's primary address
-      to the class node, one every 4 s, each held open for 50 s; the established count goes to
+      to the class node, one every 4 s, each held 50 s (p8_hold); the established count goes to
       /run/p8test-firewall/held.txt on the peer
     probe: |
       install -d -m 0700 /run/p8test-firewall
       sleep 61
-      for i in $(seq 10); do (sleep 50 | nc 192.168.56.20 22 >/dev/null 2>&1) & sleep 4; done
+      for i in $(seq 10); do p8_hold 192.168.56.20 22 50; sleep 4; done
       sleep 1
-      ss -tnH state established '( dport = :22 and dst 192.168.56.20 )' | wc -l > /run/p8test-firewall/held.txt
-      wait
+      p8_established 192.168.56.20 22 > /run/p8test-firewall/held.txt
+      sleep 50
     effect: |
       cat /run/p8test-firewall/held.txt
     expect: {rc: 0, stdout: "\\A8\\n\\Z"}
+
+  - id: only-the-per-host-limit-dropped-the-held-connections
+    what: >-
+      on the node, during the held connections only the per-host connection limit (112) dropped packets (the 9th and
+      10th connections' SYNs and their retransmissions, at least 2); the recent limit (114) and the overall drop (117)
+      dropped none, and the overall limit (116) accepted at least 8
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "96", text: "connlimit_above => $indilim,"}
+    mutates: none beyond reading the rule counters (declared mutating so it runs after the held connections)
+    probe: |
+      true
+    effect: |
+      join <(sort /run/p8test-firewall/ssh-before) <({ iptables -v -x -L LIMIT_INDIVIDUAL -n; iptables -v -x -L LIMIT_OVERALL -n; } | awk '/\/\* 11[2467] SSH/ {n=$0; sub(/.*\/\* /, "", n); print substr(n, 1, 3), $1}' | sort) | awk '{d=$3-$2; printf "%s %d\n", $1, d}' | awk '$1=="112"{print ($2>=2 ? "112 dropped the 9th and 10th" : "112 dropped "$2)} $1=="114"{print "114 dropped "$2} $1=="116"{print ($2>=8 ? "116 accepted at least 8" : "116 accepted "$2)} $1=="117"{print "117 dropped "$2}'
+    expect: {rc: 0, stdout: "\\A112 dropped the 9th and 10th\\n114 dropped 0\\n116 accepted at least 8\\n117 dropped 0\\n\\Z"}
 
   - id: new-connections-stop-at-fifteen-a-minute
     what: >-
@@ -223,3 +299,33 @@ checks:
       iptables -S INPUT | grep -c p8test-rogue
       iptables -S | grep -E '^-P INPUT '
     expect: {rc: 0, stdout: "\\A0\\n-P INPUT DROP\\n\\Z"}
+
+  - id: the-flush-script-clears-every-rule
+    what: the installed flush script (root 0755, the module's file) leaves no rule and every policy ACCEPT, so SSH stays up
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "20-27", text: "# Script that clears all firewall rules to be used only in exceptional cases (see issue 119)"}
+      - {path: files/iptables/iptables-flush.sh, sha256: "af2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935"}
+    mutates: runs /opt/puppet-infrastructure/bin/iptables-flush.sh on the node (every IPv4 and IPv6 rule and chain removed, policies ACCEPT)
+    probe: |
+      /opt/puppet-infrastructure/bin/iptables-flush.sh
+    effect: |
+      p8_digest /opt/puppet-infrastructure/bin/iptables-flush.sh | cut -d' ' -f2-
+      for t in filter mangle nat; do iptables -t "$t" -S | p8_count '^-A'; done | paste -sd' '
+      iptables -S | grep -E '^-P (INPUT|FORWARD) '
+    expect: {rc: 0, stdout: "\\Aroot:root 755 af2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935\\n0 0 0\\n-P INPUT ACCEPT\\n-P FORWARD ACCEPT\\n\\Z"}
+
+  - id: the-next-agent-run-rebuilds-the-firewall
+    what: after the node's agent run, the policies drop again and the whitelist and SSH limit rules are back
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "49-50", text: "firewallchain { 'INPUT:filter:IPv4':   ensure => present, purge => true, policy => drop }"}
+      - {path: manifests/firewall_secure.pp, lines: "100", text: "firewall { '116 SSH LIMIT_OVERALL':"}
+    mutates: none beyond reading the rules (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      iptables -S | grep -E '^-P (INPUT|FORWARD) '
+      iptables -S INPUT | p8_count '--comment "100 SSH whitelist '
+      iptables -S LIMIT_OVERALL | p8_count '--comment "116 SSH LIMIT_OVERALL"'
+    expect: {rc: 0, stdout: "\\A-P INPUT DROP\\n-P FORWARD DROP\\n3\\n1\\n\\Z"}
