@@ -1,0 +1,33 @@
+{
+ "class": "filesystem_base",
+ "at": "20261119T013714Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-local-tree-exists: manifests/filesystem_base.pp:19-24 declares the five basedirs (lines 10-16, lookups the lab Hiera common.yaml:42-46 resolves to /opt/puppet-infrastructure and its bin, etc, backup, pkgsdir) as directories root:root mode '0644'; Puppet adds x to each read bit on directories, so 755 root:root for all five is exactly what the lines produce; failed on the clean node (tree absent), passed after apply",
+  "the-syslog-mode-drifts: lines 56-63 manage $syslog_filepath's mode only when customize_syslog_mode is true (the params fixture sets it true); the action chmod 0644 /var/log/syslog is a declared drift setup, fully covered by its mutates text, and the read-only effect (stat %a plus the mypython link as an applied marker) shows the action's result, not its output; the next check proves the class undoes it",
+  "mypython-runs-python-3: lines 42-47 (default branch, Ubuntu node) set $mypython_target to /usr/bin/python3 and lines 50-54 link ${bindir}/mypython to it; readlink giving /usr/bin/python3 and the link running Python with major version 3 tests exactly that; negative on the clean node (no link)",
+  "purpose covered: Purpose (local tree for custom scripts, locale setting against ssh locale errors, mypython link to Python 3, syslog owner/mode kept when asked) matches the header comment (line 2), the inline comments (lines 18, 26, 35, 4-5) and the 65-line baseline manifest. Tested: the five directories with owner and effective mode; /etc/default/locale is the module file (sha256 of files/locale/locale, replacing Ubuntu's link) and a PAM-style env-sourcing shell gets LANG/LC_ALL en_US.UTF-8 with no locale error on stderr; mypython runs Python 3; a hand drift of /var/log/syslog to 0644 is restored to syslog:adm 0640 (u=rw,g=r,o=, lines 7, 42-47) by the node's next agent run (rc 2, 1 changed). Left out and listed honestly under uncovered: the default customize_syslog_mode false (syslog left alone, line 56), a second params fixture on the same ubuntu node kind while a set holds one fixture (same treatment as dns_client's empty-list guard); the RedHat branch (/var/log/messages root:root, lines 36-41), lifted by the rhel9 kind present in nodes.yml. The mypython link's mode (line 53) has no effect on a symlink and is not an outcome. Minor note: the locale check has no mismatch control showing that locale would print an error for a missing locale; the validator does not require one and the sha256 check pins the file content. My reviewer run: valid, ALL_PASS, no findings."
+ ],
+ "review_s": 135.8,
+ "check_file_sha256": "dcee0a1d6af1cb97ba88dc72f5cf1d648c0e4202df905fd88ed9652e70caa982",
+ "reviewer_result": "20261119T013459Z-reviewer",
+ "author_result": "20261119T013310Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "b5d2684e-6afb-4af2-9db3-3e4668246398",
+   "boot_id_at_end": "b5d2684e-6afb-4af2-9db3-3e4668246398",
+   "fresh": true
+  }
+ }
+}
