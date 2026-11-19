@@ -1,0 +1,43 @@
+{
+ "class": "firewall_secure_extra",
+ "at": "20261119T004725Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "bogus-packets-are-sent: baseline :162-163 declares rule 502 (mangle PREROUTING, tcp, flags not SYN, ctstate NEW, drop); this setup sends 5 stray ACKs outside any connection (plus SYN+FIN and RSTs for 501) from the peer, and its expect only confirms hping3 sent 5/50/5, the counts the next check's thresholds rely on; the effect on the node (501 >= 55, 502 >= 5) is judged by the-invalid-and-not-syn-rules-dropped-them, which passed - correct as a setup step",
+  "a-service-listens: baseline :18 is the service_list parameter (fixture [[8888, tcp]]); the check starts a listener on 8888 so the side-chain rules (521-524) have a service to guard, and its effect also requires rule 524 in WHITELIST_SIDE_CHAIN (baseline :252, present only with anti_ddos and ip_filter as in the fixture); a setup that tests no value the code would not produce",
+  "only-the-per-host-limit-dropped-the-held-connections: baseline :149 declares '112 SSH connlimit' in LIMIT_INDIVIDUAL, connlimit_above $indilim (8, :130), drop; with 10 held connections 4 s apart (below the 20/min overall rate, :132/:153) only 112 may drop (the 9th and 10th SYNs), 114 (15/min recent, :151) and 117 must drop 0 and 116 accept the 8 that passed; expect matches exactly what the code would produce, and my run gave '112 dropped the 9th and 10th / 114 dropped 0 / 116 accepted at least 8 / 117 dropped 0' with 8 held",
+  "finding the-rst-limit-dropped-the-third: expected rule 519 to accept 2 and 520 to drop 1 of 3 RSTs; the node counted 'accepted by the limit: 0, dropped beyond it: 0'. The RSTs of the 3 established connections are accepted by '003 accept related established rules' (title sorts before 519/520), and out-of-connection RSTs are ctstate INVALID and dropped by mangle 501 (shown by the-invalid-and-not-syn-rules-dropped-them, >= 55 incl. the 50-RST flood): rules 519/520 are unreachable, the protection holds at 501, as in HQ batch-12 ruling 1's standing rule",
+  "purpose covered: Purpose (default-drop firewall with SSH brute-force limits plus DDoS mitigation, a whitelist side chain and a blacklist) matches the baseline header (:1-6) and code. Tested and passing in my run: policies DROP and the whitelist SSH accepts; loopback accept (001); the SSH overall burst cut at 5, 8 held per host with only rule 112 dropping (counters), 14 new a minute then dropped; mangle 501/502 dropping bogus/INVALID and NEW-non-SYN packets and 503 dropping a low-MSS SYN while MSS 1000 connects; ICMP echo rate-limited; the service reachable only from the whitelisted address through the side chain, held to connlimit 3 and the 2/sec new-connection rate; the blacklisted address dropped on ICMP and SSH (local change #5) while an unlisted one is not; unmanaged rules purged and the firewall rebuilt by the next agent run after the flush script (root 0755, baseline sha) clears every rule. Tested and failing: the RST limit (519/520), honestly mapped to its checks and unreachable as stated (finding above). Uncovered rows are true: 002 (127/8 on a non-lo interface: measured 0 with and without route_localnet, cause unexplained and stated as an open lead), 518 (conntrack defrag runs at priority -400, before mangle, so the rule never sees a fragment), geoip (needs xtables-addons and a GeoIP database that no class installs), internal_forward (needs an internal network behind the node), and the anti_ddos-without-ip_filter and no-anti_ddos/strict variants (the set holds one fixture). Minor table omission, not an exercisable gap under this fixture: the no-anti_ddos '000 accept all icmp' (:100-106) is not named in the variant row, and the parameter-validation fail() calls (:39-52) have no row"
+ ],
+ "review_s": 592.9,
+ "check_file_sha256": "70f954f078bcea45d33e5e130877d00c19c4ca3e51d28f01a56b607c3627a799",
+ "reviewer_result": "20261119T003733Z-reviewer",
+ "author_result": "20261119T002722Z-author",
+ "findings": [
+  "the-rst-limit-dropped-the-third"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "4ba17276-c7c0-4fe0-ade6-bcd5fd771dc0",
+   "boot_id_at_end": "4ba17276-c7c0-4fe0-ade6-bcd5fd771dc0",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "9a2d96c5-7060-415b-9d34-a264c4999780",
+   "boot_id_at_end": "9a2d96c5-7060-415b-9d34-a264c4999780",
+   "fresh": true
+  }
+ }
+}

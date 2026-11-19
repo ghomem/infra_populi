@@ -1,0 +1,932 @@
+{
+ "class": "firewall_secure_extra",
+ "role": "reviewer",
+ "at": "20261119T003733Z",
+ "runner": "99c0eb5",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "70f954f078bcea45d33e5e130877d00c19c4ca3e51d28f01a56b607c3627a799",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "policies-and-ssh-rules",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n-P OUTPUT ACCEPT\n0\n0\n",
+   "stderr": "iptables: No chain/target/match by that name.\n",
+   "ok": true
+  },
+  {
+   "id": "mangle-anti-ddos-rules",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "a-service-listens",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "iptables: No chain/target/match by that name.\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "loopback-reaches-a-local-service",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-service-is-reached-only-from-the-whitelist",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-fwx/filter.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-whitelisted-source-is-held-to-the-connection-limit",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-fwx/held.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-whitelisted-source-is-held-to-the-new-connection-rate",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "not limited\n",
+   "stderr": "cat: /run/p8test-fwx/rate.txt: No such file or directory\nbash: line 97: /run/p8test-fwx/rate.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-blacklisted-source-gets-nothing",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-fwx/black.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "icmp-echo-is-rate-limited",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "not limited\n",
+   "stderr": "cat: /run/p8test-fwx/icmp.txt: No such file or directory\nsed: can't read /run/p8test-fwx/icmp.txt: No such file or directory\nsed: can't read /run/p8test-fwx/icmp.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-rst-counters-are-recorded",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-fwx/rst-before: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "three-connections-are-reset-at-once",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-fwx/rst.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-rst-limit-dropped-the-third",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "accepted by the limit: 0, dropped beyond it: 0\n",
+   "stderr": "bash: line 96: /run/p8test-fwx/rst-before: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-mangle-counters-are-zeroed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "bogus-packets-are-sent",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-fwx/sent.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-invalid-and-not-syn-rules-dropped-them",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "rule 501: absent, rule 502: absent\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-low-mss-syn-is-dropped",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-fwx/mss.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-mss-rule-dropped-it",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "rule 503: absent\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "an-ssh-burst-is-cut-at-the-overall-limit",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-fwx/burst.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-ssh-rule-counters-are-recorded",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "cut: /run/p8test-fwx/ssh-before: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "held-ssh-connections-stop-at-eight",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-fwx/held-ssh.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "only-the-per-host-limit-dropped-the-held-connections",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "sort: cannot read: /run/p8test-fwx/ssh-before: No such file or directory\niptables: No chain/target/match by that name.\niptables: No chain/target/match by that name.\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "new-ssh-connections-stop-at-fifteen-a-minute",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-fwx/spaced.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "an-unmanaged-rule-is-added",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-purges-the-unmanaged-rule",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "iptables: No chain/target/match by that name.\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-flush-script-clears-every-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0 0 0\n-P INPUT ACCEPT\n-P FORWARD ACCEPT\n",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/iptables-flush.sh': No such file or directory\nsha256sum: /opt/puppet-infrastructure/bin/iptables-flush.sh: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-rebuilds-the-firewall",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n0\n0\n",
+   "stderr": "iptables: No chain/target/match by that name.\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "17 SSH DROP]\n  Firewall[501 drop invalid packets]\n  Firewall[502 drop new packets not syn]\n  Firewall[503 drop syn packets with suspicious mss]\n  Firewall[504 drop packets bogus tcp flags]\n  Firewall[505 drop packets bogus tcp flags]\n  Firewall[506 drop packets bogus tcp flags]\n  Firewall[507 drop packets bogus tcp flags]\n  Firewall[508 drop packets bogus tcp flags]\n  Firewall[509 drop packets bogus tcp flags]\n  Firewall[510 drop packets bogus tcp flags]\n  Firewall[511 drop packets bogus tcp flags]\n  Firewall[512 drop packets bogus tcp flags]\n  Firewall[513 drop packets bogus tcp flags]\n  Firewall[514 drop packets bogus tcp flags]\n  Firewall[515 drop packets bogus tcp flags]\n  Firewall[516 drop packets bogus tcp flags]\n  Firewall[517 drop packets bogus tcp flags]\n  Firewall[518 drop fragmented packages]\n  Firewall[519 limit RST tcp packets]\n  Firewall[520 limit RST tcp packets (default behavior)]\n  Firewallchain[WHITELIST_SIDE_CHAIN:filter:IPv4]\n  Firewall[131313 marking all traffic at entry]\n  Firewall[131313 marking the good boys: 192.168.56.124]\n  Firewall[521 sidechain redirecting by mark]\n  Firewall[521 limit connections per source IP [8888, tcp]]\n  Firewall[522 limit mew connections per source IP and time unit [8888, tcp]]\n  Firewall[523 limit mew connections per source IP and time unit (default behavior): [8888, tcp]]\n  Firewall[524 drop all traffic in the side chain]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP firewall_secure_extra 7b8e41d4f2bc\n"
+ },
+ "applied": [
+  {
+   "id": "policies-and-ssh-rules",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P INPUT DROP\n-P FORWARD DROP\n-P OUTPUT ACCEPT\n2\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "mangle-anti-ddos-rules",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "18\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-service-listens",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0.0.0.0:8888\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "starts a transient unit p8test-listener (python3 -m http.server 8888 on 0.0.0.0) on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "loopback-reaches-a-local-service",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "loopback in\n",
+   "stderr": "Connection to 127.0.0.1 8888 port [tcp/*] succeeded!\n",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond one local connection to 127.0.0.1:8888 (declared mutating so it runs after the service starts)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-service-is-reached-only-from-the-whitelist",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "service from whitelisted in\nservice from unlisted dropped\nssh from unlisted in\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "adds the peer's +100 and +150 addresses to its host-only NIC, then three connection attempts to the class node; results in /run/p8test-fwx/filter.txt on the peer",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-whitelisted-source-is-held-to-the-connection-limit",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "3\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "5 TCP connections from the peer's +100 address to the service, one per second, each ended after 20 s; the established count goes to /run/p8test-fwx/held.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-whitelisted-source-is-held-to-the-new-connection-rate",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "in 8 of 20 in 2002 ms\nlimited\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "after 3 s (the limit refills), 20 TCP connection attempts from the peer's +100 address to the service, one every 0.1 s, each closed after at most 80 ms; the count and duration go to /run/p8test-fwx/rate.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-blacklisted-source-gets-nothing",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "icmp from blacklisted dropped\nssh from blacklisted dropped\nicmp from unlisted in\nssh from unlisted in\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "a ping and an SSH connection attempt from the peer's +150 address, then from its primary address, to the class node; results in /run/p8test-fwx/black.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "icmp-echo-is-rate-limited",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "20 packets transmitted, 6 received, 70% packet loss, time 974ms\nlimited\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "20 echo requests from the peer's primary address to the class node, 0.05 s apart; ping's summary line goes to /run/p8test-fwx/icmp.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-rst-counters-are-recorded",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0 0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes rule 519's and 520's packet counters to /run/p8test-fwx/rst-before on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "three-connections-are-reset-at-once",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "3 connections reset\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "after 3 s (the service's rate limit refills), 3 TCP connections from the peer's +100 address to the class node's service, closed together with SO_LINGER 0 (one RST each); the result goes to /run/p8test-fwx/rst.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-rst-limit-dropped-the-third",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "accepted by the limit: 0, dropped beyond it: 0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rule counters (declared mutating so it runs after the peer's resets)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-mangle-counters-are-zeroed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "zeroes the packet counters of the node's mangle PREROUTING chain (iptables -t mangle -Z PREROUTING)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "bogus-packets-are-sent",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "5 50 5\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "installs hping3 on the peer, then sends 5 SYN+FIN packets, 50 RST packets (2 ms apart) and 5 ACK packets outside any connection from its primary address to the class node's port 22; the numbers hping3 sent go to /run/p8test-fwx/sent.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-invalid-and-not-syn-rules-dropped-them",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rule 501: 55, rule 502: 5\ninvalid packets dropped: at least 55\nnew packets without SYN dropped: at least 5\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rule counters (declared mutating so it runs after the peer sent the packets)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-low-mss-syn-is-dropped",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "mss 100: no answer\nmss 1000: connected\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "two TCP connection attempts from the peer's primary address to the class node's port 22 (TCP_MAXSEG 100, then 1000; 2 s timeout each); results in /run/p8test-fwx/mss.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-mss-rule-dropped-it",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rule 503: 2\nlow-MSS SYN dropped\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rule counters (declared mutating so it runs after the peer's attempts)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "an-ssh-burst-is-cut-at-the-overall-limit",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "dropped 15\nin 5\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "after 61 s, 20 parallel TCP connects from the peer's primary address to the class node's port 22; counts in /run/p8test-fwx/burst.txt on the peer",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-ssh-rule-counters-are-recorded",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "112 114 116 117\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes the counters of rules 112, 114, 116 and 117 to /run/p8test-fwx/ssh-before on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "held-ssh-connections-stop-at-eight",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "8\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "after 61 s, 10 SSH connections from the peer's primary address to the class node, one every 4 s, each held 50 s (p8_hold); the established count goes to /run/p8test-fwx/held-ssh.txt on the peer",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "only-the-per-host-limit-dropped-the-held-connections",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "112 dropped the 9th and 10th\n114 dropped 0\n116 accepted at least 8\n117 dropped 0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rule counters (declared mutating so it runs after the held connections)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "new-ssh-connections-stop-at-fifteen-a-minute",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "in 14\ndropped 4\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "after 61 s, 18 TCP connects from the peer's primary address to the class node's port 22, one every 3.5 s; the sequence goes to /run/p8test-fwx/spaced.txt on the peer",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "an-unmanaged-rule-is-added",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "appends `-A INPUT -s 10.255.255.1/32 -m comment --comment p8test-rogue -j ACCEPT` on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-agent-run-purges-the-unmanaged-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rules (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-flush-script-clears-every-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root:root 755\naf2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935\n0 0 0\n-P INPUT ACCEPT\n-P FORWARD ACCEPT\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs /opt/puppet-infrastructure/bin/iptables-flush.sh on the node (every IPv4 and IPv6 rule and chain removed, policies ACCEPT)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-agent-run-rebuilds-the-firewall",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P INPUT DROP\n-P FORWARD DROP\n18\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rules (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [
+  "the-rst-limit-dropped-the-third"
+ ],
+ "not_run": [],
+ "outcome": "FINDINGS",
+ "authoring_minutes": 2.2,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "4ba17276-c7c0-4fe0-ade6-bcd5fd771dc0",
+   "boot_id_at_end": "4ba17276-c7c0-4fe0-ade6-bcd5fd771dc0",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "9a2d96c5-7060-415b-9d34-a264c4999780",
+   "boot_id_at_end": "9a2d96c5-7060-415b-9d34-a264c4999780",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "node_agent": {
+  "an-unmanaged-rule-is-added": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[9034 p8test-rogue]/ensure: undefined 'ensure' from 'present'\u001b[0m"
+   ],
+   "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795049188'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[9034 p8test-rogue]/ensure: undefined 'ensure' from 'present'\u001b[0m\n\u001b[mNotice: firewall[9034 p8test-rogue]: Deleting: Deleting Rule '9034 p8test-rogue'\u001b[0m\n\u001b[mNotice: firewall[9034 p8test-rogue]: Deleting: Ensuring changes to '9034 p8test-rogue' persist\u001b[0m\n\u001b[mNotice: firewall[9034 p8test-rogue]: Deleting: Finished in 0.068383 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 2.63 seconds\u001b[0m\nAGENT_RC=2\n"
+  },
+  "the-flush-script-clears-every-rule": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewallchain[FORWARD:filter:IPv4]/policy: policy changed 'accept' to 'drop' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewallchain[INPUT:filter:IPv4]/policy: policy changed 'accept' to 'drop' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[000 ICMP limit]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[000 icmp drop]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[001 accept all to lo interface]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[002 reject local traffic not on loopback interface]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[003 accept related established rules]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[00 grounding naughty boys: 192.168.56.174]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[100 SSH whitelist 127.0.0.1]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[100 SSH whitelist 192.168.56.1]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewallchain[LIMIT_INDIVIDUAL:filter:IPv4]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewallchain[LIMIT_OVERALL:filter:IPv4]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[110 SSH LIMIT_INDIVIDUAL]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[111 SSH ACCEPT ESTABLISHED]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[112 SSH connlimit]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[113 SSH set recent]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[114 SSH set recent]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[115 SSH LIMIT_INDIVIDUAL]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[116 SSH LIMIT_OVERALL]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[117 SSH DROP]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[501 drop invalid packets]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[502 drop new packets not syn]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[503 drop syn packets with suspicious mss]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[504 drop packets bogus tcp flags]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[505 drop packets bogus tcp flags]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[506 drop packets bogus tcp flags]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[507 drop packets bogus tcp flags]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[508 drop packets bogus tcp flags]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[509 drop packets bogus tcp flags]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[510 drop packets bogus tcp flags]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[511 drop packets bogus tcp flags]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[512 drop packets bogus tcp flags]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[513 drop packets bogus tcp flags]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[514 drop packets bogus tcp flags]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[515 drop packets bogus tcp flags]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[516 drop packets bogus tcp flags]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[517 drop packets bogus tcp flags]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[518 drop fragmented packages]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[519 limit RST tcp packets]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[520 limit RST tcp packets (default behavior)]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewallchain[WHITELIST_SIDE_CHAIN:filter:IPv4]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[131313 marking all traffic at entry]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[131313 marking the good boys: 192.168.56.124]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[521 sidechain redirecting by mark]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[521 limit connections per source IP [8888, tcp]]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[522 limit mew connections per source IP and time unit [8888, tcp]]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[523 limit mew connections per source IP and time unit (default behavior): [8888, tcp]]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[524 drop all traffic in the side chain]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m"
+   ],
+   "tail": "nections per source IP and time unit (default behavior): [8888, tcp]' with {:name=>\"523 limit mew connections per source IP and time unit (default behavior): [8888, tcp]\", :chain=>\"WHITELIST_SIDE_CHAIN\", :proto=>\"tcp\", :dport=>\"8888\", :ctstate=>\"NEW\", :jump=>\"DROP\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\"}\u001b[0m\n\u001b[mNotice: firewall[523 limit mew connections per source IP and time unit (default behavior): [8888, tcp]]: Creating: Ensuring changes to '523 limit mew connections per source IP and time unit (default behavior): [8888, tcp]' persist\u001b[0m\n\u001b[mNotice: firewall[523 limit mew connections per source IP and time unit (default behavior): [8888, tcp]]: Creating: Finished in 0.055418 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure_extra/Firewall[524 drop all traffic in the side chain]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m\n\u001b[mNotice: firewall[524 drop all traffic in the side chain]: Creating: Creating Rule '524 drop all traffic in the side chain' with {:name=>\"524 drop all traffic in the side chain\", :chain=>\"WHITELIST_SIDE_CHAIN\", :jump=>\"DROP\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\", :proto=>\"tcp\"}\u001b[0m\n\u001b[mNotice: firewall[524 drop all traffic in the side chain]: Creating: Ensuring changes to '524 drop all traffic in the side chain' persist\u001b[0m\n\u001b[mNotice: firewall[524 drop all traffic in the side chain]: Creating: Finished in 0.059456 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 4.35 seconds\u001b[0m\nAGENT_RC=2\n"
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "INPUT and FORWARD drop by default; the Hiera whitelist and the acl reach SSH unlimited",
+   "checks": [
+    "policies-and-ssh-rules"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "loopback traffic is accepted (rule 001)",
+   "checks": [
+    "a-service-listens",
+    "loopback-reaches-a-local-service"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "traffic to 127.0.0.0/8 arriving on another interface is rejected (rule 002)",
+   "uncovered": {
+    "why": "no node kind in nodes.yml would show this rule act; measured on the ubuntu node 2026-11-18: 3 hand-built Ethernet frames from the peer to 127.0.0.1 through the node's NIC were counted 0 by rule 002 with route_localnet 0 (the kernel drops such a destination before INPUT) and again 0 with route_localnet set to 1 on the node, for a reason not found; no check can show the rule act, and it is listed as a lead in escalations/firewall_secure_extra.behaviour.md",
+    "lifted_by": "ubuntu"
+   }
+  },
+  {
+   "outcome": "SSH from a host on no list is limited against brute force (overall 20 a minute with a burst of 5, 8 held per host, 15 new a minute per host)",
+   "checks": [
+    "an-ssh-burst-is-cut-at-the-overall-limit",
+    "the-ssh-rule-counters-are-recorded",
+    "held-ssh-connections-stop-at-eight",
+    "only-the-per-host-limit-dropped-the-held-connections",
+    "new-ssh-connections-stop-at-fifteen-a-minute"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "invalid TCP packets (bogus flag combinations such as SYN+FIN, out-of-connection RSTs) and new TCP packets without SYN are dropped before routing (the rules set no protocol, so the type's tcp default applies)",
+   "checks": [
+    "mangle-anti-ddos-rules",
+    "the-mangle-counters-are-zeroed",
+    "bogus-packets-are-sent",
+    "the-invalid-and-not-syn-rules-dropped-them"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "TCP SYN packets with an MSS outside 536-65535 are dropped (rule 503), while a normal MSS connects",
+   "checks": [
+    "the-mangle-counters-are-zeroed",
+    "a-low-mss-syn-is-dropped",
+    "the-mss-rule-dropped-it"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "TCP fragments are dropped (rule 518; tcp by the type's default)",
+   "uncovered": {
+    "why": "no node kind in nodes.yml would show this rule act (Phase 5 backlog #8); measured on the ubuntu node 2026-11-18: 5 TCP-fragmented SYNs from the peer (hping3 -f) reached the node's NIC (tcpdump: 8-byte fragments) and were counted 0 by rule 518 and 0 by 501; the kernel's connection tracking reassembles fragments at a hook that runs before the mangle table (defrag priority -400, mangle -150), so the rule only ever sees whole packets. An unreachable rule like the RST limit, reported to HQ in escalations/firewall_secure_extra.behaviour.md",
+    "lifted_by": "ubuntu"
+   }
+  },
+  {
+   "outcome": "ICMP echo requests are limited to 2 per second",
+   "checks": [
+    "icmp-echo-is-rate-limited"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "RST packets above 2 a second (burst 2) are dropped",
+   "checks": [
+    "the-rst-counters-are-recorded",
+    "three-connections-are-reset-at-once",
+    "the-rst-limit-dropped-the-third"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "only whitelisted sources reach the listed service, through the side chain",
+   "checks": [
+    "a-service-listens",
+    "the-service-is-reached-only-from-the-whitelist"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a whitelisted source holds at most ddos_limit connections to the service and opens new ones at the limited rate",
+   "checks": [
+    "a-whitelisted-source-is-held-to-the-connection-limit",
+    "a-whitelisted-source-is-held-to-the-new-connection-rate"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a blacklisted source is dropped outright, every protocol (local change",
+   "checks": [
+    "a-blacklisted-source-gets-nothing"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "rules Puppet does not manage are purged at the next agent run",
+   "checks": [
+    "an-unmanaged-rule-is-added",
+    "the-next-agent-run-purges-the-unmanaged-rule"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the flush script the WARNING asks for clears every rule, and the next agent run rebuilds the class's firewall",
+   "checks": [
+    "the-flush-script-clears-every-rule",
+    "the-next-agent-run-rebuilds-the-firewall"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "sources from whitelisted countries reach the services (country_whitelist, src_cc)",
+   "uncovered": {
+    "why": "the geoip match (xt_geoip) is not on Ubuntu 24.04 without xtables-addons and a GeoIP database, which no class installs; whether production sets country_whitelist is a production read",
+    "lifted_by": "ubuntu"
+   }
+  },
+  {
+   "outcome": "unlisted sources on the service port are forwarded to an internal landing server (internal_forward)",
+   "uncovered": {
+    "why": "needs an internal network behind the node with a server on it; the lab's nodes share one host-only link",
+    "lifted_by": "ubuntu2"
+   }
+  },
+  {
+   "outcome": "with anti_ddos but without ip_filter, every source is held to the per-source connection and rate limits on the listed services in INPUT",
+   "uncovered": {
+    "why": "a fixture variant of the same node (one set holds one fixture); this one exercises the side-chain variant of the same limits (lines 225-250), which pass",
+    "lifted_by": "ubuntu"
+   }
+  },
+  {
+   "outcome": "without anti_ddos the listed service ports are simply opened, and strict mode admits only listed SSH sources",
+   "uncovered": {
+    "why": "fixture variants of the same node (one set holds one fixture); this one exercises the class's DDoS and filter extras",
+    "lifted_by": "ubuntu"
+   }
+  }
+ ],
+ "duration_s": 551.5
+}

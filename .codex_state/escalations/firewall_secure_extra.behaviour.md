@@ -1,6 +1,13 @@
 # firewall_secure_extra — behaviour findings and check set (2026-11-18)
 
-Status: OPEN, for HQ. HQ ruled the batch-11 version of this file in "HQ rulings on batch 11" (DESIGN_DECISIONS
+Status: CLOSED for the backfill (2026-11-19). Round 4, the last (HQ batch-12 ruling 2), passed review
+20261119T004725Z: purpose covered, reproduced, with one finding, the RST limit, as ruled (no fix). The class goes to
+the approval report as it stands. Round 4 recorded the SSH rules' counters around the held connections: 8 held, and
+only rule 112 dropped anything, in the author's run, the reviewer's and three hand repetitions. The one count of 7
+did not recur, and with no legitimate interaction shown, the expectation stays at 8. Rule 518 is on the Phase 5
+backlog (#8, HQ batch-12 ruling 1).
+
+Earlier status (2026-11-18): OPEN, for HQ. HQ ruled the batch-11 version of this file in "HQ rulings on batch 11" (DESIGN_DECISIONS
 2026-11-18). This version records what those rulings did, and the third and last correction round (ruling 3), whose
 review failed. Under ruling 3 the set is escalated with the reviewer's reasons verbatim, and the run moved on.
 
