@@ -10,15 +10,25 @@ fixture: params
 authoring:
   minutes: 2
   notes: "About 10:29Z to 10:31Z 2026-11-18 (scratch file times), outside the worktree while firewall_secure's review ran (baseline class and saz-resolv_conf 8.0.1's template read).; the drift-and-restore pair added at 11:43:54Z in one command after the rsyslog_base purpose review"
-uncovered:
-  - what: an empty list (`if ($nameservers != [])`, line 8) leaves the node's resolver untouched
-    why: one set holds one fixture, and this one sets servers; the empty-list variant is a second fixture on the same node
-    lifted_by: ubuntu
 purpose: >-
   Points the node's resolver at the given DNS servers, and only those, and keeps it so, so that names resolve through them.
 node_agent:
   after: a-nameserver-is-added-by-hand
   why: the class keeps the resolver on the given servers only, which its next agent run after a hand edit shows
+# Outcomes table added 2026-11-19 (backfill batch 3, HQ batch-10 ruling 2); the set-level uncovered entry moved into it.
+outcomes:
+  - outcome: the resolver names exactly the given servers, in order
+    from: manifests/dns_client.pp:2, 8-12
+    checks: [resolv-conf-names-exactly-the-given-servers]
+  - outcome: names resolve through the given servers
+    from: manifests/dns_client.pp:2, 8-12
+    checks: [names-resolve-through-the-given-server]
+  - outcome: a server added by hand is removed again by the next agent run (the resolver is kept to the given list)
+    from: manifests/dns_client.pp:8-12
+    checks: [a-nameserver-is-added-by-hand, the-next-agent-run-keeps-only-the-given-servers]
+  - outcome: an empty list leaves the node's resolver untouched
+    from: manifests/dns_client.pp:8
+    uncovered: {why: "a fixture variant (one set holds one fixture, and this one sets servers); exercised elsewhere: node_base's fixture passes nameservers [] to this class, and node_base's check dns-is-left-alone (review PASS 20261118T194756Z) shows /etc/resolv.conf unchanged", lifted_by: ubuntu}
 checks:
   - id: resolv-conf-names-exactly-the-given-servers
     what: /etc/resolv.conf names the given nameservers, in order, and no other
