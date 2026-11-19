@@ -59,7 +59,7 @@ class puppet_infrastructure::ssh_secure (
   # sshd (RHEL 9) has none, and the idle disconnect is not enforced there.
   $sshd_release = $facts['ssh_server_version_release']
   $idle_timeouts = ($sshd_release =~ String and versioncmp($sshd_release, '9.2') >= 0) ? {
-    true    => { 'ChannelTimeout' => "session=${client_alive_interval}s", 'UnusedConnectionTimeout' => "${client_alive_interval}s" },
+    true    => { 'ChannelTimeout' => "session:*=${client_alive_interval}s", 'UnusedConnectionTimeout' => "${client_alive_interval}s" },
     default => {},
   }
 
