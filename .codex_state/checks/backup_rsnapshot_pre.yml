@@ -1,0 +1,94 @@
+# Phase 3 checks for puppet_infrastructure::backup_rsnapshot_pre (class; no parameters; bindir from Hiera
+# filesystem::bindir = /opt/puppet-infrastructure/bin). Written 2026-11-19 (backfill batch 5). The class prepares
+# backup_rsnapshot (whose own set runs rsnapshot from /etc/rsnapshot.d): rsnapshot, the configuration directory and the
+# rdiff.sh helper. The directory is declared 0644; Puppet adds search permission to a directory wherever read is set,
+# so the effective mode is read on the node, not taken from the manifest's text. rdiff.sh runs as behaviour on two
+# planted snapshots under /run (non-interactive: no second argument).
+class: backup_rsnapshot_pre
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 0.7
+  notes: "18:04:17Z (date at the start of reading rdiff.sh and the manifest) to 18:05:01Z 2026-11-19 (validation), outside the worktree while user's review ran; not prototyped on a node."
+purpose: >-
+  Prerequisites for rsnapshot backups (backup_rsnapshot): rsnapshot installed, the /etc/rsnapshot.d configuration
+  directory, and rdiff.sh, a helper that reports what changed between consecutive snapshots.
+outcomes:
+  - outcome: rsnapshot is installed and runs
+    from: manifests/backup_rsnapshot_pre.pp:7
+    checks: [rsnapshot-installed-and-runs]
+  - outcome: /etc/rsnapshot.d exists, root:root, traversable (0644 as declared, 0755 in effect for a directory)
+    from: manifests/backup_rsnapshot_pre.pp:9-14
+    checks: [config-directory]
+  - outcome: rdiff.sh is installed root:root 0755 and reports, for each pair of consecutive snapshots, the files that differ and the files only in one
+    from: manifests/backup_rsnapshot_pre.pp:16-21; files/backups/rdiff.sh:34-42, 60-115
+    checks: [rdiff-installed, two-snapshots-are-planted, rdiff-reports-what-changed-between-snapshots]
+  - outcome: rsnapshot driven from /etc/rsnapshot.d by backup_rsnapshot
+    from: manifests/backup_rsnapshot_pre.pp:1-2
+    uncovered: {why: "backup_rsnapshot's behaviour, checked in backup_rsnapshot's set, which runs on this class as its required base", lifted_by: ubuntu}
+  - outcome: rdiff.sh's interactive mode (a second argument; clears the screen and waits for ENTER between reports)
+    from: files/backups/rdiff.sh:55-58, 92-94, 111-118
+    uncovered: {why: "needs a terminal and a person pressing ENTER; the report it pages is the non-interactive one checked here", lifted_by: ubuntu}
+checks:
+  - id: rsnapshot-installed-and-runs
+    what: the rsnapshot package is installed and its command answers with its version
+    control: negative
+    derived_from:
+      - {path: manifests/backup_rsnapshot_pre.pp, lines: "7", text: "package { [ 'rsnapshot' ]: ensure => present, }"}
+    probe: |
+      dpkg-query -W -f '${Package} ${Status}\n' rsnapshot
+      rsnapshot -V 2>&1 | grep -c '^rsnapshot '
+    expect: {rc: 0, stdout: "\\Arsnapshot install ok installed\\n1\\n\\Z"}
+
+  - id: config-directory
+    what: /etc/rsnapshot.d is a directory, root:root, mode 755 in effect (declared 0644; Puppet sets search where read is set)
+    control: negative
+    derived_from:
+      - {path: manifests/backup_rsnapshot_pre.pp, lines: "9-14", text: "file { '/etc/rsnapshot.d':"}
+      - {path: manifests/backup_rsnapshot_pre.pp, lines: "11", text: "mode   => '0644',"}
+    probe: stat -c '%F %U %G %a' /etc/rsnapshot.d
+    expect: {rc: 0, stdout: "\\Adirectory root root 755\\n\\Z"}
+
+  - id: rdiff-installed
+    what: rdiff.sh is in bindir, root:root 0755, byte-identical to the module's file
+    control: negative
+    derived_from:
+      - {path: manifests/backup_rsnapshot_pre.pp, lines: "16-21", text: "source => 'puppet:///modules/puppet_infrastructure/backups/rdiff.sh',"}
+      - {path: files/backups/rdiff.sh, sha256: b45b5e661456553d11699630d7b681f1081e225d345a118fb476ec731d5272d3}
+    probe: |
+      stat -c '%U %G %a' /opt/puppet-infrastructure/bin/rdiff.sh
+      sha256sum /opt/puppet-infrastructure/bin/rdiff.sh | cut -d' ' -f1
+    expect: {rc: 0, stdout: "\\Aroot root 755\\nb45b5e661456553d11699630d7b681f1081e225d345a118fb476ec731d5272d3\\n\\Z"}
+
+  - id: two-snapshots-are-planted
+    what: setup for the report, a snapshot root with daily.0 and daily.1 that differ in one file and one new file
+    control: negative
+    derived_from:
+      - {path: files/backups/rdiff.sh, lines: "60-64", text: "LIST=`find . -maxdepth 1 -mindepth 1 -type d | sort -V`"}
+    mutates: >-
+      creates /run/p8test-rdiff/snap/daily.1 (same.txt, changed.txt "old") and daily.0 (same.txt, changed.txt "new",
+      added.txt)
+    probe: |
+      r=/run/p8test-rdiff/snap; rm -rf /run/p8test-rdiff; install -d "$r/daily.0" "$r/daily.1"
+      for d in daily.0 daily.1; do printf 'same\n' > "$r/$d/same.txt"; done
+      printf 'old\n' > "$r/daily.1/changed.txt"; printf 'new\n' > "$r/daily.0/changed.txt"; printf 'added\n' > "$r/daily.0/added.txt"
+    effect: |
+      cd /run/p8test-rdiff/snap && find . -type f | LC_ALL=C sort | tr '\n' ' '; echo
+    expect: {rc: 0, stdout: "\\A\\./daily\\.0/added\\.txt \\./daily\\.0/changed\\.txt \\./daily\\.0/same\\.txt \\./daily\\.1/changed\\.txt \\./daily\\.1/same\\.txt \\n\\Z"}
+
+  - id: rdiff-reports-what-changed-between-snapshots
+    what: >-
+      rdiff.sh, run on that root, reports daily.1 -> daily.0 with changed.txt differing and added.txt only in daily.0,
+      and nothing about same.txt
+    control: negative
+    derived_from:
+      - {path: files/backups/rdiff.sh, lines: "34-42", text: "diff $DIFF_OPTS -qr $MYDIR_A $MYDIR_B | sed 's/ and .\\// .\\//'"}
+      - {path: files/backups/rdiff.sh, lines: "100-108", text: "compare_dirs $DIR_B $DIR_A"}
+    mutates: runs /opt/puppet-infrastructure/bin/rdiff.sh /run/p8test-rdiff/snap once (it only reads); its report goes to /run/p8test-rdiff/report.txt
+    probe: |
+      /opt/puppet-infrastructure/bin/rdiff.sh /run/p8test-rdiff/snap > /run/p8test-rdiff/report.txt 2>&1; echo $? > /run/p8test-rdiff/rc
+    effect: |
+      echo "rc $(cat /run/p8test-rdiff/rc)"
+      grep -E '^-+ daily' /run/p8test-rdiff/report.txt | head -1
+      grep -E 'changed\.txt|added\.txt|same\.txt' /run/p8test-rdiff/report.txt | LC_ALL=C sort
+    expect: {rc: 0, stdout: "\\Arc 0\\n-------------------- daily\\.1 -> daily\\.0 --------------------\\nFiles \\./daily\\.1/changed\\.txt \\./daily\\.0/changed\\.txt differ\\nOnly in \\./daily\\.0: added\\.txt\\n\\Z"}
