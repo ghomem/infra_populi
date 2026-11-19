@@ -1,0 +1,130 @@
+# Phase 3 checks for puppet_infrastructure::puppet_commush (class; no parameters; localdir from Hiera
+# filesystem::localdir = /opt/puppet-infrastructure, its bin from the required base filesystem_base). Written
+# 2026-11-19 (backfill batch 5). commush.sh runs as behaviour in a git clone whose origin is a local bare repository
+# under /run (the https remote and its token prompt are the deployment's, not the script's logic); its answers come on
+# stdin (read -e reads them when stdin is not a terminal).
+class: puppet_commush
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+authoring:
+  minutes: 1.0
+  notes: "18:05:10Z (date at the start of reading commush.sh) to 18:06:09Z 2026-11-19 (validation); the branch-mismatch check and the https row's reason written and validated 18:40:56Z (one command's dates; the drafting before was not timed), outside the worktree while user's review ran; not prototyped on a node."
+purpose: >-
+  A helper for pushing node declarations from a deployment user's clone: commush.sh commits the tracked changes as a
+  given name and email, with a typed message, after a confirmation, and pushes them to the origin branch.
+outcomes:
+  - outcome: commush.sh is installed in <localdir>/bin, root:root 0755, as the module ships it
+    from: manifests/puppet_commush.pp:6-13
+    checks: [commush-installed]
+  - outcome: in a clone, a confirmed run commits the tracked changes as the given name and email with the typed message and pushes them to origin's branch
+    from: files/puppet/commush.sh:3-4, 19-30, 42-60
+    checks: [a-clone-with-a-change, a-confirmed-run-commits-and-pushes]
+  - outcome: declining the confirmation commits and pushes nothing; a missing email prints the usage and exits 1
+    from: files/puppet/commush.sh:12-24, 51-56
+    checks: [a-declined-run-and-a-missing-email-change-nothing]
+  - outcome: a branch argument other than the current branch prints an error and the run goes on (the baseline's guard does not stop)
+    from: files/puppet/commush.sh:32-37
+    checks: [a-run-on-another-branch-warns-and-goes-on]
+  - outcome: an https remote with a token prompt
+    from: files/puppet/commush.sh:6, 39
+    uncovered: {why: "the https URL and the token prompt belong to git and the deployment's server, not to the script, whose commands are the same against any remote (the local origin here); the lab has no https git server", lifted_by: ubuntu}
+checks:
+  - id: commush-installed
+    what: commush.sh is in /opt/puppet-infrastructure/bin, root:root 0755, byte-identical to the module's file
+    control: negative
+    derived_from:
+      - {path: manifests/puppet_commush.pp, lines: "6-13", text: "source  => 'puppet:///modules/puppet_infrastructure/puppet/commush.sh',"}
+      - {path: files/puppet/commush.sh, sha256: 758912dd73a09f1abd629fc98865858d2b6040881694bc3acecdec18800ccf90}
+    probe: |
+      stat -c '%U %G %a' /opt/puppet-infrastructure/bin/commush.sh
+      sha256sum /opt/puppet-infrastructure/bin/commush.sh | cut -d' ' -f1
+    expect: {rc: 0, stdout: "\\Aroot root 755\\n758912dd73a09f1abd629fc98865858d2b6040881694bc3acecdec18800ccf90\\n\\Z"}
+
+  - id: a-clone-with-a-change
+    what: setup for the runs, a local bare origin with one commit on master, and a clone of it with a tracked file changed
+    control: negative
+    timeout: 300
+    derived_from:
+      - {path: files/puppet/commush.sh, lines: "3-4", text: "# Pushes differences from files changed on a deployment user repo"}
+    mutates: >-
+      installs git if absent; creates /run/p8test-commush/origin.git (bare, master) and the clone /run/p8test-commush/work
+      with nodes.pp committed once by "P8 Seed", then changes nodes.pp in the clone (not committed)
+    probe: |
+      command -v git >/dev/null || DEBIAN_FRONTEND=noninteractive apt-get -qq -y install git >/dev/null 2>&1
+      r=/run/p8test-commush; rm -rf "$r"; install -d "$r"
+      git init -q --bare -b master "$r/origin.git"
+      git clone -q "$r/origin.git" "$r/work" 2>/dev/null
+      cd "$r/work" && git checkout -q -b master 2>/dev/null
+      printf 'node p8test-seed {}\n' > nodes.pp && git add nodes.pp
+      git -c user.name='P8 Seed' -c user.email=p8test-seed@example.invalid commit -q -m 'p8test seed' && git push -q origin master
+      printf 'node p8test-seed {}\nnode p8test-new {}\n' > nodes.pp
+    effect: |
+      cd /run/p8test-commush/work && git status --porcelain
+      git -C /run/p8test-commush/origin.git log --format='%an|%s' master
+    expect: {rc: 0, stdout: "\\A M nodes\\.pp\\nP8 Seed\\|p8test seed\\n\\Z"}
+
+  - id: a-declined-run-and-a-missing-email-change-nothing
+    what: >-
+      in the clone, answering n at the confirmation leaves the change uncommitted and origin unchanged; a call without
+      an email prints the usage and exits 1
+    control: negative
+    derived_from:
+      - {path: files/puppet/commush.sh, lines: "51-56", text: "if [[ ! $user_confirmation =~ ^([Yy](es)?)?$ ]]"}
+      - {path: files/puppet/commush.sh, lines: "12-24", text: "echo \"usage: commush.sh FULL_NAME EMAIL [BRANCH]\""}
+    mutates: >-
+      runs commush.sh twice as root in /run/p8test-commush/work: with the answers "p8test declined" and "n", and with a
+      name but no email; sets root's global git user.name and user.email (the script does so on every run); outputs
+      under /run/p8test-commush
+    probe: |
+      cd /run/p8test-commush/work
+      printf 'p8test declined\nn\n' | /opt/puppet-infrastructure/bin/commush.sh 'P8 Test' p8test@example.invalid master > /run/p8test-commush/declined.out 2>&1; echo $? > /run/p8test-commush/declined.rc
+      /opt/puppet-infrastructure/bin/commush.sh 'P8 Test' > /run/p8test-commush/usage.out 2>&1 < /dev/null; echo $? > /run/p8test-commush/usage.rc
+    effect: |
+      echo "declined: rc $(cat /run/p8test-commush/declined.rc), $(cd /run/p8test-commush/work && git status --porcelain), origin $(git -C /run/p8test-commush/origin.git rev-list --count master) commit"
+      echo "no email: rc $(cat /run/p8test-commush/usage.rc), $(cat /run/p8test-commush/usage.out)"
+    expect: {rc: 0, stdout: "\\Adeclined: rc 0,  M nodes\\.pp, origin 1 commit\\nno email: rc 1, usage: commush\\.sh FULL_NAME EMAIL \\[BRANCH\\]\\n\\Z"}
+
+  - id: a-confirmed-run-commits-and-pushes
+    what: >-
+      in the clone, a run answered with a message and an empty confirmation (the default yes) leaves the clone clean and
+      origin's master with a new commit by P8 Test <p8test@example.invalid>, the typed message and the change
+    control: negative
+    derived_from:
+      - {path: files/puppet/commush.sh, lines: "42-43", text: "git config --global user.name  \"$NAME\""}
+      - {path: files/puppet/commush.sh, lines: "58-60", text: "git commit -a -m \"$MESSAGE\""}
+    mutates: >-
+      runs commush.sh once as root in /run/p8test-commush/work with the answers "p8test node added" and an empty line
+      (commits and pushes to the local origin); sets root's global git identity; output under /run/p8test-commush
+    probe: |
+      cd /run/p8test-commush/work
+      printf 'p8test node added\n\n' | /opt/puppet-infrastructure/bin/commush.sh 'P8 Test' p8test@example.invalid master > /run/p8test-commush/confirmed.out 2>&1; echo $? > /run/p8test-commush/confirmed.rc
+    effect: |
+      echo "rc $(cat /run/p8test-commush/confirmed.rc), clone clean: $(cd /run/p8test-commush/work && git status --porcelain | wc -l)"
+      git -C /run/p8test-commush/origin.git log -1 --format='%an %ae|%s' master
+      git -C /run/p8test-commush/origin.git show master:nodes.pp | p8_count '^node p8test-new'
+    expect: {rc: 0, stdout: "\\Arc 0, clone clean: 0\\nP8 Test p8test@example\\.invalid\\|p8test node added\\n1\\n\\Z"}
+
+  - id: a-run-on-another-branch-warns-and-goes-on
+    what: >-
+      on a branch feature, a run naming master prints "error: your current branch is feature but you are trying to
+      commush to master" and goes on: it commits on feature and pushes origin master, which does not change
+    control: negative
+    derived_from:
+      - {path: files/puppet/commush.sh, lines: "32-37", text: "echo \"error: your current branch is $MYBRANCH but you are trying to commush to $BRANCH\""}
+      - {path: files/puppet/commush.sh, lines: "58-60", text: "git push origin $BRANCH"}
+    mutates: >-
+      in /run/p8test-commush/work: creates the branch feature, changes nodes.pp and runs commush.sh naming master with the
+      answers "p8test on feature" and an empty line; output under /run/p8test-commush
+    probe: |
+      cd /run/p8test-commush/work
+      before=$(git -C /run/p8test-commush/origin.git rev-parse master)
+      echo "$before" > /run/p8test-commush/origin-before
+      git checkout -q -b feature
+      printf 'node p8test-seed {}\nnode p8test-new {}\nnode p8test-feature {}\n' > nodes.pp
+      printf 'p8test on feature\n\n' | /opt/puppet-infrastructure/bin/commush.sh 'P8 Test' p8test@example.invalid master > /run/p8test-commush/feature.out 2>&1; echo $? > /run/p8test-commush/feature.rc
+    effect: |
+      echo "rc $(cat /run/p8test-commush/feature.rc)"
+      p8_count '^error: your current branch is feature but you are trying to commush to master$' /run/p8test-commush/feature.out
+      cd /run/p8test-commush/work && git log -1 --format='%s' feature
+      [ "$(git -C /run/p8test-commush/origin.git rev-parse master)" = "$(cat /run/p8test-commush/origin-before)" ] && echo "origin master unchanged"
+    expect: {rc: 0, stdout: "\\Arc 0\\n1\\np8test on feature\\norigin master unchanged\\n\\Z"}
