@@ -13,13 +13,26 @@ purpose: >-
   The basic filesystem of every non-desktop machine: the local tree for custom scripts and data, a locale setting that
   stops locale errors in ssh sessions, the mypython link to the system Python 3, and (when asked) the syslog file's
   owner and mode kept as set.
-uncovered:
-  - what: the default customize_syslog_mode false, under which the class leaves the syslog file alone
-    why: one set holds one fixture, and this one sets it true to test the managed mode; the default is a second fixture on the same node
-    lifted_by: ubuntu
-  - what: the RedHat paths (/var/log/messages owned root:root)
-    why: these checks run on the Ubuntu node
-    lifted_by: rhel9
+# Outcomes table added 2026-11-19 (backfill batch 3, HQ batch-10 ruling 2); the set-level uncovered list moved into it.
+outcomes:
+  - outcome: the local tree for custom scripts and data exists (localdir, bin, etc, backup, pkgsdir), root-owned
+    from: manifests/filesystem_base.pp:10-24
+    checks: [the-local-tree-exists]
+  - outcome: the locale setting stops locale errors in ssh sessions
+    from: manifests/filesystem_base.pp:26-32
+    checks: [the-locale-setting-works]
+  - outcome: mypython runs the system Python 3
+    from: manifests/filesystem_base.pp:34-54
+    checks: [mypython-runs-python-3]
+  - outcome: when asked (customize_syslog_mode true), the syslog file's owner and mode are kept as set
+    from: manifests/filesystem_base.pp:4-7, 56-63
+    checks: [the-syslog-mode-drifts, the-next-agent-run-restores-the-syslog-mode]
+  - outcome: by default (customize_syslog_mode false) the syslog file is left alone
+    from: manifests/filesystem_base.pp:6, 56
+    uncovered: {why: "a fixture variant (one set holds one fixture, and this one sets it true to test the managed mode); untested", lifted_by: ubuntu}
+  - outcome: the RedHat paths (/var/log/messages owned root:root)
+    from: manifests/filesystem_base.pp:36-41
+    uncovered: {why: "the RedHat branch; this set runs on the plan's Ubuntu node", lifted_by: rhel9}
 node_agent:
   after: the-syslog-mode-drifts
   why: the class keeps the syslog file's mode, which only its next agent run after a change can show
