@@ -7,12 +7,14 @@
 # Purpose and outcomes added 2026-11-19 (backfill batch 5, HQ batch-10 rulings 2 and C1), with the password login as
 # behaviour (su as an unprivileged account in a pty, as in user_base's set). What user_base does on its own (the purge
 # of other keys, the empty-hash refusal, the variants) is checked in user_base's set.
+# Correction round 1, 2026-11-19 (review 20261119T180604Z FAIL, purpose): 'no ecryptfs' was in the purpose but in no
+# outcome row; a check now shows the account exists and no ecryptfs passphrase file was written for it.
 class: user
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
   minutes: 0.7
-  notes: "Wall clock 18:52:30Z to 18:53:14Z 2026-11-16, written + validated outside the worktree while the Phase 1 review ran. Extended 2026-11-19 (purpose, outcomes, the password login): 17:43:06Z (the fixture hash changed) to 17:43:23Z (validation)."
+  notes: "Wall clock 18:52:30Z to 18:53:14Z 2026-11-16, written + validated outside the worktree while the Phase 1 review ran. Extended 2026-11-19 (purpose, outcomes, the password login): 17:43:06Z (the fixture hash changed) to 17:43:23Z (validation). Correction round 1: written and validated 18:07:36Z (one command's dates; reading the review before it was not timed)."
 purpose: >-
   A normal user, in no special group: user_base's account (own primary group, comment, home, shell) with the given
   password hash and the given SSH key, always pushed (the wrapper cannot pass ignorekey) and with no ecryptfs.
@@ -26,6 +28,9 @@ outcomes:
   - outcome: the given key is always pushed, as the user's only key, in a private file the user owns
     from: manifests/user.pp:6-8
     checks: [the-given-key-is-pushed, key-file-owned-and-private]
+  - outcome: no ecryptfs passphrase is managed (the wrapper cannot pass myppsigs or myppwrapped)
+    from: manifests/user.pp:6-8
+    checks: [no-ecryptfs-passphrase-files]
   - outcome: user_base's own behaviour (purge of other keys, empty-hash refusal, locked or keyless placeholders, group lists, home mode, shell)
     from: manifests/user.pp:5, 8
     uncovered: {why: "user_base's behaviour, checked in user_base's set; this wrapper only passes the parameters on", lifted_by: ubuntu}
@@ -109,3 +114,16 @@ checks:
     effect: |
       cat /run/p8test-user/pw.txt
     expect: {rc: 0, stdout: "\\Alogged-in-as-p8testuser\\nAuthentication failure\\n\\Z"}
+
+  - id: no-ecryptfs-passphrase-files
+    what: >-
+      the account exists and nothing was written under /home/.ecryptfs/p8testuser (user_base's wrapped-passphrase file
+      and its decoding exec are declared only when both ecryptfs parameters are given, which this wrapper cannot pass)
+    control: negative
+    derived_from:
+      - {path: manifests/user.pp, lines: "8", text: "puppet_infrastructure::user_base { $title : myname => $myname, myhash => $myhash , mykey => $mykey, mygrouplist => $mygrouplist, myhome => $myhome, myhomemode => $myhomemode, user_shell => $user_shell }"}
+      - {path: manifests/user_base.pp, lines: "108", text: "if( $ppsigs != '' ) and ( $ppwrapped != '' ) {"}
+    probe: |
+      getent passwd p8testuser >/dev/null && echo account-exists
+      find /home/.ecryptfs/p8testuser -type f 2>/dev/null | wc -l
+    expect: {rc: 0, stdout: "\\Aaccount-exists\\n0\\n\\Z"}
