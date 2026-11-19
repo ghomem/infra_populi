@@ -1,0 +1,33 @@
+{
+ "class": "filesystem_sec",
+ "at": "20261119T015748Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "a-restricted-command-is-opened-by-hand (manifests/filesystem_sec.pp:15-19): the file resource holds the listed commands at mode $restricted_mode (0750 in the fixture); the action chmods /usr/bin/wget to 0755 (declared in mutates) and the read-only effect stats the file (755), runs it as the fixture non-group account (runs) and shows curl still sudo 750, which proves the drift took on one command only; the node agent run that follows (rc 2, 1 changed) sets the mode back, which the-next-agent-run-restricts-it-again sees (root:sudo 750, denied)",
+  "only-the-sudo-group-can-run-them (manifests/filesystem_sec.pp:15-19): owner root, group $restricted_group (fixture omits it, so the default branch :7-13 gives sudo on Ubuntu), mode 0750 means group-execute only, no other-execute; the probe runs wget/curl/sftp/scp/ssh (the installed regular files) as p8testuser (no extra group) and p8testsudo (-G sudo) and expects denied for the first and runs for the second, exactly what root:sudo 0750 produces; accounts and result file are declared in mutates",
+  "only-the-sudo-group-can-run-them (manifests/filesystem_sec.pp:1-2): the header states the purpose, restricting a certain set of commands to a certain group; the probe tests exactly that restriction as the kernel enforces it (exec permission denied outside the group, allowed inside it, without sudo)",
+  "purpose covered: Purpose (restrict the listed commands to one group, sudo on Ubuntu / wheel on RedHat, and keep them restricted) matches the baseline header (:1-2) and code (:3-19). Tested on the lab: ownership root:sudo 0750 of the installed regular files; exec denied to an ordinary account and allowed to a sudo-group account for the regular files and, through local change #6 (links => follow), for the linked commands nc/telnet/ftp; uninstalled listed commands not created (invariant, holds: a file resource without ensure does not create); drift by hand restored by the next agent run. Uncovered, honestly: the RedHat wheel branch (:7-9) needs the rhel9 node (active in nodes.yml); a custom restricted_group/restricted_mode is a fixture variant on ubuntu (node_base's the-tools-are-restricted-to-the-hiera-group, review 20261118T194756Z on disk, exercises the explicit-group branch, also sudo). Reviewer run 20261119T015539Z ALL_PASS, every negative failed clean."
+ ],
+ "review_s": 129.7,
+ "check_file_sha256": "452dcfed246ff49cf54df50a26b44d0e06077a52eec65ce6b9d61b4281c86fde",
+ "reviewer_result": "20261119T015539Z-reviewer",
+ "author_result": "20261119T015305Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "beed4b62-a9ec-4284-9066-6bc8a3fed053",
+   "boot_id_at_end": "beed4b62-a9ec-4284-9066-6bc8a3fed053",
+   "fresh": true
+  }
+ }
+}
