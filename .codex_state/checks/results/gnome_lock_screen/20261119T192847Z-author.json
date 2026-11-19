@@ -1,0 +1,177 @@
+{
+ "class": "gnome_lock_screen",
+ "role": "author",
+ "at": "20261119T192847Z",
+ "runner": "3d36289",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "1d9e91d32bf232699646ba4b6bf4dc144de098539141e9790855e293e3446691",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "dconf-cli-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "dpkg-query: no packages found matching dconf-cli\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "profile-uses-system-db-local",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/dconf/profile/user': No such file or directory\ncat: /etc/dconf/profile/user: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "keyfile-and-locks-rendered",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "---\n",
+   "stderr": "cat: /etc/dconf/db/local.d/00-screenlock: No such file or directory\ncat: /etc/dconf/db/local.d/locks/00-screenlock: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "compiled-db-serves-the-policy",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: /usr/bin/dconf: No such file or directory\nbash: line 97: /usr/bin/dconf: No such file or directory\nbash: line 97: /usr/bin/dconf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "a-user-cannot-override-the-locked-keys",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-dconf/user.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "al.d/locks/00-screenlock]: Scheduling refresh of Exec[dconf_update_screenlock]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/Exec[dconf_update_screenlock]: Triggered 'refresh' from 2 events\u001b[0m\n\u001b[mNotice: Applied catalog in 9.55 seconds\u001b[0m\nRUN1_EVENTS: 7 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795116608'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.47 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::gnome_lock_screen: 10 concrete resources (+0 defined-type instances)\n  Package[dconf-cli]\n  File[/etc/dconf]\n  File[/etc/dconf/profile]\n  File[/etc/dconf/db]\n  File[/etc/dconf/profile/user]\n  File[/etc/dconf/db/local.d]\n  File[/etc/dconf/db/local.d/locks]\n  File[/etc/dconf/db/local.d/00-screenlock]\n  File[/etc/dconf/db/local.d/locks/00-screenlock]\n  Exec[dconf_update_screenlock]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP gnome_lock_screen 97d8491cedd8\n"
+ },
+ "applied": [
+  {
+   "id": "dconf-cli-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "profile-uses-system-db-local",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "644 root root\nuser-db:user\nsystem-db:local\n",
+   "stderr": ""
+  },
+  {
+   "id": "keyfile-and-locks-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "[org/gnome/desktop/session]\nidle-delay=uint32 300\n\n[org/gnome/desktop/screensaver]\nlock-enabled=true\nlock-delay=uint32 0\n---\n/org/gnome/desktop/session/idle-delay\n/org/gnome/desktop/screensaver/lock-enabled\n/org/gnome/desktop/screensaver/lock-delay\n",
+   "stderr": ""
+  },
+  {
+   "id": "compiled-db-serves-the-policy",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "uint32 300\ntrue\nuint32 0\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the dconf profile: a profile name that does not exist has no system-db:local line, so the values cannot come from the compiled system database and the three reads must not return the class's values",
+    "rc": 0,
+    "passed": false,
+    "stdout": "",
+    "stderr": "\n(/usr/bin/dconf:1842): dconf-WARNING **: 19:30:11.605: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n\n(/usr/bin/dconf:1843): dconf-WARNING **: 19:30:11.608: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n\n(/usr/bin/dconf:1844): dconf-WARNING **: 19:30:11.612: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n"
+   }
+  },
+  {
+   "id": "a-user-cannot-override-the-locked-keys",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/org/gnome/desktop/session/idle-delay refused\n/org/gnome/desktop/screensaver/lock-enabled refused\n/org/gnome/desktop/screensaver/lock-delay refused\nunlocked key written\nsession/idle-delay uint32 300\nscreensaver/lock-enabled true\nscreensaver/lock-delay uint32 0\ninterface/text-scaling-factor 1.25\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs dconf-service if absent (the dconf writer a GNOME desktop has), creates the account p8testdesk, and as it runs four dconf writes (the three locked keys and one unlocked key) in a dbus-run-session (its own user database under ~/.config/dconf); the results go to /run/p8test-dconf/user.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.3,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "dde94f25-2972-4c5c-8a8a-647edaaec8c8",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "dde94f25-2972-4c5c-8a8a-647edaaec8c8",
+   "fresh": true
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "dconf-cli is installed and the dconf profile stacks the user database over the system database local",
+   "checks": [
+    "dconf-cli-installed",
+    "profile-uses-system-db-local"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the system database sets idle-delay 300 (5 minutes), lock-enabled true and lock-delay 0, compiled by dconf update",
+   "checks": [
+    "keyfile-and-locks-rendered",
+    "compiled-db-serves-the-policy"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a user cannot override the three locked keys, while a key the class does not lock stays writable",
+   "checks": [
+    "keyfile-and-locks-rendered",
+    "a-user-cannot-override-the-locked-keys"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a GNOME session actually locking after 5 idle minutes",
+   "uncovered": {
+    "why": "needs a running GNOME session; the runner starts only a Plasma session (kubuntu), and the plan's node has no desktop",
+    "lifted_by": "gnome"
+   }
+  },
+  {
+   "outcome": "another timeout or grace period",
+   "uncovered": {
+    "why": "parameter variants (one set holds one fixture, the defaults); untested",
+    "lifted_by": "ubuntu"
+   }
+  }
+ ],
+ "duration_s": 90.1
+}
