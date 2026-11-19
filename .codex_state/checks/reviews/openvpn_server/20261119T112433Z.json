@@ -1,0 +1,40 @@
+{
+ "class": "openvpn_server",
+ "at": "20261119T112433Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "a-second-client-reaches-the-server-side-but-not-the-first: openvpn_server.pp:25 defaults client_isolation to true (the params fixture keeps the default), and :45/:211 turn it into proxy_arp_pvlan=0 on br0, so the bridge gives no proxy-ARP path between clients on the shared tap0. A second client in netns p8vpn2, logged in as p8vpnuser2, gets its own pool address and reaches 192.0.2.1 but gets no answer from the first client's address. That tests the isolation outcome. The action is what an OpenVPN client does; the effect reads the client log, the addresses and pings, not the action's output.",
+  "server-config-rendered: :173 server_bridge \"${lan_static_ip} ${lan_netmask} ${vpn_pool_start} ${vpn_pool_end}\" with the fixture (192.0.2.1/255.255.255.0, pool .100-.150) renders 'server-bridge 192.0.2.1 255.255.255.0 192.0.2.100 192.0.2.150'. The other expected lines match the cited :158 (/etc/openvpn/server), :167 dev tap0, :169 pam (auth-pam plugin at the :196 link path) and :185 reneg-sec 3600 / verify-client-cert none.",
+  "networking-brings-up-the-bridge-at-boot: :35 installs ifupdown, :39-41 enables the networking service, and :100-115 declare br0 as static with ipaddress lan_static_ip and bridge_ports lan_iface (default lo:0). The probe reads dpkg status, systemctl is-enabled networking and the /etc/network/interfaces stanza (auto br0, iface br0 inet static, address 192.0.2.1, bridge_ports lo:0), which is exactly what those lines declare under the fixture.",
+  "purpose gap: The checks test the VPN as behaviour. The server listens on 203.0.113.50:1194 with the rendered tap0/server-bridge/PAM/reneg config. br0 holds 192.0.2.1 with tap0 as a port. ifupdown plus the networking service plus the br0 stanza bring the bridge up at boot. A peer client logs in with a local PAM account, receives the pushed redirect-gateway and DNS 8.8.8.8, gets a pool address and reaches the server side. A wrong password gets AUTH_FAILED. A second client reaches the server side but not the first (isolation). Parameter variants are honestly uncovered. GAP: baseline :117-121 declares the server unit enable => 'true', so the VPN server comes back at boot. Neither the purpose nor any check covers that: outcome row 1 cites :117-121 but maps only to listening and config checks. Since the ruled change (upstream_defects.md openvpn_server) dropped the class's own service and left enablement to puppet-openvpn's unit, this is exactly the part to test. The lab can test it read-only with systemctl is-enabled openvpn-server@puppet_infrastructure, the same probe level the set uses for networking; on my applied node it reads 'enabled', but no check asserts it. Secondary: the default cipher (:19/:177 AES-256-CBC) and compression (:30/:166 comp-lzo) are not probed. The client offers data-ciphers AES-256-GCM:AES-256-CBC, so a successful connection does not show the server's cipher, and row 6 covers only the non-default variants."
+ ],
+ "review_s": 383.0,
+ "check_file_sha256": "c5b0ca647f9f271e66325067c2f91c9a21724c6933337bf3fb819c272dc71f75",
+ "reviewer_result": "20261119T111810Z-reviewer",
+ "author_result": "20261119T061919Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "3d1670f1-921e-4c86-b71d-d5e69584f0ea",
+   "boot_id_at_end": "3d1670f1-921e-4c86-b71d-d5e69584f0ea",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "5781f5d3-853a-421f-9da8-88e7d5c6e8bd",
+   "boot_id_at_end": "5781f5d3-853a-421f-9da8-88e7d5c6e8bd",
+   "fresh": true
+  }
+ }
+}
