@@ -1,0 +1,33 @@
+{
+ "class": "nginx_base",
+ "at": "20261119T032919Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "a-dynamic-module-is-loaded-once-and-nginx-runs: baseline nginx_base.pp:86 prepends an include of /etc/nginx/modules-enabled/* so enabled dynamic modules load; class_rulings.txt:15 (HQ batch-8 ruling 1) replaces it with include_modules_enabled => true, so exactly one include is what the code now produces. The mutating action (apt-get install libnginx-mod-stream + restart) is declared fully in mutates and is the scenario that include serves; the read-only effect (module link present, one include line, nginx -t ok, service active) shows the result, not the action's output",
+  "log-formats-main-and-compact: baseline :63-67 defines log formats main and compact, merged into log_format at :72-75/:85 with log_formats_additional {} under the defaults fixture; the module renders one log_format line per key, so one 'log_format main' and one 'log_format compact' in nginx.conf is what the code produces",
+  "workers-auto-and-server-tokens-off: baseline :82 worker_processes => 'auto' (and :84 server_tokens => 'off') in default_configs with my_configs {}; the probe counts exactly one 'worker_processes auto;' and one 'server_tokens off;' in nginx.conf, which the module renders from those values",
+  "purpose gap: Tested: nginx -t passes; worker_processes auto; Server header 'nginx' without a version, observed over HTTP on 127.0.0.1 (the mismatch adds nginx -v's version string, which is exactly what server_tokens on would send, and it fails as required); main and compact log formats defined; dhparams.pem has 2048 bits and mode 640; a dynamic module loads once and nginx stays active; no ad-hoc file by default. The uncovered rows (stream access_log off, which needs a stream server; ad-hoc/my_configs/extra-format/DH-size variants) are stated honestly. GAP: the purpose says 'from the distribution's package', and the class pins manage_repo => false (baseline :78; comment :96 'we install nginx from the distribution repository'). puppet-nginx 8.4.0 params.pp:116-118 defaults manage_repo to true on Debian, which would add the nginx.org repo, so this setting is real behaviour. The lab can exercise it on this node (e.g. no nginx.org apt source, and apt-cache policy shows the installed nginx comes from the Ubuntu archive). Yet it has no row in the outcomes table and no check tests it."
+ ],
+ "review_s": 176.2,
+ "check_file_sha256": "a3d7ede471b5c1f6364fddcf42de283f4f15bc81459d41ba2e6a74d93138490f",
+ "reviewer_result": "20261119T032623Z-reviewer",
+ "author_result": "20261119T032357Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "645a1fb7-86d8-43df-99c5-1b060c93b0de",
+   "boot_id_at_end": "645a1fb7-86d8-43df-99c5-1b060c93b0de",
+   "fresh": true
+  }
+ }
+}
