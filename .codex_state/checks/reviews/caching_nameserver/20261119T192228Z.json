@@ -1,0 +1,42 @@
+{
+ "class": "caching_nameserver",
+ "at": "20261119T192228Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-peer-adds-an-allowed-and-an-outside-address: manifests/caching_nameserver.pp:4-5 declare the allowed_networks array; under the params fixture ['192.168.56.0/25'] the action adds the peer's host-only address +100 (inside the /25) and +150 (outside it), and the effect counts 3 IPv4 addresses on enp0s8; a correct setup for the inside/outside query test the template's allow-query list implies",
+  "the-agent-run-restores-the-options-and-restarts-named-once: manifests/caching_nameserver.pp:33-39 manage /etc/bind/named.conf.options from the template with notify => Service[named]; after a hand-appended drift line and the node's agent run, the effect expects the line gone (0), a new named MainPID and exactly one 'Started named.service' in the journal since the noted cursor, which is what content enforcement plus notify-driven restart produces",
+  "named-runs-with-a-valid-configuration: manifests/caching_nameserver.pp:23-31 declare package bind (name bind9 on non-RedHat) ensure present and service named ensure running; the probe expects dpkg 'bind9 install ok installed', named active, named-checkconf success and the template's allow-query-cache line (template line 10) in the options file",
+  "purpose covered: Purpose (recursive caching resolver for localhost and allowed_networks, refusing others, restarted on config change) matches the manifest header and template (listen-on/allow-query/allow-query-cache = 127.0.0.1/localhost + allowed_networks, empty forwarders). Tested: bind9 installed and named active with a named-checkconf-valid config; recursive NOERROR from 127.0.0.1 and a repeated answer with a lower TTL (cache); from the peer a +100 source inside 192.168.56.0/25 gets NOERROR via the node's .20 listen-on address while a +150 source outside gets REFUSED (allow-query); a drifted options file is restored by the agent run with exactly one named restart. The lab IPv6 route removal and named -4 (/etc/default/named, not managed by the class) are a declared lab-environment fixture per HQ batch-14 ruling 5, run after apply, and do not stand in for any class resource. Left out honestly: the RedHat branch (bind, /etc/named.conf, /var/named) uncovered, lifted_by rhel9. Config details without a separate observable outcome (directory /var/cache/bind, auth-nxdomain no, logging to default_syslog, file owner/mode) are only covered indirectly by named-checkconf and named running; they are not the class's purpose. Reviewer run 20261119T191858Z: CLEAN all 7 negative controls failed, APPLIED all 7 passed, no findings."
+ ],
+ "review_s": 210.5,
+ "check_file_sha256": "fc4e774dbc67fd2edb2efa8f80a5bfe839c3476342f8c09e0de984f9f83651c0",
+ "reviewer_result": "20261119T191858Z-reviewer",
+ "author_result": "20261119T191442Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "5f155dd8-f90c-4bed-947d-c8c9a674d095",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "5f155dd8-f90c-4bed-947d-c8c9a674d095",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "3d483ba3-27a3-4539-8105-e64ad2f1d0da",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "3d483ba3-27a3-4539-8105-e64ad2f1d0da",
+   "fresh": true
+  }
+ }
+}
