@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.firewall_addon_web"><testsuite name="phase3.firewall_addon_web.clean" tests="5" failures="0"><testcase classname="phase3.firewall_addon_web.clean" name="the-two-accept-rules" /><testcase classname="phase3.firewall_addon_web.clean" name="web-ports-and-another-listen" /><testcase classname="phase3.firewall_addon_web.clean" name="a-default-drop-stands-in-for-the-base-firewall" /><testcase classname="phase3.firewall_addon_web.clean" name="another-host-reaches-http-and-https-only" /><testcase classname="phase3.firewall_addon_web.clean" name="the-class-rules-accepted-them" /></testsuite><testsuite name="phase3.firewall_addon_web.applied" tests="5" failures="1"><testcase classname="phase3.firewall_addon_web.applied" name="the-two-accept-rules" /><testcase classname="phase3.firewall_addon_web.applied" name="web-ports-and-another-listen" /><testcase classname="phase3.firewall_addon_web.applied" name="a-default-drop-stands-in-for-the-base-firewall"><failure message="check failed after the class was applied (finding)">rc 0
+200 accept http
+201 accept https
+
+</failure></testcase><testcase classname="phase3.firewall_addon_web.applied" name="another-host-reaches-http-and-https-only" /><testcase classname="phase3.firewall_addon_web.applied" name="the-class-rules-accepted-them" /></testsuite></testsuites>

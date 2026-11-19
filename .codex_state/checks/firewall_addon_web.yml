@@ -24,6 +24,8 @@ outcomes:
     from: manifests/firewall_addon_web.pp:14-15
     checks: [the-two-accept-rules]
 checks:
+  # 2026-11-19 authoring correction (run 20261119T041438Z): the sed back-references were written as \\N (escaped twice)
+  # and printed literally; they are \N now (here and in the stand-in check).
   - id: the-two-accept-rules
     what: INPUT holds the class's two accept rules, tcp to 80 and to 443 (the type's default protocol and chain)
     control: negative
@@ -31,7 +33,7 @@ checks:
       - {path: manifests/firewall_addon_web.pp, lines: "14", text: "firewall { '200 accept http':  proto  => 'tcp', dport  => 80,  action => 'accept', }"}
       - {path: manifests/firewall_addon_web.pp, lines: "15", text: "firewall { '201 accept https': proto  => 'tcp', dport  => 443, action => 'accept', }"}
     probe: |
-      iptables -S INPUT | grep -E -- '--comment "20[01] accept https?"' | sed -E 's/.*-p ([a-z]+) .*--dport ([0-9]+) .*--comment "([^"]+)" -j ([A-Z]+).*/\\3: \\1 \\2 \\4/'
+      iptables -S INPUT | grep -E -- '--comment "20[01] accept https?"' | sed -E 's/.*-p ([a-z]+) .*--dport ([0-9]+) .*--comment "([^"]+)" -j ([A-Z]+).*/\3: \1 \2 \4/'
     expect: {rc: 0, stdout: "\\A200 accept http: tcp 80 ACCEPT\\n201 accept https: tcp 443 ACCEPT\\n\\Z"}
 
   - id: web-ports-and-another-listen
@@ -58,7 +60,7 @@ checks:
     probe: |
       iptables -A INPUT -i enp0s8 -p tcp -m multiport --dports 80,443,8888 -m comment --comment p8test-default-drop -j DROP
     effect: |
-      iptables -S INPUT | grep -n -E -- '--comment "(200 accept http|201 accept https|p8test-default-drop)"' | sed -E 's/^([0-9]+):.*--comment "([^"]+)".*/\\2/'
+      iptables -S INPUT | grep -n -E -- '--comment "(200 accept http|201 accept https|p8test-default-drop)"' | sed -E 's/^([0-9]+):.*--comment "([^"]+)".*/\2/'
     expect: {rc: 0, stdout: "\\A200 accept http\\n201 accept https\\np8test-default-drop\\n\\Z"}
 
   - id: another-host-reaches-http-and-https-only
@@ -83,5 +85,5 @@ checks:
     probe: |
       true
     effect: |
-      iptables -v -x -L INPUT -n | awk '/200 accept http/ {a=$1} /201 accept https/ {b=$1} /p8test-default-drop/ {c=$1} END {print "200: " (a != 0 ? "counted" : "zero"); print "201: " (b != 0 ? "counted" : "zero"); print "stand-in drop: " (c != 0 ? "counted" : "zero")}'
+      iptables -v -x -L INPUT -n | awk '/200 accept http/ {a=$1} /201 accept https/ {b=$1} /p8test-default-drop/ {c=$1} END {print "200: " (a+0 != 0 ? "counted" : "zero"); print "201: " (b+0 != 0 ? "counted" : "zero"); print "stand-in drop: " (c+0 != 0 ? "counted" : "zero")}'
     expect: {rc: 0, stdout: "\\A200: counted\\n201: counted\\nstand-in drop: counted\\n\\Z"}
