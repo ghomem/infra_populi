@@ -1,0 +1,345 @@
+{
+ "class": "postfix_smtp_node",
+ "role": "author",
+ "at": "20261119T060533Z",
+ "runner": "3451d19",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "4d0b62b8247b4fabecabd1cb5a9c6da9041617b2ef1a106483616b6a519d9e6a",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "effective-relay-config",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: postconf: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "postfix-config-sane",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "bash: line 97: postfix: command not found\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "sasl-map-compiled-for-the-relayhost",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/postfix/sasl_passwd': No such file or directory\nbash: line 98: postmap: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "postfix-running-and-enabled",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "inactive\nnot-found\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "sasl-plain-module-installed",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "install ok installed\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "root-alias-rendered-from-default",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/aliases: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-peer-plays-the-relayhost",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "inactive\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-message-from-the-node-goes-to-the-relayhost",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "bash: line 97: postqueue: command not found\ncat: /run/p8test-mail/cursor: No such file or directory\nFailed to seek to cursor: Invalid argument\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-relayhost-received-it-authenticated-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n0\n",
+   "stderr": "grep: /var/mail/p8testuser: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-message-over-the-size-limit-is-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "refused\n0\n",
+   "stderr": "cat: /run/p8test-mail/big.rc: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "another-host-cannot-relay-through-the-node",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "no session ConnectionRefusedError\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "_infrastructure::Postfix_smtp_node/Exec[newaliases]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Exec[newaliases]: Scheduling refresh of Service[postfix]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Service[postfix]: Triggered 'refresh' from 4 events\u001b[0m\n\u001b[mNotice: Applied catalog in 19.50 seconds\u001b[0m\nRUN1_EVENTS: 4 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795068453'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.41 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::postfix_smtp_node: 8 concrete resources (+0 defined-type instances)\n  Package[cyrus_sasl_package]\n  File[/etc/postfix/main.cf]\n  File[/etc/postfix/sasl_passwd]\n  Exec[postmap_sasl]\n  Service[postfix]\n  Package[postfix]\n  File[/etc/aliases]\n  Exec[newaliases]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP postfix_smtp_node d0645bd272af\n"
+ },
+ "applied": [
+  {
+   "id": "effective-relay-config",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "puppet8node\nmycompany.com\npuppet8node, localhost.localdomain, , localhost\nmailserver.mycompany.com:587\n127.0.0.0/8\n10240000\nyes\nhash:/etc/postfix/sasl_passwd\n/etc/ssl/certs/ca-certificates.crt\nipv4\n",
+   "stderr": ""
+  },
+  {
+   "id": "postfix-config-sane",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "postfix: Postfix is using backwards-compatible default settings\npostfix: See http://www.postfix.org/COMPATIBILITY_README.html for details\npostfix: To disable backwards compatibility use \"postconf compatibility_level=3.6\" and \"postfix reload\"\npostfix-check-ok\n",
+   "stderr": ""
+  },
+  {
+   "id": "sasl-map-compiled-for-the-relayhost",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "640 root root\np8test-relay\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the looked-up relay host (relay.p8test.invalid): the map holds only the configured relayhost, so the lookup must return no user",
+    "rc": 0,
+    "passed": false,
+    "stdout": "640 root root\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "postfix-running-and-enabled",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\nenabled\n",
+   "stderr": ""
+  },
+  {
+   "id": "sasl-plain-module-installed",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "root-alias-rendered-from-default",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "2:root: \naliases-db-present\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-peer-plays-the-relayhost",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0.0.0.0:587\n[::]:587\nactive\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: installs postfix (local delivery for p8test-backend.invalid, every other destination bounced by default_transport error), dovecot-core and ssl-cert; creates the accounts p8testuser and p8test-relay (the latter with the lab Hiera fixture's fake relay password, marked not-a-secret); enables postfix submission (587, STARTTLS may) with SASL from dovecot's auth socket and relay for authenticated clients only; restarts postfix and dovecot",
+    "rc": 0,
+    "stdout": "",
+    "stderr": "nset),\n\tLC_ALL = (unset),\n\tLC_ADDRESS = \"pt_PT.UTF-8\",\n\tLC_NAME = \"pt_PT.UTF-8\",\n\tLC_MONETARY = \"pt_PT.UTF-8\",\n\tLC_PAPER = \"pt_PT.UTF-8\",\n\tLC_IDENTIFICATION = \"pt_PT.UTF-8\",\n\tLC_TELEPHONE = \"pt_PT.UTF-8\",\n\tLC_MEASUREMENT = \"pt_PT.UTF-8\",\n\tLC_TIME = \"pt_PT.UTF-8\",\n\tLC_NUMERIC = \"pt_PT.UTF-8\",\n\tLANG = \"en_US.UTF-8\"\n    are supported and installed on your system.\nperl: warning: Falling back to a fallback locale (\"en_US.UTF-8\").\nlocale: Cannot set LC_ALL to default locale: No such file or directory\n"
+   }
+  },
+  {
+   "id": "a-message-from-the-node-goes-to-the-relayhost",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Mail queue is empty\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "on the node: appends \"$P8_PEER_ADDR mailserver.mycompany.com\" to /etc/hosts (the peer's host-only address, from the runner); inserts `-I OUTPUT -p tcp -m multiport --dports 25,465,587 ! -d $P8_PEER_ADDR -m comment --comment p8test-mail-fence -j REJECT` so no message can reach the real-world relayhost domain; saves /etc/resolv.conf to /run/p8test-mail/resolv.conf.orig and points it and postfix's chroot copy (/var/spool/postfix/etc/resolv.conf) at the systemd-resolved stub 127.0.0.53, which answers from /etc/hosts; waits up to 10 s for the stub to answer the pin; reloads postfix; notes the journal cursor in /run/p8test-mail/cursor; submits one message (token p8test-relay-token) from root to p8testuser@p8test-backend.invalid with sendmail and waits up to 60 s for the queue to empty",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-relayhost-received-it-authenticated-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n1\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the mailbox and the journal (declared mutating so it runs after the node's message)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-message-over-the-size-limit-is-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "refused\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "submits one message of about 10.5 MB from root to p8testuser@p8test-backend.invalid with sendmail (the fence from the relay check stays in place); writes its exit status to /run/p8test-mail/big.rc",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "another-host-cannot-relay-through-the-node",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "454 Relay access denied\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "one SMTP session from the peer to the class node's port 25, ending before DATA (no message is accepted)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 1.4,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "4aca2c02-1626-434c-9a08-1a4a08391e54",
+   "boot_id_at_end": "4aca2c02-1626-434c-9a08-1a4a08391e54",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "0dee3fe1-058b-4bcb-9600-ef3d69bfac70",
+   "boot_id_at_end": "0dee3fe1-058b-4bcb-9600-ef3d69bfac70",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "outcomes": [
+  {
+   "outcome": "postfix is installed, runs, starts at boot, and its configuration is the template rendered from Hiera and the lookup defaults",
+   "checks": [
+    "effective-relay-config",
+    "postfix-config-sane",
+    "postfix-running-and-enabled",
+    "sasl-plain-module-installed"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a message sent on the node reaches the relayhost on the relay port, authenticated as the relay user over TLS",
+   "checks": [
+    "sasl-map-compiled-for-the-relayhost",
+    "the-peer-plays-the-relayhost",
+    "a-message-from-the-node-goes-to-the-relayhost",
+    "the-relayhost-received-it-authenticated-over-tls"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a message over the size limit is refused",
+   "checks": [
+    "a-message-over-the-size-limit-is-refused"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "another host cannot relay through the node (only mynetworks and authenticated clients may)",
+   "checks": [
+    "another-host-cannot-relay-through-the-node"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "root's mail alias, rendered from root_email_alias and compiled",
+   "checks": [
+    "root-alias-rendered-from-default"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a non-default root alias, mynetworks, mydestination or size limit (per-node Hiera keys)",
+   "uncovered": {
+    "why": "fixture variants (one set holds one lab Hiera fixture, which leaves these at their defaults); untested",
+    "lifted_by": "ubuntu"
+   }
+  },
+  {
+   "outcome": "the RedHat branch (cyrus-sasl-plain, /etc/ssl/certs/ca-bundle.crt)",
+   "uncovered": {
+    "why": "the RedHat branch; this set runs on the plan's Ubuntu node",
+    "lifted_by": "rhel9"
+   }
+  }
+ ],
+ "duration_s": 154.4
+}
