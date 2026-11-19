@@ -5,16 +5,48 @@
 # .101-.200, so peer probes name no 192.168 address); openvpn_server's local/local_interface come from the lab Hiera
 # (p8test0 / 203.0.113.50). Defaults: bridge br0, lan_iface lo:0, client DNS = the static IP.
 # The client filters the pushed redirect-gateway (checked as received), as in openvpn_server's set.
+# Purpose and outcomes table added 2026-11-19 (backfill batch 4, HQ batch-10 rulings 2 and C1), with the composition
+# as behaviour: stand-ins for the base firewall's default drop (INPUT UDP 53 on br0, FORWARD from br0 and from
+# p8test0) are appended after the class's rules; the VPN client resolves a real name recursively through the VPN's
+# nameserver (with the lab NAT IPv6 fixture of caching_nameserver's set) and reaches a TCP server on the WAN side (the
+# node fixture's namespace p8testdhcp, 203.0.113.1 behind p8test0), which sees the server's WAN address
+# 203.0.113.50 (masquerade); rule counters attribute the passes to 1301, 202, 203 and 205.
+# Also 2026-11-19, after openvpn_server's findings (escalations/openvpn_server.behaviour.md): network_vpn passes its own
+# default cipher (openvpn_cipher AES-256-CBC, :25, :57), so a client that offers only it is checked here too, last (it
+# stops the first client). The data channel's compression is openvpn_server's default, not passed by this class: it
+# stays with openvpn_server's set, where it is a finding.
 class: network_vpn
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
   minutes: 0.7
-  notes: "Wall clock 14:26:22Z to 14:27:05Z 2026-11-17 (no lab run active; the four composed classes, the bind template and the rendered firewall rule format read)."
+  notes: "Wall clock 14:26:22Z to 14:27:05Z 2026-11-17 (no lab run active; the four composed classes, the bind template and the rendered firewall rule format read). Extended 2026-11-19 (purpose, outcomes, recursion and the WAN path as behaviour over stand-in drops): 06:25:23Z to 06:26:32Z 2026-11-19 (date at the start of reading the set and at validation), outside the worktree while openvpn_server's review ran, not prototyped on a node; the first authoring's minutes above are kept. The cipher check added 2026-11-19: written and validated 11:49:28Z to 11:49:29Z (the edit's own dates; the reading of network_vpn.pp:25, 57 before it was not timed)."
 peer:
   kind: ubuntu2
   why: the VPN client must be a second machine that connects over UDP and resolves through the VPN's nameserver
   files: [/etc/openvpn/keys/ca.crt]
+purpose: >-
+  A VPN gateway: an OpenVPN server whose clients resolve names through the VPN's own caching nameserver on the VPN
+  bridge (allowed through the firewall on the bridge), and reach the WAN through the server, forwarded and masqueraded.
+outcomes:
+  - outcome: a client connects, gets an address on the VPN network and the VPN's nameserver as DNS
+    from: manifests/network_vpn.pp:13-27, 47-60
+    checks: [vpn-server-on-the-vpn-network, vpn-account-on-the-server, client-connects-and-resolves-through-the-vpn-nameserver]
+  - outcome: the VPN's nameserver answers VPN clients recursively through the bridge, over a default drop
+    from: manifests/network_vpn.pp:1-4, 29-37
+    checks: [nameserver-serves-the-vpn-network, firewall-accepts-dns-on-the-bridge, the-lab-nat-ipv6-route-is-removed, a-wan-host-and-default-drops, the-client-resolves-and-reaches-the-wan-through-the-server, the-composed-rules-counted-the-flows]
+  - outcome: a VPN client reaches the WAN through the server, masqueraded behind the server's WAN address
+    from: manifests/network_vpn.pp:39-44
+    checks: [forwarding-and-nat-to-the-wan, a-wan-host-and-default-drops, the-client-resolves-and-reaches-the-wan-through-the-server, the-composed-rules-counted-the-flows]
+  - outcome: a client that uses the class's cipher (openvpn_cipher AES-256-CBC, the default) connects with it
+    from: manifests/network_vpn.pp:25, 57
+    checks: [a-client-on-the-class-cipher-connects]
+  - outcome: client isolation, the bridge and the server at boot, the hairpin rule, the data channel's compression, and each composed class's own behaviours
+    from: manifests/network_vpn.pp:14, 41-60
+    uncovered: {why: "covered as behaviour by the composed classes' own sets (openvpn_server, firewall_addon_openvpn_server, caching_nameserver, firewall_addon_caching_nameserver) under their own fixtures, where openvpn_server's compression is a finding (escalations/openvpn_server.behaviour.md); this set covers what the composition adds (the VPN network wired through all four) and the cipher this class passes", lifted_by: ubuntu}
+  - outcome: parameter variants (another VPN network, another cipher, renegotiation, client DNS, client_isolation false)
+    from: manifests/network_vpn.pp:14-26
+    uncovered: {why: "parameter variants (one set holds one params fixture); untested", lifted_by: ubuntu}
 checks:
   - id: nameserver-serves-the-vpn-network
     what: bind listens on the VPN bridge address and allows queries from the VPN network
@@ -72,6 +104,54 @@ checks:
       getent passwd p8vpnuser | cut -d: -f1
     expect: {rc: 0, stdout: "\\Ap8vpnuser\\n\\Z"}
 
+  - id: the-lab-nat-ipv6-route-is-removed
+    what: >-
+      lab-environment fixture for the resolution check: the NAT interface's IPv6 default route (learned by router
+      advertisement, reaching no internet) is gone and named, restarted, resolves over IPv4
+    control: negative
+    timeout: 150
+    derived_from:
+      - {path: manifests/caching_nameserver.pp, lines: "28-31", text: "ensure  => 'running',"}
+    mutates: >-
+      sets net.ipv6.conf.enp0s3.accept_ra to 0, deletes the IPv6 default route on enp0s3 (the VirtualBox NAT
+      interface), restarts named and waits up to 90 s until it resolves example.com (a name the checks do not ask;
+      measured for caching_nameserver's set 2026-11-19)
+    probe: |
+      sysctl -q -w net.ipv6.conf.enp0s3.accept_ra=0
+      ip -6 route del default dev enp0s3 2>/dev/null || true
+      systemctl restart named
+      for i in $(seq 30); do dig +time=2 +tries=1 @127.0.0.1 example.com A +noall +comments | grep -q 'status: NOERROR' && break; sleep 3; done
+    effect: |
+      ip -6 route show default dev enp0s3 | wc -l
+      p8_service named | cut -d' ' -f1
+      dig +time=3 +tries=1 @127.0.0.1 example.com A +noall +comments | grep -o 'status: [A-Z]*'
+    expect: {rc: 0, stdout: "\\A0\\nactive\\nstatus: NOERROR\\n\\Z"}
+
+  - id: a-wan-host-and-default-drops
+    what: >-
+      setup for the composition checks: a TCP server on the WAN side (namespace p8testdhcp, 203.0.113.1:8090, answering
+      with the client address it sees) and stand-ins for the base firewall's default drop appended after the class's
+      rules
+    control: negative
+    derived_from:
+      - {path: manifests/network_vpn.pp, lines: "39-44", text: "class { 'puppet_infrastructure::firewall_addon_openvpn_server':"}
+    mutates: >-
+      starts transient unit p8test-wansrv (python TCP server in namespace p8testdhcp on 203.0.113.1:8090); appends
+      `-A INPUT -i br0 -p udp --dport 53 -m comment --comment p8test-default-drop -j DROP`, `-A FORWARD -i br0 -m
+      comment --comment p8test-default-drop -j DROP` and the same for -i p8test0
+    probe: |
+      systemd-run --unit p8test-wansrv -q ip netns exec p8testdhcp python3 -c "import socket; s=socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); s.bind(('203.0.113.1', 8090)); s.listen(5)
+      while True:
+          c, a = s.accept(); c.sendall((a[0] + chr(10)).encode()); c.close()"
+      iptables -A INPUT -i br0 -p udp --dport 53 -m comment --comment p8test-default-drop -j DROP
+      iptables -A FORWARD -i br0 -m comment --comment p8test-default-drop -j DROP
+      iptables -A FORWARD -i p8test0 -m comment --comment p8test-default-drop -j DROP
+      sleep 1
+    effect: |
+      p8_service p8test-wansrv | cut -d' ' -f1
+      iptables -S | p8_count 'p8test-default-drop'
+    expect: {rc: 0, stdout: "\\Aactive\\n3\\n\\Z"}
+
   - id: client-connects-and-resolves-through-the-vpn-nameserver
     what: >-
       the peer's client gets a pool address on the VPN network, receives the VPN nameserver as its DNS, and that
@@ -97,3 +177,65 @@ checks:
       grep -o 'PUSH_REPLY,[^]]*' /run/p8vpn/client.log | head -1 | grep -o 'dhcp-option DNS [0-9.]*'
       dig +short +time=3 +tries=2 @198.51.100.1 localhost A
     expect: {rc: 0, stdout: "\\A198\\.51\\.100\\.(1\\d\\d|200)/24\\ndhcp-option DNS 198\\.51\\.100\\.1\\n127\\.0\\.0\\.1\\n\\Z"}
+
+  - id: the-client-resolves-and-reaches-the-wan-through-the-server
+    what: >-
+      through the tunnel, the client gets a recursive answer for a real name from the VPN's nameserver, and connects to
+      the WAN-side server, which sees the server's WAN address 203.0.113.50 (masqueraded)
+    control: negative
+    host: peer
+    derived_from:
+      - {path: manifests/network_vpn.pp, lines: "1-4", text: "# and an internal caching nameserver for DNS resolution to be"}
+      - {path: manifests/network_vpn.pp, lines: "41-44", text: "wan_iface        => $wan_iface,"}
+    mutates: on the peer, adds the route 203.0.113.1/32 via 198.51.100.1 on the client's tap interface (the pushed redirect-gateway is filtered)
+    probe: |
+      tap=$(ip -br link | awk '$1 ~ /^tap/ {print $1; exit}')
+      ip route replace 203.0.113.1/32 via 198.51.100.1 dev "$tap"
+    effect: |
+      dig +time=5 +tries=2 @198.51.100.1 www.debian.org A +noall +comments | grep -o 'status: [A-Z]*' | head -1
+      python3 -c "import socket
+      try:
+          s = socket.create_connection(('203.0.113.1', 8090), 5); print('WAN server saw ' + s.recv(64).decode().strip())
+      except OSError:
+          print('no connection')"
+    expect: {rc: 0, stdout: "\\Astatus: NOERROR\\nWAN server saw 203\\.0\\.113\\.50\\n\\Z"}
+
+  - id: the-composed-rules-counted-the-flows
+    what: on the node, rule 1301 (DNS on the bridge), 202 (bridge to WAN), 203 (replies into the bridge) and 205 (masquerade) counted the client's traffic
+    control: negative
+    derived_from:
+      - {path: manifests/network_vpn.pp, lines: "35-44", text: "class { 'puppet_infrastructure::firewall_addon_caching_nameserver':"}
+    mutates: none beyond reading the rule counters (declared mutating so it runs after the client's traffic)
+    probe: |
+      true
+    effect: |
+      iptables -v -x -L INPUT -n | awk '/1301 accept nameserver/ {d=$1} END {print "1301: " (d+0 != 0 ? "counted" : "zero")}'
+      iptables -v -x -L FORWARD -n | awk '/202 allow flow/ {a=$1} /203 allow flow/ {b=$1} END {print "202: " (a+0 != 0 ? "counted" : "zero"); print "203: " (b+0 != 0 ? "counted" : "zero")}'
+      iptables -t nat -v -x -L POSTROUTING -n | awk '/205 performing nat/ {n=$1} END {print "205: " (n+0 != 0 ? "counted" : "zero")}'
+    expect: {rc: 0, stdout: "\\A1301: counted\\n202: counted\\n203: counted\\n205: counted\\n\\Z"}
+
+  - id: a-client-on-the-class-cipher-connects
+    what: >-
+      a client that offers only the class's cipher (AES-256-CBC) connects as p8vpnuser and its data channel uses that
+      cipher
+    control: negative
+    host: peer
+    timeout: 120
+    derived_from:
+      - {path: manifests/network_vpn.pp, lines: "25", text: "$openvpn_cipher           = 'AES-256-CBC',"}
+      - {path: manifests/network_vpn.pp, lines: "57", text: "cipher           => $openvpn_cipher,"}
+    mutates: >-
+      on the peer: stops the first client (its pid in /run/p8vpn/pid), writes a client config that offers only
+      AES-256-CBC (data-ciphers AES-256-CBC) with the same credentials under /run/p8vpncbc and starts it
+    probe: |
+      kill "$(cat /run/p8vpn/pid)" 2>/dev/null || true
+      sleep 1
+      mkdir -p /run/p8vpncbc
+      sed -e 's#^data-ciphers .*#data-ciphers AES-256-CBC#' /run/p8vpn/client.conf > /run/p8vpncbc/client.conf
+      openvpn --config /run/p8vpncbc/client.conf --daemon --log /run/p8vpncbc/client.log --writepid /run/p8vpncbc/pid
+      for i in $(seq 40); do grep -q -e 'Initialization Sequence Completed' -e 'AUTH_FAILED' /run/p8vpncbc/client.log && break; sleep 1; done
+    effect: |
+      p8_count 'Initialization Sequence Completed' /run/p8vpncbc/client.log
+      grep -o "Data Channel: cipher '[^']*'" /run/p8vpncbc/client.log | head -1
+      grep -o 'AUTH_FAILED,.*)' /run/p8vpncbc/client.log | head -1
+    expect: {rc: 0, stdout: "\\A1\\nData Channel: cipher 'AES-256-CBC'\\n\\Z"}
