@@ -18,6 +18,8 @@ peer:
   kind: ubuntu2
   why: the bandwidth check's CRITICAL state needs traffic on the node's NIC during its sample, which only another machine can send
 outcomes:
+  # Correction round 3 (2026-11-19, HQ batch-12 ruling 3; review 20261118T211242Z): the Puppet check's failed-run
+  # CRITICAL branch (agent exit above 2) is exercised, and the Elasticsearch stand-in records the request it gets.
   # Correction round 2 (2026-11-18, review 20261118T210122Z): the Elasticsearch check is exercised on the node (it
   # queries localhost:9200, so a stand-in there drives it), and the RHEL package-count branch has its own row.
   # Correction round 1 (2026-11-18, review 20261118T204912Z): every alarm path is now exercised (the Puppet check's
@@ -26,9 +28,9 @@ outcomes:
   - outcome: the checks are installed root-owned 0755 as the module's files (check_cpu.py from its template, run by the local python)
     from: manifests/sysmon_base.pp:22-136
     checks: [the-checks-are-installed]
-  - outcome: the Puppet check runs the agent and reports OK with the agent's exit code, UNKNOWN (not CRITICAL) when another agent run holds the lock, and CRITICAL when the run fails otherwise (an agent disabled by an administrator)
+  - outcome: the Puppet check runs the agent and reports OK with the agent's exit code, UNKNOWN (not CRITICAL) when another agent run holds the lock, CRITICAL when the agent exits 1 otherwise (an agent disabled by an administrator), and CRITICAL when resources fail during the run (agent exit above 2)
     from: manifests/sysmon_base.pp:24-29; files/sysmon/nagios-puppet.sh
-    checks: [the-puppet-check-ok-then-unknown-under-lock, the-puppet-check-is-critical-when-the-agent-is-disabled]
+    checks: [the-puppet-check-ok-then-unknown-under-lock, the-puppet-check-is-critical-when-the-agent-is-disabled, the-puppet-check-is-critical-when-a-resource-fails]
   - outcome: the reboot check says OK, and WARNING once a package asks for a reboot
     from: manifests/sysmon_base.pp:31-37; files/sysmon/check_reboot_required.sh
     checks: [the-reboot-check-says-ok, a-pending-reboot-gives-a-warning]
@@ -58,7 +60,7 @@ outcomes:
     checks: [the-certificate-check-reports-expiry-in-short-words]
   - outcome: the Elasticsearch query check asks localhost:9200 for matching sshd events, OK when there are none, Critical listing each event's time, user and host, and Unknown with the error when Elasticsearch cannot be asked
     from: manifests/sysmon_base.pp:130-136; files/sysmon/elastic_query_check.py
-    checks: [the-elastic-check-is-unknown-without-elasticsearch, the-elastic-check-is-ok-with-no-events, the-elastic-check-is-critical-with-events]
+    checks: [the-elastic-check-is-unknown-without-elasticsearch, the-elastic-check-is-ok-with-no-events, the-elastic-check-is-critical-with-events, the-elastic-check-asks-for-the-query]
   - outcome: on RedHat the package-count check counts the security updates of a severity (dnf or yum updateinfo, Important by default)
     from: files/sysmon/check_package_count.sh:36-46
     uncovered: {why: "the RedHat branch of the script; the set runs on the plan's Ubuntu node", lifted_by: rhel9}
@@ -338,17 +340,19 @@ checks:
     derived_from:
       - {path: files/sysmon/elastic_query_check.py, sha256: "901a03a3b60e6f3b7c433cf94ef056b4de2247b58d0b4b483a874d3c0927a168"}
     mutates: >-
-      writes a stand-in search server (/run/p8test-sysmon/es.py, answering every POST with /run/p8test-sysmon/es.json)
-      and starts it on 127.0.0.1:9200 as transient unit p8test-es, with an answer of no hits
+      writes a stand-in search server (/run/p8test-sysmon/es.py, answering every POST with /run/p8test-sysmon/es.json
+      and recording the request's path and body in /run/p8test-sysmon/es-request.txt) and starts it on 127.0.0.1:9200
+      as transient unit p8test-es, with an answer of no hits
     probe: |
       install -d -m 0700 /run/p8test-sysmon; cd /run/p8test-sysmon
       cat > es.py <<'PY'
       import http.server
       class H(http.server.BaseHTTPRequestHandler):
           def do_POST(self):
-              self.rfile.read(int(self.headers.get('Content-Length', 0)))
-              body = open('/run/p8test-sysmon/es.json', 'rb').read()
-              self.send_response(200); self.send_header('Content-Type', 'application/json'); self.end_headers(); self.wfile.write(body)
+              body = self.rfile.read(int(self.headers.get('Content-Length', 0)))
+              open('/run/p8test-sysmon/es-request.txt', 'wb').write(self.path.encode() + b'\n' + body)
+              answer = open('/run/p8test-sysmon/es.json', 'rb').read()
+              self.send_response(200); self.send_header('Content-Type', 'application/json'); self.end_headers(); self.wfile.write(answer)
           def log_message(self, *a):
               pass
       http.server.HTTPServer(('127.0.0.1', 9200), H).serve_forever()
@@ -378,3 +382,41 @@ checks:
     effect: |
       /opt/puppet-infrastructure/bin/elastic_query_check.py -f sshd -q 'sshd'; echo "rc=$?"
     expect: {rc: 0, stdout: "\\ACritical\\nNov 18 10:01:00 - p8testsudo - p8test-host-a\\nNov 18 10:05:00 - p8testuser - p8test-host-b\\nrc=2\\n\\Z"}
+
+  - id: the-elastic-check-asks-for-the-query
+    what: >-
+      the check's request to the stand-in went to /_search?size=10 (its default sample size) and carried the -q text
+      as the query_string query
+    control: negative
+    derived_from:
+      - {path: files/sysmon/elastic_query_check.py, sha256: "901a03a3b60e6f3b7c433cf94ef056b4de2247b58d0b4b483a874d3c0927a168"}
+    mutates: runs the Elasticsearch check once more with the query p8test-query (the stand-in records the request)
+    probe: |
+      /opt/puppet-infrastructure/bin/elastic_query_check.py -f sshd -q 'p8test-query' >/dev/null
+    effect: |
+      head -1 /run/p8test-sysmon/es-request.txt
+      tail -n +2 /run/p8test-sysmon/es-request.txt | python3 -c 'import json,sys; q=json.load(sys.stdin)["query"]["bool"]["must"][0]["query_string"]["query"]; print("query", q)'
+    expect: {rc: 0, stdout: "\\A/_search\\?size=10\\nquery p8test-query\\n\\Z"}
+
+  - id: the-puppet-check-is-critical-when-a-resource-fails
+    what: >-
+      with a managed check script given the wrong mode and made immutable, the agent's fix fails (agent exit above
+      2), and the Puppet check reports CRITICAL with that exit code and exits 2
+    control: negative
+    timeout: 300
+    derived_from:
+      - {path: files/sysmon/nagios-puppet.sh, sha256: "a20117e8983bb2df71e2083a37afe060a4350e38a273889a33d78977a48b9828"}
+    mutates: >-
+      sets /opt/puppet-infrastructure/bin/check_os_version.sh to mode 0700 and immutable (chattr +i), runs the class's
+      Puppet check once (one agent run, whose fix of that file fails), then removes the immutable flag; the check's
+      output and exit code go to /run/p8test-sysmon/failed.txt
+    probe: |
+      install -d -m 0700 /run/p8test-sysmon; cd /run/p8test-sysmon
+      f=/opt/puppet-infrastructure/bin/check_os_version.sh
+      chmod 0700 "$f"; chattr +i "$f"
+      /opt/puppet-infrastructure/bin/nagios-puppet.sh > failed.out; echo $? > failed.rc
+      chattr -i "$f"
+      echo "$(cut -d' ' -f1-4 failed.out) rc=$(cat failed.rc)" > failed.txt
+    effect: |
+      cat /run/p8test-sysmon/failed.txt
+    expect: {rc: 0, stdout: "\\ACRITICAL: exit code [46] rc=2\\n\\Z"}
