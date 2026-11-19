@@ -1,0 +1,34 @@
+{
+ "class": "user_base",
+ "at": "20261119T173014Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-agent-run-purges-the-out-of-band-key: user_base.pp:72 purge_ssh_keys => true removes any authorized key Puppet does not manage on the next run; after the node agent run (rc 2, 1 change) the effect sees 1 key, 0 out-of-band lines, and the fixture key's fingerprint SHA256:c3nO5X... (matches ssh-keygen -lf of the params mykey, comment p8testuser@puppet from :96)",
+  "password-hash-set: user_base.pp:71 password => $myhash sets the shadow hash; the params myhash starts with $6$p8testsalt$ and has no '!', so the probe's algorithm+salt prefix is what the code produces; :19-22 cited for the non-empty requirement",
+  "user-and-own-primary-group: user_base.pp:35-37 declares group $myusername and :25-26 makes it the gid with an empty group list; comment/home/shell from :67-70 with myname 'P8 Test User', myhome '' -> /home/p8testuser (:8-10), default user_shell /bin/bash; the probe reads exactly these from passwd and resolves the gid name",
+  "purpose covered: Purpose matches the header (:1-3) and code. Tested: account with own primary group, comment, home created/owned, shell, no extra groups; the hash set and used (su as nobody in a pty logs in with the test password, refused with a wrong one, which acts as the built-in mismatch); the pushed key is the only authorized key with sshd-acceptable owner/modes; an out-of-band key is purged by the next agent run (purge_ssh_keys). Uncovered and honestly stated: the empty-hash fail() (compile time, shown by a compile-only run), a key login (no private key kept in the repo; key line/modes checked), parameter variants (locked hash/empty key -> unusable key, group-list primary, myhome/myhomemode/shell; one params fixture per set) and the ecryptfs branch (needs an ecryptfs home, kubuntu). The default-path purpose is exercised end to end."
+ ],
+ "review_s": 127.3,
+ "check_file_sha256": "5cb293394ca3e2f3960b01e9729a4b9f38ff26b545665f1201fa786fe92393f9",
+ "reviewer_result": "20261119T172807Z-reviewer",
+ "author_result": "20261119T172504Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "c709f101-aa28-4d29-9fb6-1590d53b83ed",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "c709f101-aa28-4d29-9fb6-1590d53b83ed",
+   "fresh": true
+  }
+ }
+}
