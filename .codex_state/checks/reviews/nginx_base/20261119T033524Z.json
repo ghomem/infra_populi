@@ -1,0 +1,35 @@
+{
+ "class": "nginx_base",
+ "at": "20261119T033524Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "a-dynamic-module-is-loaded-once-and-nginx-runs: baseline nginx_base.pp:86 prepends an include of /etc/nginx/modules-enabled/* so dynamic modules load; class_rulings.txt (HQ batch-8 ruling 1) moves that include to the module's include_modules_enabled, exactly one include. The action (apt-get install libnginx-mod-stream + restart nginx) is fully declared in mutates; the read-only effect shows its result (50-mod-stream present, exactly 1 include line, nginx -t successful, service active), not the action's output (redirected). Node nginx.conf line 8 shows the single include /etc/nginx/modules-enabled/*.conf; passed after apply, failed on clean node.",
+  "log-formats-main-and-compact: baseline :63-67 defines main and compact and :72-75 merges them with log_formats_additional ({} under the defaults fixture) into log_format (:85); the probe expects exactly one log_format main and one log_format compact line in nginx.conf, which is what that code renders.",
+  "dh-group-2048-bits-not-world-readable: baseline :36 dh_params_bits = 2048 and :140-143 run openssl dhparam -out /etc/nginx/dhparams.pem 2048 && chmod u=rw,g=r,o= (creates guard); probe expects mode 640 and 'DH Parameters: (2048 bit)', exactly what that command produces.",
+  "mismatch the-server-header-names-no-version: varies the version string server_tokens off (:84) must keep out of the Server header; the mismatch appends nginx -v's version to the header read, so only the version value changes and the 'Server: nginx' expectation must reject it; it failed after apply as required (not a broken command).",
+  "nginx-comes-from-the-ubuntu-archive: baseline :78 manage_repo => false and :96 'we install nginx from the distribution repository'; probe expects no nginx.org apt source and the installed dpkg version listed by apt-cache madison from an ubuntu.com/ubuntu origin; failed on the clean node (no nginx) and passed after apply.",
+  "purpose covered: I read the whole baseline manifest (148 lines; no templates or files of its own). Purpose (common nginx base: distribution package, valid config with modules loaded once, auto workers, no version in the Server header, main/compact log formats, a private 2048-bit DH group, ad-hoc config when given) matches the header comments (:2, :30-36, :83, :96) and the code. Every default outcome is tested as behaviour, not just file presence: nginx from the Ubuntu archive with no nginx.org repo (:78, :96), nginx -t passing and the service active with a real dynamic module loaded once (:86 as ruled), a live HTTP request whose Server header carries no version, plus a mismatch (:84), worker_processes auto (:82), both log formats (:63-75), DH group bits and mode (:36, :140-143), and the ad-hoc file absent by default (:112-128). Uncovered rows are honest: stream_access_log off (ruling A1) only renders with a stream server. The applied node's nginx.conf has no stream block, and nginx_frontend_mail's set checks 'access_log off;' in the stream block. The parameter variants (ad_hoc_configs, my_configs, log_formats_additional, another dh_params_bits) cannot run because phase3.py allows one fixture per set (params|defaults, validator :376-382). No in-repo consumer passes them, and the lab node could lift this with a second fixture. The Exec['apt_update'] ordering (:101-105) is not a separate observable outcome. Reviewer run 20261119T033247Z: valid, ALL_PASS, every negative failed on the clean node and the invariant held."
+ ],
+ "review_s": 157.2,
+ "check_file_sha256": "7c7ef2f07680ec97e01869361c6aaeb5e61a702249ccab51eef03a823cc712e6",
+ "reviewer_result": "20261119T033247Z-reviewer",
+ "author_result": "20261119T033048Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "5436cce2-61f4-46f8-a5b4-75a3f5184a6e",
+   "boot_id_at_end": "5436cce2-61f4-46f8-a5b4-75a3f5184a6e",
+   "fresh": true
+  }
+ }
+}
