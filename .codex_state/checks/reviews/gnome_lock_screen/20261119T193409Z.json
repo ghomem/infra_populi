@@ -1,0 +1,35 @@
+{
+ "class": "gnome_lock_screen",
+ "at": "20261119T193409Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "keyfile-and-locks-rendered: manifests/gnome_lock_screen.pp:63-75 render the keyfile via a /L heredoc with idle-delay=uint32 ${screenlock_timeout_seconds} (5*60=300 by lines 5,9) and lock-delay=uint32 ${screenlock_grace_seconds} (default 0), ending in a newline; the probe cats it and the expect is exactly that text, then (after echo ---) the three lock paths of lines 80-89; correct under the defaults fixture",
+  "profile-uses-system-db-local: manifests/gnome_lock_screen.pp:38-45 declare /etc/dconf/profile/user root:root 0644 with content \"user-db:user\\nsystem-db:local\\n\"; the probe's stat '%a %U %G' + cat and the anchored expect '644 root root' plus those two lines test exactly that",
+  "compiled-db-serves-the-policy: manifests/gnome_lock_screen.pp:94-98 declare the refreshonly '/usr/bin/dconf update' exec notified by both files (63-78, 80-92); dconf read under DCONF_PROFILE=user returns uint32 300 / true / uint32 0 only if the compiled system db local exists, proving the refresh ran; the mismatch changes only the profile name to an absent one (no system-db:local), which must remove the values, and it failed after apply as required",
+  "a-user-cannot-override-the-locked-keys (mutating, also read in full): mutates declares everything the action changes (dconf-service install if absent, account p8testdesk, its user db under ~/.config/dconf via four dconf writes, result file under /run/p8test-dconf); the action is what the locks of lines 80-92 exist to stop (a user writing the locked keys) plus one unlocked key as an internal control that writes work; the effect's evidence includes the post-write reads (300/true/0 kept, text-scaling-factor 1.25 written), i.e. the resulting state, not only the write verdicts",
+  "purpose covered: Purpose (lines 1-3 header + whole manifest): enforce a GNOME screen-lock policy via the system dconf db (idle 5 min, lock, no grace) that users cannot change. The outcomes table covers every resource of the manifest: package + profile (dconf-cli-installed, profile-uses-system-db-local), keyfile/locks content and the compiled db answering the values (keyfile-and-locks-rendered, compiled-db-serves-the-policy), and the enforcement as behaviour: a real user in its own D-Bus session is refused on all three locked keys while an unlocked key is writable (a-user-cannot-override-the-locked-keys). Uncovered, honestly: a GNOME session actually locking after 5 idle minutes (phase3.py only starts a Plasma session, session.desktop must be plasma; lifted_by gnome, an active node in nodes.yml with the gnome capability) and non-default timeout/grace parameter variants (one fixture per set)."
+ ],
+ "review_s": 152.6,
+ "check_file_sha256": "1d9e91d32bf232699646ba4b6bf4dc144de098539141e9790855e293e3446691",
+ "reviewer_result": "20261119T193137Z-reviewer",
+ "author_result": "20261119T192847Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "bd3b81d2-59fa-4021-8d0d-5ce963048119",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "bd3b81d2-59fa-4021-8d0d-5ce963048119",
+   "fresh": true
+  }
+ }
+}
