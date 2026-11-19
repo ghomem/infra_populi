@@ -1,0 +1,34 @@
+{
+ "class": "puppet_commush",
+ "at": "20261119T185620Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "a-run-on-another-branch-warns-and-goes-on: commush.sh:32-37 only echoes the error when MYBRANCH != BRANCH and does not exit, so on feature naming master the script goes on (rc 0); line 60 'git push origin $BRANCH' pushes the local master, which equals origin master after the confirmed run, so origin master stays unchanged while the commit lands on feature; probe and expect match the lines",
+  "a-declined-run-and-a-missing-email-change-nothing: commush.sh:51-56 exits 0 when the answer does not match ^([Yy](es)?)?$, so 'n' leaves ' M nodes.pp' uncommitted and origin at its 1 seed commit; lines 12-24: an empty MAIL makes [ -z ] true, print_usage echoes 'usage: commush.sh FULL_NAME EMAIL [BRANCH]' and exits E_ERR=1; expect matches both",
+  "commush-installed: manifests/puppet_commush.pp:6-13 declares ${localdir}/bin/commush.sh (localdir /opt/puppet-infrastructure) root:root 0755 sourced from files/puppet/commush.sh; the expected sha256 758912dd73a0... is the baseline file's whole-file hash read from the pin; probe stats owner/group/mode and hashes the deployed file",
+  "purpose covered: Purpose (class header: helpers for pushing node declarations from deployment user directories; script header: push changes as if they came from your account) is read correctly. The checks run commush.sh as behaviour in a real clone against a local bare origin: install (owner/mode/bytes), a confirmed run with no branch argument (default master) committing only tracked changes as the given name/email with the typed message and pushing to origin master while the untracked file stays untracked and out of origin, a declined run changing nothing, a missing email giving usage and rc 1, and the non-stopping branch-mismatch warning on another branch. The round-1 gaps (default branch, untracked exclusion) are now exercised. The one uncovered row (https remote and token prompt, lines 6 and 39) is honest: the script's git commands are remote-agnostic and the authentication is git's and the server's; only the static token echo is untested, which is not part of the class's job. Its lifted_by names the default ubuntu kind (an https git server would be needed there), which is loose but not a misstatement of what the checks leave out."
+ ],
+ "review_s": 116.0,
+ "check_file_sha256": "89161f5c820fdb55f2f06e0685b3b8b61a5fd7d94f615a76da180a009281e2d7",
+ "reviewer_result": "20261119T185424Z-reviewer",
+ "author_result": "20261119T185156Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "019c4def-22b8-4221-8ff9-81b0d1d06ef9",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "019c4def-22b8-4221-8ff9-81b0d1d06ef9",
+   "fresh": true
+  }
+ }
+}

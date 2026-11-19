@@ -1,0 +1,195 @@
+{
+ "class": "puppet_commush",
+ "role": "reviewer",
+ "at": "20261119T185424Z",
+ "runner": "af6a1be",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "89161f5c820fdb55f2f06e0685b3b8b61a5fd7d94f615a76da180a009281e2d7",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "commush-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/commush.sh': No such file or directory\nsha256sum: /opt/puppet-infrastructure/bin/commush.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "a-clone-with-a-change",
+   "control": "negative",
+   "rc": 128,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 96: cd: /run/p8test-commush/work: No such file or directory\nfatal: cannot change to '/run/p8test-commush/origin.git': No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-declined-run-and-a-missing-email-change-nothing",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "declined: rc , , origin  commit\nno email: rc , \n",
+   "stderr": "cat: /run/p8test-commush/declined.rc: No such file or directory\nbash: line 96: cd: /run/p8test-commush/work: No such file or directory\nfatal: cannot change to '/run/p8test-commush/origin.git': No such file or directory\ncat: /run/p8test-commush/usage.rc: No such file or directory\ncat: /run/p8test-commush/usage.out: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-confirmed-run-commits-and-pushes",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "rc , tracked changes left: \n0\norigin files: \n",
+   "stderr": "cat: /run/p8test-commush/confirmed.rc: No such file or directory\nbash: line 96: cd: /run/p8test-commush/work: No such file or directory\nfatal: cannot change to '/run/p8test-commush/origin.git': No such file or directory\nfatal: cannot change to '/run/p8test-commush/origin.git': No such file or directory\nfatal: cannot change to '/run/p8test-commush/origin.git': No such file or directory\nbash: line 100: cd: /run/p8test-commush/work: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-run-on-another-branch-warns-and-goes-on",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc \n0\norigin master unchanged\n",
+   "stderr": "cat: /run/p8test-commush/feature.rc: No such file or directory\nbash: line 98: cd: /run/p8test-commush/work: No such file or directory\nfatal: cannot change to '/run/p8test-commush/origin.git': No such file or directory\ncat: /run/p8test-commush/origin-before: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "stem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Puppet_commush/File[/opt/puppet-infrastructure/bin/commush.sh]/ensure: defined content as '{sha256}758912dd73a09f1abd629fc98865858d2b6040881694bc3acecdec18800ccf90'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.24 seconds\u001b[0m\nRUN1_EVENTS: 8 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795114537'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.11 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::puppet_commush: 1 concrete resources (+0 defined-type instances)\n  File[/opt/puppet-infrastructure/bin/commush.sh]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP puppet_commush 2010393de5e8\n"
+ },
+ "applied": [
+  {
+   "id": "commush-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\n758912dd73a09f1abd629fc98865858d2b6040881694bc3acecdec18800ccf90\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-clone-with-a-change",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": " M nodes.pp\n?? p8test-untracked.pp\nP8 Seed|p8test seed\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs git if absent; creates /run/p8test-commush/origin.git (bare, master) and the clone /run/p8test-commush/work with nodes.pp committed once by \"P8 Seed\", then changes nodes.pp in the clone (not committed) and adds the untracked file p8test-untracked.pp",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-declined-run-and-a-missing-email-change-nothing",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "declined: rc 0,  M nodes.pp, origin 1 commit\nno email: rc 1, usage: commush.sh FULL_NAME EMAIL [BRANCH]\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs commush.sh twice as root in /run/p8test-commush/work: with the answers \"p8test declined\" and \"n\", and with a name but no email; sets root's global git user.name and user.email (the script does so on every run); outputs under /run/p8test-commush",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-confirmed-run-commits-and-pushes",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0, tracked changes left: 0\nP8 Test p8test@example.invalid|p8test node added\n1\norigin files: nodes.pp \n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs commush.sh once as root in /run/p8test-commush/work with a name and an email only (no branch), and the answers \"p8test node added\" and an empty line (commits and pushes to the local origin); sets root's global git identity; output under /run/p8test-commush",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-run-on-another-branch-warns-and-goes-on",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0\n1\np8test on feature\norigin master unchanged\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "in /run/p8test-commush/work: creates the branch feature, changes nodes.pp and runs commush.sh naming master with the answers \"p8test on feature\" and an empty line; output under /run/p8test-commush",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 1.0,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "019c4def-22b8-4221-8ff9-81b0d1d06ef9",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "019c4def-22b8-4221-8ff9-81b0d1d06ef9",
+   "fresh": true
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "commush.sh is installed in <localdir>/bin, root:root 0755, as the module ships it",
+   "checks": [
+    "commush-installed"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "in a clone, a confirmed run commits the tracked changes (not untracked files) as the given name and email with the typed message and pushes them to origin's branch, master when none is given",
+   "checks": [
+    "a-clone-with-a-change",
+    "a-confirmed-run-commits-and-pushes"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "declining the confirmation commits and pushes nothing; a missing email prints the usage and exits 1",
+   "checks": [
+    "a-declined-run-and-a-missing-email-change-nothing"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a branch argument other than the current branch prints an error and the run goes on (the baseline's guard does not stop)",
+   "checks": [
+    "a-run-on-another-branch-warns-and-goes-on"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "an https remote with a token prompt",
+   "uncovered": {
+    "why": "the https URL and the token prompt belong to git and the deployment's server, not to the script, whose commands are the same against any remote (the local origin here); the lab has no https git server",
+    "lifted_by": "ubuntu"
+   }
+  }
+ ],
+ "duration_s": 76.6
+}
