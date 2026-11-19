@@ -1,0 +1,89 @@
+{
+ "class": "network_vpn",
+ "role": "author",
+ "at": "20261119T120430Z",
+ "runner": "6bce592",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "63c5aa7fb76419e2ca68e946efac734e7e24c1c9644a6985dd6a5d02a6e8ab54",
+ "valid": true,
+ "problems": [
+  "peer revert failed: ERROR: apt-get update failed on node 'p8lab-ubuntu2' (mirror unreachable?)."
+ ],
+ "clean": [],
+ "apply": null,
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ENVIRONMENT_FAILED",
+ "authoring_minutes": 0.7,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "23a7bed3-e9e5-4a6d-8545-00efc8a135fb",
+   "boot_id_at_end": "23a7bed3-e9e5-4a6d-8545-00efc8a135fb",
+   "fresh": false
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2"
+  }
+ },
+ "peer": "ubuntu2",
+ "outcomes": [
+  {
+   "outcome": "a client connects, gets an address on the VPN network and the VPN's nameserver as DNS",
+   "checks": [
+    "vpn-server-on-the-vpn-network",
+    "vpn-account-on-the-server",
+    "client-connects-and-resolves-through-the-vpn-nameserver"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "the VPN's nameserver answers VPN clients recursively through the bridge, over a default drop",
+   "checks": [
+    "nameserver-serves-the-vpn-network",
+    "firewall-accepts-dns-on-the-bridge",
+    "the-lab-nat-ipv6-route-is-removed",
+    "a-wan-host-and-default-drops",
+    "the-client-resolves-and-reaches-the-wan-through-the-server",
+    "the-composed-rules-counted-the-flows"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "a VPN client reaches the WAN through the server, masqueraded behind the server's WAN address",
+   "checks": [
+    "forwarding-and-nat-to-the-wan",
+    "a-wan-host-and-default-drops",
+    "the-client-resolves-and-reaches-the-wan-through-the-server",
+    "the-composed-rules-counted-the-flows"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "a client that uses the class's cipher (openvpn_cipher AES-256-CBC, the default) connects with it",
+   "checks": [
+    "a-client-on-the-class-cipher-connects"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "client isolation, the bridge and the server at boot, the hairpin rule, the data channel's compression, and each composed class's own behaviours",
+   "uncovered": {
+    "why": "covered as behaviour by the composed classes' own sets (openvpn_server, firewall_addon_openvpn_server, caching_nameserver, firewall_addon_caching_nameserver) under their own fixtures, where openvpn_server's compression is a finding (escalations/openvpn_server.behaviour.md); this set covers what the composition adds (the VPN network wired through all four) and the cipher this class passes",
+    "lifted_by": "ubuntu"
+   }
+  },
+  {
+   "outcome": "parameter variants (another VPN network, another cipher, renegotiation, client DNS, client_isolation false)",
+   "uncovered": {
+    "why": "parameter variants (one set holds one params fixture); untested",
+    "lifted_by": "ubuntu"
+   }
+  }
+ ],
+ "duration_s": 336.1
+}
