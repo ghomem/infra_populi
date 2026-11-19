@@ -1,0 +1,41 @@
+{
+ "class": "rsyslog_client",
+ "at": "20261119T023155Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "forwarding-rule-sends-everything-over-tls: rsyslog_client.pp:42-55 renders forward_simple.conf.epp with the fixture's target and port 6514 (default) and check_names false (default); the template emits $DefaultNetstreamDriver gtls, $ActionSendStreamDriverMode 1, AuthMode x509/certvalid (check_names false branch), no PermittedPeer, '*.*  @@<target>:<port>' and no failover block (failover undef); the probe greps exactly those lines (whitespace collapsed, target masked) and rsyslogd -N1 validates the file. It does not grep the CAFile/CertFile/KeyFile lines its 'what' names, but the end-to-end TLS checks need them to work",
+  "the-agent-run-restores-the-rule-and-restarts-rsyslog-once: line 40's comment states the intent and the resource at 42-55 carries notify => Service['rsyslog'] (service declared in rsyslog_base, provider systemd), so the agent run after drift rewrites the content (drift line count 0) and refreshes the service once; the effect reads the rule, a new MainPID versus the noted one, and exactly one 'Started rsyslog.service' in the journal after the noted cursor. Read-only, declared as such; passed in my run after the node agent run (rc 2)",
+  "the-forwarding-rule-drifts: setup for the restart check on the file at 40-55; mutates declares everything the action does (PID and journal cursor noted in /run/p8test-rsyslog/before-rule, a comment line appended to 40-forward.conf); the effect reads the file and the note, not the action's output; failed on the clean node (no file) and passed after apply",
+  "whole file: no invariants; mismatch on tls-material-is-the-nodes-puppet-identity varies only the CA file handed to openssl verify (system bundle instead of the Puppet CA, which signed the node's certificate), a value that must change the verdict, and it failed after apply as required; rsyslog_base.pp:49-71 sources ca/cert/key from ${ssldir} (fixture ssldir_override /etc/puppetlabs/puppet/ssl), key syslog 0600, matching the expect; the hosts check matches rsyslog_client.pp:24-28 with target_ip 192.168.56.24; peer probes act only on the declared peer (ubuntu2) and name only the node's address; the node probes reach no other host beyond rsyslog's own forwarding. My run: all 8 negative controls failed clean, all 8 checks passed applied, no findings",
+  "purpose covered: Purpose (forward all local logs to a remote rsyslog server over TLS with the node's Puppet certificate and CA, target optionally pinned in /etc/hosts) matches the baseline header line 1 and the code (rsyslog_base TLS material, host pin at 24-28, forwarding rule at 42-55). Tested as behaviour on the applied node with the ubuntu2 peer as a gtls x509/certvalid server on 6514 using the same lab CA: the rule's driver/mode/auth lines and a valid config, the TLS files byte-identical to the Puppet identity with the cert verifying against the Puppet CA (mismatch on the CA), the target resolving through the /etc/hosts entry, a logger line leaving over an established TLS session and arriving on the peer under the node's host name (mutual certvalid authentication exercised), and drift of the rule restored by the next agent run with exactly one rsyslog restart (notify). Uncovered row is honest under the precedent that one set holds one fixture: failover (needs a dead first target, incompatible with the live-target checks), forward_auth_log and check_names (non-default parameter variants the fixture leaves at their defaults). Minor: lifted_by names ubuntu2, the peer already in use; the obstacle is the fixture variant, not a node kind. The failover host pin (31-38) is inside that row"
+ ],
+ "review_s": 172.8,
+ "check_file_sha256": "b5128e390aeeb4dc331654ca635793fbbd23b3f1d8e7d380e3eec1b3500cab2b",
+ "reviewer_result": "20261119T022903Z-reviewer",
+ "author_result": "20261119T022612Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "a2088ecd-dd88-4b0f-b688-a280fde034df",
+   "boot_id_at_end": "a2088ecd-dd88-4b0f-b688-a280fde034df",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "2cc2cf5e-28eb-47bd-8e83-83b225b947c9",
+   "boot_id_at_end": "2cc2cf5e-28eb-47bd-8e83-83b225b947c9",
+   "fresh": true
+  }
+ }
+}

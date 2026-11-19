@@ -1,0 +1,286 @@
+{
+ "class": "rsyslog_client",
+ "role": "reviewer",
+ "at": "20261119T022903Z",
+ "runner": "ee88e83",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "b5128e390aeeb4dc331654ca635793fbbd23b3f1d8e7d380e3eec1b3500cab2b",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "forwarding-rule-sends-everything-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "config-valid\n",
+   "stderr": "grep: /etc/rsyslog.d/40-forward.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "tls-material-is-the-nodes-puppet-identity",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/rsyslog.d/tls/puppet8node.key': No such file or directory\nError loading file /etc/rsyslog.d/tls/ca.pem\n4057143C8B740000:error:80000002:system library:BIO_new_file:No such file or directory:../crypto/bio/bss_file.c:67:calling fopen(/etc/rsyslog.d/tls/ca.pem, r)\n4057143C8B740000:error:10000080:BIO routines:BIO_new_file:no such file:../crypto/bio/bss_file.c:75:\n4057143C8B740000:error:05880002:x509 certificate routines:X509_load_cert_crl_file_ex:system lib:../crypto/x509/by_file.c:228:\n",
+   "ok": true
+  },
+  {
+   "id": "the-target-is-pinned-in-hosts",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /etc/rsyslog.d/40-forward.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-peer-runs-a-tls-log-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-local-log-line-leaves-over-tls",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-server-received-the-line-from-the-node",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /var/log/p8test-remote.log: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-forwarding-rule-drifts",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /run/p8test-rsyslog/before-rule: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-rule-and-restarts-rsyslog-once",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\nrestarted\n0\n",
+   "stderr": "bash: line 97: /run/p8test-rsyslog/before-rule: No such file or directory\nFailed to seek to cursor: Invalid argument\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]: Scheduling refresh of Service[rsyslog]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 5 events\u001b[0m\n\u001b[mNotice: Applied catalog in 6.89 seconds\u001b[0m\nRUN1_EVENTS: 7 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795055421'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.57 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::rsyslog_client: 9 concrete resources (+0 defined-type instances)\n  Package[rsyslog]\n  Package[rsyslog-gnutls]\n  File[/etc/rsyslog.d/tls]\n  File[/etc/rsyslog.d/tls/ca.pem]\n  File[/etc/rsyslog.d/tls/puppet8node.pem]\n  File[/etc/rsyslog.d/tls/puppet8node.key]\n  Service[rsyslog]\n  Host[p8lab-ubuntu2]\n  File[/etc/rsyslog.d/40-forward.conf]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP rsyslog_client 4f64617b4fa3\n"
+ },
+ "applied": [
+  {
+   "id": "forwarding-rule-sends-everything-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "$DefaultNetstreamDriver gtls\n$ActionSendStreamDriverMode 1\n$ActionSendStreamDriverAuthMode x509/certvalid\n*.* @@TARGET:6514\nconfig-valid\n",
+   "stderr": ""
+  },
+  {
+   "id": "tls-material-is-the-nodes-puppet-identity",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "same-as-puppet\nsyslog 600\nOK\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the CA (the system bundle instead of the Puppet CA), which did not sign the node's certificate",
+    "rc": 0,
+    "passed": false,
+    "stdout": "same-as-puppet\nsyslog 600\nverification failed\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-target-is-pinned-in-hosts",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "192.168.56.24\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-peer-runs-a-tls-log-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "2\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: installs rsyslog-gnutls, copies its own Puppet CA, certificate and key to /etc/rsyslog.d/p8test-tls (syslog-readable), adds /etc/rsyslog.d/10-p8test-server.conf (an imtcp gtls listener on 6514, x509/certvalid, writing what it receives to /var/log/p8test-remote.log) and restarts rsyslog",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-local-log-line-leaves-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "restarts rsyslog on the node, logs `p8test-rsyslog-forward-token` with tag p8test-rsyslog through logger, then waits 5 s",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-server-received-the-line-from-the-node",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "puppet8node p8test-rsyslog: p8test-rsyslog-forward-token\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the peer's received log (declared mutating so it runs after the node's line was sent)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-forwarding-rule-drifts",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nnoted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "notes rsyslog's main PID and its journal cursor in /run/p8test-rsyslog/before-rule, then appends a comment line to /etc/rsyslog.d/40-forward.conf on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-the-rule-and-restarts-rsyslog-once",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\nrestarted\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rule, rsyslog's state and its journal (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 3,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "a2088ecd-dd88-4b0f-b688-a280fde034df",
+   "boot_id_at_end": "a2088ecd-dd88-4b0f-b688-a280fde034df",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "2cc2cf5e-28eb-47bd-8e83-83b225b947c9",
+   "boot_id_at_end": "2cc2cf5e-28eb-47bd-8e83-83b225b947c9",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "node_agent": {
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]/content:",
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]/content:",
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]/content: content changed '{sha256}5aed24b62ff7f3ac5fe230a129b48e9a93ae9114a5a79de3d917a8a63e3fed9d' to '{sha256}85a5826eace84b68a5fbbb87a234364326136ad98e718b47293d10833c4d3b0d' (corrective)\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 1 event\u001b[0m"
+  ],
+  "tail": "0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795055446'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]/content: \n--- /etc/rsyslog.d/40-forward.conf\t2026-11-19 02:30:39.196576201 +0000\n+++ /tmp/puppet-file20261119-2153-abkmt2\t2026-11-19 02:30:46.865147786 +0000\n@@ -7,4 +7,3 @@\n $ActionSendStreamDriverAuthMode  x509/certvalid\n \n *.*  @@p8lab-ubuntu2:6514\n-# p8test drift\n\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]/content: \n\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]/content: content changed '{sha256}5aed24b62ff7f3ac5fe230a129b48e9a93ae9114a5a79de3d917a8a63e3fed9d' to '{sha256}85a5826eace84b68a5fbbb87a234364326136ad98e718b47293d10833c4d3b0d' (corrective)\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]: Scheduling refresh of Service[rsyslog]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.53 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "outcomes": [
+  {
+   "outcome": "the forwarding rule sends every facility and severity to the target over TLS with the node's certificate, key and CA, validating the server's certificate",
+   "checks": [
+    "forwarding-rule-sends-everything-over-tls",
+    "tls-material-is-the-nodes-puppet-identity"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the target is pinned in /etc/hosts when its IP is given",
+   "checks": [
+    "the-target-is-pinned-in-hosts"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a line logged on the node reaches the remote TLS log server, under the node's name",
+   "checks": [
+    "the-peer-runs-a-tls-log-server",
+    "a-local-log-line-leaves-over-tls",
+    "the-server-received-the-line-from-the-node"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a changed forwarding rule is restored by the next agent run, which restarts rsyslog once",
+   "checks": [
+    "the-forwarding-rule-drifts",
+    "the-agent-run-restores-the-rule-and-restarts-rsyslog-once"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the failover target (forwarding switches to it while the first target is suspended), forward_auth_log and check_names",
+   "uncovered": {
+    "why": "fixture variants: the fixture forwards to one live target and sets none of them; failover needs a second fixture (a dead target, the peer as failover), which one set cannot hold; untested",
+    "lifted_by": "ubuntu2"
+   }
+  }
+ ],
+ "duration_s": 103.8
+}
