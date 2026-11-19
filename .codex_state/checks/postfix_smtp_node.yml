@@ -17,6 +17,10 @@
 # check now points /etc/resolv.conf and postfix's chroot copy at the stub (a declared lab fixture: production resolves
 # the relayhost through its DNS), waits until the stub answers the pin, and reloads postfix. (2) The peer's postfix also
 # listens on [::]:587; the expectation allows that line.
+# AUTHORING ERROR corrected 2026-11-19 after run 20261119T060057Z (1 FAIL; the relay itself passed: queue empty,
+# status=sent, the mailbox holds the message with ESMTPSA): the peer's submission service logs under the tag
+# postfix/smtpd (the master.cf entry sets no syslog_name), not postfix/submission/smtpd; read on the peer's journal
+# ('client=unknown[...], sasl_method=PLAIN, sasl_username=p8test-relay').
 class: postfix_smtp_node
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -228,7 +232,7 @@ checks:
     effect: |
       p8_count 'p8test-relay-token' /var/mail/p8testuser
       grep -B30 'Subject: p8test-relay-token' /var/mail/p8testuser | p8_count 'with ESMTPSA'
-      journalctl --no-pager -q -t postfix/submission/smtpd | p8_count 'sasl_method=PLAIN, sasl_username=p8test-relay$'
+      journalctl --no-pager -q -t postfix/smtpd | p8_count 'sasl_method=PLAIN, sasl_username=p8test-relay$'
     expect: {rc: 0, stdout: "\\A1\\n1\\n1\\n\\Z"}
 
   - id: a-message-over-the-size-limit-is-refused
