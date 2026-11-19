@@ -14,6 +14,8 @@ derived from the pinned baseline, probed on the node only, with negative control
   phase3.py spot <class> [--n N] [--seed S]
                                  reviewer: N random derived_from references (default 3), each printed with the
                                  baseline lines read fresh from the upstream pin, beside the check's probe/expect.
+  phase3.py sweep                approved, unchanged sets whose uncovered rows the HQ batch-15 ruling-3 rule would
+                                 refuse, with the row count (the scheduled sweep)
   phase3.py state [<class> ...]  behaviour state per class (HQ 2026-11-16), DERIVED from the check, result and
                                  review files: pass | finding | deferred (<needs>) | none (no check file) |
                                  unreviewed | stale (check file changed after its review) | review-failed | invalid |
@@ -49,7 +51,10 @@ Check file .codex_state/checks/<class>.yml:
     - outcome: <what can be observed when the class does its job (>= 15 characters)>
       from: <where the baseline says so: manifests/x.pp:12-14, a template, a header comment>
       checks: [<id of a check that probes it>, ...]        # >= 1 existing check id, or instead:
-      uncovered: {why: <why the lab does not probe it (>= 20 characters)>, lifted_by: <node kind>}
+      uncovered: {why: <why the lab does not probe it (>= 20 characters)>, lifted_by: <node kind that is not active,
+                  or `capability: <what is missing>`>, evidence: <a command result, or the capability the node
+                  inventory lacks (>= 20 characters)>}   # HQ batch-15 ruling 3; an approved, unchanged set keeps
+                  # the earlier {why, lifted_by} until the sweep (`phase3.py sweep`)
   checks:
     - id: <slug>
       what: <one line>
@@ -299,7 +304,44 @@ PURPOSE_MISSING = "purpose: the class's purpose (one or two sentences, >= 40 cha
 OUTCOMES_MISSING = "outcomes: the purpose as observable outcomes, each mapped to checks or uncovered, is required (HQ ruling 2)"
 
 
-def outcome_problems(data: dict) -> list[str]:
+def uncovered_problems(u, where: str, strict: bool) -> list[str]:
+    """An outcome left uncovered. Strict (HQ batch-15 ruling 3, applied capability-based): why, lifted_by and evidence
+    for the reason (a command result, or a capability the node inventory lacks); lifted_by names a node kind that is
+    not active, or the missing capability as `capability: ...`. A row lifted by an active node kind is refused: the
+    node exists, so the outcome is a work item to test there. Not strict: the rule before it (why and lifted_by)."""
+    import nodes  # noqa: PLC0415
+    allowed = [{"why", "lifted_by", "evidence"}] if strict else [{"why", "lifted_by"}, {"why", "lifted_by", "evidence"}]
+    if not isinstance(u, dict) or set(u) not in allowed or len(str(u.get("why", ""))) < 20:
+        return [f"{where}: uncovered takes why (>= 20 characters), lifted_by" + (" and evidence" if strict else "")]
+    lifted = str(u["lifted_by"])
+    if not strict:
+        return lifting_problems(lifted, None, where)
+    out = []
+    if len(str(u["evidence"]).strip()) < 20:
+        out.append(f"{where}: evidence (>= 20 characters) backs the reason: a command result, or a capability the node "
+                   "inventory lacks (HQ batch-15 ruling 3)")
+    if lifted.startswith("capability:"):
+        if len(lifted.split(":", 1)[1].strip()) < 10:
+            out.append(f"{where}: lifted_by `capability: ...` names the missing capability")
+        return out
+    found = lifting_problems(lifted, None, where)
+    if found:
+        return out + found
+    if nodes.load()["nodes"][lifted].get("status") == "active":
+        out.append(f"{where}: lifted_by {lifted!r} is an active node kind: test it there (a work item), or name what is "
+                   "missing as `capability: ...` with evidence (HQ batch-15 ruling 3)")
+    return out
+
+
+def approved_unchanged(cls: str, raw: bytes) -> bool:
+    """HQ batch-15 ruling 3's scope: a set whose latest review passed it as it stands keeps the earlier uncovered rule
+    until the scheduled sweep; a new or changed set meets the new rule at once."""
+    review = latest_review(cls)
+    return bool(review) and review.get("verdict") == "PASS" and \
+        review.get("check_file_sha256") == hashlib.sha256(raw).hexdigest()
+
+
+def outcome_problems(data: dict, strict: bool = True) -> list[str]:
     """HQ 2026-11-18 ruling 2: every outcome maps to at least one check of the set, or is declared uncovered."""
     rows = data.get("outcomes")
     if not rows:
@@ -323,11 +365,7 @@ def outcome_problems(data: dict) -> list[str]:
             else:
                 out += [f"{where}: no check {r!r} in the set" for r in refs if r not in ids]
         else:
-            u = row["uncovered"]
-            if not isinstance(u, dict) or set(u) != {"why", "lifted_by"} or len(str(u.get("why", ""))) < 20:
-                out.append(f"{where}: uncovered takes why (>= 20 characters) and lifted_by")
-            else:
-                out += lifting_problems(u["lifted_by"], None, f"{where}.uncovered")
+            out += uncovered_problems(row["uncovered"], f"{where}.uncovered", strict)
     return out
 
 
@@ -385,7 +423,7 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
         problems.append(f"fixture: defaults but {params} exists (the harness would apply it)")
     if len(str(data.get("purpose") or "").strip()) < 40:
         problems.append(PURPOSE_MISSING)
-    problems += outcome_problems(data)
+    problems += outcome_problems(data, strict=not approved_unchanged(cls, raw))
     peer_ip = None
     if "peer" in data:
         found, peer_ip = peer_problems(cls, data["peer"])
@@ -483,6 +521,30 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
     return problems, data, raw
 
 
+def sweep_pending(cls: str, data: dict) -> list[str]:
+    """The uncovered rows of an approved, unchanged set that the strict rule would refuse (the scheduled sweep)."""
+    raw = (phase3_dir() / f"{cls}.yml").read_bytes()
+    if "deferred" in data or not approved_unchanged(cls, raw):
+        return []
+    return [p for p in outcome_problems(data, strict=True) if ".uncovered" in p]
+
+
+def cmd_sweep() -> int:
+    """List every approved set whose uncovered rows await the HQ batch-15 ruling-3 sweep, with the row count."""
+    total = 0
+    for path in sorted(phase3_dir().glob("*.yml")):
+        cls = path.stem
+        problems, data, _ = validate(cls)
+        if problems:
+            continue
+        pending = sweep_pending(cls, data)
+        if pending:
+            total += len(pending)
+            print(f"{cls}: {len(pending)}")
+    print(f"SWEEP: {total} uncovered row(s) in approved sets await the ruling-3 sweep")
+    return 0
+
+
 def cmd_validate(cls: str) -> int:
     problems, data, _ = validate(cls)
     for p in problems:
@@ -493,6 +555,10 @@ def cmd_validate(cls: str) -> int:
         print(f"VALID {cls}: DEFERRED (needs {data['deferred']['needs']}, lifted by {data['deferred']['lifted_by']}): "
               f"{data['deferred']['why']}")
         return 0
+    pending = sweep_pending(cls, data)
+    if pending:
+        print(f"SWEEP {cls}: {len(pending)} uncovered row(s) await the HQ batch-15 ruling-3 sweep (approved as it "
+              f"stands): {pending[0]}")
     neg = sum(1 for c in data["checks"] if c["control"] == "negative")
     mut = sum(1 for c in data["checks"] if "mutates" in c)
     mism = sum(1 for c in data["checks"] if "mismatch" in c)
@@ -1180,6 +1246,8 @@ def main(argv: list[str]) -> int:
         return cmd_spot(short(argv[1]), int(opt("--n", "3")), int(opt("--seed")) if "--seed" in argv else None)
     if argv[:1] == ["state"]:
         return cmd_state([short(c) for c in argv[1:]])
+    if argv == ["sweep"]:
+        return cmd_sweep()
     if len(argv) >= 2 and argv[0] == "verdict":
         evidence = [argv[i + 1] for i, a in enumerate(argv[:-1]) if a == "--evidence"]
         return cmd_verdict(short(argv[1]), opt("--derived", ""), evidence, opt("--purpose", ""),

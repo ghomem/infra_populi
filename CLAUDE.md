@@ -155,7 +155,11 @@ changes too (HQ batch-10 ruling 4), recorded with a local_changes.md row; `recor
 marker `local changes: #N[, #M]` from those rows and never shrinks it without `--shrink-local-changes` (HQ batch-12
 ruling 4).
 Check sets list the purpose as observable outcomes in an `outcomes:` table, each mapped to checks or `uncovered`
-(ruling 2). Times and numbers in sets, records and reports are measured or absent, never estimated (ruling 3).
+(ruling 2). An `uncovered` row carries `evidence` for its reason and is lifted by a node kind that is not active or by
+`capability: <what is missing>`; one lifted by an active node kind is a work item to test there (HQ batch-15 ruling 3;
+approved, unchanged sets await `phase3.py sweep`). A class with a new local change gets its Phase 1 PASS only once the
+change's after-check has passed on the current code (HQ batch-15 ruling 2): record_green, then the Phase 3 after-run,
+then the row's after evidence, then the reviewer. Times and numbers in sets, records and reports are measured or absent, never estimated (ruling 3).
 Run rule (HQ batch-12 ruling 5, amending batch-10 ruling 1):
 - An escalated check set does not hold the run, and neither does a finding with one clear fix under policy B.
 - A finding with more than one reasonable design is escalated for that class, and the run continues with the next

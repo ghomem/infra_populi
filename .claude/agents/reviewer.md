@@ -114,8 +114,13 @@ read `.codex_state/checks/results/<class>/*-author.*`: the verdict tool compares
    Then judge: do the checks, taken together, test that purpose (the class doing its job: a service answering, a user
    able to log in, a backup restorable, a rule blocking), or only that files and packages exist? `covered` when every
    part of the purpose the lab can exercise is tested, and every part it cannot is listed honestly under `uncovered`
-   with the node kind that would lift it. `gap` when a part the lab CAN exercise is untested, or when the stated
-   purpose misreads the class: name that part in the evidence.
+   with what would lift it. `gap` when a part the lab CAN exercise is untested, or when the stated
+   purpose misreads the class: name that part in the evidence. Since HQ batch-15 ruling 3 (applied capability-based),
+   a new or changed `uncovered` row carries `evidence` for its reason (a command result, or a capability the node
+   inventory lacks) and names in `lifted_by` either a node kind that is not active or `capability: <what is missing>`;
+   the validator refuses one lifted by an active node kind. Judge that the evidence really backs the reason: a reason
+   whose evidence does not show the lab lacking something is a `gap`. Approved, unchanged sets keep the earlier rows
+   until the scheduled sweep (`phase3.py sweep`).
 3. Record: `python3 .codex_state/tools/phase3.py verdict <class> --derived ok|fail --evidence "<check id: why the
    reference supports (or not) the probe>" --purpose covered|gap --purpose-evidence "<what of the purpose the checks
    test, and what they leave out and why>"` — one --evidence per spot-checked reference, plus one per finding if the

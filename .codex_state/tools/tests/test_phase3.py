@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 import pytest
 import yaml
 
-from conftest import TOOLS
+from conftest import TOOLS, PLANNED_KIND, planned_inventory
 
 pytestmark = pytest.mark.slow  # stub-lab subprocess runs (HQ 2026-11-11 ruling 3: full suite only)
 
@@ -936,7 +936,7 @@ def test_every_outcome_maps_to_checks_or_is_uncovered(p3):
         ([{"outcome": "a daily snapshot exists", "from": "x.pp:1", "checks": ["nope"]}], "no check 'nope' in the set"),
         ([{"outcome": "a daily snapshot exists", "from": "x.pp:1", "checks": []}], "at least one check id"),
         ([{"outcome": "short", "from": "x.pp:1", "checks": ["conf"]}], "outcome (>= 15 characters)"),
-        ([{"outcome": "a daily snapshot exists", "from": "x.pp:1", "uncovered": {"why": "w" * 25, "lifted_by": "nope"}}],
+        ([{"outcome": "a daily snapshot exists", "from": "x.pp:1", "uncovered": {"why": "w" * 25, "lifted_by": "nope", "evidence": "e" * 25}}],
          "is not a node kind"),
     ]:
         data = dict(base)
@@ -948,7 +948,9 @@ def test_every_outcome_maps_to_checks_or_is_uncovered(p3):
         assert proc.returncode == 2 and message in proc.stderr, (message, proc.stderr)
     data = dict(base)
     data["outcomes"] = base["outcomes"] + [{"outcome": "the snapshot reaches a remote host", "from": "x.pp:2",
-                                            "uncovered": {"why": "the lab has no remote backup host", "lifted_by": "ubuntu2"}}]
+                                            "uncovered": {"why": "the lab has no remote backup host",
+                                                          "lifted_by": "capability: a remote backup host in the lab",
+                                                          "evidence": "nodes.yml lists no node with a backup-host role"}}]
     p3.write(data)
     assert p3.run("validate", CLS).returncode == 0
 
@@ -1051,4 +1053,59 @@ def test_a_revert_without_the_field_records_no_mirror():
     assert phase3.revert_mirror("SUCCESS\nREVERT_METRICS {\"node\":\"ubuntu\"}\n") is None
     assert phase3.revert_mirror("no metrics\n") is None
     assert phase3.revert_mirror('REVERT_METRICS {"apt_mirror":"primary"}') == "primary"
+
+
+# HQ batch-15 ruling 3 (applied capability-based): an uncovered row carries evidence, and is lifted by a node kind that
+# is not active or by a named missing capability; a set approved as it stands keeps the earlier rule until the sweep.
+UNC_OUTCOME = {"outcome": "the snapshot reaches a remote host", "from": "x.pp:2"}
+
+
+def with_uncovered(u):
+    data = check_set(check("conf", "probe-conf"))
+    data["outcomes"] = data["outcomes"] + [{**UNC_OUTCOME, "uncovered": u}]
+    return data
+
+
+WHY = "the lab has no remote backup host"
+EVIDENCE = "nodes.yml lists no node with a backup-host role"
+
+
+@pytest.mark.parametrize("u, message", [
+    ({"why": WHY, "lifted_by": "ubuntu2"}, "lifted_by and evidence"),
+    ({"why": WHY, "lifted_by": "ubuntu2", "evidence": EVIDENCE}, "is an active node kind"),
+    ({"why": WHY, "lifted_by": "capability: x", "evidence": EVIDENCE}, "names the missing capability"),
+    ({"why": WHY, "lifted_by": "capability: a remote backup host", "evidence": "short"}, "evidence (>= 20 characters)"),
+])
+def test_a_new_uncovered_row_needs_evidence_and_no_active_lifting_node(p3, u, message):
+    p3.write(with_uncovered(u))
+    proc = p3.run("validate", CLS)
+    assert proc.returncode == 2 and message in proc.stderr, proc.stderr
+
+
+def test_a_row_lifted_by_a_node_kind_not_active_yet_is_accepted(p3, tmp_path):
+    p3.write(with_uncovered({"why": WHY, "lifted_by": PLANNED_KIND, "evidence": EVIDENCE}))
+    proc = p3.run("validate", CLS, P8_NODES=planned_inventory(tmp_path))
+    assert proc.returncode == 0, proc.stderr
+
+
+def approve_as_it_stands(p3):
+    import hashlib
+    sha = hashlib.sha256((p3.dir / f"{CLS}.yml").read_bytes()).hexdigest()
+    reviews = p3.dir / "reviews" / CLS
+    reviews.mkdir(parents=True, exist_ok=True)
+    (reviews / "20261119T120000Z.json").write_text(json.dumps({"verdict": "PASS", "check_file_sha256": sha}))
+
+
+def test_an_approved_unchanged_set_keeps_the_earlier_rule_until_the_sweep(p3):
+    p3.write(with_uncovered({"why": WHY, "lifted_by": "ubuntu2"}))
+    approve_as_it_stands(p3)
+    proc = p3.run("validate", CLS)
+    assert proc.returncode == 0, proc.stderr
+    assert f"SWEEP {CLS}: 1 uncovered row(s)" in proc.stdout
+    sweep = p3.run("sweep")
+    assert f"{CLS}: 1" in sweep.stdout and "SWEEP: 1 uncovered row(s)" in sweep.stdout
+    changed = with_uncovered({"why": WHY + ", none at all", "lifted_by": "ubuntu2"})  # any change ends the grace
+    p3.write(changed)
+    proc = p3.run("validate", CLS)
+    assert proc.returncode == 2 and "lifted_by and evidence" in proc.stderr
 
