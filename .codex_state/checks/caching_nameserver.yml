@@ -23,12 +23,16 @@ outcomes:
   - outcome: bind9 is installed and named runs with a configuration named-checkconf accepts
     from: manifests/caching_nameserver.pp:15-31
     checks: [named-runs-with-a-valid-configuration]
+  # Correction round 1 (2026-11-19, run 20261119T042407Z): recursion failed in the lab because named sent its queries
+  # over the VirtualBox NAT's IPv6 (a ULA address with a default route learned by router advertisement), which reaches
+  # no internet (tcpdump: 27 queries out to root servers' IPv6 addresses, 0 answers); a lab-environment fixture now
+  # removes that route, stops advertisements re-adding it, and restarts named before the resolution checks.
   - outcome: the node itself gets recursive answers from 127.0.0.1, and a repeated question is answered from the cache
     from: manifests/caching_nameserver.pp:1-2; templates/bind/named.conf.options.erb:3, 9-10
-    checks: [the-node-resolves-through-it-and-the-cache-answers-again]
+    checks: [the-lab-nat-ipv6-route-is-removed, the-node-resolves-through-it-and-the-cache-answers-again]
   - outcome: a client in an allowed network gets answers; a client outside them is refused
     from: manifests/caching_nameserver.pp:4-5; templates/bind/named.conf.options.erb:3, 9-10
-    checks: [the-peer-adds-an-allowed-and-an-outside-address, an-allowed-client-is-answered-and-an-outside-one-refused]
+    checks: [the-lab-nat-ipv6-route-is-removed, the-peer-adds-an-allowed-and-an-outside-address, an-allowed-client-is-answered-and-an-outside-one-refused]
   - outcome: a changed options file is restored by the next agent run, which restarts named once
     from: manifests/caching_nameserver.pp:33-39
     checks: [the-options-drift, the-agent-run-restores-the-options-and-restarts-named-once]
@@ -48,6 +52,27 @@ checks:
       named-checkconf && echo config-valid
       p8_count 'allow-query-cache' /etc/bind/named.conf.options
     expect: {rc: 0, stdout: "\\Abind9 install ok installed\\nactive\\nconfig-valid\\n1\\n\\Z"}
+
+  - id: the-lab-nat-ipv6-route-is-removed
+    what: >-
+      lab-environment fixture for the resolution checks: the NAT interface's IPv6 default route (learned by router
+      advertisement, reaching no internet) is gone and named, restarted, resolves over IPv4
+    control: negative
+    timeout: 120
+    derived_from:
+      - {path: manifests/caching_nameserver.pp, lines: "28-31", text: "ensure  => 'running',"}
+    mutates: >-
+      sets net.ipv6.conf.enp0s3.accept_ra to 0, deletes the IPv6 default route on enp0s3 (the VirtualBox NAT
+      interface), restarts named and waits up to 60 s for it to answer a question
+    probe: |
+      sysctl -q -w net.ipv6.conf.enp0s3.accept_ra=0
+      ip -6 route del default dev enp0s3 2>/dev/null || true
+      systemctl restart named
+      for i in $(seq 30); do dig +time=2 +tries=1 @127.0.0.1 . NS +noall +comments | grep -q 'status: NOERROR' && break; sleep 2; done
+    effect: |
+      ip -6 route show default dev enp0s3 | wc -l
+      p8_service named | cut -d' ' -f1
+    expect: {rc: 0, stdout: "\\A0\\nactive\\n\\Z"}
 
   - id: the-node-resolves-through-it-and-the-cache-answers-again
     what: >-
