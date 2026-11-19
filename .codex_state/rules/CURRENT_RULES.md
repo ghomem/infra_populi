@@ -2,7 +2,14 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-117 entries; 6 marked superseded (in whole or part); newest first.
+118 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-19 — Backfill batch 5 and the batch-14 rulings carried out
+- 1. **Local changes #7 and #8 are done** (Phase 1 and Phase 3 PASS each).
+- 2. **The mirror fallback is built as ruled** (revert_node.sh):
+- 3. **rules/approval_conditions.md** is the single source for what HQ rules "record in the approval report". Its items:
+- 4. **Fixtures moved closer to the class's defaults and purpose.** They are params and never committed:
+- 5. **Proposal for HQ, not built: a validator rule against unverified uncovered reasons.**
 
 ## 2026-11-19 — HQ rulings on batch 14
 - 1. **openvpn_server and network_vpn, cipher: option A approved.** The class's cipher is added to the server's accepted

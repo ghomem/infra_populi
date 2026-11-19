@@ -2118,3 +2118,34 @@ snapshot list, record.
 7. **Mirror fallback:** allowed only when the primary archive fails, for that run only, recorded in the run record,
    and never written into a baseline.
 8. **Go:** batch 5 starts with user_base.
+
+## 2026-11-19 — Backfill batch 5 and the batch-14 rulings carried out
+1. **Local changes #7 and #8 are done** (Phase 1 and Phase 3 PASS each).
+   - **#7:** openvpn_server adds the class's cipher to data-ciphers, after OpenVPN 2.6's default list.
+   - **#8:** ssh_secure sets sshd's own idle timeouts from client_alive_interval, guarded by saz-ssh's
+     ssh_server_version_release fact (9.2 and later).
+   - **#8's first value was wrong.** `ChannelTimeout session=` matches no channel type on OpenSSH 9.6; the types are
+     session:command, session:shell and session:subsystem:..., per the node's sshd_config(5). The correct value is
+     `session:*=`. Phase 3 caught it, not Phase 1: the first Phase 1 review judged the diff against the row, and the row
+     carried the same wrong value.
+   - **ssh_secure's lab fixture moved from 10 to 30 s.** A working 10 s idle timeout also closed the lab's own silent
+     SSH sessions to the node.
+2. **The mirror fallback is built as ruled** (revert_node.sh):
+   - a tmpfs copy of the sources, bind-mounted over the file, for that run only;
+   - nothing is written to disk or to a baseline;
+   - `apt_mirror` is recorded in REVERT_METRICS and in the phase3 run records.
+   Every run since shows `primary`.
+3. **rules/approval_conditions.md** is the single source for what HQ rules "record in the approval report". Its items:
+   compression (openvpn_server), BIND on IPv4-only hosts, and RHEL 9's unenforced idle disconnect (ssh_secure).
+4. **Fixtures moved closer to the class's defaults and purpose.** They are params and never committed:
+   - **user_base:** ignorekey false, with a test RSA public key (no private half kept anywhere);
+   - **user_base and user:** the SHA-512 hash of the test password `p8test-user-not-a-secret`, so a password login
+     can be shown;
+   - **sync:** two host names, both pinned to the peer.
+5. **Proposal for HQ, not built: a validator rule against unverified uncovered reasons.**
+   - **The record:** three reasons I gave for leaving an outcome uncovered were untrue:
+     - sync's "one remote host" was a fixture choice;
+     - user's "checked in user_base's set" was untrue for the variants;
+     - backup_rsnapshot_pre's "needs a terminal" was wrong: `read` takes stdin.
+   - **The rule:** the validator would require such rows to name a parameter variant or a lab limit, whenever
+     `lifted_by` is the set's own node kind.
