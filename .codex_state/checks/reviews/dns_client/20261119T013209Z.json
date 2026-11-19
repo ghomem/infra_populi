@@ -1,0 +1,33 @@
+{
+ "class": "dns_client",
+ "at": "20261119T013209Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-next-agent-run-keeps-only-the-given-servers: dns_client.pp:8-12 declares class resolv_conf with nameservers => $nameservers; saz-resolv_conf 8.0.1 manages /etc/resolv.conf with content from its template (one 'nameserver' line per given server, in order), so after the hand-added 9.9.9.9 the node's agent run restores exactly 10.0.2.3, 1.1.1.1 (my run: corrective content change on File[/etc/resolv.conf], effect matched); the action 'true' changes nothing, as declared",
+  "resolv-conf-names-exactly-the-given-servers: same lines 8-12 under the fixture [10.0.2.3, 1.1.1.1]; the module template renders the nameserver lines in list order and nothing else, so the anchored expect (exactly those two, in order, 8.8.8.8 gone) is what the code produces; clean node showed 1.1.1.1/8.8.8.8 (negative failed as required)",
+  "names-resolve-through-the-given-server: lines 1-2 (purpose: configures the DNS servers for the client) plus 8-12; dig without @server uses /etc/resolv.conf, so NOERROR from SERVER 10.0.2.3 (first given server) tests the configured resolver answering; the mismatch varies only the queried name to the reserved p8test.invalid, which must turn NOERROR into NXDOMAIN, and it did (NXDOMAIN from 10.0.2.3), so the probe's verdict depends on the name, not on a broken command",
+  "purpose covered: Purpose (point the resolver at the given servers only, keep it so, names resolve through them) matches the header comment and the 13-line baseline manifest; the network-manager line is a caveat, not an outcome. Outcomes table is complete: exact servers in order (resolv-conf check), resolution through the first given server (dig check with a name mismatch), drift correction by the next agent run (hand-added 9.9.9.9 removed), and the empty-list guard (line 8) honestly uncovered as a fixture variant here, exercised by node_base's invariant dns-is-left-alone with nameservers [] (node_base review 20261118T194756Z is PASS; node_base.pp:46 defaults [] and 167-169 passes it). Package[resolvconf] is the module's implementation detail, not a class outcome. My reviewer run: valid, ALL_PASS, no findings."
+ ],
+ "review_s": 100.3,
+ "check_file_sha256": "7302879a3f190f3da58e4093ed7cf6b04e40098b91d67bfa5d02909bd723623f",
+ "reviewer_result": "20261119T013029Z-reviewer",
+ "author_result": "20261119T012822Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "b6ea4e1a-bf1e-4df0-8149-d65e60ba040a",
+   "boot_id_at_end": "b6ea4e1a-bf1e-4df0-8149-d65e60ba040a",
+   "fresh": true
+  }
+ }
+}
