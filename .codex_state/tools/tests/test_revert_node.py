@@ -189,7 +189,7 @@ def test_revert_metrics_carry_nic1_bytes_from_the_route_interface(lab, stdout, v
     lab.world["ssh"].insert(0, {"match": r"statistics/rx_bytes", "stdout": stdout})
     proc = lab.run([SCRIPT])
     assert proc.returncode == 0, proc.stderr
-    assert f'"nic1_rx_bytes":{value}}}' in proc.stdout.strip().splitlines()[-1]
+    assert f'"nic1_rx_bytes":{value},' in proc.stdout.strip().splitlines()[-1]
     assert any("cat /sys/class/net/enp0s3/statistics/rx_bytes" in " ".join(c) for c in lab.calls("ssh"))
 
 @pytest.mark.parametrize("line", ["W: Failed to fetch http://archive.ubuntu.com/ubuntu/dists/noble/InRelease",
@@ -232,6 +232,7 @@ def test_the_node_kind_selects_vm_snapshot_and_alias_and_redhat_checks_registrat
     assert any("p8lab-rhel9 sudo -n subscription-manager identity" in l for l in ssh)
     assert any("dnf -q makecache" in l for l in ssh) and not any("apt-get" in l for l in ssh)
     assert '"node":"rhel9"' in proc.stdout.strip().splitlines()[-1]
+    assert json.loads(proc.stdout.strip().splitlines()[-1].split(" ", 1)[1])["apt_mirror"] is None
     assert master_actions(lab) == []
 
 
@@ -295,3 +296,64 @@ def test_power_off_is_refused_while_another_run_holds_the_lock(lab):
         assert proc.returncode == 1 and lab.calls("VBoxManage") == []
     finally:
         holder.kill()
+
+
+# HQ batch-14 ruling 7: a fallback mirror only when the primary Ubuntu archive fails, for that run only (a bind mount
+# from /run over the sources file, never an edit of the file on disk), recorded in REVERT_METRICS' apt_mirror.
+def metrics(proc):
+    return json.loads(proc.stdout.strip().splitlines()[-1].split(" ", 1)[1])
+
+
+def ssh_lines(lab):
+    return [" ".join(c[1:]) for c in lab.calls("ssh")]
+
+
+def test_the_primary_archive_is_used_and_recorded_when_it_works(lab):
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 0, proc.stderr
+    assert metrics(proc)["apt_mirror"] == "primary"
+    assert not any("p8-fallback-mirror" in l for l in ssh_lines(lab))
+
+
+@pytest.mark.parametrize("first", [{"rc": 100},
+                                   {"rc": 0, "stdout": "Err:1 http://ao.archive.ubuntu.com/ubuntu noble InRelease\n"
+                                                       "  Could not connect to ao.archive.ubuntu.com:80\n"
+                                                       "W: Failed to fetch http://ao.archive.ubuntu.com/ubuntu/dists/noble/InRelease\n"}])
+def test_a_failed_primary_archive_falls_back_for_this_run_and_records_it(lab, first):
+    lab.world["ssh"].insert(0, {"match": r"apt-get -q update", "outputs": [first, {"rc": 0, "stdout": "Hit:1 x\n"}]})
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 0, proc.stderr
+    assert metrics(proc)["apt_mirror"] == "fallback http://mirrors.edge.kernel.org/ubuntu/"
+    ssh = ssh_lines(lab)
+    apt = [i for i, l in enumerate(ssh) if "apt-get -q update" in l]
+    switch = [i for i, l in enumerate(ssh) if "p8-fallback-mirror" in l]
+    assert len(apt) == 2 and len(switch) == 1 and apt[0] < switch[0] < apt[1]
+    # tmpfs copy bind-mounted over the file; the file on disk is never edited in place
+    assert "mount --bind /run/p8-fallback-mirror/ubuntu.sources" in ssh[switch[0]]
+    assert not any("sed -i" in l for l in ssh)
+    assert (lab.root / "node_revert.json").exists()
+
+
+def test_a_failure_naming_only_another_repository_does_not_fall_back(lab):
+    lab.world["ssh"].insert(0, {"match": r"apt-get -q update", "rc": 0,
+                                "stdout": "Hit:1 x\nW: Failed to fetch https://apt.voxpupuli.org/dists/noble/InRelease\n"})
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 1 and "apt-get update reported fetch failures" in proc.stderr
+    assert not any("p8-fallback-mirror" in l for l in ssh_lines(lab))
+
+
+def test_both_the_primary_and_the_fallback_failing_fails_the_revert_naming_both(lab):
+    lab.world["ssh"].insert(0, {"match": r"apt-get -q update", "rc": 100})
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 1
+    assert "The primary archive failed" in proc.stderr and "so did the fallback mirror" in proc.stderr
+    assert not (lab.root / "node_revert.json").exists()
+
+
+def test_a_fallback_that_cannot_be_switched_fails_the_revert(lab):
+    lab.world["ssh"][:0] = [{"match": r"p8-fallback-mirror", "rc": 1},
+                            {"match": r"apt-get -q update", "outputs": [{"rc": 100}, {"rc": 0}]}]
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 1 and "could not be switched to the fallback mirror" in proc.stderr
+    assert sum("apt-get -q update" in l for l in ssh_lines(lab)) == 1
+

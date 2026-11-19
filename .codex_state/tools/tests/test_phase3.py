@@ -45,7 +45,8 @@ def check_set(*checks, **top):
 REVERT_STUB = """#!/bin/sh
 case "$*" in
   *--node-state*) kind=$2; eval "b=\\${{P8_BOOT_$kind:-boot-$kind}}"; echo "$b"; echo absent ;;
-  *) echo "{log}" >> "$(dirname "$0")/log" ;;
+  *) echo "{log}" >> "$(dirname "$0")/log"
+     kind=$2; eval "m=\\${{P8_MIRROR_$kind:-}}"; [ -z "$m" ] || echo "REVERT_METRICS {{\\"apt_mirror\\":\\"$m\\"}}" ;;
 esac
 """
 
@@ -1022,4 +1023,32 @@ def test_node_scripts_get_the_peer_address_only_when_a_peer_is_declared(monkeypa
     phase3.on_node("echo b")
     assert seen == [helpers + "echo a", helpers + "P8_PEER_ADDR=192.0.2.24\necho b"]
     assert phase3.probe_problems('echo "$P8_PEER_ADDR mailserver.p8test.invalid" >> /etc/hosts', mutating=True) == []
+
+
+# HQ batch-14 ruling 7: the mirror each revert used (primary, or the fallback) is in the run record.
+def test_the_run_record_carries_each_reverts_apt_mirror(p3, lab, tmp_path):
+    labvm = tmp_path / "labvm.sh"
+    labvm.write_text("#!/bin/sh\necho \"labvm $*\" >> \"$(dirname \"$0\")/log\"\n")
+    labvm.chmod(0o755)
+    (tmp_path / "revert.sh").write_text(REVERT_STUB.format(log="reverted $*"))
+    p3.write(check_set(check("conf", "probe-conf"), check("client", "probe-client", host="peer"), peer=PEER))
+    p3.probe_rule("probe-conf", FAIL, OK)
+    p3.probe_rule("probe-client", FAIL, OK)
+    lab.world["ssh"].insert(0, {"match": "base64 -w0 /etc/x/ca.crt", "outputs": [{"rc": 0, "stdout": "\n"},
+                                                                                 {"rc": 0, "stdout": "Q0EK\n"}]})
+    proc = p3.run("run", CLS, P8_PHASE3_LABVM=str(labvm), P8_MIRROR_ubuntu="primary",
+                  P8_MIRROR_ubuntu2="fallback http://mirror.p8test.invalid/ubuntu/")
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    record, _ = p3.result()
+    assert {k: v["apt_mirror"] for k, v in record["nodes"].items()} == \
+        {"node": "primary", "peer": "fallback http://mirror.p8test.invalid/ubuntu/"}
+
+
+def test_a_revert_without_the_field_records_no_mirror():
+    import sys
+    sys.path.insert(0, str(TOOLS))
+    import phase3
+    assert phase3.revert_mirror("SUCCESS\nREVERT_METRICS {\"node\":\"ubuntu\"}\n") is None
+    assert phase3.revert_mirror("no metrics\n") is None
+    assert phase3.revert_mirror('REVERT_METRICS {"apt_mirror":"primary"}') == "primary"
 

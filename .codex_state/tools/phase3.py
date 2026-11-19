@@ -509,6 +509,18 @@ def node_env() -> dict:
     return env
 
 
+def revert_mirror(stdout: str) -> str | None:
+    """The apt mirror a revert used, from its REVERT_METRICS line: "primary", or "fallback <url>" when the primary
+    archive failed (HQ batch-14 ruling 7: recorded in the run record); None when the line or the field is absent."""
+    for line in reversed(stdout.splitlines()):
+        if line.startswith("REVERT_METRICS "):
+            try:
+                return json.loads(line.split(" ", 1)[1]).get("apt_mirror")
+            except ValueError:
+                return None
+    return None
+
+
 def node_boot(kind: str) -> str | None:
     """The node's kernel boot ID (revert_node.sh --node-state, first line), or None when it cannot be read."""
     revert = os.environ.get("P8_PHASE3_REVERT") or str(TOOLS / "revert_node.sh")
@@ -835,6 +847,7 @@ def run_locked(cls: str, data: dict, record: dict, finish) -> int:
         record["problems"].append(f"node revert failed: {err[0]}")
         return finish("ENVIRONMENT_FAILED", 3)
     record["nodes"]["node"]["boot_id"] = node_boot(record["node"])
+    record["nodes"]["node"]["apt_mirror"] = revert_mirror(rv.stdout)
     if record.get("peer"):
         print(f"==> Reverting the peer node {record['peer']}")
         rv = subprocess.run([revert, "--node", record["peer"]], env=node_env(), capture_output=True, text=True)
@@ -844,6 +857,7 @@ def run_locked(cls: str, data: dict, record: dict, finish) -> int:
             record["problems"].append(f"peer revert failed: {err[0]}")
             return finish("ENVIRONMENT_FAILED", 3)
         record["nodes"]["peer"]["boot_id"] = node_boot(record["peer"])
+        record["nodes"]["peer"]["apt_mirror"] = revert_mirror(rv.stdout)
         fetch_node_files(data["peer"].get("files") or [])
     print("==> CLEAN phase: negative controls must fail, invariants must pass (mutating checks: effect only)")
     for check in data["checks"]:

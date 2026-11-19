@@ -28,7 +28,10 @@
 # Node power-off is a HARD poweroff (ruling 5, 2026-10-26): the node is restored
 # from an offline snapshot immediately afterwards, so a graceful shutdown buys
 # nothing. The master is never powered off, reset or restored by this script.
-# Last line on success: REVERT_METRICS {json} with phase timings (step 3.4).
+# Last line on success: REVERT_METRICS {json} with phase timings (step 3.4) and apt_mirror (primary, or the fallback).
+# Mirror fallback (HQ batch-14 ruling 7): only when the primary Ubuntu archive fails, for that run only, recorded in
+# the run record, never written into a baseline. The node's sources file on disk is not edited: a copy naming the
+# fallback mirror lives in /run (tmpfs) and is bind-mounted over it, so a shutdown or the next restore drops it.
 # Host-only path (lab-network plan, HQ step review A): after every restore the revert fails unless a fresh (-S none)
 # SSH to the node comes from 192.168.56.1 to its hostonly_ip, the node holds that address and it resolves
 # puppet8master.example.com to 192.168.56.10.
@@ -58,6 +61,7 @@ readonly NAT_GATEWAY="10.0.2.2"
 readonly NAT_ADDRESS="10.0.2.15/24"
 readonly HOME_LAN_PREFIX="192.168.77."
 readonly DNF_TIMEOUT_SECONDS=300
+readonly FALLBACK_MIRROR="${P8_FALLBACK_MIRROR:-http://mirrors.edge.kernel.org/ubuntu/}"
 # HQ 2026-11-10 ruling 2: ssh through the ControlMaster shim (see sshmux/ssh).
 TOOLS_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 PATH="${TOOLS_DIR}/sshmux:${PATH}"
@@ -280,6 +284,40 @@ node_hostname="${node_hostname//$'\n'/}"
 [[ "$node_hostname" == "$NODE_HOSTNAME" ]] ||
   fail "Node hostname verification failed: expected '$NODE_HOSTNAME', got '$node_hostname'."
 
+# One apt refresh. Sets apt_error (the failure, for messages), apt_failed_on (exit | fetch) and apt_fetch_errors.
+apt_refresh() {
+  local out
+  # shellcheck disable=SC2029  # the timeout is a local constant
+  if ! out="$(ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" "sudo -n timeout ${APT_UPDATE_TIMEOUT_SECONDS} apt-get -q update" 2>&1)"; then
+    apt_failed_on="exit" apt_fetch_errors=""
+    apt_error="apt-get update failed on node '$NODE_SSH_ALIAS' (mirror unreachable?)."
+    return 1
+  fi
+  if apt_fetch_errors="$(grep -E '^E: |Temporary failure resolving|Failed to fetch|Could not resolve|Unable to connect' <<<"$out")"; then
+    apt_failed_on="fetch"
+    apt_error="apt-get update reported fetch failures on node '$NODE_SSH_ALIAS' (no internet or DNS): ${apt_fetch_errors%%$'\n'*}"
+    return 1
+  fi
+}
+
+# Point this run's apt at the fallback mirror without touching the disk: the Ubuntu archive URIs of
+# /etc/apt/sources.list.d/ubuntu.sources are rewritten into a copy in /run, bind-mounted over the file.
+use_fallback_mirror() {
+  local script
+  # shellcheck disable=SC2016  # expanded on the node
+  script='set -e
+f=/etc/apt/sources.list.d/ubuntu.sources
+[ -f "$f" ]
+install -d -m 0755 /run/p8-fallback-mirror
+sed -E "s#https?://([a-z]+\.)?(archive|security)\.ubuntu\.com/ubuntu/?#${P8_MIRROR}#g" "$f" > /run/p8-fallback-mirror/ubuntu.sources
+grep -qF "$P8_MIRROR" /run/p8-fallback-mirror/ubuntu.sources
+findmnt -n "$f" >/dev/null || mount --bind /run/p8-fallback-mirror/ubuntu.sources "$f"
+findmnt -n "$f" >/dev/null'
+  # shellcheck disable=SC2029  # the script and the mirror are local constants, quoted for the node's shell
+  ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" \
+    "sudo -n env P8_MIRROR=$(printf '%q' "$FALLBACK_MIRROR") bash -c $(printf '%q' "$script")" >/dev/null 2>&1
+}
+
 # The snapshot's apt lists are frozen at snapshot time and the apt timers are off (ruling 5), so
 # superseded package versions 404 on the mirrors. Refresh synchronously, before any harness run.
 # Internet must be real, not assumed (2026-11-16): a missing DHCPv4 lease on NIC1 left the node IPv6-only with no
@@ -301,6 +339,7 @@ awk -v dev="$route_dev" -v want="$NAT_ADDRESS" '$1 == dev { for (i = 3; i <= NF;
 if grep -qF " ${HOME_LAN_PREFIX}" <<<"$node_addrs"; then
   fail "The node holds an address on the home LAN (${HOME_LAN_PREFIX}x): NIC1 must be NAT."
 fi
+apt_mirror=""  # RedHat nodes have no apt mirror: null in REVERT_METRICS
 if [[ "$NODE_OS_FAMILY" == "RedHat" ]]; then
   # A RHEL node must be registered after every restore (HQ 2026-11-16 item 5): no valid subscription, no packages.
   ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" 'sudo -n subscription-manager identity' >/dev/null 2>&1 ||
@@ -319,11 +358,22 @@ if [[ "$NODE_OS_FAMILY" == "RedHat" ]]; then
     fail "dnf makecache failed on node '$NODE_SSH_ALIAS' (no internet, DNS or repositories)."
 else
   printf 'Refreshing apt package lists on the node...\n'
-  # shellcheck disable=SC2029  # the timeout is a local constant
-  apt_out="$(ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" "sudo -n timeout ${APT_UPDATE_TIMEOUT_SECONDS} apt-get -q update" 2>&1)" ||
-    fail "apt-get update failed on node '$NODE_SSH_ALIAS' (mirror unreachable?)."
-  if fetch_errors="$(grep -E '^E: |Temporary failure resolving|Failed to fetch|Could not resolve|Unable to connect' <<<"$apt_out")"; then
-    fail "apt-get update reported fetch failures on node '$NODE_SSH_ALIAS' (no internet or DNS): ${fetch_errors%%$'\n'*}"
+  apt_mirror="primary"
+  if ! apt_refresh; then
+    primary_error="$apt_error"
+    # Fall back only when the primary Ubuntu archive is what failed: an exit status (a timeout says nothing about
+    # which source hung) or a fetch failure naming an archive.ubuntu.com or security.ubuntu.com host. A failure that
+    # names only other sources (the OpenVox repository) is not the archive's, and the mirror would not fix it.
+    if [[ "$apt_failed_on" == "fetch" ]] && ! grep -qE '([a-z]+\.)?(archive|security)\.ubuntu\.com' <<<"$apt_fetch_errors"; then
+      fail "$primary_error"
+    fi
+    printf 'The primary archive failed (%s); this run only, retrying on the fallback mirror %s (HQ batch-14 ruling 7)...\n' \
+      "${primary_error%%$'\n'*}" "$FALLBACK_MIRROR"
+    use_fallback_mirror ||
+      fail "The primary archive failed (${primary_error}), and node '$NODE_SSH_ALIAS' could not be switched to the fallback mirror ${FALLBACK_MIRROR} for this run."
+    apt_refresh ||
+      fail "The primary archive failed (${primary_error}), and so did the fallback mirror ${FALLBACK_MIRROR} (${apt_error})."
+    apt_mirror="fallback ${FALLBACK_MIRROR}"
   fi
 fi
 t_apt="$(now_ms)"
@@ -350,8 +400,9 @@ node_state_token | python3 "${TOOLS_DIR}/records.py" revert-mark "$NODE_SNAPSHOT
 
 printf 'SUCCESS: node %q restored to %q; host-only path, SSH, hostname, and %s:%s connectivity verified.\n' \
   "$NODE_VM" "$NODE_SNAPSHOT" "$MASTER_SERVICE_HOST" "$MASTER_SERVICE_PORT"
-printf 'REVERT_METRICS {"node":"%s","snapshot":"%s","total_s":%s,"master_check_s":%s,"poweroff_s":%s,"restore_s":%s,"boot_to_ssh_s":%s,"apt_update_s":%s,"verify_s":%s,"nic1_rx_bytes":%s}\n' \
+printf 'REVERT_METRICS {"node":"%s","snapshot":"%s","total_s":%s,"master_check_s":%s,"poweroff_s":%s,"restore_s":%s,"boot_to_ssh_s":%s,"apt_update_s":%s,"verify_s":%s,"nic1_rx_bytes":%s,"apt_mirror":%s}\n' \
   "$NODE_KIND" "$NODE_SNAPSHOT" \
   "$(ms_to_s $((t_end - t_start)))" "$(ms_to_s $((t_master - t_start)))" "$(ms_to_s $((t_off - t_master)))" \
   "$(ms_to_s $((t_restore - t_off)))" "$(ms_to_s $((t_ssh - t_restore)))" \
-  "$(ms_to_s $((t_apt - t_ssh)))" "$(ms_to_s $((t_end - t_apt)))" "$nic1_rx"
+  "$(ms_to_s $((t_apt - t_ssh)))" "$(ms_to_s $((t_end - t_apt)))" "$nic1_rx" \
+  "$([[ -n "$apt_mirror" ]] && printf '"%s"' "$apt_mirror" || printf 'null')"
