@@ -1,0 +1,234 @@
+{
+ "class": "filesystem_sec",
+ "role": "author",
+ "at": "20261119T014403Z",
+ "runner": "e2f9864",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "452dcfed246ff49cf54df50a26b44d0e06077a52eec65ce6b9d61b4281c86fde",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "restricted-commands-belong-to-the-sudo-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "/usr/bin/wget root:root 755\n/usr/bin/curl root:root 755\n/usr/bin/sftp root:root 755\n/usr/bin/scp root:root 755\n/usr/bin/ssh root:root 755\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "only-the-sudo-group-can-run-them",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-sec/run.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-linked-commands-are-restricted-too",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-sec/links.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "uninstalled-commands-are-left-alone",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "checked\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "a-restricted-command-is-opened-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "755\nruns\ncurl root 755\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-restricts-it-again",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "root:root 755\nruns\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": " to 'sudo'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ssh]/mode: mode changed '0755' to '0750'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.02 seconds\u001b[0m\nRUN1_EVENTS: 13 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795052692'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::filesystem_sec: 14 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::Filesystem_sec[filesystem_sec]\n  File[/bin/nc]\n  File[/bin/netstat]\n  File[/usr/bin/wget]\n  File[/usr/bin/curl]\n  File[/usr/bin/lynx]\n  File[/usr/bin/traceroute]\n  File[/usr/bin/telnet]\n  File[/usr/bin/ftp]\n  File[/usr/bin/sftp]\n  File[/usr/bin/scp]\n  File[/usr/bin/make]\n  File[/usr/bin/pip]\n  File[/usr/bin/ssh]\n  File[/usr/bin/gcc]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP filesystem_sec 3a358f9777a4\n"
+ },
+ "applied": [
+  {
+   "id": "restricted-commands-belong-to-the-sudo-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/usr/bin/wget root:sudo 750\n/usr/bin/curl root:sudo 750\n/usr/bin/sftp root:sudo 750\n/usr/bin/scp root:sudo 750\n/usr/bin/ssh root:sudo 750\n",
+   "stderr": ""
+  },
+  {
+   "id": "uninstalled-commands-are-left-alone",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "checked\n",
+   "stderr": ""
+  },
+  {
+   "id": "only-the-sudo-group-can-run-them",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser wget denied\np8testuser curl denied\np8testuser sftp denied\np8testuser scp denied\np8testuser ssh denied\np8testsudo wget runs\np8testsudo curl runs\np8testsudo sftp runs\np8testsudo scp runs\np8testsudo ssh runs\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates two fixture accounts without a home: p8testuser (no extra group) and p8testsudo (in group sudo); the results of running the commands as each go to /run/p8test-sec/run.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-linked-commands-are-restricted-too",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "p8testuser /bin/nc runs\np8testuser /usr/bin/telnet runs\np8testuser /usr/bin/ftp runs\np8testsudo /bin/nc runs\np8testsudo /usr/bin/telnet runs\np8testsudo /usr/bin/ftp runs\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond permission tests as the two fixture accounts (declared mutating so it runs after they exist); the results go to /run/p8test-sec/links.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-restricted-command-is-opened-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "755\nruns\ncurl sudo 750\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "chmod 0755 /usr/bin/wget on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-agent-run-restricts-it-again",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root:sudo 750\ndenied\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond running wget as the fixture account (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [
+  "the-linked-commands-are-restricted-too"
+ ],
+ "not_run": [],
+ "outcome": "FINDINGS",
+ "authoring_minutes": 0.6,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "71a44577-21fa-469e-a75a-f8db7c430fbd",
+   "boot_id_at_end": "71a44577-21fa-469e-a75a-f8db7c430fbd",
+   "fresh": true
+  }
+ },
+ "node_agent": {
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/wget]/mode: mode changed '0755' to '0750' (corrective)\u001b[0m"
+  ],
+  "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795052703'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/wget]/mode: mode changed '0755' to '0750' (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "outcomes": [
+  {
+   "outcome": "the listed commands belong to root and the restricted group (sudo by default on Ubuntu), mode 0750",
+   "checks": [
+    "restricted-commands-belong-to-the-sudo-group"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "only members of the restricted group can run them (the installed regular files)",
+   "checks": [
+    "only-the-sudo-group-can-run-them"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "only members of the restricted group can run the listed commands that are links (nc, telnet, ftp)",
+   "checks": [
+    "the-linked-commands-are-restricted-too"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "a listed command that is not installed is left alone (not created)",
+   "checks": [
+    "uninstalled-commands-are-left-alone"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a command opened by hand is restricted again by the next agent run",
+   "checks": [
+    "a-restricted-command-is-opened-by-hand",
+    "the-next-agent-run-restricts-it-again"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the RedHat default group (wheel)",
+   "uncovered": {
+    "why": "the RedHat branch; this set runs on the plan's Ubuntu node",
+    "lifted_by": "rhel9"
+   }
+  },
+  {
+   "outcome": "a custom restricted_group or restricted_mode",
+   "uncovered": {
+    "why": "a fixture variant (one set holds one fixture, and this one uses the default group and 0750); node_base passes the lab Hiera's group to this define, and node_base's check the-tools-are-restricted-to-the-hiera-group (review PASS 20261118T194756Z) shows it, which is again sudo",
+    "lifted_by": "ubuntu"
+   }
+  }
+ ],
+ "duration_s": 60.6
+}

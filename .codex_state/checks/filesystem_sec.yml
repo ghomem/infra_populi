@@ -18,9 +18,17 @@ outcomes:
   - outcome: the listed commands belong to root and the restricted group (sudo by default on Ubuntu), mode 0750
     from: manifests/filesystem_sec.pp:3-19
     checks: [restricted-commands-belong-to-the-sudo-group]
-  - outcome: only members of the restricted group can run them
+  # Correction round 1 (2026-11-19, review 20261119T014218Z): the linked commands (nc, telnet, ftp) and the
+  # uninstalled ones got checks; the earlier rows held for the regular files only.
+  - outcome: only members of the restricted group can run them (the installed regular files)
     from: manifests/filesystem_sec.pp:1-2, 15-19
     checks: [only-the-sudo-group-can-run-them]
+  - outcome: only members of the restricted group can run the listed commands that are links (nc, telnet, ftp)
+    from: manifests/filesystem_sec.pp:1-2, 15-19
+    checks: [the-linked-commands-are-restricted-too]
+  - outcome: a listed command that is not installed is left alone (not created)
+    from: manifests/filesystem_sec.pp:15-19
+    checks: [uninstalled-commands-are-left-alone]
   - outcome: a command opened by hand is restricted again by the next agent run
     from: manifests/filesystem_sec.pp:15-19
     checks: [a-restricted-command-is-opened-by-hand, the-next-agent-run-restricts-it-again]
@@ -68,6 +76,36 @@ checks:
     effect: |
       cat /run/p8test-sec/run.txt
     expect: {rc: 0, stdout: "\\Ap8testuser wget denied\\np8testuser curl denied\\np8testuser sftp denied\\np8testuser scp denied\\np8testuser ssh denied\\np8testsudo wget runs\\np8testsudo curl runs\\np8testsudo sftp runs\\np8testsudo scp runs\\np8testsudo ssh runs\\n\\Z"}
+
+  - id: the-linked-commands-are-restricted-too
+    what: >-
+      the listed commands that are links (/bin/nc, /usr/bin/telnet, /usr/bin/ftp) cannot be executed by an ordinary
+      account and can by a sudo-group account, as the regular files (execute permission through the link, test -x as
+      each account)
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_sec.pp, lines: "1-2", text: "restricting a certain set of commands to a certain group"}
+      - {path: manifests/filesystem_sec.pp, lines: "15-19", text: "mode  => $restricted_mode,"}
+    mutates: none beyond permission tests as the two fixture accounts (declared mutating so it runs after they exist); the results go to /run/p8test-sec/links.txt
+    probe: |
+      for u in p8testuser p8testsudo; do
+        for f in /bin/nc /usr/bin/telnet /usr/bin/ftp; do
+          runuser -u "$u" -- test -x "$f" && echo "$u $f runs" || echo "$u $f denied"
+        done
+      done > /run/p8test-sec/links.txt
+    effect: |
+      cat /run/p8test-sec/links.txt
+    expect: {rc: 0, stdout: "\\Ap8testuser /bin/nc denied\\np8testuser /usr/bin/telnet denied\\np8testuser /usr/bin/ftp denied\\np8testsudo /bin/nc runs\\np8testsudo /usr/bin/telnet runs\\np8testsudo /usr/bin/ftp runs\\n\\Z"}
+
+  - id: uninstalled-commands-are-left-alone
+    what: the listed commands that are not installed (netstat, lynx, traceroute, make, pip, gcc) are not created
+    control: invariant
+    why_invariant: the clean node has none of them (node inventory P8NODE_BASELINE_GREEN_v4), and a file resource without ensure does not create a missing file
+    derived_from:
+      - {path: manifests/filesystem_sec.pp, lines: "15-19", text: "file { $restricted_cmds:"}
+    probe: |
+      for f in /bin/netstat /usr/bin/lynx /usr/bin/traceroute /usr/bin/make /usr/bin/pip /usr/bin/gcc; do test -e "$f" && echo "$f present"; done; echo checked
+    expect: {rc: 0, stdout: "\\Achecked\\n\\Z"}
 
   # 2026-11-18 authoring correction (run 2, 20261118T124301Z): runuser exits 1, not 126, when the kernel refuses to
   # execute the command ("runuser: failed to execute /usr/bin/wget: Permission denied"); the checks now read that
