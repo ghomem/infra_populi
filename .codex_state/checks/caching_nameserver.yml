@@ -4,12 +4,17 @@
 # (bind listens on its local addresses that match) and for allow-query and allow-query-cache. The peer (ubuntu2) asks
 # from inside and from outside the list; peer probes name only the class node's host-only address and compute their
 # own addresses. Recursion goes out through the lab's NAT uplink.
+# 2026-11-19, HQ batch-14 ruling 5 (keep the IPv4-only fixture for the lab): the lab IPv6 fixture also runs named
+# with -4, as network_vpn's does. Removing the route alone left named spending its max-recursion-queries (50) on
+# IPv6 attempts that fail at once (measured on network_vpn's node: SERVFAIL for www.debian.org, 49 of the 50
+# queries IPv6; with -4 every name resolved). On an IPv4-only production host the same limit is an approval
+# condition (approval_conditions.md #2), not something this lab can show.
 class: caching_nameserver
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
   minutes: 1.2
-  notes: "04:06:31Z to 04:07:42Z 2026-11-19 (date at the start of reading the baseline and at validation), outside the worktree while filesystem_yum's review ran; not prototyped on a node."
+  notes: "04:06:31Z to 04:07:42Z 2026-11-19 (date at the start of reading the baseline and at validation), outside the worktree while filesystem_yum's review ran; not prototyped on a node. The -4 fixture (HQ batch-14 ruling 5): 18:25:39Z to 18:25:53Z 2026-11-19 (dates at the start of reading the check and at validation)."
 purpose: >-
   A caching nameserver with bind: it resolves names recursively for the node itself and for the allowed networks,
   answers repeated questions from its cache, and refuses everyone else; a changed configuration restarts it.
@@ -56,26 +61,29 @@ checks:
 
   - id: the-lab-nat-ipv6-route-is-removed
     what: >-
-      lab-environment fixture for the resolution checks: the NAT interface's IPv6 default route (learned by router
-      advertisement, reaching no internet) is gone and named, restarted, resolves over IPv4
+      lab-environment fixture for the resolution checks: the lab NAT has no IPv6, so its IPv6 default route (learned by
+      router advertisement, reaching no internet) is removed and named runs IPv4-only (-4), then resolves
     control: negative
     timeout: 150
     derived_from:
       - {path: manifests/caching_nameserver.pp, lines: "28-31", text: "ensure  => 'running',"}
     mutates: >-
       sets net.ipv6.conf.enp0s3.accept_ra to 0, deletes the IPv6 default route on enp0s3 (the VirtualBox NAT
-      interface), restarts named and waits up to 90 s until it resolves example.com (a name the checks do not ask; named
+      interface), sets OPTIONS="-u bind -4" in /etc/default/named (the Ubuntu default is "-u bind"; the class does not
+      manage the file, so named keeps it across the set's agent run), restarts named and waits up to 90 s until it resolves example.com (a name the checks do not ask; named
       takes 20-40 s after a restart to give up on its IPv6 servers, measured 2026-11-19)
     probe: |
       sysctl -q -w net.ipv6.conf.enp0s3.accept_ra=0
       ip -6 route del default dev enp0s3 2>/dev/null || true
+      sed -i 's/^OPTIONS="-u bind"$/OPTIONS="-u bind -4"/' /etc/default/named
       systemctl restart named
       for i in $(seq 30); do dig +time=2 +tries=1 @127.0.0.1 example.com A +noall +comments | grep -q 'status: NOERROR' && break; sleep 3; done
     effect: |
       ip -6 route show default dev enp0s3 | wc -l
+      tr '\0' ' ' < "/proc/$(systemctl show -p MainPID --value named)/cmdline" | p8_count ' -4( |$)'
       p8_service named | cut -d' ' -f1
       dig +time=3 +tries=1 @127.0.0.1 example.com A +noall +comments | grep -o 'status: [A-Z]*'
-    expect: {rc: 0, stdout: "\\A0\\nactive\\nstatus: NOERROR\\n\\Z"}
+    expect: {rc: 0, stdout: "\\A0\\n1\\nactive\\nstatus: NOERROR\\n\\Z"}
 
   # 2026-11-19 authoring correction (run 20261119T043144Z): the first question timed out once more on the lab's IPv6
   # (www.debian.org's servers have many IPv6 addresses); it is asked up to 10 times, 3 s apart, before the cache test.
