@@ -1,0 +1,34 @@
+{
+ "class": "backup_rsnapshot_pre",
+ "at": "20261119T183418Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "two-snapshots-are-planted (rdiff.sh:60-64): rdiff.sh cds into BASEDIR and lists its depth-1 subdirectories with sort -V, so planting daily.0 and daily.1 as subdirectories of /run/p8test-rdiff/snap is the input those lines consume; the effect lists the planted files (not the action's output); mutates declares the whole change",
+  "rdiff-reports-what-changed-between-snapshots (rdiff.sh:34-42, 100-108): with LIST=./daily.0 ./daily.1, ARR_B[0]=./daily.1 and ARR_A[0]=./daily.0, so the loop prints the '-------------------- daily.1 -> daily.0 --------------------' header and runs diff -qr ./daily.1 ./daily.0, whose ' and ./' the sed strips: 'Files ./daily.1/changed.txt ./daily.0/changed.txt differ' and 'Only in ./daily.0: added.txt', nothing for same.txt; with no 2nd argument '[ ! -d ]' is false so INTERACTIVE stays 0 and the exit is E_OK=0. The expectation is what the code produces; the effect reads the saved report and rc, not the action's own stdout",
+  "rsnapshot-installed-and-runs (backup_rsnapshot_pre.pp:7): package rsnapshot ensure present; dpkg-query status 'install ok installed' plus 'rsnapshot -V' answering its version line tests exactly that declaration",
+  "purpose gap: Purpose read correctly: the header names backup_base_rsync, which does not exist at cf477c6; the only consumer of /etc/rsnapshot.d is backup_rsnapshot (rsnapshot-${title}.conf), so 'prerequisites for backup_rsnapshot' is right. Tested: rsnapshot installed and answering, /etc/rsnapshot.d root:root 755 in effect, rdiff.sh root:root 0755 byte-identical, and rdiff.sh reporting one changed and one added file between two snapshots. GAP 1: the outcome claims rdiff.sh reports 'for each pair of consecutive snapshots', but with only two snapshots the loop runs once (LIM=0), so the A/B list walk across pairs (rdiff.sh:72-109, the core of the helper on a real rsnapshot root with daily.0..N) is never exercised; a third planted snapshot (daily.2) on this lab node would test it, and a version that reports only the first pair would pass this set. GAP 2: the uncovered reason for interactive mode ('needs a terminal and a person pressing ENTER') is not true: 'read' takes stdin and 'clear' only warns without a TERM, so 'printf \"\\n\" | rdiff.sh <root> X' exercises it on the default node; its lifted_by 'ubuntu' is the default node itself. The backup_rsnapshot outcome is honestly deferred to that class's set."
+ ],
+ "review_s": 107.2,
+ "check_file_sha256": "60f801541d255a3814daf33c23aaa7917815edb39b7e02d87a8f97b3642b3a56",
+ "reviewer_result": "20261119T183231Z-reviewer",
+ "author_result": "20261119T182946Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "e8ba4e26-98ab-48bd-b10e-c287d0c00331",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "e8ba4e26-98ab-48bd-b10e-c287d0c00331",
+   "fresh": true
+  }
+ }
+}
