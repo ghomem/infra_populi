@@ -1,0 +1,40 @@
+{
+ "class": "caching_nameserver",
+ "at": "20261119T044133Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-peer-adds-an-allowed-and-an-outside-address: manifests/caching_nameserver.pp:4-5 declares allowed_networks as networks with bitmask; under the params fixture [192.168.56.0/25] the peer (ubuntu2, .24) adds .124 (inside the /25) and .174 (outside it, but inside the node's /24 localnets, so bind's default allow-query-cache would have answered it); the effect counts the 3 addresses on enp0s8, which is the setup's result, not the action's output; mutates declares exactly the two address adds",
+  "the-agent-run-restores-the-options-and-restarts-named-once: manifests/caching_nameserver.pp:33-39 manages /etc/bind/named.conf.options from the template with notify => Service[named]; after a hand-made drift line and the node agent run, the effect reads the file (drift line count 0), a new named MainPID and exactly one 'Started named.service' in the journal since the noted cursor, i.e. the notify restart; read-only, the drift and the noted PID/cursor are declared by the-options-drift",
+  "the-lab-nat-ipv6-route-is-removed: manifests/caching_nameserver.pp:28-31 (service named ensure running) is the anchor of a declared lab-environment fixture: mutates names everything the action does (accept_ra=0 and the IPv6 default route removed on the NAT NIC enp0s3, a named restart, a wait on example.com which no other check asks); it touches none of the class's resources' content (named stays running, config untouched) and not the host-only path to the master; the effect reads the result (0 IPv6 default routes, named active, NOERROR from 127.0.0.1), not the action's output; this works around the lab's broken NAT IPv6, not a class behaviour",
+  "purpose covered: Purpose (a bind caching nameserver: recursive answers for the node and the allowed networks, cache, refusal of everyone else, restart on config change) matches the header comment and the baseline manifest and template. The outcomes table covers every part of manifests/caching_nameserver.pp and templates/bind/named.conf.options.erb on Debian: bind9 installed, named active, named-checkconf valid with the class's allow-query-cache line; recursive NOERROR from 127.0.0.1 with forwarders empty and a lower TTL on the repeat (cache); from the peer, +100 inside 192.168.56.0/25 answered via the node's listen-on address .20 and +150 refused with a DNS REFUSED status (allow-query, not a firewall, and distinguishable from bind's localnets default since .174 is in the node's /24); hand drift restored and named restarted exactly once. Left out honestly: the RedHat branch (package bind, /etc/named.conf, /var/named) is uncovered with lifted_by rhel9, and nodes.yml has a RHEL 9.5 node (.21) that would lift it. Minor uncovered detail not in the table: the directory option /var/cache/bind and auth-nxdomain are only exercised indirectly (named-checkconf and working cache). My reviewer run 20261119T043839Z: clean phase every negative control failed, applied phase ALL_PASS, no findings."
+ ],
+ "review_s": 174.1,
+ "check_file_sha256": "eac8e1ed2ac811045b8ad444a1aef84a8edfabfbcb7bd961d1a9cb8c8c9a4fb9",
+ "reviewer_result": "20261119T043839Z-reviewer",
+ "author_result": "20261119T043516Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "1cde5c44-1e5c-4d58-aae9-0faa3786aab4",
+   "boot_id_at_end": "1cde5c44-1e5c-4d58-aae9-0faa3786aab4",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "f8c31e4c-c698-4114-8899-37ff43155cd5",
+   "boot_id_at_end": "f8c31e4c-c698-4114-8899-37ff43155cd5",
+   "fresh": true
+  }
+ }
+}
