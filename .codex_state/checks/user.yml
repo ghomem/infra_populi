@@ -9,12 +9,15 @@
 # of other keys, the empty-hash refusal, the variants) is checked in user_base's set.
 # Correction round 1, 2026-11-19 (review 20261119T180604Z FAIL, purpose): 'no ecryptfs' was in the purpose but in no
 # outcome row; a check now shows the account exists and no ecryptfs passphrase file was written for it.
+# Correction round 2, 2026-11-19 (review 20261119T181328Z FAIL, purpose): my uncovered row said the variants are
+# checked in user_base's set, which is untrue (that set leaves them untested too); the row is split into what
+# user_base's set covers, the untested variants, and a login with the pushed key.
 class: user
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
   minutes: 0.7
-  notes: "Wall clock 18:52:30Z to 18:53:14Z 2026-11-16, written + validated outside the worktree while the Phase 1 review ran. Extended 2026-11-19 (purpose, outcomes, the password login): 17:43:06Z (the fixture hash changed) to 17:43:23Z (validation). Correction round 1: written and validated 18:07:36Z (one command's dates; reading the review before it was not timed)."
+  notes: "Wall clock 18:52:30Z to 18:53:14Z 2026-11-16, written + validated outside the worktree while the Phase 1 review ran. Extended 2026-11-19 (purpose, outcomes, the password login): 17:43:06Z (the fixture hash changed) to 17:43:23Z (validation). Correction round 1: written and validated 18:07:36Z (one command's dates; reading the review before it was not timed). Correction round 2: written and validated 18:14:56Z (one command's dates; reading the review before it was not timed)."
 purpose: >-
   A normal user, in no special group: user_base's account (own primary group, comment, home, shell) with the given
   password hash and the given SSH key, always pushed (the wrapper cannot pass ignorekey) and with no ecryptfs.
@@ -31,9 +34,15 @@ outcomes:
   - outcome: no ecryptfs passphrase is managed (the wrapper cannot pass myppsigs or myppwrapped)
     from: manifests/user.pp:6-8
     checks: [no-ecryptfs-passphrase-files]
-  - outcome: user_base's own behaviour (purge of other keys, empty-hash refusal, locked or keyless placeholders, group lists, home mode, shell)
+  - outcome: user_base's own behaviour behind the wrapper, the purge of other keys and the empty-hash refusal
     from: manifests/user.pp:5, 8
-    uncovered: {why: "user_base's behaviour, checked in user_base's set; this wrapper only passes the parameters on", lifted_by: ubuntu}
+    uncovered: {why: "checked in user_base's set: the purge by a check after an agent run, the refusal by a compile-only run (compile time); this wrapper passes the same parameters on", lifted_by: ubuntu}
+  - outcome: a login with the pushed key
+    from: manifests/user.pp:6-8
+    uncovered: {why: "the private half of the fixture key would have to be on the node, and the repository keeps no private keys; the key line, owner and modes are checked instead, as in user_base's set", lifted_by: ubuntu}
+  - outcome: the parameter variants the wrapper passes on (a group list, another home, a home mode, another shell) and the locked or keyless placeholders
+    from: manifests/user.pp:6-8
+    uncovered: {why: "parameter variants (one set holds one params fixture); untested here and in user_base's set", lifted_by: ubuntu}
 checks:
   - id: user-and-own-primary-group
     what: the wrapped user exists with its own same-named primary group, the comment, /home/<title> and /bin/bash
