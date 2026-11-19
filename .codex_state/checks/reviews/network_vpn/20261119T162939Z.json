@@ -1,0 +1,43 @@
+{
+ "class": "network_vpn",
+ "at": "20261119T162939Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "nameserver-serves-the-vpn-network: network_vpn.pp:31-32 passes allowed_networks [\"198.51.100.0/24\"] (params openvpn_network 198.51.100.0); the baseline template named.conf.options.erb:3 renders listen-on { 127.0.0.1; 198.51.100.0/24; } so bind binds the bridge address 198.51.100.1:53, and :9 renders allow-query { localhost;  198.51.100.0/24;  }, exactly what the ss count and the allow-query regex expect",
+  "the-client-resolves-and-reaches-the-wan-through-the-server: network_vpn.pp:41-44 composes firewall_addon_openvpn_server with wan_iface p8test0 (params) and bridge br0; its :17-21 (202 br0->wan accept, 203 replies, 205 MASQUERADE out the wan) is what lets a tunnel client's TCP connection reach 203.0.113.1 behind p8test0 with source 203.0.113.50 (the server's p8test0 address), with the stand-in drops appended after the class's rules so only those rules can pass it; :1-4 (internal caching nameserver for the VPN) supports the recursive NOERROR answer from 198.51.100.1; the action only adds a client-side host route (redirect-gateway filtered, declared), the effect is dig + the WAN server's own view, not the action's output",
+  "forwarding-and-nat-to-the-wan: firewall_addon_openvpn_server.pp:21 declares nat POSTROUTING outiface $wan_iface proto all jump MASQUERADE -> '-A POSTROUTING -o p8test0 -j MASQUERADE'; :17-19 give the three FORWARD lines expected (br0->p8test0 accept, p8test0->br0 with state RELATED,ESTABLISHED, br0->br0) and :25 sysctl net.ipv4.ip_forward 1; network_vpn.pp:42-43 passes wan_iface p8test0 / bridge br0 under the params fixture",
+  "whole file: all 11 checks are negative controls (no invariants); the 7 mutating checks declare every change (p8vpnuser account, the lab IPv6/-4 named fixture, the WAN-side TCP server and the 3 stand-in drops, the peer's openvpn client/routes, the second CBC-only client) and judge on read-only effects; no probe reaches a host other than the node and the declared peer; no mismatch control is required by the validator; the cipher check's effect is the negotiated Data Channel cipher, not a self-supplied verdict, and the password-rejection control lives in openvpn_server's set (wrong-password-rejected)",
+  "purpose covered: Purpose (VPN gateway: OpenVPN server with user auth whose clients resolve via the VPN's own caching nameserver on the bridge and reach the WAN through the server) matches network_vpn.pp:1-4 and the four composed classes at :29-60. Tested end to end with a real client on the peer: PAM-account login and pool address on 198.51.100.0/24 with the pushed DNS 198.51.100.1, the VPN nameserver answering through the tunnel over a stand-in default drop (1301 counted), a recursive NOERROR for a real name, a WAN-side TCP connection seen from 203.0.113.50 (202/203/205 counted), and a client on the class's own cipher AES-256-CBC (:25, :57) negotiating it. Left out, honestly listed: client isolation, bridge/server at boot, the hairpin rule 204's behaviour, the data channel's compression (an openvpn_server finding) and the composed classes' own behaviours, all exercised in those classes' own sets; parameter variants (one params fixture). The lab named runs with -4 (declared environment fixture: the NAT lab has no IPv6), so recursion under an IPv6-routed host is not shown; the set states that as an HQ question."
+ ],
+ "review_s": 300.0,
+ "check_file_sha256": "63c5aa7fb76419e2ca68e946efac734e7e24c1c9644a6985dd6a5d02a6e8ab54",
+ "reviewer_result": "20261119T162439Z-reviewer",
+ "author_result": "20261119T161918Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "39e8a96e-4d7c-4c04-883c-b4a9100d0ae7",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "39e8a96e-4d7c-4c04-883c-b4a9100d0ae7",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "b642db5c-763b-4bc3-9892-317af205d15b",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "b642db5c-763b-4bc3-9892-317af205d15b",
+   "fresh": true
+  }
+ }
+}
