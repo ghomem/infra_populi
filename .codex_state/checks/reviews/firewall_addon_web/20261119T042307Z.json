@@ -1,0 +1,40 @@
+{
+ "class": "firewall_addon_web",
+ "at": "20261119T042307Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "another-host-reaches-http-and-https-only: lines 14-15 declare tcp accepts for 80 and 443 only; with the stand-in drop of 80/443/8888 appended after them, the peer seeing 80 open, 443 open, 8888 closed is exactly what those two accepts produce (8888 is the control port that no rule accepts)",
+  "the-two-accept-rules (line 14): '200 accept http' proto tcp dport 80 action accept; the probe reads iptables -S INPUT (the type's default chain) and expects '200 accept http: tcp 80 ACCEPT', matching title, proto, port and action",
+  "the-two-accept-rules (line 15): '201 accept https' proto tcp dport 443 action accept; same probe expects '201 accept https: tcp 443 ACCEPT', matching the line",
+  "purpose covered: Purpose (header lines 1-7, code 13-15): two TCP accepts (200 http/80, 201 https/443) complementary to a base firewall's default drop. Outcomes table maps both outcomes: rule shape/order (the-two-accept-rules) and the behaviour from another host (a stand-in default drop appended after the class's rules on enp0s8 only, its order verified by grep -n; listeners on 80/443/8888; the peer ubuntu2 reaches 80 and 443 but not 8888; the counters of rules 200, 201 and the stand-in drop show they handled the peer's connections). Mutating checks declare their changes (transient http.server units, one appended iptables rule, peer connection attempts), the actions are setup the baseline's comment calls for (the base firewall's drop), and the effects are read-only evidence, not the actions' output. No probe touches SSH or another host beyond the peer targeting the class node. Nothing of the class is left out; persistence across reboot belongs to the base firewall class, not this one. My reviewer run ALL_PASS: 5 negatives failed on the clean node, all 5 passed after apply."
+ ],
+ "review_s": 97.6,
+ "check_file_sha256": "44607f799d255d7e172f1385d585269eb7c7a05118b782592c07eb01962cd5b6",
+ "reviewer_result": "20261119T042130Z-reviewer",
+ "author_result": "20261119T041920Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "b0192a82-7e1f-4f33-8ddb-16bd451f1879",
+   "boot_id_at_end": "b0192a82-7e1f-4f33-8ddb-16bd451f1879",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "6159ff7f-48ab-44bf-9b1e-a3a943836b76",
+   "boot_id_at_end": "6159ff7f-48ab-44bf-9b1e-a3a943836b76",
+   "fresh": true
+  }
+ }
+}
