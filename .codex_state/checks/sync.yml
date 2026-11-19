@@ -14,6 +14,9 @@
 # template's loop over $HOSTS with a target directory per host), and the fixture listed one host, my choice rather than
 # a lab limit. The fixture now lists two names, both pinned to the peer: each must get its own mirror, and the run
 # moves 12 MiB, so the limit means at least 9 s.
+# Authoring error 2026-11-19 (run 20261119T174827Z): the listing of the two mirrors followed the node's locale, which
+# sorts p8test2 before p8test. (punctuation ignored); it is sorted with LC_ALL=C now. Both mirrors and the limit passed
+# in that run (12.67 s for 12 MiB).
 class: sync
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -163,7 +166,7 @@ checks:
       echo "$(date +%s.%N) - $s" | bc > /run/p8test-sync/run1.seconds
     effect: |
       echo "rc $(cat /run/p8test-sync/run1.rc)"
-      ls -1 /var/tmp/p8test-sync | tr '\n' ' '; echo
+      ls -1 /var/tmp/p8test-sync | LC_ALL=C sort | tr '\n' ' '; echo
       for h in p8test p8test2; do
         cd "/var/tmp/p8test-sync/$h.example.invalid-p8test" && echo "$h: $(find . -type f | sort | tr '\n' ' ')$(cat a.txt sub/b.txt | tr '\n' '|')$(stat -c %s big.bin)"
       done
