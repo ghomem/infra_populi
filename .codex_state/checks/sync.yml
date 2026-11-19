@@ -3,13 +3,48 @@
 # an account the clean node has), remoteuser p8testuser, hour 3, minute 17, hostlist p8test.example.invalid:22,
 # suffix -p8test, bwlimit_mbitps 10 (the conversion branch: 10 Mbit/s = 1.19 MiB/s). bindir comes from Hiera
 # filesystem::bindir = /opt/puppet-infrastructure/bin (required_base filesystem_base).
-# Not exercised: running the script (it would rsync over ssh to the fixture host; probes stay on the node).
+# Extended 2026-11-19 (backfill batch 5, HQ batch-10 rulings 2 and C1): the script runs as behaviour against the peer
+# (ubuntu2) as the remote host. The fixture host name p8test.example.invalid is pinned to the peer in the node's
+# /etc/hosts (by reference, $P8_PEER_ADDR), root's public key is handed to the peer, where p8testuser serves
+# /srv/p8test. The first run must mirror it into /var/tmp/p8test-sync/p8test.example.invalid-p8test, taking at least
+# 4.5 s for a 6 MiB incompressible file under the 1.19 MiB/s limit; a file removed on the peer must be removed
+# locally by the next run (--delete).
 class: sync
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
   minutes: 0.4
-  notes: "Wall clock 18:58:44Z to 18:59:09Z 2026-11-16, outside the worktree while the Phase 1 review ran."
+  notes: "Wall clock 18:58:44Z to 18:59:09Z 2026-11-16, outside the worktree while the Phase 1 review ran. Extended 2026-11-19 (purpose, outcomes, the run against the peer): written and validated 17:36:13Z to 17:36:14Z (the edit's own dates; the reading of the template and the drafting before it were not timed), not prototyped on a node."
+peer:
+  kind: ubuntu2
+  why: the script pulls a directory from remote hosts over ssh, so a second machine must play the remote host
+  files: [/run/p8test-sync/root.pub]
+purpose: >-
+  A simple multi-host remote-to-local daily synchronisation: a per-tag script, run daily by the local user's cron,
+  mirrors each listed host's remote directory into <localdir>/<host><suffix> with rsync over ssh as the remote user
+  (deleting what the remote no longer has), at an optional bandwidth limit.
+outcomes:
+  - outcome: the per-tag script is installed root:root 0755 with the parameters, and parses
+    from: manifests/sync.pp:32-37; templates/backup/sync.sh.erb:9-17
+    checks: [script-installed-root-0755, script-carries-the-parameters, script-is-valid-bash]
+  - outcome: the local user's crontab runs it daily at hour:minute
+    from: manifests/sync.pp:39-45
+    checks: [daily-cron-for-the-local-user]
+  - outcome: a run mirrors the remote host's directory into <localdir>/<host><suffix> over ssh as the remote user
+    from: manifests/sync.pp:1-2; templates/backup/sync.sh.erb:24-31
+    checks: [root-key-and-the-remote-host-name, the-peer-serves-the-remote-dir, the-script-mirrors-the-remote-dir]
+  - outcome: the bandwidth limit (Mbit/s converted to rsync's MiB/s) slows the transfer
+    from: manifests/sync.pp:8-26; templates/backup/sync.sh.erb:17, 24
+    checks: [bandwidth-limit-converted, the-script-mirrors-the-remote-dir]
+  - outcome: a file removed on the remote host is removed locally by the next run (--delete)
+    from: templates/backup/sync.sh.erb:21-24
+    checks: [a-file-is-removed-on-the-remote, the-next-run-removes-it-locally-too]
+  - outcome: cron itself firing at 03:17
+    from: manifests/sync.pp:39-45
+    uncovered: {why: "a run would have to wait for 03:17; the crontab entry is checked and the script it names is run by hand", lifted_by: ubuntu}
+  - outcome: several hosts, other ports, no limit, another local user
+    from: manifests/sync.pp:3, 11-13
+    uncovered: {why: "parameter variants (one set holds one params fixture, one remote host); untested", lifted_by: ubuntu}
 checks:
   - id: script-installed-root-0755
     what: the per-tag sync script is installed in bindir, root:root, mode 0755
@@ -60,3 +95,97 @@ checks:
     probe: |
       crontab -l -u root 2>/dev/null | grep -A1 -x '# Puppet Name: cron_sync_sync'
     expect: {rc: 0, stdout: "\\A# Puppet Name: cron_sync_sync\\n17 3 \\* \\* \\* /opt/puppet-infrastructure/bin/sync-sync\\.sh\\n\\Z"}
+
+  - id: root-key-and-the-remote-host-name
+    what: setup for the run, root has an ssh key whose public half is handed to the peer, and the fixture host name resolves to the peer
+    control: negative
+    derived_from:
+      - {path: templates/backup/sync.sh.erb, lines: "3-5", text: "# between the local user that runs the script and $REMOTEUSER"}
+    mutates: >-
+      on the node: creates /root/.ssh/id_ed25519 if root has none, copies its public half to /run/p8test-sync/root.pub
+      (handed to the peer), and appends "$P8_PEER_ADDR p8test.example.invalid" to /etc/hosts
+    probe: |
+      install -d -m 0700 /root/.ssh /run/p8test-sync
+      [ -f /root/.ssh/id_ed25519 ] || ssh-keygen -q -t ed25519 -N '' -C p8test-sync-root -f /root/.ssh/id_ed25519
+      cp /root/.ssh/id_ed25519.pub /run/p8test-sync/root.pub
+      grep -q ' p8test\.example\.invalid$' /etc/hosts || echo "$P8_PEER_ADDR p8test.example.invalid" >> /etc/hosts
+    effect: |
+      [ "$(getent hosts p8test.example.invalid | awk '{print $1}')" = "$P8_PEER_ADDR" ] && echo pinned-to-the-peer
+      test -s /run/p8test-sync/root.pub && echo key-ready
+    expect: {rc: 0, stdout: "\\Apinned-to-the-peer\\nkey-ready\\n\\Z"}
+
+  - id: the-peer-serves-the-remote-dir
+    what: setup for the run, the peer's p8testuser trusts root's key and owns /srv/p8test with three small files and a 6 MiB one
+    control: negative
+    host: peer
+    derived_from:
+      - {path: templates/backup/sync.sh.erb, lines: "30", text: "rsync $RSYNCOPTS -e \"ssh -p $PORT -x -o 'StrictHostKeyChecking no'\" $REMOTEUSER@$HOST:$REMOTEDIR/ $TARGETDIR"}
+    mutates: >-
+      on the peer: creates the account p8testuser with the node root's public key as its only authorized key, and
+      /srv/p8test (owned by it) with a.txt, sub/b.txt, gone.txt and big.bin (6 MiB from /dev/urandom)
+    probe: |
+      id p8testuser >/dev/null 2>&1 || useradd -m -s /bin/bash p8testuser
+      install -d -m 0700 -o p8testuser -g p8testuser /home/p8testuser/.ssh
+      install -m 0600 -o p8testuser -g p8testuser /run/p8test-from-node/root.pub /home/p8testuser/.ssh/authorized_keys
+      install -d /srv/p8test/sub
+      printf 'p8test sync a\n' > /srv/p8test/a.txt
+      printf 'p8test sync b\n' > /srv/p8test/sub/b.txt
+      printf 'p8test sync gone\n' > /srv/p8test/gone.txt
+      head -c 6291456 /dev/urandom > /srv/p8test/big.bin
+      chown -R p8testuser:p8testuser /srv/p8test
+    effect: |
+      cd /srv/p8test && find . -type f | sort | tr '\n' ' '; echo
+      stat -c '%U %a' /home/p8testuser/.ssh/authorized_keys
+    expect: {rc: 0, stdout: "\\A\\./a\\.txt \\./big\\.bin \\./gone\\.txt \\./sub/b\\.txt \\np8testuser 600\\n\\Z"}
+
+  - id: the-script-mirrors-the-remote-dir
+    what: >-
+      the installed script, run once by hand as root, mirrors the peer's /srv/p8test into
+      /var/tmp/p8test-sync/p8test.example.invalid-p8test (same files, same content) and takes at least 4.5 s, as the
+      1.19 MiB/s limit requires for 6 MiB
+    control: negative
+    timeout: 120
+    derived_from:
+      - {path: templates/backup/sync.sh.erb, lines: "24-31", text: "TARGETDIR=$LOCALDIR/$HOST$SUFFIX"}
+      - {path: manifests/sync.pp, lines: "24", text: "$bwlimit_opt = \" --bwlimit=${bwlimit_mbyteps_str}m\""}
+    mutates: >-
+      on the node: runs /opt/puppet-infrastructure/bin/sync-sync.sh once as root (rsync over ssh to the peer), which
+      creates /var/tmp/p8test-sync/p8test.example.invalid-p8test; its exit status and duration go to /run/p8test-sync
+    probe: |
+      s=$(date +%s.%N)
+      /opt/puppet-infrastructure/bin/sync-sync.sh > /run/p8test-sync/run1.log 2>&1; echo $? > /run/p8test-sync/run1.rc
+      echo "$(date +%s.%N) - $s" | bc > /run/p8test-sync/run1.seconds
+    effect: |
+      echo "rc $(cat /run/p8test-sync/run1.rc)"
+      cd /var/tmp/p8test-sync/p8test.example.invalid-p8test && find . -type f | sort | tr '\n' ' '; echo
+      cat a.txt sub/b.txt
+      stat -c %s big.bin
+      awk '{print ($1 + 0 < 4.5) ? "unlimited (" $1 " s)" : "limited"}' /run/p8test-sync/run1.seconds
+    expect: {rc: 0, stdout: "\\Arc 0\\n\\./a\\.txt \\./big\\.bin \\./gone\\.txt \\./sub/b\\.txt \\np8test sync a\\np8test sync b\\n6291456\\nlimited\\n\\Z"}
+
+  - id: a-file-is-removed-on-the-remote
+    what: setup for the delete check, gone.txt removed from the peer's /srv/p8test
+    control: negative
+    host: peer
+    derived_from:
+      - {path: templates/backup/sync.sh.erb, lines: "21-22", text: "# we use the delete options because we assume snapshots are being taken care of"}
+    mutates: on the peer, removes /srv/p8test/gone.txt
+    probe: |
+      rm -f /srv/p8test/gone.txt
+    effect: |
+      cd /srv/p8test && find . -type f | sort | tr '\n' ' '; echo
+    expect: {rc: 0, stdout: "\\A\\./a\\.txt \\./big\\.bin \\./sub/b\\.txt \\n\\Z"}
+
+  - id: the-next-run-removes-it-locally-too
+    what: the script's next run removes gone.txt from the local mirror and keeps the rest (rsync --delete)
+    control: negative
+    timeout: 120
+    derived_from:
+      - {path: templates/backup/sync.sh.erb, lines: "24", text: "RSYNCOPTS=\"-av --partial --delete${BWLIMIT_OPT}\""}
+    mutates: on the node, runs /opt/puppet-infrastructure/bin/sync-sync.sh a second time as root; its exit status goes to /run/p8test-sync/run2.rc
+    probe: |
+      /opt/puppet-infrastructure/bin/sync-sync.sh > /run/p8test-sync/run2.log 2>&1; echo $? > /run/p8test-sync/run2.rc
+    effect: |
+      echo "rc $(cat /run/p8test-sync/run2.rc)"
+      cd /var/tmp/p8test-sync/p8test.example.invalid-p8test && find . -type f | sort | tr '\n' ' '; echo
+    expect: {rc: 0, stdout: "\\Arc 0\\n\\./a\\.txt \\./big\\.bin \\./sub/b\\.txt \\n\\Z"}
