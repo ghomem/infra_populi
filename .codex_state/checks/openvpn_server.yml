@@ -16,12 +16,22 @@
 # The interfaces file's rendering was read on an applied node first (2026-11-19, harness apply): one auto line names
 # br0 lo lo:0 p8test0 (p8test0 from network_dhcp's base), then "iface br0 inet static", "address 192.0.2.1", and
 # indented options with "bridge_ports lo:0".
+# Correction round 1, 2026-11-19 (review 20261119T112433Z FAIL, purpose): the set did not cover the server unit coming
+# back at boot (:117-121 enable => 'true'), nor the default cipher (:19, :177) and compression (:30, :166) as behaviour.
+# Added: the unit's enablement (the same probe level as networking's), a byte-counter measure of LZO compression in each
+# direction of the data channel, and a client that offers only the class's cipher. Measured first on an applied node
+# (2026-11-19 11:28:45Z and 11:29:11Z in the clients' logs, OpenVPN 2.6.19): the server says "--cipher set to 'AES-256-CBC' but missing in
+# --data-ciphers ... OpenVPN ignores --cipher for cipher negotiations" and refuses a CBC-only client ("No common cipher",
+# AUTH_FAILED after the password succeeded); it receives LZO-compressed packets (141 bytes per packet for 1228-byte
+# zero-filled pings) but sends uncompressed ones (1237 bytes per packet; "Sent packets are not compressed unless
+# allow-compression yes"). The expectations stay the baseline's (both directions compressed; the class's cipher
+# usable); the two new behaviour checks are expected to fail as findings.
 class: openvpn_server
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
   minutes: 0.7
-  notes: "Wall clock 13:53:31Z to 13:54:10Z 2026-11-17 (no lab run active; baseline manifest and the module's rendered config format read). Extended 2026-11-19 (purpose, outcomes, networking at boot, client isolation with a second client): 06:09:14Z to 06:19:11Z (date at the start of reading the set and at validation after the rendering was measured), including one harness apply of the class; the first authoring's minutes above are kept."
+  notes: "Wall clock 13:53:31Z to 13:54:10Z 2026-11-17 (no lab run active; baseline manifest and the module's rendered config format read). Extended 2026-11-19 (purpose, outcomes, networking at boot, client isolation with a second client): 06:09:14Z to 06:19:11Z (date at the start of reading the set and at validation after the rendering was measured), including one harness apply of the class; the first authoring's minutes above are kept. Correction round 1 2026-11-19: 11:27:09Z to 11:30:56Z (date at the start of reading the baseline lines and at validation), including the measurements on the applied node and the peer."
 peer:
   kind: ubuntu2
   why: the VPN client must be a second machine on the lab network that connects to the server node over UDP
@@ -29,11 +39,21 @@ peer:
 purpose: >-
   An OpenVPN server that bridges its clients onto a LAN bridge: clients authenticate with a local account (PAM, no
   client certificate), get an address from the bridge's pool and the pushed routes and DNS, reach the server's LAN
-  side, cannot reach each other (client isolation), and the bridge is configured to come back at boot.
+  side, cannot reach each other (client isolation), and the bridge and the server are configured to come back at boot.
+  The data channel uses the class's cipher (AES-256-CBC by default) and LZO compression (comp-lzo by default).
 outcomes:
   - outcome: the server listens on UDP 1194 at the bound address with the bridged tap0, the pool, PAM auth and the renegotiation interval
-    from: manifests/openvpn_server.pp:117-121, 157-187
+    from: manifests/openvpn_server.pp:157-187
     checks: [server-listens-on-the-bound-address, server-config-rendered]
+  - outcome: the server's unit is enabled, so the VPN server comes back at boot
+    from: manifests/openvpn_server.pp:117-121
+    checks: [server-unit-enabled-at-boot]
+  - outcome: the data channel is LZO-compressed in both directions (comp-lzo, the default)
+    from: manifests/openvpn_server.pp:30, 166
+    checks: [the-data-channel-is-compressed-both-ways]
+  - outcome: a client that uses the class's cipher (AES-256-CBC, the default) connects with it
+    from: manifests/openvpn_server.pp:19, 177
+    checks: [a-client-on-the-class-cipher-connects]
   - outcome: the bridge carries the LAN address with tap0 as a port, and is set up through ifupdown with the networking service enabled (boot)
     from: manifests/openvpn_server.pp:35-41, 73-115, 174, 202-209
     checks: [bridge-holds-the-lan-address-and-tap0, networking-brings-up-the-bridge-at-boot]
@@ -71,6 +91,17 @@ checks:
     probe: |
       grep -E '^(dev|server-bridge|plugin|verify-client-cert|reneg-sec) ' /etc/openvpn/server/puppet_infrastructure.conf
     expect: {rc: 0, stdout: "\\Adev tap0\\nserver-bridge 192\\.0\\.2\\.1 255\\.255\\.255\\.0 192\\.0\\.2\\.100 192\\.0\\.2\\.150\\nplugin /usr/lib/openvpn/openvpn-plugin-auth-pam\\.so \"login\"\\nreneg-sec 3600\\nverify-client-cert none\\n\\Z"}
+
+  - id: server-unit-enabled-at-boot
+    what: the server's systemd unit is enabled (it starts at boot) and active
+    control: negative
+    derived_from:
+      - {path: manifests/openvpn_server.pp, lines: "117-121", text: "service { 'openvpn-server@puppet_infrastructure':"}
+      - {path: manifests/openvpn_server.pp, lines: "119", text: "enable   => 'true',"}
+    probe: |
+      systemctl is-enabled openvpn-server@puppet_infrastructure
+      p8_service openvpn-server@puppet_infrastructure | cut -d' ' -f1
+    expect: {rc: 0, stdout: "\\Aenabled\\nactive\\n\\Z"}
 
   - id: bridge-holds-the-lan-address-and-tap0
     what: br0 carries lan_static_ip and the server's tap0 is one of its ports (the up script)
@@ -217,3 +248,58 @@ checks:
       ip netns exec p8vpn2 ping -c 2 -W 2 192.0.2.1 >/dev/null && echo second-reaches-server-side
       ip netns exec p8vpn2 ping -c 3 -W 2 "$first" >/dev/null && echo second-reaches-first || echo first-unreachable
     expect: {rc: 0, stdout: "\\A1\\ntwo-pool-addresses\\nsecond-reaches-server-side\\nfirst-unreachable\\n\\Z"}
+
+  - id: the-data-channel-is-compressed-both-ways
+    what: >-
+      LZO compression works in both directions of the first client's data channel: zero-filled pings from the server
+      side to the client (1228-byte IP packets) cross the tunnel as UDP packets well under their size, and so do the
+      replies (counted on the node; under 600 bytes per packet counts as compressed)
+    control: negative
+    timeout: 60
+    derived_from:
+      - {path: manifests/openvpn_server.pp, lines: "30", text: "$compression              = 'comp-lzo' # To disable compression this value needs to be set to 'none'"}
+      - {path: manifests/openvpn_server.pp, lines: "166", text: "compression              => $compression,"}
+    mutates: >-
+      on the node: inserts two counting rules (no target) for UDP 1194, `-I OUTPUT -p udp --sport 1194 -m comment
+      --comment p8test-vpn-out` and `-I INPUT -p udp --dport 1194 -m comment --comment p8test-vpn-in`; reads the first
+      client's pool address from the server's PUSH_REPLY to p8vpnuser in its journal and sends it 20 pings with a
+      1200-byte zero payload; keeps the address and ping summary under /run/p8test-vpncomp
+    probe: |
+      install -d -m 0700 /run/p8test-vpncomp
+      iptables -I OUTPUT -p udp --sport 1194 -m comment --comment p8test-vpn-out
+      iptables -I INPUT -p udp --dport 1194 -m comment --comment p8test-vpn-in
+      first=$(journalctl -u openvpn-server@puppet_infrastructure --no-pager -q | grep -o "SENT CONTROL \[p8vpnuser\]: 'PUSH_REPLY,.*ifconfig [0-9.]*" | tail -1 | grep -o '[0-9.]*$')
+      echo "$first" > /run/p8test-vpncomp/first
+      ping -c 20 -i 0.2 -s 1200 -p 00 -W 2 "$first" > /run/p8test-vpncomp/ping 2>&1
+    effect: |
+      p8_count ' 0% packet loss' /run/p8test-vpncomp/ping
+      iptables -v -x -L OUTPUT -n | awk '/p8test-vpn-out/ {print "server sends: " (($1 && $2/$1 < 600) ? "compressed" : "uncompressed") " (" ($1 ? int($2/$1) : 0) " bytes per packet)"}'
+      iptables -v -x -L INPUT -n | awk '/p8test-vpn-in/ {print "server receives: " (($1 && $2/$1 < 600) ? "compressed" : "uncompressed") " (" ($1 ? int($2/$1) : 0) " bytes per packet)"}'
+    expect: {rc: 0, stdout: "\\A1\\nserver sends: compressed \\(\\d+ bytes per packet\\)\\nserver receives: compressed \\(\\d+ bytes per packet\\)\\n\\Z"}
+
+  - id: a-client-on-the-class-cipher-connects
+    what: >-
+      a client that offers only the class's cipher (AES-256-CBC) connects as p8vpnuser2 and its data channel uses that
+      cipher
+    control: negative
+    host: peer
+    timeout: 120
+    derived_from:
+      - {path: manifests/openvpn_server.pp, lines: "19", text: "$cipher                   = 'AES-256-CBC',"}
+      - {path: manifests/openvpn_server.pp, lines: "177", text: "cipher                   => $cipher,"}
+    mutates: >-
+      on the peer: stops the second client (its pid in /run/p8vpn2/pid), writes a client config that offers only
+      AES-256-CBC (data-ciphers AES-256-CBC) with the p8vpnuser2 credentials under /run/p8vpncbc and starts it inside
+      namespace p8vpn2
+    probe: |
+      kill "$(cat /run/p8vpn2/pid)" 2>/dev/null || true
+      sleep 1
+      mkdir -p /run/p8vpncbc
+      sed -e 's#/run/p8vpn/auth#/run/p8vpn2/auth#' -e 's#^data-ciphers .*#data-ciphers AES-256-CBC#' /run/p8vpn/client.conf > /run/p8vpncbc/client.conf
+      ip netns exec p8vpn2 openvpn --config /run/p8vpncbc/client.conf --daemon --log /run/p8vpncbc/client.log --writepid /run/p8vpncbc/pid
+      for i in $(seq 40); do grep -q -e 'Initialization Sequence Completed' -e 'AUTH_FAILED' /run/p8vpncbc/client.log && break; sleep 1; done
+    effect: |
+      p8_count 'Initialization Sequence Completed' /run/p8vpncbc/client.log
+      grep -o "Data Channel: cipher '[^']*'" /run/p8vpncbc/client.log | head -1
+      grep -o 'AUTH_FAILED,.*)' /run/p8vpncbc/client.log | head -1
+    expect: {rc: 0, stdout: "\\A1\\nData Channel: cipher 'AES-256-CBC'\\n\\Z"}
