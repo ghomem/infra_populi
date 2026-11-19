@@ -1,0 +1,34 @@
+{
+ "class": "puppet_commush",
+ "at": "20261119T184905Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "a-declined-run-and-a-missing-email-change-nothing (commush.sh:51-56): an answer 'n' does not match ^([Yy](es)?)?$, so the script exits 0 before git commit/push; the effect expects rc 0, ' M nodes.pp' still in the clone's porcelain status and origin master still at 1 commit, which is what those lines produce",
+  "commush-installed (manifests/puppet_commush.pp:6-13): the file resource at lookup('filesystem::localdir')/bin/commush.sh (lab Hiera /opt/puppet-infrastructure) with owner root, group root, mode 0755 and source puppet/commush.sh; the probe checks 'root root 755' and the sha256 of the deployed file against the whole-file sha256 reference 758912dd... of files/puppet/commush.sh at the pin",
+  "a-declined-run-and-a-missing-email-change-nothing (commush.sh:12-24): with only a name, MAIL is empty, '[ -z $MAIL ]' is true and print_usage echoes 'usage: commush.sh FULL_NAME EMAIL [BRANCH]' and exits E_ERR=1; the effect expects rc 1 and exactly that line",
+  "purpose gap: Tested (my run 20261119T184732Z-reviewer ALL_PASS, every negative failed on the clean node): the install (owner/mode/content), a confirmed run (empty answer = default yes) committing as the given name/email with the typed message and pushing to a local bare origin's master, a declined run and a missing email changing nothing (usage, rc 1), and the branch guard printing its error and going on (commit on feature, push origin master leaves origin unchanged). The https/token row is honestly uncovered (git transport, not script logic; no https git server in the lab). GAP: the default branch, commush.sh:26-30 (no third argument -> BRANCH='master', the usage's optional [BRANCH]), is cited by the confirmed-run outcome row (lines 19-30) but every run passes 'master' explicitly, so the default is never exercised although the lab can trivially (a run with only NAME and EMAIL, then origin master advanced). Secondary: the outcome says 'commits the tracked changes' (git commit -a, status --untracked-files=no, lines 49-50, 59) but the clone holds no untracked file, so the exclusion of untracked files is not shown either."
+ ],
+ "review_s": 93.6,
+ "check_file_sha256": "b26e77e9f0312dd460f1e008c1d8896166e63f370a5664a2f0fd11d9858f9856",
+ "reviewer_result": "20261119T184732Z-reviewer",
+ "author_result": "20261119T184458Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "ca3f5606-218a-427b-9de4-f6a90a5607ae",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "ca3f5606-218a-427b-9de4-f6a90a5607ae",
+   "fresh": true
+  }
+ }
+}
