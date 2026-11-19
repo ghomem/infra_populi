@@ -4,12 +4,16 @@
 # rdiff.sh helper. The directory is declared 0644; Puppet adds search permission to a directory wherever read is set,
 # so the effective mode is read on the node, not taken from the manifest's text. rdiff.sh runs as behaviour on two
 # planted snapshots under /run (non-interactive: no second argument).
+# Correction round 1, 2026-11-19 (review 20261119T183418Z FAIL, purpose): two snapshots never exercised the walk across
+# pairs (the loop ran once), and my reason for leaving interactive mode uncovered was untrue: `read` takes stdin and
+# `clear` only complains on stderr without a terminal. Three snapshots now, and interactive mode with ENTERs on stdin
+# (measured on the applied node at 18:36:12Z: both reports in order, two prompts, Done!, exit 0).
 class: backup_rsnapshot_pre
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
 authoring:
   minutes: 0.7
-  notes: "18:04:17Z (date at the start of reading rdiff.sh and the manifest) to 18:05:01Z 2026-11-19 (validation), outside the worktree while user's review ran; not prototyped on a node."
+  notes: "18:04:17Z (date at the start of reading rdiff.sh and the manifest) to 18:05:01Z 2026-11-19 (validation), outside the worktree while user's review ran; not prototyped on a node. Correction round 1: 18:36:12Z (the measurement on the applied node) to 18:36:50Z (validation)."
 purpose: >-
   Prerequisites for rsnapshot backups (backup_rsnapshot): rsnapshot installed, the /etc/rsnapshot.d configuration
   directory, and rdiff.sh, a helper that reports what changed between consecutive snapshots.
@@ -26,9 +30,9 @@ outcomes:
   - outcome: rsnapshot driven from /etc/rsnapshot.d by backup_rsnapshot
     from: manifests/backup_rsnapshot_pre.pp:1-2
     uncovered: {why: "backup_rsnapshot's behaviour, checked in backup_rsnapshot's set, which runs on this class as its required base", lifted_by: ubuntu}
-  - outcome: rdiff.sh's interactive mode (a second argument; clears the screen and waits for ENTER between reports)
+  - outcome: in interactive mode (a second argument) rdiff.sh waits for ENTER after each pair's report and ends with Done!
     from: files/backups/rdiff.sh:55-58, 92-94, 111-118
-    uncovered: {why: "needs a terminal and a person pressing ENTER; the report it pages is the non-interactive one checked here", lifted_by: ubuntu}
+    checks: [two-snapshots-are-planted, rdiff-pages-the-pairs-in-interactive-mode]
 checks:
   - id: rsnapshot-installed-and-runs
     what: the rsnapshot package is installed and its command answers with its version
@@ -61,25 +65,27 @@ checks:
     expect: {rc: 0, stdout: "\\Aroot root 755\\nb45b5e661456553d11699630d7b681f1081e225d345a118fb476ec731d5272d3\\n\\Z"}
 
   - id: two-snapshots-are-planted
-    what: setup for the report, a snapshot root with daily.0 and daily.1 that differ in one file and one new file
+    what: setup for the reports, a snapshot root with daily.0, daily.1 and daily.2, each pair differing in changed.txt, with removed.txt only in daily.2 and added.txt only in daily.0
     control: negative
     derived_from:
       - {path: files/backups/rdiff.sh, lines: "60-64", text: "LIST=`find . -maxdepth 1 -mindepth 1 -type d | sort -V`"}
     mutates: >-
-      creates /run/p8test-rdiff/snap/daily.1 (same.txt, changed.txt "old") and daily.0 (same.txt, changed.txt "new",
-      added.txt)
+      creates /run/p8test-rdiff/snap/daily.2 (same.txt, changed.txt "oldest", removed.txt), daily.1 (same.txt,
+      changed.txt "old") and daily.0 (same.txt, changed.txt "new", added.txt)
     probe: |
-      r=/run/p8test-rdiff/snap; rm -rf /run/p8test-rdiff; install -d "$r/daily.0" "$r/daily.1"
-      for d in daily.0 daily.1; do printf 'same\n' > "$r/$d/same.txt"; done
+      r=/run/p8test-rdiff/snap; rm -rf /run/p8test-rdiff; install -d "$r/daily.0" "$r/daily.1" "$r/daily.2"
+      for d in daily.0 daily.1 daily.2; do printf 'same\n' > "$r/$d/same.txt"; done
+      printf 'oldest\n' > "$r/daily.2/changed.txt"; printf 'removed\n' > "$r/daily.2/removed.txt"
       printf 'old\n' > "$r/daily.1/changed.txt"; printf 'new\n' > "$r/daily.0/changed.txt"; printf 'added\n' > "$r/daily.0/added.txt"
     effect: |
       cd /run/p8test-rdiff/snap && find . -type f | LC_ALL=C sort | tr '\n' ' '; echo
-    expect: {rc: 0, stdout: "\\A\\./daily\\.0/added\\.txt \\./daily\\.0/changed\\.txt \\./daily\\.0/same\\.txt \\./daily\\.1/changed\\.txt \\./daily\\.1/same\\.txt \\n\\Z"}
+    expect: {rc: 0, stdout: "\\A\\./daily\\.0/added\\.txt \\./daily\\.0/changed\\.txt \\./daily\\.0/same\\.txt \\./daily\\.1/changed\\.txt \\./daily\\.1/same\\.txt \\./daily\\.2/changed\\.txt \\./daily\\.2/removed\\.txt \\./daily\\.2/same\\.txt \\n\\Z"}
 
   - id: rdiff-reports-what-changed-between-snapshots
     what: >-
-      rdiff.sh, run on that root, reports daily.1 -> daily.0 with changed.txt differing and added.txt only in daily.0,
-      and nothing about same.txt
+      rdiff.sh, run on that root, reports each consecutive pair in order: daily.1 -> daily.0 (added.txt only in daily.0,
+      changed.txt differs), then daily.2 -> daily.1 (changed.txt differs, removed.txt only in daily.2), and nothing about
+      same.txt
     control: negative
     derived_from:
       - {path: files/backups/rdiff.sh, lines: "34-42", text: "diff $DIFF_OPTS -qr $MYDIR_A $MYDIR_B | sed 's/ and .\\// .\\//'"}
@@ -89,6 +95,20 @@ checks:
       /opt/puppet-infrastructure/bin/rdiff.sh /run/p8test-rdiff/snap > /run/p8test-rdiff/report.txt 2>&1; echo $? > /run/p8test-rdiff/rc
     effect: |
       echo "rc $(cat /run/p8test-rdiff/rc)"
-      grep -E '^-+ daily' /run/p8test-rdiff/report.txt | head -1
-      grep -E 'changed\.txt|added\.txt|same\.txt' /run/p8test-rdiff/report.txt | LC_ALL=C sort
-    expect: {rc: 0, stdout: "\\Arc 0\\n-------------------- daily\\.1 -> daily\\.0 --------------------\\nFiles \\./daily\\.1/changed\\.txt \\./daily\\.0/changed\\.txt differ\\nOnly in \\./daily\\.0: added\\.txt\\n\\Z"}
+      grep -E '^(-+ daily|Files|Only in)' /run/p8test-rdiff/report.txt
+    expect: {rc: 0, stdout: "\\Arc 0\\n-------------------- daily\\.1 -> daily\\.0 --------------------\\nOnly in \\./daily\\.0: added\\.txt\\nFiles \\./daily\\.1/changed\\.txt \\./daily\\.0/changed\\.txt differ\\n-------------------- daily\\.2 -> daily\\.1 --------------------\\nFiles \\./daily\\.2/changed\\.txt \\./daily\\.1/changed\\.txt differ\\nOnly in \\./daily\\.2: removed\\.txt\\n\\Z"}
+
+  - id: rdiff-pages-the-pairs-in-interactive-mode
+    what: with a second argument, rdiff.sh asks for ENTER after each of the two pairs' reports, ends with Done! and exits 0
+    control: negative
+    derived_from:
+      - {path: files/backups/rdiff.sh, lines: "55-58", text: "# any other argument triggers interactive mode"}
+      - {path: files/backups/rdiff.sh, lines: "111-118", text: "echo \"press ENTER for next difference\""}
+    mutates: runs rdiff.sh /run/p8test-rdiff/snap INTERACTIVE once with three ENTERs on stdin (it only reads); its output goes to /run/p8test-rdiff/interactive.txt
+    probe: |
+      printf '\n\n\n' | /opt/puppet-infrastructure/bin/rdiff.sh /run/p8test-rdiff/snap INTERACTIVE > /run/p8test-rdiff/interactive.txt 2>/dev/null; echo $? > /run/p8test-rdiff/interactive.rc
+    effect: |
+      echo "rc $(cat /run/p8test-rdiff/interactive.rc)"
+      grep -cx 'press ENTER for next difference' /run/p8test-rdiff/interactive.txt
+      tail -n 1 /run/p8test-rdiff/interactive.txt
+    expect: {rc: 0, stdout: "\\Arc 0\\n2\\nDone!\\n\\Z"}
