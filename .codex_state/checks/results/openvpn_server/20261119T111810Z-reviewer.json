@@ -1,0 +1,313 @@
+{
+ "class": "openvpn_server",
+ "role": "reviewer",
+ "at": "20261119T111810Z",
+ "runner": "65ec2e0",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "c5b0ca647f9f271e66325067c2f91c9a21724c6933337bf3fb819c272dc71f75",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "server-listens-on-the-bound-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "server-config-rendered",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/openvpn/server/puppet_infrastructure.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "bridge-holds-the-lan-address-and-tap0",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Device \"br0\" does not exist.\nError: argument \"br0\" is wrong: Device does not exist\n\n",
+   "ok": true
+  },
+  {
+   "id": "client-isolation-on-the-bridge",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "sysctl: cannot stat /proc/sys/net/ipv4/conf/br0/proxy_arp_pvlan: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "networking-brings-up-the-bridge-at-boot",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "ifupdown unknown ok not-installed\nnot-found\n0\n",
+   "stderr": "grep: /etc/network/interfaces: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "vpn-account-on-the-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "client-connects-gets-a-pool-address-and-reaches-the-server-side",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /run/p8vpn/client.log: No such file or directory\ngrep: /run/p8vpn/client.log: No such file or directory\nDevice \"\" does not exist.\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "wrong-password-rejected",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /run/p8vpn-bad/client.log: No such file or directory\ngrep: /run/p8vpn-bad/client.log: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-second-vpn-account",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-second-client-reaches-the-server-side-but-not-the-first",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "first-unreachable\n",
+   "stderr": "grep: /run/p8vpn2/client.log: No such file or directory\nDevice \"\" does not exist.\nCannot open network namespace \"p8vpn2\": No such file or directory\nCannot open network namespace \"p8vpn2\": No such file or directory\nCannot open network namespace \"p8vpn2\": No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "[/etc/openvpn/keys/dh2048.pem]\n  File[/etc/openvpn/keys/server.crt]\n  File[/etc/openvpn/keys/server.key]\n  Package[openvpn]\n  Package[easy-rsa]\n  Package[openvpn-auth-ldap]\n  File[/etc/openvpn]\n  File[/etc/openvpn/keys]\n  File[/var/log/openvpn]\n  Concat[/etc/default/openvpn]\n  Concat::Fragment[openvpn.default.header]\n  Openvpn::Server[puppet_infrastructure]\n  File[/usr/lib/openvpn]\n  File[/usr/lib/openvpn/openvpn-plugin-auth-pam.so]\n  File[/etc/openvpn/openvpn-up.sh]\n  Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]\n  Concat_file[/etc/default/openvpn]\n  Concat_fragment[/etc/default/openvpn_header]\n  Concat_fragment[openvpn.default.header]\n  File[/etc/openvpn/server/puppet_infrastructure]\n  File[/etc/openvpn/server/puppet_infrastructure/scripts]\n  File[/etc/openvpn/server/puppet_infrastructure/auth]\n  File[/etc/openvpn/server/puppet_infrastructure/client-configs]\n  File[/etc/openvpn/server/puppet_infrastructure/download-configs]\n  File[/etc/openvpn/server/puppet_infrastructure.conf]\n  File[/etc/openvpn/server/puppet_infrastructure/keys/pre-shared.secret]\n  Service[openvpn-server@puppet_infrastructure]\n  File[/etc/sysctl.d]\n  File[/etc/sysctl.d/99-sysctl.conf]\n  File[/etc/sysctl.d/net.ipv4.conf.br0.proxy_arp_pvlan.conf]\n  Exec[sysctl-net.ipv4.conf.br0.proxy_arp_pvlan]\n  Exec[update-sysctl.conf-net.ipv4.conf.br0.proxy_arp_pvlan]\n  Exec[enforce-sysctl-value-net.ipv4.conf.br0.proxy_arp_pvlan]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP openvpn_server 3dda1cfe1b81\n"
+ },
+ "applied": [
+  {
+   "id": "server-listens-on-the-bound-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "203.0.113.50:1194\n",
+   "stderr": ""
+  },
+  {
+   "id": "server-config-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "dev tap0\nserver-bridge 192.0.2.1 255.255.255.0 192.0.2.100 192.0.2.150\nplugin /usr/lib/openvpn/openvpn-plugin-auth-pam.so \"login\"\nreneg-sec 3600\nverify-client-cert none\n",
+   "stderr": ""
+  },
+  {
+   "id": "bridge-holds-the-lan-address-and-tap0",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "192.0.2.1/24\ntap0\n",
+   "stderr": ""
+  },
+  {
+   "id": "client-isolation-on-the-bridge",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\n",
+   "stderr": ""
+  },
+  {
+   "id": "networking-brings-up-the-bridge-at-boot",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ifupdown install ok installed\nenabled\n1\niface br0 inet static\naddress 192.0.2.1\nbridge_ports lo:0\n",
+   "stderr": ""
+  },
+  {
+   "id": "vpn-account-on-the-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8vpnuser\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the local account p8vpnuser on the server node with the fake password p8test-vpn-not-a-secret",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "client-connects-gets-a-pool-address-and-reaches-the-server-side",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nredirect-gateway bypass-dhcp bypass-dns\ndhcp-option DNS 8.8.8.8\n192.0.2.100/24\nreaches-server-side\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: installs the openvpn package, adds the host route 203.0.113.50 via the node's host-only address, writes a client config and credentials under /run/p8vpn and starts an openvpn client daemon",
+    "rc": 0,
+    "stdout": "2026-11-19 11:23:16 WARNING: Compression for receiving enabled. Compression has been used in the past to break encryption. Sent packets are not compressed unless \"allow-compression yes\" is also set.\n2026-11-19 11:23:16 WARNING: Compression for sending and receiving enabled. Compression has been used in the past to break encryption. Allowing compression allows attacks that break encryption. Using \"--allow-compression yes\" is strongly discouraged for common usage. See --compress in the manual page for more information \n",
+    "stderr": ",\n\tLC_MEASUREMENT = \"pt_PT.UTF-8\",\n\tLC_IDENTIFICATION = \"pt_PT.UTF-8\",\n\tLC_NUMERIC = \"pt_PT.UTF-8\",\n\tLC_PAPER = \"pt_PT.UTF-8\",\n\tLANG = \"en_US.UTF-8\"\n    are supported and installed on your system.\nperl: warning: Falling back to a fallback locale (\"en_US.UTF-8\").\n\nRunning kernel seems to be up-to-date.\n\nNo services need to be restarted.\n\nNo containers need to be restarted.\n\nNo user sessions are running outdated binaries.\n\nNo VM guests are running outdated hypervisor (qemu) binaries on this host.\n"
+   }
+  },
+  {
+   "id": "wrong-password-rejected",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n0\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: writes a second client config with a wrong password under /run/p8vpn-bad and starts a second openvpn client daemon (it stops itself on AUTH_FAILED)",
+    "rc": 0,
+    "stdout": "2026-11-19 11:23:19 WARNING: Compression for receiving enabled. Compression has been used in the past to break encryption. Sent packets are not compressed unless \"allow-compression yes\" is also set.\n2026-11-19 11:23:19 WARNING: Compression for sending and receiving enabled. Compression has been used in the past to break encryption. Allowing compression allows attacks that break encryption. Using \"--allow-compression yes\" is strongly discouraged for common usage. See --compress in the manual page for more information \n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-second-vpn-account",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8vpnuser2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the local account p8vpnuser2 on the server node with the fake password p8test-vpn2-not-a-secret",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-second-client-reaches-the-server-side-but-not-the-first",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\ntwo-pool-addresses\nsecond-reaches-server-side\nfirst-unreachable\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: creates network namespace p8vpn2 joined to the peer by veth p8vpn2a (10.253.0.1/30) / p8vpn2b (10.253.0.2/30, default route via 10.253.0.1), turns on IPv4 forwarding and masquerades 10.253.0.0/30 in the peer's nat POSTROUTING, writes a client config and the p8vpnuser2 credentials under /run/p8vpn2 and starts a second openvpn client daemon inside the namespace",
+    "rc": 0,
+    "stdout": "2026-11-19 11:23:24 WARNING: Compression for receiving enabled. Compression has been used in the past to break encryption. Sent packets are not compressed unless \"allow-compression yes\" is also set.\n2026-11-19 11:23:24 WARNING: Compression for sending and receiving enabled. Compression has been used in the past to break encryption. Allowing compression allows attacks that break encryption. Using \"--allow-compression yes\" is strongly discouraged for common usage. See --compress in the manual page for more information \n",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.7,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "3d1670f1-921e-4c86-b71d-d5e69584f0ea",
+   "boot_id_at_end": "3d1670f1-921e-4c86-b71d-d5e69584f0ea",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "5781f5d3-853a-421f-9da8-88e7d5c6e8bd",
+   "boot_id_at_end": "5781f5d3-853a-421f-9da8-88e7d5c6e8bd",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "outcomes": [
+  {
+   "outcome": "the server listens on UDP 1194 at the bound address with the bridged tap0, the pool, PAM auth and the renegotiation interval",
+   "checks": [
+    "server-listens-on-the-bound-address",
+    "server-config-rendered"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the bridge carries the LAN address with tap0 as a port, and is set up through ifupdown with the networking service enabled (boot)",
+   "checks": [
+    "bridge-holds-the-lan-address-and-tap0",
+    "networking-brings-up-the-bridge-at-boot"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a client with a local account connects, gets a pool address and the pushed options, and reaches the server's LAN side",
+   "checks": [
+    "vpn-account-on-the-server",
+    "client-connects-gets-a-pool-address-and-reaches-the-server-side"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a wrong password is refused",
+   "checks": [
+    "wrong-password-rejected"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "clients cannot reach each other (client isolation, the default)",
+   "checks": [
+    "client-isolation-on-the-bridge",
+    "a-second-vpn-account",
+    "a-second-client-reaches-the-server-side-but-not-the-first"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the variants force_ifupdown, client_isolation false, compression none, another cipher or DNS server",
+   "uncovered": {
+    "why": "parameter variants (one set holds one params fixture, which keeps their defaults); untested",
+    "lifted_by": "ubuntu"
+   }
+  }
+ ],
+ "duration_s": 319.2
+}
