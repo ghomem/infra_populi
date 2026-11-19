@@ -1,0 +1,40 @@
+{
+ "class": "postfix_smtp_node",
+ "at": "20261119T061348Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-peer-plays-the-relayhost: manifests/postfix_smtp_node.pp:17-18 look up the node's relayuser/relaypass (and 6-7 the relayport); the peer's stand-in creates exactly that account (p8test-relay with the lab Hiera fixture's password 'p8test-not-a-secret', master_fixtures.sh:134-135) and serves submission on 587 with relaying only for SASL-authenticated clients, so the node can only get a message through with the credentials those lines render; the effect (587 listening, dovecot active) is the setup's result, and the declared mutation matches the action line by line",
+  "effective-relay-config: main.cf:11-12 render myhostname=@hostname and myorigin=@myorigin; under the defaults fixture (lab Hiera myorigin mycompany.com) postconf -h expects puppet8node and mycompany.com, and the rest of the expected values follow the template lines 34-54 and the lookup defaults (mydestination=hostname, mynetworks 127.0.0.0/8, 10240000) and the Debian CA path of manifest lines 29-32; ok",
+  "postfix-running-and-enabled: manifest lines 68-72 declare service postfix ensure running, enable true; systemctl is-active/is-enabled expecting active/enabled tests exactly that; ok",
+  "purpose covered: Purpose (header line 2: send mail from a non-specialised node by means of a relayhost) is stated right and tested as behaviour: a message submitted on the node leaves the queue with status=sent to mailserver.mycompany.com:587 (name pinned to the peer, fence on mail ports to any other address), arrives in the peer's mailbox received 'with ESMTPSA' (STARTTLS + SASL) and the peer logs sasl_username=p8test-relay, which can only succeed with the class's sasl_passwd credentials since the stand-in rejects unauthenticated relay; a 10.5 MB submission is refused by postfix's sendmail ('too big', non-zero exit; the refusal is synchronous, so the tool's exit status and diagnostic are the result itself); the peer (outside mynetworks) gets 454 Relay access denied on port 25 (main.cf:31,35); configuration, postfix check, compiled SASL map (with a valid mismatch on the looked-up host), service state and the root alias rendering/compilation are probed. Honestly uncovered: the RedHat branch (cyrus-sasl-plain, ca-bundle.crt; rhel9) and non-default per-node Hiera values (one fixture per set). Notes, not gaps: message_size_limit's lookup default equals postfix's built-in default, so the size check cannot tell the class's value from postfix's; the open-relay check has no mismatch (e.g. a local recipient) though 'Relay access denied' is specific to the unauth-destination restriction."
+ ],
+ "review_s": 281.2,
+ "check_file_sha256": "4d0b62b8247b4fabecabd1cb5a9c6da9041617b2ef1a106483616b6a519d9e6a",
+ "reviewer_result": "20261119T060907Z-reviewer",
+ "author_result": "20261119T060533Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "1096eb03-c939-42e1-a27f-47f6ad09848d",
+   "boot_id_at_end": "1096eb03-c939-42e1-a27f-47f6ad09848d",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "e766c345-3458-4a28-b19e-0a8d9a8f294d",
+   "boot_id_at_end": "e766c345-3458-4a28-b19e-0a8d9a8f294d",
+   "fresh": true
+  }
+ }
+}
