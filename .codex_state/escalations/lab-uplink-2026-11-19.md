@@ -1,7 +1,7 @@
 # Lab uplink too slow for node reverts (2026-11-19, from 06:25Z)
 
-Status: OPEN, for Salatiel (the laptop's uplink is outside the lab). Lab runs are on hold. Nothing was recorded on the
-failed runs.
+Status: RESOLVED 2026-11-19 11:17Z (Salatiel: "internet should be normal"). Was: OPEN, for Salatiel (the laptop's
+uplink is outside the lab); lab runs on hold; nothing was recorded on the failed runs.
 
 ## Evidence (measured 2026-11-19)
 - **Reverts fail:**
@@ -36,3 +36,13 @@ failed runs.
      ALL_PASS);
    - run network_vpn's extended set (drafted and validated, not yet in the repo);
    - continue backfill batch 4 → the batch report.
+
+## Resolved (2026-11-19)
+- `revert_node.sh` succeeded at 11:17:19Z to 11:17:51Z with no VPN interface on the laptop. From REVERT_METRICS:
+  total 30.9 s, apt update 9.8 s.
+- The peer's revert in the next run took 58.5 s, of which apt update was 38.6 s (REVERT_METRICS, run
+  20261119T113217Z), well inside the limit.
+- The resume steps ran:
+  - openvpn_server's review re-ran (20261119T112433Z, FAIL on purpose → correction round 1 → review 20261119T114553Z
+    PASS with two findings, escalations/openvpn_server.behaviour.md);
+  - network_vpn and batch 4 continue.
