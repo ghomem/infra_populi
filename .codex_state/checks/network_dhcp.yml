@@ -1,0 +1,79 @@
+# Phase 3 checks for puppet_infrastructure::network_dhcp (class; node ubuntu; no required base). Fixture (params, never
+# committed): iface p8test0 (the fixture interface name; never the node's real NIC). The class installs ifupdown-extra
+# and declares network_config p8test0 (puppet-network: a stanza in /etc/network/interfaces, `auto p8test0` / `iface
+# p8test0 inet dhcp`). The checks give p8test0 a LAN with a DHCP server: a network namespace p8testdhcp joined to the
+# node by a veth pair (p8test0 on the node, p8testsrv 10.251.0.1/24 in the namespace) and dnsmasq serving
+# 10.251.0.100-150 there. Then the step a boot runs for /etc/network/interfaces (the networking service, or ifup -a)
+# is run, whichever the node has. Everything stays on the node.
+class: network_dhcp
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 4.4
+  notes: "04:45:26Z to 04:49:47Z 2026-11-19 (date at the start of reading the baseline and at validation), including one harness apply of the class to see what it leaves on the node (ifupdown not installed, no networking service, the stanza written)."
+purpose: >-
+  Configures a network interface with DHCP, brought up at boot (onboot), so the interface gets its address from the
+  LAN's DHCP server.
+outcomes:
+  - outcome: the interface's configuration says DHCP at boot (auto, inet dhcp), and ifupdown-extra is installed
+    from: manifests/network_dhcp.pp:9-12
+    checks: [the-interface-stanza-says-dhcp-at-boot]
+  - outcome: at boot the interface gets an address from the LAN's DHCP server
+    from: manifests/network_dhcp.pp:1-2, 12
+    checks: [a-lan-with-a-dhcp-server-on-the-interface, the-boot-step-gives-the-interface-a-dhcp-address]
+checks:
+  - id: the-interface-stanza-says-dhcp-at-boot
+    what: /etc/network/interfaces brings p8test0 up at boot with DHCP, and ifupdown-extra is installed
+    control: negative
+    derived_from:
+      - {path: manifests/network_dhcp.pp, lines: "12", text: "network_config { $iface:           ensure => 'present', family  => 'inet', onboot => 'true', method => 'dhcp', hotplug => 'false' }"}
+      - {path: manifests/network_dhcp.pp, lines: "11", text: "package        { 'ifupdown-extra': ensure => 'installed', }"}
+    probe: |
+      grep -E '^(auto|iface) p8test0' /etc/network/interfaces
+      dpkg-query -W -f '${Package} ${Status}\n' ifupdown-extra
+    expect: {rc: 0, stdout: "\\Aauto p8test0\\niface p8test0 inet dhcp\\nifupdown-extra install ok installed\\n\\Z"}
+
+  - id: a-lan-with-a-dhcp-server-on-the-interface
+    what: setup for the next check, p8test0 joined to a namespace where dnsmasq serves DHCP for 10.251.0.0/24
+    control: negative
+    timeout: 300
+    derived_from:
+      - {path: manifests/network_dhcp.pp, lines: "1-2", text: "# This class configures a network interface with DHCP."}
+    mutates: >-
+      installs dnsmasq-base, creates network namespace p8testdhcp and veth pair p8test0 (node) / p8testsrv
+      (namespace, 10.251.0.1/24), and starts dnsmasq in the namespace as transient unit p8test-dhcp (DHCP range
+      10.251.0.100-150, no DNS)
+    probe: |
+      DEBIAN_FRONTEND=noninteractive apt-get -qq -y install dnsmasq-base >/dev/null 2>&1
+      ip netns add p8testdhcp
+      ip link add p8test0 type veth peer name p8testsrv
+      ip link set p8testsrv netns p8testdhcp
+      ip netns exec p8testdhcp ip addr add 10.251.0.1/24 dev p8testsrv
+      ip netns exec p8testdhcp ip link set p8testsrv up
+      systemd-run --unit p8test-dhcp -q ip netns exec p8testdhcp dnsmasq --no-daemon --port=0 --interface=p8testsrv --bind-interfaces --dhcp-range=10.251.0.100,10.251.0.150,1h --dhcp-leasefile=/run/p8test-dhcp.leases
+      sleep 2
+    effect: |
+      ip link show p8test0 >/dev/null 2>&1 && echo interface-present
+      p8_service p8test-dhcp | cut -d' ' -f1
+    expect: {rc: 0, stdout: "\\Ainterface-present\\nactive\\n\\Z"}
+
+  - id: the-boot-step-gives-the-interface-a-dhcp-address
+    what: >-
+      after the step a boot runs for /etc/network/interfaces (the networking service, or ifup -a), p8test0 holds an
+      address from the namespace's DHCP server (10.251.0.100-150)
+    control: negative
+    timeout: 120
+    derived_from:
+      - {path: manifests/network_dhcp.pp, lines: "12", text: "onboot => 'true', method => 'dhcp'"}
+    mutates: >-
+      runs the boot step for /etc/network/interfaces if the node has one (systemctl start networking, else ifup -a),
+      records which in /run/p8test-dhcp-step, and waits up to 20 s for an address on p8test0
+    probe: |
+      if systemctl cat networking.service >/dev/null 2>&1; then systemctl start networking.service; echo networking-service > /run/p8test-dhcp-step
+      elif command -v ifup >/dev/null 2>&1; then ifup -a; echo ifup > /run/p8test-dhcp-step
+      else echo none > /run/p8test-dhcp-step; fi
+      for i in $(seq 20); do ip -4 -o addr show p8test0 | grep -q '10\.251\.0\.' && break; sleep 1; done
+    effect: |
+      echo "boot step: $(cat /run/p8test-dhcp-step)"
+      ip -4 -o addr show p8test0 | grep -o '10\.251\.0\.1[0-5][0-9]/24' | sed 's/[0-9]*\/24/N\/24/' | head -1
+    expect: {rc: 0, stdout: "\\Aboot step: (networking-service|ifup)\\n10\\.251\\.0\\.N/24\\n\\Z"}
