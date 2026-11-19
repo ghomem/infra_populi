@@ -1,5 +1,9 @@
 # Phase 3 checks for puppet_infrastructure::ssh_secure (class; fixture params since 2026-11-19: client_alive_interval
 # 10, every other parameter at its default, so the idle-session timeout can be seen in seconds instead of 4 hours).
+# Lab Hiera fixture (master_fixtures.sh, 2026-11-19): puppet8node::ssh::othergroups 'p8testgroup', so AllowGroups is
+# "sudo naemon p8testgroup ssh_in". Correction round 1 (2026-11-19, review 20261119T020808Z): root joins ssh_in for the
+# probe so PermitRootLogin, not AllowGroups, is what refuses it (sshd logs ROOT LOGIN REFUSED); the Hiera group's
+# login is a check.
 # The node is Ubuntu 24.04 (osfamily Debian): $ssh_service = ssh, $admin_group = sudo. No Hiera key
 # `puppet8node::ssh::othergroups` on the lab master, so AllowGroups = "sudo naemon  ssh_in".
 # Effective configuration is read with `sshd -T` (what sshd will enforce, after Includes and defaults); negotiation
@@ -27,9 +31,9 @@ outcomes:
   - outcome: only the class's key exchange, ciphers and MACs are negotiated
     from: manifests/ssh_secure.pp:10-12, 59-61
     checks: [kex-only-dh-gex-sha256, kex-negotiation-refuses-curve25519, ciphers-exact, cipher-negotiation-refuses-chacha20, macs-exact, mac-negotiation-refuses-umac]
-  - outcome: a member of an allowed group (sudo, naemon, ssh_in) logs in with a key; a user in none of them is refused even with a valid key
+  - outcome: a member of an allowed group (sudo, naemon, the node's Hiera othergroups, ssh_in) logs in with a key; a user in none of them is refused even with a valid key
     from: manifests/ssh_secure.pp:35-41, 71, 79
-    checks: [allow-groups, ssh-in-group, login-test-accounts-and-key, a-key-login-in-an-allowed-group-works, a-key-login-outside-the-allowed-groups-is-refused]
+    checks: [allow-groups, ssh-in-group, login-test-accounts-and-key, a-key-login-in-an-allowed-group-works, a-key-login-in-the-hiera-group-works, a-key-login-outside-the-allowed-groups-is-refused]
   - outcome: password logins and root logins are refused
     from: manifests/ssh_secure.pp:43-53, 66-68
     checks: [password-auth-off, root-login-off, login-test-accounts-and-key, password-and-root-logins-are-refused]
@@ -45,9 +49,9 @@ outcomes:
   - outcome: Protocol 2 and UsePrivilegeSeparation yes
     from: manifests/ssh_secure.pp:57, 77
     uncovered: {why: "deprecated and ignored by OpenSSH 7.5 and later (the node runs 9.6p1), so they have no behaviour to test (Phase 5 backlog #3)", lifted_by: ubuntu}
-  - outcome: the RedHat branch (service sshd, group wheel) and per-node othergroups from Hiera
-    from: manifests/ssh_secure.pp:15-24, 41
-    uncovered: {why: "the RedHat branch needs rhel9; othergroups is a Hiera fixture variant the lab master does not set (AllowGroups is sudo naemon ssh_in here)", lifted_by: rhel9}
+  - outcome: the RedHat branch (service sshd, admin group wheel)
+    from: manifests/ssh_secure.pp:15-19
+    uncovered: {why: "the RedHat branch; this set runs on the plan's Ubuntu node", lifted_by: rhel9}
 checks:
   - id: kex-only-dh-gex-sha256
     what: the effective KexAlgorithms is exactly diffie-hellman-group-exchange-sha256
@@ -152,7 +156,7 @@ checks:
       - {path: manifests/ssh_secure.pp, lines: "41", text: "$othergroups = join([lookup ( \"${clientcert}::ssh::othergroups\", String, 'first', '' ), ' ssh_in'])"}
       - {path: manifests/ssh_secure.pp, lines: "79", text: "'AllowGroups'             => \"${admin_group} naemon ${othergroups}\" ,"}
     probe: sshd -T 2>/dev/null | awk '$1 == "allowgroups" { for (i = 2; i <= NF; i++) print $i }'
-    expect: {rc: 0, stdout: "\\Asudo\\nnaemon\\nssh_in\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Asudo\\nnaemon\\np8testgroup\\nssh_in\\n\\Z"}
 
   - id: ssh-in-group
     what: the group ssh_in exists (for non-sudoers that need ssh in)
@@ -202,29 +206,39 @@ checks:
   # from its standard input (the runner feeds scripts to bash -s), so the lines after it never ran; every ssh in the
   # set now runs with -n.
   - id: login-test-accounts-and-key
-    what: setup for the login checks, two fixture accounts with one throwaway key, p8testin in ssh_in and p8testout in no allowed group, and the key for root too
+    what: >-
+      setup for the login checks, three fixture accounts with one throwaway key (p8testin in ssh_in, p8testother in the
+      Hiera group p8testgroup, p8testout in no allowed group), and root in ssh_in with the key, with sshd's journal
+      cursor noted
     control: negative
     derived_from:
       - {path: manifests/ssh_secure.pp, lines: "35-38", text: "group {'ssh_in':"}
     mutates: >-
-      creates /run/p8test-ssh/key (an ed25519 key pair), the accounts p8testin (in group ssh_in) and p8testout (no
-      allowed group) with that key in ~/.ssh/authorized_keys, and appends it to /root/.ssh/authorized_keys on the node
+      creates /run/p8test-ssh/key (an ed25519 key pair), the group p8testgroup, the accounts p8testin (in ssh_in),
+      p8testother (in p8testgroup) and p8testout (no allowed group) with that key in ~/.ssh/authorized_keys, adds root to
+      ssh_in, appends the key to /root/.ssh/authorized_keys, and notes sshd's journal cursor in /run/p8test-ssh/cursor
     probe: |
       install -d -m 0700 /run/p8test-ssh
       [ -f /run/p8test-ssh/key ] || ssh-keygen -q -t ed25519 -N '' -f /run/p8test-ssh/key
-      for u in p8testin p8testout; do
+      getent group p8testgroup >/dev/null || groupadd p8testgroup
+      for u in p8testin p8testother p8testout; do
         id "$u" >/dev/null 2>&1 || useradd -m -s /bin/bash "$u"
         install -d -m 0700 -o "$u" -g "$u" "/home/$u/.ssh"
         install -m 0600 -o "$u" -g "$u" /run/p8test-ssh/key.pub "/home/$u/.ssh/authorized_keys"
       done
       usermod -aG ssh_in p8testin
+      usermod -aG p8testgroup p8testother
+      usermod -aG ssh_in root
       install -d -m 0700 /root/.ssh
       cat /run/p8test-ssh/key.pub >> /root/.ssh/authorized_keys
+      journalctl -u ssh.service -n 0 --show-cursor --no-pager -q | sed -n 's/^-- cursor: //p' > /run/p8test-ssh/cursor
     effect: |
       id -nG p8testin | tr ' ' '\n' | p8_count '^ssh_in$'
-      id -nG p8testout | tr ' ' '\n' | p8_count '^(sudo|naemon|ssh_in)$'
+      id -nG p8testother | tr ' ' '\n' | p8_count '^p8testgroup$'
+      id -nG root | tr ' ' '\n' | p8_count '^ssh_in$'
+      id -nG p8testout | tr ' ' '\n' | p8_count '^(sudo|naemon|p8testgroup|ssh_in)$'
       grep -cF -- "$(cut -d' ' -f2 /run/p8test-ssh/key.pub)" /root/.ssh/authorized_keys || true
-    expect: {rc: 0, stdout: "\\A1\\n0\\n1\\n\\Z"}
+    expect: {rc: 0, stdout: "\\A1\\n1\\n1\\n0\\n1\\n\\Z"}
 
   - id: a-key-login-in-an-allowed-group-works
     what: p8testin (group ssh_in) logs in over loopback with the key and runs a command
@@ -237,6 +251,18 @@ checks:
     effect: |
       ssh -n -i /run/p8test-ssh/key -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 p8testin@127.0.0.1 'echo logged-in-as-$(id -un)' 2>/dev/null
     expect: {rc: 0, stdout: "\\Alogged-in-as-p8testin\\n\\Z"}
+
+  - id: a-key-login-in-the-hiera-group-works
+    what: p8testother, in the group the node's Hiera othergroups adds (p8testgroup), logs in over loopback with the key
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "39-41", text: "$othergroups = join([lookup ( \"${clientcert}::ssh::othergroups\", String, 'first', '' ), ' ssh_in'])"}
+    mutates: none beyond one SSH login over loopback (declared mutating so it runs after the accounts exist)
+    probe: |
+      true
+    effect: |
+      ssh -n -i /run/p8test-ssh/key -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 p8testother@127.0.0.1 'echo logged-in-as-$(id -un)' 2>/dev/null
+    expect: {rc: 0, stdout: "\\Alogged-in-as-p8testother\\n\\Z"}
 
   - id: a-key-login-outside-the-allowed-groups-is-refused
     what: p8testout, with the same valid key but in no allowed group, is refused
@@ -252,10 +278,13 @@ checks:
     expect: {rc: 0, stdout: "\\APermission denied \\(publickey\\)\\naccount-exists\\n\\Z"}
 
   - id: password-and-root-logins-are-refused
-    what: a password login is not offered (publickey only), and root is refused even with the key in its authorized_keys
+    what: >-
+      a password login is not offered (publickey only), and root, though in an allowed group (ssh_in) and with the key
+      in its authorized_keys, is refused by PermitRootLogin (sshd logs ROOT LOGIN REFUSED)
     control: negative
     derived_from:
       - {path: manifests/ssh_secure.pp, lines: "66-68", text: "'PermitRootLogin'         => $my_root_login ,"}
+      - {path: manifests/ssh_secure.pp, lines: "49-53", text: "$my_root_login = 'no'"}
     mutates: none beyond two SSH login attempts over loopback (declared mutating so they run after the key is in place)
     probe: |
       true
@@ -263,7 +292,9 @@ checks:
       o='-o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5'
       ssh -n $o -o PreferredAuthentications=password -o PubkeyAuthentication=no p8testin@127.0.0.1 true 2>&1 | grep -o 'Permission denied ([a-z,-]*)'
       ssh -n $o -i /run/p8test-ssh/key root@127.0.0.1 true 2>&1 | grep -o 'Permission denied ([a-z,-]*)'
-    expect: {rc: 0, stdout: "\\APermission denied \\(publickey\\)\\nPermission denied \\(publickey\\)\\n\\Z"}
+      sleep 1
+      journalctl -u ssh.service --after-cursor "$(cat /run/p8test-ssh/cursor)" --no-pager -q | p8_count 'ROOT LOGIN REFUSED FROM 127\.0\.0\.1' | awk '{print ($1 != 0 ? "refused by PermitRootLogin" : "not refused by PermitRootLogin")}'
+    expect: {rc: 0, stdout: "\\APermission denied \\(publickey\\)\\nPermission denied \\(publickey\\)\\nrefused by PermitRootLogin\\n\\Z"}
 
   - id: an-idle-session-is-ended-after-the-interval
     what: >-
