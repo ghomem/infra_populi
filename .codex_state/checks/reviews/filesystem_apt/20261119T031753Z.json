@@ -1,0 +1,33 @@
+{
+ "class": "filesystem_apt",
+ "at": "20261119T031753Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-full-update-script-leaves-nothing-to-upgrade: manifests/filesystem_apt.pp:93-100 install files/apt/apt-update-dist.sh, which is 'apt-get -y -o DPkg::Options::=--force-confdef -o DPkg::Options::=--force-confold dist-upgrade' under DEBIAN_FRONTEND=noninteractive; the action runs the installed script and the read-only effect reads apt's own simulation (apt-get -s dist-upgrade), not the script's output; my run: clean node simulation 252 upgraded, 27 newly installed; after the action rc=0 and 0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded",
+  "helper-scripts-installed: manifests/filesystem_apt.pp:120-128 pick openscap_pkg = 'openscap-scanner' when os.release.major is '24.04' (the node) and declare package ensure installed; the probe expects 'openscap-scanner install ok installed', plus each script root 0755 (lines 24-30, 64-70, 85-100, 131-137, 149-155, 185-191, localdir /opt/puppet-infrastructure), /var/lib/apt-check-updates 0755 (178-181) and the sha256 of the four static files equal to their baseline sources; supported",
+  "the-job-s-list-is-installed-by-the-relevant-updates-script: manifests/filesystem_apt.pp:183-191 install apt-update-relevant.sh.erb, which reads /list, runs apt-get update and calls apt-update-pkg.sh on each listed package; the action snapshots the list the preceding check's job run wrote, runs the installed script, and the effect checks from apt-cache policy that the job listed at least one package and that none is still behind its candidate; it tests what the lines declare (job -> list -> install chain), and the effect reads node state, not the script's output",
+  "purpose covered: Tested (my run: clean phase all 10 negatives failed, applied phase all 10 passed): the scripts root 0755 with the static ones byte-exact and openscap-scanner installed (24.04 branch); the server surface list and root's cron line '0 0 * * * apt-check-updates.sh High' (defaults: no Hiera prio/hour/min keys); the wrapper refusing a missing package (cowsay, rc 1, not installed afterwards) and upgrading a downgraded installed package to the candidate; the surface script upgrading a downgraded surface package through the wrapper; the daily job run as the cron runs it (rc 0 requires the OVAL download, bunzip2 and oscap evaluation to succeed under set -e) writing a non-empty one-package-per-line list whose every entry is installed below its candidate, and apt-update-relevant.sh then bringing that job's own list to the candidates; the relevant script on a hand-written list; the kernel script leaving the metapackage at its candidate; the full update leaving nothing to upgrade. This tests the class doing its job, not just files existing. Left out: that the High threshold EXCLUDES lower-priority issues is not separately probed (a non-empty list of pending packages is required, and the threshold is the parameter the cron passes; the realistic 24.04 breakages - unparseable results, missing severities defaulting to Medium below High, oscap failure - empty the list or fail the job and are caught). Uncovered rows are honest: the desktop variant (server_mode false, desktop list + compatibility link, manifest lines 43-58, 72-82) needs a desktop node and the active gnome kind (capabilities desktop, gnome) lifts it; the other parameter variants (method 0, no_kernel true, custom surface list, Hiera prio/hour/min) are fixture variants of the same ubuntu node, untested because one set holds one fixture, stated as such."
+ ],
+ "review_s": 743.0,
+ "check_file_sha256": "c6c9e4c00148d86ea55fded9796e1822ffd6648c6f76d0606c14ed8598812d6a",
+ "reviewer_result": "20261119T030530Z-reviewer",
+ "author_result": "20261119T025422Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "90cbec07-96d3-47a3-a815-9f85d4ef3704",
+   "boot_id_at_end": "90cbec07-96d3-47a3-a815-9f85d4ef3704",
+   "fresh": true
+  }
+ }
+}
