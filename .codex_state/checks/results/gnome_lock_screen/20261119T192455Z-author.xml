@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.gnome_lock_screen"><testsuite name="phase3.gnome_lock_screen.clean" tests="5" failures="0"><testcase classname="phase3.gnome_lock_screen.clean" name="dconf-cli-installed" /><testcase classname="phase3.gnome_lock_screen.clean" name="profile-uses-system-db-local" /><testcase classname="phase3.gnome_lock_screen.clean" name="keyfile-and-locks-rendered" /><testcase classname="phase3.gnome_lock_screen.clean" name="compiled-db-serves-the-policy" /><testcase classname="phase3.gnome_lock_screen.clean" name="a-user-cannot-override-the-locked-keys" /></testsuite><testsuite name="phase3.gnome_lock_screen.applied" tests="6" failures="1"><testcase classname="phase3.gnome_lock_screen.applied" name="dconf-cli-installed" /><testcase classname="phase3.gnome_lock_screen.applied" name="profile-uses-system-db-local" /><testcase classname="phase3.gnome_lock_screen.applied" name="keyfile-and-locks-rendered" /><testcase classname="phase3.gnome_lock_screen.applied" name="compiled-db-serves-the-policy" /><testcase classname="phase3.gnome_lock_screen.applied" name="compiled-db-serves-the-policy.mismatch" /><testcase classname="phase3.gnome_lock_screen.applied" name="a-user-cannot-override-the-locked-keys"><failure message="check failed after the class was applied (finding)">rc 0
+/org/gnome/desktop/session/idle-delay refused
+/org/gnome/desktop/screensaver/lock-enabled refused
+/org/gnome/desktop/screensaver/lock-delay refused
+dbus-daemon[1963]: [session uid=1001 pid=1963] Activating service name='ca.desrt.dconf' requested by ':1.0' (uid=1001 pid=1968 comm="dconf write /org/gnome/desktop/interface/text-scal" label="unconfined")
+dbus-daemon[1963]: [session uid=1001 pid=1963] Successfully activated service 'ca.desrt.dconf'
+unlocked key written
+session/idle-delay uint32 300
+screensaver/lock-enabled true
+screensaver/lock-delay uint32 0
+interface/text-scaling-factor 1.25
+
+</failure></testcase></testsuite></testsuites>
