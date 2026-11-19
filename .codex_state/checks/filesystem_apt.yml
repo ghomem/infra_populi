@@ -27,7 +27,7 @@ outcomes:
     checks: [surface-list-and-daily-job, the-surface-script-updates-an-outdated-surface-package]
   - outcome: a daily job lists the relevant (High and above) security updates from Canonical's OVAL data, and the relevant-updates script installs them
     from: manifests/filesystem_apt.pp:102-190
-    checks: [surface-list-and-daily-job, the-daily-job-lists-relevant-updates, the-relevant-updates-on-the-list-get-installed]
+    checks: [surface-list-and-daily-job, the-daily-job-lists-relevant-updates, the-job-s-list-is-installed-by-the-relevant-updates-script, the-relevant-updates-on-the-list-get-installed]
   - outcome: the kernel script brings the kernel metapackage up to date
     from: manifests/filesystem_apt.pp:84-91
     checks: [the-kernel-script-brings-the-kernel-metapackage-up-to-date]
@@ -100,7 +100,7 @@ checks:
     mutates: >-
       picks the first of wget, less, tzdata, curl, vim-tiny whose archive has an older version than the installed
       candidate, downgrades it to that version (apt-get install --allow-downgrades), then runs apt-update-pkg.sh on it;
-      the package and its versions go to /run/p8test-apt/upgrade.txt
+      the package and its versions go to /run/p8test-apt/upgrade.vars
     probe: |
       install -d -m 0700 /run/p8test-apt
       for p in wget less tzdata curl vim-tiny; do
@@ -122,10 +122,14 @@ checks:
       [ "$reported" = yes ] && echo "wrapper reported the update"
     expect: {rc: 0, stdout: "\\Adowngraded to the archive's older version\\nupgraded to the candidate\\nwrapper reported the update\\n\\Z"}
 
+  # 2026-11-19 correction round 1 (review 20261119T025241Z): the list could be empty and still pass; the reverted node
+  # has pending upgrades, so the job's list must now be non-empty with every listed package installed below its
+  # candidate, and the next check installs the job's own list (the job, list and install chain end to end).
   - id: the-daily-job-lists-relevant-updates
     what: >-
       run as the cron runs it, the job fetches Canonical's OVAL data for the release, evaluates it with openscap and
-      writes the list of updates of priority >= High (the file exists, possibly empty) without error
+      writes the list of updates of priority >= High: at least one package, one per line, each installed below its
+      candidate (the reverted node has pending security updates)
     control: negative
     timeout: 600
     derived_from:
@@ -141,9 +145,33 @@ checks:
       /opt/puppet-infrastructure/bin/apt-check-updates.sh High >/dev/null 2>&1; echo "rc=$?" > /run/p8test-apt/check.txt
     effect: |
       cat /run/p8test-apt/check.txt
-      test -f /var/lib/apt-check-updates/list && echo list-written
-      awk 'NF != 1' /var/lib/apt-check-updates/list | wc -l
-    expect: {rc: 0, stdout: "\\Arc=0\\nlist-written\\n0\\n\\Z"}
+      l=/var/lib/apt-check-updates/list
+      test -f "$l" && echo list-written
+      awk 'NF != 1' "$l" | wc -l
+      n=$(p8_count . "$l"); [ "$n" -ge 1 ] && echo "listed: at least 1"
+      for p in $(cat "$l"); do apt-cache policy "$p" | awk '/Installed:/ {i=$2} /Candidate:/ {c=$2} END {if (i == c || i == "(none)") print "not behind"}'; done | p8_count 'not behind'
+    expect: {rc: 0, stdout: "\\Arc=0\\nlist-written\\n0\\nlisted: at least 1\\n0\\n\\Z"}
+
+  - id: the-job-s-list-is-installed-by-the-relevant-updates-script
+    what: >-
+      apt-update-relevant.sh, run after the daily job, installs the job's own list: every package on it ends at its
+      candidate
+    control: negative
+    timeout: 600
+    derived_from:
+      - {path: manifests/filesystem_apt.pp, lines: "183-191", text: "content => template('puppet_infrastructure/apt/apt-update-relevant.sh.erb'),"}
+      - {path: templates/apt/apt-update-relevant.sh.erb, sha256: "0953a9fc34832eb2a15c3d1aa42ea2bf14428789054d249f910b4c32b65f3eb2"}
+    mutates: >-
+      copies the job's list to /run/p8test-apt/job-list, then runs /opt/puppet-infrastructure/bin/apt-update-relevant.sh
+      on the node (it upgrades every listed package through the wrapper)
+    probe: |
+      install -d -m 0700 /run/p8test-apt
+      cp /var/lib/apt-check-updates/list /run/p8test-apt/job-list
+      /opt/puppet-infrastructure/bin/apt-update-relevant.sh >/dev/null 2>&1
+    effect: |
+      n=$(p8_count . /run/p8test-apt/job-list); [ "$n" -ge 1 ] && echo "the job listed at least 1"
+      for p in $(cat /run/p8test-apt/job-list); do apt-cache policy "$p" | awk '/Installed:/ {i=$2} /Candidate:/ {c=$2} END {if (i != c) print "still behind"}'; done | p8_count 'still behind'
+    expect: {rc: 0, stdout: "\\Athe job listed at least 1\\n0\\n\\Z"}
 
   # 2026-11-18 purpose correction (review 20261118T121418Z): apt-update-relevant.sh (manifest lines 183-191), the
   # script that installs the updates on the daily list, was missing from the purpose and the checks; it is in both now.
@@ -159,7 +187,7 @@ checks:
     mutates: >-
       picks the first of wget, less, tzdata, curl, vim-tiny whose archive has an older version, downgrades it, writes
       its name as the only line of /var/lib/apt-check-updates/list (as the daily job writes the list), runs
-      apt-update-relevant.sh; the package's versions go to /run/p8test-apt/relevant.txt
+      apt-update-relevant.sh; the package's versions go to /run/p8test-apt/relevant.vars
     probe: |
       install -d -m 0700 /run/p8test-apt
       for p in wget less tzdata curl vim-tiny; do
@@ -199,7 +227,7 @@ checks:
     mutates: >-
       picks the first of less, gzip, vim whose archive has an older version, downgrades it, then runs
       apt-update-surface.sh (which updates every installed surface package that has an update); the package's
-      versions go to /run/p8test-apt/surface.txt
+      versions go to /run/p8test-apt/surface.vars
     probe: |
       install -d -m 0700 /run/p8test-apt
       for p in less gzip vim; do
