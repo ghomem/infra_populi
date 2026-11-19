@@ -27,7 +27,12 @@ node_agent:
     the class purges firewall rules it does not manage, and rebuilds its rules after the flush its WARNING asks for;
     only its next agent run can show either
 outcomes:
-  # Correction round 3 (2026-11-18, HQ batch-11 rulings 1 and 3; review 20261118T182854Z), the last:
+  # Correction round 4 (2026-11-19, HQ batch-12 ruling 2; review 20261118T225957Z), the last for this class: the
+  # held-SSH check records the SSH rules' counters before and after, so a run that holds fewer than 8 shows which
+  # rule took the connection (three hand repetitions on the applied node, 2026-11-19: 8 held each time, only rule 112
+  # dropped, 16 packets a round: the 9th and 10th SYNs and their retransmissions; 114 and 117 dropped none); the
+  # expectation stays 8, no legitimate interaction having shown; the held connections use the probe helpers.
+  # Correction round 3 (2026-11-18, HQ batch-11 rulings 1 and 3; review 20261118T182854Z):
   # - local change #5 (rules/local_changes.md): the blacklist drop is titled 00 and covers all protocols, so the
   #   blacklist check expects ICMP and SSH dropped, and a non-listed source is shown unaffected;
   # - the rows say TCP where the type's default protocol makes a rule TCP-only (501-518, 524);
@@ -46,10 +51,10 @@ outcomes:
     checks: [a-service-listens, loopback-reaches-a-local-service]
   - outcome: traffic to 127.0.0.0/8 arriving on another interface is rejected (rule 002)
     from: manifests/firewall_secure_extra.pp:113-118
-    uncovered: {why: "measured on the applied node 2026-11-18: 3 hand-built Ethernet frames from the peer to 127.0.0.1 through the node's NIC were counted 0 by rule 002 with route_localnet 0 (the kernel drops such a destination before INPUT) and again 0 with route_localnet set to 1 on the node, for a reason not found; no check can show the rule act, and it is listed as a lead in escalations/firewall_secure_extra.behaviour.md", lifted_by: ubuntu}
+    uncovered: {why: "no node kind in nodes.yml would show this rule act; measured on the ubuntu node 2026-11-18: 3 hand-built Ethernet frames from the peer to 127.0.0.1 through the node's NIC were counted 0 by rule 002 with route_localnet 0 (the kernel drops such a destination before INPUT) and again 0 with route_localnet set to 1 on the node, for a reason not found; no check can show the rule act, and it is listed as a lead in escalations/firewall_secure_extra.behaviour.md", lifted_by: ubuntu}
   - outcome: SSH from a host on no list is limited against brute force (overall 20 a minute with a burst of 5, 8 held per host, 15 new a minute per host)
     from: manifests/firewall_secure_extra.pp:129-132, 144-155
-    checks: [an-ssh-burst-is-cut-at-the-overall-limit, held-ssh-connections-stop-at-eight, new-ssh-connections-stop-at-fifteen-a-minute]
+    checks: [an-ssh-burst-is-cut-at-the-overall-limit, the-ssh-rule-counters-are-recorded, held-ssh-connections-stop-at-eight, only-the-per-host-limit-dropped-the-held-connections, new-ssh-connections-stop-at-fifteen-a-minute]
   - outcome: invalid TCP packets (bogus flag combinations such as SYN+FIN, out-of-connection RSTs) and new TCP packets without SYN are dropped before routing (the rules set no protocol, so the type's tcp default applies)
     from: manifests/firewall_secure_extra.pp:157-185
     checks: [mangle-anti-ddos-rules, the-mangle-counters-are-zeroed, bogus-packets-are-sent, the-invalid-and-not-syn-rules-dropped-them]
@@ -58,7 +63,7 @@ outcomes:
     checks: [the-mangle-counters-are-zeroed, a-low-mss-syn-is-dropped, the-mss-rule-dropped-it]
   - outcome: TCP fragments are dropped (rule 518; tcp by the type's default)
     from: manifests/firewall_secure_extra.pp:184-185
-    uncovered: {why: "measured on the applied node 2026-11-18: 5 TCP-fragmented SYNs from the peer (hping3 -f) reached the node's NIC (tcpdump: 8-byte fragments) and were counted 0 by rule 518 and 0 by 501; the kernel's connection tracking reassembles fragments at a hook that runs before the mangle table (defrag priority -400, mangle -150), so the rule only ever sees whole packets. An unreachable rule like the RST limit, reported to HQ in escalations/firewall_secure_extra.behaviour.md", lifted_by: ubuntu}
+    uncovered: {why: "no node kind in nodes.yml would show this rule act (Phase 5 backlog #8); measured on the ubuntu node 2026-11-18: 5 TCP-fragmented SYNs from the peer (hping3 -f) reached the node's NIC (tcpdump: 8-byte fragments) and were counted 0 by rule 518 and 0 by 501; the kernel's connection tracking reassembles fragments at a hook that runs before the mangle table (defrag priority -400, mangle -150), so the rule only ever sees whole packets. An unreachable rule like the RST limit, reported to HQ in escalations/firewall_secure_extra.behaviour.md", lifted_by: ubuntu}
   - outcome: ICMP echo requests are limited to 2 per second
     from: manifests/firewall_secure_extra.pp:87-99
     checks: [icmp-echo-is-rate-limited]
@@ -433,6 +438,19 @@ checks:
       cat /run/p8test-fwx/burst.txt
     expect: {rc: 0, stdout: "\\Adropped 15\\nin 5\\n\\Z"}
 
+  - id: the-ssh-rule-counters-are-recorded
+    what: setup for the held-connection checks, the packet counters of the SSH limit rules (112, 114, 116, 117) recorded on the node
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "149", text: "-> firewall { '112 SSH connlimit':"}
+    mutates: writes the counters of rules 112, 114, 116 and 117 to /run/p8test-fwx/ssh-before on the node
+    probe: |
+      install -d -m 0700 /run/p8test-fwx
+      { iptables -v -x -L LIMIT_INDIVIDUAL -n; iptables -v -x -L LIMIT_OVERALL -n; } | awk '/\/\* 11[2467] SSH/ {n=$0; sub(/.*\/\* /, "", n); print substr(n, 1, 3), $1}' > /run/p8test-fwx/ssh-before
+    effect: |
+      cut -d' ' -f1 /run/p8test-fwx/ssh-before | paste -sd' '
+    expect: {rc: 0, stdout: "\\A112 114 116 117\\n\\Z"}
+
   - id: held-ssh-connections-stop-at-eight
     what: >-
       from the peer's primary address, new SSH connections one every 4 s (slower than the overall limit refills), each
@@ -444,17 +462,32 @@ checks:
       - {path: manifests/firewall_secure_extra.pp, lines: "130", text: "$indilim='8'           # limit for individual IP simultaneous connections"}
       - {path: manifests/firewall_secure_extra.pp, lines: "149", text: "-> firewall { '112 SSH connlimit':          chain => 'LIMIT_INDIVIDUAL', proto => tcp, dport => $ssh_port, connlimit_above => $indilim, action => 'drop', }"}
     mutates: >-
-      after 61 s, 10 SSH connections from the peer's primary address to the class node, one every 4 s, each ended
-      after 50 s; the established count goes to /run/p8test-fwx/held-ssh.txt on the peer
+      after 61 s, 10 SSH connections from the peer's primary address to the class node, one every 4 s, each held 50 s
+      (p8_hold); the established count goes to /run/p8test-fwx/held-ssh.txt on the peer
     probe: |
       sleep 61
-      for i in $(seq 10); do (timeout 50 nc 192.168.56.20 22 </dev/null >/dev/null 2>&1) & sleep 4; done
+      for i in $(seq 10); do p8_hold 192.168.56.20 22 50; sleep 4; done
       sleep 1
-      ss -tnH state established '( dport = :22 and dst 192.168.56.20 )' | wc -l > /run/p8test-fwx/held-ssh.txt
-      wait
+      p8_established 192.168.56.20 22 > /run/p8test-fwx/held-ssh.txt
+      sleep 50
     effect: |
       cat /run/p8test-fwx/held-ssh.txt
     expect: {rc: 0, stdout: "\\A8\\n\\Z"}
+
+  - id: only-the-per-host-limit-dropped-the-held-connections
+    what: >-
+      on the node, during the held connections only the per-host connection limit (112) dropped packets (the 9th and
+      10th connections' SYNs and their retransmissions, at least 2); the recent limit (114) and the overall drop (117)
+      dropped none, and the overall limit (116) accepted at least 8
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "149", text: "connlimit_above => $indilim, action => 'drop', }"}
+    mutates: none beyond reading the rule counters (declared mutating so it runs after the held connections)
+    probe: |
+      true
+    effect: |
+      join <(sort /run/p8test-fwx/ssh-before) <({ iptables -v -x -L LIMIT_INDIVIDUAL -n; iptables -v -x -L LIMIT_OVERALL -n; } | awk '/\/\* 11[2467] SSH/ {n=$0; sub(/.*\/\* /, "", n); print substr(n, 1, 3), $1}' | sort) | awk '{d=$3-$2; printf "%s %d\n", $1, d}' | awk '$1=="112"{print ($2>=2 ? "112 dropped the 9th and 10th" : "112 dropped "$2)} $1=="114"{print "114 dropped "$2} $1=="116"{print ($2>=8 ? "116 accepted at least 8" : "116 accepted "$2)} $1=="117"{print "117 dropped "$2}'
+    expect: {rc: 0, stdout: "\\A112 dropped the 9th and 10th\\n114 dropped 0\\n116 accepted at least 8\\n117 dropped 0\\n\\Z"}
 
   - id: new-ssh-connections-stop-at-fifteen-a-minute
     what: >-
