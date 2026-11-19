@@ -1,6 +1,7 @@
 # network_dhcp — behaviour finding: the DHCP interface is never brought up on Ubuntu 24.04 (2026-11-19)
 
-Status: OPEN, for HQ. Escalated for this class under HQ batch-12 ruling 5: a finding whose fix has more than one
+Status: OPEN, for HQ. The reviewer reproduced it and confirmed that ifupdown-extra does not depend on ifupdown
+(checks/reviews/network_dhcp/20261119T045534Z.json, set PASS with this finding, purpose covered). Escalated for this class under HQ batch-12 ruling 5: a finding whose fix has more than one
 reasonable design. The run continues with the next class.
 
 ## What the class does
@@ -36,5 +37,5 @@ reasonable design. The run continues with the next class.
 - **D. No fix:** record that the class is ifupdown-only and does nothing on netplan systems, in the documentation list
   and the approval report.
 
-**Recommendation:** decide together with the same question for the class's sibling network_static (puppet-network on a
-netplan-only release), which is next in the backfill.
+**Recommendation:** decide together with the same question for the sibling network_static, which also uses
+puppet-network on a netplan-only release. It has no check set yet, and no production statement declares it.

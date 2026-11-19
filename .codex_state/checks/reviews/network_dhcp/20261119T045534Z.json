@@ -1,0 +1,36 @@
+{
+ "class": "network_dhcp",
+ "at": "20261119T045534Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-interface-stanza-says-dhcp-at-boot (network_dhcp.pp:12): network_config $iface with family inet, method dhcp, onboot true is rendered by puppet-network as 'auto <iface>' + 'iface <iface> inet dhcp' in /etc/network/interfaces; the probe greps exactly those two lines for the fixture iface p8test0 and expects them (I read the applied file: header, 'auto p8test0', 'iface p8test0 inet dhcp', no allow-hotplug line, consistent with hotplug false)",
+  "the-boot-step-gives-the-interface-a-dhcp-address (network_dhcp.pp:12): onboot true + method dhcp means the step a boot runs for /etc/network/interfaces (networking.service or ifup -a) must bring p8test0 up with a DHCP lease; the action runs exactly that step if the node has one and records which, and the read-only effect reads the resulting 10.251.0.100-150 address on p8test0 from the namespace dnsmasq (the result, not the action's output); mutates declares all of it",
+  "the-interface-stanza-says-dhcp-at-boot (network_dhcp.pp:11): package ifupdown-extra ensure installed; dpkg-query expecting 'ifupdown-extra install ok installed' tests exactly that",
+  "finding the-boot-step-gives-the-interface-a-dhcp-address: applied effect 'boot step: none' and no 10.251.0.x address on p8test0 although the setup check passed (interface-present, dnsmasq active); I confirmed read-only on the node: ifupdown is not installed (dpkg 'un'), no ifup command, no networking.service, and apt-cache depends shows ifupdown-extra does not depend on ifupdown, so on Ubuntu 24.04 nothing reads the stanza the class writes",
+  "purpose covered: Purpose (configure an interface with DHCP, up at boot, address from the LAN DHCP server) matches the baseline header lines 1-2 and line 12; lines 4-7 are the reason the class exists (puppet-network managing lo forces managing all interfaces), not a separate outcome. Both outcomes are mapped: the stanza + package check, and a real behaviour test (a namespace LAN with dnsmasq on veth p8test0, then the boot step for /etc/network/interfaces, judged on the leased address). Everything the lab can exercise is tested; no uncovered entries are needed. Minor: hotplug false (no allow-hotplug line) is not asserted by the grep, though the applied file I read has none. The boot-step check found that on 24.04 the address never comes; that is a finding, not a coverage gap."
+ ],
+ "review_s": 127.5,
+ "check_file_sha256": "a51eb2f12dfa16fea270d952d05dca29d79daa89e7abc8a0fe5691c03d3cbb95",
+ "reviewer_result": "20261119T045327Z-reviewer",
+ "author_result": "20261119T045009Z-author",
+ "findings": [
+  "the-boot-step-gives-the-interface-a-dhcp-address"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "d8612b7b-09d0-410a-9dff-9ec63db4400c",
+   "boot_id_at_end": "d8612b7b-09d0-410a-9dff-9ec63db4400c",
+   "fresh": true
+  }
+ }
+}
