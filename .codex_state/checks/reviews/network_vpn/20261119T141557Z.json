@@ -1,0 +1,43 @@
+{
+ "class": "network_vpn",
+ "at": "20261119T141557Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "forwarding-and-nat-to-the-wan (network_vpn.pp:42-43): wan_iface => $wan_iface (params p8test0) and lan_bridge_iface => $openvpn_bridge_iface (default br0) feed firewall_addon_openvpn_server:17-21; the expected -A FORWARD -i br0 -o p8test0, -i p8test0 -o br0 RELATED,ESTABLISHED, -i br0 -o br0 and POSTROUTING -o p8test0 MASQUERADE are exactly those rules with these values, plus ip_forward 1 (:25)",
+  "client-connects-and-resolves-through-the-vpn-nameserver (network_vpn.pp:31-32): allowed_networks => [\"${openvpn_network}/24\"] = 198.51.100.0/24 under the params fixture, rendered into allow-query; a client holding a tunnel address in that network asks @198.51.100.1 and is answered (localhost -> 127.0.0.1), which is what those lines grant",
+  "client-connects-and-resolves-through-the-vpn-nameserver (network_vpn.pp:23-24): pool_start/pool_end (params .101/.200) go to openvpn_server's server-bridge; the client's tap address is expected in 198.51.100.(1\\d\\d|200)/24, i.e. the pool (the regex also admits .100, one address below pool_start: slightly lax, not a wrong expectation)",
+  "finding a-client-on-the-class-cipher-connects: a client offering only the class's cipher AES-256-CBC (network_vpn.pp:25, 57) got 'AUTH_FAILED,Data channel cipher negotiation failed (no shared cipher)' and 0 'Initialization Sequence Completed', expected 1 and Data Channel cipher 'AES-256-CBC' (same as openvpn_server's escalated finding)",
+  "purpose covered: Purpose (header :1-4 and the four compositions :29-60) is read right: OpenVPN server with user auth, the VPN's own caching nameserver on the bridge allowed by the firewall, forwarding and NAT to the WAN. Checks test it as behaviour from a second machine: a PAM account connects, gets a pool address and the pushed DNS 198.51.100.1, resolves a real name recursively through that nameserver over stand-in default drops, reaches a WAN-side server that sees the masqueraded 203.0.113.50, and counters on 1301/202/203/205 attribute the flows; plus the class's own cipher (finding). Uncovered rows are true: client isolation, bridge/unit at boot, hairpin behaviour and compression are tested by openvpn_server's and firewall_addon_openvpn_server's sets, and network_vpn's defaults for reneg_sec 3600, cipher, client_isolation true equal openvpn_server's own defaults; compression is not passed by this class; parameter variants are untested (one params fixture), lifted_by ubuntu. The lab IPv6/-4 fixture is a lab-environment mutation declared in mutates, not part of the class."
+ ],
+ "review_s": 252.2,
+ "check_file_sha256": "63c5aa7fb76419e2ca68e946efac734e7e24c1c9644a6985dd6a5d02a6e8ab54",
+ "reviewer_result": "20261119T141145Z-reviewer",
+ "author_result": "20261119T140625Z-author",
+ "findings": [
+  "a-client-on-the-class-cipher-connects"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "eda7a78f-135d-4b12-8d25-e63f928e09c8",
+   "boot_id_at_end": "eda7a78f-135d-4b12-8d25-e63f928e09c8",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "df546c2c-f8f4-4b7e-9a9d-281d1eb16f09",
+   "boot_id_at_end": "df546c2c-f8f4-4b7e-9a9d-281d1eb16f09",
+   "fresh": true
+  }
+ }
+}
