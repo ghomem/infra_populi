@@ -1,0 +1,42 @@
+{
+ "class": "sync",
+ "at": "20261119T174521Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-peer-serves-the-remote-dir: sync.sh.erb:30 runs rsync over ssh as $REMOTEUSER@$HOST:$REMOTEDIR/; the action creates exactly that remote side (p8testuser trusting root's key, /srv/p8test owned by it, as the params fixture's remoteuser/remotedir say); mutates declares every change; the effect lists the tree and the authorized_keys owner/mode by reading them, not the action's output",
+  "bandwidth-limit-converted: sync.erb:24 RSYNCOPTS=\"-av --partial --delete${BWLIMIT_OPT}\" is matched literally, and with fixture bwlimit_mbitps=10 sync.pp:17-24 gives 10*1e6/(8*1048576)=1.192 -> sprintf %.2f -> ' --bwlimit=1.19m', the expected BWLIMIT_OPT line",
+  "daily-cron-for-the-local-user: sync.pp:41 user => $localuser; the fixture's localuser is root, so the probe reads root's crontab and expects the cron_sync_sync entry '17 3 * * * /opt/puppet-infrastructure/bin/sync-sync.sh' (fixture hour 3, minute 17, Hiera bindir), what Puppet's cron type writes",
+  "purpose gap: Tested: script installed root:root 0755 with the rendered parameters and valid bash; root's daily 03:17 cron entry naming it; a real run of the installed script against the peer mirrors /srv/p8test into <localdir>/<host><suffix> over ssh as p8testuser (same files and content), under the 1.19 MiB/s limit (>=4.5 s for 6 MiB), and the next run deletes a file removed remotely (--delete); reviewer run ALL_PASS, all 10 negative controls failed clean. Left out: cron actually firing at 03:17 (honest), and the no-limit/other-user variants (honestly need another params fixture). GAP: the class is a MULTI-host sync (sync.pp:2 header, sync.sh.erb:25-31 loop over $HOSTS with a per-host TARGETDIR and PORT), and the stated purpose says 'each listed host', but the fixture lists one host; the 'uncovered' reason 'one remote host' is a fixture choice, not a lab limit (its lifted_by is the default ubuntu node): a hostlist with two names pinned to the same peer (or the peer under two names/ports) would exercise the loop and the separate target dirs on this lab."
+ ],
+ "review_s": 143.6,
+ "check_file_sha256": "4b834d75843c296755c0065013f9acaf4c66dc52cacd5c54e89d15e48513ab1d",
+ "reviewer_result": "20261119T174258Z-reviewer",
+ "author_result": "20261119T173937Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "41813d9b-96dd-4797-b010-223b1c750897",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "41813d9b-96dd-4797-b010-223b1c750897",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "91a5d7b3-498d-42da-b3a1-745c9e8ba757",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "91a5d7b3-498d-42da-b3a1-745c9e8ba757",
+   "fresh": true
+  }
+ }
+}
