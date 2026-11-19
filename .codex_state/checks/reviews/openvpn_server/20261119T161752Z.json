@@ -1,0 +1,45 @@
+{
+ "class": "openvpn_server",
+ "at": "20261119T161752Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "a-second-client-reaches-the-server-side-but-not-the-first (:43-45): $proxy_arp = Numeric(!$client_isolation) turns the default client_isolation true (:25) into proxy_arp_pvlan 0 on br0 (:211), so the bridge does not proxy between ports and two VPN clients behind tap0 cannot reach each other; the probe connects a second client (own account, own namespace) that reaches 192.0.2.1 but not the first client's pool address, which is the outcome those lines produce under the params fixture",
+  "server-listens-on-the-bound-address (:184): local => $local renders 'local' in the server config; the params fixture sets local 203.0.113.50 and proto udp (:165) on the module's default port 1194, so ss showing exactly 203.0.113.50:1194 is what the code produces",
+  "bridge-holds-the-lan-address-and-tap0 (:174): up => openvpn-up.sh br0 lo:0 tap0, and the baseline script files/openvpn/openvpn-up.sh runs 'brctl addif $BR $TAPDEV', so tap0 as a port of br0 follows from the line; br0's 192.0.2.1/24 comes from the bridge's network_config (:100-115, lan_static_ip 192.0.2.1, netmask 255.255.255.0 in the fixture), cited by the networking check rather than this one but the expected value is what the code produces",
+  "finding the-data-channel-is-compressed-both-ways: applied, the server receives LZO-compressed packets (139 bytes per packet) but sends uncompressed ones (1237 bytes per packet) for 1228-byte zero pings, vs the expectation of both directions compressed (comp-lzo, :30, :166); the same result as the author's measurement in the set header (OpenVPN 2.6 needs allow-compression yes to compress sent packets)",
+  "purpose covered: The purpose (bridged OpenVPN server, PAM accounts without client certificates, pool addresses and pushed options, LAN-side reach, client isolation, bridge and server back at boot, class cipher and LZO) matches the baseline manifest and its header. Every outcome row maps to checks that exercise it with a real client on ubuntu2: listening on the bound address, rendered tap0/server-bridge/PAM/reneg-sec/verify-client-cert none, unit enabled and active, bridge address with tap0 as port, ifupdown + networking enabled + br0 stanza, a PAM login that gets a pool address and the pushed redirect-gateway and DNS and pings 192.0.2.1 (also proving the key files, the auth-pam symlink and the up script work), a wrong password refused, a second client isolated from the first, a CBC-only client negotiating AES-256-CBC (pass after local change #7), and byte-counter measurement of LZO in both directions (finding on the send side). Left out, honestly listed or explained: parameter variants (force_ifupdown, client_isolation false, compression none, other cipher/DNS) uncovered with lifted_by ubuntu since one set holds one params fixture; the pushed redirect-gateway is checked as received but filtered on the client because applying it would reroute the peer's path to the server through NAT; reneg-sec and at-boot behaviour are checked at the config/enablement level, not by waiting 3600 s or rebooting"
+ ],
+ "review_s": 245.7,
+ "check_file_sha256": "397368838d10dbb0fd745f45cfe174fc591ec3a9150068a511891ddb7001e8cf",
+ "reviewer_result": "20261119T161347Z-reviewer",
+ "author_result": "20261119T160852Z-author",
+ "findings": [
+  "the-data-channel-is-compressed-both-ways"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "dd6ae168-2794-452e-8e4d-599cb75b608a",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "dd6ae168-2794-452e-8e4d-599cb75b608a",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "73b64fe4-3be3-4cd3-a4f4-46e7c21e3580",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "73b64fe4-3be3-4cd3-a4f4-46e7c21e3580",
+   "fresh": true
+  }
+ }
+}
