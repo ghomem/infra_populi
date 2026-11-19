@@ -14,13 +14,32 @@ purpose: >-
   installing anything new), surface, kernel and full update scripts, and a daily job that lists the relevant (High or
   above) security updates from Canonical's OVAL data with openscap (for monitoring), and a script that installs the
   updates on that list through the wrapper; each script is run here.
-uncovered:
-  - what: "the desktop variant (server_mode false): the desktop surface list and the compatibility link"
-    why: the fixture is a server; one set holds one fixture
-    lifted_by: gnome
-  - what: "the other parameter variants: relevant_updates_method 0 (no relevant-updates job), relevant_updates_no_kernel true, a custom apt_surface_list, and Hiera prio_threshold/checkhour/checkmin"
-    why: each is a fixture variant of the same server; one set holds one fixture (the defaults)
-    lifted_by: ubuntu
+# Outcomes table added 2026-11-19 (backfill batch 3, HQ batch-10 ruling 2); the set-level uncovered list moved into it.
+outcomes:
+  - outcome: the update scripts are installed (wrapper, surface, kernel, full, relevant updates) and openscap is available for the relevant-updates job
+    from: manifests/filesystem_apt.pp:23-30, 63-70, 84-100, 113-157, 184-190
+    checks: [helper-scripts-installed]
+  - outcome: the wrapper updates an installed package and never installs a missing one
+    from: manifests/filesystem_apt.pp:23-30
+    checks: [the-wrapper-never-installs-a-missing-package, the-wrapper-upgrades-an-installed-package-with-an-update]
+  - outcome: the surface script updates the server surface list (server_mode true) through the wrapper
+    from: manifests/filesystem_apt.pp:32-70
+    checks: [surface-list-and-daily-job, the-surface-script-updates-an-outdated-surface-package]
+  - outcome: a daily job lists the relevant (High and above) security updates from Canonical's OVAL data, and the relevant-updates script installs them
+    from: manifests/filesystem_apt.pp:102-190
+    checks: [surface-list-and-daily-job, the-daily-job-lists-relevant-updates, the-relevant-updates-on-the-list-get-installed]
+  - outcome: the kernel script brings the kernel metapackage up to date
+    from: manifests/filesystem_apt.pp:84-91
+    checks: [the-kernel-script-brings-the-kernel-metapackage-up-to-date]
+  - outcome: the full update script leaves nothing to upgrade
+    from: manifests/filesystem_apt.pp:93-100
+    checks: [the-full-update-script-leaves-nothing-to-upgrade]
+  - outcome: "the desktop variant (server_mode false): the desktop surface list and the compatibility link"
+    from: manifests/filesystem_apt.pp:10, 54-58, 72-82
+    uncovered: {why: "a fixture variant: the fixture is a server and one set holds one fixture; untested", lifted_by: gnome}
+  - outcome: "the other parameter variants: relevant_updates_method 0 (no relevant-updates job), relevant_updates_no_kernel true, a custom apt_surface_list, and Hiera prio_threshold/checkhour/checkmin"
+    from: manifests/filesystem_apt.pp:12-18, 52-61, 113-176
+    uncovered: {why: "fixture variants of the same server (one set holds one fixture, the defaults); untested", lifted_by: ubuntu}
 checks:
   - id: helper-scripts-installed
     what: the helper scripts are installed root-owned 0755 (the static ones byte for byte), and openscap-scanner is installed
