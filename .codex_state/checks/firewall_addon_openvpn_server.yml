@@ -10,6 +10,30 @@ fixture: params
 authoring:
   minutes: 0.4
   notes: "Wall clock 2026-11-16T13:13:57Z to 13:14:23Z (written + validated outside the worktree while the Phase 1 review ran)."
+purpose: >-
+  The firewall side of an OpenVPN server that bridges its VPN clients onto a LAN bridge: traffic from the bridge out
+  to the WAN is forwarded and masqueraded behind the server's WAN address, only replies come back from the WAN into the
+  bridge, and the kernel forwards IPv4.
+# Purpose and outcomes table added 2026-11-19 (backfill batch 4, HQ batch-10 rulings 2 and C1), with forwarding through
+# the node as behaviour: two network namespaces stand for the LAN behind the bridge (p8testlan, through veth p8test1,
+# 10.252.1.0/24) and the WAN (p8testwan, through veth p8test0, 10.252.0.0/24), and a stand-in for the base firewall's
+# FORWARD default drop is appended after the class's rules. Everything stays on the node.
+outcomes:
+  - outcome: traffic from the bridge to the WAN is forwarded and leaves masqueraded behind the server's WAN address
+    from: manifests/firewall_addon_openvpn_server.pp:15-17, 21
+    checks: [forward-bridge-to-wan, nat-masquerade-on-wan, a-lan-and-a-wan-behind-the-node, a-lan-host-reaches-the-wan-masqueraded, the-forward-rules-counted-the-flows]
+  - outcome: from the WAN into the bridge only replies (related, established) pass; a new connection is dropped
+    from: manifests/firewall_addon_openvpn_server.pp:18
+    checks: [forward-wan-to-bridge-established-only, a-lan-and-a-wan-behind-the-node, a-wan-host-cannot-open-a-connection-into-the-lan, the-forward-rules-counted-the-flows]
+  - outcome: IPv4 forwarding is on, now and after a reboot
+    from: manifests/firewall_addon_openvpn_server.pp:23-25
+    checks: [ipv4-forwarding-on-and-persistent]
+  - outcome: traffic that enters the bridge and leaves it again (hairpin) is forwarded
+    from: manifests/firewall_addon_openvpn_server.pp:19
+    uncovered: {why: "the rule is checked as installed (forward-bridge-loopback), but a hairpin needs two clients behind one bridge whose traffic the server routes back out the same bridge, and the fixture's bridge interface is a veth with one client; untested as behaviour", lifted_by: ubuntu}
+  - outcome: client isolation (client_isolation)
+    from: manifests/firewall_addon_openvpn_server.pp:4-5, 11
+    uncovered: {why: "the parameter is declared but no code uses it (the class's own warning: still to be implemented); there is no behaviour to test", lifted_by: ubuntu}
 checks:
   - id: forward-bridge-to-wan
     what: FORWARD accepts traffic from the LAN bridge interface out of the WAN interface (rule 202)
@@ -52,3 +76,87 @@ checks:
       sysctl -n net.ipv4.ip_forward
       cat /etc/sysctl.d/net.ipv4.ip_forward.conf
     expect: {rc: 0, stdout: "\\A1\\nnet\\.ipv4\\.ip_forward = 1\\n\\Z"}
+
+  - id: a-lan-and-a-wan-behind-the-node
+    what: >-
+      setup for the forwarding checks: a LAN namespace behind p8test1 and a WAN namespace behind p8test0, a TCP server
+      on each side, and the stand-in FORWARD drop appended after the class's rules
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_openvpn_server.pp, lines: "1-2", text: "# This class provides necessary firewall configurations for openvpn servers"}
+    mutates: >-
+      creates namespaces p8testlan and p8testwan with veth pairs p8test1/p8testlanif (10.252.1.1/24 node,
+      10.252.1.2/24 LAN, default route via the node) and p8test0/p8testwanif (10.252.0.1/24 node, 10.252.0.2/24 WAN,
+      a route to the LAN via the node); starts transient units p8test-wansrv (TCP 10.252.0.2:8080, answers with the
+      client address it sees) and p8test-lansrv (TCP 10.252.1.2:8081); appends `-A FORWARD -i p8test0 -m comment
+      --comment p8test-default-drop -j DROP` and the same for -i p8test1
+    probe: |
+      ip netns add p8testlan; ip netns add p8testwan
+      ip link add p8test1 type veth peer name p8testlanif; ip link set p8testlanif netns p8testlan
+      ip link add p8test0 type veth peer name p8testwanif; ip link set p8testwanif netns p8testwan
+      ip addr add 10.252.1.1/24 dev p8test1; ip link set p8test1 up
+      ip addr add 10.252.0.1/24 dev p8test0; ip link set p8test0 up
+      ip netns exec p8testlan ip addr add 10.252.1.2/24 dev p8testlanif; ip netns exec p8testlan ip link set p8testlanif up
+      ip netns exec p8testlan ip route add default via 10.252.1.1
+      ip netns exec p8testwan ip addr add 10.252.0.2/24 dev p8testwanif; ip netns exec p8testwan ip link set p8testwanif up
+      ip netns exec p8testwan ip route add 10.252.1.0/24 via 10.252.0.1
+      systemd-run --unit p8test-wansrv -q ip netns exec p8testwan python3 -c "import socket; s=socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); s.bind(('10.252.0.2', 8080)); s.listen(5)
+      while True:
+          c, a = s.accept(); c.sendall((a[0] + chr(10)).encode()); c.close()"
+      systemd-run --unit p8test-lansrv -q ip netns exec p8testlan python3 -c "import socket; s=socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); s.bind(('10.252.1.2', 8081)); s.listen(5)
+      while True:
+          c, a = s.accept(); c.close()"
+      iptables -A FORWARD -i p8test0 -m comment --comment p8test-default-drop -j DROP
+      iptables -A FORWARD -i p8test1 -m comment --comment p8test-default-drop -j DROP
+      sleep 1
+    effect: |
+      for u in p8test-wansrv p8test-lansrv; do p8_service "$u" | cut -d' ' -f1; done
+      iptables -S FORWARD | p8_count 'p8test-default-drop'
+    expect: {rc: 0, stdout: "\\Aactive\\nactive\\n2\\n\\Z"}
+
+  - id: a-lan-host-reaches-the-wan-masqueraded
+    what: the LAN host connects to the WAN server through the node, and the server sees the node's WAN address (10.252.0.1), not the LAN host's
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_openvpn_server.pp, lines: "17", text: "firewall { '202 allow flow from br0 exterior':      chain => 'FORWARD', iniface => $lan_bridge_iface, outiface => $wan_iface,"}
+      - {path: manifests/firewall_addon_openvpn_server.pp, lines: "21", text: "firewall {'205 performing nat': table => 'nat', chain => 'POSTROUTING', outiface => $wan_iface, proto => 'all', jump => 'MASQUERADE' }"}
+    mutates: none beyond one TCP connection from the LAN namespace to the WAN server (declared mutating so it runs after the setup)
+    probe: |
+      true
+    effect: |
+      ip netns exec p8testlan python3 -c "import socket
+      try:
+          s = socket.create_connection(('10.252.0.2', 8080), 3); print('WAN server saw ' + s.recv(64).decode().strip())
+      except OSError:
+          print('no connection')"
+    expect: {rc: 0, stdout: "\\AWAN server saw 10\\.252\\.0\\.1\\n\\Z"}
+
+  - id: a-wan-host-cannot-open-a-connection-into-the-lan
+    what: the WAN host, with a route to the LAN through the node, cannot open a new connection to the LAN server
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_openvpn_server.pp, lines: "18", text: "proto => 'all', action => 'accept', state => ['RELATED', 'ESTABLISHED'], }"}
+    mutates: none beyond one TCP connection attempt from the WAN namespace to the LAN server (declared mutating so it runs after the setup)
+    probe: |
+      true
+    effect: |
+      ip link show p8test0 >/dev/null 2>&1 && echo wan-present
+      ip netns exec p8testwan python3 -c "import socket
+      try:
+          socket.create_connection(('10.252.1.2', 8081), 3); print('connected')
+      except OSError:
+          print('no connection')"
+    expect: {rc: 0, stdout: "\\Awan-present\\nno connection\\n\\Z"}
+
+  - id: the-forward-rules-counted-the-flows
+    what: on the node, rule 202 (bridge to WAN), rule 203 (replies into the bridge) and rule 205 (masquerade) counted packets, and the stand-in drop counted the WAN host's attempt
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_openvpn_server.pp, lines: "17-21", text: "firewall {'205 performing nat':"}
+    mutates: none beyond reading the rule counters (declared mutating so it runs after the flows)
+    probe: |
+      true
+    effect: |
+      iptables -v -x -L FORWARD -n | awk '/202 allow flow/ {a=$1} /203 allow flow/ {b=$1} /p8test-default-drop/ {c+=$1} END {print "202: " (a+0 != 0 ? "counted" : "zero"); print "203: " (b+0 != 0 ? "counted" : "zero"); print "stand-in drop: " (c+0 != 0 ? "counted" : "zero")}'
+      iptables -t nat -v -x -L POSTROUTING -n | awk '/205 performing nat/ {n=$1} END {print "205: " (n+0 != 0 ? "counted" : "zero")}'
+    expect: {rc: 0, stdout: "\\A202: counted\\n203: counted\\nstand-in drop: counted\\n205: counted\\n\\Z"}
