@@ -2149,3 +2149,39 @@ snapshot list, record.
      - backup_rsnapshot_pre's "needs a terminal" was wrong: `read` takes stdin.
    - **The rule:** the validator would require such rows to name a parameter variant or a lab limit, whenever
      `lifted_by` is the set's own node kind.
+
+## 2026-11-19 — HQ rulings on batch 15
+1. **Batch 15 is accepted** (39 approved). **Not a false PASS.** The definition, for the record: a false PASS is an error
+   that got past every gate that applied to it and was recorded as approved. An error stopped by a later gate in the
+   same cycle is the gates working. The ssh_secure value was caught by its behaviour check before approval.
+2. **A class carrying a new local change gets its Phase 1 PASS only once the change's after-check has passed,** and the
+   reviewer confirms that result exists.
+3. **Validator rule approved, applied capability-based** (Salatiel's answer, 2026-11-19):
+   - every `uncovered` row carries evidence for its reason: a command result, or a capability missing from the node
+     inventory;
+   - `lifted_by` names either a node kind that is not active, or a missing capability;
+   - a row whose lifting node kind is already active is rejected, and becomes a work item to test on that node.
+
+   **Scope:**
+   - the rule is enforced now for new and changed sets;
+   - the 36 approved sets with such rows (70 rows: 28 parameter variants, 16 RedHat branches on rhel9, 26 others) are
+     swept in a scheduled pass, not invalidated at once.
+4. **Continue with batch 6 and onward** under the run rule.
+5. **network_dhcp and network_static.**
+   - **Production** (read by Salatiel): a VPN server runs Ubuntu 22.04 with netplan from the cloud image and ifupdown
+     installed, with a populated interfaces file. So production's design is ifupdown alongside netplan.
+   - **Keep that design:** the classes declare ifupdown explicitly, if it is installable on Ubuntu 24.04; if it is not,
+     stop and report.
+   - **To find out:** why production has ifupdown and the lab does not. Record the answer.
+   - **Checks:**
+     - the fixture interface comes up through ifupdown;
+     - it survives a restart of the networking service;
+     - the node's primary interface keeps working.
+   - **Later:** native netplan support goes on the Phase 5 backlog, and ifupdown's availability is checked in the 26.04
+     pass.
+6. **caching_nameserver.** The same production server has no global IPv6 address, so the IPv4-only condition is now a
+   finding.
+   - **Fix:** named runs IPv4-only when the host has no global IPv6 address, and is unchanged otherwise.
+   - **Checks:** on the IPv4-only node, the names that failed now resolve. The IPv6 side cannot be tested in the lab:
+     record that as uncovered, with the evidence.
+   - **Afterwards:** remove the approval condition once this passes.

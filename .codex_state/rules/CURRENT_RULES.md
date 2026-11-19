@@ -2,7 +2,15 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-118 entries; 6 marked superseded (in whole or part); newest first.
+119 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-19 — HQ rulings on batch 15
+- 1. **Batch 15 is accepted** (39 approved). **Not a false PASS.** The definition, for the record: a false PASS is an error
+- 2. **A class carrying a new local change gets its Phase 1 PASS only once the change's after-check has passed,** and the
+- 3. **Validator rule approved, applied capability-based** (Salatiel's answer, 2026-11-19):
+- 4. **Continue with batch 6 and onward** under the run rule.
+- 5. **network_dhcp and network_static.**
+- 6. **caching_nameserver.** The same production server has no global IPv6 address, so the IPv4-only condition is now a
 
 ## 2026-11-19 — Backfill batch 5 and the batch-14 rulings carried out
 - 1. **Local changes #7 and #8 are done** (Phase 1 and Phase 3 PASS each).
