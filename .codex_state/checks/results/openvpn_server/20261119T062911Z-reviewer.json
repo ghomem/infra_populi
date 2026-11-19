@@ -1,0 +1,81 @@
+{
+ "class": "openvpn_server",
+ "role": "reviewer",
+ "at": "20261119T062911Z",
+ "runner": "14b86ae",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "c5b0ca647f9f271e66325067c2f91c9a21724c6933337bf3fb819c272dc71f75",
+ "valid": true,
+ "problems": [
+  "node revert failed: ERROR: apt-get update failed on node 'puppet8node' (mirror unreachable?)."
+ ],
+ "clean": [],
+ "apply": null,
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ENVIRONMENT_FAILED",
+ "authoring_minutes": 0.7,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4"
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2"
+  }
+ },
+ "peer": "ubuntu2",
+ "outcomes": [
+  {
+   "outcome": "the server listens on UDP 1194 at the bound address with the bridged tap0, the pool, PAM auth and the renegotiation interval",
+   "checks": [
+    "server-listens-on-the-bound-address",
+    "server-config-rendered"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "the bridge carries the LAN address with tap0 as a port, and is set up through ifupdown with the networking service enabled (boot)",
+   "checks": [
+    "bridge-holds-the-lan-address-and-tap0",
+    "networking-brings-up-the-bridge-at-boot"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "a client with a local account connects, gets a pool address and the pushed options, and reaches the server's LAN side",
+   "checks": [
+    "vpn-account-on-the-server",
+    "client-connects-gets-a-pool-address-and-reaches-the-server-side"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "a wrong password is refused",
+   "checks": [
+    "wrong-password-rejected"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "clients cannot reach each other (client isolation, the default)",
+   "checks": [
+    "client-isolation-on-the-bridge",
+    "a-second-vpn-account",
+    "a-second-client-reaches-the-server-side-but-not-the-first"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "the variants force_ifupdown, client_isolation false, compression none, another cipher or DNS server",
+   "uncovered": {
+    "why": "parameter variants (one set holds one params fixture, which keeps their defaults); untested",
+    "lifted_by": "ubuntu"
+   }
+  }
+ ],
+ "duration_s": 195.8
+}
