@@ -1,5 +1,7 @@
 # ssh_secure — behaviour finding: the idle-session timeout no longer acts (2026-11-19)
 
+**Status: CLOSED 2026-11-19.** Fixed by local change #8 (ChannelTimeout session:*= and UnusedConnectionTimeout from client_alive_interval on OpenSSH 9.2+): Phase 1 PASS 20261119T170145Z, Phase 3 PASS 20261119T170844Z. RHEL 9: not enforced, approval_conditions.md #3.
+
 **HQ ruling (batch 14, 2026-11-19):** restore the idle disconnect with sshd's own idle-timeout settings where OpenSSH has them (9.2 and later, so Ubuntu 24.04), set from the class's existing timeout value; where it lacks them (RHEL 9) record it as not enforced, no shell workaround. If the analysis finds a reason this does not work, hold the class and show HQ. The text below is the escalation as sent.
 
 Status: OPEN, for HQ. The reviewer reproduced it (checks/reviews/ssh_secure/20261119T022504Z.json, set PASS with this
