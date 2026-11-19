@@ -2,7 +2,13 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-115 entries; 6 marked superseded (in whole or part); newest first.
+116 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-19 — Backfill batch 4: the peer's address for node scripts, the lab's IPv6 and named, holds on the uplink
+- 1. **Node scripts get `P8_PEER_ADDR`** (phase3.py, commit e85d826, tested).
+- 2. **The lab NAT's IPv6, and named.**
+- 3. **Lab holds on the uplink.**
+- 4. **A composite checks a component's finding on a value the composite itself passes.** network_vpn passes its own
 
 ## 2026-11-18 — HQ rulings on batch 12
 - 1. **Rule 518 (firewall_secure_extra, TCP fragments):** the same handling as the RST limit (Phase 5 backlog #8,

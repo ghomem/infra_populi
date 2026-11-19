@@ -2068,3 +2068,33 @@ snapshot list, record.
    mutating helpers refused outside a check's action.
 7. **Continue with batch 3 and onward,** by production use under the corrected count, mixing classes with no set and
    classes whose set is unjudged.
+
+## 2026-11-19 — Backfill batch 4: the peer's address for node scripts, the lab's IPv6 and named, holds on the uplink
+1. **Node scripts get `P8_PEER_ADDR`** (phase3.py, commit e85d826, tested).
+   - postfix_smtp_node's relay check had to pin the relayhost's name to the peer from a node action, and the validator
+     forbids lab addresses written into node probes.
+   - When a set declares a peer, the runner now prepends `P8_PEER_ADDR=<the peer's host-only address>` to node
+     scripts, so a node action names the peer by reference. Without a peer the variable is absent, and the validator's
+     rule is unchanged.
+2. **The lab NAT's IPv6, and named.**
+   - VirtualBox NAT hands the VMs an IPv6 default route by router advertisement that reaches no internet.
+   - Removing that route (the fixture since caching_nameserver's set) is not enough for BIND 9.18.39. Each IPv6
+     attempt then fails at once ("network unreachable") but still counts against max-recursion-queries (50), and a
+     name with a long delegation chain gets SERVFAIL. Measured on network_vpn's applied node: 49 of the 50 queries
+     were IPv6.
+   - Disabling IPv6 on the host did not stop the attempts; named with `-4` resolved every name.
+   - **The lab fixture for a set that needs recursion:** remove the route and run named with `-4`, set in
+     /etc/default/named (no class manages that file), with the flag shown in named's command line.
+   - caching_nameserver's passing set still carries the route-only fixture. It is to be updated, since it can fail
+     falsely, though never pass falsely.
+   - Whether an IPv4-only production host meets the same limit is a question for HQ, not a lab fact.
+3. **Lab holds on the uplink.**
+   - The revert's apt-update limit (180 s) stays as it is.
+   - A revert that fails on the mirrors puts lab runs on hold, with escalations/lab-uplink-2026-11-19.md. This
+     happened twice on 2026-11-19: a slow uplink, then Canonical's archive refusing TCP while other hosts worked.
+   - Switching the lab to another mirror changes the test environment, so it waits for Salatiel's go.
+   - The lab lock's clock-skew guard caught a stopped master clock (5270 s behind). Its own remedy, restarting
+     systemd-timesyncd, fixed it without restarting the master.
+4. **A composite checks a component's finding on a value the composite itself passes.** network_vpn passes its own
+   default cipher to openvpn_server, so network_vpn's set carries the cipher check too and its state shows the
+   finding. What the composite only inherits (compression) stays with the component's set.
