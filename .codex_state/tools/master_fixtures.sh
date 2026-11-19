@@ -147,6 +147,9 @@ puppet_infrastructure::rsyslog_base::ssldir_override: '/etc/puppetlabs/puppet/ss
 # (The batch-7 db:: keys were removed 2026-11-17: common.yaml, first in the hierarchy, defines them; never effective.)
 puppet_infrastructure::openvpn_server::local_interface: 'p8test0'
 puppet_infrastructure::openvpn_server::local: '203.0.113.50'
+# ssh_secure appends <certname>::ssh::othergroups to AllowGroups (issue 20); the lab node gets one fixture group so the
+# concatenation is exercised (HQ batch-12 backfill, review 20261119T020808Z).
+puppet8node::ssh::othergroups: 'p8testgroup'
 YAML
 )"
 if [[ "$(cat "$data" 2>/dev/null)" != "$want" ]]; then
