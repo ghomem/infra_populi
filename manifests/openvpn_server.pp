@@ -1,4 +1,4 @@
-# Puppet 8 migration: the module owns openvpn-server@puppet_infrastructure (duplicate service dropped, notifies retargeted).
+# Puppet 8 migration: the module owns openvpn-server@puppet_infrastructure (duplicate service dropped, notifies retargeted); local change #7: the class's cipher in data-ciphers.
 # Module dependencies: puppet-network 2.2.1; puppet-openvpn 12.0.0; thias-sysctl 1.0.8.
 ### Purpose ########
 # Configure a server running ubuntu as a OpenVPN server
@@ -154,6 +154,10 @@ class puppet_infrastructure::openvpn_server (
       server_directory => '/etc/openvpn/server',
     }
 
+    # OpenVPN 2.6 ignores `cipher` when negotiating and accepts only its data-ciphers (default
+    # AES-256-GCM:AES-128-GCM:CHACHA20-POLY1305), so a client using $cipher was refused: keep those, then accept $cipher.
+    $data_ciphers = join(unique(['AES-256-GCM', 'AES-128-GCM', 'CHACHA20-POLY1305', $cipher]), ':')
+
     # configuration of the openvpn server itself
     openvpn::server { 'puppet_infrastructure':
         verb                     => '3',
@@ -178,7 +182,7 @@ class puppet_infrastructure::openvpn_server (
         tls_auth                 => false,
         require                  => [ File["${openvpn_keys_dir}/ca.crt"], File["${openvpn_keys_dir}/dh2048.pem"], File["${openvpn_keys_dir}/server.crt"], File["${openvpn_keys_dir}/server.key"] ],
         local                    => $local,
-        custom_options           => { 'reneg-sec' => $reneg_sec, 'verify-client-cert' => 'none' },
+        custom_options           => { 'reneg-sec' => $reneg_sec, 'verify-client-cert' => 'none', 'data-ciphers' => $data_ciphers },
     }
 
     file { '/usr/lib/openvpn':
