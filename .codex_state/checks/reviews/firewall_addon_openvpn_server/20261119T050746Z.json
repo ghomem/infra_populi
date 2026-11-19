@@ -1,0 +1,33 @@
+{
+ "class": "firewall_addon_openvpn_server",
+ "at": "20261119T050746Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "a-lan-host-reaches-another-subnet-on-the-bridge: line 19 accepts FORWARD with iniface = outiface = lan_bridge_iface (fixture p8test1); the clients sit in two subnets on bridge p8test1 with default routes via the node and ICMP redirects ignored, so 10.252.1.2 -> 10.252.2.2:8082 and its replies are routed in and back out of p8test1, which only rule 204 accepts ahead of the appended -i p8test1 stand-in drop; 'connected' is what the line produces, and the counter check confirms 204 counted",
+  "forward-bridge-loopback: line 19 (proto all, action accept, no state) renders as -A FORWARD -i p8test1 -o p8test1 ... -j ACCEPT with the title as comment and no --state; the probe greps exactly that comment and the regex requires both interfaces, no --state and ACCEPT",
+  "a-lan-host-reaches-the-wan-masqueraded: line 17 forwards p8test1 -> p8test0 and line 21 masquerades out of p8test0; the WAN namespace has a direct route back to 10.252.1.0/24, so without rule 205 the server would echo 10.252.1.2; expecting 10.252.0.1 (the node's WAN address) discriminates the masquerade, and the reply path through the -i p8test0 drop needs rule 203's ESTABLISHED match, so the flow exercises 202, 203 and 205 together",
+  "purpose covered: Purpose (firewall side of an OpenVPN server bridging clients onto a LAN bridge, forwarding and masquerading to the WAN, IPv4 forwarding) matches the header comment and the 5 resources of the baseline manifest. Every resource is an outcome and each is tested as behaviour on the node: 202+205 by a LAN namespace reaching a WAN server that sees the node's WAN address; 203 by the reply path plus a WAN host's new connection into the LAN being refused (with wan-present guarding against a trivial pass); 204 by a hairpin flow between two subnets on bridge p8test1; all backed by rule counters (202/203/204/205 and the stand-in drop counted) and by the rendered iptables rules; ip_forward by the live sysctl and the persisted /etc/sysctl.d file (reboot itself not exercised, the persisted file is the observable). The stand-in FORWARD drop models the base firewall's default drop and is appended after the class's rules, declared in mutates. The only uncovered outcome, client_isolation, is truthfully uncovered: the parameter is declared (line 11) but no code uses it, as the class's own warning (lines 4-5) states. No probe reaches another host; the setup's mutates declares every namespace, bridge, veth, address, route, sysctl, transient unit and iptables rule its action creates, and its effect reads the resulting state (units active, drop rules counted, bridge ports), not the action's output."
+ ],
+ "review_s": 131.4,
+ "check_file_sha256": "1767d89d1ce761da65a01d7d27ef576287767a6f5eed4ee873300264debe6b96",
+ "reviewer_result": "20261119T050535Z-reviewer",
+ "author_result": "20261119T050338Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "71b2031c-e013-44a9-9198-7c2d1a1acb47",
+   "boot_id_at_end": "71b2031c-e013-44a9-9198-7c2d1a1acb47",
+   "fresh": true
+  }
+ }
+}
