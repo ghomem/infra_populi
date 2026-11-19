@@ -1,0 +1,33 @@
+{
+ "class": "filesystem_yum",
+ "at": "20261119T041325Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "update-scripts-installed (files/yum/yum-update-dist.sh whole file): the expected second digest 70fdcab7... equals the sha256 of the baseline file I read fresh (36 bytes, '/usr/bin/yum update -y'); together with manifest lines 9-15/18-24 (mode 0755, owner root, source = the module's yum/ files under lookup('filesystem::localdir')/bin, /opt/puppet-infrastructure in the lab Hiera) the probe's stat '%U %a' + sha256sum test exactly what is declared. Group root (lines 12/21) is not probed: a subset, not a mis-derivation.",
+  "the-surface-script-brings-the-exposed-packages-up-to-date (manifests/filesystem_yum.pp:8 '# security surface updates' + yum-update-surface.sh): the script loops 'yum update -y' over SURFACE='openssh-server openssh nginx openssl ca-certificates httpd', prints 'error updating package <p>' when yum's PIPESTATUS[0] is non-zero, and always exits 0. The action runs it as an operator would; the effect reads the saved rc, counts error lines only for installed packages (RHEL 9 dnf exits 1 for not-installed nginx/httpd, which yum update does not install), and asks dnf itself (check-update over the installed surface set) whether anything is pending. That is evidence independent of the action's output. mutates declares the run and the /run/p8test-yum file. My run: clean node pending rc=100, applied rc=0, so the check discriminates.",
+  "the-full-update-script-leaves-nothing-to-update (files/yum/yum-update-dist.sh whole file, sha256 70fdcab7 verified): the file is only '/usr/bin/yum update -y'. The action runs it and saves only its rc; the read-only effect is the separate 'dnf -q check-update' (rc 0 = nothing pending), so the result is not the action's own output. mutates declares the full update and the result file. My run: clean pending rc=100, after action rc=0 pending rc=0.",
+  "purpose covered: The purpose (yum update helpers for RedHat-family servers: a surface script that updates the exposed packages one by one, and a full update script) matches the manifest header ('helper scripts for yum based system updates') and the two file resources plus their scripts. The outcomes table covers the whole class: installation of both files (mode/owner/content), the surface script really updating the installed exposed packages (dnf reports none pending afterwards, no yum error for an installed one), and the dist script leaving nothing to update. The checks run on the rhel9 node, the class's production branch (node_base RedHat), against real Red Hat repos with updates pending on the 9.5 snapshot, so they test the scripts doing their job, not just that files exist. Left out, all minor and non-functional: the group root attribute; the surface script's filtered 'Updating' progress output; the empty-SURFACE guard, which cannot be reached because SURFACE is a constant. nginx/httpd are absent on the node, and their error lines are allowed and explained in the set. No part the lab can exercise is left untested in a way that matters to the purpose."
+ ],
+ "review_s": 407.5,
+ "check_file_sha256": "21977897fc08e7ffbf61c98487a4aec179da508335dce4a26e15ead0554d82c8",
+ "reviewer_result": "20261119T040638Z-reviewer",
+ "author_result": "20261119T035907Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "rhel9",
+   "snapshot": "P8LAB_RHEL9_BASELINE_v1",
+   "boot_id": "ffec9846-eb9c-4bcf-bf1c-1e54b2e46342",
+   "boot_id_at_end": "ffec9846-eb9c-4bcf-bf1c-1e54b2e46342",
+   "fresh": true
+  }
+ }
+}
