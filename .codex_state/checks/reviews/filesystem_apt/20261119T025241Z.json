@@ -1,0 +1,33 @@
+{
+ "class": "filesystem_apt",
+ "at": "20261119T025241Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-full-update-script-leaves-nothing-to-upgrade: files/apt/apt-update-dist.sh (sha c240c676) is exactly 'apt-get -y -o DPkg::Options::=--force-confdef -o --force-confold dist-upgrade' under DEBIAN_FRONTEND=noninteractive; the action runs that script as installed, and the read-only effect (apt-get -s dist-upgrade -> 0 upgraded, 0 not upgraded) reads apt state, not the script's output; on the clean node the same simulation showed 252 upgraded, 27 newly installed",
+  "helper-scripts-installed: manifests/filesystem_apt.pp:178-191 declare file { $update_cache_dir: ensure => directory, mode => '0755' } (/var/lib/apt-check-updates, line 107) and ${localdir}/bin/apt-update-relevant.sh mode 0755 owner root; the probe stats /var/lib/apt-check-updates 755 and apt-update-relevant.sh root 755 (localdir /opt/puppet-infrastructure), matching those lines",
+  "the-daily-job-lists-relevant-updates: manifests/filesystem_apt.pp:131-137 deploy get-relevant-updates-list, which apt-check-updates-v2.sh.erb runs on the oscap results with -of ${PKGSFILE} (/var/lib/apt-check-updates/list, one package per line); the action runs apt-check-updates.sh High as the cron (line 171) does, and the effect checks rc=0, the file written and one field per line: supported by the lines (but see the purpose evidence: an empty list also passes). Minor declaration slip across the set: three mutates texts name /run/p8test-apt/upgrade.txt, relevant.txt, surface.txt while the actions write upgrade.vars/relevant.vars/surface.vars (and *.none), scratch files under the same declared /run/p8test-apt directory; the package downgrades/upgrades and the list overwrite they actually make are declared",
+  "purpose gap: Tested: the scripts and openscap-scanner installed (byte-exact for the static files), the server surface list and the 00:00 High cron line, the wrapper refusing a missing package (cowsay) and upgrading a downgraded installed one, the surface script upgrading a downgraded surface package through the wrapper, apt-update-relevant.sh upgrading a package written onto the list, the kernel script leaving the metapackage at the candidate, and the full update leaving 0 to upgrade. Uncovered rows (desktop variant -> gnome, other parameter variants -> ubuntu, one fixture per set) are stated honestly. GAP: the core of the stated purpose, that the daily job LISTS the relevant (High and above) security updates from Canonical's OVAL data, is not tested: the-daily-job-lists-relevant-updates passes on an empty list (expect 'list-written\\n0' accepts a 0-line file), so a job whose oscap evaluation or parser finds nothing passes the same as a working one. The lab can exercise it: the reverted node has pending upgrades (my clean-phase dist-upgrade simulation: 252 upgraded, 27 newly installed), so the list after the job can be required to be non-empty and each listed package to have an installed version below its candidate (or a package downgraded to its release-pocket version with a known High/Critical USN to appear on it). The list is also never fed from the job into apt-update-relevant.sh (that check writes the list by hand), so the job -> list -> install chain is untested end to end."
+ ],
+ "review_s": 559.3,
+ "check_file_sha256": "339eff57fff612218f4bfcbf25959319d2ea12de94c35443c387899a62519306",
+ "reviewer_result": "20261119T024322Z-reviewer",
+ "author_result": "20261119T023306Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "48150020-909f-4dba-aa37-57a8e426ef74",
+   "boot_id_at_end": "48150020-909f-4dba-aa37-57a8e426ef74",
+   "fresh": true
+  }
+ }
+}
