@@ -18,6 +18,11 @@ purpose: >-
 # Purpose and outcomes table added 2026-11-19 (backfill batch 3, HQ batch-10 rulings 2 and C1), with the Server
 # header (server_tokens off) checked as behaviour and the default absence of the ad-hoc file.
 outcomes:
+  # Correction round 1 (2026-11-19, review 20261119T032919Z): nginx from the distribution (manage_repo false) got a row
+  # and a check.
+  - outcome: nginx comes from the distribution's archive (manage_repo false), with no nginx.org repository added
+    from: manifests/nginx_base.pp:78, 96
+    checks: [nginx-comes-from-the-ubuntu-archive]
   - outcome: nginx is installed and runs with a configuration that passes nginx -t, dynamic modules loaded once
     from: manifests/nginx_base.pp:80-110
     checks: [nginx-config-valid, a-dynamic-module-is-loaded-once-and-nginx-runs]
@@ -124,3 +129,15 @@ checks:
     probe: |
       test -e /etc/nginx/conf.d/puppet_infrastructure.conf && echo present || echo absent
     expect: {rc: 0, stdout: "\\Aabsent\\n\\Z"}
+
+  - id: nginx-comes-from-the-ubuntu-archive
+    what: no apt source names nginx.org, and the installed nginx version is the one the Ubuntu archive offers
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "78", text: "manage_repo       => false,"}
+      - {path: manifests/nginx_base.pp, lines: "96", text: "# we install nginx from the distribution repository"}
+    probe: |
+      grep -rl 'nginx\.org' /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null | wc -l
+      v=$(dpkg-query -W -f '${Version}' nginx 2>/dev/null)
+      apt-cache madison nginx | awk -F'|' -v v="$v" '{gsub(/ /, "", $2)} $2 == v && $3 ~ /ubuntu\.com\/ubuntu/ {f = 1} END {print (f ? "from the Ubuntu archive" : "not from the Ubuntu archive")}'
+    expect: {rc: 0, stdout: "\\A0\\nfrom the Ubuntu archive\\n\\Z"}
