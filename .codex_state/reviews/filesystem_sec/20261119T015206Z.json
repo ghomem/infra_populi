@@ -1,0 +1,99 @@
+{
+ "schema": 1,
+ "class": "filesystem_sec",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-19T01:52:06Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "4402391ce70c",
+ "migrate_subject": "P8: migrate puppet_infrastructure::filesystem_sec",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 4402391ce70c; 1 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/filesystem_sec.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `filesystem_sec Done [from: release-0.9.10; upstream defect fixed: default group assigned to a new variable (no parameter reassignment); local changes: #6]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 16 catalog events; COVERAGE puppet_infrastructure::filesystem_sec: 14 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-2): migration header comment only (release-0.9.10 manifest, ruled defect fix, local change #6, Module dependencies: none).",
+   "DIFF A hunk 2 (baseline :7-13): $restricted_group = 'wheel'/'sudo' becomes $restricted_group_real = 'wheel' (RedHat) / 'sudo' (other), plus an else branch $restricted_group_real = $restricted_group, and file { $restricted_cmds: group => $restricted_group_real }: exactly the ruled upstream-defect change in upstream_defects.md (HQ ck1 ruling 6), same group value on every branch; owner root and mode $restricted_mode unchanged, resource title unchanged.",
+   "DIFF A hunk 2 (baseline :15-19): 'links => follow' added to the same file resource plus a one-line '# Local change #6' comment: exactly local_changes.md row #6 and nothing more; it is the minimal change for the failing check the row cites (results/filesystem_sec/20261119T014403Z-author.json, the-linked-commands-are-restricted-too: after apply 'p8testuser /bin/nc runs', /usr/bin/telnet and /usr/bin/ftp the same, because Puppet managed the /etc/alternatives links, which carry no mode); regular files in $restricted_cmds are unaffected by follow. No other resource, attribute, default or conditional changed; no baseline comment removed (comments_preserved ok).",
+   "DIFF B (re-migration over 929062b-era content): adds only the 'links => follow' line, its '# Local change #6' comment and the header extension naming #6; the ruled defect change was already present and is judged in DIFF A."
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 9,
+  "removed": 3,
+  "non_comment_changes": 9,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest; upstream defect fixed (HQ ruling 2026-10-27): the default branch reassigned the parameter $restricted_group (Puppet 8: Cannot reassign variable) and now assigns $restricted_group_real, same values; plus one local change (policy B, HQ batch-12 ruling 5; rules/local_changes.md #6): links => follow, so a listed command that is a link (nc, telnet, ftp) has the program it points to restricted, not the link.",
+  "# Module dependencies: none."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 16,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::filesystem_sec: 14 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 21.458,
+   "master_check_s": 0.285,
+   "poweroff_s": 0.858,
+   "restore_s": 0.271,
+   "boot_to_ssh_s": 12.636,
+   "apt_update_s": 7.078,
+   "verify_s": 0.33,
+   "nic1_rx_bytes": 13107809
+  },
+  "log": ".codex_state/logs/reviews/filesystem_sec.20261119T015051Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "ubuntu"
+}
