@@ -14,15 +14,30 @@ authoring:
 purpose: >-
   Forwards all of the node's local logs to a remote rsyslog server over TLS, authenticated with the node's Puppet
   certificate and CA, with the target optionally pinned in /etc/hosts.
-uncovered:
-  - what: the failover target (forwarding switches to it while the first target is suspended) and forward_auth_log
-    why: >-
-      the fixture forwards to one live target and sets neither; failover needs a second fixture variant (a dead
-      target, the peer as failover), which one set cannot hold
-    lifted_by: ubuntu2
 peer:
   kind: ubuntu2
   why: forwarding logs needs a remote log server on another machine that receives them
+node_agent:
+  after: the-forwarding-rule-drifts
+  why: the forwarding rule notifies rsyslog, which only the next agent run after a change to it can show
+# Outcomes table added 2026-11-19 (backfill batch 3, HQ batch-10 ruling 2), with the restart on a changed rule (line
+# 40's comment) the table showed untested; the set-level uncovered entry moved into it.
+outcomes:
+  - outcome: the forwarding rule sends every facility and severity to the target over TLS with the node's certificate, key and CA, validating the server's certificate
+    from: manifests/rsyslog_client.pp:1, 40-55; templates/rsyslog/forward_simple.conf.epp
+    checks: [forwarding-rule-sends-everything-over-tls, tls-material-is-the-nodes-puppet-identity]
+  - outcome: the target is pinned in /etc/hosts when its IP is given
+    from: manifests/rsyslog_client.pp:22-29
+    checks: [the-target-is-pinned-in-hosts]
+  - outcome: a line logged on the node reaches the remote TLS log server, under the node's name
+    from: manifests/rsyslog_client.pp:1
+    checks: [the-peer-runs-a-tls-log-server, a-local-log-line-leaves-over-tls, the-server-received-the-line-from-the-node]
+  - outcome: a changed forwarding rule is restored by the next agent run, which restarts rsyslog once
+    from: manifests/rsyslog_client.pp:40-55
+    checks: [the-forwarding-rule-drifts, the-agent-run-restores-the-rule-and-restarts-rsyslog-once]
+  - outcome: the failover target (forwarding switches to it while the first target is suspended), forward_auth_log and check_names
+    from: manifests/rsyslog_client.pp:7-11, 31-38
+    uncovered: {why: "fixture variants: the fixture forwards to one live target and sets none of them; failover needs a second fixture (a dead target, the peer as failover), which one set cannot hold; untested", lifted_by: ubuntu2}
 checks:
   - id: forwarding-rule-sends-everything-over-tls
     what: >-
@@ -141,3 +156,34 @@ checks:
     effect: |
       grep -m1 'p8test-rsyslog-forward-token' /var/log/p8test-remote.log
     expect: {rc: 0, stdout: "\\Apuppet8node p8test-rsyslog: ?p8test-rsyslog-forward-token\\n\\Z"}
+
+  - id: the-forwarding-rule-drifts
+    what: setup for the next check, the forwarding rule changed by hand, with rsyslog's process id and journal cursor noted
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_client.pp, lines: "40-55", text: "notify => Service['rsyslog'],"}
+    mutates: notes rsyslog's main PID and its journal cursor in /run/p8test-rsyslog/before-rule, then appends a comment line to /etc/rsyslog.d/40-forward.conf on the node
+    probe: |
+      install -d -m 0700 /run/p8test-rsyslog
+      printf "pid='%s'\ncursor='%s'\n" "$(systemctl show -p MainPID --value rsyslog)" "$(journalctl -u rsyslog -n 0 --show-cursor --no-pager -q | sed -n 's/^-- cursor: //p')" > /run/p8test-rsyslog/before-rule
+      echo '# p8test drift' >> /etc/rsyslog.d/40-forward.conf
+    effect: |
+      p8_count '^# p8test drift$' /etc/rsyslog.d/40-forward.conf
+      grep -q "^pid='[1-9]" /run/p8test-rsyslog/before-rule && echo noted
+    expect: {rc: 0, stdout: "\\A1\\nnoted\\n\\Z"}
+
+  - id: the-agent-run-restores-the-rule-and-restarts-rsyslog-once
+    what: after the node's agent run, the forwarding rule is restored and rsyslog was restarted exactly once (a new main PID; one start in its journal since the change)
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_client.pp, lines: "40", text: "# Render the forwarding rule and restart rsyslog if it changes."}
+    mutates: none beyond reading the rule, rsyslog's state and its journal (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      p8_count '^# p8test drift$' /etc/rsyslog.d/40-forward.conf
+      . /run/p8test-rsyslog/before-rule
+      now=$(systemctl show -p MainPID --value rsyslog)
+      [ -n "$now" ] && [ "$now" != 0 ] && [ "$now" != "$pid" ] && echo restarted
+      journalctl -u rsyslog --after-cursor "$cursor" --no-pager -q | p8_count 'Started rsyslog.service'
+    expect: {rc: 0, stdout: "\\A0\\nrestarted\\n1\\n\\Z"}
