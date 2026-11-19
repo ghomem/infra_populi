@@ -1,0 +1,268 @@
+{
+ "class": "firewall_addon_openvpn_server",
+ "role": "reviewer",
+ "at": "20261119T045854Z",
+ "runner": "1277074",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "cf0ba477216fa49e261d61bc279622a896e31fc8beb029b9e338a3ab87c71c36",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "forward-bridge-to-wan",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "forward-wan-to-bridge-established-only",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "forward-bridge-loopback",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "nat-masquerade-on-wan",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "ipv4-forwarding-on-and-persistent",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /etc/sysctl.d/net.ipv4.ip_forward.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "a-lan-and-a-wan-behind-the-node",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "inactive\ninactive\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-lan-host-reaches-the-wan-masqueraded",
+   "control": "negative",
+   "rc": 255,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Cannot open network namespace \"p8testlan\": No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-wan-host-cannot-open-a-connection-into-the-lan",
+   "control": "negative",
+   "rc": 255,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Cannot open network namespace \"p8testwan\": No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-forward-rules-counted-the-flows",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "202: zero\n203: zero\nstand-in drop: zero\n205: zero\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "ysctl.conf-net.ipv4.ip_forward]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 7.04 seconds\u001b[0m\nRUN1_EVENTS: 6 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795064395'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.48 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::firewall_addon_openvpn_server: 11 concrete resources (+0 defined-type instances)\n  Firewall[202 allow flow from br0 exterior]\n  Firewall[203 allow flow from exterior into br0]\n  Firewall[204 allow flow loopback on br0]\n  Firewall[205 performing nat]\n  Sysctl[net.ipv4.ip_forward]\n  File[/etc/sysctl.d]\n  File[/etc/sysctl.d/99-sysctl.conf]\n  File[/etc/sysctl.d/net.ipv4.ip_forward.conf]\n  Exec[sysctl-net.ipv4.ip_forward]\n  Exec[update-sysctl.conf-net.ipv4.ip_forward]\n  Exec[enforce-sysctl-value-net.ipv4.ip_forward]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP firewall_addon_openvpn_server e30b584de09d\n"
+ },
+ "applied": [
+  {
+   "id": "forward-bridge-to-wan",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A FORWARD -i p8test1 -o p8test0 -m comment --comment \"202 allow flow from br0 exterior\" -j ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "forward-wan-to-bridge-established-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A FORWARD -i p8test0 -o p8test1 -m state --state RELATED,ESTABLISHED -m comment --comment \"203 allow flow from exterior into br0\" -j ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "forward-bridge-loopback",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A FORWARD -i p8test1 -o p8test1 -m comment --comment \"204 allow flow loopback on br0\" -j ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "nat-masquerade-on-wan",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A POSTROUTING -o p8test0 -m comment --comment \"205 performing nat\" -j MASQUERADE\n",
+   "stderr": ""
+  },
+  {
+   "id": "ipv4-forwarding-on-and-persistent",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nnet.ipv4.ip_forward = 1\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-lan-and-a-wan-behind-the-node",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\nactive\n2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates namespaces p8testlan and p8testwan with veth pairs p8test1/p8testlanif (10.252.1.1/24 node, 10.252.1.2/24 LAN, default route via the node) and p8test0/p8testwanif (10.252.0.1/24 node, 10.252.0.2/24 WAN, a route to the LAN via the node); starts transient units p8test-wansrv (TCP 10.252.0.2:8080, answers with the client address it sees) and p8test-lansrv (TCP 10.252.1.2:8081); appends `-A FORWARD -i p8test0 -m comment --comment p8test-default-drop -j DROP` and the same for -i p8test1",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-lan-host-reaches-the-wan-masqueraded",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "WAN server saw 10.252.0.1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond one TCP connection from the LAN namespace to the WAN server (declared mutating so it runs after the setup)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-wan-host-cannot-open-a-connection-into-the-lan",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "wan-present\nno connection\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond one TCP connection attempt from the WAN namespace to the LAN server (declared mutating so it runs after the setup)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-forward-rules-counted-the-flows",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "202: counted\n203: counted\nstand-in drop: counted\n205: counted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rule counters (declared mutating so it runs after the flows)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "authoring_minutes": 0.4,
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "2e8dab14-4cf9-41a9-8516-eb7b5176dd89",
+   "boot_id_at_end": "2e8dab14-4cf9-41a9-8516-eb7b5176dd89",
+   "fresh": true
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "traffic from the bridge to the WAN is forwarded and leaves masqueraded behind the server's WAN address",
+   "checks": [
+    "forward-bridge-to-wan",
+    "nat-masquerade-on-wan",
+    "a-lan-and-a-wan-behind-the-node",
+    "a-lan-host-reaches-the-wan-masqueraded",
+    "the-forward-rules-counted-the-flows"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "from the WAN into the bridge only replies (related, established) pass; a new connection is dropped",
+   "checks": [
+    "forward-wan-to-bridge-established-only",
+    "a-lan-and-a-wan-behind-the-node",
+    "a-wan-host-cannot-open-a-connection-into-the-lan",
+    "the-forward-rules-counted-the-flows"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "IPv4 forwarding is on, now and after a reboot",
+   "checks": [
+    "ipv4-forwarding-on-and-persistent"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "traffic that enters the bridge and leaves it again (hairpin) is forwarded",
+   "uncovered": {
+    "why": "the rule is checked as installed (forward-bridge-loopback), but a hairpin needs two clients behind one bridge whose traffic the server routes back out the same bridge, and the fixture's bridge interface is a veth with one client; untested as behaviour",
+    "lifted_by": "ubuntu"
+   }
+  },
+  {
+   "outcome": "client isolation (client_isolation)",
+   "uncovered": {
+    "why": "the parameter is declared but no code uses it (the class's own warning: still to be implemented); there is no behaviour to test",
+    "lifted_by": "ubuntu"
+   }
+  }
+ ],
+ "duration_s": 68.3
+}

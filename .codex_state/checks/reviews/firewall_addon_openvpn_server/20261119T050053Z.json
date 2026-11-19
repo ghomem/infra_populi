@@ -1,0 +1,33 @@
+{
+ "class": "firewall_addon_openvpn_server",
+ "at": "20261119T050053Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "a-lan-and-a-wan-behind-the-node: cites the class purpose (pp:1-2, firewall config for an openvpn server); it is the setup for the forwarding checks, its namespaces sit on the fixture's interfaces (lan_bridge_iface p8test1, wan_iface p8test0), its declared mutates covers every action line (2 netns, 2 veth pairs, addresses/routes, 2 transient units, 2 appended p8test-default-drop rules), and the read-only effect (units active + 2 stand-in rules) shows the action's result, not its output",
+  "forward-bridge-loopback: pp:19 declares FORWARD iniface=outiface=$lan_bridge_iface, proto all, accept, no state; under the fixture that is -i p8test1 -o p8test1 without --state, -j ACCEPT, which is exactly the expect",
+  "nat-masquerade-on-wan: pp:21 declares nat POSTROUTING outiface $wan_iface, proto all, jump MASQUERADE; expect -o p8test0, no -p, -j MASQUERADE matches what the code produces under the fixture",
+  "purpose gap: Tested as behaviour: a LAN namespace behind p8test1 reaches a WAN server through the node and is seen as 10.252.0.1 (rules 202+205 forward and masquerade, counters confirm 202/203/205), a WAN host with a route into the LAN cannot open a connection (only 203 RELATED,ESTABLISHED passes, stand-in drop counted), ip_forward=1 live and persisted in /etc/sysctl.d; client_isolation is honestly uncovered (declared at pp:11, used nowhere, class warning pp:4-5). Gap: the hairpin outcome (pp:19, rule 204, traffic routed in and back out of the LAN bridge) is marked uncovered with lifted_by: ubuntu, which is this lab's default node itself; the stated reason is the set's own fixture choice (one veth with one client), not a lab limit: a Linux bridge p8test1 with two namespaces in two subnets routed via the node would send traffic in and out of p8test1, accepted only by rule 204 ahead of the stand-in -i p8test1 drop. The rule is only checked as installed (forward-bridge-loopback), so a part the lab can exercise is untested."
+ ],
+ "review_s": 119.6,
+ "check_file_sha256": "cf0ba477216fa49e261d61bc279622a896e31fc8beb029b9e338a3ab87c71c36",
+ "reviewer_result": "20261119T045854Z-reviewer",
+ "author_result": "20261119T045643Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "2e8dab14-4cf9-41a9-8516-eb7b5176dd89",
+   "boot_id_at_end": "2e8dab14-4cf9-41a9-8516-eb7b5176dd89",
+   "fresh": true
+  }
+ }
+}
