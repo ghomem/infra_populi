@@ -1,15 +1,34 @@
 # Phase 3 checks for puppet_infrastructure::user (define; harness title p8testuser, the user-identity fixture).
 # The define is a thin wrapper: it passes its parameters to puppet_infrastructure::user_base and cannot pass
 # ignorekey, so user_base's default (ignorekey false) applies and the SSH key IS pushed.
-# Fixture (params, never committed): myname "P8 Test User", a fake SHA-512 hash with salt p8testsalt (only the
-# algorithm and salt are asserted), mykey = the body of a throwaway RSA public key generated for the fixture (private
+# Fixture (params, never committed): myname "P8 Test User", myhash the SHA-512 hash (salt p8testsalt) of the test
+# password p8test-user-not-a-secret (a fake hash until 2026-11-19), mykey = the body of a throwaway RSA public key generated for the fixture (private
 # half discarded); defaults: mygrouplist [], myhome '', myhomemode '', user_shell /bin/bash.
+# Purpose and outcomes added 2026-11-19 (backfill batch 5, HQ batch-10 rulings 2 and C1), with the password login as
+# behaviour (su as an unprivileged account in a pty, as in user_base's set). What user_base does on its own (the purge
+# of other keys, the empty-hash refusal, the variants) is checked in user_base's set.
 class: user
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
   minutes: 0.7
-  notes: "Wall clock 18:52:30Z to 18:53:14Z 2026-11-16, written + validated outside the worktree while the Phase 1 review ran."
+  notes: "Wall clock 18:52:30Z to 18:53:14Z 2026-11-16, written + validated outside the worktree while the Phase 1 review ran. Extended 2026-11-19 (purpose, outcomes, the password login): 17:43:06Z (the fixture hash changed) to 17:43:23Z (validation)."
+purpose: >-
+  A normal user, in no special group: user_base's account (own primary group, comment, home, shell) with the given
+  password hash and the given SSH key, always pushed (the wrapper cannot pass ignorekey) and with no ecryptfs.
+outcomes:
+  - outcome: the account exists with its own primary group, comment, home (created, owned) and shell, in no other group
+    from: manifests/user.pp:1-2, 6-8
+    checks: [user-and-own-primary-group, no-supplementary-groups, home-created-and-owned]
+  - outcome: the given password hash is set, so the password logs in and a wrong one is refused
+    from: manifests/user.pp:6-8
+    checks: [password-hash-set, the-password-logs-in-and-a-wrong-one-is-refused]
+  - outcome: the given key is always pushed, as the user's only key, in a private file the user owns
+    from: manifests/user.pp:6-8
+    checks: [the-given-key-is-pushed, key-file-owned-and-private]
+  - outcome: user_base's own behaviour (purge of other keys, empty-hash refusal, locked or keyless placeholders, group lists, home mode, shell)
+    from: manifests/user.pp:5, 8
+    uncovered: {why: "user_base's behaviour, checked in user_base's set; this wrapper only passes the parameters on", lifted_by: ubuntu}
 checks:
   - id: user-and-own-primary-group
     what: the wrapped user exists with its own same-named primary group, the comment, /home/<title> and /bin/bash
@@ -70,3 +89,23 @@ checks:
       - {path: manifests/user_base.pp, lines: "96-99", text: "user => $myusername,"}
     probe: stat -c '%U %a %n' /home/p8testuser/.ssh /home/p8testuser/.ssh/authorized_keys
     expect: {rc: 0, stdout: "\\Ap8testuser 700 /home/p8testuser/\\.ssh\\np8testuser 600 /home/p8testuser/\\.ssh/authorized_keys\\n\\Z"}
+
+  - id: the-password-logs-in-and-a-wrong-one-is-refused
+    what: >-
+      su to p8testuser, run by an unprivileged account in a pty, succeeds with the test password and is refused with a
+      wrong one
+    control: negative
+    timeout: 90
+    derived_from:
+      - {path: manifests/user.pp, lines: "8", text: "myhash => $myhash ,"}
+      - {path: manifests/user_base.pp, lines: "63-72", text: "password       => $myhash,"}
+    mutates: two su attempts as the account nobody (one with the test password, one with a wrong one); the outcomes go to /run/p8test-user/pw.txt
+    probe: |
+      install -d -m 0700 /run/p8test-user; : > /run/p8test-user/pw.txt
+      for pw in 'p8test-user-not-a-secret' 'p8test-wrong-password'; do
+        out=$( (sleep 2; printf '%s\n' "$pw"; sleep 3) | timeout 20 runuser -u nobody -- script -qec "su p8testuser -c 'echo logged-in-as-\$(id -un)'" /dev/null 2>&1 | tr -d '\r' | grep -o -e 'logged-in-as-[a-z0-9]*' -e 'Authentication failure' | head -1)
+        echo "${out:-no answer}" >> /run/p8test-user/pw.txt
+      done
+    effect: |
+      cat /run/p8test-user/pw.txt
+    expect: {rc: 0, stdout: "\\Alogged-in-as-p8testuser\\nAuthentication failure\\n\\Z"}
