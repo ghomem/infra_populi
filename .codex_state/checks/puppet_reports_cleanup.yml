@@ -40,8 +40,9 @@ checks:
     derived_from:
       - {path: manifests/puppet_reports_cleanup.pp, lines: "5-6", text: "$reportdays = lookup('puppet::reportdays')"}
     mutates: >-
-      creates /opt/puppetlabs/server/data/puppetserver/reports/p8test-node with old.yaml dated 10 days ago and
-      recent.yaml dated 2 days ago (the store the master's puppetserver keeps)
+      creates /opt/puppetlabs/server/data/puppetserver/reports/p8test-node and its missing parents (from
+      /opt/puppetlabs/server on an agent node), with old.yaml dated 10 days ago and recent.yaml dated 2 days ago (the
+      store the master's puppetserver keeps)
     probe: |
       d=/opt/puppetlabs/server/data/puppetserver/reports/p8test-node
       install -d -m 0750 "$d"
