@@ -77,6 +77,9 @@ the tracked `.codex_state/rules/CODEX_RUNBOOK.md`.
   never modified; no start below 4 GB free; no delete — deleting a VM or a baseline snapshot stays Salatiel's; NIC1 NAT
   like the others, HQ NAT review G). Raw
   mutating VBoxManage is denied. Lab nodes: `.codex_state/lab/nodes.yml` (nodes.py; plan column `node`).
+- Lab power (HQ 2026-11-20 travel additions): when a run stops to wait for Salatiel or HQ, `lab_power.sh down`;
+  `lab_power.sh up` when work resumes. The lab is never left running unattended between runs. The sleep guard runs
+  `lab_power.sh down` itself when the laptop is on battery below 25% while lab VMs run (it aborts the current run).
 - Git: commit only when GREEN and idempotent; message `P8: migrate puppet_infrastructure::<class>`;
   never commit params, tooling scratch, or a class that is not GREEN. `.bak` files are never committed.
 

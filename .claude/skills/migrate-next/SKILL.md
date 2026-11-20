@@ -5,7 +5,7 @@ description: Run the Phase 1 migration loop autonomously for a budget of classes
 Budget: parse the argument. `N` means N classes reach reviewer-PASS. `until N done` same. `until N resolved`
 counts PASS + blocked-with-evidence. Stop exactly at budget, or when no PENDING non-blocked class remains.
 
-PREFLIGHT (once): read CLAUDE.md and the three most recent DESIGN_DECISIONS.md entries. `git status`
+PREFLIGHT (once): `lab_power.sh up` if the master is not running; read CLAUDE.md and the three most recent DESIGN_DECISIONS.md entries. `git status`
 clean and HEAD == origin/main (fix by push if only ahead; STOP if diverged). `ssh puppet8master` reachable
 and 8140 listening. Regenerate the order file. Create `.codex_state/logs/` if missing.
 `.git/hooks/pre-commit` must be a symlink to `../../.codex_state/tools/pre-commit` (install it if missing).
@@ -122,7 +122,8 @@ with run/review times derived from the result and review files), every finding's
 file, and every authoring correction.
 A `## Skipped tests` section names every test the full suite skipped, with its reason (the pre-commit hook prints them
 as `TESTS: skipped <module>::<test> — <reason>` and refuses a batch report that misses one).
-Revert the node to baseline. Confirm `git status` clean and pushed. Print a summary table:
+Revert the node to baseline. Confirm `git status` clean and pushed. When the run stops to wait for Salatiel or HQ,
+`.codex_state/tools/lab_power.sh down` (HQ 2026-11-20; `lab_power.sh up` at the next PREFLIGHT). Print a summary table:
 class | outcome (PASS/BLOCKED cat N/ESCALATED) | commit | one-line note. List every escalation file.
 If any design decision was made (a new rule, a corrected diagnosis), append a dated entry to
 DESIGN_DECISIONS.md before the final push.

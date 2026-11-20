@@ -2280,3 +2280,17 @@ snapshot list, record.
    the lock, every other running lab VM powered off (nodes are reverted before use), the master through ACPI with a
    timeout and never forced, the sleep guard released. Up: the lock, the master started, SSH + puppetserver + 8140 +
    clock checked, the node reverted. 9 tests on the stub lab.
+
+## 2026-11-20 — HQ accepts travel readiness, with three additions
+1. **Lab power at run boundaries.** When a run stops to wait for Salatiel or HQ, `lab_power.sh down`; `lab_power.sh up`
+   when work resumes. The lab is never left running unattended (CLAUDE.md, migrate-next END OF RUN and PREFLIGHT).
+2. **Battery guard.** The sleep guard, which runs exactly while lab VMs run, reads /sys/class/power_supply each poll
+   (30 s): a battery whose kernel status is `Discharging` below 25% starts `lab_power.sh down` once, detached. Down
+   aborts the run holding the lab (TERM), powers the nodes off and the master through ACPI, and releases the guard.
+   `Not charging` and `Full` are on mains (the laptop reports `Not charging` at 99% on its adapter). Tests: down at 20%
+   discharging; no down at 25% discharging, 60% discharging, or 10% not charging / full. The live guard was restarted
+   on the new code.
+3. **Nothing is deleted.** The six VMs the lab does not use stay (three are clone sources); old snapshots and backup
+   files stay until Salatiel decides.
+Then batch 6. Order after the backfill is unchanged: stand-in lifts, the sweep of open uncovered rows, the approval
+report, the test-suite design note, the rename.

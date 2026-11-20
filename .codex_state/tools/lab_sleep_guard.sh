@@ -15,11 +15,19 @@
 # says none). P8_SLEEP_GUARD_PID overrides the pid file, P8_SLEEP_GUARD_POLL the poll interval in seconds, and a
 # non-empty P8_NO_SLEEP_GUARD makes `ensure` start nothing (the stub lab of the tests). The guard sleeps with the
 # system's sleep (`command -p`), never a stub found on PATH: a stub that returns at once would make it spin.
+# Battery guard (HQ 2026-11-20 travel addition 2): while it holds, a battery whose kernel status is `Discharging` below
+# P8_BATTERY_MIN percent (default 25; the lowest discharging battery counts) makes the guard start `lab_power.sh down`
+# once, detached: it aborts the run holding the lab (TERM), powers the VMs off, the master through ACPI. The trigger and
+# down's output go to P8_BATTERY_LOG (default ~/.cache/infra_populi/battery_down.log). P8_POWER_SUPPLY overrides
+# /sys/class/power_supply (tests). Plugged in but not charging (`Not charging`, `Full`) is not on battery.
 set -euo pipefail
 
 TOOLS_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 PIDFILE="${P8_SLEEP_GUARD_PID:-${HOME}/.cache/infra_populi/sleep_guard.pid}"
 POLL="${P8_SLEEP_GUARD_POLL:-30}"
+POWER_SUPPLY="${P8_POWER_SUPPLY:-/sys/class/power_supply}"
+BATTERY_MIN="${P8_BATTERY_MIN:-25}"
+BATTERY_LOG="${P8_BATTERY_LOG:-${HOME}/.cache/infra_populi/battery_down.log}"
 MASTER_VM="Ubuntu24-puppet8-Master"
 mkdir -p "$(dirname "$PIDFILE")"
 
@@ -34,6 +42,18 @@ lab_vms_running() {
   running="$(VBoxManage list runningvms 2>/dev/null | sed -n 's/^"\(.*\)" {.*}$/\1/p')"
   vms="$(printf '%s\n' "$MASTER_VM"; python3 "${TOOLS_DIR}/nodes.py" list 2>/dev/null | awk '{print $3}')"
   grep -qxF -f <(printf '%s\n' "$vms") <<<"$running"
+}
+
+# The lowest capacity among discharging batteries, or nothing when no battery discharges (on mains power).
+battery_low_level() {
+  local d level="" cap
+  for d in "$POWER_SUPPLY"/*; do
+    [[ "$(cat "$d/type" 2>/dev/null)" == Battery && "$(cat "$d/status" 2>/dev/null)" == Discharging ]] || continue
+    cap="$(cat "$d/capacity" 2>/dev/null || true)"
+    [[ "$cap" =~ ^[0-9]+$ ]] || continue
+    if [[ -z "$level" ]] || ((cap < level)); then level="$cap"; fi
+  done
+  [[ -n "$level" ]] && ((level < BATTERY_MIN)) && printf '%s\n' "$level"
 }
 
 case "${1:-}" in
@@ -56,7 +76,16 @@ case "${1:-}" in
   hold)
     echo "$$" >"$PIDFILE"
     trap 'rm -f "$PIDFILE"' EXIT
+    downed=""
     while lab_vms_running; do
+      if [[ -z "$downed" ]] && level="$(battery_low_level)"; then
+        downed=1
+        mkdir -p "$(dirname "$BATTERY_LOG")"
+        echo "$(date -u +%FT%TZ) on battery at ${level}% (< ${BATTERY_MIN}%) with lab VMs running: lab_power.sh down" \
+          >>"$BATTERY_LOG"
+        # Detached: down releases this guard (kills it) as its last step and must outlive it.
+        setsid "${TOOLS_DIR}/lab_power.sh" down </dev/null >>"$BATTERY_LOG" 2>&1 8>&- 9>&- &
+      fi
       command -p sleep "$POLL"
     done
     ;;

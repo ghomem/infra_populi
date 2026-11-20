@@ -2,7 +2,12 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-123 entries; 6 marked superseded (in whole or part); newest first.
+124 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-20 — HQ accepts travel readiness, with three additions
+- 1. **Lab power at run boundaries.** When a run stops to wait for Salatiel or HQ, `lab_power.sh down`; `lab_power.sh up`
+- 2. **Battery guard.** The sleep guard, which runs exactly while lab VMs run, reads /sys/class/power_supply each poll
+- 3. **Nothing is deleted.** The six VMs the lab does not use stay (three are clone sources); old snapshots and backup
 
 ## 2026-11-20 — HQ after batch 15: network_static fixed, no hand-entered authoring time, lab power commands
 - 1. **network_static (HQ item 1, keep and fix).** The baseline's parameters show the gateway belongs to the interface the

@@ -1,6 +1,9 @@
 # Travel readiness (HQ 2026-11-20 item 4; Salatiel flies on the 23rd)
 
-Status: WRITTEN 2026-11-20, for HQ review. The engine's part is done; Salatiel's part is listed below. All numbers were
+Status: ACCEPTED by HQ 2026-11-20, with three additions: `lab down` whenever a run stops to wait and `lab up` when
+work resumes (CLAUDE.md, the skill); a battery guard (the sleep guard brings the lab down on battery below 25%, tested);
+the six unused VMs stay (three are clone sources), and old snapshots and backup files stay until Salatiel decides —
+nothing depends on deleting them. Was: WRITTEN 2026-11-20, for HQ review. The engine's part is done; Salatiel's part is listed below. All numbers were
 measured on 2026-11-20.
 
 ## Checklist
