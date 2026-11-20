@@ -1,4 +1,4 @@
-# Puppet 8 migration: release-0.9.10 manifest; local change #11: ifupdown declared (ensure_packages, as network_dhcp).
+# Puppet 8 migration: release-0.9.10 manifest; local changes #11: ifupdown declared (ensure_packages, as network_dhcp); #12: the default route on $iface, not eth0.
 # Module dependencies: puppet-network 2.2.1 (network_config, network_route), puppet-filemapper 4.0.0, puppet-kmod 4.1.0, puppetlabs-stdlib 9.7.0 (ensure_packages).
 ### Purpose ########
 # This class configures a network interface with static parameters.
@@ -15,6 +15,7 @@ class puppet_infrastructure::network_static ( $iface, $ipaddress, $gateway ) {
     ensure_packages(['ifupdown'], { 'ensure' => 'present' })
     package        { 'ifupdown-extra': ensure => 'installed', }
     network_config { $iface:           ensure => 'present', family  => 'inet',   onboot    => 'true', method => 'static',   ipaddress => $ipaddress, hotplug => 'false' }
-    network_route  { 'default':        ensure => 'present', gateway => $gateway, interface => 'eth0', netmask => '0.0.0.0', network   => 'default' }
+    # The gateway belongs to the interface the class configures (eth0 was its name before predictable names).
+    network_route  { 'default':        ensure => 'present', gateway => $gateway, interface => $iface, netmask => '0.0.0.0', network   => 'default' }
 
 }
