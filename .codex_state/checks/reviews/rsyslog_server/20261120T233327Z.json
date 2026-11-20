@@ -1,0 +1,35 @@
+{
+ "class": "rsyslog_server",
+ "at": "20261120T233327Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "remote-message-lands-in-the-host-tree: listener_simple.conf.epp:16 streamdriver.authMode=x509/certvalid accepts any CA-signed client; the probe sends one RFC3164 line over TLS with the node's own Puppet-CA-signed cert, and the effect counts that line in /var/log/hosts/p8testremote/p8test.log, the path the 'remote' template (lines 18-24: log_root/hosts/hostname/programname.log, log_root /var/log by default) and the omfile action (line 35) produce",
+  "retention-script-and-cron: rsyslog_server.pp:103-107 declares cron rsyslog_hosts_retention_cleanup, command ${bindir}/rsyslog-hosts-retention.sh, user root, hour 3, minute 17 (defaults lines 12-13); the probe reads root's crontab entry under that Puppet Name and expects '17 3 * * * /opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh', plus the file's root 0755 mode (lines 91-95) and ROOT_DIR/ACTIVE_DAYS/RETENTION_DAYS rendered from the 7/7 defaults",
+  "listener-config-rendered: rsyslog_server.pp:25 declares /etc/rsyslog.d/30-listener.conf from listener_simple.conf.epp; the probe greps the rendered file and expects cert/key named after the certname puppet8node (template lines 7-8), port 6514, maxSessions 2000, notifyOnConnectionClose off (lines 12-14, false default) and the /var/log/hosts/ constant twice (lines 19 and 27) - exactly what the template renders under the defaults fixture",
+  "purpose covered: The purpose (central TLS log server: CA-signed clients only, per-host tree, daily rotation, compress after the active period, delete after retention) matches the manifest header (lines 1-3) and code. The checks exercise it, beyond file presence: a CA-signed client's message lands in hosts/<host>/<program>.log and an empty-tag one in unknown.log (template 26-36); a self-signed client's message is not written anywhere in the tree and rsyslogd logs 'signer not found' (authMode certvalid, line 16); the server's own logger message lands in its own host directory (the rules have no input binding, header 'local and remote logs'); the TLS listener verifies against the Puppet CA for the node name, with a wrong-name mismatch that fails; the logrotate timer override is active in systemd (00:00, 1min accuracy) and a forced rotation moves the log to a date-suffixed uncompressed file and rsyslog reopens a fresh one after the HUP; the retention script, run as cron would, gzips a 10-day-old rotated log, leaves a 2-day-old one, deletes a 10-day-old .gz and keeps a 2-day-old one. Left out: non-default ports/roots/periods/times/session limits/notify-on-close - one fixture per set, which phase3.py enforces (fixture must be params or defaults, applied once), so the uncovered row and its capability lift are honest. The timer actually firing at 00:00 and cron firing at 03:17 are not waited for; the systemd-reported schedule and the crontab entry stand in for them."
+ ],
+ "review_s": 176.3,
+ "check_file_sha256": "d9544e5a91a9b56efe6c003ff17944cfd6151e74464a19224da1b230240162c2",
+ "content_sha256": "d9544e5a91a9b56efe6c003ff17944cfd6151e74464a19224da1b230240162c2",
+ "reviewer_result": "20261120T233031Z-reviewer",
+ "author_result": "20261120T232624Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "f1e0e2e1-4f2b-4dd6-9978-583dbd04c1ac",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "f1e0e2e1-4f2b-4dd6-9978-583dbd04c1ac",
+   "fresh": true
+  }
+ }
+}

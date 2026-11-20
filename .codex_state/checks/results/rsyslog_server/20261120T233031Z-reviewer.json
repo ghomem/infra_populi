@@ -1,0 +1,353 @@
+{
+ "class": "rsyslog_server",
+ "role": "reviewer",
+ "at": "20261120T233031Z",
+ "runner": "b57a354",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "d9544e5a91a9b56efe6c003ff17944cfd6151e74464a19224da1b230240162c2",
+ "content_sha256": "d9544e5a91a9b56efe6c003ff17944cfd6151e74464a19224da1b230240162c2",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "listener-config-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/rsyslog.d/30-listener.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "tls-listener-presents-the-node-certificate",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "self-forward-config-absent",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "absent\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "logrotate-timer-override-active",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "AccuracyUSec=1h\nActiveState=active\nDropInPaths=\nOnCalendar=*-*-* 00:00:00\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "host-logs-rotation-rule",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "retention-script-and-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh': No such file or directory\nbash: /opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "remote-message-lands-in-the-host-tree",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /var/log/hosts/p8testremote/p8test.log: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-self-signed-client-is-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-message-without-a-program-lands-in-unknown",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-servers-own-logs-land-in-its-host-directory",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-rotation-reopens-the-host-log",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-retention-script-compresses-and-deletes",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 96: cd: /var/log/hosts/p8testold: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": " (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795217515'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.50 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::rsyslog_server: 16 concrete resources (+0 defined-type instances)\n  Package[rsyslog]\n  Package[rsyslog-gnutls]\n  File[/etc/rsyslog.d/tls]\n  File[/etc/rsyslog.d/tls/ca.pem]\n  File[/etc/rsyslog.d/tls/puppet8node.pem]\n  File[/etc/rsyslog.d/tls/puppet8node.key]\n  Service[rsyslog]\n  File[/etc/rsyslog.d/30-listener.conf]\n  File[/etc/rsyslog.d/40-forward-self.conf]\n  File[/etc/systemd/system/logrotate.timer.d]\n  File[/etc/systemd/system/logrotate.timer.d/override.conf]\n  Exec[reload systemd for logrotate timer]\n  Exec[restart logrotate timer]\n  File[/etc/logrotate.d/rsyslog-hosts]\n  File[/opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh]\n  Cron[rsyslog_hosts_retention_cleanup]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP rsyslog_server 7dfc955b8a4e\n"
+ },
+ "applied": [
+  {
+   "id": "listener-config-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "DefaultNetstreamDriverCertFile=\"/etc/rsyslog.d/tls/puppet8node.pem\"\nDefaultNetstreamDriverKeyFile=\"/etc/rsyslog.d/tls/puppet8node.key\"\nport=\"6514\"\nmaxSessions=\"2000\"\nnotifyOnConnectionClose=\"off\"\nconstant(value=\"/var/log/hosts/\")\nconstant(value=\"/var/log/hosts/\")\n",
+   "stderr": ""
+  },
+  {
+   "id": "tls-listener-presents-the-node-certificate",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Verify return code: 0 (ok)\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the name: the same handshake verified for p8test-wrong.invalid must fail, so the pass above is the certificate's name and chain, not a tool that always says ok",
+    "rc": 0,
+    "passed": false,
+    "stdout": "Verify return code: 62 (hostname mismatch)\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "self-forward-config-absent",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "absent\n",
+   "stderr": ""
+  },
+  {
+   "id": "logrotate-timer-override-active",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "AccuracyUSec=1min\nActiveState=active\nDropInPaths=/etc/systemd/system/logrotate.timer.d/override.conf\nOnCalendar=*-*-* 00:00:00\n",
+   "stderr": ""
+  },
+  {
+   "id": "host-logs-rotation-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/var/log/hosts/*/*.log /var/log/hosts/*/.log {\ndaily\nrotate -1\nnocompress\ndateext\ndateformat -%Y%m%d\n",
+   "stderr": ""
+  },
+  {
+   "id": "retention-script-and-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\nROOT_DIR=\"/var/log/hosts\"\nACTIVE_DAYS=7\nRETENTION_DAYS=7\n17 3 * * * /opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "remote-message-lands-in-the-host-tree",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "sends one RFC3164 line (host p8testremote, tag p8test) to 127.0.0.1:6514 over TLS with the node's own Puppet certificate as the client certificate; rsyslogd creates /var/log/hosts/p8testremote/p8test.log and, through the stock /etc/rsyslog.d/50-default.conf (the listener's rules do not stop the message), appends the same line to /var/log/syslog",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-self-signed-client-is-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n0\n2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates a throwaway RSA key and self-signed certificate (CN p8test-selfsigned) in /run/p8test-rsyslog; sends one RFC3164 line (host p8testremote, tag p8test) to 127.0.0.1:6514 over TLS with it; rsyslogd logs the refused session to syslog (the journal, /var/log/syslog, and through the listener's own rules the node's /var/log/hosts/<node>/rsyslogd.log)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-message-without-a-program-lands-in-unknown",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "sends one RFC3164 line with an empty tag (host p8testremote) to 127.0.0.1:6514 over TLS with the node's own certificate; rsyslogd creates /var/log/hosts/p8testremote/unknown.log and appends to /var/log/syslog",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-servers-own-logs-land-in-its-host-directory",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "logs one message with logger -t p8testlocal; rsyslogd creates /var/log/hosts/<hostname>/p8testlocal.log and appends to /var/log/syslog and the journal",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-rotation-reopens-the-host-log",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs `logrotate -f /etc/logrotate.d/rsyslog-hosts` once (it renames the per-host logs, HUPs rsyslog and updates logrotate's state file /var/lib/logrotate/status); sends one more RFC3164 line over TLS with the node's own certificate; rsyslogd creates a new /var/log/hosts/p8testremote/p8test.log and appends to /var/log/syslog",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-retention-script-compresses-and-deletes",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "newer.log-20200102.gz p8test.log-NEW p8test.log-OLD.gz \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates /var/log/hosts/p8testold with p8test.log-<10 days ago> and p8test.log-<2 days ago> (clear text) and older.log-20200101.gz (mtime 10 days ago) and newer.log-20200102.gz (mtime 2 days ago); runs the retention script once as root (it gzips, touches and deletes in /var/log/hosts)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "f1e0e2e1-4f2b-4dd6-9978-583dbd04c1ac",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "f1e0e2e1-4f2b-4dd6-9978-583dbd04c1ac",
+   "fresh": true
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "rsyslogd listens on the port over TLS with the node's own certificate, configured for the per-host tree and the session limit",
+   "checks": [
+    "listener-config-rendered",
+    "tls-listener-presents-the-node-certificate",
+    "self-forward-config-absent"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a message from a client with a CA-signed certificate lands in <log_root>/hosts/<hostname>/<program>.log, or unknown.log without a program name; a client with a self-signed certificate is refused",
+   "checks": [
+    "remote-message-lands-in-the-host-tree",
+    "a-message-without-a-program-lands-in-unknown",
+    "a-self-signed-client-is-refused"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the server's own local logs are stored in its own host directory of the tree",
+   "checks": [
+    "the-servers-own-logs-land-in-its-host-directory"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the per-host logs rotate daily at the rotation time, date-suffixed and uncompressed, and rsyslog reopens its files after the rotation",
+   "checks": [
+    "logrotate-timer-override-active",
+    "host-logs-rotation-rule",
+    "a-rotation-reopens-the-host-log"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "rotated logs older than the active period are compressed and compressed logs older than the retention period are deleted, from root's cron at the retention time",
+   "checks": [
+    "retention-script-and-cron",
+    "the-retention-script-compresses-and-deletes"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "other ports, roots, periods, times, session limits or connection-close notices",
+   "uncovered": {
+    "why": "one set holds one fixture, the class defaults",
+    "lifted_by": "capability: more than one params fixture per set",
+    "evidence": "phase3.py applies the class once with its single `fixture` (params or defaults)"
+   }
+  }
+ ],
+ "duration_s": 148.2
+}
