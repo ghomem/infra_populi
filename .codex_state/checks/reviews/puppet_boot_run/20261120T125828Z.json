@@ -1,0 +1,35 @@
+{
+ "class": "puppet_boot_run",
+ "at": "20261120T125828Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-lock-wait-is-bounded: puppet_boot_run.sh:5 sets LOCK_WAIT_MAX=120 and :25-29 log 'Apt/dpkg locks still present after ${LOCK_WAIT_MAX}s; continuing anyway.' then break; with lock-frontend held 150 s the probe expects exactly that log line once and the 'Running puppet agent at' timestamp >= start+120 and < the release time, which is what the bounded loop (3 s polls, then line 35 of the current file) produces; relies on local change #13 (lsof -t) for the wait to happen at all",
+  "the-unit-makes-an-agent-run: puppet_boot_run.sh:33-42 log 'Running puppet agent at', run 'timeout 900 puppet agent -t' into the log and exit 0; the effect checks unit start rc=0 and Result=success (oneshot, script always exits 0), one Running line, one 'Notice: Applied catalog in' line from puppet agent -t, last_run_summary newer than the start, and (lines 19-31) that the agent run started only after the 15 s dpkg lock-frontend hold was released (the release stamp is written before the holder's fd closes, so ran >= released is sound)",
+  "script-and-unit-installed: service.erb:5-7 render [Service] Type=oneshot and ExecStart=<%= @boot_run_script %>, which the manifest (lines 8-9) sets to lookup('filesystem::bindir')/puppet_boot_run.sh = /opt/puppet-infrastructure/bin/puppet_boot_run.sh; manifest 11-17 give root:root 0750 from the module file, whose current sha256 99b6e01a...a66b I computed from files/etc/puppet_boot_run.sh (baseline + local change #13); unit file 0644 root root and WantedBy=multi-user.target (erb:11) match",
+  "purpose covered: Purpose (one agent run per boot via a oneshot unit wanted by multi-user.target, with lock wait, skip-if-running and a time limit) matches the class header and baseline manifest/script/template. Checks test the unit installed and enabled/wanted by multi-user.target, the skip path with the agent lockfile present (start succeeds, Skipping logged, no agent run), the dpkg-lock wait followed by a real agent run that applies the catalog and updates last_run_summary, and the 120 s bound on the lock wait. Uncovered rows are honest: the 900 s PUPPET_TIMEOUT cut-off exceeds the runner's 1-600 s mutating-action timeout (phase3.py:522-523), and a real boot/After=network.target ordering needs a reboot step phase3.py lacks (revert, apply, probe, node_agent only); both lifted by capabilities, not an active node kind. Left out without a row: the else branch for a node without the timeout binary (coreutils always present on Ubuntu 24.04) and 'not kept running' is shown by the harness's clean second run rather than a probe; neither is a lab-exercisable gap in the purpose."
+ ],
+ "review_s": 272.0,
+ "check_file_sha256": "97a59d778027212302af9d63e5e53e807dad31857c33f625203632bd7516d380",
+ "content_sha256": "97a59d778027212302af9d63e5e53e807dad31857c33f625203632bd7516d380",
+ "reviewer_result": "20261120T125356Z-reviewer",
+ "author_result": "20261120T124533Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "9149b146-16e7-405f-afc5-74aa56e5442e",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "9149b146-16e7-405f-afc5-74aa56e5442e",
+   "fresh": true
+  }
+ }
+}
