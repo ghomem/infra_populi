@@ -1,0 +1,265 @@
+{
+ "class": "sysmon_backup",
+ "role": "author",
+ "at": "20261120T221159Z",
+ "runner": "220628f",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "c4f235a038375b3b051b2102e816bd88d1c3674b510ffb540f0b64e5bbf19684",
+ "content_sha256": "c4f235a038375b3b051b2102e816bd88d1c3674b510ffb540f0b64e5bbf19684",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "backup-script-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/backup-sysmon.sh': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "script-carries-the-sysmon-keys",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /opt/puppet-infrastructure/bin/backup-sysmon.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "nightly-cron",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-backup-directory-exists",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/backup/sysmon': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "aged-archives-are-planted",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 96: cd: /opt/puppet-infrastructure/backup/sysmon: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "backup-runs-and-archives-basedir",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "rc \n\n",
+   "stderr": "cat: /run/p8test-sysmon/rc: No such file or directory\ncat: /run/p8test-sysmon/archive: No such file or directory\ngzip: .gz: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-run-deletes-only-its-own-old-archives",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 96: cd: /opt/puppet-infrastructure/backup/sysmon: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-failed-run-is-loud",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "cat: /run/p8test-sysmon-fail/rc: No such file or directory\nbash: line 96: [: : integer expression expected\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "tructure::Sysmon_backup/Puppet_infrastructure::Backup[sysmon]/File[/opt/puppet-infrastructure/bin/backup-sysmon.sh]/ensure: defined content as '{sha256}9c5299511db26f199be27ff5c9890ae6e45ac74dd83fbb6356b21d883850588a'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_backup/Puppet_infrastructure::Backup[sysmon]/Cron[cron_sysmon_backup]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.23 seconds\u001b[0m\nRUN1_EVENTS: 10 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795212790'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.11 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::sysmon_backup: 3 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::Backup[sysmon]\n  File[/opt/puppet-infrastructure/backup/sysmon]\n  File[/opt/puppet-infrastructure/bin/backup-sysmon.sh]\n  Cron[cron_sysmon_backup]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP sysmon_backup a7c9213a17f1\n"
+ },
+ "applied": [
+  {
+   "id": "backup-script-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "script-carries-the-sysmon-keys",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "FILETARGETDIRS=/var/tmp/p8test-sysmon/\nFILEPREFIX=sysmon.p8test.invalid\nBACKDIR=/opt/puppet-infrastructure/backup/sysmon\nNC=10\nCOMPRESSION=true\n",
+   "stderr": ""
+  },
+  {
+   "id": "nightly-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "# Puppet Name: cron_sysmon_backup\n0 23 * * * /opt/puppet-infrastructure/bin/backup-sysmon.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-backup-directory-exists",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "aged-archives-are-planted",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "./p8test-other-old.tar.gz ./sysmon.p8test.invalid-old.tar.gz \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the fixture source /var/tmp/p8test-sysmon/ (the monitoring server's data) with one file p8test.txt; creates in /opt/puppet-infrastructure/backup/sysmon: sysmon.p8test.invalid-old.tar.gz dated 12 days ago, sysmon.p8test.invalid-recent.tar.gz dated 5 days ago, and p8test-other-old.tar.gz (another prefix) dated 30 days ago",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "backup-runs-and-archives-basedir",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0\nsysmon.p8test.invalid-DATE.tar.gz\ngzip-ok\nrestores-byte-for-byte\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs backup-sysmon.sh once as root (a new archive in the backup directory; the planted 12-day-old file of its prefix is deleted); writes its exit code and the archive's name to /run/p8test-sysmon (rc, archive) and restores var/tmp/p8test-sysmon/p8test.txt from the archive there",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-run-deletes-only-its-own-old-archives",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test-other-old.tar.gz sysmon.p8test.invalid-DATE.tar.gz sysmon.p8test.invalid-recent.tar.gz \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond listing the backup directory (declared mutating so it runs after the run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-failed-run-is-loud",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "exit non-zero\n1\n1\nold archives kept\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "bind-mounts /opt/puppet-infrastructure/backup/sysmon read-only over itself, runs backup-sysmon.sh once as root, unmounts it; the script's exit code and stderr go to /run/p8test-sysmon-fail (rc, stderr); the script logs its ERROR line to syslog (the journal, /var/log/syslog) and the kernel logs the remount (/var/log/kern.log)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "df3bb17c-b7e4-4d92-83d3-a7173ce4c9d7",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "df3bb17c-b7e4-4d92-83d3-a7173ce4c9d7",
+   "fresh": true
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "the backup script carries the values of the Hiera keys sysmon::basedir and the like, and root's crontab runs it at 23:00 every day",
+   "checks": [
+    "backup-script-installed",
+    "script-carries-the-sysmon-keys",
+    "nightly-cron"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the backup directory the script writes into is there after the apply",
+   "checks": [
+    "the-backup-directory-exists"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a run writes a dated gzip tar of the data directory from which a file restores byte for byte",
+   "checks": [
+    "aged-archives-are-planted",
+    "backup-runs-and-archives-basedir"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the run deletes the prefix's archives older than 9 full days and keeps newer ones and other prefixes' files",
+   "checks": [
+    "aged-archives-are-planted",
+    "a-run-deletes-only-its-own-old-archives"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a run that cannot write its archive fails loudly (non-zero exit, an error line on stderr and in syslog) and deletes no old archive",
+   "checks": [
+    "a-failed-run-is-loud"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "cron itself firing at 23:00",
+   "uncovered": {
+    "why": "a run would have to wait for 23:00; the crontab entry is checked and the script it names is run by hand",
+    "lifted_by": "capability: a clock-controlled cron trigger inside a phase3 run",
+    "evidence": "phase3.py runs probes and agent runs only; it has no step that advances or waits for the node's cron schedule"
+   }
+  },
+  {
+   "outcome": "compression off (sysmon::compression false)",
+   "uncovered": {
+    "why": "one set holds one Hiera fixture, which leaves sysmon::compression unset (default true)",
+    "lifted_by": "capability: more than one params or Hiera fixture per set",
+    "evidence": "phase3.py applies the class once with its single `fixture` (params or defaults) against the master's one Hiera"
+   }
+  }
+ ],
+ "duration_s": 75.7
+}
