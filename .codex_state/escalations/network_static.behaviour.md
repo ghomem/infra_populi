@@ -1,6 +1,6 @@
 # network_static — behaviour finding: the default route never applies (it names eth0) (2026-11-20)
 
-Status: OPEN, for HQ. The reviewer reproduced it on a fresh node (checks/reviews/network_static/20261120T012645Z.json, set
+Status: CLOSED 2026-11-20. HQ: keep and fix (the baseline's parameters show the gateway belongs to $iface); local change #12, interface => $iface: Phase 1 PASS 20261120T084744Z, Phase 3 PASS 20261120T085040Z (the default route through the gateway on the configured interface). Was: OPEN, for HQ. The reviewer reproduced it on a fresh node (checks/reviews/network_static/20261120T012645Z.json, set
 PASS with this finding, purpose covered) and confirmed the mechanism: ifupdown-extra's if-up.d/20static-routes applies
 only routes lines whose last field matches the interface being brought up ($IFACE).
 Escalated for this class under HQ batch-12 ruling 5: the fix has more than one reasonable design. The run continues.
