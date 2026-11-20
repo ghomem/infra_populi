@@ -1,0 +1,34 @@
+{
+ "class": "network_dhcp",
+ "at": "20261120T005352Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-primary-interface-keeps-working: network_dhcp.pp:4-7 warns that once puppet manages one interface it must manage all of them, i.e. the risk to the interfaces the class does not manage; the effect checks p8test0 up via ifupdown while the route to 1.1.1.1 still leaves via enp0s3 (netplan) and answers, which tests exactly that risk. The action is a no-op (true), declared mutating only for ordering after the restart; its effect pings 1.1.1.1 (outside the node), declared in mutates and read-only for the node",
+  "a-restart-of-networking-keeps-the-address: network_dhcp.pp:12 network_config onboot=>'true', method=>'dhcp' writes an auto/inet dhcp stanza, which the networking service (ifupdown, local change #10) brings up on restart; the effect requires networking active and a 10.251.0.100-150 lease on p8test0 (reviewer run: 'active', '10.251.0.N/24')",
+  "the-interface-stanza-says-dhcp-at-boot: network_dhcp.pp:12 (onboot true -> 'auto p8test0', family inet + method dhcp -> 'iface p8test0 inet dhcp', hotplug false -> no allow-hotplug) and :11 package ifupdown-extra installed; probe greps exactly those two stanza lines and dpkg status, expect matches what the code produces under the p8test0 fixture",
+  "purpose covered: Purpose (configure an interface with DHCP, up at boot) matches the baseline header and code. Checks cover: the stanza and ifupdown-extra (:11-12); ifupdown installed and networking enabled (local change #10); a real DHCP lease from a namespaced dnsmasq after the boot step the node has (networking service, reviewer run 'boot step: networking-service'); the lease kept through a networking restart; the primary netplan interface still carrying the internet (the header's manage-all-interfaces concern). Left out: an actual reboot, honestly uncovered: phase3.py has no reboot step (verified: only revert/apply/probe/node_agent), lifted_by a capability, not an active node kind. Reviewer run 20261120T004308Z: CLEAN all negatives failed, APPLIED all 6 pass, no findings."
+ ],
+ "review_s": 644.0,
+ "check_file_sha256": "ca7eb2fb63d1667658791895c1cfe64c8cc18b150d49f968a09eb718c98e8d28",
+ "reviewer_result": "20261120T004308Z-reviewer",
+ "author_result": "20261120T003715Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "118306af-4709-4ca6-a809-ad5818a269f9",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "118306af-4709-4ca6-a809-ad5818a269f9",
+   "fresh": true
+  }
+ }
+}
