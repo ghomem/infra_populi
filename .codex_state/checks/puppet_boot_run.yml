@@ -9,6 +9,8 @@
 # Correction round 1, 2026-11-20 (review 20261120T123521Z, purpose gap): the lock wait's 120 s bound is exercised
 # (a lock held 150 s), and the 900 s time limit is an uncovered row with its evidence. The same review reproduced the
 # finding that the lock wait never waits (lsof given three files exits 1 unless all three are held).
+# Local change #13, 2026-11-20: the wait uses lsof -t. Authoring error in the first run after it (20261120T124321Z):
+# script-and-unit-installed still expected the baseline script's sha256; it now expects the module's file as changed.
 class: puppet_boot_run
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -43,17 +45,19 @@ outcomes:
       evidence: "phase3.py has no reboot step: a run reverts, applies, probes, and at most runs the node's agent (node_agent)"
 checks:
   - id: script-and-unit-installed
-    what: the script is root:root 0750 with the module file's content, and the unit (0644) runs it as a oneshot
+    what: >-
+      the script is root:root 0750 with the module file's content (the baseline script with local change #13, sha256
+      below), and the unit (0644) runs it as a oneshot
     control: negative
     derived_from:
       - {path: manifests/puppet_boot_run.pp, lines: "11-17", text: "source => ('puppet:///modules/puppet_infrastructure/etc/puppet_boot_run.sh')"}
-      - {path: files/etc/puppet_boot_run.sh, sha256: 4e69688ce0bb941774382bff816ba3190d185adf6341e04e1e1cfa2b2c4b9c6a}
+      - {path: files/etc/puppet_boot_run.sh, lines: "1-8", text: "echo \"Puppet boot-run started at: $(date -Is)\" > \"$LOG\""}
       - {path: templates/etc/puppet_boot_run.service.erb, lines: "5-7", text: "ExecStart=<%= @boot_run_script %>"}
     probe: |
       p8_digest /opt/puppet-infrastructure/bin/puppet_boot_run.sh | cut -d' ' -f2-
       stat -c '%U %G %a' /etc/systemd/system/puppet_boot_run.service
       grep -E '^(Type|ExecStart|WantedBy)=' /etc/systemd/system/puppet_boot_run.service
-    expect: {rc: 0, stdout: "\\Aroot:root 750 4e69688ce0bb941774382bff816ba3190d185adf6341e04e1e1cfa2b2c4b9c6a\\nroot root 644\\nType=oneshot\\nExecStart=/opt/puppet-infrastructure/bin/puppet_boot_run\\.sh\\nWantedBy=multi-user\\.target\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Aroot:root 750 99b6e01a29dff0d52bd10a4ae26ef896c939cb564e16020255b087c607d1a66b\\nroot root 644\\nType=oneshot\\nExecStart=/opt/puppet-infrastructure/bin/puppet_boot_run\\.sh\\nWantedBy=multi-user\\.target\\n\\Z"}
 
   - id: unit-enabled-for-boot
     what: systemd knows the unit (daemon-reload ran), it is enabled, and multi-user.target wants it
