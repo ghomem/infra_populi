@@ -1,0 +1,36 @@
+{
+ "class": "letsencrypt_base",
+ "at": "20261120T113847Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "fail",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "deploy-script-rendered: templates/letsencrypt/deploy_maintained_certificates.sh.erb:3-5 render CERT_DIR=$certificatesdir (/etc/letsencrypt/live), SSL_DIR=$ssldir (/etc/puppetlabs/puppet/extra_files/ssl) and DOMAINS=join($domains,' ') = \"p8test.example.com\" under the params fixture; root 0700 is manifest 83-85; the probe greps exactly those lines after bash -n, so the reference supports it",
+  "dns-plugin-installed: manifests/letsencrypt_base.pp:16 sets package_name python3-certbot-dns-digitalocean for provider digitalocean (the fixture's), installed via apt (lines 47-53); certbot itself comes from class letsencrypt (line 63); dpkg-query on both packages tests that, supported",
+  "the-deploy-script-copies-renewed-certificates: template lines 7-17 find dirs under /etc/letsencrypt/live named *<domain> and cp privkey/cert/chain to <name>-key.pem, <name>.pem, <name>-chain.pem, then chown puppet:puppet; with domains [p8test.example.com] the p8test-other.example.org dir does not match, so exactly the three files, byte-identical, puppet:puppet is what the code produces; supported (the action's implicit parent /etc/letsencrypt/live is covered by the declared paths)",
+  "certbot-finds-the-dns-plugin (mutates incomplete): its action `certbot plugins` also created /etc/letsencrypt/renewal-hooks and its pre/, deploy/ and post/ subdirectories (node after my run: all four mtime 2026-11-20 11:38:03.620, the same instant as /var/log/letsencrypt/letsencrypt.log and /var/lib/letsencrypt, after the 11:37:50 apply; not in dpkg -L certbot, not managed by the class); the mutates declares only the log, /var/lib/letsencrypt and /run/p8test-le, so it does not declare everything its action changes",
+  "purpose covered: Purpose matches the baseline manifest and template: certbot + provider plugin + root-only token file (dns-plugin-installed, certbot-finds-the-dns-plugin, dns-credentials-file-private), the renew cron with its nginx-reload post hook (renew-cron-with-nginx-reload-hook reads the hook file the cron names), the deploy script and cron (deploy-script-rendered, deploy-cron), and the script really copying a maintained domain's renewal into extra_files/ssl as puppet:puppet while leaving another domain (the-deploy-script-copies-renewed-certificates) on the master-role node. Uncovered rows are honest: the nginx reload effect needs nginx, which the class does not install and the node lacks (dpkg-query: no nginx); issuing/renewing needs an ACME endpoint and a DNS API; hetzner pip variants and other params need a second fixture. No finding in my run (ALL_PASS, every negative failed clean)."
+ ],
+ "review_s": 110.0,
+ "check_file_sha256": "13fc03988067316189563cb3f711b4bf7cda5e7ff463e980f2339bf8a6fe103b",
+ "content_sha256": "13fc03988067316189563cb3f711b4bf7cda5e7ff463e980f2339bf8a6fe103b",
+ "reviewer_result": "20261120T113658Z-reviewer",
+ "author_result": "20261120T113437Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "boot_id": "9825104e-ed17-4a1b-bba8-0e706162e091",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "9825104e-ed17-4a1b-bba8-0e706162e091",
+   "fresh": true
+  }
+ }
+}
