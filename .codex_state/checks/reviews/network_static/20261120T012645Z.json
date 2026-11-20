@@ -1,0 +1,37 @@
+{
+ "class": "network_static",
+ "at": "20261120T012645Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-interface-stanza-says-static-at-boot: :13 network_route 'default' (network default, netmask 0.0.0.0, gateway $gateway, interface eth0) renders as the routes line 'default 0.0.0.0 192.0.2.1 eth0' under the fixture gateway 192.0.2.1 (seen verbatim in /etc/network/routes on the applied node); with :11-12 (ifupdown-extra installed; onboot true/hotplug false -> auto, inet static, ipaddress 192.0.2.10) the probe and expect test exactly what the lines declare",
+  "ifupdown-and-the-networking-service: :12 onboot => 'true' declares a stanza read at boot; on Ubuntu 24.04 only ifupdown's enabled networking service reads it, which is what local change #11 (ensure_packages ifupdown, row 11) adds; probe checks ifupdown installed + networking enabled, consistent with the lines plus the recorded local change",
+  "the-boot-step-brings-the-interface-up: :12 onboot true, method static, ipaddress $ipaddress -> starting networking.service (what a boot runs) must give p8test0 192.0.2.10 (/24 is ifupdown's default with no netmask, as measured) and reach the LAN; the a-lan-on-the-interface setup (namespace + veth p8test0, gateway 192.0.2.1/24) only supplies the interface and a peer, declares all it creates, and changes nothing the class declares; effects are read-only ip/ping results, not the actions' output",
+  "finding the-default-route-goes-through-the-gateway: expected 1 default route via 192.0.2.1, saw 0 (stdout '0'); the node's only default route is via 10.0.2.2 dev enp0s3. Confirmed independently: /etc/network/routes holds 'default 0.0.0.0 192.0.2.1 eth0' and ifupdown-extra's if-up.d/20static-routes only applies lines whose trailing interface matches $IFACE (egrep ...[[:space:]]${IFACE}), so bringing up p8test0 never installs it and eth0 does not exist on Ubuntu 24.04 (enp0s3/enp0s8/p8test0) - the baseline's hard-coded interface => 'eth0' (:13)",
+  "purpose covered: Purpose (static interface up at boot + default route via the gateway) matches the header (:1-7) and baseline :11-13. Outcomes table covers every declared resource: ifupdown-extra and stanza (:11-12), ifupdown/networking (local change #11), boot-step address and LAN reachability, address kept through a networking restart, default route via the gateway (:13, tested; it fails - a finding, not a coverage gap), and that the primary interface enp0s3 keeps working beside ifupdown (:4-7 rationale). Only an actual reboot is uncovered; its evidence holds (phase3.py's run is revert/apply/probe with no reboot step) and lifted_by names a missing capability; the boot step is exercised instead via networking.service start. Checks test the class doing its job (address on a live link, gateway answering), not just files."
+ ],
+ "review_s": 110.3,
+ "check_file_sha256": "41638178db1287f08c9a63e89e9d30268072b9f0a0c3132d8e0db53404d3264e",
+ "reviewer_result": "20261120T012455Z-reviewer",
+ "author_result": "20261120T011857Z-author",
+ "findings": [
+  "the-default-route-goes-through-the-gateway"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "e40c51b2-83a2-4bb9-987b-dfaad6b487b7",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "e40c51b2-83a2-4bb9-987b-dfaad6b487b7",
+   "fresh": true
+  }
+ }
+}
