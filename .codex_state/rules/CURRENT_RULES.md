@@ -2,7 +2,12 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-122 entries; 6 marked superseded (in whole or part); newest first.
+123 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-20 — HQ after batch 15: network_static fixed, no hand-entered authoring time, lab power commands
+- 1. **network_static (HQ item 1, keep and fix).** The baseline's parameters show the gateway belongs to the interface the
+- 2. **Authoring time (HQ item 2).** Computed by the tool or not recorded: phase3.py refuses an `authoring` block, and
+- 3. **Lab power (HQ item 3).** `lab_power.sh down|up`, the second sanctioned master shutdown beside snapshot_master.sh
 
 ## 2026-11-20 — ifupdown alongside netplan (HQ batch-15 ruling 5): measured facts and the plan
 - 1. **ifupdown is installable on Ubuntu 24.04:** 0.8.41ubuntu1 from noble/universe (apt-cache policy on the 24.04

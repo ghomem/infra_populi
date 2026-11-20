@@ -6,6 +6,7 @@
 #
 #   lab_sleep_guard.sh ensure   start the guard unless one is alive (idempotent; the VM-starting tools call it)
 #   lab_sleep_guard.sh status   print `held <pid>` or `none`; exit 0 either way
+#   lab_sleep_guard.sh release  stop the guard now, if one runs (lab_power.sh down, after the last VM stopped)
 #   lab_sleep_guard.sh hold     (internal) the guard itself, run under systemd-inhibit: polls the running VMs and exits
 #                               when no lab VM runs, which releases the inhibitor
 #
@@ -62,8 +63,11 @@ case "${1:-}" in
   status)
     if pid="$(guard_pid)"; then echo "held $pid"; else echo "none"; fi
     ;;
+  release)
+    if pid="$(guard_pid)"; then kill "$pid" 2>/dev/null || true; rm -f "$PIDFILE"; fi
+    ;;
   *)
-    echo "usage: $0 ensure|status|hold" >&2
+    echo "usage: $0 ensure|status|release|hold" >&2
     exit 2
     ;;
 esac

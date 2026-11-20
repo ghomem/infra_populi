@@ -2263,3 +2263,20 @@ snapshot list, record.
    :13), whatever $iface is. Ubuntu 24.04 names interfaces predictably, with no eth0.
 6. **Plan:** native netplan support goes on the Phase 5 backlog, and ifupdown's availability is checked in the 26.04
    pass (HQ ruling 5).
+
+## 2026-11-20 — HQ after batch 15: network_static fixed, no hand-entered authoring time, lab power commands
+1. **network_static (HQ item 1, keep and fix).** The baseline's parameters show the gateway belongs to the interface the
+   class configures: one `$iface` with its address and gateway, no other interface; upstream f807e7b split it from the
+   first OpenVPN file, whose WAN interface defaulted to `eth0`. Local change #12: `interface => $iface`. Before:
+   route check `0` (20261120T011857Z); after: `1` (20261120T084255Z). Phase 1 PASS 20261120T084744Z, Phase 3 PASS
+   20261120T085040Z. The route takes the node's default route on the lab node, so the node is reverted after every run.
+2. **Authoring time (HQ item 2).** Computed by the tool or not recorded: phase3.py refuses an `authoring` block, and
+   the block is removed from all 79 sets. Results and reviews now carry a content sha (the set without that block), and
+   older records are matched through the git version their full-file sha names, so removing the block left every
+   reviewed set reviewed (state unchanged). Found on the way: an approved set's new-form uncovered rows (evidence,
+   `capability:`) were judged by the earlier rule and read as invalid; they are now judged by the new rule.
+3. **Lab power (HQ item 3).** `lab_power.sh down|up`, the second sanctioned master shutdown beside snapshot_master.sh
+   (CLAUDE.md updated). Down: TERM to the lab lock's holder and a wait (refuses, touching nothing, if it does not stop),
+   the lock, every other running lab VM powered off (nodes are reverted before use), the master through ACPI with a
+   timeout and never forced, the sleep guard released. Up: the lock, the master started, SSH + puppetserver + 8140 +
+   clock checked, the node reverted. 9 tests on the stub lab.
