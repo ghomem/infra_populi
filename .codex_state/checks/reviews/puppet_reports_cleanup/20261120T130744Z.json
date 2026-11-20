@@ -1,0 +1,35 @@
+{
+ "class": "puppet_reports_cleanup",
+ "at": "20261120T130744Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "cron-entry-with-the-hiera-values @5-6: the two lookup() lines resolve on the lab master to common.yaml puppet::reportdir /opt/puppetlabs/server/data/puppetserver/reports and puppet::reportdays 7; the expected crontab line embeds exactly those values",
+  "cron-entry-with-the-hiera-values @8-14: cron 'puppet_report_cleanup', user root, minute 0, hour 0, monthday * (weekday/month default *) renders as '# Puppet Name: puppet_report_cleanup' + '0 0 * * * find <reportdir> -type f -mtime +<reportdays> | xargs rm' in root's crontab; probe reads root's crontab and expect matches that line exactly",
+  "aged-reports-are-planted @5-6: planting a 10-day and a 2-day report under the looked-up reportdir straddles reportdays=7; mutates declares the dir+parents and both files; the read-only effect (find -mtime +7 in the store) shows the planting result (only old.yaml is aged), not the action's output",
+  "purpose covered: Purpose matches the baseline header ('cleans up puppet reports to avoid filling the disk') and the single cron resource. Checks test the crontab entry with the Hiera values and then run the exact command extracted from root's crontab via sh -c as root against a planted store, observing that only the >7-day report is deleted and the 2-day one kept (the class doing its job). Uncovered: only cron's own midnight firing; phase3.py has no clock-advancing step, an honest capability gap. The store being planted (not created by the class) is correct: on production the master's puppetserver owns it."
+ ],
+ "review_s": 69.8,
+ "check_file_sha256": "a7b0b1e68154f73339d5561b226e6d558b810a24c15196d24e262d808a5b41f0",
+ "content_sha256": "a7b0b1e68154f73339d5561b226e6d558b810a24c15196d24e262d808a5b41f0",
+ "reviewer_result": "20261120T130635Z-reviewer",
+ "author_result": "20261120T130441Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "64a48bae-0a09-4f7b-a1b0-3c28cf0af5a8",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "64a48bae-0a09-4f7b-a1b0-3c28cf0af5a8",
+   "fresh": true
+  }
+ }
+}
