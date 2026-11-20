@@ -1,0 +1,100 @@
+{
+ "schema": 1,
+ "class": "network_static",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-20T01:23:59Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "657434d492dd",
+ "migrate_subject": "P8: migrate puppet_infrastructure::network_static",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 657434d492dd; 5 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/network_static.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `network_static Done [from: release-0.9.10; local changes: #11]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppet-network', '2.2.1'), ('puppet-filemapper', '4.0.0'), ('puppet-kmod', '4.1.0'), ('puppetlabs-stdlib', '9.7.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 4 catalog events; COVERAGE puppet_infrastructure::network_static: 4 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A @@ -1,2 +1,4: the 2-line migration header only (release-0.9.10 manifest; local change #11; module deps puppet-network 2.2.1, puppet-filemapper 4.0.0, puppet-kmod 4.1.0, puppetlabs-stdlib 9.7.0 matching the master); all baseline comment lines kept",
+   "DIFF A @@ -9,4 +11,7: exactly local change #11 and nothing more: two comment lines plus ensure_packages(['ifupdown'], { 'ensure' => 'present' }) before package 'ifupdown-extra' (network_static.pp:13-15); same call and attributes as network_dhcp's #10, so the classes compile together. Minimal for the failing check the row cites: ifupdown-and-the-networking-service FAIL before (results/network_static/20261120T005952Z-author applied: 'ifupdown unknown ok not-installed', boot step not run) and PASS after (20261120T011857Z-author applied: 'ifupdown install ok installed', 'enabled'; the-boot-step-brings-the-interface-up: 192.0.2.10/24, gateway answers)",
+   "Unchanged vs baseline: package ifupdown-extra, network_config $iface (static, onboot true, hotplug false) and network_route 'default' (interface eth0, gateway $gateway) keep their titles, types and every attribute; class parameters unchanged; the eth0 route is left as upstream (row #11 names it a separate behaviour finding, not part of this change)",
+   "DIFF B: re-migration; replaces the earlier 'release-0.9.8 manifest validated unchanged' header with the release-0.9.10 one and adds the same #11 hunk as DIFF A; idempotent GREEN with 4 run-1 events and 4 concrete resources covered"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 5,
+  "removed": 0,
+  "non_comment_changes": 1,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest; local change #11: ifupdown declared (ensure_packages, as network_dhcp).",
+  "# Module dependencies: puppet-network 2.2.1 (network_config, network_route), puppet-filemapper 4.0.0, puppet-kmod 4.1.0, puppetlabs-stdlib 9.7.0 (ensure_packages)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 4,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::network_static: 4 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 50.989,
+   "master_check_s": 0.336,
+   "poweroff_s": 0.843,
+   "restore_s": 0.253,
+   "boot_to_ssh_s": 12.593,
+   "apt_update_s": 36.618,
+   "verify_s": 0.346,
+   "nic1_rx_bytes": 13179771,
+   "apt_mirror": "primary"
+  },
+  "log": ".codex_state/logs/reviews/network_static.20261120T012214Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "ubuntu"
+}
