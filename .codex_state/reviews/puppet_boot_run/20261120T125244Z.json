@@ -1,0 +1,100 @@
+{
+ "schema": 1,
+ "class": "puppet_boot_run",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-20T12:52:44Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "96c8cea8643b",
+ "migrate_subject": "P8: migrate puppet_infrastructure::puppet_boot_run",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 96c8cea8643b; 4 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "3 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/puppet_boot_run.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `puppet_boot_run Done [from: release-0.9.10; upstream defect fixed: ensure dropped; local changes: #13]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 10 catalog events; COVERAGE puppet_infrastructure::puppet_boot_run: 4 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A manifests/puppet_boot_run.pp @@ -1,2 +1,4: only the 2-line migration header comment added (defect + local change #13 + 'Module dependencies: none'); every baseline comment kept (comments_preserved ok).",
+   "DIFF A manifests/puppet_boot_run.pp @@ -31,5 +33,4: removes only 'ensure => running' from service 'puppet_boot_run'; enable => true, provider => 'systemd' and require are unchanged. This is exactly the RULED UPSTREAM-DEFECT CHANGE 'ensure dropped' (upstream_defects.md, HQ ruling 8). No other resource, attribute or logic in the manifest changed.",
+   "DIFF A files/etc/puppet_boot_run.sh @@ -20,5 +20,6: line 22 'if ! lsof <3 locks> >/dev/null 2>&1' becomes 'if [ -z \"$(lsof -t <same 3 locks> 2>/dev/null)\" ]' plus one comment line. This is exactly local change #13 and the minimal fix: given several files, lsof exits 1 unless it finds all of them open, so the baseline loop broke at once while only apt/lists/lock was held. -t prints a PID for any holder. Same lock files, same 120 s bound, sleep 3 and log line; with lsof absent, both versions break at once. Cited check the-unit-makes-an-agent-run: FAIL before in 20261120T123031Z-author (FINDINGS); PASS after in 20261120T124533Z-author (ALL_PASS, valid; the-lock-wait-is-bounded also PASS).",
+   "DIFF B (re-migration): changes only the header line to add the local change #13 note, plus the same lsof -t hunk. The earlier migrated content (header + ensure dropped) is expected drift, and DIFF A carries the whole claim."
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 4,
+  "removed": 2,
+  "non_comment_changes": 3,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest; upstream defect fixed (HQ ruling 8): `ensure => running` dropped from the oneshot unit (it restarted the unit on every agent run); `enable => true` kept; local change #13: the boot script's lock wait (lsof -t).",
+  "# Module dependencies: none."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 10,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::puppet_boot_run: 4 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 23.155,
+   "master_check_s": 0.328,
+   "poweroff_s": 0.637,
+   "restore_s": 0.213,
+   "boot_to_ssh_s": 13.762,
+   "apt_update_s": 7.878,
+   "verify_s": 0.337,
+   "nic1_rx_bytes": 13177247,
+   "apt_mirror": "primary"
+  },
+  "log": ".codex_state/logs/reviews/puppet_boot_run.20261120T125131Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "ubuntu"
+}
