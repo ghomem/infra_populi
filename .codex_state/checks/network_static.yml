@@ -1,0 +1,140 @@
+# Phase 3 checks for puppet_infrastructure::network_static (class; node ubuntu; 0 production statements). Fixture
+# (params, never committed): iface p8test0 (the fixture interface name), ipaddress 192.0.2.10, gateway 192.0.2.1 (a
+# documentation address since 2026-11-20; it was on the home LAN's prefix). Written 2026-11-20 (HQ batch-15 ruling 5,
+# local change #11): ifupdown is declared as for network_dhcp. The checks give p8test0 a LAN: a network namespace
+# p8testgw joined to the node by a veth pair (p8test0 on the node, p8testgwif 192.0.2.1/24 in the namespace). Measured on
+# the node 2026-11-20 (the class applied, ifupdown installed by hand): the stanza has no netmask and ifupdown gives
+# p8test0 192.0.2.10/24; /etc/network/routes reads `default 0.0.0.0 192.0.2.1 eth0`, and ifupdown-extra's
+# 20static-routes installs no default route for p8test0, because the class names eth0 (baseline :13), which Ubuntu 24.04
+# does not have. The route check expects the baseline's purpose and fails: a finding, escalated.
+class: network_static
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+authoring:
+  minutes: 0.1
+  notes: "Written in one command at 00:58:34Z 2026-11-20 (not timed: the drafting before it was not, and the command took under a second); minutes 0.1 are the read-through against the measured rendering, 00:58:49Z to 00:58:58Z (dates at its start and at validation). The prototype on the node, in the header, was not timed."
+purpose: >-
+  Configures a network interface with a static address, brought up at boot, and a default route through the given
+  gateway.
+outcomes:
+  - outcome: the interface's configuration says static at boot with the given address, ifupdown-extra is installed, and the default route names the gateway
+    from: manifests/network_static.pp:9-13
+    checks: [the-interface-stanza-says-static-at-boot]
+  - outcome: ifupdown, which reads the stanza at boot, is installed and its networking service enabled (local change #11)
+    from: manifests/network_static.pp:1-7, 11-12
+    checks: [ifupdown-and-the-networking-service]
+  - outcome: at boot the interface comes up with its static address and reaches the LAN
+    from: manifests/network_static.pp:1-2, 12
+    checks: [a-lan-on-the-interface, the-boot-step-brings-the-interface-up]
+  - outcome: the interface keeps its address through a restart of the networking service
+    from: manifests/network_static.pp:12
+    checks: [a-restart-of-networking-keeps-the-address]
+  - outcome: the default route goes through the given gateway once the interface is up
+    from: manifests/network_static.pp:13
+    checks: [the-default-route-goes-through-the-gateway]
+  - outcome: the node's primary interface keeps working (ifupdown beside netplan, HQ batch-15 ruling 5)
+    from: manifests/network_static.pp:4-7
+    checks: [the-primary-interface-keeps-working]
+  - outcome: an actual reboot brings the interface up
+    from: manifests/network_static.pp:12
+    uncovered:
+      why: a run does not reboot the class's node; the boot step (the networking service a boot starts) is run instead
+      lifted_by: "capability: a reboot of the class's node inside a phase3 run"
+      evidence: "phase3.py has no reboot step: a run reverts, applies, probes, and at most runs the node's agent (node_agent)"
+checks:
+  - id: the-interface-stanza-says-static-at-boot
+    what: /etc/network/interfaces brings p8test0 up at boot with the static address, ifupdown-extra is installed, and /etc/network/routes holds the default route through the gateway
+    control: negative
+    derived_from:
+      - {path: manifests/network_static.pp, lines: "12", text: "method => 'static',   ipaddress => $ipaddress, hotplug => 'false' }"}
+      - {path: manifests/network_static.pp, lines: "13", text: "network_route  { 'default':        ensure => 'present', gateway => $gateway, interface => 'eth0', netmask => '0.0.0.0', network   => 'default' }"}
+      - {path: manifests/network_static.pp, lines: "11", text: "package        { 'ifupdown-extra': ensure => 'installed', }"}
+    probe: |
+      grep -E '^(auto|iface) p8test0|^address ' /etc/network/interfaces
+      grep -vE '^#' /etc/network/routes
+      dpkg-query -W -f '${Package} ${Status}\n' ifupdown-extra
+    expect: {rc: 0, stdout: "\\Aauto p8test0\\niface p8test0 inet static\\naddress 192\\.0\\.2\\.10\\ndefault 0\\.0\\.0\\.0 192\\.0\\.2\\.1 eth0\\nifupdown-extra install ok installed\\n\\Z"}
+
+  - id: ifupdown-and-the-networking-service
+    what: ifupdown is installed and its networking service, which runs the stanzas at boot, is enabled
+    control: negative
+    derived_from:
+      - {path: manifests/network_static.pp, lines: "4-7", text: "# needs to manage interface lo and it has been found that"}
+      - {path: manifests/network_static.pp, lines: "12", text: "onboot    => 'true', method => 'static'"}
+    probe: |
+      dpkg-query -W -f '${Package} ${Status}\n' ifupdown 2>/dev/null
+      systemctl is-enabled networking 2>/dev/null
+    expect: {rc: 0, stdout: "\\Aifupdown install ok installed\\nenabled\\n\\Z"}
+
+  - id: a-lan-on-the-interface
+    what: setup for the next checks, p8test0 joined to a namespace that holds the gateway 192.0.2.1
+    control: negative
+    derived_from:
+      - {path: manifests/network_static.pp, lines: "1-2", text: "# This class configures a network interface with static parameters."}
+    mutates: creates network namespace p8testgw and veth pair p8test0 (node) / p8testgwif (namespace, 192.0.2.1/24, up)
+    probe: |
+      ip netns add p8testgw
+      ip link add p8test0 type veth peer name p8testgwif
+      ip link set p8testgwif netns p8testgw
+      ip netns exec p8testgw ip addr add 192.0.2.1/24 dev p8testgwif
+      ip netns exec p8testgw ip link set p8testgwif up
+    effect: |
+      ip link show p8test0 >/dev/null 2>&1 && echo interface-present
+      ip netns exec p8testgw ip -4 -o addr show p8testgwif | awk '{print $4}'
+    expect: {rc: 0, stdout: "\\Ainterface-present\\n192\\.0\\.2\\.1/24\\n\\Z"}
+
+  - id: the-boot-step-brings-the-interface-up
+    what: after the networking service starts (the boot step), p8test0 holds 192.0.2.10 and the gateway answers through it
+    control: negative
+    timeout: 120
+    derived_from:
+      - {path: manifests/network_static.pp, lines: "12", text: "onboot    => 'true', method => 'static',   ipaddress => $ipaddress"}
+    mutates: starts the networking service (ifup of every auto stanza) and pings 192.0.2.1 twice
+    probe: |
+      systemctl start networking.service
+      for i in $(seq 20); do ip -4 -o addr show p8test0 | grep -q '192\.0\.2\.10/' && break; sleep 1; done
+    effect: |
+      ip -4 -o addr show p8test0 | awk '{print $4}'
+      ping -c2 -W2 -q -I p8test0 192.0.2.1 >/dev/null 2>&1 && echo "gateway answers"
+    expect: {rc: 0, stdout: "\\A192\\.0\\.2\\.10/24\\ngateway answers\\n\\Z"}
+
+  - id: a-restart-of-networking-keeps-the-address
+    what: after `systemctl restart networking`, p8test0 holds 192.0.2.10 again
+    control: negative
+    timeout: 120
+    derived_from:
+      - {path: manifests/network_static.pp, lines: "12", text: "onboot    => 'true', method => 'static'"}
+    mutates: restarts the networking service and waits up to 20 s for the address on p8test0
+    probe: |
+      systemctl restart networking.service
+      for i in $(seq 20); do ip -4 -o addr show p8test0 | grep -q '192\.0\.2\.10/' && break; sleep 1; done
+    effect: |
+      systemctl is-active networking.service
+      ip -4 -o addr show p8test0 | awk '{print $4}'
+    expect: {rc: 0, stdout: "\\Aactive\\n192\\.0\\.2\\.10/24\\n\\Z"}
+
+  - id: the-default-route-goes-through-the-gateway
+    what: with p8test0 up, a default route through the gateway 192.0.2.1 is installed (from /etc/network/routes)
+    control: negative
+    derived_from:
+      - {path: manifests/network_static.pp, lines: "13", text: "network_route  { 'default':        ensure => 'present', gateway => $gateway, interface => 'eth0', netmask => '0.0.0.0', network   => 'default' }"}
+    mutates: none beyond reading the routes (declared mutating so it runs after the interface is up)
+    probe: |
+      true
+    effect: |
+      ip -4 route show default | p8_count 'via 192\.0\.2\.1 '
+    expect: {rc: 0, stdout: "\\A1\\n\\Z"}
+
+  - id: the-primary-interface-keeps-working
+    what: with p8test0 up through ifupdown, the node's way to the internet still goes out through its primary interface (enp0s3, netplan) and answers
+    control: negative
+    derived_from:
+      - {path: manifests/network_static.pp, lines: "4-7", text: "# once puppet starts managing one interface it has to manage"}
+    mutates: none beyond one route lookup and two pings to 1.1.1.1 (declared mutating so it runs after the restart)
+    probe: |
+      true
+    effect: |
+      ip -4 -o addr show p8test0 | grep -q '192\.0\.2\.10/' && echo "p8test0 up"
+      ip -4 route get 1.1.1.1 | grep -o 'dev [a-z0-9]*' | head -1
+      ping -c2 -W3 -q 1.1.1.1 >/dev/null 2>&1 && echo "internet answers"
+    expect: {rc: 0, stdout: "\\Ap8test0 up\\ndev enp0s3\\ninternet answers\\n\\Z"}
