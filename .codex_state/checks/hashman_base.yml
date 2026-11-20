@@ -10,16 +10,54 @@
 # administrator adds the fixture user p8hashuser with the CLI, sets its password with `setpw`, and copies the role line
 # it prints into the client's node definition. The peer's (ubuntu2) agent run against the master-role server applies
 # the user, and PAM there accepts the password. The former `uncovered` note is lifted by that.
+# 2026-11-20 (backfill batch 6): purpose and outcomes (HQ rulings 2 and C1), and the server's own agent run after the
+# administrator's change (node_agent), which must leave the database alone (replace => 'no').
 class: hashman_base
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
 peer:
   kind: ubuntu2
   why: the database is consumed by the master's catalogs for other machines, so another machine must apply a user from it
+node_agent:
+  after: admin-adds-a-user-with-a-password
+  why: the database files are declared replace => 'no', which only an agent run of the server after a user was added can show
 peer_agent:
   after: admin-adds-a-user-with-a-password
   certname: p8test-hashman-client
   why: the database reaches another machine only through that machine's agent run against the master-role server
+purpose: >-
+  Provides Hashman, a Puppet-based user directory managed from the command line: the pp_auth CLI and its library,
+  configured from Hiera, and a user database kept as Puppet code in the master's manifests, created empty on the first
+  run and never overwritten afterwards, from which the master's catalogs give users and password hashes to other
+  machines.
+outcomes:
+  - outcome: the CLI, its library configured from Hiera and its Python packages are installed, and the CLI starts
+    from: manifests/hashman_base.pp:13-151, 170-171
+    checks: [config-rendered-from-hiera, python-dependencies-installed, cli-wrapper-starts-the-cli]
+  - outcome: an empty, usable user database in the master's manifests after the first run
+    from: manifests/hashman_base.pp:47, 160-167
+    checks: [empty-database-files, admin-adds-a-user-with-a-password]
+  - outcome: the administrator adds a user, unlocks it and sets its password with the CLI, and the CLI authenticates it
+    from: templates/hashman/pp_auth.py.erb:111-148, 202-215
+    checks: [admin-adds-a-user-with-a-password]
+  - outcome: the server's next agent run leaves the database as the administrator left it (replace no)
+    from: manifests/hashman_base.pp:160-167
+    checks: [the-next-agent-run-keeps-the-database]
+  - outcome: another machine gets the user, its name and its password from the database through the master's catalog
+    from: templates/hashman/libhashman/interface.py.erb:343
+    checks: [a-client-applies-the-user-from-the-database]
+  - outcome: the mails the CLI sends (a new user's initial password, notifications) reach the user
+    from: templates/hashman/pp_auth.py.erb:202-215
+    uncovered:
+      why: the exercise adds the user SILENT; a delivered mail needs a mailbox the lab can read
+      lifted_by: "capability: a mail sink in the lab that the class's MTA delivers to"
+      evidence: "the action runs `useradd ... SILENT` (admin-adds-a-user-with-a-password); the lab Hiera's hashman::mailfrom and the users' addresses are example.invalid"
+  - outcome: debug output, another minimum password length or strict password rules
+    from: manifests/hashman_base.pp:14-15, 26-27
+    uncovered:
+      why: one set holds one fixture (the class defaults and the lab Hiera)
+      lifted_by: "capability: more than one params fixture per set"
+      evidence: "phase3.py applies the class once with its single `fixture` (params or defaults)"
 checks:
   - id: config-rendered-from-hiera
     what: the library config carries the database dir, company, URL, test-env and debug flags and the password defaults
@@ -104,6 +142,21 @@ checks:
       grep -c -E "^[$]p8hashuser_pwd_hash = '[$]6[$]" /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp
       sed -n 2p /etc/puppetlabs/code/environments/production/manifests/nodes/p8test-hashman-client.pp
     expect: {rc: 0, stdout: "\\Aauth set password rc=0\\nauth wrong password rc=[1-9]\\d*\\n1\\n  puppet_infrastructure::user        \\{ 'p8hashuser': myname => \\$::p8hashuser_cname, myhash => \\$::p8hashuser_pwd_hash, mykey  => \\$::p8hashuser_ssh_key,  \\}\\n\\Z"}
+
+  - id: the-next-agent-run-keeps-the-database
+    what: >-
+      after the server's own agent run, which follows the administrator's change, hashes.pp still holds p8hashuser's
+      hash and the client's node file is still there (the class's empty database files are never put back)
+    control: negative
+    derived_from:
+      - {path: manifests/hashman_base.pp, lines: "160-167", text: "replace => 'no', # can't touch this!"}
+    mutates: none beyond reading the database (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      grep -c -E "^[$]p8hashuser_pwd_hash = '[$]6[$]" /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp
+      test -s /etc/puppetlabs/code/environments/production/manifests/nodes/p8test-hashman-client.pp && echo "node file kept"
+    expect: {rc: 0, stdout: "\\A1\\nnode file kept\\n\\Z"}
 
   - id: a-client-applies-the-user-from-the-database
     what: >-
