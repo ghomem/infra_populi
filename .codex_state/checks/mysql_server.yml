@@ -108,7 +108,7 @@ checks:
     mutates: >-
       creates the account 'p8testsql'@'%' (mysql_native_password, so a plaintext login reaches the server's transport
       rule instead of failing in the client; password p8test-Sql-pw5!) through root's socket login, which the server
-      records in its data directory (redo log, binary log); makes four TCP logins to 127.0.0.1:3306 as it; the answers go
+      records in its data directory /srv/mysql (mysql.ibd, the system tablespace, the undo, redo and binary logs); makes four TCP logins to 127.0.0.1:3306 as it; the answers go
       to /run/p8test-mysql/tls.txt (/run/p8test-mysql created 0700)
     probe: |
       install -d -m 0700 /run/p8test-mysql; o=/run/p8test-mysql/tls.txt
