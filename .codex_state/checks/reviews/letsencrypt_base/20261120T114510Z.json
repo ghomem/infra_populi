@@ -1,0 +1,35 @@
+{
+ "class": "letsencrypt_base",
+ "at": "20261120T114510Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "deploy-cron: manifests/letsencrypt_base.pp:98-102 declares cron deploy_maintained_certificates with minute $deploy_cron_minute (0), hour $deploy_cron_hour (5), monthday $renew_cron_monthday ([5,10,15,20,25]), user root, command ${bindir}/deploy_maintained_certificates.sh (line 104); the probe reads root's crontab line under '# Puppet Name: deploy_maintained_certificates' and expects exactly '0 5 5,10,15,20,25 * * /opt/puppet-infrastructure/bin/deploy_maintained_certificates.sh' (localdir /opt/puppet-infrastructure, automate_deployment true in the fixture) - matches",
+  "the-deploy-script-copies-renewed-certificates: manifests/letsencrypt_base.pp:76-79 sets certificatesdir /etc/letsencrypt/live and ssldir /etc/puppetlabs/puppet/extra_files/ssl, which the template (lines 3-4, 7-17) uses: find dirs named *${DOMAIN} under CERT_DIR, cp -f privkey/cert/chain to <name>-key.pem, <name>.pem, <name>-chain.pem, chown puppet:puppet. The action plants what certbot leaves (live/<domain>/{privkey,cert,chain}.pem) for p8test.example.com and p8test-other.example.org (not matching *p8test.example.com), creates the master's ssl dir and runs the script; mutates declares all of it. The read-only effect lists ssl dir contents (exactly the three files of the maintained domain), their owner puppet:puppet and cmp byte-for-byte - the script's result, not its output. puppet user exists on p8lab-puppetserver (uid 999) - matches",
+  "dns-credentials-file-private: manifests/letsencrypt_base.pp:55-56 (with 57-60) declares $dns_creds_file mode '600' owner root group root content dns-creds.ini.erb ('<%= @api_property_str %> = <%= @dns_api_token %>'); with provider digitalocean api_property_str is dns_digitalocean_token (line 19) and default path ${etcdir}/dns-creds.ini = /opt/puppet-infrastructure/etc/dns-creds.ini; probe stat '%U %G %a' + cat expects 'root root 600' and 'dns_digitalocean_token = p8test-not-a-secret' - matches",
+  "purpose covered: Purpose (certbot + DNS plugin with root-only API token, renew cron with nginx-reload post hook, deploy script + cron copying maintained domains' certs into the master's extra_files/ssl owned by puppet) matches the whole baseline manifest and both templates. Checks test: plugin and certbot installed and certbot itself lists dns-digitalocean (functional), credentials file content/mode, renew cron schedule and its post-hook file containing 'service nginx reload', deploy script rendered and its cron, and the deploy script actually run against planted live certs copying byte-for-byte, chowned puppet:puppet, ignoring another domain. Uncovered rows are honest: nginx reload effect (class declares no nginx; verified dpkg-query finds no nginx on p8lab-puppetserver), obtaining/renewing a cert (needs ACME endpoint and DNS provider API; fixture token is fake), hetzner/hetzner-cloud pip branches, automation off and other times (one params fixture per set). Each lifted by a capability, none by an active node kind. Reviewer run 20261120T114332Z ALL_PASS, all 7 negatives failed clean."
+ ],
+ "review_s": 98.3,
+ "check_file_sha256": "9f81df70ef7c9d85dce5f412df22439f3c469bcf725da1696970369e264b1029",
+ "content_sha256": "9f81df70ef7c9d85dce5f412df22439f3c469bcf725da1696970369e264b1029",
+ "reviewer_result": "20261120T114332Z-reviewer",
+ "author_result": "20261120T114119Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "boot_id": "9b019cef-86e3-4796-bd5e-b9a080761eb9",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "9b019cef-86e3-4796-bd5e-b9a080761eb9",
+   "fresh": true
+  }
+ }
+}
