@@ -1,0 +1,342 @@
+{
+ "class": "hashman_base",
+ "role": "reviewer",
+ "at": "20261120T110434Z",
+ "runner": "f088869",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "e2f9f64bea5ea4d8f7cccbbca1ccd989a8b5f6236bcac1a916e65383b82eed0c",
+ "content_sha256": "e2f9f64bea5ea4d8f7cccbbca1ccd989a8b5f6236bcac1a916e65383b82eed0c",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "config-rendered-from-hiera",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /opt/puppet-infrastructure/hashman/common/libhashman/config.py: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "empty-database-files",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: cd: /etc/puppetlabs/code/environments/production/manifests/01_hashman: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "python-dependencies-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "python3-openssl install ok installed\n",
+   "stderr": "dpkg-query: no packages found matching python3-cracklib\ndpkg-query: no packages found matching python3-setproctitle\ndpkg-query: no packages found matching python3-rsa\ndpkg-query: no packages found matching python3-prettytable\n",
+   "ok": true
+  },
+  {
+   "id": "cli-wrapper-starts-the-cli",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/pp_auth.sh': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "admin-adds-a-user-with-a-password",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-hashman/cli.txt: No such file or directory\ngrep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp: No such file or directory\nsed: can't read /etc/puppetlabs/code/environments/production/manifests/nodes/p8test-hashman-client.pp: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "admin-sets-a-key-and-revokes-users",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n0\n0\n",
+   "stderr": "cat: /run/p8test-hashman/revoke.txt: No such file or directory\ncut: /run/p8test-hashman/id_p8.pub: No such file or directory\ngrep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/keys.pp: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-keeps-the-database",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp: No such file or directory\ngrep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/keys.pp: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-client-applies-the-user-from-the-database",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "Authentication failure\nAuthentication failure\n",
+   "stderr": "grep: /home/p8hashuser/.ssh/authorized_keys: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-client-refuses-the-locked-and-expired-users",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "Authentication failure\nAuthentication failure\n0\nno p8hashdel\n",
+   "stderr": "grep: /home/p8hashlocked/.ssh/authorized_keys: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "n/common/libhashman/switch.py]\n  File[/opt/puppet-infrastructure/hashman/common/libhashman/config.py]\n  File[/opt/puppet-infrastructure/hashman/common/libhashman/coding.py]\n  File[/opt/puppet-infrastructure/hashman/common/libhashman/typeutils.py]\n  File[/opt/puppet-infrastructure/hashman/common/libhashman/dbutils.py]\n  File[/opt/puppet-infrastructure/hashman/common/libhashman/mailutils.py]\n  File[/opt/puppet-infrastructure/hashman/common/libhashman/miscutils.py]\n  File[/opt/puppet-infrastructure/hashman/common/libhashman/interface.py]\n  File[/opt/puppet-infrastructure/hashman/common/libhashman/test.py]\n  File[/opt/puppet-infrastructure/bin/pp_auth.sh]\n  File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//cnames.pp]\n  File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//companies.pp]\n  File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//emails.pp]\n  File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//hashes.pp]\n  File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//keys.pp]\n  File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//ppsigs.pp]\n  File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//ppwrapped.pp]\n  Package[python3-cracklib]\n  Package[python3-setproctitle]\n  Package[python3-openssl]\n  Package[python3-rsa]\n  Package[python3-prettytable]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP hashman_base a37f216f5aa6\n"
+ },
+ "applied": [
+  {
+   "id": "config-rendered-from-hiera",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "DBDIR  = '/etc/puppetlabs//code/environments/production/manifests/01_hashman/'\nMAIN_COMPANY = 'My Company'\nHASHMAN_URL = 'https://puppet.example.com'\nTESTENV = False\nDEBUG_MODE = False\nMINPASSWORDLEN = 6\nRELAXPASSWORD = True\n",
+   "stderr": ""
+  },
+  {
+   "id": "empty-database-files",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "cnames.pp 0 644\ncompanies.pp 0 644\nemails.pp 0 644\nhashes.pp 0 644\nkeys.pp 0 644\nppsigs.pp 0 644\nppwrapped.pp 0 644\n",
+   "stderr": ""
+  },
+  {
+   "id": "python-dependencies-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "python3-cracklib install ok installed\npython3-openssl install ok installed\npython3-prettytable install ok installed\npython3-rsa install ok installed\npython3-setproctitle install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "cli-wrapper-starts-the-cli",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\nUsage: pp_auth.py auth          USER PASSWORD\n",
+   "stderr": ""
+  },
+  {
+   "id": "admin-adds-a-user-with-a-password",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "auth set password rc=0\nauth wrong password rc=1\n1\n  puppet_infrastructure::user        { 'p8hashuser': myname => $::p8hashuser_cname, myhash => $::p8hashuser_pwd_hash, mykey  => $::p8hashuser_ssh_key,  }\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "on the node, through the wrapper /opt/puppet-infrastructure/bin/pp_auth.sh: useradd p8hashuser (SILENT), unlock, setpw from the logged initial password to p8test-Cli-pw5!, and the printinfo role line written as node 'p8test-hashman-client' into the server's manifests/nodes/p8test-hashman-client.pp; the auth answers for the set and for a wrong password go to /run/p8test-hashman/cli.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "admin-sets-a-key-and-revokes-users",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "auth locked rc=1\n1\n1\n1\n0\n3\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "generates two throwaway RSA keys in /run/p8test-hashman; through the CLI: setpubkey p8hashuser; useradd (SILENT), unlock and setpw p8test-Revoked-pw5! for p8hashlocked, p8hashexpired and p8hashdel; setpubkey p8hashlocked; lock p8hashlocked; expire p8hashexpired; userdel p8hashdel; rewrites the server's nodes/p8test-hashman-client.pp with the role lines of p8hashuser, p8hashlocked and p8hashexpired; the CLI's auth answers go to /run/p8test-hashman/revoke.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-agent-run-keeps-the-database",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\nnode file kept\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the database (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-client-applies-the-user-from-the-database",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8hashuser:P8test Hash User\nsuccessfully authenticated\nAuthentication failure\n1\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond authenticating p8hashuser with PAM (declared mutating so it runs after the peer's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-client-refuses-the-locked-and-expired-users",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8hashlocked\nAuthentication failure\np8hashexpired\nAuthentication failure\n0\n1\nno p8hashdel\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond authenticating the two users with PAM (declared mutating so it runs after the peer's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "puppetserver",
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "boot_id": "168ed391-72eb-4b10-b6ce-32d485d6c9c5",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "168ed391-72eb-4b10-b6ce-32d485d6c9c5",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "53b71b82-087e-44b1-9d5f-f225c6904d27",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "53b71b82-087e-44b1-9d5f-f225c6904d27",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "node_agent": {
+  "rc": 0,
+  "events": [],
+  "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-puppetserver\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795172845'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.62 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "peer_agent": {
+  "certname": "p8test-hashman-client",
+  "server": "p8lab-puppetserver",
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashuser]/Puppet_infrastructure::User_base[p8hashuser]/Group[p8hashuser]/ensure: created\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashuser]/Puppet_infrastructure::User_base[p8hashuser]/User[p8hashuser]/ensure: created\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashuser]/Puppet_infrastructure::User_base[p8hashuser]/Ssh_authorized_key[p8hashuser@puppet]/ensure: created\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashlocked]/Puppet_infrastructure::User_base[p8hashlocked]/Group[p8hashlocked]/ensure: created\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashlocked]/Puppet_infrastructure::User_base[p8hashlocked]/User[p8hashlocked]/ensure: created\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashlocked]/Puppet_infrastructure::User_base[p8hashlocked]/Ssh_authorized_key[p8hashlocked@puppet]/ensure: created\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashexpired]/Puppet_infrastructure::User_base[p8hashexpired]/Group[p8hashexpired]/ensure: created\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashexpired]/Puppet_infrastructure::User_base[p8hashexpired]/User[p8hashexpired]/ensure: created\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashexpired]/Puppet_infrastructure::User_base[p8hashexpired]/Ssh_authorized_key[p8hashexpired@puppet]/ensure: created\u001b[0m"
+  ],
+  "tail": "ain]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashuser]/Puppet_infrastructure::User_base[p8hashuser]/Ssh_authorized_key[p8hashuser@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashlocked]/Puppet_infrastructure::User_base[p8hashlocked]/Group[p8hashlocked]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashlocked]/Puppet_infrastructure::User_base[p8hashlocked]/User[p8hashlocked]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashlocked]/Puppet_infrastructure::User_base[p8hashlocked]/Ssh_authorized_key[p8hashlocked@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashexpired]/Puppet_infrastructure::User_base[p8hashexpired]/Group[p8hashexpired]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashexpired]/Puppet_infrastructure::User_base[p8hashexpired]/User[p8hashexpired]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User[p8hashexpired]/Puppet_infrastructure::User_base[p8hashexpired]/Ssh_authorized_key[p8hashexpired@puppet]/ensure: created\u001b[0m\n\u001b[0;32mInfo: Creating state file /var/lib/p8test-agent/p8test-hashman-client/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 0.74 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "outcomes": [
+  {
+   "outcome": "the CLI, its library configured from Hiera and its Python packages are installed, and the CLI starts",
+   "checks": [
+    "config-rendered-from-hiera",
+    "python-dependencies-installed",
+    "cli-wrapper-starts-the-cli"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "an empty, usable user database in the master's manifests after the first run",
+   "checks": [
+    "empty-database-files",
+    "admin-adds-a-user-with-a-password"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the administrator adds a user, unlocks it and sets its password with the CLI, and the CLI authenticates it",
+   "checks": [
+    "admin-adds-a-user-with-a-password"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the server's next agent run leaves the database as the administrator left it (replace no)",
+   "checks": [
+    "the-next-agent-run-keeps-the-database"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "another machine gets the user, its name, its password and its SSH key from the database through the master's catalog",
+   "checks": [
+    "admin-sets-a-key-and-revokes-users",
+    "a-client-applies-the-user-from-the-database"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a user the administrator locks or expires is refused on the other machine and gets no SSH key there; a deleted user leaves the database",
+   "checks": [
+    "admin-sets-a-key-and-revokes-users",
+    "a-client-refuses-the-locked-and-expired-users"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the mails the CLI sends (a new user's initial password, reset, inform, testemail) reach the user",
+   "uncovered": {
+    "why": "the exercise adds the user SILENT; a delivered mail needs a mailbox the lab can read",
+    "lifted_by": "capability: a mail sink in the lab that the class's MTA delivers to",
+    "evidence": "the action runs `useradd ... SILENT` (admin-adds-a-user-with-a-password); the lab Hiera's hashman::mailfrom and the users' addresses are example.invalid"
+   }
+  },
+  {
+   "outcome": "encrypted home data (setecryptfs) reaching the other machine",
+   "uncovered": {
+    "why": "the wrapped-passphrase data belongs to a user's real ecryptfs setup, which no fixture user has",
+    "lifted_by": "capability: an ecryptfs-encrypted home fixture on the peer",
+    "evidence": "the fixture users are created by the CLI with passwords only; no ecryptfs package or wrapped passphrase exists on p8lab-ubuntu2's baseline"
+   }
+  },
+  {
+   "outcome": "debug output, another minimum password length or strict password rules",
+   "uncovered": {
+    "why": "one set holds one fixture (the class defaults and the lab Hiera)",
+    "lifted_by": "capability: more than one params fixture per set",
+    "evidence": "phase3.py applies the class once with its single `fixture` (params or defaults)"
+   }
+  }
+ ],
+ "duration_s": 225.3
+}

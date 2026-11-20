@@ -1,0 +1,43 @@
+{
+ "class": "hashman_base",
+ "at": "20261120T111006Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "config-rendered-from-hiera: manifests/hashman_base.pp:20 builds $url = 'https://' + lookup('hashman::address'); the lab Hiera has hashman::address = %{hiera('puppet::address')} = puppet.example.com, and config.py.erb:8 renders HASHMAN_URL = '<%= @url %>', so the expected HASHMAN_URL = 'https://puppet.example.com' line (with the other Hiera/default-derived lines) is what the code produces; the grep of the rendered config.py tests it",
+  "empty-database-files: manifests/hashman_base.pp:163-167 declares the $dbfiles (line 47: the seven cnames/companies/emails/hashes/keys/ppsigs/ppwrapped .pp under $dbdir) ensure present, content '', mode 0644; the stat probe in dbdir (manifdir/01_hashman) expecting each file size 0 mode 644 tests exactly that",
+  "admin-sets-a-key-and-revokes-users: config.py.erb:58-59 LOCKPREFIX = EXPIREPREFIX = '!'; dbutils.py.erb:804 lockpw prepends LOCKPREFIX (hash starts with '!'), interface.py.erb:265 expire inserts EXPIREPREFIX after the first '$' ('$6$' -> '$!6$'); the effect's counts of '^$p8hashlocked_pwd_hash = '!' and '$!6$' in hashes.pp, plus the key line written by setpubkey (dbutils.py.erb:431-445 into DBFILE_KEY) matched as a fixed string and no p8hashdel line, test what those lines declare; the CLI refusing the locked user's auth follows from the '!' prefix",
+  "purpose gap: Tested: the CLI and library rendered from Hiera, the Python packages, the CLI starting, the empty 0644 database, replace=>no across the server's agent run, the CLI adding/unlocking/setting a password/setting a key/locking/expiring/deleting users, and a peer applying the user, its password and key from the database through the master's catalog while PAM refuses the locked and expired users and the deleted user is absent (my run ALL_PASS, no findings). Gap: the CLI's mail. With the lab Hiera's hashman::testenv 'False', pp_auth.py.erb:528-530/546-548 send notif_email (files/hashman/common/hashman_utils.py:50, SMTP 127.0.0.1) from MAIL_FROM to SUPPORT_TEAM after every NOTIFCMDS command; the lab exercises this and no check probes it: after my run, postqueue -p on p8lab-puppetserver held the notifications from hashman@mycompany.com to name01@mycompany.com (18 'from=<hashman@mycompany.com>' entries in mail.log), deferred only at the fake relayhost. The outcomes table has no row for these support-team notifications, and the 'mails' row's uncovered evidence is wrong on its own terms: the lab Hiera's hashman::mailfrom is 'Hashman My Company <hashman@mycompany.com>', not example.invalid; the user mails' real precondition is hashman_web's email template (miscutils.py.erb:151-158 check_hashman_web exits for a non-SILENT useradd/inform/reset/testemail without it), and the reason ('needs a mailbox the lab can read') does not show the lab lacking anything, since postfix_smtp_node's mydestination includes localhost and the queue can be read. Hand-off of the team notification to the local MTA (queue or mail.log: sender, recipient, subject 'Hashman ... for <user>'), and the CLI refusing non-SILENT mail commands without hashman_web, are untested parts the lab can exercise. Correctly uncovered: ecryptfs data (no ecryptfs fixture) and the non-default debug/minpasswordlen/relaxpassword fixture."
+ ],
+ "review_s": 332.3,
+ "check_file_sha256": "e2f9f64bea5ea4d8f7cccbbca1ccd989a8b5f6236bcac1a916e65383b82eed0c",
+ "content_sha256": "e2f9f64bea5ea4d8f7cccbbca1ccd989a8b5f6236bcac1a916e65383b82eed0c",
+ "reviewer_result": "20261120T110434Z-reviewer",
+ "author_result": "20261120T105924Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "boot_id": "168ed391-72eb-4b10-b6ce-32d485d6c9c5",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "168ed391-72eb-4b10-b6ce-32d485d6c9c5",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "53b71b82-087e-44b1-9d5f-f225c6904d27",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "53b71b82-087e-44b1-9d5f-f225c6904d27",
+   "fresh": true
+  }
+ }
+}
