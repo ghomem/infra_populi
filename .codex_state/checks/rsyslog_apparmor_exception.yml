@@ -64,7 +64,8 @@ checks:
       - {path: manifests/rsyslog_apparmor_exception.pp, lines: "11", text: "content => \"${logs_dir}/ rw,\\n${logs_dir}/** rwk,\\n\","}
     mutates: >-
       creates /srv/p8test-logs (owner syslog, rsyslogd's runtime user), adds /etc/rsyslog.d/99-p8test.conf routing the
-      tag p8test to /srv/p8test-logs/p8test.log, restarts rsyslog, sends one message with logger -t p8test
+      tag p8test to /srv/p8test-logs/p8test.log, restarts rsyslog, sends one message with logger -t p8test (rsyslog
+      logs its restart to /var/log/syslog)
     probe: |
       install -d -o syslog -g adm -m 0750 /srv/p8test-logs
       printf ':syslogtag, isequal, "p8test:" /srv/p8test-logs/p8test.log\n& stop\n' > /etc/rsyslog.d/99-p8test.conf
@@ -82,7 +83,8 @@ checks:
       - {path: manifests/rsyslog_apparmor_exception.pp, lines: "11", text: "content => \"${logs_dir}/ rw,\\n${logs_dir}/** rwk,\\n\","}
     mutates: >-
       creates /srv/p8test-other (owner syslog), adds /etc/rsyslog.d/98-p8test-other.conf routing the tag p8testother to
-      /srv/p8test-other/p8test.log, restarts rsyslog, sends one message with logger -t p8testother
+      /srv/p8test-other/p8test.log, restarts rsyslog, sends one message with logger -t p8testother (the kernel logs
+      the AppArmor denial to the journal and /var/log/kern.log; rsyslog logs its restart to /var/log/syslog)
     probe: |
       install -d -o syslog -g adm -m 0750 /srv/p8test-other
       printf ':syslogtag, isequal, "p8testother:" /srv/p8test-other/p8test.log\n& stop\n' > /etc/rsyslog.d/98-p8test-other.conf
