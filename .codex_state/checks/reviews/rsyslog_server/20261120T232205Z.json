@@ -1,0 +1,35 @@
+{
+ "class": "rsyslog_server",
+ "at": "20261120T232205Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "remote-message-lands-in-the-host-tree: listener_simple.conf.epp:16 x509/certvalid accepts any CA-signed client cert; the probe sends an RFC3164 line (host p8testremote, tag p8test) over TLS with the node's Puppet-CA-signed cert, and the effect expects it once in /var/log/hosts/p8testremote/p8test.log, which is what lines 18-23/34-35 (log_root default /var/log + hostname + programname + .log) produce",
+  "listener-config-rendered: listener_simple.conf.epp:12-14 render port/maxSessions/notifyOnConnectionClose; class defaults 6514, 2000, false (-> 'off' by the selector on line 14) match the expected port=\"6514\", maxSessions=\"2000\", notifyOnConnectionClose=\"off\"; cert/key named after $trusted['certname'] (puppet8node) and the /var/log/hosts/ constant twice (lines 19 and 27) also match",
+  "the-retention-script-compresses-and-deletes: rsyslog-hosts-retention.sh.epp:30-34 delete *.gz not newer than RETENTION_DAYS (7) days ago, so older.log-20200101.gz (mtime 10 days) goes and newer.log-20200102.gz (mtime 2 days) stays; lines 12-26 gzip+touch p8test.log-<10 days ago> (date < 6 days ago) so its fresh .gz survives the delete, and leave the 2-day one; expected listing newer...gz, p8test.log-NEW, p8test.log-OLD.gz is exactly that",
+  "purpose gap: Tested: the TLS listener config and the node certificate it presents (with a name mismatch control), a CA-signed client's message landing in hosts/<host>/<program>.log, a self-signed client refused, the logrotate timer override active, the rotation rule and a forced rotation reopening the file, the retention script/cron and its compress/delete behaviour; the parameter-variation row is honestly uncovered (phase3.py applies one fixture, lines 475-481). Gap, lab-exercisable but neither in the outcomes table nor tested: (1) the header (manifests/rsyslog_server.pp:2 'Receives local and remote logs ... stores them under a host-based tree') and the unconditional omfile actions of listener_simple.conf.epp:32-36 store the server's OWN local logs in the per-host tree - on the applied node /var/log/hosts/puppet8node/ holds sshd.log, sudo.log, systemd.log etc. (lab_exec ls), but no check sends a local logger message and looks for it there; (2) the empty-programname branch, listener_simple.conf.epp:26-33 (template remote_unknown_program -> <log_root>/hosts/<hostname>/unknown.log), is untested although a TLS line with an empty tag can be sent the same way as the existing exercise. Minor: a-self-signed-client-is-refused has no evidence that the refusal (not a failed openssl req) caused the 0; grepping rsyslogd's refusal entry would close that."
+ ],
+ "review_s": 183.6,
+ "check_file_sha256": "b166730f53f930e68efe191275fe0cdffc415e2b9f33f3d46a632d1fdf22e11c",
+ "content_sha256": "b166730f53f930e68efe191275fe0cdffc415e2b9f33f3d46a632d1fdf22e11c",
+ "reviewer_result": "20261120T231902Z-reviewer",
+ "author_result": "20261120T231522Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "0e0032d2-24b8-41c1-be5d-c2c669184216",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "0e0032d2-24b8-41c1-be5d-c2c669184216",
+   "fresh": true
+  }
+ }
+}
