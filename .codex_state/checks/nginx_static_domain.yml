@@ -4,12 +4,38 @@
 # Resulting servers (lines 136-205): static_main_redirector (HTTP, 301 to https://<domain>) and static_https (HTTPS,
 # www_root); static_http, static_default and static_https_www_redirector are absent. Required base: nginx_base
 # (2048-bit DH group at /etc/nginx/dhparams.pem). Probes talk to the node's own nginx on 127.0.0.1 only.
+# 2026-11-20 (backfill batch 6): outcomes table (HQ 2026-11-18 ruling 2); checks unchanged.
 class: nginx_static_domain
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 purpose: >-
   Sets up nginx servers (vhosts) that serve a domain's static content from a local directory, with the class's
   redirect and TLS options, so requests for the domain get that content.
+outcomes:
+  - outcome: nginx accepts the configuration, and plain HTTP for the domain is redirected to HTTPS keeping the path and query
+    from: manifests/nginx_static_domain.pp:155-177, 252-261
+    checks: [nginx-config-valid, http-redirects-to-https-same-host]
+  - outcome: HTTPS for the domain serves the www_root files byte for byte and never lists a directory
+    from: manifests/nginx_static_domain.pp:43, 118-121, 298-318
+    checks: [https-serves-www-root, https-no-directory-listing]
+  - outcome: the HTTPS server presents the domain's certificate bundle, and a client trusting its CA verifies the name
+    from: manifests/nginx_static_domain.pp:21-27, 114-116, 298-318
+    checks: [served-certificate-is-the-bundle, https-name-verifies]
+  - outcome: the TLS policy holds (TLS 1.2 only, the server's cipher order, the 2048-bit DH group, the prime256v1 curve)
+    from: manifests/nginx_static_domain.pp:44-49, 94-99, 298-318
+    checks: [tls12-only, server-cipher-order-and-dh-group, ecdh-curve-prime256v1]
+  - outcome: the other combinations (redirect to www, a default server, directory listing, plain HTTP only, an IP whitelist, extra protocols or ciphers)
+    from: manifests/nginx_static_domain.pp:20-54, 101-205
+    uncovered:
+      why: one set holds one params fixture (HTTPS with a redirect from HTTP, no www, no listing)
+      lifted_by: "capability: more than one params fixture per set"
+      evidence: "phase3.py applies the class once with its single `fixture` (params or defaults)"
+  - outcome: serving with a Let's Encrypt certificate (letsencrypt_certificate true)
+    from: manifests/nginx_static_domain.pp:23-24, 86-92
+    uncovered:
+      why: a Let's Encrypt certificate needs an ACME endpoint the lab can reach and that can validate the domain
+      lifted_by: "capability: an ACME test endpoint in the lab (as for letsencrypt_certificate's stand-in)"
+      evidence: "the fixture's letsencrypt_certificate is false; the lab has no ACME endpoint (status.py --standins: letsencrypt_certificate)"
 checks:
   - id: nginx-config-valid
     what: the nginx configuration the define produces passes `nginx -t`
