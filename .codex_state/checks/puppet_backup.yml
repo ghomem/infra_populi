@@ -141,7 +141,8 @@ checks:
       - {path: manifests/backup.pp, lines: "21-28", text: "command   => \"${bindir}/backup-${title}.sh\","}
     mutates: >-
       bind-mounts /opt/puppet-infrastructure/backup/puppet read-only over itself, runs backup-puppet.sh once as root,
-      unmounts it; the script's exit code and stderr go to /run/p8test-backup-fail (rc, stderr)
+      unmounts it; the script's exit code and stderr go to /run/p8test-backup-fail (rc, stderr); the script logs its
+      ERROR line to syslog (the journal, /var/log/syslog) and the kernel logs the remount (/var/log/kern.log)
     probe: |
       d=/opt/puppet-infrastructure/backup/puppet
       install -d -m 0700 /run/p8test-backup-fail
