@@ -1,5 +1,5 @@
-# Puppet 8 migration: the module owns openvpn-server@puppet_infrastructure (duplicate service dropped, notifies retargeted); local change #7: the class's cipher in data-ciphers.
-# Module dependencies: puppet-network 2.2.1; puppet-openvpn 12.0.0; thias-sysctl 1.0.8.
+# Puppet 8 migration: the module owns openvpn-server@puppet_infrastructure (duplicate service dropped, notifies retargeted); local change #7: the class's cipher in data-ciphers; ifupdown and bridge-utils through ensure_packages (shared with network_dhcp).
+# Module dependencies: puppet-network 2.2.1; puppet-openvpn 12.0.0; thias-sysctl 1.0.8; puppetlabs-stdlib 9.7.0 (ensure_packages).
 ### Purpose ########
 # Configure a server running ubuntu as a OpenVPN server
 # This configuration is based on our gateway's configuration
@@ -34,7 +34,7 @@ class puppet_infrastructure::openvpn_server (
 ){
     $major_release = $facts['os']['release']['major']
 
-    package { [ 'ifupdown', 'bridge-utils']: ensure => present }
+    ensure_packages(['ifupdown', 'bridge-utils'], { 'ensure' => 'present' })
 
     # enabling the service, following these instruction
     # https://askubuntu.com/questions/1031709/ubuntu-18-04-switch-back-to-etc-network-interfaces
