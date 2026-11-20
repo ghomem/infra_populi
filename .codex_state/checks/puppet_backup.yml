@@ -10,6 +10,9 @@
 # define nor filesystem_base declares it; filesystem_base declares only its parent).
 # 2026-11-20 (HQ after batch 16, item 1): the finding is fixed by local change #14 (the backup define declares the
 # directory) and #15 (a run that cannot write fails loudly, checked by a-failed-run-is-loud).
+# 2026-11-20 correction (review 20261120T224719Z, puppet_backup): the loud-failure check made the directory read-only,
+# so the retention step could not have deleted anything either way. It now fills a one-page tmpfs over the
+# directory (tar fails, the directory stays writable) holding an archive old enough for retention to delete.
 class: puppet_backup
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -29,7 +32,7 @@ outcomes:
   - outcome: the run deletes the prefix's archives older than 9 full days and keeps newer ones and other prefixes' files
     from: templates/backup/backup.sh.erb:22-23, 33-37
     checks: [aged-archives-are-planted, a-run-deletes-only-its-own-old-archives]
-  - outcome: a run that cannot write its archive fails loudly (non-zero exit, an error line on stderr and in syslog) and deletes no old archive
+  - outcome: a run that cannot write its archive fails loudly (non-zero exit, an error line on stderr and in syslog) and stops before retention, so no old archive is deleted
     from: templates/backup/backup.sh.erb:31-37
     checks: [a-failed-run-is-loud]
   - outcome: cron itself firing at 23:00
@@ -132,26 +135,27 @@ checks:
 
   - id: a-failed-run-is-loud
     what: >-
-      with the backup directory made unwritable (read-only), the script run as cron would exits non-zero, writes an
-      ERROR line on stderr and to syslog, and leaves the prefix's archives in place (the 5-day-old one is still there)
+      with the backup directory full (a one-page tmpfs over it, holding only an archive of the prefix dated 12 days
+      ago), the script run as cron would cannot write its archive: it exits non-zero, writes an ERROR line on stderr and
+      to syslog, and stops before its retention step, so the 12-day-old archive, which retention would delete, is kept
     control: negative
-    timeout: 180
+    timeout: 120
     derived_from:
       - {path: templates/backup/backup.sh.erb, lines: "31", text: "tar $EXCLUDELINE -cv${COMPRESSION_FLAG}f $BACKDIR/$FILEPREFIX-`date +%Y-%b-%d-%Hh%Mm`.tar.gz $FILETARGETDIRS"}
       - {path: manifests/backup.pp, lines: "21-28", text: "command   => \"${bindir}/backup-${title}.sh\","}
     mutates: >-
-      bind-mounts /opt/puppet-infrastructure/backup/puppet read-only over itself, runs backup-puppet.sh once as root,
-      unmounts it; the script's exit code and stderr go to /run/p8test-backup-fail (rc, stderr); the script logs its
-      ERROR line to syslog (the journal, /var/log/syslog) and the kernel logs the remount (/var/log/kern.log)
+      mounts a 4 KiB tmpfs over /opt/puppet-infrastructure/backup/puppet (left mounted: the node is reverted after the run) and writes
+      puppet.example.com-ancient.tar.gz into it, dated 12 days ago; runs backup-puppet.sh once as root; its exit code and stderr go to
+      /run/p8test-backup-fail (rc, stderr); the script logs its ERROR line to syslog (the journal, /var/log/syslog)
     probe: |
       d=/opt/puppet-infrastructure/backup/puppet
       install -d -m 0700 /run/p8test-backup-fail
-      mount --bind "$d" "$d" && mount -o remount,bind,ro "$d"
+      mount -t tmpfs -o size=4k p8test-full "$d"
+      printf 'p8test planted\n' > "$d/puppet.example.com-ancient.tar.gz"; touch -d '12 days ago' "$d/puppet.example.com-ancient.tar.gz"
       /opt/puppet-infrastructure/bin/backup-puppet.sh >/dev/null 2>/run/p8test-backup-fail/stderr; echo $? > /run/p8test-backup-fail/rc
-      umount "$d"
     effect: |
       [ "$(cat /run/p8test-backup-fail/rc)" -ne 0 ] && echo "exit non-zero"
       p8_count '^ERROR: backup of /etc/puppetlabs/ into /opt/puppet-infrastructure/backup/puppet failed' /run/p8test-backup-fail/stderr
       journalctl -t backup-puppet.example.com -o cat --no-pager | p8_count '^ERROR: backup of /etc/puppetlabs/ into /opt/puppet-infrastructure/backup/puppet failed'
-      test -e /opt/puppet-infrastructure/backup/puppet/puppet.example.com-recent.tar.gz && echo "old archives kept"
-    expect: {rc: 0, stdout: "\\Aexit non-zero\\n1\\n1\\nold archives kept\\n\\Z"}
+      test -e /opt/puppet-infrastructure/backup/puppet/puppet.example.com-ancient.tar.gz && echo "the 12-day-old archive is kept"
+    expect: {rc: 0, stdout: "\\Aexit non-zero\\n1\\n1\\nthe 12-day-old archive is kept\\n\\Z"}
