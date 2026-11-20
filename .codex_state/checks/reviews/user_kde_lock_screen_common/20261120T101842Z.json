@@ -1,0 +1,35 @@
+{
+ "class": "user_kde_lock_screen_common",
+ "at": "20261120T101842Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "a-logged-out-user-runs-it: user_kde_lock_screen.pp:15-17 runs ${bindir}/configure_lock_screen.sh with the timeout/grace args (defaults 5, 0 at lines 5-6) as user => $myusername; the probe runs exactly that as the ordinary fixture user p8testkde via runuser (no utmp entry, so who does not list it), and script lines 14-21 then log 'User p8testkde not loged in, skipping screenlock settings update' under tag linuxint-screenlocker and exit 0 before any kwriteconfig, so rc=0, one note and no kscreenlockerrc is what the code produces; mutates declares the account, the run and the rc file, and the effect reads the journal and the home dir",
+  "the-script-is-the-modules-file: user_kde_lock_screen_common.pp:8-15 declares ${bindir}/configure_lock_screen.sh owner root, group root, mode '0755', source the module file; the probe's expected 'root:root 755 <sha256>' tests exactly owner, group, mode and content at bindir /opt/puppet-infrastructure/bin",
+  "the-script-is-the-modules-file: files/user_kde_lock_screen/configure_lock_screen.sh whole-file sha256 at the pin is 8bc3f286c0ea..., the same digest the probe expects, so the content check is the upstream file byte for byte",
+  "purpose covered: Purpose (header: 'This class provides the screen locker settings script') is read correctly: the class is one file resource. Outcome 1 (script in bindir, module's exact file, root:root 0755) is probed by the-script-is-the-modules-file. Outcome 2 (an ordinary user can run it; logged out it exits 0, logs its note, writes nothing) is probed by a-logged-out-user-runs-it, which exercises the script end to end on the server node. Outcome 3 (logged-in KDE path: settings written, --check idempotency and the qdbus live reload, script lines 39-106) is uncovered here and its reason holds: nodes.yml gives the class's plan node ubuntu capabilities [server] only and phase3.py session_problems refuses a session on a node without kde; that path is exercised in the lab by user_kde_lock_screen's set on kubuntu (lock-settings-in-the-users-kscreenlockerrc, applied-in-the-session-and-reloaded-live, with a clean second agent run), which applies this class through the define's include. Nothing the ubuntu node can exercise is left untested."
+ ],
+ "review_s": 102.4,
+ "check_file_sha256": "9885123587e1fbafdd2bf759167b4265614522128b89a299969ca9ca5de63546",
+ "content_sha256": "9885123587e1fbafdd2bf759167b4265614522128b89a299969ca9ca5de63546",
+ "reviewer_result": "20261120T101700Z-reviewer",
+ "author_result": "20261120T101500Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "520ec86f-b96d-4790-a112-efa29de011d2",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "520ec86f-b96d-4790-a112-efa29de011d2",
+   "fresh": true
+  }
+ }
+}
