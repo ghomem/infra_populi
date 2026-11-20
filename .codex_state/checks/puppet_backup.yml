@@ -8,6 +8,8 @@
 # restorable byte for byte), retention with planted archives of known ages (ndays 10: find -mtime +9). No step of the set
 # creates the backup directory: whether it exists after the apply is itself a check (neither this class, the backup
 # define nor filesystem_base declares it; filesystem_base declares only its parent).
+# 2026-11-20 (HQ after batch 16, item 1): the finding is fixed by local change #14 (the backup define declares the
+# directory) and #15 (a run that cannot write fails loudly, checked by a-failed-run-is-loud).
 class: puppet_backup
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -27,6 +29,9 @@ outcomes:
   - outcome: the run deletes the prefix's archives older than 9 full days and keeps newer ones and other prefixes' files
     from: templates/backup/backup.sh.erb:22-23, 33-37
     checks: [aged-archives-are-planted, a-run-deletes-only-its-own-old-archives]
+  - outcome: a run that cannot write its archive fails loudly (non-zero exit, an error line on stderr and in syslog) and deletes no old archive
+    from: templates/backup/backup.sh.erb:31-37
+    checks: [a-failed-run-is-loud]
   - outcome: cron itself firing at 23:00
     from: manifests/backup.pp:21-28
     uncovered:
@@ -56,14 +61,15 @@ checks:
     expect: {rc: 0, stdout: "\\A# Puppet Name: cron_puppet_backup\\n0 23 \\* \\* \\* /opt/puppet-infrastructure/bin/backup-puppet\\.sh\\n\\Z"}
 
   - id: the-backup-directory-exists
-    what: the directory the script writes into, /opt/puppet-infrastructure/backup/puppet, exists after the apply
+    what: the directory the script writes into, /opt/puppet-infrastructure/backup/puppet, exists after the apply, root-owned 0755
     control: negative
     derived_from:
       - {path: manifests/puppet_backup.pp, lines: "8", text: "$mybackdir = lookup(\"${mysystype}::backdir\")"}
       - {path: templates/backup/backup.sh.erb, lines: "31", text: "tar $EXCLUDELINE -cv${COMPRESSION_FLAG}f $BACKDIR/$FILEPREFIX-`date +%Y-%b-%d-%Hh%Mm`.tar.gz $FILETARGETDIRS"}
     probe: |
       test -d /opt/puppet-infrastructure/backup/puppet && echo present || echo absent
-    expect: {rc: 0, stdout: "\\Apresent\\n\\Z"}
+      stat -c '%U %G %a' /opt/puppet-infrastructure/backup/puppet 2>/dev/null
+    expect: {rc: 0, stdout: "\\Apresent\\nroot root 755\\n\\Z"}
 
   - id: aged-archives-are-planted
     what: setup for the run, three files of known ages in the backup directory (the directory is not created here)
@@ -123,3 +129,28 @@ checks:
     effect: |
       cd /opt/puppet-infrastructure/backup/puppet && ls -1 | sed -E 's/-[0-9]{4}-[A-Z][a-z]{2}-[0-9]{2}-[0-9]{2}h[0-9]{2}m\.tar\.gz$/-DATE.tar.gz/' | LC_ALL=C sort | tr '\n' ' '; echo
     expect: {rc: 0, stdout: "\\Ap8test-other-old\\.tar\\.gz puppet\\.example\\.com-DATE\\.tar\\.gz puppet\\.example\\.com-recent\\.tar\\.gz \\n\\Z"}
+
+  - id: a-failed-run-is-loud
+    what: >-
+      with the backup directory made unwritable (read-only), the script run as cron would exits non-zero, writes an
+      ERROR line on stderr and to syslog, and leaves the prefix's archives in place (the 5-day-old one is still there)
+    control: negative
+    timeout: 180
+    derived_from:
+      - {path: templates/backup/backup.sh.erb, lines: "31", text: "tar $EXCLUDELINE -cv${COMPRESSION_FLAG}f $BACKDIR/$FILEPREFIX-`date +%Y-%b-%d-%Hh%Mm`.tar.gz $FILETARGETDIRS"}
+      - {path: manifests/backup.pp, lines: "21-28", text: "command   => \"${bindir}/backup-${title}.sh\","}
+    mutates: >-
+      bind-mounts /opt/puppet-infrastructure/backup/puppet read-only over itself, runs backup-puppet.sh once as root,
+      unmounts it; the script's exit code and stderr go to /run/p8test-backup-fail (rc, stderr)
+    probe: |
+      d=/opt/puppet-infrastructure/backup/puppet
+      install -d -m 0700 /run/p8test-backup-fail
+      mount --bind "$d" "$d" && mount -o remount,bind,ro "$d"
+      /opt/puppet-infrastructure/bin/backup-puppet.sh >/dev/null 2>/run/p8test-backup-fail/stderr; echo $? > /run/p8test-backup-fail/rc
+      umount "$d"
+    effect: |
+      [ "$(cat /run/p8test-backup-fail/rc)" -ne 0 ] && echo "exit non-zero"
+      p8_count '^ERROR: backup of /etc/puppetlabs/ into /opt/puppet-infrastructure/backup/puppet failed' /run/p8test-backup-fail/stderr
+      journalctl -t backup-puppet.example.com -o cat --no-pager | p8_count '^ERROR: backup of /etc/puppetlabs/ into /opt/puppet-infrastructure/backup/puppet failed'
+      test -e /opt/puppet-infrastructure/backup/puppet/puppet.example.com-recent.tar.gz && echo "old archives kept"
+    expect: {rc: 0, stdout: "\\Aexit non-zero\\n1\\n1\\nold archives kept\\n\\Z"}

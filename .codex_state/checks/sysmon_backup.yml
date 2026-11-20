@@ -3,9 +3,45 @@
 # sysmon::address sysmon.p8test.invalid, sysmon::backdir %{filesystem::backdir}/sysmon
 # (= /opt/puppet-infrastructure/backup/sysmon), sysmon::backdays 10; no sysmon::compression key (default true);
 # filesystem::bindir /opt/puppet-infrastructure/bin. The class instantiates puppet_infrastructure::backup 'sysmon'.
+# 2026-11-20 (HQ after batch 16, item 1): the earlier exercise created the backup directory itself, which masked that
+# nothing declared it (puppet_backup's finding). The set no longer creates it: local change #14 has the backup define
+# declare it, and the-backup-directory-exists reads it after the apply. The exercise creates only the source data
+# (sysmon::basedir, the monitoring server's data). Purpose and outcomes (HQ rulings 2 and C1), a restore, retention with
+# planted archives (backdays 10: find -mtime +9), and local change #15: a run that cannot write fails loudly.
 class: sysmon_backup
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
+purpose: >-
+  Backs up the monitoring server's data directory every night: a dated gzip tar in the sysmon backup directory, keeping
+  the configured number of days of archives.
+outcomes:
+  - outcome: the backup script carries the values of the Hiera keys sysmon::basedir and the like, and root's crontab runs it at 23:00 every day
+    from: manifests/sysmon_backup.pp:3-13; manifests/backup.pp:14-28
+    checks: [backup-script-installed, script-carries-the-sysmon-keys, nightly-cron]
+  - outcome: the backup directory the script writes into is there after the apply
+    from: manifests/sysmon_backup.pp:8
+    checks: [the-backup-directory-exists]
+  - outcome: a run writes a dated gzip tar of the data directory from which a file restores byte for byte
+    from: manifests/sysmon_backup.pp:1-2; templates/backup/backup.sh.erb:14-20, 31
+    checks: [aged-archives-are-planted, backup-runs-and-archives-basedir]
+  - outcome: the run deletes the prefix's archives older than 9 full days and keeps newer ones and other prefixes' files
+    from: templates/backup/backup.sh.erb:22-23, 33-37
+    checks: [aged-archives-are-planted, a-run-deletes-only-its-own-old-archives]
+  - outcome: a run that cannot write its archive fails loudly (non-zero exit, an error line on stderr and in syslog) and deletes no old archive
+    from: templates/backup/backup.sh.erb:31-37
+    checks: [a-failed-run-is-loud]
+  - outcome: cron itself firing at 23:00
+    from: manifests/backup.pp:21-28
+    uncovered:
+      why: a run would have to wait for 23:00; the crontab entry is checked and the script it names is run by hand
+      lifted_by: "capability: a clock-controlled cron trigger inside a phase3 run"
+      evidence: "phase3.py runs probes and agent runs only; it has no step that advances or waits for the node's cron schedule"
+  - outcome: compression off (sysmon::compression false)
+    from: manifests/sysmon_backup.pp:10; templates/backup/backup.sh.erb:15-20
+    uncovered:
+      why: one set holds one Hiera fixture, which leaves sysmon::compression unset (default true)
+      lifted_by: "capability: more than one params or Hiera fixture per set"
+      evidence: "phase3.py applies the class once with its single `fixture` (params or defaults) against the master's one Hiera"
 checks:
   - id: backup-script-installed
     what: the sysmon backup script is installed in bindir as backup-sysmon.sh, root:root 0755
@@ -37,24 +73,99 @@ checks:
       crontab -l -u root 2>/dev/null | grep -A1 -x '# Puppet Name: cron_sysmon_backup'
     expect: {rc: 0, stdout: "\\A# Puppet Name: cron_sysmon_backup\\n0 23 \\* \\* \\* /opt/puppet-infrastructure/bin/backup-sysmon\\.sh\\n\\Z"}
 
+  - id: the-backup-directory-exists
+    what: the directory the script writes into, /opt/puppet-infrastructure/backup/sysmon, exists after the apply, root-owned 0755
+    control: negative
+    derived_from:
+      - {path: manifests/sysmon_backup.pp, lines: "8", text: "$mybackdir = lookup(\"${mysystype}::backdir\")"}
+      - {path: templates/backup/backup.sh.erb, lines: "31", text: "tar $EXCLUDELINE -cv${COMPRESSION_FLAG}f $BACKDIR/$FILEPREFIX-`date +%Y-%b-%d-%Hh%Mm`.tar.gz $FILETARGETDIRS"}
+    probe: |
+      stat -c '%U %G %a' /opt/puppet-infrastructure/backup/sysmon
+    expect: {rc: 0, stdout: "\\Aroot root 755\\n\\Z"}
+
+  - id: aged-archives-are-planted
+    what: setup for the run, the source data and three files of known ages in the backup directory (which is not created here)
+    control: negative
+    derived_from:
+      - {path: templates/backup/backup.sh.erb, lines: "35-37", text: "for i in `find $BACKDIR -maxdepth 1 -mtime +$DAYS -type f -name \"$FILEPREFIX*\" `; do"}
+    mutates: >-
+      creates the fixture source /var/tmp/p8test-sysmon/ (the monitoring server's data) with one file p8test.txt; creates
+      in /opt/puppet-infrastructure/backup/sysmon: sysmon.p8test.invalid-old.tar.gz dated 12 days ago,
+      sysmon.p8test.invalid-recent.tar.gz dated 5 days ago, and p8test-other-old.tar.gz (another prefix) dated 30 days ago
+    probe: |
+      install -d /var/tmp/p8test-sysmon
+      echo p8test-sysmon-content > /var/tmp/p8test-sysmon/p8test.txt
+      d=/opt/puppet-infrastructure/backup/sysmon
+      for f in sysmon.p8test.invalid-old:12 sysmon.p8test.invalid-recent:5 p8test-other-old:30; do
+        printf 'p8test planted\n' > "$d/${f%%:*}.tar.gz"; touch -d "${f##*:} days ago" "$d/${f%%:*}.tar.gz"
+      done
+    effect: |
+      cd /opt/puppet-infrastructure/backup/sysmon && find . -maxdepth 1 -type f -mtime +9 | LC_ALL=C sort | tr '\n' ' '; echo
+    expect: {rc: 0, stdout: "\\A\\./p8test-other-old\\.tar\\.gz \\./sysmon\\.p8test\\.invalid-old\\.tar\\.gz \\n\\Z"}
+
   - id: backup-runs-and-archives-basedir
     what: >-
-      the exercise: run once, the script writes one compressed archive named <address>-<date>.tar.gz in backdir that
-      holds basedir's content
+      the script, run once by hand as cron would, exits 0 and writes one new archive sysmon.p8test.invalid-<date>.tar.gz,
+      gzip-compressed, from which var/tmp/p8test-sysmon/p8test.txt restores byte for byte
     control: negative
+    timeout: 120
     derived_from:
       - {path: manifests/sysmon_backup.pp, lines: "2", text: "# This class provides sysmon backups"}
       - {path: templates/backup/backup.sh.erb, lines: "31", text: "tar $EXCLUDELINE -cv${COMPRESSION_FLAG}f $BACKDIR/$FILEPREFIX-`date +%Y-%b-%d-%Hh%Mm`.tar.gz $FILETARGETDIRS"}
     mutates: >-
-      creates the fixture source /var/tmp/p8test-sysmon/ with one file p8test.txt and the backup directory
-      /opt/puppet-infrastructure/backup/sysmon (neither the class nor filesystem_base creates them), then runs
-      backup-sysmon.sh once as root
+      runs backup-sysmon.sh once as root (a new archive in the backup directory; the planted 12-day-old file of its
+      prefix is deleted); writes its exit code and the archive's name to /run/p8test-sysmon (rc, archive) and restores
+      var/tmp/p8test-sysmon/p8test.txt from the archive there
     probe: |
-      install -d /var/tmp/p8test-sysmon /opt/puppet-infrastructure/backup/sysmon
-      echo p8test-sysmon-content > /var/tmp/p8test-sysmon/p8test.txt
-      /opt/puppet-infrastructure/bin/backup-sysmon.sh >/dev/null 2>&1
+      install -d -m 0700 /run/p8test-sysmon
+      /opt/puppet-infrastructure/bin/backup-sysmon.sh >/dev/null 2>&1; echo $? > /run/p8test-sysmon/rc
+      a=$(ls -1t /opt/puppet-infrastructure/backup/sysmon/sysmon.p8test.invalid-2*.tar.gz 2>/dev/null | head -1)
+      echo "$a" > /run/p8test-sysmon/archive
+      [ -n "$a" ] && tar -xzf "$a" -C /run/p8test-sysmon var/tmp/p8test-sysmon/p8test.txt
     effect: |
-      set -- /opt/puppet-infrastructure/backup/sysmon/sysmon.p8test.invalid-*.tar.gz
-      test "$#" -eq 1 -a -f "$1" || { echo "archives: $*"; exit 1; }
-      tar -tzf "$1" | grep -x 'var/tmp/p8test-sysmon/p8test.txt'
-    expect: {rc: 0, stdout: "\\Avar/tmp/p8test-sysmon/p8test\\.txt\\n\\Z"}
+      echo "rc $(cat /run/p8test-sysmon/rc)"
+      a=$(cat /run/p8test-sysmon/archive)
+      basename "$a" | sed -E 's/-[0-9]{4}-[A-Z][a-z]{2}-[0-9]{2}-[0-9]{2}h[0-9]{2}m\.tar\.gz$/-DATE.tar.gz/'
+      gzip -t "$a" && echo gzip-ok
+      cmp -s /run/p8test-sysmon/var/tmp/p8test-sysmon/p8test.txt /var/tmp/p8test-sysmon/p8test.txt && echo restores-byte-for-byte
+    expect: {rc: 0, stdout: "\\Arc 0\\nsysmon\\.p8test\\.invalid-DATE\\.tar\\.gz\\ngzip-ok\\nrestores-byte-for-byte\\n\\Z"}
+
+  - id: a-run-deletes-only-its-own-old-archives
+    what: >-
+      after the run, the prefix's 12-day-old archive is gone, its 5-day-old one and the other prefix's 30-day-old file
+      remain (find -mtime +9 on files named sysmon.p8test.invalid*)
+    control: negative
+    derived_from:
+      - {path: templates/backup/backup.sh.erb, lines: "22-23", text: "let DAYS=$INTERVAL*$NC-1"}
+      - {path: templates/backup/backup.sh.erb, lines: "35-37", text: "rm -f  $i"}
+    mutates: none beyond listing the backup directory (declared mutating so it runs after the run)
+    probe: |
+      true
+    effect: |
+      cd /opt/puppet-infrastructure/backup/sysmon && ls -1 | sed -E 's/-[0-9]{4}-[A-Z][a-z]{2}-[0-9]{2}-[0-9]{2}h[0-9]{2}m\.tar\.gz$/-DATE.tar.gz/' | LC_ALL=C sort | tr '\n' ' '; echo
+    expect: {rc: 0, stdout: "\\Ap8test-other-old\\.tar\\.gz sysmon\\.p8test\\.invalid-DATE\\.tar\\.gz sysmon\\.p8test\\.invalid-recent\\.tar\\.gz \\n\\Z"}
+
+  - id: a-failed-run-is-loud
+    what: >-
+      with the backup directory made unwritable (read-only), the script run as cron would exits non-zero, writes an
+      ERROR line on stderr and to syslog, and leaves the prefix's archives in place (the 5-day-old one is still there)
+    control: negative
+    timeout: 120
+    derived_from:
+      - {path: templates/backup/backup.sh.erb, lines: "31", text: "tar $EXCLUDELINE -cv${COMPRESSION_FLAG}f $BACKDIR/$FILEPREFIX-`date +%Y-%b-%d-%Hh%Mm`.tar.gz $FILETARGETDIRS"}
+      - {path: manifests/backup.pp, lines: "21-28", text: "command   => \"${bindir}/backup-${title}.sh\","}
+    mutates: >-
+      bind-mounts /opt/puppet-infrastructure/backup/sysmon read-only over itself, runs backup-sysmon.sh once as root,
+      unmounts it; the script's exit code and stderr go to /run/p8test-sysmon-fail (rc, stderr)
+    probe: |
+      d=/opt/puppet-infrastructure/backup/sysmon
+      install -d -m 0700 /run/p8test-sysmon-fail
+      mount --bind "$d" "$d" && mount -o remount,bind,ro "$d"
+      /opt/puppet-infrastructure/bin/backup-sysmon.sh >/dev/null 2>/run/p8test-sysmon-fail/stderr; echo $? > /run/p8test-sysmon-fail/rc
+      umount "$d"
+    effect: |
+      [ "$(cat /run/p8test-sysmon-fail/rc)" -ne 0 ] && echo "exit non-zero"
+      p8_count '^ERROR: backup of /var/tmp/p8test-sysmon/ into /opt/puppet-infrastructure/backup/sysmon failed' /run/p8test-sysmon-fail/stderr
+      journalctl -t backup-sysmon.p8test.invalid -o cat --no-pager | p8_count '^ERROR: backup of /var/tmp/p8test-sysmon/ into /opt/puppet-infrastructure/backup/sysmon failed'
+      test -e /opt/puppet-infrastructure/backup/sysmon/sysmon.p8test.invalid-recent.tar.gz && echo "old archives kept"
+    expect: {rc: 0, stdout: "\\Aexit non-zero\\n1\\n1\\nold archives kept\\n\\Z"}
