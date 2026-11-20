@@ -12,6 +12,8 @@
 # renewed certificate under /etc/letsencrypt/live as certbot leaves it, plus one of another domain) and runs the script.
 # Correction round 1, 2026-11-20 (review 20261120T113221Z): certbot-finds-the-dns-plugin's mutates now declares every
 # write (its /run output, certbot's log and its work directory /var/lib/letsencrypt).
+# Correction round 2, 2026-11-20 (review 20261120T113847Z): also certbot's empty renewal-hooks directories; the list
+# is every path the node changed in that second of the reviewer's run (find -newermt), so nothing else is left out.
 class: letsencrypt_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -67,8 +69,9 @@ checks:
       - {path: manifests/letsencrypt_base.pp, lines: "16-20", text: "$package_name     = 'python3-certbot-dns-digitalocean'"}
       - {path: manifests/letsencrypt_base.pp, lines: "48-53", text: "name     => $package_name,"}
     mutates: >-
-      runs `certbot plugins` once, which creates its log under /var/log/letsencrypt and its work directory
-      /var/lib/letsencrypt; writes the plugin list to /run/p8test-le/plugins.txt (/run/p8test-le created 0700)
+      runs `certbot plugins` once, which creates its log /var/log/letsencrypt/letsencrypt.log, its work directory
+      /var/lib/letsencrypt and its empty hook directories /etc/letsencrypt/renewal-hooks/{pre,deploy,post}; writes the
+      plugin list to /run/p8test-le/plugins.txt (/run/p8test-le created 0700)
     probe: |
       install -d -m 0700 /run/p8test-le
       certbot plugins --text 2>/dev/null | sed -n 's/^\* //p' > /run/p8test-le/plugins.txt
