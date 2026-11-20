@@ -1,0 +1,35 @@
+{
+ "class": "user_sudoer",
+ "at": "20261120T234638Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "sudo-grants-all: user_sudoer.pp:2 ('defines a sudoer user') with 10-11 (Debian branch appends sudo); on the node /etc/sudoers holds '%sudo ALL=(ALL:ALL) ALL', so sudo -l -U p8testuser listing exactly '(ALL : ALL) ALL' is the grant the class's group membership produces (confirmed by hand); the mismatch varies only the user to nobody (in no admin group), which must change sudo's verdict, and it failed after apply as required",
+  "user-with-own-primary-group: user_sudoer.pp:14 passes grouplist [sudo] to user_base, whose lines 25-26 keep the title as primary when the first entry is sudo/wheel; under the params fixture (myname 'P8 Test User', home/shell defaults /home/p8testuser, /bin/bash) the expected name|gecos|home|shell and primary group p8testuser are exactly what the code produces",
+  "the-user-becomes-root-with-sudo: user_sudoer.pp:2 + 10-11 (sudo membership -> sudoer); the action runs sudo -S -k id -u as p8testuser with the fixture hash's password, with a wrong one, and as nobody; the effect file holds what id -u printed under sudo (0 = root) or 'refused'. The journal on the applied node confirms each cause: p8testuser COMMAND=/usr/bin/id -u session opened as root, '1 incorrect password attempt', and 'nobody : user NOT in sudoers'. mutates declares the run file, the auth logs and .sudo_as_admin_successful (no lecture file was written: /var/lib/sudo/lectured is empty); -k leaves no timestamp",
+  "purpose covered: Purpose (a user that administers the machine via the OS admin group) matches the header comment and the baseline's only own logic (sudo/wheel appended, all else passed to user_base). The checks test it as behaviour: the user's own primary group and identity, membership in exactly its group + sudo, sudo's own ALL verdict (with a nobody mismatch), and an actual sudo to root with the password while a wrong password and a non-admin account are refused; the key push is checked by its authorized_keys line. Pass-through user_base behaviours (key login, purge, ecryptfs, param variants) are user_base's own outcomes in its set. The RedHat/wheel row is uncovered with capability lifting: true in substance, since a set is one file per class with Debian expectations and checks carry no node condition, so the rhel9 branch needs a node-specific set the runner cannot hold beside this one; note its evidence overstates slightly: nodes.select falls back to the P8_NODE env var when the plan row's node column is empty (as for user_sudoer), so a run can be steered to another kind, just not with this set."
+ ],
+ "review_s": 202.4,
+ "check_file_sha256": "0cdb27f5d6fccbe3c54451767bcde72338bd009970baf93a827f3d4171fb6f78",
+ "content_sha256": "0cdb27f5d6fccbe3c54451767bcde72338bd009970baf93a827f3d4171fb6f78",
+ "reviewer_result": "20261120T234316Z-reviewer",
+ "author_result": "20261120T233943Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "8f792314-949d-45e6-a718-100fe6e4d619",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "8f792314-949d-45e6-a718-100fe6e4d619",
+   "fresh": true
+  }
+ }
+}
