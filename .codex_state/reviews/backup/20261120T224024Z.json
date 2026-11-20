@@ -1,0 +1,100 @@
+{
+ "schema": 1,
+ "class": "backup",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-20T22:40:24Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "3c25bcbd22a7",
+ "migrate_subject": "P8: migrate puppet_infrastructure::backup",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 3c25bcbd22a7; 10 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/backup.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `backup Done [from: release-0.9.10; local changes: #14, #15]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-cron_core', '1.3.0'), ('puppetlabs-stdlib', '9.7.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 10 catalog events; COVERAGE puppet_infrastructure::backup: 3 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A backup.pp:1-2: the 2-line migration header (release-0.9.10 manifest, local changes #14/#15, cron_core 1.3.0 and stdlib 9.7.0 for ensure_resource); no baseline comment removed, the baseline file and cron resources are byte-identical",
+   "DIFF A backup.pp:16-18 = local change #14 exactly: ensure_resource('file', $backdir, {ensure directory, owner $user, group root, mode 0755}) plus a 2-line comment. Minimal for the-backup-directory-is-declared: the baseline define and its callers puppet_backup/sysmon_backup (baseline, both only pass backdir to the define) and filesystem_base (declares only the parent filesystem::backdir) never declare the target, so tar could not open its archive; owner $user matches the cron user that writes there; ensure_resource lets two callers share a target; params fixture backdir /opt/puppet-infrastructure/backup/p8test is a child of filesystem_base's directory, no duplicate. After-check passes in results/backup/20261120T220922Z-author (root root 755, failed on the clean phase as negative)",
+   "DIFF A backup.sh.erb:33-41 = local change #15 exactly: rc=$? right after the tar line, and on non-zero an ERROR line to stderr and logger -p user.err -t backup-$FILEPREFIX, exit $rc before the retention find/rm; the tar, retention and chown lines are unchanged. Minimal for a-failed-run-is-loud: before (20261120T212918Z-author) the script exited 0 with no ERROR line because its last command is the TARGETUSER if; after (20261120T220922Z-author) exit non-zero, 1 ERROR line on stderr and in the journal, old archives kept",
+   "DIFF B: re-migration replacing the earlier release-0.9.8 'validated unchanged' header with the new header and adding exactly the #14 and #15 hunks; no other content changed"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 13,
+  "removed": 0,
+  "non_comment_changes": 8,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest; local changes #14: the backup directory declared here; #15: the script fails loudly.",
+  "# Module dependencies: puppetlabs-cron_core 1.3.0 (vendored with Puppet 8.24.2); puppetlabs-stdlib 9.7.0 (ensure_resource)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 10,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::backup: 3 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 31.534,
+   "master_check_s": 0.668,
+   "poweroff_s": 1.358,
+   "restore_s": 0.506,
+   "boot_to_ssh_s": 18.13,
+   "apt_update_s": 10.17,
+   "verify_s": 0.702,
+   "nic1_rx_bytes": 13179160,
+   "apt_mirror": "primary"
+  },
+  "log": ".codex_state/logs/reviews/backup.20261120T223841Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "ubuntu"
+}
