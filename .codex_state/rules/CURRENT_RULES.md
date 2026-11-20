@@ -2,7 +2,14 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-124 entries; 6 marked superseded (in whole or part); newest first.
+125 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-20 — backfill batch 6: lessons that change how sets are written
+- 1. **Declared writes are measured, not recalled.** After an author run, the paths the node changed during each
+- 2. **Literal data is matched as a fixed string.** A count fed with substituted data (keys, hashes, tokens) uses
+- 3. **A behaviour baseline is measured before a check relies on it.** user_kde_lock_screen's first draft assumed
+- 4. **Local change #13** (puppet_boot_run, policy B): `lsof` given several files exits 0 only when all are open.
+- 5. **Plan node follows production's declaring node** where the behaviour needs it (letsencrypt_base to puppetserver).
 
 ## 2026-11-20 — HQ accepts travel readiness, with three additions
 - 1. **Lab power at run boundaries.** When a run stops to wait for Salatiel or HQ, `lab_power.sh down`; `lab_power.sh up`

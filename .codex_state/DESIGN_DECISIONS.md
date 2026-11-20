@@ -2294,3 +2294,16 @@ snapshot list, record.
    files stay until Salatiel decides.
 Then batch 6. Order after the backfill is unchanged: stand-in lifts, the sweep of open uncovered rows, the approval
 report, the test-suite design note, the rename.
+
+## 2026-11-20 — backfill batch 6: lessons that change how sets are written
+1. **Declared writes are measured, not recalled.** After an author run, the paths the node changed during each
+   exercise are listed with `find -newermt` and compared with `mutates` before the review (letsencrypt_base needed two
+   rounds for undeclared writes of `certbot plugins`).
+2. **Literal data is matched as a fixed string.** A count fed with substituted data (keys, hashes, tokens) uses
+   `grep -F`; a regex over base64 matched nothing and let a key-absence check pass on a 0 it could not avoid
+   (hashman_base, caught before any review; no other set had the pattern).
+3. **A behaviour baseline is measured before a check relies on it.** user_kde_lock_screen's first draft assumed
+   Plasma's default locks an idle session after five minutes; measured, a fresh session was still unlocked 450 s after
+   login.
+4. **Local change #13** (puppet_boot_run, policy B): `lsof` given several files exits 0 only when all are open.
+5. **Plan node follows production's declaring node** where the behaviour needs it (letsencrypt_base to puppetserver).
