@@ -18,6 +18,9 @@
 # three users' role lines. The agent runs now follow that change. Prototyped on p8lab-puppetserver 2026-11-20: lock
 # prefixes the hash with '!', expire turns '$6$' into '$!6$' (the CLI's own auth still accepts an expired password;
 # user_base treats any '!' as locked), userdel leaves no line of the user in any database file.
+# 2026-11-20 correction round 2 (review 20261120T111006Z, purpose gap): the CLI's support-team notifications (the lab's
+# MTA queues them: the fake relayhost defers them, so the queue can be read) and the hashman_web precondition for the
+# mails to users. The earlier mail row's evidence was wrong (the lab's hashman::mailfrom is hashman@mycompany.com).
 # Authoring error 2026-11-20 (run 20261120T105405Z): the key lines were matched with p8_count (grep -E), and a key's
 # base64 body holds '+', a regex quantifier, so the present key read 0; the locked user's key-absence check read 0 for
 # the same reason whatever the file held. All three now match the key as a fixed string (grep -F). The behaviour in
@@ -60,12 +63,18 @@ outcomes:
   - outcome: a user the administrator locks or expires is refused on the other machine and gets no SSH key there; a deleted user leaves the database
     from: templates/hashman/libhashman/dbutils.py.erb:780-805; templates/hashman/libhashman/config.py.erb:58-59; manifests/user_base.pp:41-62
     checks: [admin-sets-a-key-and-revokes-users, a-client-refuses-the-locked-and-expired-users]
-  - outcome: the mails the CLI sends (a new user's initial password, reset, inform, testemail) reach the user
-    from: templates/hashman/pp_auth.py.erb:202-215
+  - outcome: every notifying CLI command (useradd, unlock, setpw, auth, lock, expire, userdel) mails the support team its result, through the local MTA
+    from: templates/hashman/pp_auth.py.erb:524-548; templates/hashman/libhashman/config.py.erb:6-7, 19; files/hashman/common/hashman_utils.py:11-24, 40-55
+    checks: [the-support-team-is-notified-of-each-command]
+  - outcome: without hashman_web, the CLI refuses the commands that mail the user (useradd without SILENT, inform) and changes nothing
+    from: templates/hashman/libhashman/miscutils.py.erb:151-158
+    checks: [user-mail-commands-need-hashman-web]
+  - outcome: the mails to the user themselves (a new user's initial password, reset, inform, testemail)
+    from: templates/hashman/libhashman/miscutils.py.erb:151-158; templates/hashman/libhashman/config.py.erb:66
     uncovered:
-      why: the exercise adds the user SILENT; a delivered mail needs a mailbox the lab can read
-      lifted_by: "capability: a mail sink in the lab that the class's MTA delivers to"
-      evidence: "the action runs `useradd ... SILENT` (admin-adds-a-user-with-a-password); the lab Hiera's hashman::mailfrom and the users' addresses are example.invalid"
+      why: they need hashman_web's email template, which this class does not install; they belong to hashman_web composed with this class
+      lifted_by: "capability: hashman_web composed with hashman_base on the class's node"
+      evidence: "check_hashman_web exits before mailing when EMAIL_TEMPLATE (TEMPLATE_DIR/email/index.html) is absent, and hashman_base declares no file there (manifests/hashman_base.pp); user-mail-commands-need-hashman-web shows the refusal"
   - outcome: encrypted home data (setecryptfs) reaching the other machine
     from: templates/hashman/libhashman/dbutils.py.erb:431-445; manifests/user_base.pp:104-110
     uncovered:
@@ -266,3 +275,38 @@ checks:
       p8_count '^ssh-rsa userlocked' /home/p8hashlocked/.ssh/authorized_keys
       getent passwd p8hashdel || echo "no p8hashdel"
     expect: {rc: 0, stdout: "\\Ap8hashlocked\\nAuthentication failure\\np8hashexpired\\nAuthentication failure\\n0\\n1\\nno p8hashdel\\n\\Z"}
+
+  - id: the-support-team-is-notified-of-each-command
+    what: >-
+      after the administrator's commands, the local MTA holds one notification per command and user from the Hiera
+      sender to the support team, subject `Hashman <action> <SUCCESS|FAIL> for <user> at <time>`: 18 distinct subjects
+      (creation, unlock and password change of four users, login success and failure of p8hashuser, lock and login
+      failure of p8hashlocked, expiration of p8hashexpired, deletion of p8hashdel)
+    control: negative
+    derived_from:
+      - {path: templates/hashman/pp_auth.py.erb, lines: "528-530", text: "notif_email( MAIL_FROM  , SUPPORT_TEAM, username , cmd , 'SUCCESS', extra_msg )"}
+      - {path: templates/hashman/libhashman/config.py.erb, lines: "19", text: "NOTIFCMDS  = [ 'setpw' , 'lock' , 'unlock' , 'useradd' , 'userdel' , 'expire', 'unexpire', 'reset', 'auth', 'extauth', 'inform' ]"}
+      - {path: files/hashman/common/hashman_utils.py, lines: "50-53", text: "subject = 'Hashman ' + ACTIONS[action] + ' ' + result + ' for ' + username + ' at ' + datetime.datetime.now().strftime(\"%Y-%m-%d %H:%M\")"}
+    mutates: none beyond reading the mail queue and mail.log (declared mutating so it runs after the administrator's commands)
+    probe: |
+      true
+    effect: |
+      for id in $(postqueue -j | sed -n 's/.*"queue_id": *"\([^"]*\)".*/\1/p'); do postcat -hq "$id" | sed -n 's/^Subject: //p'; done | sed -E 's/ at [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}$//' | LC_ALL=C sort -u
+    expect: {rc: 0, stdout: "\\AHashman creation SUCCESS for p8hashdel\\nHashman creation SUCCESS for p8hashexpired\\nHashman creation SUCCESS for p8hashlocked\\nHashman creation SUCCESS for p8hashuser\\nHashman deletion SUCCESS for p8hashdel\\nHashman lock SUCCESS for p8hashlocked\\nHashman login FAIL for p8hashlocked\\nHashman login FAIL for p8hashuser\\nHashman login SUCCESS for p8hashuser\\nHashman password change SUCCESS for p8hashdel\\nHashman password change SUCCESS for p8hashexpired\\nHashman password change SUCCESS for p8hashlocked\\nHashman password change SUCCESS for p8hashuser\\nHashman password expiration SUCCESS for p8hashexpired\\nHashman unlock SUCCESS for p8hashdel\\nHashman unlock SUCCESS for p8hashexpired\\nHashman unlock SUCCESS for p8hashlocked\\nHashman unlock SUCCESS for p8hashuser\\n\\Z"}
+
+  - id: user-mail-commands-need-hashman-web
+    what: >-
+      without hashman_web's email template, `useradd` with a confirmation address (not SILENT) and `inform` exit 1 with
+      the CLI's hashman_web message, and p8hashweb is not in the database
+    control: negative
+    derived_from:
+      - {path: templates/hashman/libhashman/miscutils.py.erb, lines: "151-158", text: "print(\"Class puppet_infrastructure::hashman_web not included. Please run the command with [silent] option\")"}
+    mutates: runs the CLI's useradd for p8hashweb with a confirmation address and inform for p8hashuser (both refused); their output goes to /run/p8test-hashman/web.txt
+    probe: |
+      c=/opt/puppet-infrastructure/bin/pp_auth.sh
+      $c useradd p8hashweb p8hashweb@example.invalid "P8test Web" p8test name01@mycompany.com > /run/p8test-hashman/web.txt 2>&1; echo "useradd rc=$?" >> /run/p8test-hashman/web.txt
+      $c inform p8hashuser >> /run/p8test-hashman/web.txt 2>&1; echo "inform rc=$?" >> /run/p8test-hashman/web.txt
+    effect: |
+      grep -E '^(Class puppet_infrastructure::hashman_web not included|This command requires class puppet_infrastructure::hashman_web)|rc=' /run/p8test-hashman/web.txt
+      p8_count 'p8hashweb' /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp
+    expect: {rc: 0, stdout: "\\AClass puppet_infrastructure::hashman_web not included\\. Please run the command with \\[silent\\] option\\nuseradd rc=1\\nThis command requires class puppet_infrastructure::hashman_web, which was not included in the node declaration\\.\\ninform rc=1\\n0\\n\\Z"}
