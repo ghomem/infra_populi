@@ -1,0 +1,35 @@
+{
+ "class": "backup",
+ "at": "20261120T230154Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "a-failed-run-is-loud: baseline manifests/backup.pp:21-28 makes the cron command ${bindir}/backup-${title}.sh run as $user (root by default), which is exactly what the action runs as root; with a 4 KiB tmpfs over the backup directory holding one 8-day-old prefix file, tar (erb:31) cannot write and the directory stays writable, so the 'kept' line shows the early exit (local change #15, rows in local_changes.md) rather than a read-only directory; the effect reads persisted rc/stderr plus the journal (logger -t backup-p8test-backup) and filesystem state, and mutates declares the mount, planted file, script run and /run outputs",
+  "a-run-deletes-only-its-own-old-archives: erb:22-23 gives DAYS=1*7-1=6 with fixture ndays 7, and erb:35-37 deletes find -maxdepth 1 -mtime +6 -type f -name 'p8test-backup*'; so the planted 8-day p8test-backup-old goes, the 3-day p8test-backup-recent and the 30-day p8test-other-old (prefix does not match) stay, plus the new dated archive: exactly the expected listing",
+  "script-installed-with-the-parameters: erb:4-7 (and 15) render @basedir/@prefix/@backdir/@ndays/@compression; the params fixture gives /etc/default, p8test-backup, /opt/puppet-infrastructure/backup/p8test, 7 and the default compression true, and manifests/backup.pp:14-19 sets root:root 0755 on ${bindir}/backup-backup.sh: the expected stat and grep lines match",
+  "purpose covered: Purpose (tar-based generic backups: per-title script run by cron, dated gzip tar of the base dirs into backdir, prefix retention) matches the baseline header and code. The checks test the job, not just files: the script run as cron would writes a gzip tar that restores /etc/default/cron byte for byte, retention deletes only the prefix's files older than ndays-1 days, and a run that cannot write its archive exits non-zero with an ERROR on stderr and syslog and keeps old archives (local change #15); also the installed script with its parameters, the crontab line (0 23 * * *), and the backup directory the define now declares (local change #14). Uncovered rows are honest: cron actually firing at 23:00 needs a clock-controlled trigger the runner lacks, and compression off / several dirs / other user, hour or monthday need more than one params fixture per set (phase3.py applies one fixture). EXCLUDEDIRS and TARGETUSER are empty constants in the template, so their branches are dead code, not outcomes."
+ ],
+ "review_s": 112.9,
+ "check_file_sha256": "d103cb947444b9b02b8e9e4b6b63c1a4fea5b9adbfd953fe36cb8a2ff24c6361",
+ "content_sha256": "d103cb947444b9b02b8e9e4b6b63c1a4fea5b9adbfd953fe36cb8a2ff24c6361",
+ "reviewer_result": "20261120T230002Z-reviewer",
+ "author_result": "20261120T225107Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "ba5ae2d1-7ac1-4713-830f-23c9f3c8d1ea",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "ba5ae2d1-7ac1-4713-830f-23c9f3c8d1ea",
+   "fresh": true
+  }
+ }
+}
