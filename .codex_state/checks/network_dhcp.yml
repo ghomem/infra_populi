@@ -5,12 +5,17 @@
 # node by a veth pair (p8test0 on the node, p8testsrv 10.251.0.1/24 in the namespace) and dnsmasq serving
 # 10.251.0.100-150 there. Then the step a boot runs for /etc/network/interfaces (the networking service, or ifup -a)
 # is run, whichever the node has. Everything stays on the node.
+# 2026-11-20, HQ batch-15 ruling 5 (local change #10): production runs ifupdown beside netplan (openvpn_server installs
+# it on the same servers); the class now declares ifupdown itself (ensure_packages). New checks: ifupdown and the
+# networking service, the address through a restart of networking, and the primary interface still carrying the
+# node's internet. Measured on the node 2026-11-20: ifup uses dhcpcd (dhcpcd-base), and the fixture's DHCP route
+# comes at metric 1005, behind the NAT route's 100.
 class: network_dhcp
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 authoring:
   minutes: 4.4
-  notes: "04:45:26Z to 04:49:47Z 2026-11-19 (date at the start of reading the baseline and at validation), including one harness apply of the class to see what it leaves on the node (ifupdown not installed, no networking service, the stanza written)."
+  notes: "04:45:26Z to 04:49:47Z 2026-11-19 (date at the start of reading the baseline and at validation), including one harness apply of the class to see what it leaves on the node (ifupdown not installed, no networking service, the stanza written). Local change #10 (ruling 5): written and validated 00:25:41Z 2026-11-20 (one command's dates; the ifupdown prototype on the node before it is in the header)."
 purpose: >-
   Configures a network interface with DHCP, brought up at boot (onboot), so the interface gets its address from the
   LAN's DHCP server.
@@ -18,9 +23,25 @@ outcomes:
   - outcome: the interface's configuration says DHCP at boot (auto, inet dhcp), and ifupdown-extra is installed
     from: manifests/network_dhcp.pp:9-12
     checks: [the-interface-stanza-says-dhcp-at-boot]
+  - outcome: ifupdown, which reads the stanza at boot, is installed and its networking service enabled (local change #10)
+    from: manifests/network_dhcp.pp:1-7, 11-12
+    checks: [ifupdown-and-the-networking-service]
   - outcome: at boot the interface gets an address from the LAN's DHCP server
     from: manifests/network_dhcp.pp:1-2, 12
     checks: [a-lan-with-a-dhcp-server-on-the-interface, the-boot-step-gives-the-interface-a-dhcp-address]
+  - outcome: the interface keeps its DHCP address through a restart of the networking service
+    from: manifests/network_dhcp.pp:12
+    checks: [a-restart-of-networking-keeps-the-address]
+  - outcome: the node's primary interface keeps working (ifupdown beside netplan, HQ batch-15 ruling 5)
+    from: manifests/network_dhcp.pp:4-7
+    checks: [the-primary-interface-keeps-working]
+  - outcome: an actual reboot brings the interface up
+    from: manifests/network_dhcp.pp:12
+    uncovered:
+      why: a run does not reboot the class's node; the boot step (the networking service a boot starts) is run instead
+      lifted_by: "capability: a reboot of the class's node inside a phase3 run"
+      evidence: "phase3.py has no reboot step: a run reverts, applies, probes, and at most runs the node's agent (node_agent)"
+
 checks:
   - id: the-interface-stanza-says-dhcp-at-boot
     what: /etc/network/interfaces brings p8test0 up at boot with DHCP, and ifupdown-extra is installed
@@ -32,6 +53,17 @@ checks:
       grep -E '^(auto|iface) p8test0' /etc/network/interfaces
       dpkg-query -W -f '${Package} ${Status}\n' ifupdown-extra
     expect: {rc: 0, stdout: "\\Aauto p8test0\\niface p8test0 inet dhcp\\nifupdown-extra install ok installed\\n\\Z"}
+
+  - id: ifupdown-and-the-networking-service
+    what: ifupdown is installed and its networking service, which runs the stanzas at boot, is enabled
+    control: negative
+    derived_from:
+      - {path: manifests/network_dhcp.pp, lines: "4-7", text: "# needs to manage interface lo and it has been found that"}
+      - {path: manifests/network_dhcp.pp, lines: "12", text: "onboot => 'true', method => 'dhcp'"}
+    probe: |
+      dpkg-query -W -f '${Package} ${Status}\n' ifupdown 2>/dev/null
+      systemctl is-enabled networking 2>/dev/null
+    expect: {rc: 0, stdout: "\\Aifupdown install ok installed\\nenabled\\n\\Z"}
 
   - id: a-lan-with-a-dhcp-server-on-the-interface
     what: setup for the next check, p8test0 joined to a namespace where dnsmasq serves DHCP for 10.251.0.0/24
@@ -77,3 +109,34 @@ checks:
       echo "boot step: $(cat /run/p8test-dhcp-step)"
       ip -4 -o addr show p8test0 | grep -o '10\.251\.0\.1[0-5][0-9]/24' | sed 's/[0-9]*\/24/N\/24/' | head -1
     expect: {rc: 0, stdout: "\\Aboot step: (networking-service|ifup)\\n10\\.251\\.0\\.N/24\\n\\Z"}
+
+  - id: a-restart-of-networking-keeps-the-address
+    what: after `systemctl restart networking`, p8test0 holds a DHCP address from the namespace's server again
+    control: negative
+    timeout: 120
+    derived_from:
+      - {path: manifests/network_dhcp.pp, lines: "12", text: "onboot => 'true', method => 'dhcp'"}
+    mutates: restarts the networking service (ifdown, then ifup of every auto stanza) and waits up to 30 s for an address on p8test0
+    probe: |
+      systemctl restart networking.service
+      for i in $(seq 30); do ip -4 -o addr show p8test0 | grep -q '10\.251\.0\.' && break; sleep 1; done
+    effect: |
+      systemctl is-active networking.service
+      ip -4 -o addr show p8test0 | grep -o '10\.251\.0\.1[0-5][0-9]/24' | sed 's/[0-9]*\/24/N\/24/' | head -1
+    expect: {rc: 0, stdout: "\\Aactive\\n10\\.251\\.0\\.N/24\\n\\Z"}
+
+  - id: the-primary-interface-keeps-working
+    what: >-
+      with p8test0 up through ifupdown, the node's way to the internet still goes out through its primary interface
+      (enp0s3, netplan) and answers; the DHCP route p8test0 adds stays behind it
+    control: negative
+    derived_from:
+      - {path: manifests/network_dhcp.pp, lines: "4-7", text: "# once puppet starts managing one interface it has to manage"}
+    mutates: none beyond one route lookup and two pings to 1.1.1.1 (declared mutating so it runs after the restart)
+    probe: |
+      true
+    effect: |
+      ip -4 -o addr show p8test0 | grep -q '10\.251\.0\.' && echo "p8test0 up"
+      ip -4 route get 1.1.1.1 | grep -o 'dev [a-z0-9]*' | head -1
+      ping -c2 -W3 -q 1.1.1.1 >/dev/null 2>&1 && echo "internet answers"
+    expect: {rc: 0, stdout: "\\Ap8test0 up\\ndev enp0s3\\ninternet answers\\n\\Z"}
