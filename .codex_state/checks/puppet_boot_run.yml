@@ -6,6 +6,9 @@
 # does (`systemctl start`), once with another agent run's lockfile present (the script must skip and exit 0 without
 # competing) and once without (the unit's script makes the agent run). That agent run is the class's own behaviour,
 # not a probe's: the catalog is the one the harness applied, whose second run was clean.
+# Correction round 1, 2026-11-20 (review 20261120T123521Z, purpose gap): the lock wait's 120 s bound is exercised
+# (a lock held 150 s), and the 900 s time limit is an uncovered row with its evidence. The same review reproduced the
+# finding that the lock wait never waits (lsof given three files exits 1 unless all three are held).
 class: puppet_boot_run
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -23,6 +26,15 @@ outcomes:
   - outcome: started as the boot does while dpkg's lock is held, the unit waits for the lock, then makes one agent run and succeeds
     from: files/etc/puppet_boot_run.sh:19-46
     checks: [the-unit-makes-an-agent-run]
+  - outcome: the lock wait is bounded, so a lock held past 120 s delays the agent run by no more than that
+    from: files/etc/puppet_boot_run.sh:5, 19-31
+    checks: [the-lock-wait-is-bounded]
+  - outcome: an agent run longer than 900 s is cut off and the boot still finishes (the unit exits 0)
+    from: files/etc/puppet_boot_run.sh:6, 33-42
+    uncovered:
+      why: the limit is longer than a check's action may run, and the lab's agent runs finish in seconds
+      lifted_by: "capability: a check action longer than 900 s, or a held agent run, inside a phase3 run"
+      evidence: "phase3.py accepts a mutating check's timeout of 1-600 s; the script's PUPPET_TIMEOUT is 900 (puppet_boot_run.sh:6)"
   - outcome: the unit runs during a real boot, after the network is up enough for the agent to reach the master
     from: templates/etc/puppet_boot_run.service.erb:3, 10-11
     uncovered:
@@ -114,3 +126,34 @@ checks:
       last=$(sed -n 's/^ *last_run: *//p' /opt/puppetlabs/puppet/public/last_run_summary.yaml)
       [ "$last" -ge "$(cat /run/p8test-bootrun/start)" ] && echo "last run is the unit's"
     expect: {rc: 0, stdout: "\\Astart rc=0\\nsuccess\\nthe agent run started after the dpkg lock was released\\n1\\n1\\nlast run is the unit's\\n\\Z"}
+
+  - id: the-lock-wait-is-bounded
+    what: >-
+      with dpkg's frontend lock held for 150 s, the unit gives up waiting after 120 s: its log says the locks are still
+      present after 120 s and that it continues, and its agent run starts at least 120 s after the unit started and
+      before the lock is released
+    control: negative
+    timeout: 400
+    derived_from:
+      - {path: files/etc/puppet_boot_run.sh, lines: "5", text: "LOCK_WAIT_MAX=120        # seconds to wait for apt/dpkg locks"}
+      - {path: files/etc/puppet_boot_run.sh, lines: "25-29", text: "echo \"Apt/dpkg locks still present after ${LOCK_WAIT_MAX}s; continuing anyway.\" >> \"$LOG\""}
+    mutates: >-
+      holds /var/lib/dpkg/lock-frontend open (flock) for 150 s in a background shell, which then writes its release time
+      to /run/p8test-bootrun/bounded-released; records the start time in /run/p8test-bootrun/bounded-start and starts
+      puppet_boot_run.service (one agent run against the lab master, writing the agent's state under
+      /opt/puppetlabs/puppet/cache and the script's log /tmp/puppet_boot_run.log), copied to /run/p8test-bootrun/bounded.log
+    probe: |
+      install -d -m 0700 /run/p8test-bootrun
+      ( exec 9>/var/lib/dpkg/lock-frontend; flock 9; sleep 150; date +%s > /run/p8test-bootrun/bounded-released ) &
+      sleep 2
+      date +%s > /run/p8test-bootrun/bounded-start
+      systemctl start puppet_boot_run.service
+      cp /tmp/puppet_boot_run.log /run/p8test-bootrun/bounded.log
+      wait
+    effect: |
+      r=/run/p8test-bootrun
+      p8_count '^Apt/dpkg locks still present after 120s; continuing anyway\.$' $r/bounded.log
+      ran=$(date -d "$(sed -n 's/^Running puppet.agent at: //p' $r/bounded.log)" +%s)
+      start=$(cat $r/bounded-start); released=$(cat $r/bounded-released)
+      [ $((ran - start)) -ge 120 ] && [ "$ran" -lt "$released" ] && echo "the agent run started after the 120 s bound, before the lock was released"
+    expect: {rc: 0, stdout: "\\A1\\nthe agent run started after the 120 s bound, before the lock was released\\n\\Z"}
