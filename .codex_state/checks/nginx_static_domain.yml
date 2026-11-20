@@ -7,24 +7,6 @@
 class: nginx_static_domain
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 9.0
-  notes: >-
-    Wall clock 2026-11-10T16:00:52Z (class-specific: nginx_base DH size) to 16:02:11Z (validated). validate caught
-    one authoring error: nginx_base.pp:38 was the LOCAL line (the 2-line migration header shifts it); the baseline
-    line is 36. One probe rewritten before validation so that it writes no file (curl -o /tmp → captured output).
-    Fixture certificate: throwaway p8test PKI (RSA 2048). Since pki v2 (HQ 2026-11-10, master_fixtures.sh) its SAN
-    names p8test.example.com, so https-name-verifies (added 16:21:30Z-16:22:16Z, ~0.7 min with the bundle lookup) checks the name; served-certificate-is-
-    the-bundle keeps the fingerprint comparison. Corrected 2026-11-16 after pilot run 1 (20261116T114053Z-author,
-    FINDINGS on https-name-verifies): AUTHORING ERROR, not a finding — OpenSSL 3 prints `Verify return code` indented
-    inside the SSL-Session block, the probe anchored it at column 0 and saw nothing; a manual run of the same handshake
-    verified. Testing the fix against a WRONG hostname showed that OpenSSL 3.0.13 prints `Verify return code: 0 (ok)`
-    even for an aborted handshake (empty session), so that line cannot discriminate; the probe now reads the
-    top-level `Verification: OK` / `Verification error: hostname mismatch` line (both cases tested on the node). 1 min.
-    Mismatch controls (HQ 2026-11-16), 12:18Z-12:26Z (~6 min here), one per tool-verdict check. The Host header is
-    never the varied value: each port has exactly one server, so nginx's default-server rule answers any Host the same
-    way and a Host mismatch could not discriminate. Varied instead: the path, the compared file or certificate, the
-    verified hostname, the requested protocol, the offered suites, and the offered curve.
 purpose: >-
   Sets up nginx servers (vhosts) that serve a domain's static content from a local directory, with the class's
   redirect and TLS options, so requests for the domain get that content.

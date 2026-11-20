@@ -6,9 +6,6 @@
 class: sysmon_backup
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
-authoring:
-  minutes: 0.3
-  notes: "Wall clock 19:12:16Z to 19:12:35Z 2026-11-16, outside the worktree while another review ran; the master's Hiera fixtures and filesystem_base read for the exercise's prerequisites."
 checks:
   - id: backup-script-installed
     what: the sysmon backup script is installed in bindir as backup-sysmon.sh, root:root 0755

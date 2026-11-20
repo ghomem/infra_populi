@@ -6,9 +6,6 @@
 class: docker_container
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 0.9
-  notes: "20:58:14Z to 20:59:10Z 2026-11-18 (date at the start of reading the baseline and at validation), outside the worktree while sysmon_base's Phase 3 re-review ran; not prototyped on a node (the unit template was read on the master)."
 purpose: >-
   Runs one container from an image (pulled at a tag or digest, optionally from a registry with credentials) under
   systemd, with its app port published on 127.0.0.1 only, and recreates it when the image changes.

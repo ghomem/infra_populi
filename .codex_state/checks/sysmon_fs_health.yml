@@ -4,9 +4,6 @@
 class: sysmon_fs_health
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 0.3
-  notes: "Wall clock 23:40:47Z to 23:41:06Z 2026-11-16, outside the worktree while the Phase 1 review ran."
 checks:
   - id: check-script-rendered
     what: the per-volume check script (root 0755) carries the base directory, the size threshold and the file count

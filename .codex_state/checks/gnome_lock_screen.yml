@@ -12,9 +12,6 @@
 class: gnome_lock_screen
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
-authoring:
-  minutes: 0.3
-  notes: "Wall clock 2026-11-16T12:46:14Z to 12:46:32Z (written + validated), while the Phase 1 review ran. Extended 2026-11-19 (purpose, outcomes, the user override as behaviour): 18:47:30Z (date at the start of reading the set) to 18:48:14Z (validation); all three locked keys tried at 18:54:55Z (one command's dates); not prototyped on a node."
 purpose: >-
   Enforces a GNOME screen lock policy through the system dconf database: the session goes idle after the timeout
   (5 minutes by default), the screen locks with no grace period, and users cannot change these settings.

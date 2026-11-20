@@ -17,9 +17,6 @@
 class: caching_nameserver
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 1.2
-  notes: "04:06:31Z to 04:07:42Z 2026-11-19 (date at the start of reading the baseline and at validation), outside the worktree while filesystem_yum's review ran; not prototyped on a node. The -4 fixture (HQ batch-14 ruling 5): 18:25:39Z to 18:25:53Z 2026-11-19 (dates at the start of reading the check and at validation). Local change #9 (ruling 6): 23:42:13Z to 23:42:50Z 2026-11-19 (dates at the start of reading the set and at validation)."
 purpose: >-
   A caching nameserver with bind: it resolves names recursively for the node itself and for the allowed networks,
   answers repeated questions from its cache, and refuses everyone else; a changed configuration restarts it.

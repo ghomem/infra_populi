@@ -10,9 +10,6 @@
 class: firewall_secure_extra
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 2.2
-  notes: "16:37:08Z to 16:39:18Z 2026-11-18 (date at the start of reading the baseline and at validation), outside the worktree while hashman_web's re-review ran; the fixture was chosen to exercise the extras (the plain mode duplicates firewall_secure, covered there)."
 purpose: >-
   firewall_secure's default-drop firewall with SSH brute-force limits, extended with DDoS mitigation (invalid and
   bogus-flag packets, out-of-connection RSTs and fragments dropped, ICMP rate-limited, per-source limits on the listed services), a

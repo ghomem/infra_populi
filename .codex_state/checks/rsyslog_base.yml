@@ -6,9 +6,6 @@
 class: rsyslog_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 2
-  notes: "About 10:28Z to 10:31Z 2026-11-18 (scratch file times, overlapping rsyslog_client's), outside the worktree while firewall_secure's review ran.; the outcomes table (HQ ruling 2) and the TLS-file restart check (ruling 5) 15:17:52Z to 15:18:14Z 2026-11-18 (date)"
 purpose: >-
   The shared rsyslog setup of log servers and clients: rsyslog with its GnuTLS driver installed and running, and the
   node's Puppet CA, certificate and key copied where rsyslog (which drops to the syslog user) can read them for TLS; rsyslog

@@ -7,9 +7,6 @@
 class: ssl_nginx_domain
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 0.5
-  notes: "20:35:04Z to 20:35:32Z 2026-11-18 (date at the start of reading the baseline and at validation); built from ssl_base's draft (not yet run) plus one TLS serving check, outside the worktree while sysmon_base's Phase 1 review ran."
 purpose: >-
   Gives nginx a domain's TLS key and certificate bundle (through ssl_base, for the nginx service), so nginx can serve
   that domain over TLS with the certificate and its intermediate, and is restarted when either changes.

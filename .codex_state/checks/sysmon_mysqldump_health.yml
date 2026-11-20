@@ -7,9 +7,6 @@
 class: sysmon_mysqldump_health
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 0.1
-  notes: "Wall clock 00:31:28Z to 00:31:28Z 2026-11-17, outside the worktree while the Phase 1 review ran."
 checks:
   - id: check-script-rendered
     what: the check script (root 0755, valid bash) carries the MySQL user and password and the dump directories

@@ -5,9 +5,6 @@
 class: nginx_default_removal
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
-authoring:
-  minutes: 0.5
-  notes: "20:44:18Z to 20:44:49Z 2026-11-18 (date at the start of reading the baseline and at validation), outside the worktree while sysmon_base's Phase 3 review ran; not prototyped on a node."
 purpose: >-
   Removes the default site that the nginx package enables (/etc/nginx/sites-enabled/default) from nginx's
   configuration, as its comment says ("removes the default config file from the package"). The class notifies

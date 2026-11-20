@@ -8,9 +8,6 @@
 class: rsyslog_client
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 3
-  notes: "About 10:27Z to 10:30Z 2026-11-18 (scratch file times), outside the worktree while firewall_secure's review ran (baseline class, rsyslog_base and the forwarding template read)."
 purpose: >-
   Forwards all of the node's local logs to a remote rsyslog server over TLS, authenticated with the node's Puppet
   certificate and CA, with the target optionally pinned in /etc/hosts.

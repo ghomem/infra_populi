@@ -11,9 +11,6 @@
 class: backup_rsnapshot_pre
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
-authoring:
-  minutes: 0.7
-  notes: "18:04:17Z (date at the start of reading rdiff.sh and the manifest) to 18:05:01Z 2026-11-19 (validation), outside the worktree while user's review ran; not prototyped on a node. Correction round 1: 18:36:12Z (the measurement on the applied node) to 18:36:50Z (validation)."
 purpose: >-
   Prerequisites for rsnapshot backups (backup_rsnapshot): rsnapshot installed, the /etc/rsnapshot.d configuration
   directory, and rdiff.sh, a helper that reports what changed between consecutive snapshots.

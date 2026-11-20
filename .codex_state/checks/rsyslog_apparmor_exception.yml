@@ -5,9 +5,6 @@
 class: rsyslog_apparmor_exception
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 0.8
-  notes: "Wall clock 19:05:06Z to 19:05:51Z 2026-11-16, outside the worktree while the Phase 1 review ran; the node's stock profile read to choose a fixture path outside /var/log."
 checks:
   - id: local-exception-file
     what: the profile's local include grants rw on logs_dir and rwk below it, root:root 0644

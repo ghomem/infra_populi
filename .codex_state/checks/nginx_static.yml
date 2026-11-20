@@ -9,9 +9,6 @@
 class: nginx_static
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 0.6
-  notes: "Wall clock 01:44:55Z to 01:45:31Z 2026-11-17, outside the worktree while the Phase 1 review ran (server set derived from nginx_static_domain.pp 125-300)."
 checks:
   - id: nginx-config-valid
     what: the nginx configuration the wrapper produces passes `nginx -t`

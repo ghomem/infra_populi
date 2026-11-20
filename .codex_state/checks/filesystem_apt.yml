@@ -6,9 +6,6 @@
 class: filesystem_apt
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
-authoring:
-  minutes: 0.7
-  notes: "11:00:27Z to 11:01:09Z 2026-11-18 (date at start and at validation; the baseline class and its scripts were read before the clock started), outside the worktree while firewall_secure's re-review ran."
 purpose: >-
   Apt update tooling for Ubuntu 24.04 servers (the target release; the 20.04/22.04 openscap package branch is not in Phase 1): a wrapper that upgrades a package only if it is installed and has an update (never
   installing anything new), surface, kernel and full update scripts, and a daily job that lists the relevant (High or

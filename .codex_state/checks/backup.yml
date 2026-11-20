@@ -7,9 +7,6 @@
 class: backup
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 0.3
-  notes: "First drafted 17:57:28Z (one command, not timed); minutes 0.3 are the read-through against the template and the fix of the planting step (it no longer creates the backup directory), 17:57:47Z to 17:58:05Z 2026-11-19 (dates at its start and at validation); the reading and drafting before were not timed, outside the worktree while sync's review ran; not prototyped on a node."
 purpose: >-
   Simple tar-based generic backups: a per-title script, run by cron, that archives the base directories into the
   backup directory as a dated, gzip-compressed tar (unless compression is off), and deletes that prefix's archives

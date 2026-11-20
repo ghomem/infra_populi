@@ -8,18 +8,6 @@
 class: backup_rsnapshot
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 1.5
-  notes: >-
-    Wall clock 2026-11-10T15:58:20Z (class-specific reading: backup_rsnapshot_pre, template hash) to 15:59:02Z
-    (file validated), plus 0.3 min on 16:17Z for the mutating check daily-backup-executes (HQ allowed opt-in
-    mutating probes 2026-11-10). Corrected 2026-11-16 after the first pilot run (20261116T113012Z-author, FINDINGS
-    on daily-plan): AUTHORING ERROR, not a finding — rsnapshot prints the backup point as `/etc/` and the
-    destination as `daily.0//etc`; the expectation demanded ` /etc /opt/...`. The new regex accepts the trailing
-    slash and asserts the destination ends in `etc` (template line 12 `./<%= @prefix %>`). 0.5 min. Shared research for the three pilots (baselines, fixtures, read-only look at the clean node's
-    sshd/tools, fixture certificate type), 15:52-15:57Z, is reported once in the pilot report.
-    Outcomes table and the retention check 2026-11-19: written and validated at 17:19:50Z (the edit's own date; the
-    reading of the set and the template before it was not timed).
 purpose: >-
   Simple rsnapshot-based generic backups: a configuration per title and a daily cron run that snapshots the configured
   directory into the snapshot root, so its files can be restored from there.

@@ -5,9 +5,6 @@
 class: ssl_nginx
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 0.1
-  notes: "Wall clock 23:20:12Z to 23:20:21Z 2026-11-16, adapted from ssl_postfix's corrected set outside the worktree while the Phase 1 review ran."
 checks:
   - id: private-key-installed-root-only
     what: the prefix's private key is installed as /etc/ssl/private/<prefix>.key, root:root 0600

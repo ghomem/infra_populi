@@ -5,9 +5,6 @@
 class: sysmon_integrity_master
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 0.1
-  notes: "Wall clock 23:47:51Z to 23:47:51Z 2026-11-16, outside the worktree while the Phase 1 review ran."
 checks:
   - id: checklist-script-rendered
     what: the checklist script (root 0755) carries the output directory (puppet::manifdir), the output file and the file list

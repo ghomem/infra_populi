@@ -6,12 +6,6 @@
 class: rsyslog_server
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
-authoring:
-  minutes: 0.8
-  corrections:
-    - "2026-11-16, after the FAIL review 20261116T193506Z (authoring, no finding): mutates names the /var/log/syslog line the exercise also writes; the timer check asserts the 00:00 calendar its description states (it equals the stock daily time, so the drop-in and 1 min accuracy remain the negative evidence)."
-    - "2026-11-16, after run 20261116T193021Z (two authoring errors, behaviour as the baseline): systemctl show prints properties alphabetically (expect reordered); the rotation probe read seven lines for six expected (head -6)."
-  notes: "Wall clock 19:28:58Z to 19:29:45Z 2026-11-16, outside the worktree while the Phase 1 review ran (four templates read; the node's timer state read)."
 checks:
   - id: listener-config-rendered
     what: the TLS listener config names the node's own certificate files, the port, the session limit and the host-based tree

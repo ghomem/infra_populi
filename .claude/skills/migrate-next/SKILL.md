@@ -79,7 +79,7 @@ pregate are fine.
      - a `mismatch` control wherever a probe hands a name/user/key/cipher/vhost to a tool and takes its verdict;
      - opt-in `mutates` + `effect` for an exercise.
    - Or write a `deferred: {needs: second-node|browser|rhel|desktop, why}` file, with derived_from lines showing why.
-   - Measure the authoring time (wall clock, start → validated) into `authoring.minutes`.
+   - No hand-entered authoring time (HQ 2026-11-20 item 2): the tool computes times or none is recorded.
    - `phase3.py validate <class>`, then `phase3.py run <class>`. Commit the results:
      `P8: phase3: <class> run N results — <outcome>`.
    - An AUTHORING ERROR (the probe or expectation is wrong while the behaviour matches the baseline) is corrected in
@@ -118,7 +118,7 @@ END OF RUN: the batch report's table is `python3 .codex_state/tools/metrics.py b
 dispatch→verdict, phases prep/pregate/harness/codex/record/review/wait, expected run-2 events listed own vs inherited —
 never implied), plus `metrics.py summary` (medians/rates per path). The node_base-style composite compiles go in too.
 A `## Behaviour (Phase 3)` section: `python3 .codex_state/tools/phase3.py state <class>...` (pass / finding / deferred,
-with authoring minutes and run/review times derived from the check, result and review files), every finding's escalation
+with run/review times derived from the result and review files), every finding's escalation
 file, and every authoring correction.
 A `## Skipped tests` section names every test the full suite skipped, with its reason (the pre-commit hook prints them
 as `TESTS: skipped <module>::<test> — <reason>` and refuses a batch report that misses one).

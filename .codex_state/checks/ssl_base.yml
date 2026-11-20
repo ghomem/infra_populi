@@ -6,9 +6,6 @@
 class: ssl_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 1.6
-  notes: "20:12:00Z to 20:13:38Z 2026-11-18 (date at the start of reading the baseline and at validation), outside the worktree while sysmon_base's Phase 1 review ran; not prototyped on a node."
 purpose: >-
   Deploys a service's TLS key and certificate: the key into the private directory (0600), and the certificate bundled
   with its intermediate in the order a service needs (leaf first) into the certificates directory, and restarts the

@@ -6,9 +6,6 @@
 class: postfix_smtp_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 0.5
-  notes: "Wall clock 02:36:27Z to 02:36:57Z 2026-11-17, outside the worktree while the Phase 1 review ran; each tool verdict has a single-value mismatch."
 checks:
   # 2026-11-17 authoring correction (run 1, 20261117T023815Z, FINDINGS): the probe called smtplib.SMTP.getwelcome(),
   # which does not exist (AttributeError after a successful connect); the banner is now read from a plain socket.

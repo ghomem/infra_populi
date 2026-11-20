@@ -7,9 +7,6 @@
 class: node_base_domain_desktop
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
-authoring:
-  minutes: 1.2
-  notes: "Wall clock 02:09:09Z to 02:10:22Z 2026-11-17, outside the worktree while the Phase 1 review ran (clean-node state from the v4 inventory and the harness log)."
 uncovered:
   - what: the puppet agent daemon running on its interval (Service['puppet'] is checked as a unit that is enabled and running)
     why: a real daemon would run the catalog between the harness's runs; the lab uses a stand-in unit body

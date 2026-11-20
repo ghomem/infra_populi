@@ -13,11 +13,6 @@
 class: hashman_base
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
-authoring:
-  minutes: 5.8
-  corrections:
-    - "2026-11-16, after run 20261116T200848Z (authoring error, behaviour as the baseline): the probe merged stderr, whose first line is Python 3.12's DeprecationWarning for `import crypt` (pp_auth.py:10); the usage line is on stdout. The warning is a forward note: crypt is removed in Python 3.13, so the CLI needs work on a distribution shipping it (batch-5 report)."
-  notes: "Wall clock 20:07:19Z to 20:08:04Z 2026-11-16, outside the worktree while the Phase 1 review ran (CLI, config and interface templates read); extended 09:05Z to 09:10Z 2026-11-18 for HQ ruling C2 (two mutating checks; the flow was explored by hand for hashman_web), outside the worktree while that review ran."
 peer:
   kind: ubuntu2
   why: the database is consumed by the master's catalogs for other machines, so another machine must apply a user from it

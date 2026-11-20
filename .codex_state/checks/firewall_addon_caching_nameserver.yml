@@ -9,9 +9,6 @@
 class: firewall_addon_caching_nameserver
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 0.7
-  notes: "04:38:42Z to 04:39:26Z 2026-11-19 (date at the start of reading the baseline and at validation), outside the worktree while caching_nameserver's review ran; not prototyped on a node."
 purpose: >-
   Lets a caching nameserver's clients on the LAN interface reach it: DNS over UDP to the nameserver port arriving on
   that interface is accepted, over the base firewall's default drop.

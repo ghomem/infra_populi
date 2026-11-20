@@ -31,7 +31,7 @@ COVERED = ("--purpose", "covered", "--purpose-evidence", "the checks back up and
 
 def check_set(*checks, **top):
     data = {"class": CLS, "baseline": "release-0.9.10 (cf477c6)", "fixture": "params",
-            "authoring": {"minutes": 5}, "purpose": PURPOSE, "checks": list(checks)}
+            "purpose": PURPOSE, "checks": list(checks)}
     ids = [c["id"] for c in checks if isinstance(c, dict) and "id" in c]
     if ids:  # HQ 2026-11-18 ruling 2: the default table maps the purpose to every check of the set
         data["outcomes"] = [{"outcome": "a daily snapshot of the directory exists", "from": "manifests/backup_rsnapshot.pp:5-19",
@@ -118,7 +118,7 @@ def test_a_set_bound_to_the_baseline_validates(p3):
     (lambda d: d.update(baseline="release-0.9.8"), "!= the class's baseline 'release-0.9.10 (cf477c6)'"),
     (lambda d: d["checks"][0].update(control="invariant", why_invariant="x"), "no negative control"),
     (lambda d: d["checks"].append(check("inv", "true", control="invariant")), "an invariant needs why_invariant"),
-    (lambda d: d.update(authoring={}), "authoring.minutes"),
+    (lambda d: d.update(authoring={"minutes": 5}), "authoring is not entered by hand"),
     (lambda d: d.update(fixture="defaults"), "fixture: defaults but"),
 ])
 def test_invalid_sets_are_refused(p3, mutate, message):
@@ -439,7 +439,7 @@ def test_no_mismatch_run_when_the_check_itself_fails(p3, lab):
 
 
 # HQ 2026-11-16 item 2: behaviour state (derived) and deferrals.
-DEFERRED = {"class": CLS, "baseline": "release-0.9.10 (cf477c6)", "authoring": {"minutes": 2}, "purpose": PURPOSE,
+DEFERRED = {"class": CLS, "baseline": "release-0.9.10 (cf477c6)", "purpose": PURPOSE,
             "outcomes": [{"outcome": "the backup reaches the remote host", "from": "manifests/backup_rsnapshot.pp:13-19",
                           "uncovered": {"why": "the cron pushes to a remote backup host", "lifted_by": "ubuntu2"}}],
             "deferred": {"needs": "second-node", "why": "the cron pushes to a remote backup host that the lab lacks",
@@ -481,12 +481,12 @@ def test_state_moves_from_none_to_unreviewed_to_pass_to_stale(p3):
     run_both(p3)
     assert state_of(p3, CLS)[1] == "unreviewed"
     record, _ = p3.result()
-    assert record["duration_s"] >= 0 and record["authoring_minutes"] == 5
+    assert record["duration_s"] >= 0 and "authoring_minutes" not in record and len(record["content_sha256"]) == 64
     assert p3.run("verdict", CLS, *COVERED, "--derived", "ok", "--evidence", "e").returncode == 0
     (review,) = (p3.dir / "reviews" / CLS).glob("*.json")
     assert json.loads(review.read_text())["review_s"] is not None
     row = state_of(p3, CLS)
-    assert row[1] == "pass" and row[3] == "5 min"
+    assert row[1] == "pass" and row[3].endswith(" s")  # the author run's time (no authoring column, 2026-11-20)
     data = yaml.safe_load((p3.dir / f"{CLS}.yml").read_text())
     data["checks"][0]["what"] = "edited after the review"
     p3.write(data)
@@ -1122,3 +1122,41 @@ def test_open_uncovered_counts_the_uncovered_outcomes(tmp_path, monkeypatch):
     (tmp_path / "broken.yml").write_text("outcomes: [unclosed\n")
     assert phase3.open_uncovered("x") == 2
     assert phase3.open_uncovered("missing") == 0 and phase3.open_uncovered("broken") == 0
+
+
+# HQ 2026-11-20 item 2: authoring time is computed by the tool or not recorded; removing the hand-entered block from a
+# reviewed set must not make it stale.
+WITH_AUTHORING = b"class: x\nauthoring:\n  minutes: 1.2\n  notes: >-\n    two\n    lines\n\npurpose: p\nchecks: []\n"
+WITHOUT = b"class: x\npurpose: p\nchecks: []\n"
+
+
+def test_strip_authoring_removes_only_the_block():
+    import sys
+    sys.path.insert(0, str(TOOLS))
+    import phase3
+    assert phase3.strip_authoring(WITH_AUTHORING) == WITHOUT
+    assert phase3.strip_authoring(WITHOUT) == WITHOUT
+    assert phase3.content_sha(WITH_AUTHORING) == phase3.content_sha(WITHOUT)
+
+
+def test_a_legacy_review_still_matches_once_the_block_is_removed_and_a_real_change_does_not(tmp_path, monkeypatch):
+    import hashlib
+    import subprocess
+    import sys
+    sys.path.insert(0, str(TOOLS))
+    import phase3
+    repo = tmp_path / "repo"
+    checks = repo / "checks"
+    checks.mkdir(parents=True)
+    git = ["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t.invalid"]
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    (checks / "x.yml").write_bytes(WITH_AUTHORING)
+    subprocess.run(git + ["add", "-A"], check=True)
+    subprocess.run(git + ["commit", "-q", "-m", "set"], check=True)
+    legacy = {"verdict": "PASS", "check_file_sha256": hashlib.sha256(WITH_AUTHORING).hexdigest()}  # no content sha
+    monkeypatch.setenv("P8_PHASE3_DIR", str(checks))
+    phase3._content_shas_by_full_sha.cache_clear()
+    assert phase3.reviewed_as_is("x", legacy, WITHOUT, repo=repo)
+    assert not phase3.reviewed_as_is("x", legacy, WITHOUT.replace(b"purpose: p", b"purpose: q"), repo=repo)
+    assert phase3.reviewed_as_is("x", {"content_sha256": phase3.content_sha(WITHOUT)}, WITH_AUTHORING)
+

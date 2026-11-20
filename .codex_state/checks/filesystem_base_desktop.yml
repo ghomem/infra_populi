@@ -7,9 +7,6 @@
 class: filesystem_base_desktop
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 0.9
-  notes: "18:32:28Z (date at the start of reading the manifest) to 18:33:23Z 2026-11-19 (validation); the etcdir read added at 18:54:55Z (one command's dates), outside the worktree while backup_rsnapshot_pre's review ran; not prototyped on a node."
 node_agent:
   after: the-syslog-file-drifts
   why: the class corrects the syslog file's owner and mode only on an agent run after they changed

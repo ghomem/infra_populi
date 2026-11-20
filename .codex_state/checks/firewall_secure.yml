@@ -12,9 +12,6 @@
 class: firewall_secure
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 18
-  notes: "About 10:13Z to 10:20Z 2026-11-18 (the class applied once and its live rules read, the peer tests prototyped by hand: 5 of 20 burst connections accepted), and about 10:30Z to 10:41Z for the purpose correction (prototyped by hand: 20 of 20 from a whitelisted address, 8 held, 14 then dropped); times from the scratch files and the review, outside the worktree."
 purpose: >-
   A base firewall: INPUT and FORWARD drop by default, OUTPUT stays open, ICMP and SSH are let in, whitelisted hosts
   reach SSH freely and other hosts are rate-limited against brute force; rules Puppet does not manage are purged.

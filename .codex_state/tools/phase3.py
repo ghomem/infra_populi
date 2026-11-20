@@ -20,7 +20,7 @@ derived from the pinned baseline, probed on the node only, with negative control
                                  review files: pass | finding | deferred (<needs>) | none (no check file) |
                                  unreviewed | stale (check file changed after its review) | review-failed | invalid |
                                  unjudged (no stated purpose, or a review before the purpose judgement, HQ C1);
-                                 with authoring minutes and the author-run / reviewer-run / review times. A finding
+                                 with the author-run / reviewer-run / review times. A finding
                                  without .codex_state/escalations/<class>.behaviour.md is flagged.
   phase3.py verdict <class> --derived ok|fail --evidence TEXT [--evidence ...] --purpose covered|gap
                      --purpose-evidence TEXT
@@ -31,7 +31,7 @@ derived from the pinned baseline, probed on the node only, with negative control
                                  peer, the peer; both are recorded in the verdict).
 
 A class that cannot be tested on this lab declares a DEFERRAL instead of checks (HQ 2026-11-16):
-  class / baseline / authoring as below, plus
+  class / baseline as below, plus
   deferred: {needs: second-node|browser|rhel|desktop, why: <one or two sentences>, lifted_by: <node kind>}
   derived_from: [<baseline references showing why, as for a check>]
 The reviewer judges a deferral too (`--phase3`: `spot` prints the cited lines beside the reason, `verdict` records
@@ -44,7 +44,6 @@ Check file .codex_state/checks/<class>.yml:
   class: <short name>             # = the file name
   baseline: release-0.9.10 (cf477c6)   # = `baseline.py for <class>`
   fixture: params | defaults      # what the harness applies: the class's params file, or no params file at all
-  authoring: {minutes: N, notes: "..."}
   purpose: <the class's purpose in one or two sentences, from its own header and code: what it is FOR, not what it
            declares> (HQ 2026-11-18 ruling C1; >= 40 characters). The reviewer judges whether the checks test it.
   outcomes:                       # HQ 2026-11-18 ruling 2: the purpose as observable outcomes, the reviewer's table
@@ -119,6 +118,7 @@ revert tool, P8_PARAMS_DIR the params directory (tests). Harness metrics events 
 from __future__ import annotations
 
 import datetime as dt
+import functools
 import hashlib
 import json
 import os
@@ -345,12 +345,59 @@ def open_uncovered(cls: str) -> int:
     return sum(1 for r in rows if isinstance(r, dict) and "uncovered" in r)
 
 
+def strip_authoring(raw: bytes) -> bytes:
+    """The set without a top-level `authoring:` block (the key line and every indented or blank line after it): HQ
+    2026-11-20 item 2 removed the hand-entered field, which must not make a reviewed set stale."""
+    out, skipping = [], False
+    for line in raw.decode("utf-8").splitlines(keepends=True):
+        if line.startswith("authoring:"):
+            skipping = True
+            continue
+        if skipping and (line.startswith((" ", "\t")) or not line.strip()):
+            continue
+        skipping = False
+        out.append(line)
+    return "".join(out).encode("utf-8")
+
+
+def content_sha(raw: bytes) -> str:
+    return hashlib.sha256(strip_authoring(raw)).hexdigest()
+
+
+@functools.lru_cache(maxsize=None)
+def _content_shas_by_full_sha(path: str, repo: str) -> dict:
+    """Every committed version of a set file: its full-file sha256 -> its content sha (older records name only the
+    former). Empty outside a git work tree."""
+    rel = os.path.relpath(path, repo)
+    log = subprocess.run(["git", "-C", repo, "log", "--format=%H", "--", rel], capture_output=True, text=True)
+    out = {}
+    for commit in log.stdout.split() if log.returncode == 0 else []:
+        blob = subprocess.run(["git", "-C", repo, "show", f"{commit}:{rel}"], capture_output=True)
+        if blob.returncode == 0:
+            out.setdefault(hashlib.sha256(blob.stdout).hexdigest(), content_sha(blob.stdout))
+    return out
+
+
+def reviewed_as_is(cls: str, record: dict | None, raw: bytes, repo: Path | None = None) -> bool:
+    """Whether `record` (a review or a result) judged the set as it stands: the same file, or the same file but for the
+    removed `authoring:` block (its own content sha, or for an older record the content sha of the git version its
+    full-file sha names)."""
+    if not record:
+        return False
+    if record.get("check_file_sha256") == hashlib.sha256(raw).hexdigest():
+        return True
+    mine = content_sha(raw)
+    if record.get("content_sha256"):
+        return record["content_sha256"] == mine
+    path = phase3_dir() / f"{cls}.yml"
+    return _content_shas_by_full_sha(str(path), str(repo or REPO)).get(record.get("check_file_sha256")) == mine
+
+
 def approved_unchanged(cls: str, raw: bytes) -> bool:
     """HQ batch-15 ruling 3's scope: a set whose latest review passed it as it stands keeps the earlier uncovered rule
     until the scheduled sweep; a new or changed set meets the new rule at once."""
     review = latest_review(cls)
-    return bool(review) and review.get("verdict") == "PASS" and \
-        review.get("check_file_sha256") == hashlib.sha256(raw).hexdigest()
+    return bool(review) and review.get("verdict") == "PASS" and reviewed_as_is(cls, review, raw)
 
 
 def outcome_problems(data: dict, strict: bool = True) -> list[str]:
@@ -404,9 +451,8 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
         problems.append(f"class {data.get('class')!r} != file name {cls!r}")
     if data.get("baseline") != label(base):
         problems.append(f"baseline {data.get('baseline')!r} != the class's baseline {label(base)!r}")
-    minutes = (data.get("authoring") or {}).get("minutes")
-    if not isinstance(minutes, (int, float)) or minutes <= 0:
-        problems.append("authoring.minutes (authoring time, minutes) is required")
+    if "authoring" in data:  # HQ 2026-11-20 item 2: computed by the tool or not recorded
+        problems.append("authoring is not entered by hand (HQ 2026-11-20 item 2): remove the block")
     for i, u in enumerate(data.get("uncovered") or []):
         if not isinstance(u, dict) or set(u) != {"what", "why", "lifted_by"} or len(str(u.get("why", ""))) < 20:
             problems.append(f"uncovered[{i}] takes what, why (>= 20 characters) and lifted_by")
@@ -852,11 +898,11 @@ def cmd_run(cls: str, role: str) -> int:
     started = now()
     problems, data, raw = validate(cls)
     record = {"class": cls, "role": role, "at": started, "runner": git_head(), "baseline": data.get("baseline"),
-              "check_file_sha256": hashlib.sha256(raw).hexdigest(), "valid": not problems, "problems": problems,
+              "check_file_sha256": hashlib.sha256(raw).hexdigest(), "content_sha256": content_sha(raw),
+              "valid": not problems, "problems": problems,
               "clean": [], "apply": None, "applied": [], "findings": [], "not_run": [], "outcome": None}
 
     t0 = time.monotonic()
-    record["authoring_minutes"] = (data.get("authoring") or {}).get("minutes")
 
     def finish(outcome: str, rc: int) -> int:
         # HQ 2026-11-17 batch-8 ruling 3: each node reverted for this run is fresh if it kept the boot of that revert
@@ -1107,7 +1153,8 @@ def cmd_verdict(cls: str, derived: str, evidence: list[str], purpose: str = "", 
                   "purpose": "ok" if purpose == "covered" else "fail"}
         verdict = "PASS" if all(v == "ok" for v in checks.values()) else "FAIL"
         record = {"class": cls, "at": now(), "verdict": verdict, "deferral": True, "checks": checks,
-                  "evidence": evidence, "check_file_sha256": hashlib.sha256(raw).hexdigest(), "findings": [],
+                  "evidence": evidence, "check_file_sha256": hashlib.sha256(raw).hexdigest(),
+                  "content_sha256": content_sha(raw), "findings": [],
                   "review_s": None}
         out = phase3_dir() / "reviews" / cls
         out.mkdir(parents=True, exist_ok=True)
@@ -1124,8 +1171,9 @@ def cmd_verdict(cls: str, derived: str, evidence: list[str], purpose: str = "", 
     checks["reviewer_run"] = "ok" if mine and mine["valid"] and mine["outcome"] in ("ALL_PASS", "FINDINGS") else "fail"
     checks["author_run"] = "ok" if theirs and theirs["valid"] and theirs["outcome"] in ("ALL_PASS", "FINDINGS") \
         else "fail"
-    same = bool(mine and theirs) and outcomes(mine) == outcomes(theirs) \
-        and mine["check_file_sha256"] == theirs["check_file_sha256"]
+    same = bool(mine and theirs) and outcomes(mine) == outcomes(theirs) and (
+        mine["check_file_sha256"] == theirs["check_file_sha256"]
+        or (mine.get("content_sha256") or "x") == (theirs.get("content_sha256") or "y"))
     checks["reproduced"] = "ok" if same else "fail"
     checks["derived_from"] = derived
     # HQ 2026-11-17 batch-8 ruling 3: the reviewer's run had every node fresh (with a peer: both), recorded below.
@@ -1138,6 +1186,7 @@ def cmd_verdict(cls: str, derived: str, evidence: list[str], purpose: str = "", 
     review_s = round((dt.datetime.now(dt.timezone.utc) - started).total_seconds(), 1) if started else None
     record = {"class": cls, "at": now(), "verdict": verdict, "checks": checks, "evidence": evidence,
               "review_s": review_s, "check_file_sha256": mine and mine["check_file_sha256"],
+              "content_sha256": mine and mine.get("content_sha256"),
               "reviewer_result": mine and f"{mine['at']}-reviewer", "author_result": theirs and f"{theirs['at']}-author",
               "findings": (mine or {}).get("findings", []), "nodes": ran}
     out = phase3_dir() / "reviews" / cls
@@ -1165,12 +1214,11 @@ def latest_review(cls: str) -> dict | None:
 
 def behaviour_state(cls: str) -> dict:
     """Derived (P2) from .codex_state/checks: the check file, the latest results and the latest phase-3 review."""
-    row = {"class": cls, "state": "none", "detail": "", "authoring_min": None, "author_run_s": None,
+    row = {"class": cls, "state": "none", "detail": "", "author_run_s": None,
            "reviewer_run_s": None, "review_s": None}
     if not (phase3_dir() / f"{cls}.yml").is_file():
         return row
     problems, data, raw = validate(cls)
-    row["authoring_min"] = (data.get("authoring") or {}).get("minutes")
     # HQ 2026-11-18 ruling C1: a set that states no purpose yet, or whose review predates the purpose judgement, is
     # `unjudged` (its earlier PASS stands as history, not as behaviour approval)
     if problems and set(problems) <= {PURPOSE_MISSING, OUTCOMES_MISSING}:
@@ -1181,7 +1229,7 @@ def behaviour_state(cls: str) -> dict:
     if "deferred" in data:
         review = latest_review(cls)
         d = data["deferred"]
-        if not review or review.get("check_file_sha256") != hashlib.sha256(raw).hexdigest():
+        if not review or not reviewed_as_is(cls, review, raw):
             return {**row, "state": "unreviewed", "detail": f"deferral ({d['needs']}) not yet judged by the reviewer"}
         if review["verdict"] != "PASS":
             return {**row, "state": "review-failed", "detail": "deferral rejected"}
@@ -1194,9 +1242,8 @@ def behaviour_state(cls: str) -> dict:
     row["review_s"] = (review or {}).get("review_s")
     if not review:
         return {**row, "state": "unreviewed", "detail": (author or {}).get("outcome") or "not run"}
-    sha = hashlib.sha256(raw).hexdigest()
-    reviewed_sha = review.get("check_file_sha256") or (reviewer or {}).get("check_file_sha256")
-    if reviewed_sha != sha:
+    judged = review if review.get("check_file_sha256") else reviewer
+    if not reviewed_as_is(cls, judged, raw):
         return {**row, "state": "stale", "detail": "the check file changed after its review"}
     if review["verdict"] != "PASS":
         failed = ", ".join(k for k, v in review["checks"].items() if v != "ok")
@@ -1215,10 +1262,10 @@ def cmd_state(classes: list[str]) -> int:
         classes = sorted(p.stem for p in phase3_dir().glob("*.yml"))
     rows = [behaviour_state(c) for c in classes]
     m = lambda v, unit: "–" if v is None else f"{v:g}{unit}"  # noqa: E731
-    print("| class | behaviour | detail | authoring | author run | reviewer run | review |")
-    print("|---|---|---|---:|---:|---:|---:|")
+    print("| class | behaviour | detail | author run | reviewer run | review |")
+    print("|---|---|---|---:|---:|---:|")
     for r in rows:
-        print(f"| {r['class']} | {r['state']} | {r['detail']} | {m(r['authoring_min'], ' min')} | "
+        print(f"| {r['class']} | {r['state']} | {r['detail']} | "
               f"{m(r['author_run_s'], ' s')} | {m(r['reviewer_run_s'], ' s')} | {m(r['review_s'], ' s')} |")
     counts: dict[str, int] = {}
     for r in rows:

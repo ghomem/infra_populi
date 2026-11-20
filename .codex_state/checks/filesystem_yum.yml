@@ -6,9 +6,6 @@
 class: filesystem_yum
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
-authoring:
-  minutes: 0.6
-  notes: "11:01:10Z to 11:01:43Z 2026-11-18 (the scripts read from 11:01:10Z, the set composed and validated in one command at 11:01:43Z), outside the worktree while firewall_secure's re-review ran."
 purpose: >-
   Yum update helpers for RedHat-family servers: a surface script that updates the exposed packages (ssh, TLS, web
   servers) one by one, and a full update script.

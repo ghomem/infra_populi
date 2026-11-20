@@ -8,9 +8,6 @@
 class: nginx_base
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
-authoring:
-  minutes: 0.6
-  notes: "Wall clock 20:53:45Z to 20:54:18Z 2026-11-17, write to valid (no lab run active); the baseline manifest and puppet-nginx 8.4.0's nginx.conf.erb, config.pp and params.pp were read before the clock started."
 purpose: >-
   The common nginx base of every web frontend: nginx installed and running from the distribution's package with a
   valid configuration (dynamic modules loaded once), auto worker processes, no version in the Server header, the

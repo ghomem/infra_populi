@@ -24,12 +24,6 @@
 class: postfix_smtp_node
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
-authoring:
-  minutes: 1.4
-  notes: "Wall clock 2026-11-16T13:26:46Z to 13:27:53Z (templates read, written, clean-node inventory consulted for the invariant and the aliases control, validated; one YAML quoting error caught by the validator) outside the worktree while the Phase 1 review ran. Corrected 2026-11-16 after run 20261116T133127Z (FINDINGS on
-    postfix-config-sane): AUTHORING ERROR: the claim of the check is rc 0 of `postfix check`; the expectation wrongly demanded no other
-    output, and postfix 3.8 warns 'using backwards-compatible default settings' because the baseline main.cf sets no
-    compatibility_level (upstream configuration, an observation, not a defect). 0.3 min. The Phase 1 pregate flagged @domain in main.cf: a false positive (a comment line, not ERB). Extended 2026-11-19 (purpose, outcomes, the relay with a peer, size limit, no open relay): its authoring time was not measured (no start time noted), so it is absent; minutes above are the first authoring only."
 purpose: >-
   Lets a node send mail through the organisation's relay: postfix hands every message to the relayhost on the relay
   port, authenticated as the node's relay user over opportunistic TLS, refuses messages over the size limit, and does

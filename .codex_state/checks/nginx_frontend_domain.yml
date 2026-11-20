@@ -8,9 +8,6 @@
 class: nginx_frontend_domain
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-authoring:
-  minutes: 1.4
-  notes: "20:45:07Z to 20:46:32Z 2026-11-18 (date at the start of reading the baseline and at validation), outside the worktree while sysmon_base's Phase 3 review ran; not prototyped on a node."
 purpose: >-
   A TLS frontend for one domain in nginx: plain HTTP on the domain and on www redirects to HTTPS, and HTTPS on the
   domain and www proxies to the domain's backends (an upstream), with the domain's certificate and modern TLS settings.
