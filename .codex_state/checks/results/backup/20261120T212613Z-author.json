@@ -1,0 +1,225 @@
+{
+ "class": "backup",
+ "role": "author",
+ "at": "20261120T212613Z",
+ "runner": "ac49d94",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "0c1884c55473c63e5a905a35a38a13f3a9ba3a5056ad3c2f45ef24778a1dbeb1",
+ "content_sha256": "0c1884c55473c63e5a905a35a38a13f3a9ba3a5056ad3c2f45ef24778a1dbeb1",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "script-installed-with-the-parameters",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/backup-backup.sh': No such file or directory\ngrep: /opt/puppet-infrastructure/bin/backup-backup.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "cron-runs-it-at-2300",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "aged-archives-are-planted",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 96: cd: /opt/puppet-infrastructure/backup: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-run-writes-a-restorable-gzip-tar",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "rc \n\n",
+   "stderr": "cat: /run/p8test-backup/run.rc: No such file or directory\ncat: /run/p8test-backup/archive: No such file or directory\ngzip: .gz: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-run-deletes-only-its-own-old-archives",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 96: cd: /opt/puppet-infrastructure/backup: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-failed-run-is-loud",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "cat: /run/p8test-backup-fail/rc: No such file or directory\nbash: line 96: [: : integer expression expected\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "uppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Backup[backup]/File[/opt/puppet-infrastructure/bin/backup-backup.sh]/ensure: defined content as '{sha256}2f986b46b04aefbc3c5b6ae28483f1ef56f00e65cbbad0c2fbd5176d19ecbb79'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Backup[backup]/Cron[cron_backup_backup]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.33 seconds\u001b[0m\nRUN1_EVENTS: 9 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795210052'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.12 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::backup: 2 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::Backup[backup]\n  File[/opt/puppet-infrastructure/bin/backup-backup.sh]\n  Cron[cron_backup_backup]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP backup b9954ce3ac21\n"
+ },
+ "applied": [
+  {
+   "id": "script-installed-with-the-parameters",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\nFILETARGETDIRS=/etc/default\nFILEPREFIX=p8test-backup\nBACKDIR=/opt/puppet-infrastructure/backup\nNC=7\nCOMPRESSION=true\n",
+   "stderr": ""
+  },
+  {
+   "id": "cron-runs-it-at-2300",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "# Puppet Name: cron_backup_backup\n0 23 * * * /opt/puppet-infrastructure/bin/backup-backup.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "aged-archives-are-planted",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "./p8test-backup-old.tar.gz ./p8test-other-old.tar.gz \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates in /opt/puppet-infrastructure/backup: p8test-backup-old.tar.gz dated 8 days ago, p8test-backup-recent.tar.gz dated 3 days ago, and p8test-other-old.tar.gz (another prefix) dated 30 days ago",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-run-writes-a-restorable-gzip-tar",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0\np8test-backup-DATE.tar.gz\ngzip-ok\nrestores-byte-for-byte\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs /opt/puppet-infrastructure/bin/backup-backup.sh once as root (a new archive in the backup directory; the planted 8-day-old file of its prefix is deleted); restores etc/default/cron from the archive into /run/p8test-backup",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-run-deletes-only-its-own-old-archives",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test-backup-DATE.tar.gz p8test-backup-recent.tar.gz p8test-other-old.tar.gz \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond listing the backup directory (declared mutating so it runs after the run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-failed-run-is-loud",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\nold archives kept\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "sets the immutable attribute on /opt/puppet-infrastructure/backup (chattr +i), runs backup-backup.sh once as root, clears the attribute (chattr -i); the script's exit code and stderr go to /run/p8test-backup-fail (rc, stderr)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [
+  "a-failed-run-is-loud"
+ ],
+ "not_run": [],
+ "outcome": "FINDINGS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "93812ff0-341f-44ac-8f16-b40fedac8ae6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "93812ff0-341f-44ac-8f16-b40fedac8ae6",
+   "fresh": true
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "the per-title script is installed root:root 0755 with the parameters, and the user's crontab runs it at 23:00 every day of the month",
+   "checks": [
+    "script-installed-with-the-parameters",
+    "cron-runs-it-at-2300"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a run writes a dated gzip tar of the base directory into the backup directory, from which a file restores byte for byte",
+   "checks": [
+    "aged-archives-are-planted",
+    "a-run-writes-a-restorable-gzip-tar"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the run deletes the prefix's archives older than ndays-1 full days and keeps newer ones and other prefixes' files",
+   "checks": [
+    "aged-archives-are-planted",
+    "a-run-deletes-only-its-own-old-archives"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a run that cannot write its archive fails loudly (non-zero exit, an error line on stderr and in syslog) and deletes no old archive",
+   "checks": [
+    "a-failed-run-is-loud"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "cron itself firing at 23:00",
+   "uncovered": {
+    "why": "a run would have to wait for 23:00; the crontab entry is checked and the script it names is run by hand",
+    "lifted_by": "capability: a clock-controlled cron trigger inside a phase3 run",
+    "evidence": "phase3.py runs probes and agent runs only; it has no step that advances or waits for the node's cron schedule"
+   }
+  },
+  {
+   "outcome": "compression off, several base directories, another user, time or monthday",
+   "uncovered": {
+    "why": "parameter variants; one set holds one params fixture (compression on, one base directory, root, 23:00)",
+    "lifted_by": "capability: more than one params fixture per set",
+    "evidence": "phase3.py applies the class once with its single `fixture` (params or defaults)"
+   }
+  }
+ ],
+ "duration_s": 83.6
+}

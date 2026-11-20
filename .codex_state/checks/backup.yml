@@ -4,8 +4,10 @@
 # monthday, compression true. Written 2026-11-19 (backfill batch 5): the script runs by hand as behaviour (a gzip tar of
 # the base directory, restorable byte for byte), and retention is shown with planted archives of known ages: with
 # ndays 7 the script deletes its own prefix's files older than 6 full days (find -mtime +6), and nothing else.
-# 2026-11-20 (HQ after batch 16, item 1b): a run whose archive cannot be written must fail loudly. The check makes the
-# backup directory immutable (chattr +i: even root cannot create a file in it) and runs the script as cron would.
+# 2026-11-20 (HQ after batch 16, item 1b): a run whose archive cannot be written must fail loudly. The check mounts the
+# backup directory read-only over itself (a read-only bind mount: even root cannot write into it) and runs the script as
+# cron would. Authoring error in run 20261120T212613Z: chattr +i only blocks new names, and the archive of the same
+# minute (written by the check before it) was simply rewritten, so tar did not fail; the read-only mount blocks both.
 class: backup
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -121,7 +123,7 @@ checks:
 
   - id: a-failed-run-is-loud
     what: >-
-      with the backup directory made unwritable (immutable), the script run as cron would exits non-zero, writes an
+      with the backup directory made unwritable (read-only), the script run as cron would exits non-zero, writes an
       ERROR line on stderr and to syslog, and leaves the prefix's archives in place (the 3-day-old one is still there)
     control: negative
     timeout: 120
@@ -129,14 +131,14 @@ checks:
       - {path: templates/backup/backup.sh.erb, lines: "31", text: "tar $EXCLUDELINE -cv${COMPRESSION_FLAG}f $BACKDIR/$FILEPREFIX-`date +%Y-%b-%d-%Hh%Mm`.tar.gz $FILETARGETDIRS"}
       - {path: manifests/backup.pp, lines: "21-28", text: "command   => \"${bindir}/backup-${title}.sh\","}
     mutates: >-
-      sets the immutable attribute on /opt/puppet-infrastructure/backup (chattr +i), runs backup-backup.sh once as root,
-      clears the attribute (chattr -i); the script's exit code and stderr go to /run/p8test-backup-fail (rc, stderr)
+      bind-mounts /opt/puppet-infrastructure/backup read-only over itself, runs backup-backup.sh once as root, unmounts
+      it; the script's exit code and stderr go to /run/p8test-backup-fail (rc, stderr)
     probe: |
       d=/opt/puppet-infrastructure/backup
       install -d -m 0700 /run/p8test-backup-fail
-      chattr +i "$d"
+      mount --bind "$d" "$d" && mount -o remount,bind,ro "$d"
       /opt/puppet-infrastructure/bin/backup-backup.sh >/dev/null 2>/run/p8test-backup-fail/stderr; echo $? > /run/p8test-backup-fail/rc
-      chattr -i "$d"
+      umount "$d"
     effect: |
       [ "$(cat /run/p8test-backup-fail/rc)" -ne 0 ] && echo "exit non-zero"
       p8_count '^ERROR: backup of /etc/default into /opt/puppet-infrastructure/backup failed' /run/p8test-backup-fail/stderr
