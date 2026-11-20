@@ -1,0 +1,35 @@
+{
+ "class": "user_kde_lock_screen",
+ "at": "20261120T103657Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "script-installed-root-executable: user_kde_lock_screen_common.pp:8-12 declares the file in bindir with owner root, group root, mode 0755; filesystem::bindir resolves on the master to /opt/puppet-infrastructure/bin, so stat '%U %G %a' expecting 'root root 755' tests exactly those lines",
+  "lock-settings-in-the-users-kscreenlockerrc (configure_lock_screen.sh:66-95): the script writes Autolock=true, LockOnResume=true, Timeout=$1 and LockGrace=$2 under [Daemon] of $HOME/.config/kscreenlockerrc, running as the user (exec user => title); the probe reads those four keys of p8testuser's file plus its owner, and the expected values follow from those lines with the fixture's arguments 2 and 0",
+  "lock-settings-in-the-users-kscreenlockerrc (user_kde_lock_screen.pp:5-6): the defaults are timeout 5 and grace 0; the params fixture {screenlock_timeout_minutes: 2} overrides only the timeout, so Timeout=2 and LockGrace=0 are what the code produces",
+  "purpose covered: The stated purpose (enforce the user's KDE screen lock: idle lock after the timeout, lock on resume, grace, applied to the user's own settings and reloaded live on each agent run while logged in, so a user who disables it gets it back) matches the header ('updates the screen locker settings for a specific user') and the baseline define plus script. Tested on kubuntu with a real Plasma login: the root-owned 0755 script, the skip note when the harness ran with the user logged out, the four settings in the user's kscreenlockerrc, the logged-in note with no D-Bus fallback (live reload worked), the idle session actually locking 120-290 s after login (measured contrast: no lock within 450 s without the class), and the user turning Autolock off (still unlocked 150 s later) then the node's agent run restoring Autolock=true and the session locking. Uncovered, honestly: the grace period's effect (needs input injection; I confirmed xdotool, ydotool, xte, wtype and evemu-event are all missing on p8lab-kubuntu); lock on resume (the runner has no suspend step and holds a sleep inhibitor; LockOnResume=true itself is checked in the file); other timeout/grace values (one params fixture per set). Not in the table and not needed for the purpose: the 16.04 kwriteconfig branch (Ubuntu 24.04 only) and the D-Bus-unavailable fallback (a degraded path; the checks assert it did not trigger)."
+ ],
+ "review_s": 442.0,
+ "check_file_sha256": "a9a9cd9057e9c4617b1c0f714d1ab58b4e08c54b9ea2632f729035e4b3db1d9c",
+ "content_sha256": "a9a9cd9057e9c4617b1c0f714d1ab58b4e08c54b9ea2632f729035e4b3db1d9c",
+ "reviewer_result": "20261120T102936Z-reviewer",
+ "author_result": "20261120T102109Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "b7e56031-e925-4a01-858b-56c6abc96d12",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "b7e56031-e925-4a01-858b-56c6abc96d12",
+   "fresh": true
+  }
+ }
+}
