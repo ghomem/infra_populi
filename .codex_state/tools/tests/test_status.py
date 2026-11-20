@@ -84,9 +84,30 @@ def test_repo_sweep_result_is_8_verified(status):
     # commit was refused for network_static's local change #11): its last verdict, a PASS, still stands. A FAIL does not.
     verified = {n for n, (state, verdict) in states.items() if state == status.VERIFIED or (
         state == status.PENDING_RECONCILIATION and (verdict or {}).get("verdict") == "PASS")}
+    # A class whose latest review is a recorded FAIL of its current migration is out of the verified set on the record,
+    # not silently (Salatiel 2026-11-20: a FAIL review of a re-migrated checkpoint class blocked every commit, its own
+    # record included, while the reviewer refuses an uncommitted fix). No verdict, or a FAIL of an older migration, is
+    # still a silent loss.
+    failed_on_record = {n for n, (state, verdict) in states.items()
+                        if state == status.PENDING_RECONCILIATION and recorded_fail_of(migrations[n], verdict)}
     # checkpoint 1: exactly the 8 sweep PASSes; grows only through new v2 PASSes after fix commits
     assert {"backup", "filesystem_base", "filesystem_base_desktop", "hello_world_flask_common",
-            "network_static", "puppet_backup", "puppet_commush", "user_kde_lock_screen_common"} <= verified
+            "network_static", "puppet_backup", "puppet_commush", "user_kde_lock_screen_common"} <= verified | failed_on_record
+
+
+def recorded_fail_of(migration, verdict) -> bool:
+    """The latest review is a FAIL that judged this migration commit."""
+    reviewed = (verdict or {}).get("migrate_commit") or ""
+    return (verdict or {}).get("verdict") == "FAIL" and bool(reviewed) and migration.commit.startswith(reviewed)
+
+
+def test_only_a_fail_of_the_current_migration_excuses_a_checkpoint_class(status):
+    current = status.generator.MigrationCommit(commit="4651372abcdef", date="2026-11-20")
+    assert recorded_fail_of(current, {"verdict": "FAIL", "migrate_commit": "4651372"})
+    assert not recorded_fail_of(current, {"verdict": "FAIL", "migrate_commit": "1dacd02"})  # an older migration's FAIL
+    assert not recorded_fail_of(current, {"verdict": "FAIL"})  # judged no commit
+    assert not recorded_fail_of(current, {"verdict": "PASS", "migrate_commit": "4651372"})
+    assert not recorded_fail_of(current, None)  # no verdict: a silent loss
 
 
 # HQ batch-7 ruling 3: "verified" splits into verified and verified with stand-in; what lifts each stand-in comes from

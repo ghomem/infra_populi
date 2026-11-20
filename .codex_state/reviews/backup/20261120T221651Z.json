@@ -1,0 +1,106 @@
+{
+ "schema": 1,
+ "class": "backup",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-20T22:16:51Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "3c25bcbd22a7",
+ "migrate_subject": "P8: migrate puppet_infrastructure::backup",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 3c25bcbd22a7; 9 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/backup.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "fail",
+   "detail": [
+    "local change #14: check puppet_backup's the-backup-directory-exists did not pass in 20261120T220922Z-author.json",
+    "local change #14: check puppet_backup's the-backup-directory-exists did not pass in the latest result 20261120T220922Z-author.json on the current code",
+    "local change #15: check backup's a-failed-run-is-loud did not pass in 20261120T220922Z-author.json",
+    "local change #15: check backup's a-failed-run-is-loud did not pass in the latest result 20261120T220922Z-author.json on the current code"
+   ]
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-cron_core', '1.3.0'), ('puppetlabs-stdlib', '9.7.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 10 catalog events; COVERAGE puppet_infrastructure::backup: 3 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A manifests/backup.pp:1-2: migration header only (release-0.9.10 manifest, local changes #14/#15, cron_core 1.3.0 and stdlib 9.7.0 for ensure_resource, matching the master)",
+   "DIFF A manifests/backup.pp:16-18: exactly local change #14 - ensure_resource('file', $backdir, {ensure=>directory, owner=>$user, group=>root, mode=>0755}) plus its comment; no other resource, attribute or param changed; minimal for puppet_backup's the-backup-directory-exists (absent before); no other manifest declares the per-backup $backdir (filesystem_base declares only filesystem::backdir, puppet_backup/sysmon_backup pass ${systype}::backdir), so ensure_resource cannot conflict",
+   "DIFF A templates/backup/backup.sh.erb:33-40: exactly local change #15 - rc=$? directly after the tar line (only a comment between), on non-zero the ERROR line to stderr and logger -p user.err -t backup-$FILEPREFIX, exit $rc before the find/rm retention step; rest of the script byte-identical to the baseline; minimal for backup's a-failed-run-is-loud",
+   "DIFF B equals DIFF A apart from replacing the earlier release-0.9.8 header (re-migration); no baseline comment removed",
+   "records=fail is mechanical: rows #14/#15 cite check ids with a class prefix (\"puppet_backup's the-backup-directory-exists\", \"backup's a-failed-run-is-loud\") which the tool takes as the literal id, and row #14's named after file results/backup/20261120T220922Z-author holds the-backup-directory-is-declared, not puppet_backup's check; in the result files themselves a-failed-run-is-loud passed (backup 220922Z) and the-backup-directory-exists passed (puppet_backup 221042Z), but the rows as written do not satisfy the records check"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 13,
+  "removed": 0,
+  "non_comment_changes": 8,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest; local changes #14: the backup directory declared here; #15: the script fails loudly.",
+  "# Module dependencies: puppetlabs-cron_core 1.3.0 (vendored with Puppet 8.24.2); puppetlabs-stdlib 9.7.0 (ensure_resource)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 10,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::backup: 3 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 31.752,
+   "master_check_s": 0.597,
+   "poweroff_s": 0.999,
+   "restore_s": 0.488,
+   "boot_to_ssh_s": 18.103,
+   "apt_update_s": 10.916,
+   "verify_s": 0.649,
+   "nic1_rx_bytes": 13177575,
+   "apt_mirror": "primary"
+  },
+  "log": ".codex_state/logs/reviews/backup.20261120T221503Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "ubuntu"
+}
