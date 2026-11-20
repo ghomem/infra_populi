@@ -1,0 +1,38 @@
+{
+ "class": "puppet_backup",
+ "at": "20261120T122809Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-backup-directory-exists: backup.sh.erb:31 writes the archive to $BACKDIR/$FILEPREFIX-<date>.tar.gz (BACKDIR=puppet::backdir = /opt/puppet-infrastructure/backup/puppet per puppet_backup.pp:8 and the applied script's BACKDIR line); tar cannot create its output file without that directory, so testing that the directory exists after the apply tests a precondition of the declared behaviour; no baseline line declares it (backup.pp has only the script file and cron; filesystem_base.pp:13-24 declares only filesystem::backdir, the parent), so 'present' is the purpose outcome, not a value the code produces - correctly a finding, not a derivation error",
+  "a-run-writes-a-restorable-gzip-tar (backup.sh.erb:31): the line tars FILETARGETDIRS=/etc/puppetlabs/ with -cv${COMPRESSION_FLAG}f into BACKDIR/FILEPREFIX-`date +%Y-%b-%d-%Hh%Mm`.tar.gz; the effect normalises exactly that name pattern (-YYYY-Mon-DD-HHhMMm.tar.gz) to puppet.example.com-DATE.tar.gz, and member etc/puppetlabs/puppet/puppet.conf (tar strips the leading /) restored byte for byte by cmp shows the archive holds /etc/puppetlabs; the action is the cron command itself (backup.pp:22 command => ${bindir}/backup-${title}.sh), mutates declares the archive, the deletion of the planted old file and the /run/p8test-backup scratch, and the effect (gzip -t, cmp) checks the result, not the script's output",
+  "a-run-writes-a-restorable-gzip-tar (backup.sh.erb:14-20): COMPRESSION=<%= @compression %> with COMPRESSION_FLAG=z unless the value is 'false'; puppet_backup.pp:9 defaults puppet::compression to true and the applied script shows COMPRESSION=true, so the flag is z and the archive must be gzip - the effect's gzip -t + tar -xzf test exactly that",
+  "finding the-backup-directory-exists: after a GREEN gate-v2 apply (script and cron created) the probe printed 'absent' for /opt/puppet-infrastructure/backup/puppet, expected 'present'; consequently the three mutating checks (aged-archives-are-planted, a-run-writes-a-restorable-gzip-tar, a-run-deletes-only-its-own-old-archives) were not run by the runner",
+  "purpose covered: Purpose (nightly dated gzip tar of /etc/puppetlabs into the puppet backup directory, keeping backdays of archives) matches the header ('provides puppet backups'), puppet_backup.pp:5-13, backup.pp:14-28 and the whole template (EXCLUDEDIRS and TARGETUSER are empty in the baseline template, so no exclusion/chown outcome exists). The outcomes table covers every outcome: script values from the puppet:: Hiera keys + root crontab 0 23 * * * (passed), backup directory present (finding), a by-hand run of the exact cron command producing a restorable gzip tar, and retention (find -maxdepth 1 -mtime +9 -name 'puppet.example.com*': planted 12-day file deleted, 5-day file and another prefix's 30-day file kept - correct for NC=10, INTERVAL=1, DAYS=9). Only cron actually firing at 23:00 is uncovered; its reason holds (phase3.py has no clock-advancing or waiting step; the crontab entry and the command it names are both tested) and it is lifted by a capability, not an active node kind. In this run the run/retention outcomes were not exercised because the runner gated them behind the directory finding; the set itself covers them."
+ ],
+ "review_s": 105.6,
+ "check_file_sha256": "7768e5e5c24ce335e92725447adb5cc732fa8f3199c80156e662bde33a729cf3",
+ "content_sha256": "7768e5e5c24ce335e92725447adb5cc732fa8f3199c80156e662bde33a729cf3",
+ "reviewer_result": "20261120T122624Z-reviewer",
+ "author_result": "20261120T122402Z-author",
+ "findings": [
+  "the-backup-directory-exists"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "7fe0f101-19d7-442e-a543-351d27a033fc",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "7fe0f101-19d7-442e-a543-351d27a033fc",
+   "fresh": true
+  }
+ }
+}

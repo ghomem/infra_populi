@@ -1,0 +1,197 @@
+{
+ "class": "puppet_backup",
+ "role": "reviewer",
+ "at": "20261120T122624Z",
+ "runner": "a2c8f1f",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "7768e5e5c24ce335e92725447adb5cc732fa8f3199c80156e662bde33a729cf3",
+ "content_sha256": "7768e5e5c24ce335e92725447adb5cc732fa8f3199c80156e662bde33a729cf3",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "script-carries-the-puppet-hiera-values",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/backup-puppet.sh': No such file or directory\ngrep: /opt/puppet-infrastructure/bin/backup-puppet.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "cron-runs-it-at-2300",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-backup-directory-exists",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "absent\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "aged-archives-are-planted",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 96: cd: /opt/puppet-infrastructure/backup/puppet: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-run-writes-a-restorable-gzip-tar",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "rc \n\n",
+   "stderr": "cat: /run/p8test-backup/run.rc: No such file or directory\ncat: /run/p8test-backup/archive: No such file or directory\ngzip: .gz: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-run-deletes-only-its-own-old-archives",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 96: cd: /opt/puppet-infrastructure/backup/puppet: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": " created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Puppet_backup/Puppet_infrastructure::Backup[puppet]/File[/opt/puppet-infrastructure/bin/backup-puppet.sh]/ensure: defined content as '{sha256}a66ed7643bfaa0586090f4ea47ddbc99edf5e09d1112111ae91d84ec467ab91b'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Puppet_backup/Puppet_infrastructure::Backup[puppet]/Cron[cron_puppet_backup]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.14 seconds\u001b[0m\nRUN1_EVENTS: 9 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795177633'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.09 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::puppet_backup: 2 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::Backup[puppet]\n  File[/opt/puppet-infrastructure/bin/backup-puppet.sh]\n  Cron[cron_puppet_backup]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP puppet_backup faf1df9367f2\n"
+ },
+ "applied": [
+  {
+   "id": "script-carries-the-puppet-hiera-values",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\nFILETARGETDIRS=/etc/puppetlabs/\nFILEPREFIX=puppet.example.com\nBACKDIR=/opt/puppet-infrastructure/backup/puppet\nNC=10\nCOMPRESSION=true\n",
+   "stderr": ""
+  },
+  {
+   "id": "cron-runs-it-at-2300",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "# Puppet Name: cron_puppet_backup\n0 23 * * * /opt/puppet-infrastructure/bin/backup-puppet.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-backup-directory-exists",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "absent\n",
+   "stderr": ""
+  },
+  {
+   "id": "aged-archives-are-planted",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (the-backup-directory-exists)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "a-run-writes-a-restorable-gzip-tar",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (the-backup-directory-exists)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "a-run-deletes-only-its-own-old-archives",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (the-backup-directory-exists)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  }
+ ],
+ "findings": [
+  "the-backup-directory-exists"
+ ],
+ "not_run": [
+  "aged-archives-are-planted",
+  "a-run-writes-a-restorable-gzip-tar",
+  "a-run-deletes-only-its-own-old-archives"
+ ],
+ "outcome": "FINDINGS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "7fe0f101-19d7-442e-a543-351d27a033fc",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "7fe0f101-19d7-442e-a543-351d27a033fc",
+   "fresh": true
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "the backup script carries the values of the Hiera keys puppet::basedir and the like, and root's crontab runs it at 23:00 every day",
+   "checks": [
+    "script-carries-the-puppet-hiera-values",
+    "cron-runs-it-at-2300"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the backup directory the script writes into is there after the apply",
+   "checks": [
+    "the-backup-directory-exists"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "a run writes a dated gzip tar of /etc/puppetlabs from which a file restores byte for byte",
+   "checks": [
+    "aged-archives-are-planted",
+    "a-run-writes-a-restorable-gzip-tar"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "the run deletes the prefix's archives older than 9 full days and keeps newer ones and other prefixes' files",
+   "checks": [
+    "aged-archives-are-planted",
+    "a-run-deletes-only-its-own-old-archives"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "cron itself firing at 23:00",
+   "uncovered": {
+    "why": "a run would have to wait for 23:00; the crontab entry is checked and the script it names is run by hand",
+    "lifted_by": "capability: a clock-controlled cron trigger inside a phase3 run",
+    "evidence": "phase3.py runs probes and agent runs only; it has no step that advances or waits for the node's cron schedule"
+   }
+  }
+ ],
+ "duration_s": 51.2
+}
