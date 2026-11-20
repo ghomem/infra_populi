@@ -1,0 +1,35 @@
+{
+ "class": "mysql_server",
+ "at": "20261120T121517Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "apparmor-allows-datadir-and-tls: manifests/mysql_server.pp:100 reloads /etc/apparmor.d/usr.sbin.mysqld after the local include (apparmor-local.epp:5-11, data_dir/ r, data_dir/** rwk, chain/cert/key r) changes; the probe reads exactly those five rendered lines under the fixture (/srv/mysql, /etc/mysql/ssl/p8test*.pem) and that the running mysqld is confined by the reloaded profile (enforce), which is what the reload serves",
+  "a-client-needs-tls-and-verifies-the-server: server.cnf.epp:8-11 sets ssl-ca/ssl-cert/ssl-key to the class's files and require_secure_transport = ON; a plaintext TCP login answered ERROR 3159 (insecure transport prohibited), a TLS login reaches TLS, VERIFY_CA against the installed chain succeeds and a foreign CA gets ERROR 2026 are what those lines produce; mutates declares the throwaway account, its data-dir writes and the /run output dir; the effect file holds the server's answers to the logins, the only observable result of a login, and the built-in foreign-CA line fails as a mismatch would",
+  "server-reports-mysql-from-the-managed-config: server.cnf.epp:5-11 (bind-address 0.0.0.0, datadir, ssl-ca/cert/key, require_secure_transport ON) rendered with the fixture; the probe asks the running server for @@datadir, @@ssl_ca, @@ssl_cert, @@ssl_key, @@require_secure_transport, @@bind_address and expects exactly those values (datadir normalised with a trailing slash, ON = 1) plus an Ubuntu 8.0 version string per package_name mysql-server-${version} (manifest :48)",
+  "purpose covered: Purpose matches the header (line 1: MySQL server from the Ubuntu packages) and the code (lines 14-130). Outcomes table covers every outcome of the manifest and both templates: MySQL 8.0 (not MariaDB) package, service active+enabled, server running with the managed config's datadir/TLS/secure transport/bind 0.0.0.0, config file root 0644 (mysql-not-mariadb..., server-reports..., managed-config-file-rendered); AppArmor local include and confined mysqld (apparmor-allows...); TLS required for TCP clients and the cert verifying against the installed chain, foreign CA refused (a-client-needs-tls...); ssl dir 0750 / key 0640 readable by mysql and not by nobody (mismatch), cert/chain 0644 (the-tls-key...); root refused without its password and logging in with it, no anonymous account, no root for other hosts, no test database (root-needs-the-password..., mismatch with the password supplied). The checks exercise the service doing its job (logins, TLS handshakes, verification), not only files. Left out: hostname verification (VERIFY_IDENTITY) and a login from another host \u2014 the class claims neither (bind 0.0.0.0 is checked; the header leaves TCP/3306 firewall access to the node declaration). No uncovered rows; nothing the lab can exercise is untested."
+ ],
+ "review_s": 139.3,
+ "check_file_sha256": "cfe76949c27b716ea9c6654f8bbe4b85b3fa54e9f1f399a09845dbb4668e59e3",
+ "content_sha256": "cfe76949c27b716ea9c6654f8bbe4b85b3fa54e9f1f399a09845dbb4668e59e3",
+ "reviewer_result": "20261120T121258Z-reviewer",
+ "author_result": "20261120T120944Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "9554c32c-8d6f-4be0-9e54-844b202f5501",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "9554c32c-8d6f-4be0-9e54-844b202f5501",
+   "fresh": true
+  }
+ }
+}
