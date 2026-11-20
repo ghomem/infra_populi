@@ -1,0 +1,38 @@
+{
+ "class": "puppet_boot_run",
+ "at": "20261120T123521Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-unit-makes-an-agent-run: puppet_boot_run.service.erb:6-7 (Type=oneshot, ExecStart=<script>) supports starting the unit with systemctl start and judging start rc=0 / Result=success and one 'Running puppet agent at' + 'Applied catalog' in the script's log; the wait-for-release line follows the cited script lines 19-31 ('Avoid apt/dpkg lock contention', loop until no lock is held); the mutation (flock on lock-frontend 15 s, unit start) is fully declared and the effect reads files, not the action's output",
+  "script-and-unit-installed: puppet_boot_run.pp:11-17 declares the script root:root 0750 from files/etc/puppet_boot_run.sh; the probe checks p8_digest owner/mode/sha256 (4e69688c..., same as the sha256 reference) at /opt/puppet-infrastructure/bin (filesystem::bindir, confirmed by the applied path) plus the unit's 0644, Type=oneshot, ExecStart, WantedBy lines",
+  "unit-enabled-for-boot: template lines 10-11 ([Install] WantedBy=multi-user.target) with the manifest's enable => true produce is-enabled=enabled and multi-user.target Wants containing puppet_boot_run.service; probe tests exactly that",
+  "finding the-unit-makes-an-agent-run: reproduced; with lock-frontend held by flock the unit's agent run started before the lock was released (effect lacked 'the agent run started after the dpkg lock was released'); start rc=0, success, one agent run, Applied catalog, last run is the unit's all held. Consistent with puppet_boot_run.sh:22: lsof given three paths exits non-zero unless all are open, so '! lsof' breaks the wait while only lock-frontend is held",
+  "purpose gap: Tested: script and unit installed, unit enabled and wanted by multi-user.target, skip with exit 0 while the agent lockfile exists, one agent run when started as the boot does (and the lock wait, as a finding). Missing from the outcomes table although the stated purpose names it: the time limit on the agent run (puppet_boot_run.sh:5-6,35-42: PUPPET_TIMEOUT=900 via timeout, 'timed out' logged, exit 0) has neither a check nor an uncovered row with evidence; likewise the bounded lock wait (LOCK_WAIT_MAX=120, 'continuing anyway', lines 25-29), which the lab CAN exercise by holding all three locks (dpkg lock-frontend, lock, apt lists/lock) longer than 120 s within a check timeout of 600 s. The reboot row's uncovered reason is true (phase3.py has no reboot step)."
+ ],
+ "review_s": 97.5,
+ "check_file_sha256": "20c430e4e2ebd9b04e3dbaabaab8f9341a58a6a5d5164d81a20920615de65a5c",
+ "content_sha256": "20c430e4e2ebd9b04e3dbaabaab8f9341a58a6a5d5164d81a20920615de65a5c",
+ "reviewer_result": "20261120T123344Z-reviewer",
+ "author_result": "20261120T123031Z-author",
+ "findings": [
+  "the-unit-makes-an-agent-run"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "a7b79536-b5df-4d1a-bf55-11dd02bb40ac",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "a7b79536-b5df-4d1a-bf55-11dd02bb40ac",
+   "fresh": true
+  }
+ }
+}
