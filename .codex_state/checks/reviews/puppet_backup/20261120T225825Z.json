@@ -1,0 +1,35 @@
+{
+ "class": "puppet_backup",
+ "at": "20261120T225825Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "script-carries-the-puppet-hiera-values @ manifests/puppet_backup.pp:13: the line declares backup 'puppet' with basedir/prefix/backdir/ndays/bindir/compression from the puppet:: lookups (lines 6-11; compression default true); with backup.pp:14-19 (root root 0755, template) the probe's stat of bindir/backup-puppet.sh and grep of the five assignments test exactly what that declaration renders under the lab Hiera (defaults fixture)",
+  "script-carries-the-puppet-hiera-values @ templates/backup/backup.sh.erb:4-7: FILETARGETDIRS/FILEPREFIX/BACKDIR/NC are written from @basedir/@prefix/@backdir/@ndays; the expect anchors each rendered line (/etc/puppetlabs/, puppet.example.com, /opt/puppet-infrastructure/backup/puppet, 10) plus COMPRESSION=true from line 15",
+  "a-run-writes-a-restorable-gzip-tar @ templates/backup/backup.sh.erb:14-20: COMPRESSION=true leaves COMPRESSION_FLAG=z, so line 31 runs tar -cvzf; the action runs the script once as cron would, the read-only effect checks rc 0, the dated name pattern from date +%Y-%b-%d-%Hh%Mm, gzip -t on the archive and a byte-for-byte restore of etc/puppetlabs/puppet/puppet.conf: the archive's result, not the action's output",
+  "purpose covered: Purpose (nightly gzip tar of /etc/puppetlabs into the puppet backup dir, keeping ndays of archives) matches the baseline header and code (puppet_backup.pp, backup.pp, backup.sh.erb). The checks test it end to end: the rendered script values and root:root 0755, root's cron entry 0 23 * * *, the backup directory present after apply (local change #14), a real run producing a gzip tar that restores a file byte for byte, retention deleting only the prefix's archive older than 9 full days (find -mtime +9 with NC=10) while keeping the 5-day one and another prefix's 30-day file, and a full-disk run (4 KiB tmpfs, directory stays writable) exiting non-zero with the ERROR line on stderr and in the journal and keeping an archive retention would have deleted (local change #15). Left out, honestly listed: cron actually firing at 23:00 (phase3.py has no step that waits for or advances the node's cron clock; lifted_by a capability). EXCLUDEDIRS and TARGETUSER are empty in the template, so the exclude/chown branches are inert at this baseline."
+ ],
+ "review_s": 105.9,
+ "check_file_sha256": "3289322aab1f9e6d1a3308f48fe067474aeb483936c4cc39df6abeeddee581f5",
+ "content_sha256": "3289322aab1f9e6d1a3308f48fe067474aeb483936c4cc39df6abeeddee581f5",
+ "reviewer_result": "20261120T225640Z-reviewer",
+ "author_result": "20261120T225223Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "9e76d9de-434e-4a6a-8557-9675d6af210d",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "9e76d9de-434e-4a6a-8557-9675d6af210d",
+   "fresh": true
+  }
+ }
+}

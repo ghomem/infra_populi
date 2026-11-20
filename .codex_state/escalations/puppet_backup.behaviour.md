@@ -1,6 +1,6 @@
 # puppet_backup — behaviour finding: the backup directory is never created, and the script reports success anyway (2026-11-20)
 
-Status: OPEN, for HQ. Found in backfill batch 6; reproduced by the reviewer (checks/reviews/puppet_backup/20261120T122809Z.json, set PASS with this finding, purpose covered). Escalated for this
+Status: CLOSED 2026-11-20. HQ (after batch 16, item 1) ruled both parts: the backup define declares the directory (local change #14) and the script fails loudly (#15); puppet_backup Phase 3 PASS 20261120T225825Z with no findings; sysmon_backup's masking removed; cutover item 7 checks production. Was: OPEN, for HQ. Found in backfill batch 6; reproduced by the reviewer (checks/reviews/puppet_backup/20261120T122809Z.json, set PASS with this finding, purpose covered). Escalated for this
 class under HQ batch-12 ruling 5: the fix has more than one reasonable design. The run continues.
 
 ## What the class does
