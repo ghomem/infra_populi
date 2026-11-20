@@ -1,5 +1,7 @@
 # network_dhcp — behaviour finding: the DHCP interface is never brought up on Ubuntu 24.04 (2026-11-19)
 
+**Status: CLOSED 2026-11-20.** HQ batch-15 ruling 5 (production runs ifupdown beside netplan): local change #10 declares ifupdown; Phase 1 PASS 20261120T004148Z, Phase 3 PASS 20261120T005352Z (DHCP through ifupdown at the boot step and after a restart; the primary interface keeps the node's internet). Why production had it: openvpn_server on the same servers (DESIGN_DECISIONS 2026-11-20). network_static follows.
+
 **HQ ruling (batch 14, 2026-11-19):** stays escalated, with network_static, until Salatiel answers how the production VPN servers' network is configured. No change yet. The text below is the escalation as sent.
 
 Status: OPEN, for HQ. The reviewer reproduced it and confirmed that ifupdown-extra does not depend on ifupdown
