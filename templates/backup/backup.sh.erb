@@ -30,6 +30,15 @@ done
 
 tar $EXCLUDELINE -cv${COMPRESSION_FLAG}f $BACKDIR/$FILEPREFIX-`date +%Y-%b-%d-%Hh%Mm`.tar.gz $FILETARGETDIRS
 
+# a failed archive is an error for cron and monitoring, and old archives are kept
+rc=$?
+if [ $rc -ne 0 ]; then
+        msg="ERROR: backup of $FILETARGETDIRS into $BACKDIR failed (tar exit status $rc); old archives kept"
+        echo "$msg" >&2
+        logger -p user.err -t "backup-$FILEPREFIX" "$msg"
+        exit $rc
+fi
+
 # we do this in the end because compressing takes time and $DAYS is counted from the end of compression
 
 for i in `find $BACKDIR -maxdepth 1 -mtime +$DAYS -type f -name "$FILEPREFIX*" `; do
