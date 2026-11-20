@@ -142,7 +142,8 @@ checks:
     mutates: >-
       creates a throwaway RSA key and self-signed certificate (CN p8test-selfsigned) in /run/p8test-rsyslog; sends one
       RFC3164 line (host p8testremote, tag p8test) to 127.0.0.1:6514 over TLS with it; rsyslogd logs the refused
-      session to syslog (the journal, /var/log/syslog)
+      session to syslog (the journal, /var/log/syslog, and through the listener's own rules the node's
+      /var/log/hosts/<node>/rsyslogd.log)
     probe: |
       install -d -m 0700 /run/p8test-rsyslog; d=/run/p8test-rsyslog
       openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=p8test-selfsigned -keyout $d/self.key -out $d/self.pem 2>/dev/null
