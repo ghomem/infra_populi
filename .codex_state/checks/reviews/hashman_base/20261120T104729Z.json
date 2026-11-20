@@ -1,0 +1,43 @@
+{
+ "class": "hashman_base",
+ "at": "20261120T104729Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "admin-adds-a-user-with-a-password @ templates/hashman/pp_auth.py.erb:202-215: useradd takes USER EMAIL NAME COMPANY and a 6th argument where SILENT sets mailnotif False; the action calls the wrapper with exactly those 7 argv (useradd p8hashuser p8hashuser@example.invalid 'P8test Hash User' p8test SILENT), and the effect sees the resulting $p8hashuser_pwd_hash = '$6$...' line in the dbdir's hashes.pp (lab Hiera dbdir = manifests/01_hashman)",
+  "admin-adds-a-user-with-a-password @ templates/hashman/pp_auth.py.erb:111-120: 'auth USER PASSWORD' locks the db and returns rc = auth(username, password); the probe records the CLI's rc for the password set via setpw (expect 0) and for a wrong one (expect non-zero), which is exactly what those lines return; the action's effect also reads the database and the node file, so it does not rest on the CLI's answer alone (the peer check confirms the hash independently through PAM)",
+  "the-next-agent-run-keeps-the-database @ manifests/hashman_base.pp:160-167: the db files are declared ensure present, content '' with replace => 'no'; after the administrator populated hashes.pp the server's own agent run (rc 0, 0 changed in my run) must not empty it, and the effect expects the p8hashuser hash line still there (count 1) and the client node file kept - what replace no declares",
+  "purpose gap: Tested (my run ALL_PASS, agreeing with the author): config.py rendered from Hiera, the seven empty 0644 db files, the Python packages, the wrapper starting the CLI, useradd SILENT + unlock + setpw + auth (right password accepted, wrong refused), printinfo's role line, replace => 'no' surviving the server's own agent run, and the peer ubuntu2 applying p8hashuser via the master-role server with PAM accepting the set password. Uncovered rows (mail delivery: SILENT/example.invalid, no mail sink; debug/minpasswordlen/relaxpassword variants: one fixture per set) are honest and evidenced. GAP: the outcomes table omits lab-exercisable directory outcomes that the class's CLI (pp_auth.py.erb, usage at interface.py.erb:445-472) exists to deliver, with neither checks nor an uncovered row: (1) revoking a user - 'lock USER' prefixes the hash with LOCKPREFIX (dbutils lockpw, dbutils.py.erb:780-805) so on the next client run the account must refuse the password (and user_base.pp stops pushing the ssh key for a locked user); (2) SSH key distribution - 'setpubkey USER PUBKEY' writes keys.pp (setpubkey, ~431-445), consumed as mykey by the printed role line and applied by user_base.pp as ssh_authorized_key '<user>@puppet'; (3) userdel/expire/reset are likewise unlisted. Lock and setpubkey are exercisable on the existing puppetserver + ubuntu2 pair the set already uses (CLI on the server, peer agent run, pamtester / authorized_keys on the peer)."
+ ],
+ "review_s": 241.3,
+ "check_file_sha256": "7650db82e19f50aa1f63546408e936c2c7494c1ac64e56dfac8ff61881d1f7f2",
+ "content_sha256": "7650db82e19f50aa1f63546408e936c2c7494c1ac64e56dfac8ff61881d1f7f2",
+ "reviewer_result": "20261120T104328Z-reviewer",
+ "author_result": "20261120T103905Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "boot_id": "c6a42fea-b647-4667-a077-3e3a5fcd170d",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "c6a42fea-b647-4667-a077-3e3a5fcd170d",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "c59fa2f7-b852-4871-a36c-fa7e22ceef83",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "c59fa2f7-b852-4871-a36c-fa7e22ceef83",
+   "fresh": true
+  }
+ }
+}
