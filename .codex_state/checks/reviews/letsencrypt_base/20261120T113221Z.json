@@ -1,0 +1,35 @@
+{
+ "class": "letsencrypt_base",
+ "at": "20261120T113221Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "fail",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "certbot-finds-the-dns-plugin (manifests/letsencrypt_base.pp:16-20, 48-53): the probe fits the lines. They select and install python3-certbot-dns-digitalocean through apt, and certbot listing dns-digitalocean shows that the plugin works with the module's certbot. The check's mutates declaration is incomplete, though. It declares 'none beyond certbot's own log under /var/log/letsencrypt', but its action also creates /run/p8test-le (0700) and /run/p8test-le/plugins.txt, the file its effect reads. certbot also created its work directory /var/lib/letsencrypt. Read on the node after my reviewer run: birth 2026-11-20 11:30:55.372, the same instant as /var/log/letsencrypt/letsencrypt.log, after the agent run's report at 11:30:52, and absent from that report. The rule says mutates must declare every effect (the rsyslog_server precedent; filesystem_yum and backup_rsnapshot_pre name their /run output files). That is a derivation failure. The fix is to declare /run/p8test-le/plugins.txt and /var/lib/letsencrypt.",
+  "deploy-cron (manifests/letsencrypt_base.pp:98-102, with 9-10 and 104): supported. With automate_deployment's default true, cron 'deploy_maintained_certificates' is present for user root with minute 0, hour 5 and monthday [5,10,15,20,25]. Its command is ${localdir}/bin/deploy_maintained_certificates.sh, where localdir is /opt/puppet-infrastructure from the lab Hiera. The expected crontab line '0 5 5,10,15,20,25 * * /opt/puppet-infrastructure/bin/deploy_maintained_certificates.sh' under '# Puppet Name: deploy_maintained_certificates' is exactly what that cron resource produces.",
+  "dns-credentials-file-private (manifests/letsencrypt_base.pp:55-59 and :19, templates/letsencrypt/dns-creds.ini.erb:1): supported. The file at dns_creds_file (etcdir /opt/puppet-infrastructure/etc + /dns-creds.ini) is mode 600, root:root. The template renders '<api_property_str> = <dns_api_token>', which with provider digitalocean and the fixture token gives 'dns_digitalocean_token = p8test-not-a-secret'.",
+  "purpose covered: Checked against the whole baseline manifest (lines 1-106, including its comments at 65 and 70) and the deploy template (lines 1-17), the stated purpose is right. The class sets up certbot with the DNS provider's plugin and token file, a renew cron with an nginx-reload post hook, and a deploy script plus cron that copies maintained domains' certificates into the master's extra_files/ssl, owned by puppet. The checks test this beyond mere presence: certbot itself finds the dns-digitalocean plugin; the token file is root-only with the right property; the renew cron line and its hook script hold 'service nginx reload'; and the deploy script, run on the master-role node, copies a maintained domain's privkey, cert and chain byte for byte as puppet:puppet and leaves another domain's certificate alone. The uncovered rows are honest. The nginx reload's effect: the class has no nginx resource, and dpkg on p8lab-puppetserver shows no nginx package. Obtaining and renewing a certificate needs a real DNS API and an ACME endpoint: the token is fake. The hetzner and hetzner-cloud pip branches, automation off and other cron times: phase3 applies a single params fixture. The account email (the letsencrypt class, lines 63-64) only takes effect when registering or obtaining a certificate, which falls under the obtaining row."
+ ],
+ "review_s": 149.7,
+ "check_file_sha256": "416911e7bbd5bfa07e1f9e235e90f566adbc661a16651d9c9a413b465d307322",
+ "content_sha256": "416911e7bbd5bfa07e1f9e235e90f566adbc661a16651d9c9a413b465d307322",
+ "reviewer_result": "20261120T112952Z-reviewer",
+ "author_result": "20261120T112739Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "boot_id": "89295783-947c-458c-ad4d-c232e30b18b2",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "89295783-947c-458c-ad4d-c232e30b18b2",
+   "fresh": true
+  }
+ }
+}
