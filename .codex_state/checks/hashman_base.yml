@@ -18,6 +18,10 @@
 # three users' role lines. The agent runs now follow that change. Prototyped on p8lab-puppetserver 2026-11-20: lock
 # prefixes the hash with '!', expire turns '$6$' into '$!6$' (the CLI's own auth still accepts an expired password;
 # user_base treats any '!' as locked), userdel leaves no line of the user in any database file.
+# Authoring error 2026-11-20 (run 20261120T105405Z): the key lines were matched with p8_count (grep -E), and a key's
+# base64 body holds '+', a regex quantifier, so the present key read 0; the locked user's key-absence check read 0 for
+# the same reason whatever the file held. All three now match the key as a fixed string (grep -F). The behaviour in
+# that run was as expected (keys.pp held the key: the-next-agent-run-keeps-the-database passed).
 class: hashman_base
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -197,7 +201,7 @@ checks:
     effect: |
       d=/etc/puppetlabs/code/environments/production/manifests/01_hashman
       cat /run/p8test-hashman/revoke.txt
-      p8_count "^[$]p8hashuser_ssh_key = '$(cut -d' ' -f2 /run/p8test-hashman/id_p8.pub)'$" $d/keys.pp
+      grep -cxF "\$p8hashuser_ssh_key = '$(cut -d' ' -f2 /run/p8test-hashman/id_p8.pub)'" $d/keys.pp
       p8_count "^[$]p8hashlocked_pwd_hash = '!" $d/hashes.pp
       p8_count "^[$]p8hashexpired_pwd_hash = '[$]!6[$]" $d/hashes.pp
       p8_count 'p8hashdel' $d/cnames.pp $d/companies.pp $d/emails.pp $d/hashes.pp $d/keys.pp
@@ -237,7 +241,7 @@ checks:
       getent passwd p8hashuser | cut -d: -f1,5
       printf '%s\n' 'p8test-Cli-pw5!' | pamtester login p8hashuser authenticate 2>&1 | sed -n 's/.*pamtester: //p'
       printf '%s\n' 'p8test-Wrong-pw5!' | pamtester login p8hashuser authenticate 2>&1 | sed -n 's/.*pamtester: //p'
-      p8_count "^ssh-rsa $(cut -d' ' -f2 /run/p8test-from-node/id_p8.pub) p8hashuser@puppet$" /home/p8hashuser/.ssh/authorized_keys
+      grep -cxF "ssh-rsa $(cut -d' ' -f2 /run/p8test-from-node/id_p8.pub) p8hashuser@puppet" /home/p8hashuser/.ssh/authorized_keys
     expect: {rc: 0, stdout: "\\Ap8hashuser:P8test Hash User\\nsuccessfully authenticated\\nAuthentication failure\\n1\\n\\Z"}
 
   - id: a-client-refuses-the-locked-and-expired-users
@@ -258,7 +262,7 @@ checks:
         getent passwd $u | cut -d: -f1
         printf '%s\n' 'p8test-Revoked-pw5!' | pamtester login $u authenticate 2>&1 | sed -n 's/.*pamtester: //p'
       done
-      p8_count "$(cut -d' ' -f2 /run/p8test-from-node/id_p8l.pub)" /home/p8hashlocked/.ssh/authorized_keys
+      grep -cF "$(cut -d' ' -f2 /run/p8test-from-node/id_p8l.pub)" /home/p8hashlocked/.ssh/authorized_keys || true
       p8_count '^ssh-rsa userlocked' /home/p8hashlocked/.ssh/authorized_keys
       getent passwd p8hashdel || echo "no p8hashdel"
     expect: {rc: 0, stdout: "\\Ap8hashlocked\\nAuthentication failure\\np8hashexpired\\nAuthentication failure\\n0\\n1\\nno p8hashdel\\n\\Z"}
