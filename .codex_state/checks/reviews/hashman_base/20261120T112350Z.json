@@ -1,0 +1,43 @@
+{
+ "class": "hashman_base",
+ "at": "20261120T112350Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "admin-sets-a-key-and-revokes-users @ dbutils.py.erb:431-445: setpubkey validates the user and the base64 key and writes it with setent into DBFILE_KEY (keys.pp, suffix _ssh_key per config.py.erb); the probe sets a fresh ssh-keygen body through the CLI and the effect matches the exact line $p8hashuser_ssh_key = '<body>' in keys.pp as a fixed string (grep -cxF), expecting 1",
+  "user-mail-commands-need-hashman-web @ miscutils.py.erb:151-158: with EMAIL_TEMPLATE absent (hashman_base installs nothing under httpserver/templates/email), 'useradd' prints 'Class ... not included. Please run the command with [silent] option' and 'inform' prints 'This command requires class ...', both sys.exit(1); pp_auth.py.erb:206-207 calls check_hashman_web('useradd') only for a non-SILENT e-mail argument (name01@mycompany.com), before lockdb/useradd, so p8hashweb stays out of hashes.pp (count 0) - expect matches both messages, rc=1 twice and 0",
+  "admin-sets-a-key-and-revokes-users @ dbutils.py.erb:780-791: lockpw rejects an unknown user and (lines 792-805, cited by the outcome row, with config.py.erb:58-59 LOCKPREFIX '!') sets LOCKPREFIX + pwentry via setpw, so after 'lock p8hashlocked' hashes.pp holds $p8hashlocked_pwd_hash = '!...' (expect 1); is_pwlocked makes the later auth of the locked user fail (rc>=1); the probe unlocks then setpw before locking, matching pp_auth.py.erb:137-148 (setpw authenticates the old password first)",
+  "purpose covered: Purpose matches the header (Puppet-based user directory + pp_auth CLI, empty usable db after first run) and manifests/hashman_base.pp:11-171. Reviewer run 20261120T111852Z ALL_PASS, clean phase all 11 negatives failed. Tested: config.py rendered from Hiera, the 7 empty 0644 db files, the 5 python3 packages, pp_auth.sh 0755 starting the CLI; the administrator's useradd/unlock/setpw/auth (wrong password refused), setpubkey, lock, expire, userdel; replace=>no kept by the server's own agent run; the end-to-end consumer: peer ubuntu2's agent run as p8test-hashman-client (rc 2, 9 changed) gets p8hashuser with name, PAM-accepted password (wrong one refused) and authorized key, refuses the locked and expired users and pushes the userlocked placeholder key, has no deleted user; 18 support-team notifications queued in the local MTA per pp_auth.py.erb:524-548 (NOTIFCMDS, TESTENV False); the hashman_web refusal. Uncovered rows are honest: user mails need hashman_web's EMAIL_TEMPLATE (miscutils.py.erb:151-158, the class installs none); ecryptfs data needs /home/.ecryptfs/<user>/.ecryptfs on the peer (user_base.pp file resource with an undeclared parent, no ecryptfs on the peer baseline); debug/minpasswordlen/relaxpassword variants need a second params fixture. Left out without a row: the minor admin commands unexpire, unsetpubkey, setemail, setcompany, import, listusers and the CLI-side setecryptfs db write; they reuse the setent/setpw paths the checks already exercise (setpubkey, lock/expire) and do not change what the class delivers, and the plugin dirs 1-3 ship empty so ondbchange has no hook to observe."
+ ],
+ "review_s": 298.4,
+ "check_file_sha256": "56c917ae518a8763116d01e2cd8b28d475b8002dfa4c6a4b8401cf2a144869f2",
+ "content_sha256": "56c917ae518a8763116d01e2cd8b28d475b8002dfa4c6a4b8401cf2a144869f2",
+ "reviewer_result": "20261120T111852Z-reviewer",
+ "author_result": "20261120T111350Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "boot_id": "b48618b2-b059-4466-a97c-3fd962e028ef",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "b48618b2-b059-4466-a97c-3fd962e028ef",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "74b3b1e1-cfcd-48b0-9515-f7d2e61c40bf",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "74b3b1e1-cfcd-48b0-9515-f7d2e61c40bf",
+   "fresh": true
+  }
+ }
+}
