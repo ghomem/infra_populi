@@ -1,0 +1,35 @@
+{
+ "class": "backup",
+ "at": "20261120T224343Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "script-installed-with-the-parameters: baseline backup.sh.erb:4-7 render FILETARGETDIRS/FILEPREFIX/BACKDIR/NC from @basedir/@prefix/@backdir/@ndays; with the params fixture (/etc/default, p8test-backup, /opt/puppet-infrastructure/backup/p8test, 7) and default compression true (line 15) the expected lines are exactly what the template produces; root root 755 matches manifests/backup.pp file mode/owner/group",
+  "a-run-deletes-only-its-own-old-archives: baseline backup.sh.erb:22-23 gives DAYS=1*7-1=6, and line 35 deletes files named p8test-backup* with find -mtime +6; so the planted 8-day-old p8test-backup-old goes, the 3-day-old p8test-backup-recent and the 30-day-old p8test-other-old (other prefix) stay, plus the new dated archive: exactly the expected listing",
+  "a-run-writes-a-restorable-gzip-tar: baseline backup.sh.erb:14-20 sets COMPRESSION_FLAG=z unless compression is false (fixture: true), and line 31 writes tar -cvzf $BACKDIR/$FILEPREFIX-<date>.tar.gz $FILETARGETDIRS; the probe runs the script, checks rc 0, the dated name pattern (date +%Y-%b-%d-%Hh%Mm), gzip -t and a byte-for-byte restore of etc/default/cron (tar strips the leading /), which is what those lines produce",
+  "purpose covered: Purpose (tar-based generic backups via per-title script run by cron, with retention) matches the baseline header comment and code. The checks test the script installed with its parameters, the crontab entry at 23:00 every monthday, the backup directory (local change #14), an actual run producing a gzip tar that restores a file byte for byte, retention deleting only the prefix's archives older than ndays-1 days, and a failed run being loud with old archives kept (local change #15). Left out, honestly listed as uncovered with capability-based lift: cron actually firing at 23:00 (phase3.py has no clock-advancing step; the crontab line and the named script are tested instead) and parameter variants (compression off, several basedirs, other user/time) which need more than one params fixture per set. EXCLUDEDIRS and TARGETUSER are empty constants in the template, nothing to exercise. Reviewer run 20261120T224157Z: CLEAN phase all 7 negatives failed, APPLIED phase ALL_PASS."
+ ],
+ "review_s": 106.8,
+ "check_file_sha256": "5cfdd5908de44cf714bc3810f597a0c63aa9df4bddd85e53fb3c95d07fb28b45",
+ "content_sha256": "5cfdd5908de44cf714bc3810f597a0c63aa9df4bddd85e53fb3c95d07fb28b45",
+ "reviewer_result": "20261120T224157Z-reviewer",
+ "author_result": "20261120T220922Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "15f394ae-9524-4995-944c-e6c50d24449c",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "15f394ae-9524-4995-944c-e6c50d24449c",
+   "fresh": true
+  }
+ }
+}
