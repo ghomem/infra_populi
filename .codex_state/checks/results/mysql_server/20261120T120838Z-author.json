@@ -1,0 +1,60 @@
+{
+ "class": "mysql_server",
+ "role": "author",
+ "at": "20261120T120838Z",
+ "runner": "549dbf2",
+ "baseline": "874f854 (874f854)",
+ "check_file_sha256": "efc376e5fda3fcc2c28f0a3e47ad9e9358bae396435568eb475697c92f59e63b",
+ "content_sha256": "efc376e5fda3fcc2c28f0a3e47ad9e9358bae396435568eb475697c92f59e63b",
+ "valid": false,
+ "problems": [
+  "check root-needs-the-password-and-defaults-are-gone: probe redirects into a file: (?<![0-9&])>>?\\s*(?!/dev/null\\b|&)\\S",
+  "check root-needs-the-password-and-defaults-are-gone: mismatch probe redirects into a file: (?<![0-9&])>>?\\s*(?!/dev/null\\b|&)\\S"
+ ],
+ "clean": [],
+ "apply": null,
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "INVALID_SET",
+ "outcomes": [
+  {
+   "outcome": "MySQL (not MariaDB) 8.0 runs, enabled, from the managed configuration and the custom data directory",
+   "checks": [
+    "mysql-not-mariadb-installed-and-running",
+    "server-reports-mysql-from-the-managed-config",
+    "managed-config-file-rendered"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "AppArmor confines mysqld and allows the custom data directory and the TLS files",
+   "checks": [
+    "apparmor-allows-datadir-and-tls"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "a network client must use TLS, and the server's certificate verifies against the given chain",
+   "checks": [
+    "a-client-needs-tls-and-verifies-the-server"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "the TLS key is readable by mysqld's user and by no other local user; the certificate and chain are public",
+   "checks": [
+    "the-tls-key-is-readable-by-mysql-only"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "root needs the given password, and no anonymous account, no root account for another host and no test database remains",
+   "checks": [
+    "root-needs-the-password-and-defaults-are-gone"
+   ],
+   "passed": false
+  }
+ ],
+ "duration_s": 0.0
+}

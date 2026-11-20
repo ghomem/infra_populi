@@ -11,6 +11,8 @@
 # rule, so the throwaway account uses mysql_native_password and the server answers ERROR 3159.
 # Correction round 1, 2026-11-20 (review 20261120T115855Z, purpose gap): the TLS key's confidentiality (mysql reads it,
 # other users cannot), with a mismatch reading it as nobody.
+# Correction round 2, 2026-11-20 (review 20261120T120720Z, purpose gap): root accounts for hosts other than localhost
+# (the rest of remove_default_accounts) are counted too.
 class: mysql_server
 baseline: 874f854 (874f854)
 fixture: params
@@ -31,7 +33,7 @@ outcomes:
   - outcome: the TLS key is readable by mysqld's user and by no other local user; the certificate and chain are public
     from: manifests/mysql_server.pp:64-97
     checks: [the-tls-key-is-readable-by-mysql-only]
-  - outcome: root needs the given password, and no anonymous account or test database remains
+  - outcome: root needs the given password, and no anonymous account, no root account for another host and no test database remains
     from: manifests/mysql_server.pp:44-52
     checks: [root-needs-the-password-and-defaults-are-gone]
 checks:
@@ -84,22 +86,23 @@ checks:
   - id: root-needs-the-password-and-defaults-are-gone
     what: >-
       root@localhost authenticates by password (not the socket), so a root login without one is refused while root's
-      own client options (the module's /root/.my.cnf) log in; no anonymous account and no test database exist
+      own client options (the module's /root/.my.cnf) log in; no anonymous account, no root account for any host but
+      localhost (127.0.0.1, ::1, the host's names) and no test database exist
     control: negative
     derived_from:
       - {path: manifests/mysql_server.pp, lines: "44-52", text: "remove_default_accounts => true,"}
       - {path: manifests/mysql_server.pp, lines: "44-52", text: "root_password           => $root_pw,"}
     probe: |
       mysql --no-defaults -uroot -e 'SELECT 1' 2>&1 | grep -o 'ERROR 1045' | head -1
-      mysql -NB -e "SELECT CURRENT_USER(), (SELECT plugin FROM mysql.user WHERE user='root' AND host='localhost'), (SELECT COUNT(*) FROM mysql.user WHERE user=''), (SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name='test')"
+      mysql -NB -e "SELECT CURRENT_USER(), (SELECT plugin FROM mysql.user WHERE user='root' AND host='localhost'), (SELECT COUNT(*) FROM mysql.user WHERE user=''), (SELECT COUNT(*) FROM mysql.user WHERE user='root' AND host!='localhost'), (SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name='test')"
     mismatch:
       varies: >-
         the password: the same root login with root's own client options (the module's /root/.my.cnf, which holds the
         password) is not refused, so the first line cannot read ERROR 1045
       probe: |
         mysql -uroot -e 'SELECT 1' 2>&1 | grep -o 'ERROR 1045' | head -1
-        mysql -NB -e "SELECT CURRENT_USER(), (SELECT plugin FROM mysql.user WHERE user='root' AND host='localhost'), (SELECT COUNT(*) FROM mysql.user WHERE user=''), (SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name='test')"
-    expect: {rc: 0, stdout: "\\AERROR 1045\\nroot@localhost\\tmysql_native_password\\t0\\t0\\n\\Z"}
+        mysql -NB -e "SELECT CURRENT_USER(), (SELECT plugin FROM mysql.user WHERE user='root' AND host='localhost'), (SELECT COUNT(*) FROM mysql.user WHERE user=''), (SELECT COUNT(*) FROM mysql.user WHERE user='root' AND host!='localhost'), (SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name='test')"
+    expect: {rc: 0, stdout: "\\AERROR 1045\\nroot@localhost\\tmysql_native_password\\t0\\t0\\t0\\n\\Z"}
 
   - id: a-client-needs-tls-and-verifies-the-server
     what: >-
