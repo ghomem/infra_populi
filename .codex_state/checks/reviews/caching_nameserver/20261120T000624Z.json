@@ -1,0 +1,42 @@
+{
+ "class": "caching_nameserver",
+ "at": "20261120T000624Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-names-that-failed-resolve-cold: caching_nameserver.pp:1-2 declares a caching nameserver using bind and the template's empty forwarders block (named.conf.options.erb:4-6) means named recurses itself; after rndc flush the probe asks named on 127.0.0.1 for www.debian.org and www.kernel.org once each (dig +tries=2, no outer retry) and expects NOERROR for both, which tests cold recursion and the -4 outcome of local change #9 (the manifest's file_line OPTIONS=\"-u bind -4\" on a node with no 2000::/3 address). The effect reads the statuses the action wrote, but those are named's own DNS response codes, not a self-report of the action, and the clean node fails it (no named)",
+  "the-node-resolves-through-it-and-the-cache-answers-again: caching_nameserver.pp:1-2 (caching nameserver) with allow-query/allow-query-cache { localhost; ... } (template 9-10) under the params fixture: a question from the node to 127.0.0.1 must get NOERROR with an A record, and the same question 2 s later must come back with a lower TTL, i.e. from named's cache. That is exactly the recursive-plus-caching behaviour the lines declare; the up-to-10 retries only wait out named's first lookup and do not hide a cache failure, because the TTL comparison runs on the answer that succeeded",
+  "the-peer-adds-an-allowed-and-an-outside-address: caching_nameserver.pp:4-5 declares allowed_networks, which the template puts into listen-on, allow-query and allow-query-cache; with the fixture 192.168.56.0/25 the peer's +100 address (.124) is inside it and +150 (.174) outside it, so this setup (effect: 3 IPv4 addresses on enp0s8) gives the next check an inside client and an outside one, and that check expects NOERROR from .124 and REFUSED from .174 when they query 192.168.56.20. That is the behaviour the parameter declares. The setup only adds addresses on the peer and declares that in mutates",
+  "purpose covered: Purpose (caching nameserver with bind: recursion for the node and the allowed networks, answers from cache, refuses everyone else, restarts on a config change) matches the header comments (pp:1-2, 4) and the code (package, service, options template, notify). The checks cover every Debian outcome the lab can exercise: bind9 installed and named active with a config named-checkconf accepts; recursion and cache from 127.0.0.1; an allowed peer address answered and an outside one REFUSED (this also shows listen-on includes the node's host-only address, because the peer gets an answer on .20); drift of the options file restored by the agent run with exactly one restart (new PID, one 'Started' in the journal); local change #9 (no 2000::/3 address, named runs with -4 from /etc/default/named, the names that failed earlier resolve cold). My reviewer run 20261120T000139Z: all 9 negatives failed on the clean node and all passed after apply, with no findings. Uncovered rows hold: (a) the global-IPv6 branch: the lab has no 2000::/3 address, and my run's probe counted 0 such addresses on puppet8node; lifted_by is a capability. (b) the RedHat branch (bind, /etc/named.conf, /var/named, /etc/sysconfig/named OPTIONS=\"-4\"): phase3.py run takes no node option and always uses the plan row's node (main() parses only --role for run; the node comes from the plan), so the capability claim is true even though rhel9 is an active kind. Left out as non-observable or default-equivalent: auth-nxdomain no and the logging category default_syslog (both bind 9.18 default behaviour), and directory /var/cache/bind, which named's successful start with named-checkconf passing already implies"
+ ],
+ "review_s": 285.3,
+ "check_file_sha256": "9cfd5e4ca28409d06738fe8d2436bf8fd0dc07359c5406d3a946af5392162b06",
+ "reviewer_result": "20261120T000139Z-reviewer",
+ "author_result": "20261119T235358Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "04f8921f-bbc6-4911-abf1-0908da19ed29",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "04f8921f-bbc6-4911-abf1-0908da19ed29",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "c7d7d72a-6bf3-41fd-8af1-60700b33bc1f",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "c7d7d72a-6bf3-41fd-8af1-60700b33bc1f",
+   "fresh": true
+  }
+ }
+}
