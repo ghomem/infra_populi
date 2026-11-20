@@ -1,0 +1,35 @@
+{
+ "class": "rsyslog_apparmor_exception",
+ "at": "20261120T131600Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "a-directory-outside-the-exception-stays-denied: line 11 grants only ${logs_dir}/ rw and ${logs_dir}/** rwk (fixture logs_dir /srv/p8test-logs), so a syslog-owned /srv/p8test-other is outside the grant; the action routes one tagged message there and the read-only effect (file absent + kernel apparmor DENIED records for profile rsyslogd on that path) is the result of the action, not its output; mutates declares the dir, the 98- conf, the restart and the log side effects. Clean: effect alone gives 'not written / 0' (fails), applied: 'not written / 8'.",
+  "local-exception-file: lines 6-10 declare /etc/apparmor.d/local/usr.sbin.rsyslogd ensure file root:root 0644 and line 11 its content; probe stats owner/group/mode and cats the file, expect 'root root 644' then exactly '/srv/p8test-logs/ rw,' and '/srv/p8test-logs/** rwk,' as the fixture renders. On the clean node the file exists empty, so the content part makes the negative fail as it did.",
+  "profile-compiles-with-the-exception: line 16 reloads /etc/apparmor.d/usr.sbin.rsyslogd with apparmor_parser -r; probe preprocesses that same profile (apparmor_parser -p, includes resolved) and expects exactly the two logs_dir rules. It shows the on-disk profile carries the exception; that the LOADED profile carries it is shown by confined-rsyslogd-writes-to-logs-dir, since the stock profile does not grant /srv.",
+  "purpose covered: Purpose (header line 1: an AppArmor local exception so rsyslog can write to a custom log path; the manifest is one file + a refreshonly apparmor_parser -r notifying Service[rsyslog]) is read right and fully in the outcomes table. Checks test the exception file and its content/mode, the profile carrying it, rsyslogd still running confined in enforce mode after the reload chain, and the job itself: a confined rsyslogd actually writing a routed message into logs_dir (outside the stock /var/log grant), with a control that the same rsyslogd is still denied a syslog-owned directory outside the exception, so the profile rather than ownership decides. Nothing the lab can exercise is left out; no uncovered rows are needed (reboot-time profile loading is the apparmor service's, not this class's)."
+ ],
+ "review_s": 90.7,
+ "check_file_sha256": "e8956a8954807e10e92ab65a2b09f9a1e2ab8759ed8f4874325efb229fe4995a",
+ "content_sha256": "e8956a8954807e10e92ab65a2b09f9a1e2ab8759ed8f4874325efb229fe4995a",
+ "reviewer_result": "20261120T131430Z-reviewer",
+ "author_result": "20261120T131217Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "22a66650-0654-403a-bd9e-e2d208640862",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "22a66650-0654-403a-bd9e-e2d208640862",
+   "fresh": true
+  }
+ }
+}
