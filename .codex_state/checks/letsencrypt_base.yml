@@ -3,12 +3,51 @@
 # p8test-not-a-secret, domains [p8test.example.com], provider digitalocean (the apt plugin package); other parameters
 # at their defaults (renew 04:00, deploy 05:00, monthdays 5,10,15,20,25, automate_deployment true). etcdir is
 # /opt/puppet-infrastructure/etc (lab Hiera).
-# Not exercised: obtaining or renewing a certificate (needs the DNS provider's API); running the deploy script (it
-# copies into the Puppet master's extra_files/ssl and chowns to the `puppet` user, i.e. it belongs on a master; the lab
-# has no master-kind node); the hetzner/hetzner-cloud branches (pip provider), which the fixture does not select.
+# Not exercised: obtaining or renewing a certificate (needs the DNS provider's API); the hetzner/hetzner-cloud branches
+# (pip provider), which the fixture does not select.
+# 2026-11-20 (backfill batch 6): purpose and outcomes (HQ rulings 2 and C1). The plan's node moved to puppetserver, the
+# master-role kind: production declares the class on the Puppet master (operations/puppet.pp), and its deploy script
+# copies into the master's extra_files/ssl and chowns to the `puppet` user, which only a Puppet server has. The exercise
+# plants what the master and certbot provide (the master's extra_files/ssl directory, hand-built in production; a
+# renewed certificate under /etc/letsencrypt/live as certbot leaves it, plus one of another domain) and runs the script.
 class: letsencrypt_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
+purpose: >-
+  Sets up Let's Encrypt certificate maintenance on the Puppet master: certbot with the DNS provider's plugin and its
+  API token, a renewal cron that reloads nginx after renewing, and a cron-run script that copies the maintained
+  domains' renewed certificates into the master's extra_files/ssl, owned by puppet, for the master to serve to nodes.
+outcomes:
+  - outcome: certbot and the chosen DNS provider's plugin are installed and certbot finds the plugin, with the API token in a root-only credentials file
+    from: manifests/letsencrypt_base.pp:15-60
+    checks: [dns-plugin-installed, certbot-finds-the-dns-plugin, dns-credentials-file-private]
+  - outcome: certbot renew runs from root's crontab on the renew days, with a post hook that reloads nginx
+    from: manifests/letsencrypt_base.pp:7-11, 62-72
+    checks: [renew-cron-with-nginx-reload-hook]
+  - outcome: after a renewal the hook's nginx reload takes effect
+    from: manifests/letsencrypt_base.pp:70-71
+    uncovered:
+      why: the class neither installs nor needs nginx on its node, and the reload has nothing to act on there
+      lifted_by: "capability: nginx composed with letsencrypt_base on the class's node"
+      evidence: "letsencrypt_base declares no nginx package or service (manifests/letsencrypt_base.pp); p8lab-puppetserver's baseline has no nginx"
+  - outcome: the deploy script and its cron are installed with the maintained domains
+    from: manifests/letsencrypt_base.pp:9-10, 74-103
+    checks: [deploy-script-rendered, deploy-cron]
+  - outcome: the deploy script copies a maintained domain's renewed key, certificate and chain into extra_files/ssl, owned by puppet, and leaves other domains alone
+    from: templates/letsencrypt/deploy_maintained_certificates.sh.erb:1-17
+    checks: [the-deploy-script-copies-renewed-certificates]
+  - outcome: obtaining and renewing a certificate through the DNS provider
+    from: manifests/letsencrypt_base.pp:47-72
+    uncovered:
+      why: needs the DNS provider's API with a real token and a domain it serves
+      lifted_by: "capability: an ACME test endpoint and a DNS provider API stand-in in the lab"
+      evidence: "the fixture's token is p8test-not-a-secret; the lab has no ACME endpoint (status.py --standins: letsencrypt_certificate)"
+  - outcome: the hetzner and hetzner-cloud plugins (pip), deployment automation off, other cron times
+    from: manifests/letsencrypt_base.pp:8-14, 22-45, 93-98
+    uncovered:
+      why: one set holds one params fixture (digitalocean, automation on, the default times)
+      lifted_by: "capability: more than one params fixture per set"
+      evidence: "phase3.py applies the class once with its single `fixture` (params or defaults)"
 checks:
   - id: dns-plugin-installed
     what: the selected provider's certbot DNS plugin (digitalocean, apt) and certbot itself are installed
@@ -18,6 +57,20 @@ checks:
       - {path: manifests/letsencrypt_base.pp, lines: "63", text: "class { 'letsencrypt':"}
     probe: dpkg-query -W -f '${Package} ${Status}\n' python3-certbot-dns-digitalocean certbot
     expect: {rc: 0, stdout: "\\Acertbot install ok installed\\npython3-certbot-dns-digitalocean install ok installed\\n\\Z"}
+
+  - id: certbot-finds-the-dns-plugin
+    what: certbot itself lists the digitalocean DNS authenticator among its plugins (the plugin package works with the certbot the module installed)
+    control: negative
+    derived_from:
+      - {path: manifests/letsencrypt_base.pp, lines: "16-20", text: "$package_name     = 'python3-certbot-dns-digitalocean'"}
+      - {path: manifests/letsencrypt_base.pp, lines: "48-53", text: "name     => $package_name,"}
+    mutates: none beyond certbot's own log under /var/log/letsencrypt (declared mutating for that write)
+    probe: |
+      install -d -m 0700 /run/p8test-le
+      certbot plugins --text 2>/dev/null | sed -n 's/^\* //p' > /run/p8test-le/plugins.txt
+    effect: |
+      grep -x 'dns-digitalocean' /run/p8test-le/plugins.txt
+    expect: {rc: 0, stdout: "\\Adns-digitalocean\\n\\Z"}
 
   - id: dns-credentials-file-private
     what: the credentials file holds the provider's token property with the given token, root-only (0600)
@@ -65,3 +118,31 @@ checks:
     probe: |
       crontab -l -u root 2>/dev/null | grep -A1 -x '# Puppet Name: deploy_maintained_certificates' | tail -1
     expect: {rc: 0, stdout: "\\A0 5 5,10,15,20,25 \\* \\* /opt/puppet-infrastructure/bin/deploy_maintained_certificates\\.sh\\n\\Z"}
+
+  - id: the-deploy-script-copies-renewed-certificates
+    what: >-
+      run as cron would, the deploy script copies the maintained domain's renewed privkey, cert and chain into
+      extra_files/ssl as <domain>-key.pem, <domain>.pem and <domain>-chain.pem, byte for byte and owned puppet:puppet,
+      and copies nothing of a certificate for another domain
+    control: negative
+    derived_from:
+      - {path: templates/letsencrypt/deploy_maintained_certificates.sh.erb, lines: "7-17", text: "cp -f $CERT_DIR/$CERT_NAME/privkey.pem $SSL_DIR/$CERT_NAME-key.pem"}
+      - {path: templates/letsencrypt/deploy_maintained_certificates.sh.erb, lines: "15", text: "chown puppet:puppet $SSL_DIR/${CERT_NAME}*.pem"}
+      - {path: manifests/letsencrypt_base.pp, lines: "76-79", text: "$ssldir          = \"/etc/puppetlabs/puppet/extra_files/ssl\""}
+    mutates: >-
+      creates /etc/puppetlabs/puppet/extra_files/ssl (root 0755, the master's directory, hand-built in production) and,
+      as certbot leaves a renewal, /etc/letsencrypt/live/p8test.example.com and /etc/letsencrypt/live/p8test-other.example.org
+      with privkey.pem, cert.pem and chain.pem of p8test text; runs the deploy script once as root
+    probe: |
+      install -d -m 0755 /etc/puppetlabs/puppet/extra_files/ssl
+      for d in p8test.example.com p8test-other.example.org; do
+        install -d -m 0700 "/etc/letsencrypt/live/$d"
+        for f in privkey cert chain; do printf 'p8test %s %s\n' "$d" "$f" > "/etc/letsencrypt/live/$d/$f.pem"; done
+      done
+      /opt/puppet-infrastructure/bin/deploy_maintained_certificates.sh
+    effect: |
+      s=/etc/puppetlabs/puppet/extra_files/ssl; l=/etc/letsencrypt/live/p8test.example.com
+      cd "$s" && ls -1 | LC_ALL=C sort | tr '\n' ' '; echo
+      stat -c '%U:%G' p8test.example.com-key.pem p8test.example.com.pem p8test.example.com-chain.pem | sort -u
+      cmp -s "$l/privkey.pem" "$s/p8test.example.com-key.pem" && cmp -s "$l/cert.pem" "$s/p8test.example.com.pem" && cmp -s "$l/chain.pem" "$s/p8test.example.com-chain.pem" && echo byte-for-byte
+    expect: {rc: 0, stdout: "\\Ap8test\\.example\\.com-chain\\.pem p8test\\.example\\.com-key\\.pem p8test\\.example\\.com\\.pem \\npuppet:puppet\\nbyte-for-byte\\n\\Z"}
