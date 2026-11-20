@@ -2,9 +2,24 @@
 # Fixture (params, never committed): logs_dir /srv/p8test-logs. It is deliberately OUTSIDE /var/log: the stock
 # usr.sbin.rsyslogd profile already allows `/var/log/** rw`, so only a directory outside it shows what the exception
 # adds. (The Phase 1 harness run used /var/log/p8test-remote; the fixture moved for Phase 3, 2026-11-16.)
+# 2026-11-20 (backfill batch 6): purpose and outcomes (HQ rulings 2 and C1), and the control that the same confined
+# rsyslogd is still denied a directory outside the exception (the profile, not ownership, decides).
 class: rsyslog_apparmor_exception
 baseline: release-0.9.10 (cf477c6)
 fixture: params
+purpose: >-
+  Lets the AppArmor-confined rsyslogd write logs to a custom directory outside the stock profile's paths, by adding a
+  local profile exception for that directory and reloading the profile and rsyslog.
+outcomes:
+  - outcome: the local exception grants logs_dir, and the reloaded rsyslogd profile carries it
+    from: manifests/rsyslog_apparmor_exception.pp:6-17
+    checks: [local-exception-file, profile-compiles-with-the-exception]
+  - outcome: rsyslogd keeps running confined after the reload chain
+    from: manifests/rsyslog_apparmor_exception.pp:15-19
+    checks: [rsyslogd-confined-and-running]
+  - outcome: the confined rsyslogd writes a log routed into logs_dir, while a directory outside the exception stays denied
+    from: manifests/rsyslog_apparmor_exception.pp:1, 11
+    checks: [confined-rsyslogd-writes-to-logs-dir, a-directory-outside-the-exception-stays-denied]
 checks:
   - id: local-exception-file
     what: the profile's local include grants rw on logs_dir and rwk below it, root:root 0644
@@ -57,3 +72,22 @@ checks:
     effect: |
       grep -c 'p8test-apparmor-marker' /srv/p8test-logs/p8test.log
     expect: {rc: 0, stdout: "\\A1\\n\\Z"}
+
+  - id: a-directory-outside-the-exception-stays-denied
+    what: >-
+      the same rsyslogd, routed into /srv/p8test-other (owned by syslog like logs_dir, but outside the exception), writes
+      nothing there, and the kernel logs an AppArmor denial for rsyslogd on that path
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_apparmor_exception.pp, lines: "11", text: "content => \"${logs_dir}/ rw,\\n${logs_dir}/** rwk,\\n\","}
+    mutates: >-
+      creates /srv/p8test-other (owner syslog), adds /etc/rsyslog.d/98-p8test-other.conf routing the tag p8testother to
+      /srv/p8test-other/p8test.log, restarts rsyslog, sends one message with logger -t p8testother
+    probe: |
+      install -d -o syslog -g adm -m 0750 /srv/p8test-other
+      printf ':syslogtag, isequal, "p8testother:" /srv/p8test-other/p8test.log\n& stop\n' > /etc/rsyslog.d/98-p8test-other.conf
+      systemctl restart rsyslog && sleep 1 && logger -t p8testother p8test-other-marker && sleep 2
+    effect: |
+      test -e /srv/p8test-other/p8test.log && echo "written" || echo "not written"
+      journalctl -k --no-pager -o cat | grep 'apparmor="DENIED"' | grep 'profile="rsyslogd"' | p8_count 'name="/srv/p8test-other/'
+    expect: {rc: 0, stdout: "\\Anot written\\n[1-9]\\d*\\n\\Z"}
