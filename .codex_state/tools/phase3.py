@@ -314,7 +314,7 @@ def uncovered_problems(u, where: str, strict: bool) -> list[str]:
     if not isinstance(u, dict) or set(u) not in allowed or len(str(u.get("why", ""))) < 20:
         return [f"{where}: uncovered takes why (>= 20 characters), lifted_by" + (" and evidence" if strict else "")]
     lifted = str(u["lifted_by"])
-    if not strict:
+    if not strict and "evidence" not in u:  # an earlier row of an approved set: the earlier rule until the sweep
         return lifting_problems(lifted, None, where)
     out = []
     if len(str(u["evidence"]).strip()) < 20:

@@ -1160,3 +1160,13 @@ def test_a_legacy_review_still_matches_once_the_block_is_removed_and_a_real_chan
     assert not phase3.reviewed_as_is("x", legacy, WITHOUT.replace(b"purpose: p", b"purpose: q"), repo=repo)
     assert phase3.reviewed_as_is("x", {"content_sha256": phase3.content_sha(WITHOUT)}, WITH_AUTHORING)
 
+
+
+# 2026-11-20: an approved set keeps the earlier rule for its earlier rows only; a row already in the new form (with
+# evidence and a `capability:` lifting) is judged by the new rule, not refused as "not a node kind" once approved.
+def test_an_approved_set_with_new_form_rows_stays_valid(p3):
+    p3.write(with_uncovered({"why": WHY, "lifted_by": "capability: a remote backup host in the lab", "evidence": EVIDENCE}))
+    approve_as_it_stands(p3)
+    proc = p3.run("validate", CLS)
+    assert proc.returncode == 0, proc.stderr
+    assert "SWEEP" not in proc.stdout
