@@ -9,6 +9,8 @@
 # and a throwaway account p8testsql. Prototyped on the node 2026-11-20: root's plugin is mysql_native_password (the
 # module's); a caching_sha2 account fails a plaintext login in the client (ERROR 2061) before the server's transport
 # rule, so the throwaway account uses mysql_native_password and the server answers ERROR 3159.
+# Correction round 1, 2026-11-20 (review 20261120T115855Z, purpose gap): the TLS key's confidentiality (mysql reads it,
+# other users cannot), with a mismatch reading it as nobody.
 class: mysql_server
 baseline: 874f854 (874f854)
 fixture: params
@@ -26,6 +28,9 @@ outcomes:
   - outcome: a network client must use TLS, and the server's certificate verifies against the given chain
     from: templates/mysql/server.cnf.epp:7-10; manifests/mysql_server.pp:64-95
     checks: [a-client-needs-tls-and-verifies-the-server]
+  - outcome: the TLS key is readable by mysqld's user and by no other local user; the certificate and chain are public
+    from: manifests/mysql_server.pp:64-97
+    checks: [the-tls-key-is-readable-by-mysql-only]
   - outcome: root needs the given password, and no anonymous account or test database remains
     from: manifests/mysql_server.pp:44-52
     checks: [root-needs-the-password-and-defaults-are-gone]
@@ -121,3 +126,22 @@ checks:
     effect: |
       cat /run/p8test-mysql/tls.txt
     expect: {rc: 0, stdout: "\\AERROR 3159\\nTLS\\nverified\\nERROR 2026\\n\\Z"}
+
+  - id: the-tls-key-is-readable-by-mysql-only
+    what: >-
+      the TLS directory is root:mysql 0750, the key root:mysql 0640, the certificate and chain root:mysql 0644, and
+      mysqld's user (mysql) reads the key as a private key
+    control: negative
+    derived_from:
+      - {path: manifests/mysql_server.pp, lines: "64-69", text: "mode    => '0750',"}
+      - {path: manifests/mysql_server.pp, lines: "90-96", text: "mode    => '0640',"}
+      - {path: manifests/mysql_server.pp, lines: "72-78", text: "mode    => '0644',"}
+    probe: |
+      stat -c '%U:%G %a' /etc/mysql/ssl /etc/mysql/ssl/p8test-key.pem /etc/mysql/ssl/p8test.pem /etc/mysql/ssl/p8test-chain.pem
+      runuser -u mysql -- openssl pkey -in /etc/mysql/ssl/p8test-key.pem -noout 2>/dev/null && echo key-readable-by-mysql
+    mismatch:
+      varies: the user that reads the key, nobody instead of mysql, who must not read it, so the last line cannot appear
+      probe: |
+        stat -c '%U:%G %a' /etc/mysql/ssl /etc/mysql/ssl/p8test-key.pem /etc/mysql/ssl/p8test.pem /etc/mysql/ssl/p8test-chain.pem
+        runuser -u nobody -- openssl pkey -in /etc/mysql/ssl/p8test-key.pem -noout 2>/dev/null && echo key-readable-by-mysql
+    expect: {rc: 0, stdout: "\\Aroot:mysql 750\\nroot:mysql 640\\nroot:mysql 644\\nroot:mysql 644\\nkey-readable-by-mysql\\n\\Z"}
