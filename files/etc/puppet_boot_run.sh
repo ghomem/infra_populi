@@ -19,7 +19,8 @@ fi
 # 2) Avoid apt/dpkg lock contention during boot
 start_ts=$(date +%s)
 while true; do
-  if ! lsof /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock >/dev/null 2>&1; then
+  # lsof -t prints the PID of any holder; given several files, lsof's exit status is 0 only when all of them are open.
+  if [ -z "$(lsof -t /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock 2>/dev/null)" ]; then
     break
   fi
   now_ts=$(date +%s)

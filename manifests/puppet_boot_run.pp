@@ -1,4 +1,4 @@
-# Puppet 8 migration: release-0.9.10 manifest; upstream defect fixed (HQ ruling 8): `ensure => running` dropped from the oneshot unit (it restarted the unit on every agent run); `enable => true` kept.
+# Puppet 8 migration: release-0.9.10 manifest; upstream defect fixed (HQ ruling 8): `ensure => running` dropped from the oneshot unit (it restarted the unit on every agent run); `enable => true` kept; local change #13: the boot script's lock wait (lsof -t).
 # Module dependencies: none.
 ### PURPOSE ###
 # the purpose of this class is to setup a oneshot service
