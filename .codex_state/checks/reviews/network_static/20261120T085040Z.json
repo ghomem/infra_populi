@@ -1,0 +1,34 @@
+{
+ "class": "network_static",
+ "at": "20261120T085040Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-interface-stanza-says-static-at-boot (manifests/network_static.pp:11 `package { 'ifupdown-extra': ensure => 'installed' }`): the probe's dpkg-query line expects 'ifupdown-extra install ok installed', exactly what :11 declares; the stanza lines (auto/iface inet static/address 192.0.2.10) follow :12 under the params fixture, and the routes line 'default 0.0.0.0 192.0.2.1 p8test0' follows :13 with local change #12 (interface => $iface) applied; my run saw exactly that text after apply and nothing on the clean node",
+  "ifupdown-and-the-networking-service (manifests/network_static.pp:12 network_config onboot => 'true', method => 'static'): onboot writes an 'auto' stanza that only ifupdown's networking service reads at boot; ifupdown is declared by local change #11 (ensure_packages(['ifupdown'])), so expecting 'ifupdown install ok installed' + 'enabled' tests that the boot reader of :12's stanza is present; clean node gave 'not-installed'/'not-found', applied gave the expected lines",
+  "the-boot-step-brings-the-interface-up (manifests/network_static.pp:12 onboot => 'true', method => 'static', ipaddress => $ipaddress): the action is what onboot runs at boot (systemctl start networking = ifup of auto stanzas), mutates declares it and the ping; the read-only effect reads the address on p8test0 (192.0.2.10/24: no netmask in the stanza, ifupdown's classful default, measured in my run) and the gateway answering on the check-built namespace LAN (on the node, no other host), i.e. the action's result, not its output. a-lan-on-the-interface is fixture scaffolding (netns + veth p8test0, all declared in mutates), not a baseline action; the two route checks declare their 'true' action honestly",
+  "purpose covered: Purpose (static address on an interface, up at boot, default route through the gateway) matches the header comment (:1-2) and code (:11-13). The checks test the class doing its job, not just files: the stanza and routes file, ifupdown + enabled networking (#11), the boot step bringing p8test0 up with 192.0.2.10/24 and the gateway answering on a real (namespace) LAN, the address surviving a networking restart, the kernel default route via 192.0.2.1 dev p8test0 (#12), and the NAT/host-only routes staying (the :4-7 'manage all interfaces' warning). Left out: a real reboot, uncovered with true evidence (phase3.py has no reboot step; grep finds none) and lifted_by a capability; hotplug => 'false' (absence of allow-hotplug) is not probed by the stanza grep, a minor attribute with no effect on the boot-time purpose. My run: 7/7 negatives failed clean, 7/7 pass applied, no findings."
+ ],
+ "review_s": 116.2,
+ "check_file_sha256": "d3fcd912a31f01ea0c6a349bcf23829dc4bb8d493c9b79aca1bd5ad78331b75b",
+ "reviewer_result": "20261120T084844Z-reviewer",
+ "author_result": "20261120T084255Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "2d05d7ae-006c-42ce-828f-03560b42dbc8",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "2d05d7ae-006c-42ce-828f-03560b42dbc8",
+   "fresh": true
+  }
+ }
+}
