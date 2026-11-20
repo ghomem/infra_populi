@@ -65,5 +65,18 @@
       "Bash(VBoxManage snapshot * delete*)",
       "Bash(VBoxManage snapshot * edit*)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.codex_state/tools/hooks/lab_ssh_guard.py"
+          }
+        ]
+      }
+    ]
   }
 }

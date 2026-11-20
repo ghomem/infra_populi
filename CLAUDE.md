@@ -77,6 +77,10 @@ the tracked `.codex_state/rules/CODEX_RUNBOOK.md`.
   never modified; no start below 4 GB free; no delete — deleting a VM or a baseline snapshot stays Salatiel's; NIC1 NAT
   like the others, HQ NAT review G). Raw
   mutating VBoxManage is denied. Lab nodes: `.codex_state/lab/nodes.yml` (nodes.py; plan column `node`).
+- Lab access (HQ 2026-11-20, after batch 16, item 3): a command run by hand on a lab machine goes through
+  `.codex_state/tools/lab_exec.sh <host> '<command>'` (stdin passes through), which holds the lab lock while it runs and
+  refuses while another run holds it. A PreToolUse hook (`.codex_state/tools/hooks/lab_ssh_guard.py`) refuses direct
+  ssh/scp/sftp/rsync to a lab host.
 - Lab power (HQ 2026-11-20 travel additions): when a run stops to wait for Salatiel or HQ, `lab_power.sh down`;
   `lab_power.sh up` when work resumes. The lab is never left running unattended between runs. The sleep guard runs
   `lab_power.sh down` itself when the laptop is on battery below 25% while lab VMs run (it aborts the current run).

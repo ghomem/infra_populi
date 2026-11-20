@@ -138,3 +138,5 @@ of these:
 Then record `verdict <class> --derived ok|fail --evidence "<reference: why>" --purpose covered|gap
 --purpose-evidence "<...>"` (for a deferral: whether the stated purpose is right and the deferral covers all of it). A set's `uncovered` notes are part of
 the file. Judge that each states honestly what the checks do not cover.
+
+Lab access (HQ 2026-11-20): read a lab machine by hand only through `.codex_state/tools/lab_exec.sh <host> '<command>'`; it refuses while another run holds the lab lock, and a hook refuses direct ssh to a lab host.

@@ -2307,3 +2307,11 @@ report, the test-suite design note, the rename.
    login.
 4. **Local change #13** (puppet_boot_run, policy B): `lsof` given several files exits 0 only when all are open.
 5. **Plan node follows production's declaring node** where the behaviour needs it (letsencrypt_base to puppetserver).
+
+## 2026-11-20 — HQ after batch 16, item 3: lab access through a wrapper
+A command run by hand on a lab machine goes through `lab_exec.sh <host> '<command>'`: it takes the lab lock for as long
+as the command runs (so it refuses while another run holds the lab, and no run starts under it), runs only on lab hosts,
+passes stdin through, and inside an engine run (P8_LAB_LOCKED=1) runs without taking the lock. Cause: batch 16, a
+command run on the node during a reviewer's run was cut by that run's revert. Enforcement: a project PreToolUse hook
+(`hooks/lab_ssh_guard.py`) refuses a Bash command that reaches a lab host with ssh/scp/sftp/rsync outside the wrapper;
+the engine's tools, which take the lock themselves, are unaffected. 21 tests; the live hook refused a direct ssh.

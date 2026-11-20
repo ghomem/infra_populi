@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-125 entries; 6 marked superseded (in whole or part); newest first.
+126 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-20 — HQ after batch 16, item 3: lab access through a wrapper
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-20 — backfill batch 6: lessons that change how sets are written
 - 1. **Declared writes are measured, not recalled.** After an author run, the paths the node changed during each
