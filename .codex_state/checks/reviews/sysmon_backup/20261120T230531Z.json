@@ -1,0 +1,35 @@
+{
+ "class": "sysmon_backup",
+ "at": "20261120T230531Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "nightly-cron <- manifests/backup.pp:5-8: the define's defaults user root, hour 23, minute 0, monthday * (sysmon_backup.pp:13 passes none of them) give the crontab line '0 23 * * *' in root's crontab; the probe greps exactly that line under the cron's Puppet Name",
+  "nightly-cron <- manifests/backup.pp:22-23: command ${bindir}/backup-${title}.sh with title sysmon and filesystem::bindir /opt/puppet-infrastructure/bin is /opt/puppet-infrastructure/bin/backup-sysmon.sh, user root, resource title cron_sysmon_backup; the expect matches that command and name",
+  "a-failed-run-is-loud <- templates/backup/backup.sh.erb:31: the tar line writes $BACKDIR/$FILEPREFIX-<date>.tar.gz, so a full one-page tmpfs over /opt/puppet-infrastructure/backup/sysmon makes it fail while the directory stays writable; the non-zero exit, the ERROR line on stderr and via logger -t backup-$FILEPREFIX (journalctl -t backup-sysmon.p8test.invalid) and the exit before the retention loop are local change #15 (current template lines 33-40, row 15 in local_changes.md), not baseline text; the planted archive dated 12 days is older than DAYS=10*1-1=9 (baseline 22-23, 35-37), so its survival shows retention was skipped. mutates covers the mount, the planted file, the script run and /run/p8test-sysmon-fail; the effect reads the recorded rc/stderr, the journal and the directory, not the action's output",
+  "purpose covered: Purpose (nightly gzip tar of sysmon::basedir into sysmon::backdir, keeping sysmon::backdays days) matches sysmon_backup.pp:1-13 and the backup define/template. Checks test: script installed root 0755 with the Hiera values (basedir, prefix sysmon::address, backdir, NC 10, compression true); root crontab 0 23 * * * for the script; the backup directory declared (local change #14) root 0755; a by-hand run exits 0 and writes a dated gzip archive that passes gzip -t and restores p8test.txt byte for byte; retention deletes only the prefix's file older than 9 days and keeps the 5-day one and the other prefix's 30-day file; a run that cannot write fails loudly and keeps old archives (local change #15). Uncovered, honestly: cron actually firing at 23:00 (phase3.py has no step that waits for or advances the node's cron schedule; the entry and the script it names are both tested) and compression false (one Hiera fixture per set leaves sysmon::compression unset; probes may not change the master's Hiera). EXCLUDEDIRS and TARGETUSER are empty constants in the template, so the exclude and chown branches are not outcomes of this class."
+ ],
+ "review_s": 119.4,
+ "check_file_sha256": "9966bb0abca5f2ebdc29d89721a1037f21a5917845e7683ff4507dc0bedaea8f",
+ "content_sha256": "9966bb0abca5f2ebdc29d89721a1037f21a5917845e7683ff4507dc0bedaea8f",
+ "reviewer_result": "20261120T230332Z-reviewer",
+ "author_result": "20261120T225344Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "01ba895c-9947-46d4-85b2-5c7e2500aac8",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "01ba895c-9947-46d4-85b2-5c7e2500aac8",
+   "fresh": true
+  }
+ }
+}
