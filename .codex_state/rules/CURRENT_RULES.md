@@ -2,7 +2,15 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-121 entries; 6 marked superseded (in whole or part); newest first.
+122 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-20 — ifupdown alongside netplan (HQ batch-15 ruling 5): measured facts and the plan
+- 1. **ifupdown is installable on Ubuntu 24.04:** 0.8.41ubuntu1 from noble/universe (apt-cache policy on the 24.04
+- 2. **Why production has ifupdown and the lab does not** (the answer HQ asked to record).
+- 3. **On the 24.04 node** (prototype, 2026-11-20):
+- 4. **Recording.**
+- 5. **Reported, not part of ruling 5.** network_static's default route is hard-coded to `interface => 'eth0'` (baseline
+- 6. **Plan:** native netplan support goes on the Phase 5 backlog, and ifupdown's availability is checked in the 26.04
 
 ## 2026-11-20 — Local change #9 done; the review form for a class with a new local change
 - 1. **Local change #9** (caching_nameserver, HQ batch-15 ruling 6) is done.

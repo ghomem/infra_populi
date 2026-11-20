@@ -2235,3 +2235,31 @@ snapshot list, record.
    reviewer) puts commits after the migrate commit, and the reviewer's `--fresh` refuses that ("only for the review right
    after a migration"). For a class with a new local change, the Phase 1 review uses the plain form `<class>`, which
    re-verifies the recorded class. Recorded in CLAUDE.md.
+
+## 2026-11-20 — ifupdown alongside netplan (HQ batch-15 ruling 5): measured facts and the plan
+1. **ifupdown is installable on Ubuntu 24.04:** 0.8.41ubuntu1 from noble/universe (apt-cache policy on the 24.04
+   master), depending only on libc6, adduser and iproute2. So the ruled design stands; no stop.
+2. **Why production has ifupdown and the lab does not** (the answer HQ asked to record).
+   - network_dhcp's own header: it "was originally created because the OpenVPN server class needs to manage interface
+     lo".
+   - In production, the same 3 node statements declare network_dhcp and network_vpn (fleet_class_usage.md: direct=3
+     each), and network_vpn brings in openvpn_server.
+   - openvpn_server installs ifupdown itself (`package { ['ifupdown', 'bridge-utils']: }`, baseline :35) and enables
+     the networking service (:38-41). That is the ifupdown and the populated interfaces file Salatiel found.
+   - The lab ran network_dhcp alone, so nothing installed ifupdown.
+   - network_static has 0 production statements.
+3. **On the 24.04 node** (prototype, 2026-11-20):
+   - installing ifupdown enables networking.service by itself, so network_dhcp needs only the package;
+   - `ifup` of a DHCP stanza uses dhcpcd (dhcpcd-base; isc-dhcp-client is absent), and p8test0 got 10.251.0.146/24
+     from the fixture's server;
+   - dhcpcd added the fixture's default route at metric 1005, behind the NAT route's 100, and the node kept its
+     internet.
+4. **Recording.**
+   - **network_dhcp:** declares ifupdown (local change #10) through stdlib ensure_packages.
+   - **openvpn_server:** its plain package declaration becomes the same ensure_packages (class_rulings.txt), so the two
+     classes compile together in either order.
+   - **network_static:** gets the same declaration and a set of its own.
+5. **Reported, not part of ruling 5.** network_static's default route is hard-coded to `interface => 'eth0'` (baseline
+   :13), whatever $iface is. Ubuntu 24.04 names interfaces predictably, with no eth0.
+6. **Plan:** native netplan support goes on the Phase 5 backlog, and ifupdown's availability is checked in the 26.04
+   pass (HQ ruling 5).
