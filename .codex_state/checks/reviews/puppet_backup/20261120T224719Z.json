@@ -1,0 +1,35 @@
+{
+ "class": "puppet_backup",
+ "at": "20261120T224719Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "cron-runs-it-at-2300 (manifests/backup.pp:21-28): the cron resource cron_${title}_backup with command ${bindir}/backup-${title}.sh, user root, hour 23, minute 0, monthday * yields exactly the crontab entry '# Puppet Name: cron_puppet_backup' / '0 23 * * * /opt/puppet-infrastructure/bin/backup-puppet.sh' (bindir from filesystem::bindir, title puppet); probe and expect match",
+  "a-failed-run-is-loud (manifests/backup.pp:21-28): the reference fixes what is run and as whom (root's cron runs backup-puppet.sh), which the action reproduces by running the script once as root; the ERROR text and non-zero exit the expect matches come from local change #15 (current template lines 33-40), which the baseline lines cannot cite, so the reference is the invocation anchor only",
+  "a-failed-run-is-loud (templates/backup/backup.sh.erb:31): the tar line writes $BACKDIR/$FILEPREFIX-<date>.tar.gz; making BACKDIR read-only makes exactly this command fail (as the row 15 before-run shows: 'Cannot open: Read-only file system'), and the expected ERROR line names $FILETARGETDIRS=/etc/puppetlabs/ and $BACKDIR=/opt/puppet-infrastructure/backup/puppet as the template renders them under the lab Hiera",
+  "purpose gap: Purpose (nightly dated gzip tar of /etc/puppetlabs with N-day retention) matches the header ('provides puppet backups') and puppet_backup.pp/backup.pp/backup.sh.erb. Tested: the rendered Hiera values and 0755 root script, the 23:00 crontab entry, the backup directory (local change #14), a run producing a gzip archive that restores puppet.conf byte for byte, retention deleting only the prefix's >9-day archive (12-day gone, 5-day and other-prefix 30-day kept), and a failed run's non-zero exit plus ERROR line on stderr and in the journal (local change #15). Uncovered row (cron firing at 23:00) is honest. GAP: outcome 5 claims a failed run 'deletes no old archive', mapped to a-failed-run-is-loud, but that check does not probe it: it only checks puppet.example.com-recent.tar.gz (5 days old, outside the find -mtime +9 retention, so a run reaching the retention loop keeps it too), no >9-day archive of the prefix remains at that point (the earlier run deleted the 12-day one), and the directory is bind-mounted read-only so rm -f could not delete anything anyway. The 'exit before retention' half of change #15 thus holds with or without the exit; the lab CAN exercise it, e.g. plant a >9-day prefix archive and make tar fail while the directory stays writable (a full small tmpfs over the backup directory, or an unreadable/missing target), then check that archive is still there."
+ ],
+ "review_s": 121.8,
+ "check_file_sha256": "a85861c5b5f00186c7918693da789259789ad88e8f852a3dca05958c35d3d710",
+ "content_sha256": "a85861c5b5f00186c7918693da789259789ad88e8f852a3dca05958c35d3d710",
+ "reviewer_result": "20261120T224518Z-reviewer",
+ "author_result": "20261120T221042Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "3d23fb25-8a7d-4596-af8b-e3b3f4d63bc9",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "3d23fb25-8a7d-4596-af8b-e3b3f4d63bc9",
+   "fresh": true
+  }
+ }
+}
