@@ -1,6 +1,6 @@
 # Lab VMs crashed on a laptop resume (2026-11-19 20:38Z)
 
-Status: OPEN, for Salatiel. Lab runs are on hold. Recovering a VM in this state needs a power-off, which for the master
+Status: CLOSED 2026-11-20. Salatiel powered both VMs off; revert_node.sh started the master (clock checked: -1.07 s) and restored the node; the master is healthy (DESIGN_DECISIONS 2026-11-19, the VM crash entry); lab_sleep_guard.sh now blocks sleep while any lab VM runs. Salatiel is checking the KVM side. Was: OPEN, for Salatiel. Lab runs were on hold. Recovering a VM in this state needs a power-off, which for the master
 is Salatiel's alone (CLAUDE.md: the master is never hard-powered off by the engine; raw mutating VBoxManage is denied).
 
 ## Evidence (read-only, 2026-11-19 21:31Z)
