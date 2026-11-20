@@ -85,7 +85,8 @@ checks:
       - {path: manifests/user_sudoer.pp, lines: "10-11", text: "$grouplist = flatten( [ $mygrouplist, [ 'sudo' ] ] )"}
     mutates: >-
       three sudo attempts (p8testuser with the test password and with a wrong one, nobody with the test password); sudo
-      logs them to the journal and /var/log/auth.log and keeps a timestamp per user under /run/sudo; the answers go to
+      logs them to the journal and /var/log/auth.log, and the successful one creates Ubuntu's marker
+      /home/p8testuser/.sudo_as_admin_successful (-k keeps no credential timestamp); the answers go to
       /run/p8test-sudoer/sudo.txt
     probe: |
       install -d -m 0700 /run/p8test-sudoer; o=/run/p8test-sudoer/sudo.txt; : > $o
