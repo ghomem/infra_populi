@@ -6,6 +6,8 @@
 # 2026-11-20 (backfill batch 7): purpose and outcomes (HQ rulings 2 and C1); exercises for the certificate check (a
 # self-signed client is refused), the rotation (forced, then a new message lands in a fresh file: rsyslog reopened
 # it after the postrotate HUP) and the retention script (planted files of known dates and ages).
+# Correction round 1, 2026-11-20 (review 20261120T232205Z, purpose): the server's own logs in its host directory, the
+# unknown-program branch, and rsyslogd's own refusal entry as the self-signed check's evidence (prototyped on the node).
 class: rsyslog_server
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -17,9 +19,12 @@ outcomes:
   - outcome: rsyslogd listens on the port over TLS with the node's own certificate, configured for the per-host tree and the session limit
     from: manifests/rsyslog_server.pp:20-39; templates/rsyslog/listener_simple.conf.epp:1-35
     checks: [listener-config-rendered, tls-listener-presents-the-node-certificate, self-forward-config-absent]
-  - outcome: a message from a client with a CA-signed certificate lands in <log_root>/hosts/<hostname>/<program>.log; a client with a self-signed certificate is refused
-    from: templates/rsyslog/listener_simple.conf.epp:15-35
-    checks: [remote-message-lands-in-the-host-tree, a-self-signed-client-is-refused]
+  - outcome: a message from a client with a CA-signed certificate lands in <log_root>/hosts/<hostname>/<program>.log, or unknown.log without a program name; a client with a self-signed certificate is refused
+    from: templates/rsyslog/listener_simple.conf.epp:15-36
+    checks: [remote-message-lands-in-the-host-tree, a-message-without-a-program-lands-in-unknown, a-self-signed-client-is-refused]
+  - outcome: the server's own local logs are stored in its own host directory of the tree
+    from: manifests/rsyslog_server.pp:1-5; templates/rsyslog/listener_simple.conf.epp:32-36
+    checks: [the-servers-own-logs-land-in-its-host-directory]
   - outcome: the per-host logs rotate daily at the rotation time, date-suffixed and uncompressed, and rsyslog reopens its files after the rotation
     from: manifests/rsyslog_server.pp:43-87; templates/rsyslog/rsyslog-hosts.logrotate.epp:1-13; templates/rsyslog/logrotate.timer.override.epp:1-5
     checks: [logrotate-timer-override-active, host-logs-rotation-rule, a-rotation-reopens-the-host-log]
@@ -151,7 +156,38 @@ checks:
     effect: |
       p8_count 'p8test-remote-marker' /var/log/hosts/p8testremote/p8test.log
       cat /var/log/hosts/*/*.log 2>/dev/null | p8_count 'p8test-selfsigned-marker'
-    expect: {rc: 0, stdout: "\\A1\\n0\\n\\Z"}
+      journalctl -t rsyslogd -o cat --no-pager | p8_count 'certificate invalid: signer not found'
+    expect: {rc: 0, stdout: "\\A1\\n0\\n[1-9]\\d*\\n\\Z"}
+
+  - id: a-message-without-a-program-lands-in-unknown
+    what: a CA-signed client's message with an empty tag (no program name) is written to <log_root>/hosts/<hostname>/unknown.log
+    control: negative
+    derived_from:
+      - {path: templates/rsyslog/listener_simple.conf.epp, lines: "26-33", text: "if ($programname == '') then {"}
+    mutates: >-
+      sends one RFC3164 line with an empty tag (host p8testremote) to 127.0.0.1:6514 over TLS with the node's own
+      certificate; rsyslogd creates /var/log/hosts/p8testremote/unknown.log and appends to /var/log/syslog
+    probe: |
+      c=$(basename /etc/rsyslog.d/tls/*.key .key)
+      { printf '<14>Nov 16 19:03:00 p8testremote : p8test-unknown-marker\n'; sleep 2; } | timeout 15 openssl s_client -quiet -connect 127.0.0.1:6514 -CAfile /etc/rsyslog.d/tls/ca.pem -cert "/etc/rsyslog.d/tls/$c.pem" -key "/etc/rsyslog.d/tls/$c.key" >/dev/null 2>&1; sleep 2
+    effect: |
+      p8_count 'p8test-unknown-marker' /var/log/hosts/p8testremote/unknown.log
+    expect: {rc: 0, stdout: "\\A1\\n\\Z"}
+
+  - id: the-servers-own-logs-land-in-its-host-directory
+    what: a message logged on the server itself (logger, tag p8testlocal) is written to <log_root>/hosts/<its hostname>/p8testlocal.log
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_server.pp, lines: "1-5", text: "# Receives local and remote logs over TLS, stores them under a host-based tree,"}
+      - {path: templates/rsyslog/listener_simple.conf.epp, lines: "34-36", text: "action(type=\"omfile\" dynaFile=\"remote\" createDirs=\"on\")"}
+    mutates: >-
+      logs one message with logger -t p8testlocal; rsyslogd creates /var/log/hosts/<hostname>/p8testlocal.log and
+      appends to /var/log/syslog and the journal
+    probe: |
+      logger -t p8testlocal p8test-local-marker; sleep 2
+    effect: |
+      p8_count 'p8test-local-marker' "/var/log/hosts/$(hostname)/p8testlocal.log"
+    expect: {rc: 0, stdout: "\\A1\\n\\Z"}
 
   - id: a-rotation-reopens-the-host-log
     what: >-
