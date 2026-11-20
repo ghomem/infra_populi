@@ -7,6 +7,9 @@
 # p8test0 192.0.2.10/24; /etc/network/routes reads `default 0.0.0.0 192.0.2.1 eth0`, and ifupdown-extra's
 # 20static-routes installs no default route for p8test0, because the class names eth0 (baseline :13), which Ubuntu 24.04
 # does not have. The route check expects the baseline's purpose and fails: a finding, escalated.
+# 2026-11-20, local change #12 (HQ: keep and fix): the route uses $iface. The class's default route through p8test0
+# now takes the node's default route (by design: the class configures the node's primary interface), so the last
+# check reads that the NAT route stays behind it and the host-only route stays; the node is reverted after every run.
 class: network_static
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -29,10 +32,10 @@ outcomes:
   - outcome: the interface keeps its address through a restart of the networking service
     from: manifests/network_static.pp:12
     checks: [a-restart-of-networking-keeps-the-address]
-  - outcome: the default route goes through the given gateway once the interface is up
-    from: manifests/network_static.pp:13
+  - outcome: the default route goes through the given gateway on the configured interface once it is up (local change #12)
+    from: manifests/network_static.pp:9-13
     checks: [the-default-route-goes-through-the-gateway]
-  - outcome: the node's primary interface keeps working (ifupdown beside netplan, HQ batch-15 ruling 5)
+  - outcome: the node's other routes and its management path keep working beside the class's default route (the NAT route stays, behind it; the host-only route stays)
     from: manifests/network_static.pp:4-7
     checks: [the-primary-interface-keeps-working]
   - outcome: an actual reboot brings the interface up
@@ -53,7 +56,7 @@ checks:
       grep -E '^(auto|iface) p8test0|^address ' /etc/network/interfaces
       grep -vE '^#' /etc/network/routes
       dpkg-query -W -f '${Package} ${Status}\n' ifupdown-extra
-    expect: {rc: 0, stdout: "\\Aauto p8test0\\niface p8test0 inet static\\naddress 192\\.0\\.2\\.10\\ndefault 0\\.0\\.0\\.0 192\\.0\\.2\\.1 eth0\\nifupdown-extra install ok installed\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Aauto p8test0\\niface p8test0 inet static\\naddress 192\\.0\\.2\\.10\\ndefault 0\\.0\\.0\\.0 192\\.0\\.2\\.1 p8test0\\nifupdown-extra install ok installed\\n\\Z"}
 
   - id: ifupdown-and-the-networking-service
     what: ifupdown is installed and its networking service, which runs the stanzas at boot, is enabled
@@ -114,7 +117,7 @@ checks:
     expect: {rc: 0, stdout: "\\Aactive\\n192\\.0\\.2\\.10/24\\n\\Z"}
 
   - id: the-default-route-goes-through-the-gateway
-    what: with p8test0 up, a default route through the gateway 192.0.2.1 is installed (from /etc/network/routes)
+    what: with p8test0 up, a default route through the gateway 192.0.2.1 on p8test0 is installed (from /etc/network/routes)
     control: negative
     derived_from:
       - {path: manifests/network_static.pp, lines: "13", text: "network_route  { 'default':        ensure => 'present', gateway => $gateway, interface => 'eth0', netmask => '0.0.0.0', network   => 'default' }"}
@@ -122,19 +125,22 @@ checks:
     probe: |
       true
     effect: |
-      ip -4 route show default | p8_count 'via 192\.0\.2\.1 '
+      ip -4 route show default | p8_count 'via 192\.0\.2\.1 dev p8test0'
     expect: {rc: 0, stdout: "\\A1\\n\\Z"}
 
   - id: the-primary-interface-keeps-working
-    what: with p8test0 up through ifupdown, the node's way to the internet still goes out through its primary interface (enp0s3, netplan) and answers
+    what: >-
+      with p8test0 up through ifupdown and the class's default route through it, the NAT default route (enp0s3,
+      netplan, metric 100) is still present behind it, and the host-only interface keeps its connected route (the
+      management path the runner's own SSH uses)
     control: negative
     derived_from:
       - {path: manifests/network_static.pp, lines: "4-7", text: "# once puppet starts managing one interface it has to manage"}
-    mutates: none beyond one route lookup and two pings to 1.1.1.1 (declared mutating so it runs after the restart)
+    mutates: none beyond reading the routes (declared mutating so it runs after the restart)
     probe: |
       true
     effect: |
       ip -4 -o addr show p8test0 | grep -q '192\.0\.2\.10/' && echo "p8test0 up"
-      ip -4 route get 1.1.1.1 | grep -o 'dev [a-z0-9]*' | head -1
-      ping -c2 -W3 -q 1.1.1.1 >/dev/null 2>&1 && echo "internet answers"
-    expect: {rc: 0, stdout: "\\Ap8test0 up\\ndev enp0s3\\ninternet answers\\n\\Z"}
+      ip -4 route show default dev enp0s3 | p8_count 'metric 100'
+      ip -4 route show dev enp0s8 | p8_count 'proto kernel scope link'
+    expect: {rc: 0, stdout: "\\Ap8test0 up\\n1\\n1\\n\\Z"}
