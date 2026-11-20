@@ -1,0 +1,35 @@
+{
+ "class": "mysql_server",
+ "at": "20261120T120720Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "a-client-needs-tls-and-verifies-the-server: mysql_server.pp:14-18 build ssl_chain_file = /etc/mysql/ssl/p8test-chain.pem under the fixture (ssl_chain p8test-chain.pem), and server.cnf.epp:11 sets require_secure_transport = ON. The probe expects ERROR 3159 for a plaintext TCP login, a TLS session, VERIFY_CA success against exactly that chain file, and ERROR 2026 against an unrelated CA (ISRG Root X1). That is what those lines produce. mutates declares the account, the data-directory writes and the /run output. The action is a client exercise of the server's transport rule. The effect records the server's answers and the client's verification of the server certificate; it does not record a self-report. The node's error log (read after the run) has no entry from the action",
+  "managed-config-file-rendered: server.cnf.epp:6-10 rendered with data_dir ${base_dir}/mysql = /srv/mysql and the three /etc/mysql/ssl/p8test* paths, plus line 11 require_secure_transport = ON. Root and 0644 come from mysql_server.pp:109-113. The expectation matches the rendering line for line",
+  "server-reports-mysql-from-the-managed-config: mysql_server.pp:18-19 (data_dir /srv/mysql, config_file zz-puppet-infrastructure.cnf) and template lines 5-11. Querying the running server's @@datadir /srv/mysql/, @@ssl_ca/cert/key, @@require_secure_transport 1 and @@bind_address 0.0.0.0 tests that mysqld really runs from that config. The version 8.0.x-0ubuntu (Ubuntu) follows from package_name mysql-server-${version} with version 8.0 (pp:48)",
+  "purpose gap: Tested: MySQL 8.0 (not MariaDB) installed, active and enabled. The running server uses the managed config's datadir, TLS files, secure transport and bind 0.0.0.0 (ss also shows 0.0.0.0:3306). AppArmor's local include holds the paths and mysqld is confined in enforce mode while serving /srv/mysql. TCP clients must use TLS, and the server certificate verifies against the given chain (with an unrelated CA as the contrast). The TLS key is root:mysql 0640 in a 0750 directory and is readable by mysql, not by nobody. Root@localhost uses mysql_native_password, and a login without the password is refused. Gap: the class sets remove_default_accounts => true (mysql_server.pp:51). On the lab module (mysql::server::account_security) that removes root@127.0.0.1, root@::1, root@localhost.localdomain, root@<fqdn> and root@<hostname> as well as the anonymous accounts and the test database. The outcome row 'no anonymous account or test database remains' and the check root-needs-the-password-and-defaults-are-gone test only user='' and schema 'test'. The absence of any root account other than root@localhost is untested. This is the security-relevant half of the default-account removal: a root reachable over TCP from another host entry. The lab can check it with one read-only query (a read-only query on the applied node now lists only root@localhost besides mysql.infoschema/session/sys and the test account), and the outcomes table does not list it as uncovered"
+ ],
+ "review_s": 180.3,
+ "check_file_sha256": "b20dd271f2b8dc022fffe1f36ad67fe9784072610c17d74e62ed3f6b3a21673e",
+ "content_sha256": "b20dd271f2b8dc022fffe1f36ad67fe9784072610c17d74e62ed3f6b3a21673e",
+ "reviewer_result": "20261120T120420Z-reviewer",
+ "author_result": "20261120T120128Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "b206c26f-bee6-4354-bb1a-58a4c8bce383",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "b206c26f-bee6-4354-bb1a-58a4c8bce383",
+   "fresh": true
+  }
+ }
+}
