@@ -1,0 +1,68 @@
+{
+ "class": "backup",
+ "role": "author",
+ "at": "20261120T212444Z",
+ "runner": "5f8298c",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "2fe43e5e70c7f45cdc5475985d14b5a16fd035ebc4d78bcca1e970312bfacb5f",
+ "content_sha256": "2fe43e5e70c7f45cdc5475985d14b5a16fd035ebc4d78bcca1e970312bfacb5f",
+ "valid": false,
+ "problems": [
+  "outcomes[4].uncovered: uncovered takes why (>= 20 characters), lifted_by and evidence",
+  "outcomes[5].uncovered: uncovered takes why (>= 20 characters), lifted_by and evidence"
+ ],
+ "clean": [],
+ "apply": null,
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "INVALID_SET",
+ "outcomes": [
+  {
+   "outcome": "the per-title script is installed root:root 0755 with the parameters, and the user's crontab runs it at 23:00 every day of the month",
+   "checks": [
+    "script-installed-with-the-parameters",
+    "cron-runs-it-at-2300"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "a run writes a dated gzip tar of the base directory into the backup directory, from which a file restores byte for byte",
+   "checks": [
+    "aged-archives-are-planted",
+    "a-run-writes-a-restorable-gzip-tar"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "the run deletes the prefix's archives older than ndays-1 full days and keeps newer ones and other prefixes' files",
+   "checks": [
+    "aged-archives-are-planted",
+    "a-run-deletes-only-its-own-old-archives"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "a run that cannot write its archive fails loudly (non-zero exit, an error line on stderr and in syslog) and deletes no old archive",
+   "checks": [
+    "a-failed-run-is-loud"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "cron itself firing at 23:00",
+   "uncovered": {
+    "why": "a run would have to wait for 23:00; the crontab entry is checked and the script it names is run by hand",
+    "lifted_by": "ubuntu"
+   }
+  },
+  {
+   "outcome": "compression off, several base directories, another user, time or monthday",
+   "uncovered": {
+    "why": "parameter variants (one set holds one params fixture); untested",
+    "lifted_by": "ubuntu"
+   }
+  }
+ ],
+ "duration_s": 0.0
+}
