@@ -2,7 +2,11 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-120 entries; 6 marked superseded (in whole or part); newest first.
+121 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-20 — Local change #9 done; the review form for a class with a new local change
+- 1. **Local change #9** (caching_nameserver, HQ batch-15 ruling 6) is done.
+- 2. **The review form.** Ruling 2's order (record_green, the Phase 3 after-run, the row's after evidence, then the
 
 ## 2026-11-19 — The lab VM crash on a laptop resume, and what it changed
 - 1. **The crash** (escalations/lab-vm-crash-2026-11-19.md):

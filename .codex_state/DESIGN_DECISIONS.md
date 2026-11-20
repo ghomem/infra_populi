@@ -2223,3 +2223,15 @@ snapshot list, record.
      1. the RedHat rows, on rhel9;
      2. the parameter variants that production sets (names and counts from the fleet data);
      3. the remaining variants, listed for Salatiel's acceptance, not tested one by one.
+
+## 2026-11-20 — Local change #9 done; the review form for a class with a new local change
+1. **Local change #9** (caching_nameserver, HQ batch-15 ruling 6) is done.
+   - On a host without a 2000::/3 address, a stdlib file_line makes named IPv4-only.
+   - On the IPv4-only lab node, www.debian.org and www.kernel.org now resolve at the first cold attempt.
+   - Phase 1 PASS 20261120T000035Z, with the after-check confirmed by the reviewer. Phase 3 PASS 20261120T000624Z.
+   - Approval condition #2 is removed; its number is not reused.
+   - The plan row gained required_external stdlib (file_line, as linux_policies_user).
+2. **The review form.** Ruling 2's order (record_green, the Phase 3 after-run, the row's after evidence, then the
+   reviewer) puts commits after the migrate commit, and the reviewer's `--fresh` refuses that ("only for the review right
+   after a migration"). For a class with a new local change, the Phase 1 review uses the plain form `<class>`, which
+   re-verifies the recorded class. Recorded in CLAUDE.md.
