@@ -2315,3 +2315,21 @@ passes stdin through, and inside an engine run (P8_LAB_LOCKED=1) runs without ta
 command run on the node during a reviewer's run was cut by that run's revert. Enforcement: a project PreToolUse hook
 (`hooks/lab_ssh_guard.py`) refuses a Bash command that reaches a lab host with ssh/scp/sftp/rsync outside the wrapper;
 the engine's tools, which take the lock themselves, are unaffected. 21 tests; the live hook refused a direct ssh.
+
+## 2026-11-20 — HQ after batch 16, items 1 and 2: the backup directory and loud failures
+1. **Local change #14:** the backup define receives the target, so it declares the directory once for every caller
+   (`ensure_resource`, owned by the cron user, 0755); filesystem_base keeps the parent. The fixture of the define's own
+   set moved under the parent, as every real caller's target is. Standing composite `backup_wrappers` (filesystem_base,
+   puppet_backup, sysmon_backup) compiles.
+2. **Local change #15:** after tar, a non-zero status writes an ERROR line to stderr and syslog and exits with tar's
+   status before retention, so old archives are kept. The checking method matters: a read-only directory cannot show
+   that retention was skipped (rm could not delete either way; puppet_backup's review caught it, and backup's earlier
+   PASS on the same check was corrected in the same cycle). The check now fills a one-page tmpfs over the directory,
+   holding an archive old enough for retention to delete, so tar fails with the directory writable.
+3. **sysmon_backup's set** no longer creates the backup directory (it masked the defect).
+4. **Cutover item 7 (item 2):** check on the production master (and the monitoring server) whether archives were ever
+   written.
+5. **A commit deadlock** (Salatiel chose the fix): a FAIL review of a re-migrated checkpoint class blocked every commit
+   (test_repo_sweep_result_is_8_verified) while the reviewer refused the uncommitted fix. The test now accepts a class
+   out of the verified set only while its latest review is a recorded FAIL of its current migration; moving the FAIL
+   review aside was refused as undermining oversight and was not done.

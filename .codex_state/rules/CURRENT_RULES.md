@@ -2,7 +2,14 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-126 entries; 6 marked superseded (in whole or part); newest first.
+127 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-20 — HQ after batch 16, items 1 and 2: the backup directory and loud failures
+- 1. **Local change #14:** the backup define receives the target, so it declares the directory once for every caller
+- 2. **Local change #15:** after tar, a non-zero status writes an ERROR line to stderr and syslog and exits with tar's
+- 3. **sysmon_backup's set** no longer creates the backup directory (it masked the defect).
+- 4. **Cutover item 7 (item 2):** check on the production master (and the monitoring server) whether archives were ever
+- 5. **A commit deadlock** (Salatiel chose the fix): a FAIL review of a re-migrated checkpoint class blocked every commit
 
 ## 2026-11-20 — HQ after batch 16, item 3: lab access through a wrapper
 - (no numbered/Rule/Decision lines; read the entry)
