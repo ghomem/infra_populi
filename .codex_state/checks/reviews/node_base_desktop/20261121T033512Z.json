@@ -1,0 +1,35 @@
+{
+ "class": "node_base_desktop",
+ "at": "20261121T033512Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-local-directories-are-in-place: node_base_desktop.pp:49-52 declares filesystem_base_desktop, whose baseline lines 10-22 make localdir/bindir/etcdir directories root-owned with mode 0644, which Puppet turns into 0755 on directories (search bit where read is set); the probe stats exactly those three Hiera paths (/opt/puppet-infrastructure, bin, etc) for root 755, which is what that code produces",
+  "puppet-service-enabled-and-running: node_base_desktop.pp:104-108 declares service puppet ensure running, enable true, provider systemd; systemctl is-enabled/is-active expecting enabled/active tests exactly that (the unit body is the puppet_agent_standin fixture, stated in the header and the uncovered daemon row)",
+  "ipv6-input-and-forward-dropped: node_base_desktop.pp:59 includes firewall_ipv6_drop_policy_desktop, whose baseline declares INPUT:filter:IPv6 and FORWARD:filter:IPv6 policy drop and one ip6tables INPUT accept rule on iniface lo; the probe reads the two ip6tables policies (DROP) and counts one '-i lo' rule in INPUT, matching that code",
+  "purpose covered: Purpose matches the baseline header (lines 1-7) and code. My run (20261121T033223Z-reviewer) was ALL_PASS: all 10 negatives failed on the clean gnome node and passed after apply; the dconf mismatch (absent profile, no system-db:local) failed as required. The checks test what the profile chooses: sshd -T shows password and root login refused (lines 17-18, 43-47); unattended-upgrades removed (39-41, also the packages_base sentinel); firewall_secure applied (policies DROP, the Hiera whitelist rule, the 116 LIMIT_OVERALL rule, which I saw in iptables -S on the applied node); IPv6 INPUT/FORWARD dropped with lo accepted (59); filesystem_base_desktop dirs (49-52); filesystem_apt in desktop mode by its content (firefox listed, nginx-core/postfix not, desktop link, relevant script) (65-68); the 02:00 root cron (71-77); the forward line to the fixture's target and 6514 (80-86); the GNOME dconf policy read through the user profile, 300 s/true/0 (95-101); the puppet service (104-108). Component behaviour (TLS delivery, SSH limits, KDE lock effect) is delegated to the component sets, all at pass in phase3 state. Uncovered rows are honest: KDE per-user lock needs a KDE session (user_kde_lock_screen's exec acts only with the user logged in to KDE; phase3 run has no per-node option, so a set cannot run on kubuntu as well as gnome); the agent daemon is a stand-in. Left out and not needing a row: parameters passed at values equal to the component defaults (ssh port 22, strict_purge true, ignore_patterns [], check_names false) are covered by those components' sets; the log_target_ip pin is unobservable here because the gnome baseline /etc/hosts already maps 192.168.56.10 to puppet8master.example.com (I read it on the node). Minor table note: the 'syslog left to rsyslog' half of the filesystem_base_desktop row is not probed by its mapped check, but it cannot be told apart on this node (/var/log/syslog is already syslog:adm 0640, the same as the customized mode), so no exercisable part is untested."
+ ],
+ "review_s": 169.1,
+ "check_file_sha256": "3e25a54081a9fd627f37de84196e0c8fd2a1bc45e275cb47966f21f3bad83c82",
+ "content_sha256": "3e25a54081a9fd627f37de84196e0c8fd2a1bc45e275cb47966f21f3bad83c82",
+ "reviewer_result": "20261121T033223Z-reviewer",
+ "author_result": "20261121T032857Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "boot_id": "cb4d9a9e-3274-4e1d-954e-fea0840442f4",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "cb4d9a9e-3274-4e1d-954e-fea0840442f4",
+   "fresh": true
+  }
+ }
+}
