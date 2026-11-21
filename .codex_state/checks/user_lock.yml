@@ -4,8 +4,10 @@
 # What a node can show: hashman's own `pp_auth.py lock` marked the user's password entry locked (LOCKPREFIX '!'), in
 # hashman's line format. NOT shown: a locked user refused by pp_auth/the web interface on a master (mock-apply; the
 # fixture hash is not a real password).
-# 2026-11-21 (backfill batch 9): purpose and outcomes (HQ rulings 2 and C1); the master-side refusal as a row lifted by
-# the active puppetserver node kind (a work item for the stand-in lifts).
+# 2026-11-21 (backfill batch 9): purpose and outcomes (HQ rulings 2 and C1).
+# Correction round 1, 2026-11-21 (review 20261121T124336Z, purpose): the refusal itself, through hashman's own auth on
+# the node (hashman_base installs the same CLI and library a master runs). The node fixture now seeds the SHA-512 hash
+# of the lab's user test password, so the refusal is the lock's and not a fake hash's.
 class: user_lock
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -16,12 +18,9 @@ outcomes:
   - outcome: hashman's pp_auth.py lock marks the user's entry locked, in place (one entry, not a duplicate)
     from: manifests/user_lock.pp:5-16
     checks: [user-entry-locked-by-hashman, exactly-one-entry]
-  - outcome: the locked user is refused by hashman's authentication on a master whose database holds the user
-    from: manifests/user_lock.pp:2, 9-10
-    uncovered:
-      why: the node's hashman entry is a stand-in seeded by the node fixture hashman_lock_standin (a fake hash), not a master's user database
-      lifted_by: "capability: user_lock's set run on the puppetserver node (its hashman database), i.e. the class's plan node moved there; phase3.py runs a set on its class's plan node only (the stand-in lift after the backfill, HQ order)"
-      evidence: "plan node column for user_lock empty (default ubuntu) and node_fixture hashman_lock_standin; phase3.py run selects the node with nodes.select(cls); status.py --standins: user_lock"
+  - outcome: the locked user is refused by hashman's authentication (pp_auth auth, which hashman's web interface and services use), although the password matches the entry under the lock prefix
+    from: manifests/user_lock.pp:2, 11-14; templates/hashman/libhashman/dbutils.py.erb:168-206
+    checks: [the-locked-user-is-refused-by-hashman]
 checks:
   - id: user-entry-locked-by-hashman
     what: >-
@@ -33,7 +32,7 @@ checks:
       - {path: templates/hashman/libhashman/config.py.erb, lines: "58", text: "LOCKPREFIX = '!'"}
     probe: |
       grep -E '^[$]p8testuser_pwd_hash' /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp
-    expect: {rc: 0, stdout: "\\A\\$p8testuser_pwd_hash = '!\\$6\\$p8testsalt\\$p8testfixturehash'\\n\\Z"}
+    expect: {rc: 0, stdout: "\\A\\$p8testuser_pwd_hash = '!\\$6\\$p8testsalt\\$9xUyvkdoWnCLXETknv6/4H3vp7SZeY8/YeLlc0ghI7hRs/fF2LUjHGXmTgj4aqG2H/bbIFwnc09v0F/xru7g6/'\\n\\Z"}
 
   - id: exactly-one-entry
     what: locking rewrites the user's entry in place (one line for the user, no duplicate appended)
@@ -44,3 +43,27 @@ checks:
     probe: |
       grep -cE '^[$]p8testuser_pwd_hash' /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp
     expect: {rc: 0, stdout: "\\A1\\n\\Z"}
+
+  - id: the-locked-user-is-refused-by-hashman
+    what: >-
+      hashman's pp_auth auth refuses p8testuser with the test password (exit 1), while that password does match the
+      stored entry once the lock prefix is taken off (crypt of the password with the entry's salt equals it): the refusal
+      is the lock
+    control: negative
+    timeout: 120
+    derived_from:
+      - {path: templates/hashman/libhashman/dbutils.py.erb, lines: "199-205", text: "ourentry = crypt.crypt( password , '$' + salttype + '$' + saltstr + '$')"}
+      - {path: manifests/user_lock.pp, lines: "11-14", text: "command => \"${hashmandir}/common/pp_auth.py lock ${myuser} DUMMYARG; exit 0\","}
+    mutates: >-
+      one authentication attempt through hashman's CLI (it takes hashman's database lock briefly and logs to syslog); the
+      outcomes go to /run/p8test-lock/auth.txt
+    probe: |
+      install -d -m 0700 /run/p8test-lock
+      { /opt/puppet-infrastructure/bin/pp_auth.sh auth p8testuser 'p8test-user-not-a-secret' >/dev/null 2>&1; echo "hashman auth rc=$?"
+        e=$(sed -n "s/^[$]p8testuser_pwd_hash = '\(.*\)'$/\1/p" /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp)
+        python3 -W ignore -c 'import crypt,sys; e=sys.argv[1]; print("locked" if e.startswith("!") else "not locked"); print("password matches the unlocked entry" if crypt.crypt(sys.argv[2], e[1:]) == e[1:] else "password does not match")' "$e" 'p8test-user-not-a-secret'
+      } > /run/p8test-lock/auth.txt
+    effect: |
+      cat /run/p8test-lock/auth.txt
+    expect: {rc: 0, stdout: "\\Ahashman auth rc=1\\nlocked\\npassword matches the unlocked entry\\n\\Z"}
+
