@@ -4,28 +4,35 @@
 # Adapted from ssl_postfix's reviewed set (same ssl_base; the bundle is named for nginx).
 # 2026-11-21 (backfill batch 8): purpose and outcomes (HQ rulings 2 and C1), and ssl_base's restart on a changed
 # certificate as behaviour (a bundle changed by hand, the node's agent run, nginx under a new PID).
+# Correction round 1, 2026-11-21 (review 20261121T055031Z, purpose): the key's restore and restart (a second agent run,
+# after the key is changed by hand); the Let's Encrypt half dropped from the uncovered row (unreachable here).
 class: ssl_nginx
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 node_agent:
-  after: the-bundle-is-changed-by-hand
-  why: ssl_base restores a changed bundle and restarts the service only on an agent run after the change
+  after: [the-bundle-is-changed-by-hand, the-key-is-changed-by-hand]
+  why: ssl_base restores a changed bundle or key and restarts the service only on an agent run after the change
 purpose: >-
   Installs a site's TLS key and certificate for nginx: the private key root-only and the certificate bundled with its
   intermediate in the form nginx reads, and restarts nginx whenever either changes.
 outcomes:
   - outcome: the private key is installed root-only, and the bundle holds the certificate then the intermediate, the certificate matching the key
-    from: manifests/ssl_nginx.pp:1-9; manifests/ssl_base.pp:66-118
+    from: manifests/ssl_nginx.pp:1-9; manifests/ssl_base.pp:56-118
     checks: [private-key-installed-root-only, nginx-bundle-cert-then-intermediate, bundle-certificate-matches-the-key]
   - outcome: a changed bundle is put back on the next agent run and nginx is restarted
     from: manifests/ssl_base.pp:10, 100-103
     checks: [the-bundle-is-changed-by-hand, the-agent-run-restores-the-bundle-and-restarts-nginx]
-  - outcome: Let's Encrypt-shaped files (letsencrypt_certificate true), and the RedHat paths
-    from: manifests/ssl_base.pp:47-79
+  - outcome: a changed private key is put back on the next agent run and nginx is restarted
+    from: manifests/ssl_base.pp:10, 84-91
+    checks: [the-key-is-changed-by-hand, the-agent-run-restores-the-key-and-restarts-nginx]
+  - outcome: the RedHat paths (/etc/pki/tls/private for the key)
+    from: manifests/ssl_base.pp:56-68
     uncovered:
-      why: ssl_nginx passes no letsencrypt flag and the plan's node is Debian; one set holds one fixture on one node
-      lifted_by: "capability: more than one params fixture per set, and a phase3 set for a node kind other than the plan's (rhel9)"
-      evidence: "manifests/ssl_nginx.pp declares ssl_base with myprefix, myservice and myservicename only; phase3.py runs a set on the class's plan node with one fixture"
+      why: the plan's node for ssl_nginx is Debian (Ubuntu); a set runs on its class's plan node only
+      lifted_by: "capability: a phase3 set for a node kind other than the plan's (rhel9)"
+      evidence: "phase3.py run selects the class's plan node (nodes.select); migration_plan.md node column for ssl_nginx"
+# Not an outcome of this class: ssl_base's Let's Encrypt branch (ssl_base.pp:70-76). ssl_nginx has no parameter for it
+# and passes no letsencrypt_certificate (ssl_nginx.pp:1-9), so the branch is unreachable through this class.
 checks:
   - id: private-key-installed-root-only
     what: the prefix's private key is installed as /etc/ssl/private/<prefix>.key, root:root 0600
@@ -102,4 +109,38 @@ checks:
       [ "$now" -gt 0 ] && [ "$now" != "$(cat /run/p8test-sslnginx/pid)" ] && echo "nginx restarted"
       systemctl is-active nginx
     expect: {rc: 0, stdout: "\\A0\\nnginx restarted\\nactive\\n\\Z"}
+
+  - id: the-key-is-changed-by-hand
+    what: setup for the second agent run, a stray line appended to the private key, its digest before the change and nginx's main PID noted
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "84-91", text: "notify => Service[$myservicename],"}
+    mutates: >-
+      writes the key's SHA-256 and nginx's main PID to /run/p8test-sslnginx/key.sha and /run/p8test-sslnginx/pid-key,
+      then appends the line "# p8test drift" to /etc/ssl/private/p8test.key
+    probe: |
+      install -d -m 0700 /run/p8test-sslnginx
+      sha256sum /etc/ssl/private/p8test.key | cut -d' ' -f1 > /run/p8test-sslnginx/key.sha
+      systemctl show -p MainPID --value nginx > /run/p8test-sslnginx/pid-key
+      echo '# p8test drift' >> /etc/ssl/private/p8test.key
+    effect: |
+      p8_count '^# p8test drift$' /etc/ssl/private/p8test.key
+      [ "$(cat /run/p8test-sslnginx/pid-key)" -gt 0 ] && echo "pid noted"
+    expect: {rc: 0, stdout: "\\A1\\npid noted\\n\\Z"}
+
+  - id: the-agent-run-restores-the-key-and-restarts-nginx
+    what: after the second agent run the key's digest is back to the one noted before the change, and nginx runs under a new main PID
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "10", text: "# The service is restarted if the certificate changes."}
+      - {path: manifests/ssl_base.pp, lines: "84-91", text: "notify => Service[$myservicename],"}
+    mutates: none beyond reading the key's digest and nginx's PID (declared mutating so it runs after the second agent run)
+    probe: |
+      true
+    effect: |
+      [ -s /run/p8test-sslnginx/key.sha ] && [ "$(sha256sum /etc/ssl/private/p8test.key | cut -d' ' -f1)" = "$(cat /run/p8test-sslnginx/key.sha)" ] && echo "key restored"
+      now=$(systemctl show -p MainPID --value nginx)
+      [ "$now" -gt 0 ] && [ "$now" != "$(cat /run/p8test-sslnginx/pid-key)" ] && echo "nginx restarted"
+      systemctl is-active nginx
+    expect: {rc: 0, stdout: "\\Akey restored\\nnginx restarted\\nactive\\n\\Z"}
 
