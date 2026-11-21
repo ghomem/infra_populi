@@ -1,0 +1,43 @@
+{
+ "class": "openvpn_nm_connection",
+ "at": "20261121T035545Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "uuid-is-the-stable-version-5-uuid-of-the-name (manifests/openvpn_nm_connection.pp:29): baseline sets $uuid = fqdn_rand_uuid($connection_name), migrated under the ruled fix to fqdn_uuid($connection_name); the probe reads the uuid from the rendered file and from nmcli and expects df2d3b4d-5aa3-564f-92d4-fd9bac9644f9, which I recomputed independently as uuid5(NAMESPACE_DNS,'p8test-vpn'); the mismatch varies the connection name nmcli reports on, so the verdict must change",
+  "uuid-is-the-stable-version-5-uuid-of-the-name (templates/openvpn/connection_file.erb:3): uuid=<%= @uuid %> puts that UUID in the [connection] section, which is exactly what the sed on the profile file and nmcli connection.uuid read",
+  "a-wrong-password-does-not-connect (templates/openvpn/connection_file.erb:10-11): connection-type=password with password-flags=1 makes the connection depend on the user's password supplied by an agent; the action supplies a wrong one via nmcli passwd-file against the peer's password-checking server and the effect expects nmcli up rc!=0 and no tap0, which is what password auth must produce; the-server-refused-the-wrong-password corroborates with AUTH_FAILED in the server log",
+  "purpose covered: Purpose (a root-only NetworkManager OpenVPN profile for a desktop user: server, CA, VPN login, cipher, password auth over tap, restricted to the local user, stable UUID, loaded) matches the baseline header and code (file 0600 root, template, nmcli con reload exec). The checks test the file mode, NM loading it as an openvpn VPN under its name, every templated vpn.data key and ipv4/ipv6 auto, the permissions, the UUID, and the purpose itself: with a throwaway PKI and an OpenVPN server on peer ubuntu2 the profile connects with the right password (activated, tap0 address from the pool, server answers through the tunnel, server logged p8testuser authenticated offering AES-256-CBC) and a wrong password is refused (no activation, no tap0, AUTH_FAILED). My reviewer run: ALL_PASS, every negative failed clean, every mismatch failed applied. Left out: the desktop's GNOME secret agent prompting for the password (password-flags=1); the uncovered row is honest: phase3.py session_problems accepts only desktop plasma on a kde node, and nodes.yml gives gnome only [desktop, gnome], so the runner cannot start a GNOME session; lifted by capability: a GNOME desktop session in phase3 runs. The class itself declares it does not set up passwords."
+ ],
+ "review_s": 179.0,
+ "check_file_sha256": "0729f5e59c3f2804d651e8ef148ef33b5b924557c4777582b2637d429b348d9d",
+ "content_sha256": "0729f5e59c3f2804d651e8ef148ef33b5b924557c4777582b2637d429b348d9d",
+ "reviewer_result": "20261121T035247Z-reviewer",
+ "author_result": "20261121T034903Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "boot_id": "1d58af49-1d2d-4698-b929-f0b0b88aa343",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "1d58af49-1d2d-4698-b929-f0b0b88aa343",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "9634b95a-d278-4c89-904d-584be2644e47",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "9634b95a-d278-4c89-904d-584be2644e47",
+   "fresh": true
+  }
+ }
+}
