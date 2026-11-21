@@ -1,0 +1,85 @@
+# Phase 3 checks for puppet_infrastructure::sysmon_puppet_cert_status (class; node ubuntu; required_base filesystem_base;
+# required_external apt, sudo; no parameters, fixture defaults). It installs a Nagios check, meant for the Puppet
+# master, that runs `puppet certregen healthcheck --all` and reports the earliest certificate expiry (OK above 30 days,
+# Warning under 30, Critical under 10 or when one has expired), plus python3-yaml and a sudo rule for naemon.
+# 2026-11-21 (backfill batch 10): first set, with purpose and outcomes (HQ rulings 2 and C1). Measured before writing the
+# health check: `puppet certregen` is an unknown subcommand on the OpenVox 8 agent node (puppet 8.24.2) and on the lab's
+# master-role node p8lab-puppetserver (openvox-server, puppet 8.24.2, no certregen module), so the check prints
+# "command ... failed" with exit 1 wherever it runs; escalations/sysmon_puppet_cert_status.behaviour.md.
+class: sysmon_puppet_cert_status
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+purpose: >-
+  Gives the monitoring system (naemon, through sudo) a Nagios check on the Puppet master that reports the certificate
+  expiry of every node the CA signed: Critical when one has expired or expires within 10 days, Warning within 30, OK
+  otherwise, naming the certificate that expires first.
+outcomes:
+  - outcome: the check script (the module's file, root 0755) and its dependency python3-yaml are installed
+    from: manifests/sysmon_puppet_cert_status.pp:3-19
+    checks: [script-and-dependency-installed]
+  - outcome: naemon may run the check as root through sudo, and the check refuses to run unprivileged
+    from: manifests/sysmon_puppet_cert_status.pp:21-24; files/sysmon/check_puppet_cert_health.py:12-21
+    checks: [naemon-may-run-it-through-sudo, refuses-to-run-unprivileged]
+  - outcome: run as root, the check reports the certificates' expiry in Nagios form (OK, Warning or Critical with the certificate that expires first)
+    from: files/sysmon/check_puppet_cert_health.py:9-48
+    checks: [reports-certificate-health]
+  - outcome: the thresholds (expired, 10 and 30 days) against a CA whose certificates expire at chosen dates
+    from: files/sysmon/check_puppet_cert_health.py:29-48
+    uncovered:
+      why: >-
+        the check cannot produce any expiry report on OpenVox 8 (puppet certregen is an unknown subcommand, measured on
+        the agent node and on the master-role node), so the thresholds cannot be reached until the finding is resolved
+      lifted_by: "capability: a certificate-health source on OpenVox 8 (the finding's resolution), then a lab CA with certificates near expiry"
+      evidence: "reports-certificate-health's result; escalations/sysmon_puppet_cert_status.behaviour.md (the measurements)"
+checks:
+  - id: script-and-dependency-installed
+    what: the check script is the module's file, root:root 0755, and python3-yaml is installed
+    control: negative
+    derived_from:
+      - {path: manifests/sysmon_puppet_cert_status.pp, lines: "12-19", text: "source  => 'puppet:///modules/puppet_infrastructure/sysmon/check_puppet_cert_health.py',"}
+      - {path: manifests/sysmon_puppet_cert_status.pp, lines: "3-4", text: "$check_puppet_cert_health_deps = [ 'python3-yaml' ]"}
+      - {path: files/sysmon/check_puppet_cert_health.py, sha256: "dcc07a961db070d9dc54691ef52929f3c85312ddf91dcfbc9f9b3c28c0b28282"}
+    probe: |
+      p8_digest /opt/puppet-infrastructure/bin/check_puppet_cert_health.py | cut -d' ' -f2-
+      dpkg-query -W -f '${Package} ${Status}\n' python3-yaml
+    expect: {rc: 0, stdout: "\\Aroot:root 755 dcc07a961db070d9dc54691ef52929f3c85312ddf91dcfbc9f9b3c28c0b28282\\npython3-yaml install ok installed\\n\\Z"}
+
+  - id: naemon-may-run-it-through-sudo
+    what: a sudoers drop-in (priority 20) lets naemon run exactly this script without a password, and sudoers stays valid
+    control: negative
+    derived_from:
+      - {path: manifests/sysmon_puppet_cert_status.pp, lines: "21-24", text: "content  => \"naemon ALL=NOPASSWD:${localdir}/bin/check_puppet_cert_health.py\","}
+    probe: |
+      grep -h '^naemon ' /etc/sudoers.d/20_check_puppet_cert_health
+      visudo -c -q && echo sudoers-valid
+    expect: {rc: 0, stdout: "\\Anaemon ALL=NOPASSWD:/opt/puppet-infrastructure/bin/check_puppet_cert_health\\.py\\nsudoers-valid\\n\\Z"}
+
+  - id: refuses-to-run-unprivileged
+    what: run as an unprivileged account (nobody), the check prints "please run as root" and exits 1
+    control: negative
+    derived_from:
+      - {path: files/sysmon/check_puppet_cert_health.py, lines: "12-21", text: "print(\"please run as root\")"}
+    probe: |
+      out=$(cd /tmp && runuser -u nobody -- /opt/puppet-infrastructure/bin/check_puppet_cert_health.py 2>&1); echo "$out rc=$?"
+    mismatch:
+      varies: the account (root), for which the privilege test passes, so the "please run as root" verdict must not come
+      probe: |
+        out=$(cd /tmp && /opt/puppet-infrastructure/bin/check_puppet_cert_health.py 2>&1); echo "$out rc=$?"
+    expect: {rc: 0, stdout: "\\Aplease run as root rc=1\\n\\Z"}
+
+  - id: reports-certificate-health
+    what: >-
+      run as root with Puppet's commands on the PATH, the check reports the certificates' expiry in Nagios form (a line
+      starting OK, Warning or Critical, exit 0, 1 or 2)
+    control: negative
+    timeout: 120
+    derived_from:
+      - {path: files/sysmon/check_puppet_cert_health.py, lines: "11", text: "healthcheck_command = [\"puppet\", \"certregen\", \"healthcheck\", \"--all\",  \"--render-as\", \"yaml\"]"}
+      - {path: files/sysmon/check_puppet_cert_health.py, lines: "40-48", text: "print (\"OK: The next certificate expiration will be from %s, in %s\" % (expiring_machine_name, expiring_time))"}
+    mutates: runs the check once as root (it runs Puppet's certregen healthcheck, which only reads); the output goes to /run/p8test-certhealth/out.txt
+    probe: |
+      install -d -m 0700 /run/p8test-certhealth
+      { cd /tmp; PATH=/opt/puppetlabs/bin:$PATH /opt/puppet-infrastructure/bin/check_puppet_cert_health.py 2>&1; echo "rc=$?"; } > /run/p8test-certhealth/out.txt
+    effect: |
+      cat /run/p8test-certhealth/out.txt
+    expect: {rc: 0, stdout: "\\A(OK|Warning|Critical): [^\\n]*\\nrc=[012]\\n\\Z"}
