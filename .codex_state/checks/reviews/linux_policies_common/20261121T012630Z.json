@@ -1,0 +1,35 @@
+{
+ "class": "linux_policies_common",
+ "at": "20261121T012630Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "runner-executes-the-users-policy: manifest 33-37 deploys the runner from execute_linux_policies_user.sh.erb (root 0755); template lines 5-13 set USERNAME=whoami, script USER/${USERNAME}.sh, tag linuxint-policies-${CALLER}, and if -x log 'Executing <script>' then run it; the action installs USER/root.sh 0755 and runs the runner as root with caller p8test (what the template runs), mutates declares both; the effect reads stat root 755, the policy's own side-effect file and one journal line under tag linuxint-policies-p8test, not the action's output",
+  "autostart-entry-runs-the-runner: manifest 27-31 declares /etc/xdg/autostart/linux-policies-user.desktop root 0644 from autostart.desktop.erb, whose line 4 is Exec=<linux_policies_dir>/COMMON/execute_linux_policies_user.sh autostart; with lab localdir /opt/puppet-infrastructure the probe's stat 'root 644' and exact Exec= line are what the code produces",
+  "policies-tree-deployed: manifest 13-14/22-23 copy puppet:///modules/puppet_infrastructure/linux-policies/ recursively to <localdir>/linux-policies; the baseline tree at cf477c6 is exactly COMMON/common (sha256 96142acf...f147a, verified by hashing baseline.py show), TMP/.placeholder and USER/.placeholder, which the probe checks byte for byte and by presence",
+  "purpose covered: Purpose matches the header (common files/dirs for linux policies, autostart on user login) and the whole manifest (3 file resources) and both templates. Tested: tree deployed (content hash + TMP/USER), autostart entry content/mode, the runner's both branches exercised (executes an executable USER/<user>.sh and logs Executing under linuxint-policies-<caller>; logs 'not found' for a user without one, run as nobody). Not tested on this class's plan node (ubuntu, capabilities [server] per nodes.yml): the desktop login actually triggering the autostart entry; the uncovered row says so with capability-based lifted_by, and its evidence holds: linux_policies_user.yml check autostart-runs-the-policies-at-login reads the linuxint-policies-autostart journal line on kubuntu. Minor, not a gap: the recursive tree's 0644 mode/owner are not probed, but the outcome is the deployment the runner and policies consume."
+ ],
+ "review_s": 103.3,
+ "check_file_sha256": "b9bbd5f99d4b1e6a65e59699abbe4022539e3524ab91a9563118e0b5297309ec",
+ "content_sha256": "b9bbd5f99d4b1e6a65e59699abbe4022539e3524ab91a9563118e0b5297309ec",
+ "reviewer_result": "20261121T012447Z-reviewer",
+ "author_result": "20261121T012154Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "d3aab0e2-c4be-4713-bf61-ec08314d3e92",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "d3aab0e2-c4be-4713-bf61-ec08314d3e92",
+   "fresh": true
+  }
+ }
+}
