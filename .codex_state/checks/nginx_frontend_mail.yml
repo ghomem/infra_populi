@@ -9,12 +9,39 @@
 # leaves it (default_transport error). Node probes name no lab host: the backend reaches the node only through the
 # rendered nginx configuration. Mutating checks run after the read-only ones, in file order: the peer is set up first,
 # then the node's sessions go through the proxy, then the peer is asked what arrived.
+# 2026-11-21 (backfill batch 8): purpose and outcomes (HQ rulings 2 and C1); checks unchanged.
 class: nginx_frontend_mail
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 peer:
   kind: ubuntu2
   why: the class proxies mail and web sessions to a backend server, so a second machine must serve SMTP, IMAPS and HTTPS
+purpose: >-
+  Makes a node the mail frontend of a domain: nginx proxies IMAPS (993), SMTPS (465) and SMTP (25) to the mail backend,
+  each session authorised through a local auth_http server and carried by a local stream to the backend, which itself
+  checks the user's credentials, and proxies the backend's web interface on HTTPS, all behind the frontend's certificate.
+outcomes:
+  - outcome: nginx runs a valid configuration listening on 993, 465 and 25, with an auth server and a stream per protocol (stream access log off)
+    from: manifests/nginx_frontend_mail.pp:54-160
+    checks: [nginx-config-valid-and-running, mail-ports-listen, auth-servers-point-each-protocol-at-its-stream, streams-listen-and-stream-access-log-off]
+  - outcome: SMTPS and IMAPS present the frontend's certificate
+    from: manifests/nginx_frontend_mail.pp:18, 31-43, 54-82
+    checks: [smtps-and-imaps-serve-the-frontend-certificate]
+  - outcome: SMTP on 25 delivers through the proxy to the backend, SMTPS relays the client's login to the backend, and IMAPS logs in there and sees the mail
+    from: manifests/nginx_frontend_mail.pp:54-124
+    checks: [the-peer-serves-the-mail-backend, smtp-25-delivers-through-the-proxy, smtps-465-relays-the-client-login-to-the-backend, imaps-993-logs-in-at-the-backend-and-sees-the-mail, the-backend-received-the-sessions-from-the-proxy]
+  - outcome: a wrong password on SMTPS or IMAPS is refused by the backend
+    from: manifests/nginx_frontend_mail.pp:54-82, 96-115
+    checks: [smtps-465-wrong-password-is-refused-by-the-backend, imaps-993-wrong-password-is-refused-by-the-backend]
+  - outcome: HTTPS for the domain proxies to the backend's web interface
+    from: manifests/nginx_frontend_mail.pp:45-52
+    checks: [https-443-proxies-to-the-backend-web-interface]
+  - outcome: other ports, a non-letsencrypt certificate, or another helo name
+    from: manifests/nginx_frontend_mail.pp:13-30
+    uncovered:
+      why: one set holds one params fixture (the default ports, a letsencrypt-style bundle)
+      lifted_by: "capability: more than one params fixture per set"
+      evidence: "phase3.py applies the class once with its single `fixture` (params or defaults)"
 checks:
   - id: nginx-config-valid-and-running
     what: the configuration the class produces passes `nginx -t` and nginx runs
