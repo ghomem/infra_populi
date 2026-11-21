@@ -1,0 +1,35 @@
+{
+ "class": "linux_policies_user",
+ "at": "20261121T013717Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "autostart-runs-the-policies-at-login: autostart.desktop.erb:1-7 sets Exec=<dir>/COMMON/execute_linux_policies_user.sh autostart; with execute_linux_policies_user.sh.erb:9-12 (SYSLOG_TAG=linuxint-policies-${CALLER}, logs 'Executing ${LINUX_POLICIES_SCRIPT}' when the script is executable) a Plasma login must leave a linuxint-policies-autostart 'Executing /opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh' line (localdir /opt/puppet-infrastructure, fixture user p8testuser); probe greps exactly that line; negative on the clean node (no runner) holds",
+  "user-policy-script-composed: puppet_header.sh.erb:4 renders '. <linux_policies_dir>/COMMON/common', so the composed USER/p8testuser.sh (linux_policies_user.pp:26, 58-63 owner/group $username mode 0700, source the tmp file holding header + file_line policies, lines 46-51) must hold exactly one such line under /opt/puppet-infrastructure, start with #!/bin/bash (header line 1) and end with the fixture's two policy lines (file_line appends after the header's last line 16); expect 'p8testuser p8testuser 700 / #!/bin/bash / 1 / two policy lines' matches",
+  "policies-run-on-an-agent-run-while-logged-in: puppet_header.sh.erb:9-10 logs 'User ${USERNAME} loged in, executing policies' under tag linuxint-policies when who lists whoami; with the exec (linux_policies_user.pp:71-74, command '<exec> puppet-agent', user $username) the runner logs under linuxint-policies-puppet-agent; the probe requires both lines and the node journal shows them at 01:35:41 and 01:35:59 beside the agent's 'Exec[Execute linux policies for: p8testuser] executed successfully'; the whoami-derived user name in the line shows it ran as p8testuser",
+  "purpose gap: Tested: the script's composition (owner, mode, header sourcing COMMON/common, policy lines), and that with p8testuser logged in to Plasma both an agent run (tag linuxint-policies-puppet-agent) and the login autostart (tag linuxint-policies-autostart) execute the user's script, which takes its logged-in branch as p8testuser. The uncovered row (other users/policy lists) is true: phase3.py applies one fixture per set. GAP 1 - the purpose's own condition 'while the user is logged in' has a no-session side (baseline puppet_header.sh.erb:9-14: without a session the script logs 'not loged in, skipping policies execution' and exits 0, so the policies do not run) that is neither in the outcomes table nor checked, and the lab CAN exercise it: in this run the node journal shows the two harness agent runs at 01:34:41 and 01:34:59, before logind's 'New session 7 of user p8testuser' at 01:35:07, with no 'User p8testuser loged in, executing policies' line until 01:35:16; a baseline-derived probe (no executing-policies line before the user's first session; holds under the baseline and the ruled guard alike) or a mutating check that ends the session and runs the script as the user would test it. GAP 2 - 'runs those policies' is observed only one step before the policies: the params fixture's policies are no-op 'true' lines, so no check sees a policy line itself execute (or execute as the user); an observable fixture policy (e.g. a logger or touch under a p8test tag) would let both run checks see the policies' effect, which the lab can exercise."
+ ],
+ "review_s": 233.7,
+ "check_file_sha256": "c32c39c05f899cdbce0ca20f76a24b2af2ce92956c606c65c8cf84001e88c27b",
+ "content_sha256": "c32c39c05f899cdbce0ca20f76a24b2af2ce92956c606c65c8cf84001e88c27b",
+ "reviewer_result": "20261121T013324Z-reviewer",
+ "author_result": "20261121T012919Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "ea565b14-b8d9-4725-a5ca-f26e0c6bdf37",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "ea565b14-b8d9-4725-a5ca-f26e0c6bdf37",
+   "fresh": true
+  }
+ }
+}
