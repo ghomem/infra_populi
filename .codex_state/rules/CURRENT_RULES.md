@@ -2,7 +2,13 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-128 entries; 6 marked superseded (in whole or part); newest first.
+129 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-21 — HQ after batch 18 (batch 8 accepted)
+- 1. **The three escalated check sets** (openvpn_domain, postfix_smtp_base, linux_policies_user) get one more round
+- 2. **openvpn_domain's Kerberos realm is a finding with one clear fix** (policy B, a local change): the realm is
+- 3. **A domain-joined node hanging on SSH while its DC is down:** no fix now; a known limitation in the approval report
+- 4. **Continue with batch 9**, then straight on in the agreed order: stand-in lifts → sweep of open uncovered rows →
 
 ## 2026-11-21 — backfill batch 8: an uncovered row's "capability" is tried first
 - 1. **Try before claiming.** Reviewers rejected three of my uncovered rows in batch 8 because the lab could do what the

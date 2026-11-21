@@ -2344,3 +2344,16 @@ the engine's tools, which take the lock themselves, are unaffected. 21 tests; th
    agent run (`node_agent.after` as a list), so a restart is attributed to one resource.
 3. **Peers powered off after a run** (HQ 2026-11-17 ruling 5) leave a domain-member node waiting on its DC: a by-hand
    command on such a node after a run needs the peer started first (measured in the batch 18 report).
+
+## 2026-11-21 — HQ after batch 18 (batch 8 accepted)
+1. **The three escalated check sets** (openvpn_domain, postfix_smtp_base, linux_policies_user) get one more round
+   each, because the missing outcomes are central and lab-testable: bare-name login against the DC; relay to another
+   domain through the second node; the agent run's own policy lines. After that round the set stands as it is, and
+   any remaining gap is listed as an open row.
+2. **openvpn_domain's Kerberos realm is a finding with one clear fix** (policy B, a local change): the realm is
+   upper-cased when built; the check shows kinit working with the lowercase-tld fixture.
+3. **A domain-joined node hanging on SSH while its DC is down:** no fix now; a known limitation in the approval report
+   and Phase 5 backlog #11. Batch 18's two unreachable rules are recorded alongside it (#12, #13) under the batch-12
+   standing rule.
+4. **Continue with batch 9**, then straight on in the agreed order: stand-in lifts → sweep of open uncovered rows →
+   approval report → test-suite design note. Stop for HQ review at the approval report.
