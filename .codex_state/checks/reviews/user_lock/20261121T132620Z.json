@@ -1,0 +1,35 @@
+{
+ "class": "user_lock",
+ "at": "20261121T132620Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "exactly-one-entry @ manifests/user_lock.pp:11-14: the exec runs pp_auth.py lock <user> DUMMYARG, which (pp_auth.py.erb case 'lock' -> lockpw(user, True) -> setpw(username, pwentry, True, '', smbhashentry), dbutils.py.erb:804-807) rewrites the existing entry; grep -c of the user's line == 1 tests the in-place rewrite under the fixture's single seeded entry",
+  "user-entry-locked-by-hashman @ manifests/user_lock.pp:11-14: same lock command; lockpw sets pwentry = LOCKPREFIX + pwentry, so the expected line is '!' followed by exactly the fixture-seeded $6$p8testsalt$... hash in hashes.pp format",
+  "user-entry-locked-by-hashman @ templates/hashman/libhashman/config.py.erb:58: LOCKPREFIX = '!' is the prefix the expect requires before the seeded hash; value produced by the code",
+  "purpose covered: Purpose (header 'locks an existing user'; exec running hashman's pp_auth.py lock) is read right and both outcomes are probed: the Unix entry locked in place (user-entry-locked-by-hashman, exactly-one-entry), the Samba hash invalidated with '!' as mk_smb_lockness (miscutils.py.erb:129-148) does (the-samba-hash-is-locked-too), and the refusal through hashman's own auth (the-locked-user-is-refused-by-hashman: rc=1 while crypt of the password matches the entry without the prefix; dbutils auth() compares crypt output with the '!'-prefixed entry, so it can only fail). I confirmed the refusal is auth()'s verdict, not a crash or stale lock: the node's syslog shows 'user p8testuser wants to authenticate' then 'action failure' after the auth delay, and /tmp/pp_auth.lock is absent. The hashman web interface's extauth calls the same auth(). The set leaves out how site manifests use the locked hashes on fleet accounts (no consumer in the module at the pin) and Samba's own login refusal (no Samba consumer in this define); neither is this define's job, so no uncovered row is needed. Mock-apply fixture hashman_lock_standin only seeds the user's two entries before the lock."
+ ],
+ "review_s": 205.3,
+ "check_file_sha256": "aee6e502d4766d8de4155327e3ed24f00e3174ac2de3b1ad7036e33a11279702",
+ "content_sha256": "aee6e502d4766d8de4155327e3ed24f00e3174ac2de3b1ad7036e33a11279702",
+ "reviewer_result": "20261121T132255Z-reviewer",
+ "author_result": "20261121T131912Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "d31f5543-920f-49a2-96d0-bdc1d9ff39e9",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "d31f5543-920f-49a2-96d0-bdc1d9ff39e9",
+   "fresh": true
+  }
+ }
+}
