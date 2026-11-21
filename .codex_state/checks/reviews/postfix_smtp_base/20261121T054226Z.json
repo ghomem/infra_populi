@@ -1,0 +1,35 @@
+{
+ "class": "postfix_smtp_base",
+ "at": "20261121T054226Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "sasl-user-authenticates-through-dovecot: postfix_smtp_base.pp:117-121 writes /etc/dovecot/users from sasl_users.erb (name:password_hash per smtp_users), main.cf.erb:92 smtpd_sasl_type = dovecot; doveadm auth test with the fixture's p8testuser password expecting 'auth succeeded' tests exactly that passdb entry, and the mismatch varies only the password, which must flip dovecot's verdict",
+  "smtpd-on-the-configured-port-with-the-hostname: main.cf.erb:75 myhostname = smtp_hostname with :10 smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu) and master.cf.erb:12 smtpd on postfix_port; the banner read on 127.0.0.1:587 expecting '220 smtp.p8test.example.com ESMTP Postfix (Ubuntu)' is what these lines produce under the params fixture (port 587, smtp_hostname smtp.p8test.example.com)",
+  "smtp-restrictions-exercised: main.cf.erb:101-103 check_client_access hash:/etc/postfix/client_access then reject; client_access.erb lists only 127.0.0.1, inet_protocols = all, so the session from ::1 gets 554 Client host rejected at RCPT (smtpd_delay_reject default) while the 127.0.0.1 sessions pass the client stage; the other expected replies follow from :107-109 (sender_access reject -> 554 Access denied), :112/:115-118 (reject_sender_login_mismatch -> 553 not owned / not logged in) and permit_sasl_authenticated -> 250; the effect is the server's own replies",
+  "purpose gap: Tested: banner/port/hostname, STARTTLS with the sslprefix bundle, TLS mandatory (530 before STARTTLS, no AUTH offered), dovecot passwd-file SASL and refusal of an OS account, the client/sender/login-map restrictions in seven sessions, and one submission queued and delivered to the local mailbox. Left out although the lab CAN exercise it: the class's main job, relaying an authenticated user's mail to a non-local domain. No check sends RCPT to a remote recipient (every session uses root@localhost, so relay acceptance under smtpd_relay_restrictions, main.cf.erb:73, is never observed) and no message leaves through postfix's smtp client. The uncovered row 'onward delivery to a remote domain's MX' (new in round 2) gives as evidence 'nodes.yml lists no mail-sink node kind', but nodes.yml has active kinds with capability second-node (ubuntu2 192.168.56.24, dc) and phase3.py supports a peer block with P8_PEER_ADDR for node actions: a sink on the peer reached through an address-literal recipient (user@[peer IP]; relayhost is empty, so the smtp transport delivers straight there, no MX lookup or internet needed) exercises the onward-delivery path. The evidence therefore does not show the lab lacking it. The same path carries smtp_header_checks (main.cf.erb:121, smtp client only), so the From-header WARN row is also exercisable: its second reason, the empty do_not_warn_from_addresses_regexes, is a params-fixture choice (the fixture was already extended for p8testuser2), not a missing lab capability. The extra_sec / Let's Encrypt row (one params fixture per set) is an honest limitation."
+ ],
+ "review_s": 226.2,
+ "check_file_sha256": "2936a861d8cf601e83fd40a0c513d65cfd26b6181305ab6d72e1e93d008bf724",
+ "content_sha256": "2936a861d8cf601e83fd40a0c513d65cfd26b6181305ab6d72e1e93d008bf724",
+ "reviewer_result": "20261121T053840Z-reviewer",
+ "author_result": "20261121T053528Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "5b270a16-7ef6-4631-8969-361d0ac97937",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "5b270a16-7ef6-4631-8969-361d0ac97937",
+   "fresh": true
+  }
+ }
+}
