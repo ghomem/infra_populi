@@ -5,16 +5,33 @@
 # Migrated with the ruled fix fqdn_rand_uuid -> stdlib fqdn_uuid (upstream_defects.md): the UUID is the RFC 4122
 # version-5 UUID of the connection name in the DNS namespace, df2d3b4d-5aa3-564f-92d4-fd9bac9644f9 for p8test-vpn.
 # Probes read the node's own NetworkManager (nmcli) and files only.
+# 2026-11-21 (backfill batch 8): purpose and outcomes (HQ rulings 2 and C1); the uncovered row in the current form.
 class: openvpn_nm_connection
 baseline: release-0.9.10 (cf477c6)
 fixture: params
-uncovered:
-  - what: connecting through the profile to an OpenVPN server
-    why: >-
-      the profile stores the password as agent-owned (password-flags=1), so a connection needs a desktop session's
-      secret agent and an OpenVPN server with the matching tap/password setup; the lab has neither session nor server
-      for it yet
-    lifted_by: ubuntu2
+purpose: >-
+  Gives a desktop user a NetworkManager OpenVPN connection to the company VPN: a root-only profile with the server,
+  CA, the user's VPN login and cipher, password authentication over a tap device, usable only by that local user, with
+  a stable UUID, loaded into NetworkManager.
+outcomes:
+  - outcome: the profile file is root-only and NetworkManager loads it as an OpenVPN connection under its name
+    from: manifests/openvpn_nm_connection.pp:22-39
+    checks: [profile-file-root-only, networkmanager-loads-the-vpn-profile]
+  - outcome: the loaded profile carries the parameters (remote, CA, VPN user, cipher, password auth, tap)
+    from: templates/openvpn/connection_file.erb
+    checks: [vpn-settings-from-the-parameters]
+  - outcome: only the local user may use the connection, and its UUID is stable (fqdn_uuid of the name)
+    from: manifests/openvpn_nm_connection.pp:9-21; templates/openvpn/connection_file.erb
+    checks: [only-the-local-user-may-use-it, uuid-is-the-stable-version-5-uuid-of-the-name]
+  - outcome: connecting through the profile to an OpenVPN server
+    from: manifests/openvpn_nm_connection.pp:9
+    uncovered:
+      why: >-
+        the profile stores the password as agent-owned (password-flags=1), so a connection needs a desktop session's
+        secret agent, and the class's node is gnome while the runner starts only Plasma sessions; it also needs an
+        OpenVPN server with the matching tap/password setup on a peer
+      lifted_by: "capability: a GNOME desktop session in phase3 runs, with an OpenVPN server peer"
+      evidence: "phase3.py session_problems accepts only desktop plasma; nodes.yml: the class's node gnome (capabilities [desktop, gnome]); status.py --standins: openvpn_nm_connection"
 checks:
   - id: profile-file-root-only
     what: the connection file is /etc/NetworkManager/system-connections/<connection_name>, root:root 0600
