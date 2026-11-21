@@ -5,6 +5,8 @@
 # peer probes, purge, flush and rebuild); firewall has no whitelist or rate limits. Node probes name no other host; peer
 # probes name only the class node's host-only address.
 # 2026-11-21 (backfill batch 10): first set, with purpose and outcomes (HQ rulings 2 and C1).
+# Correction round 1, 2026-11-21 (review 20261121T144541Z, purpose): rule 003 exercised, an outbound connection from the
+# node to the peer's SSH port (P8_PEER_ADDR) gets its replies, counted by the rule.
 class: firewall
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -20,7 +22,7 @@ node_agent:
     the class purges firewall rules it does not manage, and its rules come back after the emergency flush; only its
     next agent run can show either
 outcomes:
-  - outcome: INPUT and FORWARD drop by default and OUTPUT stays open; a port no rule allows is dropped for any other host
+  - outcome: INPUT and FORWARD drop by default and OUTPUT is left open (the class sets no OUTPUT policy); a port no rule allows is dropped for any other host
     from: manifests/firewall.pp:1-3, 30-31
     checks: [default-policies-drop-input-and-forward, a-service-the-firewall-does-not-allow-is-listening, another-host-gets-icmp-and-ssh-but-not-other-ports]
   - outcome: ICMP and SSH are let in from any host
@@ -38,6 +40,9 @@ outcomes:
         that brings such a frame to INPUT
       lifted_by: "capability: a frame path that reaches INPUT with a 127.0.0.0/8 destination on a non-loopback interface (route_localnet 1 did not suffice)"
       evidence: "firewall_secure.yml rule-002 row; the lead in escalations/firewall_secure_extra.behaviour.md"
+  - outcome: replies to the node's own outbound connections are accepted despite the INPUT drop (rule 003, related and established)
+    from: manifests/firewall.pp:49-53
+    checks: [replies-to-the-nodes-own-connections-get-in]
   - outcome: rules Puppet does not manage are purged at the next agent run
     from: manifests/firewall.pp:27
     checks: [an-unmanaged-rule-is-added, the-next-agent-run-purges-the-unmanaged-rule]
@@ -127,6 +132,23 @@ checks:
     effect: |
       cat /run/p8test-firewall/reach.txt
     expect: {rc: 0, stdout: "\\Aicmp in\\nssh in\\n8888 dropped\\n\\Z"}
+
+  - id: replies-to-the-nodes-own-connections-get-in
+    what: >-
+      the node opens a TCP connection to the peer's SSH port: it succeeds (the replies come in although INPUT drops
+      by default), and rule 003's packet counter rises over the connection
+    control: negative
+    derived_from:
+      - {path: manifests/firewall.pp, lines: "49-53", text: "-> firewall { '003 accept related established rules':"}
+    mutates: one outbound TCP connection from the node to the peer's port 22 (the peer's sshd logs it); the counts go to /run/p8test-firewall/out.txt
+    probe: |
+      install -d -m 0700 /run/p8test-firewall
+      cnt() { iptables -v -x -L INPUT -n | awk '/003 accept related established rules/ {print $1}'; }
+      c0=$(cnt); r=$(p8_tcp "$P8_PEER_ADDR" 22 3); c1=$(cnt)
+      { echo "outbound to the peer's ssh: $r"; [ -n "$c0" ] && [ -n "$c1" ] && [ "$c1" -gt "$c0" ] && echo "rule 003 counted the replies"; } > /run/p8test-firewall/out.txt
+    effect: |
+      cat /run/p8test-firewall/out.txt
+    expect: {rc: 0, stdout: "\\Aoutbound to the peer's ssh: open\\nrule 003 counted the replies\\n\\Z"}
 
   - id: an-unmanaged-rule-is-added
     what: setup for the purge check, a rule Puppet does not manage added to INPUT by hand
