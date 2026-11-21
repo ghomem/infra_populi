@@ -1,9 +1,35 @@
 # Phase 3 checks for puppet_infrastructure::ssl_postfix (class; required_base postfix_smtp_node, which declares the
 # Service['postfix'] ssl_base notifies). Fixture (params, never committed): sslprefix p8test (the lab master's fixture
 # PKI, CN p8test.invalid), letsencrypt_certificate false. The class hands ssl_base the service postfix.
+# 2026-11-21 (backfill batch 8): purpose and outcomes (HQ rulings 2 and C1), and ssl_base's restart on a changed
+# certificate as behaviour (a bundle changed by hand, the node's agent run, the postfix master under a new PID: Ubuntu's
+# postfix.service is a oneshot wrapper, so the master's PID file is read); the key's restore and restart likewise (a
+# second agent run), as ssl_nginx's set after its review 20261121T055031Z.
 class: ssl_postfix
 baseline: release-0.9.10 (cf477c6)
 fixture: params
+node_agent:
+  after: [the-bundle-is-changed-by-hand, the-key-is-changed-by-hand]
+  why: ssl_base restores a changed bundle or key and restarts the service only on an agent run after the change
+purpose: >-
+  Installs a site's TLS key and certificate for postfix: the private key root-only and the certificate bundled with its
+  intermediate in the form postfix reads, and restarts postfix whenever either changes.
+outcomes:
+  - outcome: the private key is installed root-only, and the bundle holds the certificate then the intermediate, the certificate matching the key
+    from: manifests/ssl_postfix.pp; manifests/ssl_base.pp:56-118
+    checks: [private-key-installed-root-only, postfix-bundle-cert-then-intermediate, bundle-certificate-matches-the-key]
+  - outcome: a changed bundle is put back on the next agent run and postfix is restarted
+    from: manifests/ssl_base.pp:10, 100-103
+    checks: [the-bundle-is-changed-by-hand, the-agent-run-restores-the-bundle-and-restarts-postfix]
+  - outcome: a changed private key is put back on the next agent run and postfix is restarted
+    from: manifests/ssl_base.pp:10, 84-91
+    checks: [the-key-is-changed-by-hand, the-agent-run-restores-the-key-and-restarts-postfix]
+  - outcome: Let's Encrypt-shaped files (letsencrypt_certificate true), and the RedHat paths
+    from: manifests/ssl_base.pp:56-82
+    uncovered:
+      why: the fixture sets letsencrypt_certificate false and the plan's node is Debian; one set holds one fixture on one node
+      lifted_by: "capability: more than one params fixture per set, and a phase3 set for a node kind other than the plan's (rhel9)"
+      evidence: "the params fixture has letsencrypt_certificate false; phase3.py runs a set on the class's plan node with one fixture"
 checks:
   - id: private-key-installed-root-only
     what: the prefix's private key is installed as /etc/ssl/private/<prefix>.key, root:root 0600
@@ -47,3 +73,69 @@ checks:
         b=$(openssl pkey -pubout -in "$(ls /etc/puppetlabs/puppet/ssl/private_keys/*.pem | head -1)" | sha256sum)
         test "$a" = "$b" && echo key-matches-certificate
     expect: {rc: 0, stdout: "\\Akey-matches-certificate\\n\\Z"}
+
+  - id: the-bundle-is-changed-by-hand
+    what: setup for the agent run, a stray line appended to the postfix bundle and the postfix master's PID noted
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "100-103", text: "notify         => Service[$myservicename],"}
+    mutates: >-
+      appends the line "# p8test drift" to /etc/ssl/certs/p8test.postfix.bundle.crt and writes the postfix master's PID
+      (/var/spool/postfix/pid/master.pid) to /run/p8test-sslpostfix/pid (/run/p8test-sslpostfix created 0700)
+    probe: |
+      install -d -m 0700 /run/p8test-sslpostfix
+      tr -d ' ' < /var/spool/postfix/pid/master.pid > /run/p8test-sslpostfix/pid
+      echo '# p8test drift' >> /etc/ssl/certs/p8test.postfix.bundle.crt
+    effect: |
+      p8_count '^# p8test drift$' /etc/ssl/certs/p8test.postfix.bundle.crt
+      [ "$(cat /run/p8test-sslpostfix/pid)" -gt 0 ] && echo "pid noted"
+    expect: {rc: 0, stdout: "\\A1\\npid noted\\n\\Z"}
+
+  - id: the-agent-run-restores-the-bundle-and-restarts-postfix
+    what: after the node's agent run, the stray line is gone and the postfix master runs under a new PID (restarted by the bundle's notify)
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "10", text: "# The service is restarted if the certificate changes."}
+      - {path: manifests/ssl_base.pp, lines: "100-103", text: "notify         => Service[$myservicename],"}
+    mutates: none beyond reading the bundle and the master's PID (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      p8_count '^# p8test drift$' /etc/ssl/certs/p8test.postfix.bundle.crt
+      now=$(tr -d ' ' < /var/spool/postfix/pid/master.pid)
+      [ "$now" -gt 0 ] && [ "$now" != "$(cat /run/p8test-sslpostfix/pid)" ] && kill -0 "$now" && echo "postfix restarted"
+    expect: {rc: 0, stdout: "\\A0\\npostfix restarted\\n\\Z"}
+
+  - id: the-key-is-changed-by-hand
+    what: setup for the second agent run, a stray line appended to the private key, its digest before the change and the postfix master's PID noted
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "84-91", text: "notify => Service[$myservicename],"}
+    mutates: >-
+      writes the key's SHA-256 and the postfix master's PID to /run/p8test-sslpostfix/key.sha and
+      /run/p8test-sslpostfix/pid-key, then appends the line "# p8test drift" to /etc/ssl/private/p8test.key
+    probe: |
+      install -d -m 0700 /run/p8test-sslpostfix
+      sha256sum /etc/ssl/private/p8test.key | cut -d' ' -f1 > /run/p8test-sslpostfix/key.sha
+      tr -d ' ' < /var/spool/postfix/pid/master.pid > /run/p8test-sslpostfix/pid-key
+      echo '# p8test drift' >> /etc/ssl/private/p8test.key
+    effect: |
+      p8_count '^# p8test drift$' /etc/ssl/private/p8test.key
+      [ "$(cat /run/p8test-sslpostfix/pid-key)" -gt 0 ] && echo "pid noted"
+    expect: {rc: 0, stdout: "\\A1\\npid noted\\n\\Z"}
+
+  - id: the-agent-run-restores-the-key-and-restarts-postfix
+    what: after the second agent run the key's digest is back to the one noted before the change, and the postfix master runs under a new PID
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "10", text: "# The service is restarted if the certificate changes."}
+      - {path: manifests/ssl_base.pp, lines: "84-91", text: "notify => Service[$myservicename],"}
+    mutates: none beyond reading the key's digest and the master's PID (declared mutating so it runs after the second agent run)
+    probe: |
+      true
+    effect: |
+      [ -s /run/p8test-sslpostfix/key.sha ] && [ "$(sha256sum /etc/ssl/private/p8test.key | cut -d' ' -f1)" = "$(cat /run/p8test-sslpostfix/key.sha)" ] && echo "key restored"
+      now=$(tr -d ' ' < /var/spool/postfix/pid/master.pid)
+      [ "$now" -gt 0 ] && [ "$now" != "$(cat /run/p8test-sslpostfix/pid-key)" ] && kill -0 "$now" && echo "postfix restarted"
+    expect: {rc: 0, stdout: "\\Akey restored\\npostfix restarted\\n\\Z"}
+
