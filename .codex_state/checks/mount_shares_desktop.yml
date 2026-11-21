@@ -7,12 +7,33 @@
 # the generated scripts as a desktop user would, with the password in $PASSWORD (the script asks kdialog only when it
 # is empty) and USER=p8testuser; the scripts run as root here, so the template's `sudo` needs no sudoers rule.
 # Node probes name no lab host: the server address reaches the node only through the rendered script.
+# 2026-11-20 (backfill batch 7): purpose and outcomes (HQ rulings 2 and C1); checks unchanged.
 class: mount_shares_desktop
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 peer:
   kind: ubuntu2
   why: the generated mount script mounts a CIFS share from a server, so a second machine must serve one
+purpose: >-
+  Gives a desktop user two scripts on their Desktop that mount and unmount their network (CIFS) shares under /tmp with
+  their own credentials, asking for the password when it is not given, and optionally open them in the file manager
+  or link them.
+outcomes:
+  - outcome: the mount and unmount scripts are on the user's Desktop, root-owned and executable, rendered with the shares and options
+    from: manifests/mount_shares_desktop.pp:5-23
+    checks: [scripts-on-the-desktop-root-owned-executable, scripts-render-the-share-and-options]
+  - outcome: run as the user with the right password, the mount script mounts the share, private to the user, with the server's files readable; a wrong password mounts nothing and fails
+    from: templates/shares/shares.sh.erb:1-165
+    checks: [the-server-serves-the-test-share, the-mount-script-mounts-the-share, a-wrong-password-does-not-mount]
+  - outcome: the unmount script unmounts the shares it lists
+    from: templates/shares/unmount-shares.sh.erb:1-15
+    checks: [the-unmount-script-unmounts-it]
+  - outcome: the password asked in a kdialog box, the file manager opened on the mount (explorer), symlinks and the cache/delay options
+    from: manifests/mount_shares_desktop.pp:5
+    uncovered:
+      why: the dialog needs a desktop session with input; dolphin is not on the gnome node; the options are parameter variants (one fixture per set)
+      lifted_by: "capability: input to a desktop session and more than one params fixture per set"
+      evidence: "the fixture sets explorer False and passes the password in $PASSWORD (the script asks kdialog only when it is empty); phase3.py applies one `fixture` and sends no desktop input"
 checks:
   - id: scripts-on-the-desktop-root-owned-executable
     what: the mount and unmount scripts are in the user's Desktop, root:root 0755
