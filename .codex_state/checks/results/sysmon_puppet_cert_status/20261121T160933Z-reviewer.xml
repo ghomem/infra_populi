@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.sysmon_puppet_cert_status"><testsuite name="phase3.sysmon_puppet_cert_status.clean" tests="4" failures="0"><testcase classname="phase3.sysmon_puppet_cert_status.clean" name="script-and-dependency-installed" /><testcase classname="phase3.sysmon_puppet_cert_status.clean" name="naemon-may-run-it-through-sudo" /><testcase classname="phase3.sysmon_puppet_cert_status.clean" name="refuses-to-run-unprivileged" /><testcase classname="phase3.sysmon_puppet_cert_status.clean" name="reports-certificate-health" /></testsuite><testsuite name="phase3.sysmon_puppet_cert_status.applied" tests="5" failures="1"><testcase classname="phase3.sysmon_puppet_cert_status.applied" name="script-and-dependency-installed" /><testcase classname="phase3.sysmon_puppet_cert_status.applied" name="naemon-may-run-it-through-sudo" /><testcase classname="phase3.sysmon_puppet_cert_status.applied" name="refuses-to-run-unprivileged" /><testcase classname="phase3.sysmon_puppet_cert_status.applied" name="refuses-to-run-unprivileged.mismatch" /><testcase classname="phase3.sysmon_puppet_cert_status.applied" name="reports-certificate-health"><failure message="check failed after the class was applied (finding)">rc 0
+command 'puppet certregen healthcheck --all --render-as yaml' failed
+rc=1
+
+</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,39 @@
+{
+ "class": "sysmon_puppet_cert_status",
+ "at": "20261121T161208Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "script-and-dependency-installed (manifests/sysmon_puppet_cert_status.pp:3-4): baseline declares package python3-yaml ensure present; the probe's dpkg-query line expects 'python3-yaml install ok installed', and the file half (root:root 755 + sha256 dcc07a96..., which I recomputed from the baseline file) matches lines 12-18 (mode 0755, root/root, source sysmon/check_puppet_cert_health.py)",
+  "reports-certificate-health (files/sysmon/check_puppet_cert_health.py:11): the script runs 'puppet certregen healthcheck --all --render-as yaml' as root and prints OK/Warning/Critical lines with exit 0/1/2 (lines 29-48); the expect matches that Nagios form. The action runs the check once as root and writes only /run/p8test-certhealth/out.txt, as mutates declares. The effect reads that file, which holds the plugin's report: for a Nagios plugin the printed line and exit code are the product naemon consumes. On the clean node only the effect ran and failed as a negative control should",
+  "naemon-may-run-it-through-sudo (manifests/sysmon_puppet_cert_status.pp:21-24): sudo::conf priority 20, content 'naemon ALL=NOPASSWD:${localdir}/bin/check_puppet_cert_health.py' with filesystem::localdir=/opt/puppet-infrastructure; the probe greps /etc/sudoers.d/20_check_puppet_cert_health for exactly that line and runs visudo -c. That matches the reference",
+  "mismatch refuses-to-run-unprivileged: varies only the account (runuser -u nobody dropped -> root), which by lines 12-21 must change the verdict from 'please run as root'. In my run it printed the certregen failure instead, so it failed as required",
+  "finding reports-certificate-health: expected '(OK|Warning|Critical): ...\\nrc=[012]', saw \"command 'puppet certregen healthcheck --all --render-as yaml' failed\\nrc=1\". I confirmed by hand that 'puppet certregen' is 'Unknown subcommand' on puppet8node (puppet 8.24.2) and on the lab master puppet8master (openvox 8.24.2, whose production modules hold no certregen module); the upstream baseline cf477c6 references certregen only in the script itself",
+  "purpose covered: Purpose (a Nagios check on the Puppet master, run by naemon via sudo, reporting the earliest certificate expiry with 10/30-day thresholds) matches the whole baseline manifest (package, script file, sudo::conf) and the script. Tested: script and python3-yaml installed, naemon sudo rule present and sudoers valid, the check refuses unprivileged runs (with a mismatch), and a root run produces a Nagios report (a finding: certregen is absent on OpenVox 8). Uncovered: the expired/10/30-day thresholds. That is honest: the script's only data source, 'puppet certregen healthcheck', is an unknown subcommand on OpenVox 8, which I verified by hand on the agent node and on the lab master (also a server role). So no lab node can reach the thresholds until the finding is resolved, and the capability lift names that. Note: the reporting check runs on the agent node, not on the active puppetserver node (p8lab-puppetserver was powered off, so I could not check it by hand). The same failure on puppet8master shows a master role would not change the outcome."
+ ],
+ "review_s": 155.8,
+ "check_file_sha256": "e1b9e36e09948a2a622fc85e6874e0d8a67f7268ee9cbdfb28b9e22a644d744f",
+ "content_sha256": "e1b9e36e09948a2a622fc85e6874e0d8a67f7268ee9cbdfb28b9e22a644d744f",
+ "reviewer_result": "20261121T160933Z-reviewer",
+ "author_result": "20261121T160616Z-author",
+ "findings": [
+  "reports-certificate-health"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "241d1f77-356e-420c-be23-0af425557fa4",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "241d1f77-356e-420c-be23-0af425557fa4",
+   "fresh": true
+  }
+ }
+}

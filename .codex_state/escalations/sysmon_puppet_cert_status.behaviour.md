@@ -29,3 +29,8 @@ reports the earliest certificate expiry.
 
 Each changes the script, and they differ in approach, so this is not a policy-B fix. The run continues; the class's
 behaviour state stays "finding" until HQ rules.
+
+## Reproduced (2026-11-21)
+Review 20261121T161208Z reproduced the finding. It also confirmed by hand that `puppet certregen` is an unknown
+subcommand on the lab master puppet8master (openvox 8.24.2), as on the agent node and p8lab-puppetserver. The set passed
+on purpose; the thresholds row stays uncovered until this is resolved.
