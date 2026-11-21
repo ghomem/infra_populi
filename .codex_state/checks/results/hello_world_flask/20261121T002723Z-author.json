@@ -1,0 +1,200 @@
+{
+ "class": "hello_world_flask",
+ "role": "author",
+ "at": "20261121T002723Z",
+ "runner": "7609471",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "eeb15eb53ecfba31c2a6927a4534ec261f84057dbf50e070aa88a9e918d72298",
+ "content_sha256": "eeb15eb53ecfba31c2a6927a4534ec261f84057dbf50e070aa88a9e918d72298",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "service-running-and-enabled",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "inactive\nnot-found\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "unit-runs-gunicorn-in-the-app-dir",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /lib/systemd/system/hello-world-flask-hello_world_flask.service: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "app-serves-the-welcome-message",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "not-served-on-another-address",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "curl-rc=7\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-app-is-changed-by-hand",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-and-restarts",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795220931'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.64 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::hello_world_flask: 10 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::Hello_world_flask[hello_world_flask]\n  Package[python3-gunicorn]\n  Package[python3-flask]\n  File[/opt/puppet-infrastructure/hello_world_flask]\n  File[/opt/puppet-infrastructure/hello_world_flask/hello_world_flask]\n  File[/opt/puppet-infrastructure/hello_world_flask/hello_world_flask/hello_world_flask.py]\n  File[/opt/puppet-infrastructure/hello_world_flask/hello_world_flask/wsgi.py]\n  File[/lib/systemd/system/hello-world-flask-hello_world_flask.service]\n  Service[hello-world-flask-hello_world_flask]\n  Exec[hello-world-flask-hello_world_flask-restart]\n  Exec[hello-world-flask-hello_world_flask-reload]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP hello_world_flask f7f64e2f9fe2\n"
+ },
+ "applied": [
+  {
+   "id": "service-running-and-enabled",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\nenabled\n",
+   "stderr": ""
+  },
+  {
+   "id": "unit-runs-gunicorn-in-the-app-dir",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ExecStart=python3 -m gunicorn --bind 127.0.0.1:8080 wsgi:app\nWorkingDirectory=/opt/puppet-infrastructure/hello_world_flask/hello_world_flask\n",
+   "stderr": ""
+  },
+  {
+   "id": "app-serves-the-welcome-message",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "<h1 style='color:blue'>P8 test flask hello</h1\n",
+   "stderr": ""
+  },
+  {
+   "id": "not-served-on-another-address",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "curl-rc=7\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-app-is-changed-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "<h1 style='color:blue'>p8test drifted</h1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "replaces the welcome message in /opt/puppet-infrastructure/hello_world_flask/hello_world_flask/hello_world_flask.py with \"p8test drifted\" (sed -i) and restarts hello-world-flask-hello_world_flask",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-and-restarts",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "<h1 style='color:blue'>P8 test flask hello</h1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond one HTTP request to the app (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "0e4cb219-c584-40fe-9ad1-7c91ff8f97ba",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "0e4cb219-c584-40fe-9ad1-7c91ff8f97ba",
+   "fresh": true
+  }
+ },
+ "node_agent": {
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/opt/puppet-infrastructure/hello_world_flask/hello_world_flask/hello_world_flask.py]/content:",
+   "\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/opt/puppet-infrastructure/hello_world_flask/hello_world_flask/hello_world_flask.py]/content:",
+   "\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/opt/puppet-infrastructure/hello_world_flask/hello_world_flask/hello_world_flask.py]/content: content changed '{sha256}61943f9cd3685b59758266d48d2376c5354d334d705d648f906055f259ae2363' to '{sha256}65867763937442a4455352738754f03957ed455dc584ce7e900936247996e803' (corrective)\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-restart]: Triggered 'refresh' from 1 event\u001b[0m"
+  ],
+  "tail": "_world_flask.py\t2026-11-21 00:28:56.101990742 +0000\n+++ /tmp/puppet-file20261121-2258-rzfb0q\t2026-11-21 00:29:11.673530943 +0000\n@@ -7,7 +7,7 @@\n \n @app.route(\"/\")\n def hello():\n-    welcome_msg = 'p8test drifted'\n+    welcome_msg = 'P8 test flask hello'\n     timestamp = time.strftime('%a, %d %b %Y %X %z')\n     html = \"\"\"\n       <h1 style='color:blue'>%s</h1>\n\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/opt/puppet-infrastructure/hello_world_flask/hello_world_flask/hello_world_flask.py]/content: \n\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/opt/puppet-infrastructure/hello_world_flask/hello_world_flask/hello_world_flask.py]/content: content changed '{sha256}61943f9cd3685b59758266d48d2376c5354d334d705d648f906055f259ae2363' to '{sha256}65867763937442a4455352738754f03957ed455dc584ce7e900936247996e803' (corrective)\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/opt/puppet-infrastructure/hello_world_flask/hello_world_flask/hello_world_flask.py]: Scheduling refresh of Exec[hello-world-flask-hello_world_flask-restart]\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-restart]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.93 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "outcomes": [
+  {
+   "outcome": "the service runs gunicorn in the app directory, bound to the configured address and port only",
+   "checks": [
+    "service-running-and-enabled",
+    "unit-runs-gunicorn-in-the-app-dir",
+    "not-served-on-another-address"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the page serves the configured welcome message",
+   "checks": [
+    "app-serves-the-welcome-message"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a hand change to the app is undone by the next agent run, which restarts the service so the configured page is served again",
+   "checks": [
+    "the-app-is-changed-by-hand",
+    "the-agent-run-restores-and-restarts"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "uninstalling (uninstall true), another address, port or message",
+   "uncovered": {
+    "why": "one set holds one params fixture (installed, 127.0.0.1:8080, the test message)",
+    "lifted_by": "capability: more than one params fixture per set",
+    "evidence": "phase3.py applies the class once with its single `fixture` (params or defaults)"
+   }
+  }
+ ],
+ "duration_s": 111.8
+}
