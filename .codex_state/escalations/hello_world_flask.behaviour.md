@@ -1,6 +1,6 @@
 # hello_world_flask — behaviour finding: a changed unit is restarted before systemd reloads it (2026-11-21)
 
-Status: BEING FIXED under policy B (one clear minimal fix): local change #16. Reproduced by the reviewer
+Status: CLOSED 2026-11-21. Fixed under policy B as local change #16: Phase 1 PASS 20261121T010022Z, Phase 3 PASS 20261121T010455Z (no findings). Was: being fixed. Reproduced by the reviewer
 (checks/reviews/hello_world_flask/20261121T004402Z.json, set PASS with this finding, purpose covered).
 
 ## What happens
