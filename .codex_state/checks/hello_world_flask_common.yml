@@ -42,19 +42,24 @@ checks:
       python3 -c 'import flask, gunicorn; print("imports ok")'
     expect: {rc: 0, stdout: "\\Apython3-flask install ok installed\\npython3-gunicorn install ok installed\\nimports ok\\n\\Z"}
 
+  # 2026-11-21 authoring correction (run 1, 20261121T153019Z, FINDINGS): the action called a `gunicorn` command, which
+  # python3-gunicorn does not ship on Ubuntu (the module only); the consumer's Debian unit runs `python3 -m gunicorn`
+  # (hello-world-flask.service.erb:10), which the action now does. The behaviour is unchanged.
   - id: gunicorn-serves-a-flask-app
     what: the installed gunicorn serves a one-route Flask application on 127.0.0.1:18080, which answers 200 with its text
     control: negative
     timeout: 120
     derived_from:
       - {path: manifests/hello_world_flask_common.pp, lines: "7-8", text: "# Packages needed for the applications to run"}
+      - {path: templates/hello_world_flask/hello-world-flask.service.erb, lines: "10", text: "ExecStart=python3 -m gunicorn --bind <%= @ip_address %>:<%= @port %> wsgi:app"}
     mutates: >-
       writes /run/p8test-flask/app.py (one route returning "p8test hello") and starts a transient unit p8test-gunicorn
-      (gunicorn on 127.0.0.1:18080 serving it) until the next revert; the answers go to /run/p8test-flask/out.txt
+      (python3 -m gunicorn on 127.0.0.1:18080 serving it, as hello_world_flask's Debian unit runs it) until the next
+      revert; the answers go to /run/p8test-flask/out.txt
     probe: |
       install -d -m 0755 /run/p8test-flask
       printf '%s\n' 'from flask import Flask' 'app = Flask(__name__)' '@app.route("/")' 'def hello():' '    return "p8test hello"' > /run/p8test-flask/app.py
-      systemd-run --unit p8test-gunicorn -q --working-directory=/run/p8test-flask gunicorn --bind 127.0.0.1:18080 app:app
+      systemd-run --unit p8test-gunicorn -q --working-directory=/run/p8test-flask python3 -m gunicorn --bind 127.0.0.1:18080 app:app
       for i in $(seq 1 20); do p8_tcp 127.0.0.1 18080 1 | grep -q open && break; sleep 0.5; done
       { p8_http http://127.0.0.1:18080/; curl -s --max-time 5 http://127.0.0.1:18080/; echo; } > /run/p8test-flask/out.txt
     effect: |
