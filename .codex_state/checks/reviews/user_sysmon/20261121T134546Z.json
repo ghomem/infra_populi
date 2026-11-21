@@ -1,0 +1,36 @@
+{
+ "class": "user_sysmon",
+ "at": "20261121T134546Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "naemon-contact-file (manifests/user_sysmon.pp:14-18): the file resource declares /etc/naemon/conf.d/contacts/${myusername}.cfg mode 0664 owner/group naemon with the sysmon_contact.erb content; the probe stats the p8testuser file and expects 'naemon naemon 664', matching.",
+  "naemon-contact-file (templates/users/sysmon_contact.erb:1-7): the template renders define contact / use generic-contact / contact_name @myusername / alias @myname / email @myemail / contactgroups @mygrouplist; with the params fixture (Puppet 8 Test User, root@localhost, [admins]) and whitespace normalised by sed, the expected text including the Array#to_s rendering [\"admins\"] is what the template produces.",
+  "thruk-htpasswd-entry (manifests/user_sysmon.pp:11-12): htpasswd { $myusername: cryptpasswd => $myhash, target => '/etc/thruk/htpasswd' } writes <user>:<hash>; the probe greps the p8testuser line and keeps the first three $-fields, expecting p8testuser:$6$p8testsalt, which is the prefix of the fixture's myhash.",
+  "the-thruk-entry-accepts-the-password (mutating, line 12, read whole file): mutates declares the apache2-utils install and the /run/p8test-sysmon/verify.txt output; the action is two read-only htpasswd -v verifications of the file the htpasswd resource writes; the effect reads the recorded verdicts. The wrong-password verification (expected 'password verification failed', rc=3) is an in-probe mismatch: changing the password changes the verdict, so the check cannot pass on a hash that accepts anything. Invariant/why_invariant: none in the set; no probe reaches another host.",
+  "purpose covered: Purpose (header: an Adagios sysmon user; code: Thruk htpasswd login + Naemon contact) is read correctly. The checks test both outcomes the lab can exercise: the Thruk htpasswd entry exists with the fixture hash and actually accepts the user's password and refuses a wrong one (htpasswd -v, the Apache basic-auth check), and the Naemon contact file carries name, alias, email and contact groups with naemon:naemon 0664. Left out: Thruk accepting the login and Naemon loading the contact; the uncovered row is honest: I re-measured on the node that apt-cache policy naemon naemon-core thruk returns no candidate (sources are Ubuntu archive/security and OpenVox only), and nodes.yml has no monitoring-server kind, so lifted_by 'capability: a monitoring-server node running Naemon + Thruk' is correct."
+ ],
+ "review_s": 117.4,
+ "check_file_sha256": "72e41513e16f568498f6648fe716e66313c475c27767c26179ff924708be9351",
+ "content_sha256": "72e41513e16f568498f6648fe716e66313c475c27767c26179ff924708be9351",
+ "reviewer_result": "20261121T134349Z-reviewer",
+ "author_result": "20261121T134054Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "9b1f966c-05ab-4b7a-a07b-796a65a18d73",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "9b1f966c-05ab-4b7a-a07b-796a65a18d73",
+   "fresh": true
+  }
+ }
+}
