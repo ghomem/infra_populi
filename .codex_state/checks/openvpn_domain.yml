@@ -6,12 +6,37 @@
 # groups [p8testgroup]. The peer is p8lab-dc, the lab's Samba AD DC (realm P8TEST.EXAMPLE): reverted with the node so
 # the join starts from a domain without this machine, and asked whether it now holds the node's machine account.
 # Probes read the node's own Samba/winbind state and files; the DC is reached only by the tools the class configures.
+# 2026-11-21 (backfill batch 8): purpose and outcomes (HQ rulings 2 and C1), and the login itself as behaviour: the DC
+# gets two fixture users (p8testvpnin in p8testgroup, p8testvpnout outside it) and pamtester runs the login service's
+# auth and account stacks on the node. /etc/pam.d/openvpn (password lines only, line 7 without a module) is used by no
+# baseline service: openvpn_server's plugin names login (its set checks the plugin line); it is checked as installed.
+# Prototyped 2026-11-21 on the ubuntu node with the dc peer.
 class: openvpn_domain
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 peer:
   kind: dc
   why: the class joins the node to an Active Directory domain, so a domain controller must serve that domain
+purpose: >-
+  Joins an OpenVPN server's node to the Windows (Active Directory) domain so that domain accounts in the listed groups
+  can log in to the VPN with their domain password: Samba/winbind and Kerberos configured as a domain member, the node
+  joined once, domain users and groups resolved through nsswitch, and pam_winbind restricted to the listed groups.
+  openvpn_server's PAM plugin authenticates through the login service, whose common stacks reach pam_winbind.
+outcomes:
+  - outcome: the node is configured as a member of the domain and joined (its machine account works and the DC holds it)
+    from: manifests/openvpn_domain.pp:22-91; templates/openvpn/smb.conf.erb; templates/openvpn/join-domain.sh.erb
+    checks: [smb-conf-joins-as-a-domain-member, the-node-is-joined-to-the-domain, the-dc-holds-the-node-machine-account]
+  - outcome: domain users and groups resolve on the node through nsswitch and winbind
+    from: manifests/openvpn_domain.pp:49-56; files/openvpn/nsswitch.conf
+    checks: [domain-users-and-groups-resolve-through-winbind]
+  - outcome: pam_winbind requires membership of the listed groups, and the openvpn PAM file is installed
+    from: manifests/openvpn_domain.pp:14-15, 31-38, 58-65
+    checks: [pam-winbind-requires-the-group-and-openvpn-pam-installed]
+  - outcome: >-
+      a domain user in a listed group logs in through PAM (login, the service openvpn_server's plugin uses) with the
+      domain password; a wrong password and a domain user outside the listed groups are refused
+    from: manifests/openvpn_domain.pp:14-15, 31-38; templates/openvpn/pam_winbind.conf.erb:30; manifests/openvpn_server.pp:169
+    checks: [domain-users-for-the-login-checks, pam-logins-through-winbind]
 checks:
   - id: smb-conf-joins-as-a-domain-member
     what: >-
@@ -77,3 +102,50 @@ checks:
     probe: |
       samba-tool computer list | grep -c -x 'PUPPET8NODE\$'
     expect: {rc: 0, stdout: "\\A1\\n\\Z"}
+
+  - id: domain-users-for-the-login-checks
+    what: setup for the login checks, two domain users on the DC, p8testvpnin in p8testgroup and p8testvpnout in no listed group
+    control: negative
+    host: peer
+    derived_from:
+      - {path: templates/openvpn/pam_winbind.conf.erb, lines: "30", text: "require_membership_of = <%= @comma_separated_groups %>"}
+    mutates: >-
+      creates the domain users p8testvpnin (password P8test-vpn-in-not-a-secret1) and p8testvpnout (password
+      P8test-vpn-out-not-a-secret1) in the DC's directory and adds p8testvpnin to p8testgroup
+    probe: |
+      set -e
+      samba-tool user create p8testvpnin 'P8test-vpn-in-not-a-secret1' >/dev/null
+      samba-tool user create p8testvpnout 'P8test-vpn-out-not-a-secret1' >/dev/null
+      samba-tool group addmembers p8testgroup p8testvpnin >/dev/null
+    effect: |
+      samba-tool group listmembers p8testgroup | grep -x -e p8testvpnin -e p8testvpnout | sort
+      samba-tool user list | grep -x -e p8testvpnin -e p8testvpnout | sort
+    expect: {rc: 0, stdout: "\\Ap8testvpnin\\np8testvpnin\\np8testvpnout\\n\\Z"}
+
+  - id: pam-logins-through-winbind
+    what: >-
+      through the login PAM service (auth and account stacks): p8testvpnin with its domain password is accepted; the
+      same user with a wrong password and p8testvpnout (not in p8testgroup) with its right password are refused, while
+      the DC itself accepts p8testvpnout's password (wbinfo -a, no membership rule): the refusal is the membership rule
+    control: negative
+    timeout: 300
+    derived_from:
+      - {path: manifests/openvpn_domain.pp, lines: "31-38", text: "content => template('puppet_infrastructure/openvpn/pam_winbind.conf.erb'),"}
+      - {path: templates/openvpn/pam_winbind.conf.erb, lines: "30", text: "require_membership_of = <%= @comma_separated_groups %>"}
+      - {path: manifests/openvpn_server.pp, lines: "169", text: "pam                      => true,"}
+    mutates: >-
+      installs pamtester if absent; runs three PAM logins through the login service (winbind and the system log record
+      them, the DC counts the wrong password once against p8testvpnin) and one direct winbind authentication of
+      p8testvpnout (wbinfo -a); the outcomes go to /run/p8test-pam/logins.txt
+    probe: |
+      command -v pamtester >/dev/null || DEBIAN_FRONTEND=noninteractive apt-get -qq -y install pamtester >/dev/null 2>&1
+      install -d -m 0700 /run/p8test-pam
+      try() { printf '%s\n' "$3" | pamtester login "$2" authenticate acct_mgmt >/dev/null 2>&1; echo "$1 rc=$?"; }
+      { try member-right 'P8TEST+p8testvpnin' 'P8test-vpn-in-not-a-secret1'
+        try member-wrong 'P8TEST+p8testvpnin' 'P8test-wrong-password1'
+        try outsider-right 'P8TEST+p8testvpnout' 'P8test-vpn-out-not-a-secret1'
+        wbinfo -a 'P8TEST+p8testvpnout%P8test-vpn-out-not-a-secret1' 2>&1 | grep -o 'plaintext password authentication [a-z]*' | sed 's/^/outsider at the DC: /'; } > /run/p8test-pam/logins.txt
+    effect: |
+      cat /run/p8test-pam/logins.txt
+    expect: {rc: 0, stdout: "\\Amember-right rc=0\\nmember-wrong rc=[1-9][0-9]*\\noutsider-right rc=[1-9][0-9]*\\noutsider at the DC: plaintext password authentication succeeded\\n\\Z"}
+
