@@ -1,0 +1,35 @@
+{
+ "class": "user_samba",
+ "at": "20261121T133354Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "user-created-with-split-name (manifests/user_samba.pp:6-8): split($myname, ' ') with [0]/[-1] turns the fixture myname 'P8 Testuser' into first 'P8', last 'Testuser'; the stand-in create-user.pl records \"$1 $2 $3\", so the single line 'p8testuser P8 Testuser' is exactly what these lines produce for title p8testuser (and a single line also shows the pdbedit unless-guard kept run 2 from re-creating)",
+  "user-created-with-split-name (manifests/user_samba.pp:11): the command passes $username ${first_name} ${last_name} ${mysmbhash} in that order; the probe reads the stand-in's record of args 1-3 = user, first, last, matching the expect",
+  "samba-hash-set-for-the-user (manifests/user_samba.pp:18): set-user-samba-hash.sh gets ${first_name} ${last_name} ${mysmbhash}; the stand-in resolves the user by first/last from the users store (so the file exists only if the create exec ran first, per the require) and stores $3; expect equals the params fixture mysmbhash IgBQ...AA== verbatim",
+  "purpose covered: Purpose matches the baseline define (split myname, Zentyal create-user.pl then set-user-samba-hash.sh, each guarded by pdbedit/ldbsearch unless). Outcome 1 (arguments and order) is probed by both checks against the samba_dc_standin store; the users file holding exactly one line plus gate-v2 run 2 cover the guards. Outcome 2 (a real domain account authenticating with the hash) is honestly uncovered: the scripts are Zentyal's; the active dc node is plain Samba 4.19 AD DC (nodes.yml) without them, and I re-measured on puppet8node that apt-cache policy zentyal-samba/zentyal-users/zentyal-core returns no package (sources only ubuntu.sources and openvox8-release.list), so lifted_by 'capability: Zentyal/Samba AD DC with Zentyal user scripts' is backed. No part the lab can exercise is left untested."
+ ],
+ "review_s": 104.1,
+ "check_file_sha256": "c0cf3ddf9df583335de0cd62eecbc6155dcbb701c0094990bbdf4f88c5e9dca9",
+ "content_sha256": "c0cf3ddf9df583335de0cd62eecbc6155dcbb701c0094990bbdf4f88c5e9dca9",
+ "reviewer_result": "20261121T133210Z-reviewer",
+ "author_result": "20261121T132930Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "8cc7275e-77f0-41a0-bc9e-9f519967ec17",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "8cc7275e-77f0-41a0-bc9e-9f519967ec17",
+   "fresh": true
+  }
+ }
+}
