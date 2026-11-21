@@ -1,4 +1,4 @@
-# sysmon_mysqldump_health — behaviour findings (OPEN)
+# sysmon_mysqldump_health — behaviour findings (finding 1 FIXED, local change #18; finding 2 OPEN, for HQ)
 
 Production use 0 (migration_order.md). Both findings are in the baseline template
 `templates/sysmon/check-mysqldump-health.sh.erb` (cf477c6), measured on the lab node with Ubuntu's MySQL 8.0.46.
@@ -33,3 +33,9 @@ Production use 0 (migration_order.md). Both findings are in the baseline templat
     anything.
 - The set's check `a-live-database-of-the-dump-name-is-left-intact` expects the purpose (CRITICAL and the database
   intact). It stays a finding until HQ rules.
+
+## Status (2026-11-21)
+- Finding 1 is fixed by local change #18: Phase 1 PASS 20261121T115850Z; the after-check passed in
+  results/sysmon_mysqldump_health/20261121T115445Z-author and in the reviewer run.
+- Finding 2 was reproduced by review 20261121T120256Z. That review passed the set on purpose: 7 outcomes, no uncovered
+  rows. It awaits HQ's choice of A, B or C.

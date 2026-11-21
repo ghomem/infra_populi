@@ -1,0 +1,38 @@
+{
+ "class": "sysmon_mysqldump_health",
+ "at": "20261121T120256Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "a-file-that-is-not-a-dump-is-critical: erb:64-69 sends a .sql file without 'MySQL dump' to handle_error with 'SQL File $f is not a MySQLDump', so the empty file and the --skip-comments dump (no '-- MySQL dump' header) must give CRITICAL exit 2; at the baseline the call passes $RC (unset/0 after a good restore), the defect local change #18 replaced with 'handle_error 1' (current template line 68); my run printed both CRITICAL lines with rc=2",
+  "a-failed-drop-is-critical: erb:54-56 runs clear_database (DROP DATABASE as $MYSQLUSER, erb:36-38) and reports 'Drop database $DBNAME' on failure; the probe dumps with --skip-add-drop-table so the load needs no DROP privilege, then revokes DROP from p8test_check, so only the drop fails: CRITICAL 'Drop database p8testsrc' exit 2 is what those lines produce; mutates declares the revoke/grant and the dump swap; my run matched",
+  "a-live-database-of-the-dump-name-is-left-intact: erb:46-48 reports 'Create database $DBNAME' when CREATE fails (an existing p8testsrc), and erb:19-23 is cited as the mechanism under test: handle_error calls clear_database before exiting, which drops the existing database; the 'rows: 3' expectation comes from the purpose (a restore check must not destroy a live database), not from those lines, and the set's header names it as an escalated finding; the probe tests exactly that path",
+  "finding a-live-database-of-the-dump-name-is-left-intact: the check printed 'CRITICAL: Create database p8testsrc' and rc=2 as expected, but no 'rows: 3' line followed: SELECT COUNT(*) FROM p8testsrc.t failed because handle_error's clear_database (baseline erb:19-23, 36-38) dropped the pre-existing p8testsrc with its 3 rows",
+  "purpose covered: Purpose matches the manifest header ('nagios plugin ... MYSQL db test restores') and the template header ('Validate if the MySQL database dumps can be restored'); the define only renders the script (erb is the whole behaviour). The 7 outcomes cover the whole template: rendering with user/password/dirs root 0755 (check-script-rendered), a good dump restored into a scratch database and dropped, OK exit 0 (restores-are-checked, left: 0), a non-loading dump CRITICAL 'Load database dump' with the scratch database dropped, a non-mysqldump .sql CRITICAL (empty and comment-less dumps), both configured dirs and a dated subdirectory (find recursion), create failure, and drop failure, each probed against a real MySQL 8.0 restore on the node. The unused INV branch and RC_UNKNOWN are dead code, not outcomes. No uncovered rows; nothing the lab can exercise is left out. Not covered and not an outcome: a dump without a database name in its '-- Host:' line (e.g. --all-databases) \u2014 no dump producer exists in this repo to say the fleet writes such dumps"
+ ],
+ "review_s": 166.8,
+ "check_file_sha256": "22871c15a5d2dcd29cc022dc56e7f45abea4b83a317368c4fb0c19b1acec2eba",
+ "content_sha256": "22871c15a5d2dcd29cc022dc56e7f45abea4b83a317368c4fb0c19b1acec2eba",
+ "reviewer_result": "20261121T120010Z-reviewer",
+ "author_result": "20261121T115445Z-author",
+ "findings": [
+  "a-live-database-of-the-dump-name-is-left-intact"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "27b90bc6-ed48-4df8-8e1a-4e53ee8039f5",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "27b90bc6-ed48-4df8-8e1a-4e53ee8039f5",
+   "fresh": true
+  }
+ }
+}
