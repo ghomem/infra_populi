@@ -1,0 +1,38 @@
+{
+ "class": "openvpn_set_vpn_passwd_file",
+ "at": "20261121T163511Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "script-installed-with-the-list: manifest 29-34 declares the file mode 0755 owner/group $file_owner (fixture root) from set_vpn_passwd.sh.erb; template line 16 renders each vpn_list element with a leading space, so [VPN1, VPN2] gives VPN_LIST=\" VPN1 VPN2\"; probe stat + grep and expect 'root:root 755' match exactly",
+  "vpn-profiles-and-a-dialog-stub: template 15-20 looks for /etc/NetworkManager/system-connections/<name>; the setup writes VPN1 (listed) and VPN3 (unlisted) keyfiles at that path and a logging kdialog stub, and the effect reads NetworkManager's loaded connections and the stub, not the action's output; mutates declares all of it. Note: its 'as openvpn_nm_connection writes them' is approximate (baseline connection_file.erb writes password-flags=1 and permissions=user:...; the set uses password-flags=0, a deviation the file header declares)",
+  "matching-answers-set-the-listed-connection: template 18-23 runs nmcli connection modify <name> vpn.secrets password=<pw> only for listed names whose keyfile exists; with VPN1 listed+present, VPN2 listed+absent, VPN3 unlisted, the expected VPN1 secret p8test-pass-a, empty VPN3, 2 password prompts (lines 30, 37) and the final 'Configuration finished.' msgbox (line 59) are what the code produces",
+  "finding a-second-run-changes-the-password: expected VPN1 secret p8test-pass-c after a second run, saw 'rc=0 / VPN1: [password = p8test-pass-a]' (unchanged). Reproduced and confirmed on the node after the run via lab_exec: /etc/NetworkManager/system-connections holds only VPN3; nmcli shows VPN1 and VPN2 backed by /run/NetworkManager/system-connections/netplan-NM-<uuid>.nmconnection with /etc/netplan/90-NM-*.yaml (NetworkManager 1.46.0), so line 20's [ -f /etc/NetworkManager/system-connections/VPN1 ] is false and the second run skips VPN1 silently while still reporting 'Configuration finished'",
+  "purpose gap: Tested: install with owner/mode and the rendered list; a matching pair sets the listed present connection and leaves listed-absent and unlisted ones alone; cancel at the first dialog shows the cancel message and exits; a mismatch shows the message and re-asks, then a match sets the password; a second run (finding: it no longer finds the profile). Gap 1: the stated purpose says 'blank or mismatched answers are asked again', but no outcome row or check exercises the blank branch (template 44-45, BLANK_PASSWD msgbox then re-ask); the lab can exercise it with the same stub (an empty answer with exit 0), so it must be tested. Gap 2: profiles are written with password-flags=0 and no permissions=user:..., while openvpn_nm_connection (connection_file.erb) writes password-flags=1 (agent-owned secret) plus user permissions; how the script behaves on the profile production actually has (secret going to the desktop user's secret agent) is neither tested nor listed under uncovered with evidence and lifted_by. Minor: cancelling-changes-nothing only reads VPN3, an unlisted connection the script never touches, so it shows the exit path (last call is the cancel msgbox) but not that a listed connection kept its password; cancel at the second dialog (lines 39-42) is untested. The set has no uncovered rows."
+ ],
+ "review_s": 156.2,
+ "check_file_sha256": "5a669196059ba8f15f11a525487020efee6a0fcf9bdd190f8246911b169cf37e",
+ "content_sha256": "5a669196059ba8f15f11a525487020efee6a0fcf9bdd190f8246911b169cf37e",
+ "reviewer_result": "20261121T163235Z-reviewer",
+ "author_result": "20261121T162859Z-author",
+ "findings": [
+  "a-second-run-changes-the-password"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "d7c7cb1c-905e-4d37-83fe-03dc43678ae9",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "d7c7cb1c-905e-4d37-83fe-03dc43678ae9",
+   "fresh": true
+  }
+ }
+}
