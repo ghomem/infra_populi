@@ -1,0 +1,35 @@
+{
+ "class": "openvpn_nm_connection",
+ "at": "20261121T034103Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "only-the-local-user-may-use-it: connection_file.erb:5 renders permissions=user:<local_username>:; with local_username p8testuser; nmcli -g escapes the colon, so user\\:p8testuser is exactly that value; the mismatch changes only the connection name, which must make nmcli refuse",
+  "networkmanager-loads-the-vpn-profile: connection_file.erb:20 service-type=org.freedesktop.NetworkManager.openvpn (with id=<connection_name>, type=vpn at 1-4 and the nmcli con reload exec at manifest 22-25); the probe reads id/type/service-type of p8test-vpn from NetworkManager itself, expecting p8test-vpn / vpn / org.freedesktop.NetworkManager.openvpn",
+  "vpn-settings-from-the-parameters: connection_file.erb:8-23 declares remote/cipher/username/ca from the parameters plus connection-type=password and dev-type=tap; with the params file (remote 203.0.113.50, ca /etc/p8test-vpn/ca.crt, vpn_username p8testuser) and the cipher default AES-256-CBC (manifest :15) the expected six vpn.data keys are what the template renders",
+  "purpose gap: Tested: the profile is root:root 0600, NetworkManager loads it as an OpenVPN connection named p8test-vpn, it carries remote/CA/VPN user/cipher/password auth/tap from the parameters, only p8testuser is permitted, and its UUID is the version-5 fqdn_uuid of the name (I computed uuid5(DNS,'p8test-vpn') = df2d3b4d-5aa3-564f-92d4-fd9bac9644f9). The reviewer run reproduced ALL_PASS. GAP: the class exists to connect to the VPN (manifest :2), and the one uncovered row, 'connecting through the profile to an OpenVPN server', is something this lab can test. (1) Its reason says an agent-owned password (password-flags=1) needs a desktop session's secret agent. It does not: nmcli 1.46.0 on p8lab-gnome lists 'nmcli connection up <ID> passwd-file <file>', which makes nmcli itself the secret agent with no session, run as root in a mutating node action. The evidence (session_problems accepts only plasma) shows the runner cannot start a GNOME session. It does not show the lab cannot connect. (2) The lab already provides 'an OpenVPN server peer': the runner's peer block (ubuntu2, second-node, active) installs and runs openvpn in mutating peer checks with tap and password auth, and routes 203.0.113.50 via the node's host-only address (openvpn_server.yml, network_vpn.yml). So the lifted_by capability is not missing. Also not in the outcomes table or the probes, although nmcli vpn.data shows them and a connection depends on them: the fixed transport settings of connection_file.erb:9-17 (remote-random=no, password-flags=1, comp-lzo=yes, proto-tcp=no i.e. UDP, mssfix=no) and the ipv4/ipv6 method=auto of :22-29."
+ ],
+ "review_s": 86.4,
+ "check_file_sha256": "31d15ffae7a4621877ad3947202d5644f167c933d63beac24c2c7bdb31db0444",
+ "content_sha256": "31d15ffae7a4621877ad3947202d5644f167c933d63beac24c2c7bdb31db0444",
+ "reviewer_result": "20261121T033937Z-reviewer",
+ "author_result": "20261121T033726Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "boot_id": "e6a916e9-6561-4020-ab2b-95bff9f2f7b9",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "e6a916e9-6561-4020-ab2b-95bff9f2f7b9",
+   "fresh": true
+  }
+ }
+}
