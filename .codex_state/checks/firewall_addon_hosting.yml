@@ -6,6 +6,8 @@
 # 2026-11-20 (backfill batch 7): purpose and outcomes (HQ rulings 2 and C1), and the traffic as behaviour: DNS and NTP
 # still answer (invariants: they answer on the clean node too), a new TCP connection to the internet is dropped, and
 # an agent run made through the firewall (node_agent) succeeds. Probes may not name the master; the agent run does.
+# Correction round 1, 2026-11-21 (review 20261121T000538Z, purpose): purge => true exercised (an unmanaged OUTPUT rule
+# inserted before the agent run is gone after it); the purpose says IPv4 (the class leaves ip6tables alone).
 class: firewall_addon_hosting
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -13,8 +15,9 @@ node_agent:
   after: an-agent-run-is-due
   why: that the agent still reaches its master through the OUTPUT drop policy shows only in an agent run made after the class is in place
 purpose: >-
-  Locks down a hosting server's outbound traffic: the OUTPUT chain drops everything except replies, DNS, NTP and the
-  agent's connection to its Puppet master, so a compromised service cannot open new connections out.
+  Locks down a hosting server's outbound IPv4 traffic: the OUTPUT chain drops everything except replies, DNS, NTP and
+  the agent's connection to its Puppet master, and any OUTPUT rule Puppet does not manage is removed, so a compromised
+  service cannot open new IPv4 connections out.
 outcomes:
   - outcome: the OUTPUT policy is DROP with accept rules for replies, DNS, NTP and the master on 8140
     from: manifests/firewall_addon_hosting.pp:13-20
@@ -25,6 +28,9 @@ outcomes:
   - outcome: DNS and NTP keep working through the firewall
     from: manifests/firewall_addon_hosting.pp:17-19
     checks: [dns-still-resolves, ntp-still-answers]
+  - outcome: an OUTPUT rule that Puppet does not manage is removed on the next agent run (purge)
+    from: manifests/firewall_addon_hosting.pp:13-14
+    checks: [an-agent-run-is-due, the-agent-run-through-the-firewall-succeeded]
   - outcome: the agent still reaches its master and completes a run
     from: manifests/firewall_addon_hosting.pp:20
     checks: [an-agent-run-is-due, the-agent-run-through-the-firewall-succeeded]
@@ -109,21 +115,28 @@ checks:
     expect: {rc: 0, stdout: "\\Aanswers\\n\\Z"}
 
   - id: an-agent-run-is-due
-    what: setup for the node's agent run, a marker of the time before it
+    what: >-
+      setup for the node's agent run: a marker of the time before it, and an OUTPUT rule Puppet does not manage
+      (an ACCEPT for tcp/9 with the comment p8test-unmanaged), present before the run
     control: negative
     derived_from:
       - {path: manifests/firewall_addon_hosting.pp, lines: "13-14", text: "# override the default OUTPUT from the firewall class - can't touch this!"}
-    mutates: writes the time to /run/p8test-fah/before (the runner then makes the node's agent run)
+    mutates: >-
+      writes the time to /run/p8test-fah/before and inserts one rule at the top of the IPv4 OUTPUT chain (iptables -I
+      OUTPUT -p tcp --dport 9 -m comment --comment p8test-unmanaged -j ACCEPT); the runner then makes the node's agent run
     probe: |
       install -d -m 0700 /run/p8test-fah; date +%s > /run/p8test-fah/before
+      iptables -I OUTPUT -p tcp --dport 9 -m comment --comment p8test-unmanaged -j ACCEPT
     effect: |
       test -s /run/p8test-fah/before && echo marked
-    expect: {rc: 0, stdout: "\\Amarked\\n\\Z"}
+      iptables -S OUTPUT | p8_count 'p8test-unmanaged'
+    expect: {rc: 0, stdout: "\\Amarked\\n1\\n\\Z"}
 
   - id: the-agent-run-through-the-firewall-succeeded
     what: >-
       the agent run made after the marker (with OUTPUT dropping new connections) fetched its catalog from the master and
-      applied it: the last run summary is newer than the marker and reports no failed resources
+      applied it: the last run summary is newer than the marker and reports no failed resources, and the unmanaged
+      OUTPUT rule inserted before it is gone (purge)
     control: negative
     derived_from:
       - {path: manifests/firewall_addon_hosting.pp, lines: "13-14", text: "# override the default OUTPUT from the firewall class - can't touch this!"}
@@ -134,5 +147,6 @@ checks:
       f=/opt/puppetlabs/puppet/public/last_run_summary.yaml
       [ "$(sed -n 's/^ *last_run: *//p' $f)" -ge "$(cat /run/p8test-fah/before)" ] && echo "a run after the marker"
       sed -n '/^resources:/,/^[a-z]/p' $f | grep -E '^ +failed: ' | sed 's/^ *//'
-    expect: {rc: 0, stdout: "\\Aa run after the marker\\nfailed: 0\\n\\Z"}
+      iptables -S OUTPUT | p8_count 'p8test-unmanaged'
+    expect: {rc: 0, stdout: "\\Aa run after the marker\\nfailed: 0\\n0\\n\\Z"}
 
