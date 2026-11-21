@@ -1,0 +1,259 @@
+{
+ "class": "openvpn_set_vpn_passwd_file",
+ "role": "author",
+ "at": "20261121T163922Z",
+ "runner": "043f419",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "4a6dc3d180be5ccfe076f1b33c68210a4b21779c1ad59a79453e210d940c1573",
+ "content_sha256": "4a6dc3d180be5ccfe076f1b33c68210a4b21779c1ad59a79453e210d940c1573",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "script-installed-with-the-list",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/usr/local/bin/set_vpn_passwd.sh': No such file or directory\ngrep: /usr/local/bin/set_vpn_passwd.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "vpn-profiles-and-a-dialog-stub",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "matching-answers-set-the-listed-connection",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /var/tmp/p8test-kd/run1.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "an-openvpn-nm-connection-profile-keeps-the-password",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "VPN4: []\n",
+   "stderr": "Error: VPN4 - no such connection profile.\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "cancelling-changes-nothing",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /var/tmp/p8test-kd/cancel.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-mismatch-is-asked-again",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /var/tmp/p8test-kd/mismatch.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-second-run-changes-the-password",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /var/tmp/p8test-kd/run2.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "n '1795279233'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Puppet_infrastructure::Openvpn_set_vpn_passwd_file[/usr/local/bin/set_vpn_passwd.sh]/File[/usr/local/bin/set_vpn_passwd.sh]/ensure: defined content as '{sha256}9d99a2a18adc18f9aad7b30611b2ba40edb3b2eb6d9ceb51f02492764876a5d5'\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 0.05 seconds\u001b[0m\nRUN1_EVENTS: 1 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-kubuntu\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795279251'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.08 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::openvpn_set_vpn_passwd_file: 1 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::Openvpn_set_vpn_passwd_file[/usr/local/bin/set_vpn_passwd.sh]\n  File[/usr/local/bin/set_vpn_passwd.sh]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP openvpn_set_vpn_passwd_file 32a948dbec6a\n"
+ },
+ "applied": [
+  {
+   "id": "script-installed-with-the-list",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root:root 755\nVPN_LIST=\" VPN1 VPN2 VPN4\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "vpn-profiles-and-a-dialog-stub",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "VPN1\nVPN3\nVPN4\nstub ready\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes the NetworkManager profiles /etc/NetworkManager/system-connections/VPN1 and VPN3 (OpenVPN, password auth, password-flags=0, remote 203.0.113.9) and VPN4 (password-flags=1, permissions=user:p8testuser:;) and reloads NetworkManager; writes the stub /var/tmp/p8test-kd/kdialog (replays /var/tmp/p8test-kd/answers, logs to /var/tmp/p8test-kd/calls)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "matching-answers-set-the-listed-connection",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc=0\npassword prompts: 2\n--msgbox Configuration finished.\nVPN1: [password = p8test-pass-a]\nVPN3: []\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs the script once with the stub first on PATH (answers p8test-pass-a twice); NetworkManager stores VPN1's password; the outcomes go to /var/tmp/p8test-kd/run1.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "an-openvpn-nm-connection-profile-keeps-the-password",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "VPN4: []\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the connection (declared mutating so it runs after the first run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "cancelling-changes-nothing",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc=0 prompts=1 last=--msgbox You canceled this operation.\nrc=0 prompts=2 last=--msgbox You canceled this operation.\nVPN1: [password = p8test-pass-a]\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs the script twice with the stub (cancel at the first dialog; a password, then cancel at the second); the outcomes go to /var/tmp/p8test-kd/cancel.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-mismatch-is-asked-again",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc=0\npassword prompts: 6\n--msgbox One of the passwords was blank.\n--msgbox Passwords didn't match.\n--msgbox Configuration finished.\nVPN2: [password = p8test-pass-b]\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes the profile VPN2 (as VPN1) and reloads NetworkManager; runs the script once with the stub answering two blanks, x, y, then p8test-pass-b twice; NetworkManager stores VPN2's password; the outcomes go to /var/tmp/p8test-kd/mismatch.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-second-run-changes-the-password",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=0\nVPN1: [password = p8test-pass-a]\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs the script once more with the stub answering p8test-pass-c twice; the outcomes go to /var/tmp/p8test-kd/run2.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [
+  "an-openvpn-nm-connection-profile-keeps-the-password",
+  "a-second-run-changes-the-password"
+ ],
+ "not_run": [],
+ "outcome": "FINDINGS",
+ "node": "kubuntu",
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "435aadb7-fa92-4248-b8bf-bb44f827dd05",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "435aadb7-fa92-4248-b8bf-bb44f827dd05",
+   "fresh": true
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "the script is installed with the owner and the listed connections",
+   "checks": [
+    "script-installed-with-the-list"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "with both answers matching, every listed connection present gets the password, and an unlisted one is left alone",
+   "checks": [
+    "vpn-profiles-and-a-dialog-stub",
+    "matching-answers-set-the-listed-connection"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "openvpn_nm_connection's own profiles (agent-owned password) get the password",
+   "checks": [
+    "vpn-profiles-and-a-dialog-stub",
+    "matching-answers-set-the-listed-connection",
+    "an-openvpn-nm-connection-profile-keeps-the-password"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "cancelling at either dialog changes nothing",
+   "checks": [
+    "cancelling-changes-nothing"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "blank or mismatched answers are refused with a message and asked again, then a match sets the password",
+   "checks": [
+    "a-mismatch-is-asked-again"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "running the script again changes the password of a listed connection (the next password change)",
+   "checks": [
+    "a-second-run-changes-the-password"
+   ],
+   "passed": false
+  }
+ ],
+ "duration_s": 95.6
+}

@@ -18,8 +18,9 @@ openvpn_nm_connection writes them:
   A later run, the next password change, silently skips it and still ends "Configuration finished."
 - The set's check `a-second-run-changes-the-password` expects the second run to change the password.
 
-Two related effects, measured but not checks:
-- **openvpn_nm_connection's own profiles keep no password.** They set `password-flags=1` (agent-owned).
+Two related effects:
+- **openvpn_nm_connection's own profiles keep no password** (now a check: `an-openvpn-nm-connection-profile-keeps-the-password`,
+  run 20261121T163922Z, `VPN4: []`). They set `password-flags=1` (agent-owned).
   NetworkManager accepts the modification (its audit log: connection-update ... vpn.secrets ... success) but stores no
   agent-owned secret, so the script leaves nothing behind for those connections. The set uses `password-flags=0`
   profiles to show the script's own behaviour.
@@ -36,3 +37,9 @@ Two related effects, measured but not checks:
   versus system-stored), together with A or B.
 
 This needs a ruling on the design, so the run continues; the class's behaviour state stays "finding" until HQ rules.
+
+## Round 1 (2026-11-21, review 20261121T163511Z)
+The set now also exercises blank answers, cancel at either dialog (a listed connection keeps its password), and VPN4,
+a listed profile exactly as openvpn_nm_connection's template writes it. Run 20261121T163922Z: every dialog path passes.
+Two checks fail, both findings described above: `a-second-run-changes-the-password` and
+`an-openvpn-nm-connection-profile-keeps-the-password`.
