@@ -4,13 +4,40 @@
 # Scope: what this profile itself chooses. Its component classes (packages_base, ssh_secure, firewall_secure,
 # firewall_ipv6_drop, filesystem_base_desktop, filesystem_apt) carry their own check sets; here only the parameters
 # the profile passes them and the resources it declares itself.
+# 2026-11-21 (backfill batch 8): purpose and outcomes (HQ rulings 2 and C1), the IPv6 drop and the APT desktop mode
+# the profile chooses, and the uncovered row in the current form.
 class: node_base_domain_desktop
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
-uncovered:
-  - what: the puppet agent daemon running on its interval (Service['puppet'] is checked as a unit that is enabled and running)
-    why: a real daemon would run the catalog between the harness's runs; the lab uses a stand-in unit body
-    lifted_by: kubuntu
+purpose: >-
+  The base profile of a domain-joined desktop: the common packages with unattended upgrades, SSH hardened but accepting
+  passwords (domain accounts), the firewall with all IPv6 input and forwarding dropped, desktop APT helpers, an NTP
+  daemon, and the Puppet agent running as a daemon.
+outcomes:
+  - outcome: SSH is hardened but accepts password logins, and unattended upgrades stay installed
+    from: manifests/node_base_domain_desktop.pp:9-10
+    checks: [ssh-hardened-but-password-login-allowed, unattended-upgrades-kept]
+  - outcome: the IPv4 firewall is firewall_secure's (INPUT and FORWARD dropped by default, the SSH whitelist and limit)
+    from: manifests/node_base_domain_desktop.pp:11
+    checks: [the-ipv4-firewall-is-firewall-secure]
+  - outcome: the local directories are in place (filesystem_base_desktop)
+    from: manifests/node_base_domain_desktop.pp:13-16
+    checks: [the-local-directories-are-in-place]
+  - outcome: all IPv6 input and forwarding are dropped (firewall_ipv6_drop)
+    from: manifests/node_base_domain_desktop.pp:12
+    checks: [ipv6-input-and-forward-dropped]
+  - outcome: the APT helpers are in desktop mode (server_mode false)
+    from: manifests/node_base_domain_desktop.pp:17-20
+    checks: [apt-helpers-in-desktop-mode]
+  - outcome: an NTP daemon runs, and the puppet service is enabled and running
+    from: manifests/node_base_domain_desktop.pp:22-27
+    checks: [ntp-daemon-running, puppet-service-enabled-and-running]
+  - outcome: the puppet agent daemon running on its interval
+    from: manifests/node_base_domain_desktop.pp:23-27
+    uncovered:
+      why: a real daemon would run the catalog between the harness's two runs; the lab uses a stand-in unit body
+      lifted_by: "capability: a harness mode that tolerates a running agent daemon between runs 1 and 2"
+      evidence: "node fixture puppet_agent_standin (status.py --standins: node_base_domain_desktop)"
 checks:
   - id: ssh-hardened-but-password-login-allowed
     what: >-
@@ -58,3 +85,46 @@ checks:
     probe: |
       systemctl is-enabled puppet; systemctl is-active puppet
     expect: {rc: 0, stdout: "\\Aenabled\\nactive\\n\\Z"}
+
+  - id: ipv6-input-and-forward-dropped
+    what: ip6tables drops all IPv6 input and forwarding (rules 600 and 601 of firewall_ipv6_drop)
+    control: negative
+    derived_from:
+      - {path: manifests/node_base_domain_desktop.pp, lines: "12", text: "include puppet_infrastructure::firewall_ipv6_drop"}
+      - {path: manifests/firewall_ipv6_drop.pp, lines: "8", text: "firewall { '600 Drop ALL IPv6 - INPUT':"}
+    probe: |
+      ip6tables -S INPUT | p8_count '"600 Drop ALL IPv6 - INPUT" -j DROP$'
+      ip6tables -S FORWARD | p8_count '"601 Drop ALL IPv6 - FORWARD" -j DROP$'
+    expect: {rc: 0, stdout: "\\A1\\n1\\n\\Z"}
+
+  - id: apt-helpers-in-desktop-mode
+    what: filesystem_apt runs in desktop mode (server_mode false), so the desktop compatibility link apt-update-surface-desktop.sh points at apt-update-surface.sh
+    control: negative
+    derived_from:
+      - {path: manifests/node_base_domain_desktop.pp, lines: "17-20", text: "server_mode       => false,"}
+      - {path: manifests/filesystem_apt.pp, lines: "72-74", text: "file { \"${localdir}/bin/apt-update-surface-desktop.sh\":"}
+    probe: |
+      readlink /opt/puppet-infrastructure/bin/apt-update-surface-desktop.sh
+    expect: {rc: 0, stdout: "\\A/opt/puppet-infrastructure/bin/apt-update-surface\\.sh\\n\\Z"}
+
+  - id: the-ipv4-firewall-is-firewall-secure
+    what: INPUT and FORWARD drop by default, the lab Hiera's one address is whitelisted for SSH, and firewall_secure's limit chain stands
+    control: negative
+    derived_from:
+      - {path: manifests/node_base_domain_desktop.pp, lines: "11", text: "include puppet_infrastructure::firewall_secure"}
+    probe: |
+      iptables -S | grep -E '^-P (INPUT|FORWARD) '
+      iptables -S INPUT | grep -c -- '--comment "100 SSH whitelist '
+      iptables -S LIMIT_OVERALL 2>/dev/null | grep -c -- '--comment "116 SSH LIMIT_OVERALL"'
+    expect: {rc: 0, stdout: "\\A-P INPUT DROP\\n-P FORWARD DROP\\n1\\n1\\n\\Z"}
+
+  - id: the-local-directories-are-in-place
+    what: filesystem_base_desktop's local, bin and etc directories exist, root-owned 0755
+    control: negative
+    derived_from:
+      - {path: manifests/node_base_domain_desktop.pp, lines: "13-16", text: "class { 'puppet_infrastructure::filesystem_base_desktop':"}
+      - {path: manifests/filesystem_base_desktop.pp, lines: "8-17", text: "$basedirs = [ $localdir, $bindir, $etcdir ]"}
+    probe: |
+      stat -c '%U %a %n' /opt/puppet-infrastructure /opt/puppet-infrastructure/bin /opt/puppet-infrastructure/etc
+    expect: {rc: 0, stdout: "\\Aroot 755 /opt/puppet-infrastructure\\nroot 755 /opt/puppet-infrastructure/bin\\nroot 755 /opt/puppet-infrastructure/etc\\n\\Z"}
+
