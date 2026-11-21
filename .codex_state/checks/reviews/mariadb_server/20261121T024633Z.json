@@ -1,0 +1,43 @@
+{
+ "class": "mariadb_server",
+ "at": "20261121T024633Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-users-log-in-with-their-grants @ manifests/mariadb_server.pp:139: the baseline grants ${rw_user}@% ALL on *.* (and line 149 ro SELECT, SHOW VIEW); the probe logs both users in over TLS as CURRENT_USER p8test_mrw@% / p8test_mro@%, rw creates and drops a database with no error line, ro CREATE DATABASE is refused with ERROR 1044, and a wrong password gives ERROR 1045 (the in-check mismatch on the credential) - exactly what those grants produce under the params fixture",
+  "the-users-are-ed25519-and-require-tls @ manifests/mariadb_server.pp:138: the baseline declares ${rw_user}@% with plugin ed25519 and tls_options ['SSL'] (REQUIRE SSL = ssl_type 1/ANY); the probe reads user, host %, plugin ed25519 and global_priv ssl_type 1 for both fixture users, matching line 138 and its ro twin at 148",
+  "the-users-are-ed25519-and-require-tls @ manifests/mariadb_server.pp:7-12: the header states the any-host users carry ed25519 hashes and can only connect using ssl; plugin ed25519 plus ssl_type 1 for host % is the server-side form of that statement (the header's ed25519_password() helper is a documentation note, the set's comment records it does not exist on 10.11; the hashes were made with PASSWORD() under ed25519 instead)",
+  "purpose covered: Purpose (MariaDB server, root local only, up to two ed25519 TLS-only users for any host, certificates generated from Hiera) matches the header lines 1-12 and the manifest. Tested on the applied node: server installed and running MariaDB with the override options (ssl ca/cert/key, require_secure_transport, bind 0.0.0.0), ed25519 plugin ACTIVE, TCP with TLS accepted and without refused (mismatch fails), only root@localhost and no anonymous user (remove_default_accounts), generated key matches server cert (mismatch vs ca.pem fails), cert subject from db::organization/cname/email via the template's CERT_INFO, files root:root 644 per template lines 20-21, /var/log/mysql mysql:adm 0755, both users ed25519 + REQUIRE SSL with their grants exercised by logins on the node (which also exercises the client-side ed25519 library the class installs via mysql::client), and a real login from the peer ubuntu2 over TLS with the no-TLS login refused. Uncovered row (custom mysqld/mariadb options, generate_certificates false with puppet:///extra_files sources, a single user or none) is honest: phase3.py validates fixture as one of params|defaults and applies the class once, so a second parameterisation needs the stated capability. Not listed and acceptable: the Ubuntu 18.04 client-package branch (libmariadbclient18) and the manual 18.04 root-plugin note, which target an OS the lab does not run and are means, not outcomes; the debug notify of the produced config."
+ ],
+ "review_s": 149.2,
+ "check_file_sha256": "0528218993a5d238c30867c1249471bb8e7ba5021f7bf9672a303c6548144f98",
+ "content_sha256": "0528218993a5d238c30867c1249471bb8e7ba5021f7bf9672a303c6548144f98",
+ "reviewer_result": "20261121T024404Z-reviewer",
+ "author_result": "20261121T024043Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "60ee5d4c-15be-44b8-8ad3-13081b435625",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "60ee5d4c-15be-44b8-8ad3-13081b435625",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "597839d8-ea6a-41b8-b6f7-1da795b6e493",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "597839d8-ea6a-41b8-b6f7-1da795b6e493",
+   "fresh": true
+  }
+ }
+}
