@@ -1,0 +1,35 @@
+{
+ "class": "hello_world_flask",
+ "at": "20261121T003328Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "unit-runs-gunicorn-in-the-app-dir @ manifests/hello_world_flask.pp:34: app_dir = localdir/hello_world_flask/<title>; with filesystem::localdir /opt/puppet-infrastructure and title hello_world_flask the expected WorkingDirectory=/opt/puppet-infrastructure/hello_world_flask/hello_world_flask is exactly what the line produces",
+  "unit-runs-gunicorn-in-the-app-dir @ templates/hello_world_flask/hello-world-flask.service.erb:13: WorkingDirectory=<%= @app_dir %> is the line the grep reads; the ExecStart half matches the non-RedHat branch (line 10) with the params fixture 127.0.0.1:8080",
+  "the-agent-run-restores-and-restarts @ manifests/hello_world_flask.pp:27-29: when installed, the app file notifies Exec hello-world-flask-<title>-restart; gunicorn runs without --reload, so the page returns to the fixture message 'P8 test flask hello' only if the agent restored the file AND the restart exec ran; the setup check's effect proves the drifted page was served first",
+  "purpose gap: Tested: service active+enabled, the unit's ExecStart/WorkingDirectory, the page serving the configured message on 127.0.0.1:8080 only, and a hand change to the app file undone by the agent run with the restart exec (files_notify). Left out: (1) the stated purpose says the service restarts when its UNIT changes (manifest lines 66-73 systemd_file_notify -> restart + daemon-reload execs, 85-93); the lab can exercise this (hand-edit the unit, agent run restores it), but no check does and no outcome row lists it (row 3 cites 85-93 yet only the app-file path is probed). Lead, unverified: the restart exec is declared before the reload exec, so by manifest ordering the restart may run on the old unit definition. (2) the template's RedHat ExecStart branch (hello-world-flask.service.erb lines 7-8, 'gunicorn --bind ...' without python3 -m) is in no outcome row, neither covered nor uncovered with evidence and lifted_by, unlike other sets' RedHat rows. The uninstall/other-values row is honest (one params fixture per set)."
+ ],
+ "review_s": 157.8,
+ "check_file_sha256": "eeb15eb53ecfba31c2a6927a4534ec261f84057dbf50e070aa88a9e918d72298",
+ "content_sha256": "eeb15eb53ecfba31c2a6927a4534ec261f84057dbf50e070aa88a9e918d72298",
+ "reviewer_result": "20261121T003051Z-reviewer",
+ "author_result": "20261121T002723Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "0585ab96-8a54-4f2e-b927-21a0953494ba",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "0585ab96-8a54-4f2e-b927-21a0953494ba",
+   "fresh": true
+  }
+ }
+}
