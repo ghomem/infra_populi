@@ -1,13 +1,14 @@
 # Phase 3 checks for puppet_infrastructure::user_lock (define; harness title p8testuser; required_base hashman_base;
-# MOCK-APPLY: node fixture hashman_lock_standin seeds one fake hashman entry for p8testuser before the lock). Migrated
-# with the ruled upstream-defect fix: the lock exec is guarded by its post-condition (upstream_defects.md user_lock).
-# What a node can show: hashman's own `pp_auth.py lock` marked the user's password entry locked (LOCKPREFIX '!'), in
-# hashman's line format. NOT shown: a locked user refused by pp_auth/the web interface on a master (mock-apply; the
-# fixture hash is not a real password).
+# MOCK-APPLY: node fixture hashman_lock_standin seeds p8testuser's hashman entries before the lock: the Unix hash and
+# the Samba hash of the lab's user test password). Migrated with the ruled upstream-defect fix: the lock exec is
+# guarded by its post-condition (upstream_defects.md user_lock). hashman's own `pp_auth.py lock` marks both entries
+# locked (LOCKPREFIX '!'), and hashman's auth then refuses the user (the checks below).
 # 2026-11-21 (backfill batch 9): purpose and outcomes (HQ rulings 2 and C1).
 # Correction round 1, 2026-11-21 (review 20261121T124336Z, purpose): the refusal itself, through hashman's own auth on
 # the node (hashman_base installs the same CLI and library a master runs). The node fixture now seeds the SHA-512 hash
 # of the lab's user test password, so the refusal is the lock's and not a fake hash's.
+# Correction round 2, 2026-11-21 (review 20261121T130357Z, purpose; the last round, production use 0): the Samba hash.
+# The fixture also seeds p8testuser's Samba entry (hashes_smb.pp), which lockpw invalidates with the same prefix.
 class: user_lock
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -15,9 +16,9 @@ purpose: >-
   Locks an existing user in hashman, the fleet's user database on the Puppet master: hashman's own pp_auth.py marks the
   user's password entry locked, so hashman (and the services that authenticate through it) refuse the user.
 outcomes:
-  - outcome: hashman's pp_auth.py lock marks the user's entry locked, in place (one entry, not a duplicate)
+  - outcome: hashman's pp_auth.py lock marks the user's entry locked, in place (one entry, not a duplicate), and invalidates the user's Samba hash the same way
     from: manifests/user_lock.pp:5-16
-    checks: [user-entry-locked-by-hashman, exactly-one-entry]
+    checks: [user-entry-locked-by-hashman, exactly-one-entry, the-samba-hash-is-locked-too]
   - outcome: the locked user is refused by hashman's authentication (pp_auth auth, which hashman's web interface and services use), although the password matches the entry under the lock prefix
     from: manifests/user_lock.pp:2, 11-14; templates/hashman/libhashman/dbutils.py.erb:168-206
     checks: [the-locked-user-is-refused-by-hashman]
@@ -66,4 +67,16 @@ checks:
     effect: |
       cat /run/p8test-lock/auth.txt
     expect: {rc: 0, stdout: "\\Ahashman auth rc=1\\nlocked\\npassword matches the unlocked entry\\n\\Z"}
+
+  - id: the-samba-hash-is-locked-too
+    what: >-
+      the user's Samba hash entry in hashes_smb.pp now carries the lock prefix '!' before the seeded hash, rewritten in
+      place (one line), so Samba services using it refuse the user as well
+    control: negative
+    derived_from:
+      - {path: templates/hashman/libhashman/dbutils.py.erb, lines: "804-807", text: "return setpw(username, pwentry, True, '', smbhashentry)"}
+      - {path: templates/hashman/libhashman/miscutils.py.erb, lines: "129-148", text: "return LOCKPREFIX + currentsmbhash"}
+    probe: |
+      grep -E '^[$]p8testuser_pwd_hash_smb ' /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes_smb.pp
+    expect: {rc: 0, stdout: "\\A\\$p8testuser_pwd_hash_smb = '!mXVUzhrn8HhNXxCcp9uQcQ=='\\n\\Z"}
 
