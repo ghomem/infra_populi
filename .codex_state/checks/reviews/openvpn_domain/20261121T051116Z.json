@@ -1,0 +1,43 @@
+{
+ "class": "openvpn_domain",
+ "at": "20261121T051116Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "pam-logins-through-winbind / templates/openvpn/pam_winbind.conf.erb:30: require_membership_of = <comma_separated_groups> makes login depend on group membership; the probe runs the login PAM stack with pamtester: p8testvpnin (in p8testgroup) with its password rc=0, wrong password and p8testvpnout (outside the group) refused, while wbinfo -a shows the DC accepts p8testvpnout's password, so the refusal is the membership rule the line declares",
+  "pam-winbind-requires-the-group-and-openvpn-pam-installed / files/openvpn/openvpn_pam (whole file, sha256 e664b2eb0c14...): the manifest (lines 58-65) installs that file as /etc/pam.d/openvpn by source; the probe compares the node file's sha256 to exactly that digest",
+  "pam-winbind-requires-the-group-and-openvpn-pam-installed / manifests/openvpn_domain.pp:14-15: each group is prefixed with NetBIOS name + separator and joined with commas; with the fixture (P8TEST, '+', [p8testgroup]) that yields 'P8TEST+p8testgroup', which the probe greps as the exact require_membership_of line",
+  "purpose gap: Tested: smb.conf domain-member lines (security, netbios name, realm, wins server, workgroup, separator), the join (net rpc testjoin with a P8NOPE mismatch, and the DC listing PUPPET8NODE$), user/group resolution through nsswitch+winbind (id p8testuser@P8TEST.example, p8nouser mismatch), pam_winbind's require_membership_of and /etc/pam.d/openvpn byte for byte, login through the login PAM service (member accepted, wrong password and non-member refused, DC accepting the non-member's password), Kerberos realms against the DC (kinit in P8TEST.EXAMPLE granted, default realm P8TEST.example refused), and WINS host resolution of the DC's NetBIOS name (p8nohost mismatch). Left out, lab-exercisable and not in the outcomes table: templates/openvpn/smb.conf.erb:19 'winbind use default domain = yes' \u2014 its observable effect is that domain users resolve and log in by their UNQUALIFIED name (p8testvpnin, not P8TEST+p8testvpnin), which is the name a VPN user types (openvpn_server.pp:168-169 username_as_common_name + pam through login). Every resolution and login probe uses a qualified form (p8testuser@P8TEST.example, 'P8TEST+p8testvpnin'), which works with or without that line, so the setting is untested; the lab can exercise it with the same peer and fixture users (e.g. id -nG p8testvpnin and pamtester login p8testvpnin). Outcome 1 cites smb.conf.erb wholesale but no outcome states this effect; no uncovered row lists it."
+ ],
+ "review_s": 190.0,
+ "check_file_sha256": "03baaff9195b7c5eeb31e3067e068de4725ac69e6b432c2fb05cfe1dcc9c60d5",
+ "content_sha256": "03baaff9195b7c5eeb31e3067e068de4725ac69e6b432c2fb05cfe1dcc9c60d5",
+ "reviewer_result": "20261121T050807Z-reviewer",
+ "author_result": "20261121T050438Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "015a9f42-f52b-4f2d-bb1f-f16cd7e06dc6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "015a9f42-f52b-4f2d-bb1f-f16cd7e06dc6",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "dc",
+   "snapshot": "P8LAB_DC_BASELINE_v1",
+   "boot_id": "f282fd1b-e4ba-4809-a028-4d8e297f1514",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "f282fd1b-e4ba-4809-a028-4d8e297f1514",
+   "fresh": true
+  }
+ }
+}
