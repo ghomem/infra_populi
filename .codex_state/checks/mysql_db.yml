@@ -4,9 +4,33 @@
 # MySQL-only by baseline design (ruling 4: every mysql::db requires Class['puppet_infrastructure::mysql_server']).
 # Fixture (params, never committed): db_name p8test_db, rw_user p8test_rw, ro_user p8test_ro, fake p8test passwords (the
 # rw one appears below: a fixture value, never a real secret). Probes run as root (root@localhost via /root/.my.cnf).
+# 2026-11-20 (backfill batch 7): purpose and outcomes (HQ rulings 2 and C1), and the accounts as behaviour: rw writes,
+# ro reads over TLS and its write is refused (the ro password appears too: a p8test fixture value).
 class: mysql_db
 baseline: 874f854 (874f854)
 fixture: params
+purpose: >-
+  Creates a MySQL database with a read/write account and, optionally, a read-only one, both reachable from any host but
+  only over TLS, so applications get a database of their own with the privileges they need.
+outcomes:
+  - outcome: the MySQL server stays the one running beside the database (no MariaDB replaces it)
+    from: manifests/mysql_db.pp:26
+    checks: [mysql-server-survives-the-define]
+  - outcome: the database exists with the utf8mb3 charset and collation
+    from: manifests/mysql_db.pp:17-27
+    checks: [database-created-with-charset-and-collation]
+  - outcome: both accounts exist for any host, require TLS, and carry their grants (rw ALL, ro SELECT and SHOW VIEW)
+    from: manifests/mysql_db.pp:17-41
+    checks: [users-from-any-host-require-tls, grants-on-the-database]
+  - outcome: the rw account logs in over TLS with its password and writes; the ro account logs in over TLS and reads, and its write is refused
+    from: manifests/mysql_db.pp:17-41
+    checks: [rw-user-logs-in-over-tls, the-accounts-read-and-write-as-granted]
+  - outcome: a database without a read-only account, and a login from another host
+    from: manifests/mysql_db.pp:1-3, 9-15
+    uncovered:
+      why: one set holds one params fixture (both accounts); a login from another host is the node firewall's matter (the class header), and a local TCP login already matches the accounts' host %
+      lifted_by: "capability: more than one params fixture per set"
+      evidence: "phase3.py applies the class once with its single `fixture` (params or defaults); mysql_db.pp:2-3 leaves network access to the node firewall"
 checks:
   - id: mysql-server-survives-the-define
     what: >-
@@ -64,3 +88,26 @@ checks:
       probe: |
         mysql --protocol=TCP -h 127.0.0.1 --ssl-mode=REQUIRED -u p8test_rw -p'p8test-wrong-password' -NB -e 'SELECT CURRENT_USER()' 2>/dev/null
     expect: {rc: 0, stdout: "\\Ap8test_rw@%\\n\\Z"}
+
+  - id: the-accounts-read-and-write-as-granted
+    what: >-
+      over TCP with TLS, the rw account creates a table and inserts a row in the database; the ro account reads the row
+      back, and its own insert is refused (ERROR 1142, the command is denied)
+    control: negative
+    derived_from:
+      - {path: manifests/mysql_db.pp, lines: "17-25", text: "grant       => ['ALL'],"}
+      - {path: manifests/mysql_db.pp, lines: "30-38", text: "grant       => ['SELECT', 'SHOW VIEW'],"}
+    mutates: >-
+      as p8test_rw, creates the table p8test_db.p8test_t and inserts one row; as p8test_ro, one SELECT and one refused
+      INSERT; the server records them in its data directory (/srv/mysql, mysql_server fixture: tablespaces, redo,
+      undo and binary logs); the answers go to /run/p8test-mysqldb/answers.txt
+    probe: |
+      install -d -m 0700 /run/p8test-mysqldb; o=/run/p8test-mysqldb/answers.txt
+      m="mysql --protocol=TCP -h 127.0.0.1 --ssl-mode=REQUIRED -NB p8test_db"
+      $m -u p8test_rw -p'p8test-rw-not-a-secret' -e "CREATE TABLE IF NOT EXISTS p8test_t (v VARCHAR(32)); INSERT INTO p8test_t VALUES ('p8test-row')" 2>&1 | grep -oE 'ERROR [0-9]+' | head -1 | sed 's/^/rw write: /' > $o
+      $m -u p8test_ro -p'p8test-ro-not-a-secret' -e 'SELECT v FROM p8test_t' 2>/dev/null | sed 's/^/ro read: /' >> $o
+      $m -u p8test_ro -p'p8test-ro-not-a-secret' -e "INSERT INTO p8test_t VALUES ('p8test-ro')" 2>&1 | grep -oE 'ERROR [0-9]+' | head -1 | sed 's/^/ro write: /' >> $o
+    effect: |
+      cat /run/p8test-mysqldb/answers.txt
+    expect: {rc: 0, stdout: "\\Aro read: p8test-row\\nro write: ERROR 1142\\n\\Z"}
+
