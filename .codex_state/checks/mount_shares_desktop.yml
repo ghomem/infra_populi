@@ -8,6 +8,10 @@
 # is empty) and USER=p8testuser; the scripts run as root here, so the template's `sudo` needs no sudoers rule.
 # Node probes name no lab host: the server address reaches the node only through the rendered script.
 # 2026-11-20 (backfill batch 7): purpose and outcomes (HQ rulings 2 and C1); checks unchanged.
+# Correction round 1, 2026-11-21 (review 20261121T020700Z, purpose): the scripts ran as root, so the mount was private to
+# root. They now run as p8testuser, whose sudo for the template's two commands comes from a declared fixture drop-in
+# (/etc/sudoers.d/p8test-shares); the mount is checked as the user's own and denied to nobody. The explorer row's
+# evidence now names the plan node, not the lab.
 class: mount_shares_desktop
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -31,9 +35,12 @@ outcomes:
   - outcome: the password asked in a kdialog box, the file manager opened on the mount (explorer), symlinks and the cache/delay options
     from: manifests/mount_shares_desktop.pp:5
     uncovered:
-      why: the dialog needs a desktop session with input; dolphin is not on the gnome node; the options are parameter variants (one fixture per set)
-      lifted_by: "capability: input to a desktop session and more than one params fixture per set"
-      evidence: "the fixture sets explorer False and passes the password in $PASSWORD (the script asks kdialog only when it is empty); phase3.py applies one `fixture` and sends no desktop input"
+      why: >-
+        the dialog needs input to a desktop session; the explorer (dolphin, the class's default) is on the kubuntu kind,
+        not on this class's plan node gnome, and a set is judged on its plan node only; symlinks, cache and delay are
+        parameter variants
+      lifted_by: "capability: a phase3 set for a node kind other than the class's plan node (kubuntu), input to a desktop session, and more than one params fixture per set"
+      evidence: "the fixture sets explorer False and passes the password in $PASSWORD (the script asks kdialog only when it is empty); phase3.py applies one `fixture` on the plan's node (gnome, no dolphin) and sends no desktop input"
 checks:
   - id: scripts-on-the-desktop-root-owned-executable
     what: the mount and unmount scripts are in the user's Desktop, root:root 0755
@@ -91,11 +98,14 @@ checks:
     derived_from:
       - {path: templates/shares/shares.sh.erb, lines: "125-131", text: "echo \"Problem mounting //$SERVER/$SHARE on $TDIR.\""}
     mutates: >-
-      installs cifs-utils (mount.cifs, which desktop installs carry) and runs the mount script as USER=p8testuser with
-      a wrong $PASSWORD; output in /tmp/p8test-mount-bad.out (its kdialog error dialog fails: no kdialog on GNOME)
+      installs cifs-utils (mount.cifs, which desktop installs carry); adds the fixture sudoers drop-in
+      /etc/sudoers.d/p8test-shares (0440) letting p8testuser run exactly the template's sudo commands (mount.cifs, umount)
+      without a password, as a desktop user's own sudo rights would; runs the mount script as p8testuser with a wrong
+      $PASSWORD; output in /tmp/p8test-mount-bad.out (its kdialog error dialog fails: no kdialog on GNOME)
     probe: |
       DEBIAN_FRONTEND=noninteractive apt-get -qq -y install cifs-utils >/dev/null 2>&1
-      cd /tmp && env USER=p8testuser PASSWORD=p8test-wrong-password bash /home/p8testuser/Desktop/shares-mount.sh > /tmp/p8test-mount-bad.out 2>&1; echo "rc $?" >> /tmp/p8test-mount-bad.out
+      printf 'p8testuser ALL=(root) NOPASSWD: /sbin/mount.cifs, /usr/sbin/mount.cifs, /bin/umount, /usr/bin/umount\n' > /etc/sudoers.d/p8test-shares; chmod 0440 /etc/sudoers.d/p8test-shares
+      cd /tmp && runuser -u p8testuser -- env USER=p8testuser PASSWORD=p8test-wrong-password bash /home/p8testuser/Desktop/shares-mount.sh > /tmp/p8test-mount-bad.out 2>&1; echo "rc $?" >> /tmp/p8test-mount-bad.out
     effect: |
       grep -c 'Problem mounting //.*/p8share on /tmp/p8testuser/mnt-manual/p8share\.' /tmp/p8test-mount-bad.out
       tail -1 /tmp/p8test-mount-bad.out
@@ -104,30 +114,33 @@ checks:
 
   - id: the-mount-script-mounts-the-share
     what: >-
-      run as the user with the right password, the mount script mounts the share as CIFS under /tmp/<user>/mnt-manual
-      (mode 0700), and the server's file is readable there
+      run by the user with the right password, the mount script mounts the share as CIFS under /tmp/<user>/mnt-manual,
+      a directory the user owns (0700); the user reads the server's file there, and another account (nobody) cannot
     control: negative
     derived_from:
       - {path: templates/shares/shares.sh.erb, lines: "8", text: "MDIR=\"/tmp/$USER/mnt-manual\""}
       - {path: templates/shares/shares.sh.erb, lines: "125", text: "$SUDO /sbin/mount.cifs \"//$SERVER/$SHARE\" \"$TDIR\""}
-    mutates: runs the mount script as USER=p8testuser with the right $PASSWORD (mounts the share); output in /tmp/p8test-mount.out
+    mutates: >-
+      runs the mount script as p8testuser with the right $PASSWORD (its sudo mounts the share; sudo logs to the journal
+      and /var/log/auth.log); output in /tmp/p8test-mount.out
     probe: |
-      cd /tmp && env USER=p8testuser PASSWORD=p8test-share-not-a-secret bash /home/p8testuser/Desktop/shares-mount.sh > /tmp/p8test-mount.out 2>&1; echo "rc $?" >> /tmp/p8test-mount.out
+      cd /tmp && runuser -u p8testuser -- env USER=p8testuser PASSWORD=p8test-share-not-a-secret bash /home/p8testuser/Desktop/shares-mount.sh > /tmp/p8test-mount.out 2>&1; echo "rc $?" >> /tmp/p8test-mount.out
     effect: |
       tail -1 /tmp/p8test-mount.out
       findmnt -n -o FSTYPE /tmp/p8testuser/mnt-manual/p8share
-      stat -c '%a' /tmp/p8testuser/mnt-manual
-      cat /tmp/p8testuser/mnt-manual/p8share/p8test-share.txt
-    expect: {rc: 0, stdout: "\\Arc 0\\ncifs\\n700\\np8test share content\\n\\Z"}
+      stat -c '%U %a' /tmp/p8testuser/mnt-manual
+      runuser -u p8testuser -- cat /tmp/p8testuser/mnt-manual/p8share/p8test-share.txt
+      runuser -u nobody -- cat /tmp/p8testuser/mnt-manual/p8share/p8test-share.txt 2>&1 | p8_count 'Permission denied'
+    expect: {rc: 0, stdout: "\\Arc 0\\ncifs\\np8testuser 700\\np8test share content\\n1\\n\\Z"}
 
   - id: the-unmount-script-unmounts-it
     what: the unmount script unmounts the share it lists (its closing kdialog message fails on GNOME; the unmount is the behaviour)
     control: negative
     derived_from:
       - {path: templates/shares/unmount-shares.sh.erb, lines: "5-12", text: "$SUDO umount $MDIR/<%=share['share_name']%>"}
-    mutates: runs the unmount script as USER=p8testuser (unmounts the share)
+    mutates: runs the unmount script as p8testuser (its sudo unmounts the share; sudo logs to the journal and /var/log/auth.log)
     probe: |
-      cd /tmp && env USER=p8testuser bash /home/p8testuser/Desktop/shares-unmount.sh >/dev/null 2>&1 || true
+      cd /tmp && runuser -u p8testuser -- env USER=p8testuser bash /home/p8testuser/Desktop/shares-unmount.sh >/dev/null 2>&1 || true
     effect: |
       test -d /tmp/p8testuser/mnt-manual/p8share && ! findmnt -n /tmp/p8testuser/mnt-manual/p8share >/dev/null && echo unmounted
     expect: {rc: 0, stdout: "\\Aunmounted\\n\\Z"}
