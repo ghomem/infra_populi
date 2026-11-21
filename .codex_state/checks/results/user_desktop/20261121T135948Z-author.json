@@ -1,0 +1,199 @@
+{
+ "class": "user_desktop",
+ "role": "author",
+ "at": "20261121T135948Z",
+ "runner": "4d7aff3",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "653076f86a8dd7faf95c18cd0f41c1238c34521d59ebe92454e8ed09618abfce",
+ "content_sha256": "653076f86a8dd7faf95c18cd0f41c1238c34521d59ebe92454e8ed09618abfce",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "user-with-own-primary-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "|||\nprimary group: \n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "desktop-groups",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "id: \u2018p8testuser\u2019: no such user\n",
+   "ok": true
+  },
+  {
+   "id": "the-given-key-is-pushed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /home/p8testuser/.ssh/authorized_keys: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "lock-screen-script-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/configure_lock_screen.sh': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "kde-lock-settings-applied-in-the-session",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/home/p8testuser/.config/kscreenlockerrc': No such file or directory\nsed: can't read /home/p8testuser/.config/kscreenlockerrc: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-given-password-logs-in",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-user/pw.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "en.sh]/ensure: defined content as '{sha256}8bc3f286c0ea1b4142e10e2cf14bffa38ab099bc7e71265248d49ebe402d5e9d'\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 0.64 seconds\u001b[0m\nRUN1_EVENTS: 11 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-kubuntu\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795269681'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.24 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::user_desktop: 5 concrete resources (+3 defined-type instances)\n  Puppet_infrastructure::User_desktop[p8testuser]\n  Puppet_infrastructure::User_base[p8testuser]\n  Puppet_infrastructure::User_kde_lock_screen[p8testuser]\n  Group[p8testuser]\n  User[p8testuser]\n  Ssh_authorized_key[p8testuser@puppet]\n  File[/opt/puppet-infrastructure/bin/configure_lock_screen.sh]\n  Exec[configure_lock_screen.sh p8testuser]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP user_desktop 2a28c345f9f8\n"
+ },
+ "applied": [
+  {
+   "id": "user-with-own-primary-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser|P8 Test User|/home/p8testuser|/bin/bash\nprimary group: users\n",
+   "stderr": ""
+  },
+  {
+   "id": "desktop-groups",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "cdrom dip lp p8testuser plugdev users ",
+   "stderr": ""
+  },
+  {
+   "id": "the-given-key-is-pushed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCoGojLzXfOYoMg/8rNwk5YRfAdbJN8B/0El5HE5BPDs/QenJaGNH0nH8cGCJF87/bgIRN0nFkO0MqizXNcfcWZjJ7S360u1yZgRhUj+s9y23bUHXcODSgEfHHx3MmICaoOzouoR64NNmqMnlhbBvkfnGzLQa/mAm+2QA+TlXWxkMpIeR1EuH2ko0e/hiAeqLpHGX2GlixkFJ8n9hQwPO+IfhHXuDvwpiJkQxRtyMJnJE9qoPArR27KYJ82Rd2h1b2JjXpqbPJhMfvH7rrXPapCrFO9gQ9jHtkqPG86kNfZ5DN0JBgibKEYqIhjA33JZUnP3liYsYRY4SeNPtTuN7zB p8testuser@puppet\n",
+   "stderr": ""
+  },
+  {
+   "id": "lock-screen-script-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "kde-lock-settings-applied-in-the-session",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser\nAutolock=true\nLockGrace=0\nLockOnResume=true\nTimeout=5\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-given-password-logs-in",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "logged-in-as-p8testuser\nAuthentication failure\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "two su attempts as the account nobody (one with the test password, one with a wrong one); the outcomes go to /run/p8test-user/pw.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "kubuntu",
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "f05bb31e-9b3f-4453-811a-492aab1ca694",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "f05bb31e-9b3f-4453-811a-492aab1ca694",
+   "fresh": true
+  }
+ },
+ "session": {
+  "user": "p8testuser",
+  "up": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Puppet_infrastructure::User_desktop[p8testuser]/Puppet_infrastructure::User_kde_lock_screen[p8testuser]/Exec[configure_lock_screen.sh p8testuser]/returns: executed successfully (corrective)\u001b[0m"
+    ],
+    "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-kubuntu\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795269723'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Puppet_infrastructure::User_desktop[p8testuser]/Puppet_infrastructure::User_kde_lock_screen[p8testuser]/Exec[configure_lock_screen.sh p8testuser]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 0.55 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-kubuntu\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795269742'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.22 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ]
+ },
+ "outcomes": [
+  {
+   "outcome": "the given groups (mygrouplist) are prepended to the user's own group and the desktop groups, and the first given group becomes the primary group",
+   "checks": [
+    "user-with-own-primary-group",
+    "desktop-groups"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the other parameters (ignorekey, the ecryptfs values, non-default lock-screen values) and a first given group of sudo or wheel, passed through unchanged",
+   "uncovered": {
+    "why": "the wrapper passes them to user_base and user_kde_lock_screen as they are; their effects are those classes' outcomes, tested in their own sets (user_base.yml, user_kde_lock_screen.yml; the sudo-first branch in user_sudoer.yml), and one set holds one params fixture",
+    "lifted_by": "capability: more than one params fixture per set",
+    "evidence": "manifests/user_desktop.pp:10-11 pass the parameters through; phase3.py runs a set with one fixture"
+   }
+  },
+  {
+   "outcome": "the given password logs the user in (a wrong one is refused), and the given key is pushed",
+   "checks": [
+    "the-given-password-logs-in",
+    "the-given-key-is-pushed"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the KDE screen-lock settings are applied in the user's Plasma session",
+   "checks": [
+    "lock-screen-script-installed",
+    "kde-lock-settings-applied-in-the-session"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 164.6
+}
