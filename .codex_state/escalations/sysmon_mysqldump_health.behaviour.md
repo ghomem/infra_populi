@@ -1,0 +1,35 @@
+# sysmon_mysqldump_health — behaviour findings (OPEN)
+
+Production use 0 (migration_order.md). Both findings are in the baseline template
+`templates/sysmon/check-mysqldump-health.sh.erb` (cf477c6), measured on the lab node with Ubuntu's MySQL 8.0.46.
+
+## Finding 1 — a .sql file that is not a mysqldump is reported OK (policy B, one clear fix: local change #18)
+- Lines 64-69: for a `.sql` file without the "MySQL dump" header, the script calls `handle_error $RC "SQL File $f is
+  not a MySQLDump"`. `$RC` still holds the previous step's 0, or it is unset when the file comes first, and then the
+  arguments shift and `[` errors with "too many arguments". Either way handle_error returns and the check ends
+  "OK: exit code 0".
+- Measured: an empty `empty.sql` beside a good dump gives OK, exit 0 (results/sysmon_mysqldump_health/20261121T113058Z-author,
+  reproduced by review 20261121T113606Z). A dump written with `mysqldump --skip-comments` has no header and is also
+  reported OK.
+- An empty dump is exactly what a failed backup leaves, so the check reports a broken backup as healthy.
+- Fix: `handle_error 1 "SQL File $f is not a MySQLDump"`, the failure the line's own message declares. This is
+  minimal and changes nothing else.
+
+## Finding 2 — a failed create drops a live database of the dump's name (for HQ: more than one reasonable design)
+- Lines 46-48 and 11-24: when `CREATE DATABASE <name from the dump>` fails, handle_error first runs clear_database,
+  which is `DROP DATABASE $DBNAME`, and then reports CRITICAL.
+- If a database of that name already exists on the host (the live one, when the check runs on the database server
+  itself), the check drops it.
+- Measured 2026-11-21: p8testsrc with 3 rows existed; the check printed "CRITICAL: Create database p8testsrc", exit 2,
+  and afterwards `SELECT COUNT(*) FROM p8testsrc.t` gave "Unknown database 'p8testsrc'".
+- Options:
+  - **A (recommended): drop only what the check created.** clear_database runs only after a successful create, for
+    example with a flag set after line 47. The check still reports CRITICAL "Create database" on a host that holds a
+    database of that name. This is the smallest change.
+  - **B: restore into a scratch name** (a fixed prefix plus the dump's name). The check then also works on the
+    database server itself. It is a larger change: dumps made with `--databases` carry their own `CREATE DATABASE`
+    and `USE` lines.
+  - **C: refuse when the name exists**, checking before the create. This reports UNKNOWN or CRITICAL without touching
+    anything.
+- The set's check `a-live-database-of-the-dump-name-is-left-intact` expects the purpose (CRITICAL and the database
+  intact). It stays a finding until HQ rules.
