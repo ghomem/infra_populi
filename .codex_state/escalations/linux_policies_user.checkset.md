@@ -1,6 +1,6 @@
 # linux_policies_user — check set past its correction cap (2026-11-21)
 
-Status: OPEN, for HQ. Run rule (HQ batch-12 ruling 3): a class not used in production gets two correction rounds; the
+Status: CLOSED 2026-11-21 (HQ after batch 18, option A). Was: OPEN, for HQ. Run rule (HQ batch-12 ruling 3): a class not used in production gets two correction rounds; the
 third review still found a purpose gap, so the set is escalated rather than corrected again. It does not hold the run.
 No behaviour finding: every review reproduced ALL_PASS, and the class behaves as its baseline says.
 
@@ -24,3 +24,9 @@ This is one clear change. I am holding it only because of the cap.
 ## For HQ
 - **A:** allow a third round with this fix.
 - **B:** accept the set as it stands, with the gap recorded. The behaviour itself passed every run.
+
+## Closed (2026-11-21)
+HQ after batch 18: option A, one more round with the fix above. `policies-run-on-an-agent-run-while-logged-in` now
+counts the logged-in line and the policy line from the first agent-run line on. Phase 3 PASS
+checks/reviews/linux_policies_user/20261121T112218Z.json, no findings. Queued: the set's header line 4 still says the
+fixture policies are no-op `true` lines (stale since round 1).

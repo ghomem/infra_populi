@@ -1,0 +1,35 @@
+{
+ "class": "linux_policies_user",
+ "at": "20261121T112218Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "user-policy-script-composed / puppet_header.sh.erb:4: the template writes '. <linux_policies_dir>/COMMON/common' into the tmp file that File[USER/<user>.sh] (manifest 58-63) copies; the probe greps that exact line with localdir /opt/puppet-infrastructure, plus head -1 '#!/bin/bash' (template line 1) and owner/group p8testuser mode 700 (manifest 59-61) - all what the baseline produces under the params fixture",
+  "user-policy-script-composed / linux_policies_user.pp:46-51: file_line appends each fixture policy (index order) to the tmp file before the copy, so tail -2 of USER/p8testuser.sh is exactly the two fixture lines; expect matches them verbatim",
+  "autostart-runs-the-policies-at-login / autostart.desktop.erb:1-7: Exec= runs execute_linux_policies_user.sh with caller autostart, whose SYSLOG_TAG is linuxint-policies-autostart (runner template 9-12); the probe requires that tag's 'Executing USER/p8testuser.sh' line and a fixture policy line logged as p8testuser between logind's first p8testuser session (t0) and the first agent-run Executing line (t1); I confirmed on the node the timeline t0 1795260025 < autostart 1795260028/29 < t1 1795260048, and the window only orders correctly because the ruled session guard keeps the exec from running before the login - valid for the class's current code (ruled change, upstream_defects.md)",
+  "purpose covered: Purpose (compose USER/<user>.sh owned by the user and run its policies as the user on agent runs while logged in and at each desktop login) matches the baseline manifest header and code (linux_policies_user.pp 15-76, puppet_header.sh.erb, runner and autostart templates of linux_policies_common). The checks test the job itself, not only files: the composed script's content/owner/mode; a real Plasma session (who lists p8testuser on tty2) with agent runs whose runner line, the header's logged-in line and a policy line reporting id -un = p8testuser all come from t1 onward; the autostart run at login bounded to before the first agent run; and no policy line before the session. Left out: other users/policy lists (one params fixture per set; evidence the runner's single fixture - honest, lifted by a capability); the exec's HOME environment is not probed separately (the policy running as the user covers the user attribute). The tidy of TMP/<user>.sh.tmp (manifest 65-68) is not an outcome: Puppet's tidy ignores the managed File of that path, and I saw the tmp file still present on the applied node, so the table rightly omits it. Header comment line 4 still says 'two no-op true lines' though the fixture now logs (round 1 note at line 9 records the change) - stale comment only."
+ ],
+ "review_s": 189.9,
+ "check_file_sha256": "ecb8a1f3f6faa7f18f337343a69e42048b0862512d1fa52abcb0c57064bf3363",
+ "content_sha256": "ecb8a1f3f6faa7f18f337343a69e42048b0862512d1fa52abcb0c57064bf3363",
+ "reviewer_result": "20261121T111909Z-reviewer",
+ "author_result": "20261121T111614Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "ed630a53-399c-4f2b-a278-6c0cd1c7905a",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "ed630a53-399c-4f2b-a278-6c0cd1c7905a",
+   "fresh": true
+  }
+ }
+}
