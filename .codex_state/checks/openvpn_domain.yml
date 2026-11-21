@@ -13,6 +13,8 @@
 # Prototyped 2026-11-21 on the ubuntu node with the dc peer.
 # Correction round 1, 2026-11-21 (review 20261121T042709Z, purpose): the Kerberos configuration as an outcome, measured
 # with kinit against the DC (the default realm's case follows the domain_tld parameter: batch 8 report, for HQ).
+# Correction round 2, 2026-11-21 (review 20261121T050106Z, purpose): host resolution through WINS (nsswitch's hosts
+# line), measured with the DC up (the runner powers the peer off after a run, so a lookup after the run times out).
 class: openvpn_domain
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -47,6 +49,12 @@ outcomes:
       pam_winbind's krb5_auth stays off); the [logging] section is read by a KDC, which the node does not run
     from: manifests/openvpn_domain.pp:40-47; templates/openvpn/krb5.conf.erb:1-18; templates/openvpn/pam_winbind.conf.erb:21
     checks: [kerberos-realms-against-the-dc]
+  - outcome: >-
+      host names also resolve through NetBIOS/WINS (nsswitch's hosts line ends in wins; smb.conf names the DC as the
+      WINS server): the DC's NetBIOS name resolves through the wins source to the address DNS gives its FQDN, and an
+      unknown name does not
+    from: files/openvpn/nsswitch.conf:13-14; templates/openvpn/smb.conf.erb:8
+    checks: [the-dc-name-resolves-through-wins]
 checks:
   - id: smb-conf-joins-as-a-domain-member
     what: >-
@@ -184,4 +192,27 @@ checks:
     effect: |
       cat /run/p8test-krb5/kinit.txt
     expect: {rc: 0, stdout: "\\Adefault_realm = P8TEST\\.example\\ndc realm rc=0\\nDefault principal: p8testvpnin@P8TEST\\.EXAMPLE\\nKDC reply did not match expectations\\n\\Z"}
+
+  - id: the-dc-name-resolves-through-wins
+    what: >-
+      through nsswitch's wins source (libnss_wins, smb.conf's WINS server and broadcast) the NetBIOS name of the WINS
+      server smb.conf names (the DC, p8lab-dc) resolves, to the same address DNS gives its FQDN (read from smb.conf, so
+      the probe reaches the DC only through what the class configures)
+    control: negative
+    derived_from:
+      - {path: files/openvpn/nsswitch.conf, lines: "13-14", text: "hosts:          files mdns4_minimal [NOTFOUND=return] dns mdns4 wins"}
+      - {path: templates/openvpn/smb.conf.erb, lines: "8", text: "wins server = <%= @domain_hostname %>.<%= @domain_netbios_name %>.<%= @domain_tld %>"}
+    probe: |
+      fqdn=$(sed -n 's/^[[:space:]]*wins server = //p' /etc/samba/smb.conf)
+      w=$(timeout 60 getent -s wins hosts "${fqdn%%.*}" | awk '{print $1}')
+      d=$(getent -s dns hosts "$fqdn" | awk '{print $1}')
+      [ -n "$fqdn" ] && [ -n "$w" ] && [ "$w" = "$d" ] && echo "the WINS server's name resolves through wins to its DNS address"
+    mismatch:
+      varies: the name (p8nohost, which no machine holds), so WINS must not resolve it
+      probe: |
+        fqdn=$(sed -n 's/^[[:space:]]*wins server = //p' /etc/samba/smb.conf)
+        w=$(timeout 60 getent -s wins hosts p8nohost | awk '{print $1}')
+        d=$(getent -s dns hosts "$fqdn" | awk '{print $1}')
+        [ -n "$fqdn" ] && [ -n "$w" ] && [ "$w" = "$d" ] && echo "the WINS server's name resolves through wins to its DNS address"
+    expect: {rc: 0, stdout: "\\Athe WINS server's name resolves through wins to its DNS address\\n\\Z"}
 
