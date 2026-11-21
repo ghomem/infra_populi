@@ -1,4 +1,4 @@
-# postfix_smtp_base — Phase 3 check set past its correction cap (OPEN, for HQ)
+# postfix_smtp_base — Phase 3 check set past its correction cap (CLOSED 2026-11-21)
 
 Production use 0 (migration_order.md `prod` column), so the cap is two correction rounds (HQ batch-12 ruling 3). Both
 were used and the third review failed on purpose with no findings. The run continues; this set awaits a ruling.
@@ -41,3 +41,10 @@ sessions; one submission queued and delivered to the local mailbox.
   From header shows the WARN line on the node. Both uncovered rows are lifted except extra_sec / Let's Encrypt.
 - **B: accept the set as it stands**, with the two rows' evidence corrected to "exercisable with a peer sink, not
   done", recorded in the approval report.
+
+## Closed (2026-11-21)
+HQ after batch 18: option A, one more round. Round 3 relayed two messages to a sink on the ubuntu2 peer through an
+address-literal recipient (accepted at RCPT, delivered by postfix's SMTP client, received by the sink), with the
+From-header warning logged for the unlisted From only (fixture do_not_warn_from_addresses_regexes). One authoring
+correction (the warning's trailing colon). Phase 3 PASS checks/reviews/postfix_smtp_base/20261121T111342Z.json, no
+findings. Open rows: MX resolution (an address literal skips it) and extra_sec / Let's Encrypt (one params fixture).

@@ -1,0 +1,43 @@
+{
+ "class": "postfix_smtp_base",
+ "at": "20261121T111342Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "client-access-map-allows-the-listed-ip: postfix_smtp_base_config_file.pp:26 runs /usr/sbin/postmap on the file client_access.erb:2-3 fills with '<ip> OK' per allowed_client_ips; with the fixture's [127.0.0.1], postmap -q 127.0.0.1 on hash:/etc/postfix/client_access must print OK. The mismatch changes only the address it queries (127.0.0.2, not listed), so no entry comes back and the verdict must change",
+  "sasl-user-authenticates-through-dovecot: main.cf.erb:92 smtpd_sasl_type = dovecot, and sasl_users.erb:3 writes name:password_hash from smtp_users into /etc/dovecot/users (manifest 117-121), which 10-auth.conf:125 auth-passwdfile reads; doveadm auth test p8testuser with the fixture password must print 'passdb: p8testuser auth succeeded'. The mismatch changes only the password, which dovecot must refuse",
+  "starttls-presents-the-sslprefix-bundle: manifest 58 sets certificate_filename to /etc/ssl/certs/<smtp_sslprefix>.postfix.bundle.crt (letsencrypt false), and main.cf.erb:23 makes that file smtpd_tls_cert_file; the probe compares the SHA-256 fingerprint of the certificate served over STARTTLS on 587 with /etc/ssl/certs/p8test.postfix.bundle.crt (fixture sslprefix p8test). The mismatch changes only the file it compares against (the first certificate of the CA bundle), so the fingerprints must differ",
+  "purpose covered: The purpose matches the manifest header (lines 1-11) and the code. One part is listed differently: the header says the From warning fires when the address IS in the list, while smtp_header_checks.regexp.erb:3 warns when it matches NONE of the regexes; the set follows the code. My reviewer run was ALL_PASS: 10 negatives failed on the clean node, all 10 checks passed after apply, and the 3 mismatches failed. The checks test the class doing its job: smtpd listens on 587 with the configured banner; STARTTLS serves the sslprefix certificate; TLS is mandatory (no AUTH before STARTTLS, 530 for MAIL and AUTH); only dovecot passwd-file users authenticate (a PAM-valid OS account gets 535). Each layer of the restrictions is exercised over real SMTP sessions: each owner sending from its own address, an address outside the general list (554), an address owned by another user (553), no login (553), a wrong password (535), and an unlisted client ::1 (554). A submission is queued and delivered to the local mailbox. A message to another domain is relayed by postfix's SMTP client to a sink on the peer, which receives both messages; the From-header warning is logged for the unlisted From only. Two rows stay uncovered, and both reasons are true. MX resolution: the relay uses an address-literal recipient, and the lab DNS has no fixture zone; lifted_by names the capability of a lab MX zone. extra_sec ciphers, protocols and DH group, plus letsencrypt certificate names: the params fixture leaves extra_sec at its default false and sets letsencrypt false, and phase3.py takes exactly one fixture per set (fixture: params|defaults); lifted_by names the capability of more than one params fixture. Packages and the dovecot service are covered by the behaviour checks above"
+ ],
+ "review_s": 178.8,
+ "check_file_sha256": "8a255f13071499b7d233fdd63b4a5748c8d97c8f6e72044caa053c2123f42746",
+ "content_sha256": "8a255f13071499b7d233fdd63b4a5748c8d97c8f6e72044caa053c2123f42746",
+ "reviewer_result": "20261121T111044Z-reviewer",
+ "author_result": "20261121T110655Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "aa265cd8-058a-45c3-82fd-c7dcca56d2b1",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "aa265cd8-058a-45c3-82fd-c7dcca56d2b1",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "dea9ae64-25d3-48b4-8dc4-fbbc172f7ea8",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "dea9ae64-25d3-48b4-8dc4-fbbc172f7ea8",
+   "fresh": true
+  }
+ }
+}
