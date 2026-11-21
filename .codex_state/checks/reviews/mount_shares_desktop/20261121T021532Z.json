@@ -1,0 +1,43 @@
+{
+ "class": "mount_shares_desktop",
+ "at": "20261121T021532Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "scripts-render-the-share-and-options: shares.sh.erb:153-157 render SERVER/SHARENAME/DOMAIN/CIFSVERSION per share and the literal mountshare line; with the fixture (share_name p8share, cifs_version 3.0) the probe's exact-line greps SHARENAME=p8share, CIFSVERSION=\"3.0\" and the verbatim mountshare line are what the ERB produces; USERNAME=$USER follows line 9 with the auth_user default '$USER', EXPLORER=\"False\" line 12 with the fixture, and '$SUDO umount $MDIR/p8share' unmount-shares.sh.erb:11",
+  "scripts-on-the-desktop-root-owned-executable: mount_shares_desktop.pp:7-12 (and 16-19) declare ${desktop_dir}=/home/${username}/Desktop files shares${suffix}-mount.sh / -unmount.sh, owner root, group root, mode 0755; with title p8testuser and suffix '' the stat probe expects exactly root root 755 on both paths",
+  "the-mount-script-mounts-the-share: shares.sh.erb:8 MDIR=/tmp/$USER/mnt-manual, lines 88-93 mkdir+chmod 700 run as the invoking user, line 125 sudo mount.cifs with uid=$UID,file_mode=0600,dir_mode=0700; run as p8testuser (sudo for exactly mount.cifs/umount from the declared fixture drop-in, VERIFYSUDO=true makes SUDO=sudo, line 81) the effect expects rc 0, fstype cifs, mnt-manual p8testuser 700, the server file readable by the user and Permission denied for nobody, which follows from uid=$UID and 0600/0700; the action is the rendered script itself; the effect is findmnt/stat/cat, not only the action's output; the wrong-password check (lines 125-131: Problem mounting, exit 1, nothing mounted) pairs with it as the credential mismatch",
+  "purpose covered: Purpose (Desktop scripts that mount/unmount the user's CIFS shares under /tmp with their own credentials) matches the header comment and the manifest/templates. Tested on gnome against a real Samba share on peer ubuntu2: the scripts' placement/ownership/mode and rendering, a real mount by the user with the right password (cifs, user-private 700 dir, files readable by the user and denied to nobody), a wrong password failing with exit 1 and nothing mounted, and the unmount script unmounting. Uncovered rows are honest: the kdialog prompt needs desktop-session input; explorer (dolphin, default True) would need kubuntu, but phase3.py selects the node from the class's plan row only (nodes.select(cls=...), plan node gnome) and applies one params fixture, which also rules out the symlinks/cache=False/delay variants in the same set; lifted_by names that capability. Minor: the header's line 'the scripts run as root here, so the template's sudo needs no sudoers rule' is stale, superseded by the correction-round-1 note below it; the checks themselves run as p8testuser."
+ ],
+ "review_s": 154.5,
+ "check_file_sha256": "92c6d24e1b155ef5a694ff98f9c603ee4e36572bb291e116af624721cf071be5",
+ "content_sha256": "92c6d24e1b155ef5a694ff98f9c603ee4e36572bb291e116af624721cf071be5",
+ "reviewer_result": "20261121T021258Z-reviewer",
+ "author_result": "20261121T020957Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "boot_id": "26155c2f-7cc1-4586-b7e6-f4c3a037e323",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "26155c2f-7cc1-4586-b7e6-f4c3a037e323",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "d0ddf76e-1c65-4fab-a126-3515ec4faff5",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "d0ddf76e-1c65-4fab-a126-3515ec4faff5",
+   "fresh": true
+  }
+ }
+}
