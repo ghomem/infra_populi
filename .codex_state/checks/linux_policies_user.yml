@@ -65,6 +65,9 @@ checks:
       tail -2 "$f"
     expect: {rc: 0, stdout: "\\Ap8testuser p8testuser 700\\n#!/bin/bash\\n1\\nlogger -t p8testpolicy \"p8test policy 1 as \\$\\(id -un\\)\"\\nlogger -t p8testpolicy p8test-policy-2\\n\\Z"}
 
+  # Correction round 3, 2026-11-21 (HQ after batch 18, item 1; review 20261121T015754Z): the logged-in line and the
+  # policy line are counted from the first agent-run line (t1) on, as the autostart check bounds its own window, so the
+  # login's autostart run alone cannot satisfy this check.
   - id: policies-run-on-an-agent-run-while-logged-in
     what: >-
       with the user logged in, an agent run runs the policies as the user through the runner (tag
@@ -76,9 +79,11 @@ checks:
       - {path: templates/linux-policies/puppet_header.sh.erb, lines: "9-10", text: "logger -p local1.notice -t $SYSLOG_TAG \"User ${USERNAME} loged in, executing policies\""}
     probe: |
       journalctl -t linuxint-policies-puppet-agent -o cat --no-pager | grep -c -x 'Executing /opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh' | sed 's/^[1-9][0-9]*$/ran-on-agent-run/'
-      journalctl -t linuxint-policies -o cat --no-pager | grep -c -x 'User p8testuser loged in, executing policies' | sed 's/^[1-9][0-9]*$/logged-in/'
-      journalctl -t p8testpolicy -o cat --no-pager | p8_count '^p8test policy 1 as p8testuser$' | sed 's/^[1-9][0-9]*$/policy-ran-as-p8testuser/'
-    expect: {rc: 0, stdout: "\\Aran-on-agent-run\\nlogged-in\\npolicy-ran-as-p8testuser\\n\\Z"}
+      t1=$(journalctl -t linuxint-policies-puppet-agent -o short-unix --no-pager | awk 'NR==1 {print int($1)}')
+      [ -n "$t1" ] || { echo "no agent run"; exit 1; }
+      journalctl -t linuxint-policies --since "@$t1" -o cat --no-pager | grep -c -x 'User p8testuser loged in, executing policies' | sed 's/^[1-9][0-9]*$/logged-in-on-agent-run/'
+      journalctl -t p8testpolicy --since "@$t1" -o cat --no-pager | p8_count '^p8test policy 1 as p8testuser$' | sed 's/^[1-9][0-9]*$/policy-ran-on-agent-run-as-p8testuser/'
+    expect: {rc: 0, stdout: "\\Aran-on-agent-run\\nlogged-in-on-agent-run\\npolicy-ran-on-agent-run-as-p8testuser\\n\\Z"}
 
   - id: autostart-runs-the-policies-at-login
     what: >-
