@@ -4,9 +4,28 @@
 # mygrouplist [admins].
 # NOT shown (mock-apply): Thruk accepting the login, Naemon loading the contact.
 # Note: the template renders the group list with Ruby's Array#to_s (`["admins"]`), as at the baseline.
+# 2026-11-21 (backfill batch 9): purpose and outcomes (HQ rulings 2 and C1). The fixture hash is now the user classes'
+# known test password (p8test-user-not-a-secret), so the Thruk entry is verified with Apache's htpasswd -v.
 class: user_sysmon
 baseline: release-0.9.10 (cf477c6)
 fixture: params
+purpose: >-
+  Defines a monitoring (sysmon) user: a Thruk web login (the user's crypt hash in Thruk's htpasswd file) and a Naemon
+  contact (name, alias, email, contact groups) so the user can log in to the monitoring interface and receive
+  notifications.
+outcomes:
+  - outcome: Thruk's htpasswd file holds the user's hash, which accepts the user's password and refuses a wrong one
+    from: manifests/user_sysmon.pp:10-12
+    checks: [thruk-htpasswd-entry, the-thruk-entry-accepts-the-password]
+  - outcome: the Naemon contact file for the user names the user, alias, email and contact groups
+    from: manifests/user_sysmon.pp:14-20
+    checks: [naemon-contact-file]
+  - outcome: Thruk accepts the login and Naemon loads the contact (notifications reach the user)
+    from: manifests/user_sysmon.pp:2
+    uncovered:
+      why: the node has no Thruk or Naemon; the node fixture sysmon_server supplies only the naemon account and the directories
+      lifted_by: "capability: a monitoring-server node running Naemon + Thruk from the monitoring repository"
+      evidence: "plan node_fixture sysmon_server; nodes.yml lists no monitoring-server kind; status.py --standins: user_sysmon; measured 2026-11-21 on the node: apt-cache policy naemon, naemon-core, thruk: no candidate (sources: Ubuntu's archive and OpenVox only), so Naemon and Thruk need the monitoring repository"
 checks:
   - id: thruk-htpasswd-entry
     what: the user's crypt hash is written for Thruk in /etc/thruk/htpasswd as <user>:<hash>
@@ -28,3 +47,19 @@ checks:
       stat -c '%U %G %a' "$f"
       sed -E 's/^\s+//; s/\s+/ /' "$f"
     expect: {rc: 0, stdout: "\\Anaemon naemon 664\\ndefine contact \\{\\nuse generic-contact\\ncontact_name p8testuser\\nalias Puppet 8 Test User\\nemail root@localhost\\ncontactgroups \\[\"admins\"\\]\\n\\}\\n\\Z"}
+
+  - id: the-thruk-entry-accepts-the-password
+    what: Apache's htpasswd -v (the check Thruk's web server makes) accepts the test password for p8testuser and refuses a wrong one
+    control: negative
+    timeout: 300
+    derived_from:
+      - {path: manifests/user_sysmon.pp, lines: "12", text: "htpasswd { $myusername : cryptpasswd => $myhash, target => $htpasswd_file }"}
+    mutates: installs apache2-utils if absent (htpasswd); runs two read-only verifications of /etc/thruk/htpasswd; the answers go to /run/p8test-sysmon/verify.txt
+    probe: |
+      command -v htpasswd >/dev/null || DEBIAN_FRONTEND=noninteractive apt-get -qq -y install apache2-utils >/dev/null 2>&1
+      install -d -m 0700 /run/p8test-sysmon
+      { htpasswd -vb /etc/thruk/htpasswd p8testuser 'p8test-user-not-a-secret' 2>&1; echo "right rc=$?"
+        htpasswd -vb /etc/thruk/htpasswd p8testuser 'p8test-wrong-password' 2>&1; echo "wrong rc=$?"; } > /run/p8test-sysmon/verify.txt
+    effect: |
+      cat /run/p8test-sysmon/verify.txt
+    expect: {rc: 0, stdout: "\\APassword for user p8testuser correct\\.\\nright rc=0\\npassword verification failed\\nwrong rc=3\\n\\Z"}
