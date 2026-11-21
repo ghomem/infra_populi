@@ -1,0 +1,35 @@
+{
+ "class": "node_base_desktop",
+ "at": "20261121T032544Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "ssh-hardened-without-password-or-root-login: node_base_desktop.pp:17-18,43-46 pass password_authentication/ssh_allow_root_login (default false) to ssh_secure, whose baseline maps false to PasswordAuthentication 'no' and PermitRootLogin 'no'; sshd -T expecting both 'no' tests exactly that",
+  "ipv6-input-and-forward-dropped: line 59 includes firewall_ipv6_drop_policy_desktop, whose baseline declares INPUT:filter:IPv6 and FORWARD:filter:IPv6 policy drop plus '000 accept all IPv6 to lo interface' (iniface lo, accept); ip6tables -S expecting both -P DROP lines and one '-i lo' INPUT rule matches",
+  "gnome-lock-policy-served: line 29 default 5 min (grace default 0) passed at 96-101 to gnome_lock_screen, which writes idle-delay=uint32 (5*60), lock-enabled=true, lock-delay=uint32 0 into system-db local behind profile 'user'; dconf read under DCONF_PROFILE=user expecting uint32 300/true/uint32 0 tests that; the mismatch varies only the profile name to one without system-db:local, which must lose the policy values (failed after apply as required)",
+  "purpose gap: Tested (reviewer run 20261121T032210Z, ALL_PASS, every negative failed clean): sshd refuses passwords and root, unattended-upgrades removed, IPv6 INPUT/FORWARD dropped with lo accepted, root crontab line for apt-update-relevant.sh at 02:00, rsyslog forward line to puppet8master.example.com:6514, GNOME dconf lock policy served, puppet service enabled+active (stand-in). Uncovered rows hold: KDE per-user lock needs a Plasma session (gnome node capabilities [desktop, gnome], no kde; phase3.py selects one node per class via nodes.select), agent daemon is the puppet_agent_standin. GAP: parts the lab CAN exercise are neither checked nor in the outcomes table: (1) the profile's choice server_mode => false for filesystem_apt (pp:65-68, the 'desktop APT helpers' of the stated purpose) - baseline filesystem_apt then creates the apt-update-surface-desktop.sh link and uses the desktop surface list in apt-update-surface.sh; no check reads either, and the nightly-cron check does not even test that the apt-update-relevant.sh it schedules exists; (2) the IPv4 firewall_secure the profile applies (pp:54-57, header 'Centrally managed firewall', strict_purge true; default-drop IPv4 INPUT/FORWARD with SSH rules) has no outcome row and no sentinel (node_base's set carries one per component); (3) filesystem_base_desktop (pp:49-52) is absent from the table. Add outcome rows with checks (or honest uncovered rows) for these."
+ ],
+ "review_s": 214.9,
+ "check_file_sha256": "12f28f32efea024a81f00f7017f0daa4b4ab4c13ceaaa3a0527a5acddffd9fc3",
+ "content_sha256": "12f28f32efea024a81f00f7017f0daa4b4ab4c13ceaaa3a0527a5acddffd9fc3",
+ "reviewer_result": "20261121T032210Z-reviewer",
+ "author_result": "20261121T031846Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "boot_id": "5d5c25a1-d71a-48eb-8778-9fa9af0dae8b",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "5d5c25a1-d71a-48eb-8778-9fa9af0dae8b",
+   "fresh": true
+  }
+ }
+}
