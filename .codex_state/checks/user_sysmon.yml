@@ -1,6 +1,6 @@
 # Phase 3 checks for puppet_infrastructure::user_sysmon (define; harness title p8testuser; MOCK-APPLY: node fixture
 # sysmon_server supplies the naemon user/group and /etc/thruk, /etc/naemon/conf.d/contacts). Fixture (params, never
-# committed): myname "Puppet 8 Test User", a fake SHA-512 hash (salt p8fixture), myemail root@localhost,
+# committed): myname "Puppet 8 Test User", the SHA-512 hash of the user test password (salt p8testsalt), myemail root@localhost,
 # mygrouplist [admins].
 # NOT shown (mock-apply): Thruk accepting the login, Naemon loading the contact.
 # Note: the template renders the group list with Ruby's Array#to_s (`["admins"]`), as at the baseline.
@@ -27,6 +27,8 @@ outcomes:
       lifted_by: "capability: a monitoring-server node running Naemon + Thruk from the monitoring repository"
       evidence: "plan node_fixture sysmon_server; nodes.yml lists no monitoring-server kind; status.py --standins: user_sysmon; measured 2026-11-21 on the node: apt-cache policy naemon, naemon-core, thruk: no candidate (sources: Ubuntu's archive and OpenVox only), so Naemon and Thruk need the monitoring repository"
 checks:
+  # 2026-11-21 authoring correction (run 1, 20261121T133647Z): the params fixture's hash changed to the known test
+  # password's (salt p8testsalt, was p8fixture); the expectation follows the fixture. The behaviour is unchanged.
   - id: thruk-htpasswd-entry
     what: the user's crypt hash is written for Thruk in /etc/thruk/htpasswd as <user>:<hash>
     control: negative
@@ -34,7 +36,7 @@ checks:
       - {path: manifests/user_sysmon.pp, lines: "11-12", text: "htpasswd { $myusername : cryptpasswd => $myhash, target => $htpasswd_file }"}
     probe: |
       grep -E '^p8testuser:' /etc/thruk/htpasswd | cut -d'$' -f1-3
-    expect: {rc: 0, stdout: "\\Ap8testuser:\\$6\\$p8fixture\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Ap8testuser:\\$6\\$p8testsalt\\n\\Z"}
 
   - id: naemon-contact-file
     what: the Naemon contact for the user (naemon:naemon 0664) names the user, alias, email and contact groups
