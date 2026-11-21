@@ -1,0 +1,35 @@
+{
+ "class": "users_sudoers",
+ "at": "20261121T120926Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-managed-user-becomes-root-with-sudo: user_sudoer.pp:10-11 appends sudo to the group list on non-RedHat (Ubuntu node); line 18 creates p8testuser from the params fixture whose hash is the test password, so sudo -S with it yields uid 0, a wrong password and nobody (not in sudo) are refused; the effect reads the recorded answers, not the action's output",
+  "the-agent-run-leaves-the-unmanaged-account-alone: users_sudoers.pp:15-18 filters p8testuser2 (in unmanaged_users) out before create_resources, so the catalog has no user_sudoer for it and an agent run must leave a hand-made p8testuser2 (passwd line, shadow digest, groups) unchanged, not in sudo, with no authorized_keys; mutates truthfully declares nothing (action is true)",
+  "managed-user-is-a-sudoer: users_sudoers.pp:18 create_resources of the filtered hash declares user_sudoer p8testuser with myname 'P8 Test User' and an empty mygrouplist, so passwd comment is 'P8 Test User' and groups are its own group plus sudo (user_sudoer.pp:11)",
+  "purpose covered: The define's own job is filter + create_resources (users_sudoers.pp:15,18): the checks prove a managed entry becomes a working sudoer (groups, sudo to root with its password; wrong password and non-member refused), an unmanaged entry is not created, and a hand-made account of the unmanaged name survives an agent run untouched. Purpose and outcomes match the header comments and baseline code. The managed user's key push and RedHat wheel branch belong to user_sudoer/user_base and are covered in their own check sets (user_sudoer.yml, user_base.yml), not repeated here; nothing the lab can exercise in this define is left untested."
+ ],
+ "review_s": 90.8,
+ "check_file_sha256": "bd33fdf694e63d4fd27558c066a54a0f9dc789a7a4648c667a387d7556c1f6fa",
+ "content_sha256": "bd33fdf694e63d4fd27558c066a54a0f9dc789a7a4648c667a387d7556c1f6fa",
+ "reviewer_result": "20261121T120756Z-reviewer",
+ "author_result": "20261121T120536Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "46b9d8a7-247d-4313-9ea9-db84e42e002b",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "46b9d8a7-247d-4313-9ea9-db84e42e002b",
+   "fresh": true
+  }
+ }
+}
