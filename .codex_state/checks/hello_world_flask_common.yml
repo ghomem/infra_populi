@@ -1,0 +1,62 @@
+# Phase 3 checks for puppet_infrastructure::hello_world_flask_common (class; node ubuntu; required_base filesystem_base,
+# and extra_packages_el on RedHat; no parameters, fixture defaults). The shared part of the hello_world_flask demo
+# applications: the gunicorn and Flask packages and the directory the applications live in. The exercise serves a
+# one-route Flask app with the installed gunicorn on the node's loopback.
+# 2026-11-21 (backfill batch 10): first set, with purpose and outcomes (HQ rulings 2 and C1).
+class: hello_world_flask_common
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+purpose: >-
+  Provides what every hello_world_flask demo application needs: the Python Flask framework and the gunicorn WSGI server
+  (so an application can be served), and the directory under the local tree the applications live in.
+outcomes:
+  - outcome: the applications' directory exists, root-owned
+    from: manifests/hello_world_flask_common.pp:11-17
+    checks: [the-applications-directory]
+  - outcome: Flask and gunicorn are installed and work together (gunicorn serves a Flask application)
+    from: manifests/hello_world_flask_common.pp:7-8
+    checks: [flask-and-gunicorn-installed, gunicorn-serves-a-flask-app]
+  - outcome: the same on RedHat-family nodes (packages from EPEL through extra_packages_el)
+    from: manifests/hello_world_flask_common.pp:3, 7-8
+    uncovered:
+      why: the plan's node for this class is Debian (Ubuntu); a set runs on its class's plan node only
+      lifted_by: "capability: a phase3 set for a node kind other than the plan's (rhel9)"
+      evidence: "phase3.py run selects the class's plan node (nodes.select); migration_plan.md: required_base 'filesystem_base, extra_packages_el [RedHat]', node column empty (default ubuntu)"
+checks:
+  - id: the-applications-directory
+    what: /opt/puppet-infrastructure/hello_world_flask is a directory owned by root:root (mode 0644 given, which Puppet makes 0755 on a directory)
+    control: negative
+    derived_from:
+      - {path: manifests/hello_world_flask_common.pp, lines: "12-17", text: "file { \"${localdir}/hello_world_flask\":"}
+    probe: |
+      stat -c '%F %U:%G %a' /opt/puppet-infrastructure/hello_world_flask
+    expect: {rc: 0, stdout: "\\Adirectory root:root 755\\n\\Z"}
+
+  - id: flask-and-gunicorn-installed
+    what: the python3-flask and python3-gunicorn packages are installed, and both import in the system Python
+    control: negative
+    derived_from:
+      - {path: manifests/hello_world_flask_common.pp, lines: "8", text: "package { [ 'python3-gunicorn', 'python3-flask' ]: ensure => present, }"}
+    probe: |
+      dpkg-query -W -f '${Package} ${Status}\n' python3-flask python3-gunicorn | sort
+      python3 -c 'import flask, gunicorn; print("imports ok")'
+    expect: {rc: 0, stdout: "\\Apython3-flask install ok installed\\npython3-gunicorn install ok installed\\nimports ok\\n\\Z"}
+
+  - id: gunicorn-serves-a-flask-app
+    what: the installed gunicorn serves a one-route Flask application on 127.0.0.1:18080, which answers 200 with its text
+    control: negative
+    timeout: 120
+    derived_from:
+      - {path: manifests/hello_world_flask_common.pp, lines: "7-8", text: "# Packages needed for the applications to run"}
+    mutates: >-
+      writes /run/p8test-flask/app.py (one route returning "p8test hello") and starts a transient unit p8test-gunicorn
+      (gunicorn on 127.0.0.1:18080 serving it) until the next revert; the answers go to /run/p8test-flask/out.txt
+    probe: |
+      install -d -m 0755 /run/p8test-flask
+      printf '%s\n' 'from flask import Flask' 'app = Flask(__name__)' '@app.route("/")' 'def hello():' '    return "p8test hello"' > /run/p8test-flask/app.py
+      systemd-run --unit p8test-gunicorn -q --working-directory=/run/p8test-flask gunicorn --bind 127.0.0.1:18080 app:app
+      for i in $(seq 1 20); do p8_tcp 127.0.0.1 18080 1 | grep -q open && break; sleep 0.5; done
+      { p8_http http://127.0.0.1:18080/; curl -s --max-time 5 http://127.0.0.1:18080/; echo; } > /run/p8test-flask/out.txt
+    effect: |
+      cat /run/p8test-flask/out.txt
+    expect: {rc: 0, stdout: "\\A200\\np8test hello\\n\\Z"}
