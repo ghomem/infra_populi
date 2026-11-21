@@ -7,6 +7,8 @@
 # fixture (local) now also holds a second SASL user p8testuser2 and a second allowed address
 # p8test-other@p8test.example.com owned by it, so the sender-login rule has an address another user owns. The unlisted
 # client is the node's own ::1 (inet_protocols = all; client_access lists 127.0.0.1 only). Prototyped on the node.
+# Correction round 1, 2026-11-21 (review 20261121T052303Z, purpose): plaintext tried (TLS mandatory) and a system
+# account tried (an OS user p8testsys whose password the OS accepts through PAM, refused by dovecot and SMTP AUTH).
 class: postfix_smtp_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -27,6 +29,12 @@ outcomes:
       is not logged in, a wrong password (535) and a client address that is not listed
     from: templates/postfix_smtp_base/main.cf.erb:94-118; templates/postfix_smtp_base/client_access.erb; templates/postfix_smtp_base/sender_access.erb; templates/postfix_smtp_base/controlled_envelope_senders.erb
     checks: [smtp-restrictions-exercised]
+  - outcome: TLS is mandatory (no AUTH offered and MAIL FROM and AUTH refused before STARTTLS)
+    from: templates/postfix_smtp_base/main.cf.erb:30
+    checks: [tls-and-own-users-only]
+  - outcome: system accounts cannot authenticate (dovecot's passdb is the passwd-file only; an OS account whose password the OS accepts gets 535)
+    from: manifests/postfix_smtp_base.pp:109-114; files/postfix_smtp_base/10-auth.conf:122-125
+    checks: [tls-and-own-users-only]
   - outcome: the From-header warning (smtp_header_checks) for addresses outside do_not_warn_from_addresses_regexes
     from: manifests/postfix_smtp_base.pp:166-176; templates/postfix_smtp_base/smtp_header_checks.regexp.erb; templates/postfix_smtp_base/main.cf.erb:121
     uncovered:
@@ -159,4 +167,46 @@ checks:
     expect:
       rc: 0
       stdout: "\\Aown-address: auth 235 mail 250 rcpt 250 2\\.1\\.5 Ok\\nowner-of-the-other: auth 235 mail 250 rcpt 250 2\\.1\\.5 Ok\\nnot-in-general-list: auth 235 mail 250 rcpt 554 5\\.7\\.1 <p8test-unlisted@p8test\\.example\\.com>: Sender address rejected: Access denied\\nowned-by-another: auth 235 mail 250 rcpt 553 5\\.7\\.1 <p8test-other@p8test\\.example\\.com>: Sender address rejected: not owned by user p8testuser\\nunauthenticated: auth none mail 250 rcpt 553 5\\.7\\.1 <p8test@p8test\\.example\\.com>: Sender address rejected: not logged in\\nwrong-password: auth 535 mail 250 rcpt 553 5\\.7\\.1 <p8test@p8test\\.example\\.com>: Sender address rejected: not logged in\\nunlisted-client: auth 235 mail 250 rcpt 554 5\\.7\\.1 <ip6-localhost\\[::1\\]>: Client host rejected: Access denied\\n\\Z"
+
+  - id: tls-and-own-users-only
+    what: >-
+      before STARTTLS the server offers no AUTH and answers MAIL FROM and AUTH with 530 Must issue a STARTTLS command
+      first; an OS account (p8testsys) whose password the OS accepts (PAM login) is refused by dovecot's passdb and gets
+      535 from SMTP AUTH over TLS
+    control: negative
+    timeout: 300
+    derived_from:
+      - {path: templates/postfix_smtp_base/main.cf.erb, lines: "30", text: "smtpd_tls_security_level = encrypt"}
+      - {path: files/postfix_smtp_base/10-auth.conf, lines: "122", text: "#!include auth-system.conf.ext"}
+      - {path: files/postfix_smtp_base/10-auth.conf, lines: "125", text: "!include auth-passwdfile.conf.ext"}
+    mutates: >-
+      installs pamtester if absent; creates the system account p8testsys (no home, nologin shell, password
+      p8test-sys-not-a-secret); opens two SMTP sessions to 127.0.0.1:587 (one plaintext, one over TLS) and runs one PAM
+      and one dovecot authentication for p8testsys (logged); the replies go to /run/p8test-smtp/tls-own.txt
+    probe: |
+      command -v pamtester >/dev/null || DEBIAN_FRONTEND=noninteractive apt-get -qq -y install pamtester >/dev/null 2>&1
+      id p8testsys >/dev/null 2>&1 || useradd -M -s /usr/sbin/nologin p8testsys
+      echo 'p8testsys:p8test-sys-not-a-secret' | chpasswd
+      install -d -m 0700 /run/p8test-smtp
+      { printf '%s\n' 'p8test-sys-not-a-secret' | pamtester login p8testsys authenticate >/dev/null 2>&1; echo "os accepts p8testsys rc=$?"
+        doveadm auth test p8testsys p8test-sys-not-a-secret 2>&1 | grep -E '^passdb: '
+        python3 - <<'PY'
+      import smtplib, ssl
+      s = smtplib.SMTP('127.0.0.1', 587, timeout=30); s.ehlo('p8test.invalid')
+      print('plaintext: auth offered' if s.has_extn('auth') else 'plaintext: auth not offered')
+      code, msg = s.mail('p8test@p8test.example.com'); print('plaintext: mail', code, msg.decode())
+      code, msg = s.docmd('AUTH', 'PLAIN AHA4dGVzdHVzZXIAcDh0ZXN0LW5vdC1hLXNlY3JldA=='); print('plaintext: auth', code, msg.decode())
+      s.quit()
+      s = smtplib.SMTP('127.0.0.1', 587, timeout=30); s.ehlo('p8test.invalid')
+      s.starttls(context=ssl._create_unverified_context()); s.ehlo('p8test.invalid')
+      try:
+          s.login('p8testsys', 'p8test-sys-not-a-secret'); print('system-account: auth 235')
+      except smtplib.SMTPAuthenticationError as e:
+          print('system-account: auth', e.smtp_code)
+      s.quit()
+      PY
+      } > /run/p8test-smtp/tls-own.txt
+    effect: |
+      cat /run/p8test-smtp/tls-own.txt
+    expect: {rc: 0, stdout: "\\Aos accepts p8testsys rc=0\\npassdb: p8testsys auth failed\\nplaintext: auth not offered\\nplaintext: mail 530 5\\.7\\.0 Must issue a STARTTLS command first\\nplaintext: auth 530 5\\.7\\.0 Must issue a STARTTLS command first\\nsystem-account: auth 535\\n\\Z"}
 
