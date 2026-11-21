@@ -15,6 +15,10 @@
 # with kinit against the DC (the default realm's case follows the domain_tld parameter: batch 8 report, for HQ).
 # Correction round 2, 2026-11-21 (review 20261121T050106Z, purpose): host resolution through WINS (nsswitch's hosts
 # line), measured with the DC up (the runner powers the peer off after a run, so a lookup after the run times out).
+# Correction round 3, 2026-11-21 (HQ after batch 18, item 1; review 20261121T051116Z): logins by the bare name
+# (winbind use default domain). Kerberos (item 2, a finding with one clear fix): the check now expects the purpose,
+# kinit without naming a realm working with the lowercase-tld fixture; it fails on the baseline template (before
+# evidence for local change #17, the realm upper-cased when built).
 class: openvpn_domain
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -38,15 +42,16 @@ outcomes:
     checks: [pam-winbind-requires-the-group-and-openvpn-pam-installed]
   - outcome: >-
       a domain user in a listed group logs in through PAM (login, the service openvpn_server's plugin uses) with the
-      domain password; a wrong password and a domain user outside the listed groups are refused
-    from: manifests/openvpn_domain.pp:14-15, 31-38; templates/openvpn/pam_winbind.conf.erb:30; manifests/openvpn_server.pp:169
+      domain password, with the domain prefix and by the bare name (winbind use default domain); a wrong password and a
+      domain user outside the listed groups are refused
+    from: manifests/openvpn_domain.pp:14-15, 31-38; templates/openvpn/pam_winbind.conf.erb:30; templates/openvpn/smb.conf.erb:19; manifests/openvpn_server.pp:169
     checks: [domain-users-for-the-login-checks, pam-logins-through-winbind]
   - outcome: >-
-      Kerberos: the default realm is the NetBIOS name and the tld as given (P8TEST.example with the fixture's lowercase
-      tld) and the only realm stanza is the template's literal DOMAIN.LOCAL, so a Kerberos client finds the DC's KDC
-      through DNS; a ticket for the DC's realm (P8TEST.EXAMPLE) is granted, while one asked for the default realm is not,
-      realms being case-sensitive. Nothing in the class's login path uses Kerberos (security = domain joins over RPC;
-      pam_winbind's krb5_auth stays off); the [logging] section is read by a KDC, which the node does not run
+      Kerberos: the default realm is the domain's realm (the NetBIOS name and the tld, upper-case as AD realms are), and
+      the only realm stanza is the template's literal DOMAIN.LOCAL, so a Kerberos client finds the DC's KDC through DNS;
+      kinit for a domain user without naming a realm gets a ticket, also with a lowercase tld parameter. Nothing in the
+      class's login path uses Kerberos (security = domain joins over RPC; pam_winbind's krb5_auth stays off); the
+      [logging] section is read by a KDC, which the node does not run
     from: manifests/openvpn_domain.pp:40-47; templates/openvpn/krb5.conf.erb:1-18; templates/openvpn/pam_winbind.conf.erb:21
     checks: [kerberos-realms-against-the-dc]
   - outcome: >-
@@ -144,15 +149,18 @@ checks:
     what: >-
       through the login PAM service (auth and account stacks): p8testvpnin with its domain password is accepted; the
       same user with a wrong password and p8testvpnout (not in p8testgroup) with its right password are refused, while
-      the DC itself accepts p8testvpnout's password (wbinfo -a, no membership rule): the refusal is the membership rule
+      the DC itself accepts p8testvpnout's password (wbinfo -a, no membership rule): the refusal is the membership rule.
+      By the bare name (no domain prefix, the name a VPN user types; winbind use default domain), the member resolves
+      with its group and logs in, and the outsider is refused
     control: negative
     timeout: 300
     derived_from:
       - {path: manifests/openvpn_domain.pp, lines: "31-38", text: "content => template('puppet_infrastructure/openvpn/pam_winbind.conf.erb'),"}
       - {path: templates/openvpn/pam_winbind.conf.erb, lines: "30", text: "require_membership_of = <%= @comma_separated_groups %>"}
       - {path: manifests/openvpn_server.pp, lines: "169", text: "pam                      => true,"}
+      - {path: templates/openvpn/smb.conf.erb, lines: "19", text: "winbind use default domain = yes"}
     mutates: >-
-      installs pamtester if absent; runs three PAM logins through the login service (winbind and the system log record
+      installs pamtester if absent; runs five PAM logins through the login service (winbind and the system log record
       them, the DC counts the wrong password once against p8testvpnin) and one direct winbind authentication of
       p8testvpnout (wbinfo -a); the outcomes go to /run/p8test-pam/logins.txt
     probe: |
@@ -162,16 +170,19 @@ checks:
       { try member-right 'P8TEST+p8testvpnin' 'P8test-vpn-in-not-a-secret1'
         try member-wrong 'P8TEST+p8testvpnin' 'P8test-wrong-password1'
         try outsider-right 'P8TEST+p8testvpnout' 'P8test-vpn-out-not-a-secret1'
+        try member-bare p8testvpnin 'P8test-vpn-in-not-a-secret1'
+        try outsider-bare p8testvpnout 'P8test-vpn-out-not-a-secret1'
+        id -nG p8testvpnin 2>&1 | grep -o -w p8testgroup | sed 's/^/bare name in group: /'
         wbinfo -a 'P8TEST+p8testvpnout%P8test-vpn-out-not-a-secret1' 2>&1 | grep -o 'plaintext password authentication [a-z]*' | sed 's/^/outsider at the DC: /'; } > /run/p8test-pam/logins.txt
     effect: |
       cat /run/p8test-pam/logins.txt
-    expect: {rc: 0, stdout: "\\Amember-right rc=0\\nmember-wrong rc=[1-9][0-9]*\\noutsider-right rc=[1-9][0-9]*\\noutsider at the DC: plaintext password authentication succeeded\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Amember-right rc=0\\nmember-wrong rc=[1-9][0-9]*\\noutsider-right rc=[1-9][0-9]*\\nmember-bare rc=0\\noutsider-bare rc=[1-9][0-9]*\\nbare name in group: p8testgroup\\noutsider at the DC: plaintext password authentication succeeded\\n\\Z"}
 
   - id: kerberos-realms-against-the-dc
     what: >-
-      krb5.conf's default realm is P8TEST.example as the template renders it; kinit for p8testvpnin in the DC's realm
-      P8TEST.EXAMPLE gets a ticket (KDC through DNS), and kinit in the default realm does not (the KDC answers for
-      P8TEST.EXAMPLE)
+      krb5.conf's default realm is the domain's realm in upper case (P8TEST.EXAMPLE, from the lowercase-tld fixture);
+      kinit for p8testvpnin without naming a realm gets a ticket for P8TEST.EXAMPLE, as does kinit naming it (KDC through
+      DNS)
     control: negative
     timeout: 180
     derived_from:
@@ -180,18 +191,18 @@ checks:
       - {path: manifests/openvpn_domain.pp, lines: "40-47", text: "content => template('puppet_infrastructure/openvpn/krb5.conf.erb'),"}
     mutates: >-
       asks the DC for two tickets for p8testvpnin (kinit, the DC logs both) into the credential cache
-      /run/p8test-krb5/cc, which is destroyed afterwards; the outcomes go to /run/p8test-krb5/kinit.txt
+      /run/p8test-krb5/cc, which is destroyed after each; the outcomes go to /run/p8test-krb5/kinit.txt
     probe: |
       install -d -m 0700 /run/p8test-krb5
       { grep -E '^\s*default_realm' /etc/krb5.conf | sed 's/^ *//'
-        printf '%s\n' 'P8test-vpn-in-not-a-secret1' | timeout 60 kinit -c FILE:/run/p8test-krb5/cc p8testvpnin@P8TEST.EXAMPLE >/dev/null 2>&1; echo "dc realm rc=$?"
+        printf '%s\n' 'P8test-vpn-in-not-a-secret1' | timeout 60 kinit -c FILE:/run/p8test-krb5/cc p8testvpnin >/dev/null 2>&1; echo "default realm rc=$?"
         klist -c FILE:/run/p8test-krb5/cc 2>/dev/null | grep -o 'Default principal: .*'
         kdestroy -c FILE:/run/p8test-krb5/cc 2>/dev/null
-        printf '%s\n' 'P8test-vpn-in-not-a-secret1' | timeout 60 kinit -c FILE:/run/p8test-krb5/cc p8testvpnin 2>&1 | grep -o 'KDC reply did not match expectations'
+        printf '%s\n' 'P8test-vpn-in-not-a-secret1' | timeout 60 kinit -c FILE:/run/p8test-krb5/cc p8testvpnin@P8TEST.EXAMPLE >/dev/null 2>&1; echo "dc realm rc=$?"
         kdestroy -c FILE:/run/p8test-krb5/cc 2>/dev/null; } > /run/p8test-krb5/kinit.txt
     effect: |
       cat /run/p8test-krb5/kinit.txt
-    expect: {rc: 0, stdout: "\\Adefault_realm = P8TEST\\.example\\ndc realm rc=0\\nDefault principal: p8testvpnin@P8TEST\\.EXAMPLE\\nKDC reply did not match expectations\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Adefault_realm = P8TEST\\.EXAMPLE\\ndefault realm rc=0\\nDefault principal: p8testvpnin@P8TEST\\.EXAMPLE\\ndc realm rc=0\\n\\Z"}
 
   - id: the-dc-name-resolves-through-wins
     what: >-
@@ -215,4 +226,3 @@ checks:
         d=$(getent -s dns hosts "$fqdn" | awk '{print $1}')
         [ -n "$fqdn" ] && [ -n "$w" ] && [ "$w" = "$d" ] && echo "the WINS server's name resolves through wins to its DNS address"
     expect: {rc: 0, stdout: "\\Athe WINS server's name resolves through wins to its DNS address\\n\\Z"}
-
