@@ -2,9 +2,30 @@
 # Service['nginx'] ssl_base notifies). Fixture (params, never committed): sslprefix p8test (the lab master's fixture
 # PKI, CN p8test.invalid). The class hands ssl_base the service nginx (letsencrypt_certificate default false).
 # Adapted from ssl_postfix's reviewed set (same ssl_base; the bundle is named for nginx).
+# 2026-11-21 (backfill batch 8): purpose and outcomes (HQ rulings 2 and C1), and ssl_base's restart on a changed
+# certificate as behaviour (a bundle changed by hand, the node's agent run, nginx under a new PID).
 class: ssl_nginx
 baseline: release-0.9.10 (cf477c6)
 fixture: params
+node_agent:
+  after: the-bundle-is-changed-by-hand
+  why: ssl_base restores a changed bundle and restarts the service only on an agent run after the change
+purpose: >-
+  Installs a site's TLS key and certificate for nginx: the private key root-only and the certificate bundled with its
+  intermediate in the form nginx reads, and restarts nginx whenever either changes.
+outcomes:
+  - outcome: the private key is installed root-only, and the bundle holds the certificate then the intermediate, the certificate matching the key
+    from: manifests/ssl_nginx.pp:1-9; manifests/ssl_base.pp:66-118
+    checks: [private-key-installed-root-only, nginx-bundle-cert-then-intermediate, bundle-certificate-matches-the-key]
+  - outcome: a changed bundle is put back on the next agent run and nginx is restarted
+    from: manifests/ssl_base.pp:10, 100-103
+    checks: [the-bundle-is-changed-by-hand, the-agent-run-restores-the-bundle-and-restarts-nginx]
+  - outcome: Let's Encrypt-shaped files (letsencrypt_certificate true), and the RedHat paths
+    from: manifests/ssl_base.pp:47-79
+    uncovered:
+      why: ssl_nginx passes no letsencrypt flag and the plan's node is Debian; one set holds one fixture on one node
+      lifted_by: "capability: more than one params fixture per set, and a phase3 set for a node kind other than the plan's (rhel9)"
+      evidence: "manifests/ssl_nginx.pp declares ssl_base with myprefix, myservice and myservicename only; phase3.py runs a set on the class's plan node with one fixture"
 checks:
   - id: private-key-installed-root-only
     what: the prefix's private key is installed as /etc/ssl/private/<prefix>.key, root:root 0600
@@ -48,3 +69,37 @@ checks:
         b=$(openssl pkey -pubout -in "$(ls /etc/puppetlabs/puppet/ssl/private_keys/*.pem | head -1)" | sha256sum)
         test "$a" = "$b" && echo key-matches-certificate
     expect: {rc: 0, stdout: "\\Akey-matches-certificate\\n\\Z"}
+
+  - id: the-bundle-is-changed-by-hand
+    what: setup for the agent run, a stray line appended to the nginx bundle and nginx's main PID noted
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "100-103", text: "notify         => Service[$myservicename],"}
+    mutates: >-
+      appends the line "# p8test drift" to /etc/ssl/certs/p8test.nginx.bundle.crt and writes nginx's main PID to
+      /run/p8test-sslnginx/pid (/run/p8test-sslnginx created 0700)
+    probe: |
+      install -d -m 0700 /run/p8test-sslnginx
+      systemctl show -p MainPID --value nginx > /run/p8test-sslnginx/pid
+      echo '# p8test drift' >> /etc/ssl/certs/p8test.nginx.bundle.crt
+    effect: |
+      p8_count '^# p8test drift$' /etc/ssl/certs/p8test.nginx.bundle.crt
+      [ "$(cat /run/p8test-sslnginx/pid)" -gt 0 ] && echo "pid noted"
+    expect: {rc: 0, stdout: "\\A1\\npid noted\\n\\Z"}
+
+  - id: the-agent-run-restores-the-bundle-and-restarts-nginx
+    what: after the node's agent run, the stray line is gone and nginx runs under a new main PID (restarted by the bundle's notify)
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "10", text: "# The service is restarted if the certificate changes."}
+      - {path: manifests/ssl_base.pp, lines: "100-103", text: "notify         => Service[$myservicename],"}
+    mutates: none beyond reading the bundle and nginx's PID (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      p8_count '^# p8test drift$' /etc/ssl/certs/p8test.nginx.bundle.crt
+      now=$(systemctl show -p MainPID --value nginx)
+      [ "$now" -gt 0 ] && [ "$now" != "$(cat /run/p8test-sslnginx/pid)" ] && echo "nginx restarted"
+      systemctl is-active nginx
+    expect: {rc: 0, stdout: "\\A0\\nnginx restarted\\nactive\\n\\Z"}
+
