@@ -2,7 +2,11 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-129 entries; 6 marked superseded (in whole or part); newest first.
+130 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-21 — batch 19: a Phase 1 review that fails on a missing peer; masked chain failures
+- 1. **A Phase 1 review of a class whose harness needs a peer** (openvpn_domain needs the dc) runs only with the peer up.
+- 2. **Command chains that filter a commit's output run with `set -o pipefail`.** A trailing `grep -vE` hid a failed
 
 ## 2026-11-21 — HQ after batch 18 (batch 8 accepted)
 - 1. **The three escalated check sets** (openvpn_domain, postfix_smtp_base, linux_policies_user) get one more round

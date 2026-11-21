@@ -2357,3 +2357,14 @@ the engine's tools, which take the lock themselves, are unaffected. 21 tests; th
    standing rule.
 4. **Continue with batch 9**, then straight on in the agreed order: stand-in lifts → sweep of open uncovered rows →
    approval report → test-suite design note. Stop for HQ review at the approval report.
+
+## 2026-11-21 — batch 19: a Phase 1 review that fails on a missing peer; masked chain failures
+1. **A Phase 1 review of a class whose harness needs a peer** (openvpn_domain needs the dc) runs only with the peer up.
+   Phase 3 runs power the peer off at their end (HQ 2026-11-17 ruling 5), and the Phase 1 harness does not start it. On
+   20261121T105110Z the join could not find the DC, and the review failed with faithfulness ok. The FAIL is recorded as
+   it stands; the peer is reverted and started, and the review runs again. This is not a Phase 1 FAIL that stops the
+   run when no migrated code failed and the reviewer's own evidence names the missing precondition. To be built: the
+   Phase 1 harness starts a class's peer itself.
+2. **Command chains that filter a commit's output run with `set -o pipefail`.** A trailing `grep -vE` hid a failed
+   edit, and a run executed an unchanged set against a changed fixture (sysmon_integrity_node 20261121T122111Z,
+   committed as an operator error).
