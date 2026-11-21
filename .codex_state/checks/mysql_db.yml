@@ -6,9 +6,14 @@
 # rw one appears below: a fixture value, never a real secret). Probes run as root (root@localhost via /root/.my.cnf).
 # 2026-11-20 (backfill batch 7): purpose and outcomes (HQ rulings 2 and C1), and the accounts as behaviour: rw writes,
 # ro reads over TLS and its write is refused (the ro password appears too: a p8test fixture value).
+# Correction round 1, 2026-11-21 (review 20261121T022351Z, purpose): a login from another host, from the peer ubuntu2
+# over the host-only network (prototyped: TLS 1.3 as p8test_rw@%, served by puppet8node; without TLS ERROR 1045).
 class: mysql_db
 baseline: 874f854 (874f854)
 fixture: params
+peer:
+  kind: ubuntu2
+  why: the accounts are for any host, so another machine must log in to the class node over the network
 purpose: >-
   Creates a MySQL database with a read/write account and, optionally, a read-only one, both reachable from any host but
   only over TLS, so applications get a database of their own with the privileges they need.
@@ -25,12 +30,15 @@ outcomes:
   - outcome: the rw account logs in over TLS with its password and writes; the ro account logs in over TLS and reads, and its write is refused
     from: manifests/mysql_db.pp:17-41
     checks: [rw-user-logs-in-over-tls, the-accounts-read-and-write-as-granted]
-  - outcome: a database without a read-only account, and a login from another host
-    from: manifests/mysql_db.pp:1-3, 9-15
+  - outcome: another host logs in over the network with TLS, and without TLS is refused
+    from: manifests/mysql_db.pp:1-3, 17-27
+    checks: [another-host-logs-in-over-tls]
+  - outcome: a database without a read-only account, and the refusal of a half-given read-only pair
+    from: manifests/mysql_db.pp:9-15
     uncovered:
-      why: one set holds one params fixture (both accounts); a login from another host is the node firewall's matter (the class header), and a local TCP login already matches the accounts' host %
+      why: one set holds one params fixture (both accounts given)
       lifted_by: "capability: more than one params fixture per set"
-      evidence: "phase3.py applies the class once with its single `fixture` (params or defaults); mysql_db.pp:2-3 leaves network access to the node firewall"
+      evidence: "phase3.py applies the class once with its single `fixture` (params or defaults)"
 checks:
   - id: mysql-server-survives-the-define
     what: >-
@@ -110,4 +118,28 @@ checks:
     effect: |
       cat /run/p8test-mysqldb/answers.txt
     expect: {rc: 0, stdout: "\\Aro read: p8test-row\\nro write: ERROR 1142\\n\\Z"}
+
+  - id: another-host-logs-in-over-tls
+    what: >-
+      from another machine (the peer), the rw account logs in to the class node's MySQL over TLS and the class node
+      answers; the same login without TLS is refused
+    control: negative
+    host: peer
+    timeout: 300
+    derived_from:
+      - {path: manifests/mysql_db.pp, lines: "1-3", text: "# a read-only user. Remote accounts require TLS; network access is"}
+      - {path: manifests/mysql_db.pp, lines: "17-25", text: "host        => '%',"}
+    mutates: >-
+      installs mysql-client-core-8.0 on the peer if absent; makes three TCP logins from the peer to the class node's
+      port 3306 (the server logs nothing for them beyond its counters); the answers go to /run/p8test-mysqldb-peer/answers.txt
+    probe: |
+      command -v mysql >/dev/null || DEBIAN_FRONTEND=noninteractive apt-get -qq -y install mysql-client-core-8.0 >/dev/null 2>&1
+      install -d -m 0700 /run/p8test-mysqldb-peer; o=/run/p8test-mysqldb-peer/answers.txt
+      m="mysql --protocol=TCP -h 192.168.56.20 -P3306 -u p8test_rw -pp8test-rw-not-a-secret -NB"
+      $m --ssl-mode=REQUIRED -e 'SELECT CURRENT_USER(), @@hostname' 2>/dev/null > $o
+      $m --ssl-mode=REQUIRED -e "SHOW SESSION STATUS LIKE 'Ssl_version'" 2>/dev/null | cut -f2 | sed 's/^TLSv1\.[23]$/TLS/' >> $o
+      $m --ssl-mode=DISABLED -e 'SELECT 1' 2>&1 | grep -oE 'ERROR [0-9]+' | head -1 >> $o
+    effect: |
+      cat /run/p8test-mysqldb-peer/answers.txt
+    expect: {rc: 0, stdout: "\\Ap8test_rw@%\\tpuppet8node\\nTLS\\nERROR 1045\\n\\Z"}
 
