@@ -1,0 +1,40 @@
+{
+ "class": "sysmon_mysqldump_health",
+ "at": "20261121T114625Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "restores-are-checked (templates/sysmon/check-mysqldump-health.sh.erb:80-81): with every dump in both dirs loading, the loop ends at 'echo OK: exit code $RC_OK; exit $RC_OK', so good.sql alone gives 'OK: exit code 0' rc 0; broken.sql (head -5 of a real dump renamed to p8testbroken, so it passes the 'MySQL dump' grep and the '-- Host: ... Database:' DBNAME parse at :44, then invalid SQL) in the second dir fails the load at :50-52, handle_error calls clear_database and prints 'CRITICAL: Load database dump ./broken.sql' (f is relative after cd at :61) with exit 2; left 0 follows from the drop at :54 and :21. Probe and expect match what the lines produce.",
+  "a-live-database-of-the-dump-name-is-left-intact (:46-48): CREATE DATABASE on an existing p8testsrc fails, handle_error prints 'CRITICAL: Create database p8testsrc' and exits 2, as expected; the 'rows: 3' part is a purpose expectation that the cited :19-23 (clear_database at :21 before the exit) contradicts by design, and the set's header states it as a known escalated finding, so it is a legitimate finding, not a misread of the code.",
+  "a-failed-drop-is-critical (:54-56): a dump written with --skip-add-drop-table needs no DROP privilege to load (no DROP TABLE IF EXISTS), so with DROP revoked from p8test_check the create (:46) and load (:50) succeed and clear_database at :54 fails, giving 'CRITICAL: Drop database p8testsrc' and exit 2 (the second clear_database inside handle_error fails silently); the probe restores GRANT ALL and the plain dump afterwards, as its mutates declares.",
+  "finding a-file-that-is-not-a-dump-is-critical: the probe saw 'OK: exit code 0 / rc=0' twice (an empty empty.sql, and a --skip-comments dump nocomments.sql) where CRITICAL 'SQL File ./... is not a MySQLDump' rc 2 was expected; cause in the baseline :68: handle_error is passed $RC, which is 0 from the previous dump's drop (or unset, making '[ $CODE -ne 0 ]' a test error), so the non-dump branch never exits.",
+  "finding a-live-database-of-the-dump-name-is-left-intact: the probe saw 'CRITICAL: Create database p8testsrc / rc=2' and no 'rows: 3' line, because the SELECT on p8testsrc.t found nothing: handle_error (:20-21) ran clear_database, which dropped the pre-existing live database p8testsrc.",
+  "purpose gap: Tested: the rendered script (owner, mode, user, password, both dirs), a good dump restored into a scratch database of the dump's own name and dropped (OK, exit 0, nothing left), a dump that does not load (CRITICAL Load, exit 2, scratch dropped) in the second configured directory, create failure (CRITICAL Create, exit 2), drop failure (CRITICAL Drop, exit 2), and non-dump .sql files (findings). Gap: validate_dir finds dumps with 'find . -name \\*.sql' (template :62), which recurses, so a dump in a subdirectory of a configured directory (the usual dated layout of a backup tree) is restored too; the purpose says 'under the configured directories', but every test dump sits at the top level of a dir, and no outcome row covers the recursion although the lab can exercise it (one dump in /var/tmp/p8test-dumps/<sub>/). Minor: the manifest's group => root (manifests/sysmon_mysqldump_health.pp:12) is not probed (stat -c '%U %a' omits %G)."
+ ],
+ "review_s": 159.0,
+ "check_file_sha256": "89aa199723f26091631f5165e99e887a87ca46eccceef942f17291ed5c585f9b",
+ "content_sha256": "89aa199723f26091631f5165e99e887a87ca46eccceef942f17291ed5c585f9b",
+ "reviewer_result": "20261121T114346Z-reviewer",
+ "author_result": "20261121T114053Z-author",
+ "findings": [
+  "a-file-that-is-not-a-dump-is-critical",
+  "a-live-database-of-the-dump-name-is-left-intact"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "f4adb9e4-07a3-423e-b04d-7d7fc2133221",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "f4adb9e4-07a3-423e-b04d-7d7fc2133221",
+   "fresh": true
+  }
+ }
+}
