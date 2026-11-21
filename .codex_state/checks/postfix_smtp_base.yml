@@ -324,6 +324,9 @@ checks:
       ss -Hltn 'sport = :25' | awk '{print $4}'
     expect: {rc: 0, stdout: "\\A0\\.0\\.0\\.0:25\\n\\Z"}
 
+  # 2026-11-21 authoring correction (round 3 run 1, 20261121T110147Z, FINDINGS): postfix logs the header as
+  # "header From: <value>: ..." and the pattern kept the trailing colon; it now stops at the colon. The behaviour (both
+  # relayed and delivered, the warning once, for the second message) was as expected.
   - id: relayed-to-another-domain
     what: >-
       p8testuser (From p8test@p8test.example.com, which the regex list names) and p8testuser2 (From
@@ -362,7 +365,7 @@ checks:
       cat /run/p8test-smtp/relay.txt
       t0=$(cat /run/p8test-smtp/t0)
       journalctl -q -t postfix/smtp --since "@$t0" -o cat | p8_count 'to=<p8test-rcpt@\[.*relay=.*status=sent'
-      journalctl -q --since "@$t0" -o cat | grep 'An email was sent with this FROM header that is not expected' | grep -o 'header From: [^ ]*' | sort | uniq -c | sed 's/^ *//'
+      journalctl -q --since "@$t0" -o cat | grep 'An email was sent with this FROM header that is not expected' | grep -o 'header From: [^ :]*' | sort | uniq -c | sed 's/^ *//'
     expect: {rc: 0, stdout: "\\Ap8test-relay-1 rcpt 250 data 250 2\\.0\\.0 Ok: queued\\np8test-relay-2 rcpt 250 data 250 2\\.0\\.0 Ok: queued\\n2\\n1 header From: p8test-other@p8test\\.example\\.com\\n\\Z"}
 
   - id: the-sink-received-the-relayed-mail
