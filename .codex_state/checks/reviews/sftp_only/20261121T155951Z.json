@@ -1,0 +1,35 @@
+{
+ "class": "sftp_only",
+ "at": "20261121T155951Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "deny-block-from-other-addresses: baseline 66-71 declare Match User p8testuser, Address *,!127.0.0.1 with only DenyUsers; under the params fixture (ip_whitelist [127.0.0.1]) sshd -T from ::1 must give denyusers p8testuser with chrootdirectory/forcecommand none, which is what the expect requires; the mismatch varies only the address to the whitelisted 127.0.0.1 (allow-block lines filtered out), where the deny block must not apply, so it must fail",
+  "allow-block-from-the-whitelist: baseline 49-58 set ChrootDirectory $parent (dirname of /srv/p8test-jail/upload = /srv/p8test-jail), ForceCommand internal-sftp -d upload -u 007 (umask default 007), PasswordAuthentication no (default), AllowTcpForwarding no, X11Forwarding no; the expect is exactly those values from sshd -T for p8testuser at 127.0.0.1; the mismatch varies only the user to p8testother whom no block names, so the global settings must apply and the expect must fail",
+  "sftp-works-in-the-jail-and-nothing-else: 49-58 chroot to /srv/p8test-jail and force internal-sftp in upload with -u 007, so the curl SFTP upload lands in /srv/p8test-jail/upload owned by p8testuser with 0644 & ~007 = 0640, the jail root lists only upload, and a command session gets sshd's 'This service allows sftp connections only'; 66-71 deny the user from ::1, so that login is refused; all sessions target the node's own sshd (127.0.0.1/::1), mutates declares the sessions, the uploaded file and out.txt; the effect reads the recorded client outcomes plus a stat of the uploaded file on the node (the client's view is the only observation of a refused command/listing); setup check an-sftp-user-and-its-jail derives from warning 1 (line 6: the define manages neither user nor directories), its mutates declares group, user, key pair, authorized_keys and both directories, and its effect stats the directories and group membership",
+  "purpose covered: Purpose matches the header (lines 1-3: SFTP only, only in the folder, only from the given IPs) and the code. Tested: sshd's effective settings for the allow block from the whitelisted address (chroot, forced internal-sftp in the subdir, umask, no password auth, no TCP/X11 forwarding) and the deny block from any other address; behaviourally an SFTP upload into the jail with the umask applied, the jail root showing only the directory, a shell command refused, and a login from the unlisted ::1 refused. Forwarding refusal is verified through sshd -T effective settings rather than an attempted forward. Uncovered and honest: the empty-whitelist branch (lines 40-42, 61-62: allow from *, no deny block) and password_authentication yes need a second params fixture; phase3.py takes exactly one fixture (params or defaults) per set (validate lines 475-481), and the params file holds ip_whitelist [127.0.0.1] with password_authentication at its default no, so the lifted_by capability is genuinely missing."
+ ],
+ "review_s": 133.0,
+ "check_file_sha256": "46d492ccf79256ebd4c998911f2df56512b2ea11911ff69daf058d6a281d5227",
+ "content_sha256": "46d492ccf79256ebd4c998911f2df56512b2ea11911ff69daf058d6a281d5227",
+ "reviewer_result": "20261121T155739Z-reviewer",
+ "author_result": "20261121T155432Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "0a45f733-b112-49f2-835c-0c6560aa65bb",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "0a45f733-b112-49f2-835c-0c6560aa65bb",
+   "fresh": true
+  }
+ }
+}
