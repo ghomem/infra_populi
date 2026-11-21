@@ -1,0 +1,43 @@
+{
+ "class": "nginx_frontend_mail",
+ "at": "20261121T030619Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "mail-ports-listen: baseline lines 21-23 default imaps/smtps/smtp ports 993/465/25; the params fixture sets no port, and lines 57/70/87 bind each mailhost's listen_port to them, so the probe (exactly one nginx listener on each of 993, 465, 25) tests what the lines declare",
+  "smtps-465-wrong-password-is-refused-by-the-backend: lines 67-81 make the SMTPS mailhost take AUTH (smtp_auth login plain) and pass it on (proxy_smtp_auth on), while lines 138-148 make auth_http answer OK for every login; so a refusal of a wrong password can only come from the backend. The expect also accepts ServerDisconnected (nginx closes after the backend refuses), but the-backend-received-the-sessions-from-the-proxy proves the refusal was postfix's own (SASL authentication failed for p8testuser from 192.168.56.20), and the positive check smtps-465-relays-the-client-login-to-the-backend gets AUTH 235 with the right password",
+  "smtps-and-imaps-serve-the-frontend-certificate: lines 31-33 with letsencrypt_certificate true (fixture) set ssl_cert_path to /etc/ssl/certs/${frontend_sslprefix}.nginx.bundle.pem = /etc/ssl/certs/p8test.nginx.bundle.pem, which lines 61-64/74-77 hand to the 993 and 465 mailhosts; the probe compares the served leaf's SHA-256 fingerprint on both ports with that file's first certificate. The mismatch varies only the expected certificate (first CA of the system bundle), which must change the verdict; it failed after apply as required",
+  "purpose covered: The purpose (class header lines 1-11: a mail reverse proxy for 993 IMAPS, 465 SMTPS, 25 SMTP, 3 auth_http servers, 3 streams to the backend, plus the backend web interface via nginx_frontend_domain) is read correctly, and every outcome table row matches the manifest. The checks test the class doing its job end to end against a real backend on the peer (ubuntu2): mail sent through 25 lands in the backend mailbox; an SMTPS login is passed through and the message is queued for the SASL user; an IMAPS login at the backend finds the port-25 mail; wrong passwords on 465 and 993 are refused by the backend itself (postfix SASL and dovecot logs, source 192.168.56.20); HTTPS 443 returns the backend's page; and both TLS ports present the frontend certificate. The streams' proxy_ssl on with proxy_ssl_verify off (the default) is exercised implicitly, since the backend uses a snakeoil certificate. The configuration checks (nginx -t, listeners, auth headers 9993/9465/9925, stream access_log off) add to these. One row is uncovered: non-default ports, a non-letsencrypt certificate (.crt/.key paths) and another smtp_helo. Its reason holds: phase3.py accepts one fixture per set (params or defaults, validate lines 475-481), and the row is lifted by capability. Minor: its text does not name the proxy_ssl_verify=true variant, although its from range 13-30 covers line 19. The HTTP redirect servers and www vhost of nginx_frontend_domain belong to that define's own check set (nginx_frontend_domain.yml), not to this class's purpose."
+ ],
+ "review_s": 205.2,
+ "check_file_sha256": "a4af0351172e78feeb8d529e0fe5059a39e807d28ce9e95e5d5e8f6211533b3e",
+ "content_sha256": "a4af0351172e78feeb8d529e0fe5059a39e807d28ce9e95e5d5e8f6211533b3e",
+ "reviewer_result": "20261121T030254Z-reviewer",
+ "author_result": "20261121T025837Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "d7f44e92-8121-421f-a21a-4d612866093c",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "d7f44e92-8121-421f-a21a-4d612866093c",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "64bb75eb-3281-44f1-b13e-f8c8cedcc636",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "64bb75eb-3281-44f1-b13e-f8c8cedcc636",
+   "fresh": true
+  }
+ }
+}
