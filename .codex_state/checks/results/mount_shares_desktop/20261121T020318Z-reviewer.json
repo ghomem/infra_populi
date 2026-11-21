@@ -1,0 +1,219 @@
+{
+ "class": "mount_shares_desktop",
+ "role": "reviewer",
+ "at": "20261121T020318Z",
+ "runner": "99903ad",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "74f34fce91bc70d7e04935247f9de124f16411a9fb68337dc8fe43cee822c204",
+ "content_sha256": "74f34fce91bc70d7e04935247f9de124f16411a9fb68337dc8fe43cee822c204",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "scripts-on-the-desktop-root-owned-executable",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/home/p8testuser/Desktop/shares-mount.sh': No such file or directory\nstat: cannot statx '/home/p8testuser/Desktop/shares-unmount.sh': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "scripts-render-the-share-and-options",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /home/p8testuser/Desktop/shares-mount.sh: No such file or directory\ngrep: /home/p8testuser/Desktop/shares-mount.sh: No such file or directory\ngrep: /home/p8testuser/Desktop/shares-mount.sh: No such file or directory\ngrep: /home/p8testuser/Desktop/shares-mount.sh: No such file or directory\ngrep: /home/p8testuser/Desktop/shares-mount.sh: No such file or directory\ngrep: /home/p8testuser/Desktop/shares-unmount.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-server-serves-the-test-share",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "0\ninactive\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-wrong-password-does-not-mount",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "not-mounted\n",
+   "stderr": "grep: /tmp/p8test-mount-bad.out: No such file or directory\ntail: cannot open '/tmp/p8test-mount-bad.out' for reading: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-mount-script-mounts-the-share",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "tail: cannot open '/tmp/p8test-mount.out' for reading: No such file or directory\nstat: cannot statx '/tmp/p8testuser/mnt-manual': No such file or directory\ncat: /tmp/p8testuser/mnt-manual/p8share/p8test-share.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-unmount-script-unmounts-it",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "5edccb4c3cb71d1162f0'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8lab-gnome]/Puppet_infrastructure::Mount_shares_desktop[p8testuser]/File[/home/p8testuser/Desktop/shares-unmount.sh]/ensure: defined content as '{sha256}2ea7aa9b52c90160d618e493aeffc333a3776dedc95ebf5347e29e46849d6e21'\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 0.20 seconds\u001b[0m\nRUN1_EVENTS: 4 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-gnome\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795226672'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.05 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::mount_shares_desktop: 2 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::Mount_shares_desktop[p8testuser]\n  File[/home/p8testuser/Desktop/shares-mount.sh]\n  File[/home/p8testuser/Desktop/shares-unmount.sh]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP mount_shares_desktop 7fb1e93ea7d6\n"
+ },
+ "applied": [
+  {
+   "id": "scripts-on-the-desktop-root-owned-executable",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755 /home/p8testuser/Desktop/shares-mount.sh\nroot root 755 /home/p8testuser/Desktop/shares-unmount.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "scripts-render-the-share-and-options",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n1\n1\n1\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-server-serves-the-test-share",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nactive\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: installs samba, creates the local account p8testuser (no login shell) with the fake Samba password p8test-share-not-a-secret, adds a read-only share [p8share] at /srv/p8share holding p8test-share.txt, restarts smbd",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-wrong-password-does-not-mount",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nrc 1\nnot-mounted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs cifs-utils (mount.cifs, which desktop installs carry) and runs the mount script as USER=p8testuser with a wrong $PASSWORD; output in /tmp/p8test-mount-bad.out (its kdialog error dialog fails: no kdialog on GNOME)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-mount-script-mounts-the-share",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0\ncifs\n700\np8test share content\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs the mount script as USER=p8testuser with the right $PASSWORD (mounts the share); output in /tmp/p8test-mount.out",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-unmount-script-unmounts-it",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "unmounted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs the unmount script as USER=p8testuser (unmounts the share)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "gnome",
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "boot_id": "5b2fbb0d-2453-4ce5-9402-addcd3469703",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "5b2fbb0d-2453-4ce5-9402-addcd3469703",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "c58aa5b1-0c37-4bea-88f2-a490ec9e74c2",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "c58aa5b1-0c37-4bea-88f2-a490ec9e74c2",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "outcomes": [
+  {
+   "outcome": "the mount and unmount scripts are on the user's Desktop, root-owned and executable, rendered with the shares and options",
+   "checks": [
+    "scripts-on-the-desktop-root-owned-executable",
+    "scripts-render-the-share-and-options"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "run as the user with the right password, the mount script mounts the share, private to the user, with the server's files readable; a wrong password mounts nothing and fails",
+   "checks": [
+    "the-server-serves-the-test-share",
+    "the-mount-script-mounts-the-share",
+    "a-wrong-password-does-not-mount"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the unmount script unmounts the shares it lists",
+   "checks": [
+    "the-unmount-script-unmounts-it"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the password asked in a kdialog box, the file manager opened on the mount (explorer), symlinks and the cache/delay options",
+   "uncovered": {
+    "why": "the dialog needs a desktop session with input; dolphin is not on the gnome node; the options are parameter variants (one fixture per set)",
+    "lifted_by": "capability: input to a desktop session and more than one params fixture per set",
+    "evidence": "the fixture sets explorer False and passes the password in $PASSWORD (the script asks kdialog only when it is empty); phase3.py applies one `fixture` and sends no desktop input"
+   }
+  }
+ ],
+ "duration_s": 99.5
+}

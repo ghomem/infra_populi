@@ -1,0 +1,43 @@
+{
+ "class": "mount_shares_desktop",
+ "at": "20261121T020700Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-unmount-script-unmounts-it: unmount-shares.sh.erb:5-12 set MDIR=/tmp/$USER/mnt-manual and run $SUDO umount $MDIR/<share_name> per share; with share p8share and USER=p8testuser the effect (dir still there, findmnt finds no mount) after the earlier mount is exactly what those lines produce",
+  "the-mount-script-mounts-the-share (shares.sh.erb:8): MDIR=\"/tmp/$USER/mnt-manual\" puts the mount at /tmp/p8testuser/mnt-manual/p8share (TDIR=$MDIR/$SHARE, line 71) and line 93 chmods MDIR 700; the effect reads that path, mode 700 and the FSTYPE",
+  "the-mount-script-mounts-the-share (shares.sh.erb:125): mount.cifs //$SERVER/$SHARE $TDIR with username=$USERNAME,password=$PASSWORD,vers=$CIFSVERSION; with the right password the script exits 0 (no exit 1 at 127-131), findmnt shows cifs and the server's file is readable through the mount: what line 125 declares under the fixture (server 192.168.56.24, p8share, vers 3.0)",
+  "purpose gap: Tested: the two scripts on the Desktop root:root 0755 rendered with the fixture share/version/auth user/explorer off; a real CIFS mount from the ubuntu2 Samba share with the right password (cifs, content readable); a wrong password fails with exit 1 and mounts nothing; the unmount script unmounts. GAP 1: the outcome 'mounts the share, private to the user' is mapped to the-mount-script-mounts-the-share, but every action runs as root (header: 'the scripts run as root here, so the template's sudo needs no sudoers rule'), so uid=$UID,forceuid (shares.sh.erb:125) maps the files to uid 0 and MDIR is created by root: after my run /tmp/p8testuser/mnt-manual is 'root root 700' and p8testuser gets 'Permission denied' on its own share. The check proves privacy to root, the opposite of the outcome. The lab can exercise it on gnome without a session: p8testuser exists (p8test_desktop_home), PASSWORD in the environment skips kdialog, explorer is off; only the template's unconditional sudo (VERIFYSUDO=true, lines 81-82; unmount SUDO=sudo) needs a declared mutating NOPASSWD rule for mount.cifs/umount (now: 'User p8testuser is not allowed to run sudo on p8lab-gnome'). GAP 2: the uncovered row for explorer gives 'dolphin is not on the gnome node' as reason; its evidence shows only the chosen node lacking dolphin, not the lab: kubuntu is active with capability kde and the runner starts Plasma sessions (batch-8 ruling 5), and explorer=True is the class's own default (manifest line 5, EXPLORER_CMD=dolphin), so a single fixture covers it there (run as the session user: dolphin refuses root). The kdialog password and error dialogs needing input are uncovered honestly; symlinks/cache/delay as parameter variants are acceptable under one fixture, though the fixture's defaults leave cache=none and the Desktop symlink unobserved."
+ ],
+ "review_s": 222.7,
+ "check_file_sha256": "74f34fce91bc70d7e04935247f9de124f16411a9fb68337dc8fe43cee822c204",
+ "content_sha256": "74f34fce91bc70d7e04935247f9de124f16411a9fb68337dc8fe43cee822c204",
+ "reviewer_result": "20261121T020318Z-reviewer",
+ "author_result": "20261121T020023Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "boot_id": "5b2fbb0d-2453-4ce5-9402-addcd3469703",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "5b2fbb0d-2453-4ce5-9402-addcd3469703",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "c58aa5b1-0c37-4bea-88f2-a490ec9e74c2",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "c58aa5b1-0c37-4bea-88f2-a490ec9e74c2",
+   "fresh": true
+  }
+ }
+}
