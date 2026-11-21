@@ -4,6 +4,9 @@
 # hash with salt p8testsalt, mykey = a throwaway RSA public key body (private half discarded); defaults otherwise.
 # Node kubuntu since 2026-11-17: the set's `session` block logs p8testuser in to Plasma after the apply, then two
 # agent runs (Phase 3 desktop sessions), so the KDE lock settings (formerly an uncovered note) are checked too.
+# 2026-11-21 (backfill batch 9): purpose and outcomes (HQ rulings 2 and C1). The fixture hash is now the user classes'
+# known test password (p8test-user-not-a-secret), so the password the wrapper passes is exercised. user_base's own set
+# covers the key purge and the home; user_kde_lock_screen's set covers the lock settings in depth.
 class: user_desktop
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -11,6 +14,20 @@ session:
   user: p8testuser
   desktop: plasma
   why: user_kde_lock_screen's exec applies the lock settings only on an agent run while the user is logged in
+purpose: >-
+  Defines a desktop user: an account with its own group and the desktop groups (cdrom, dip, plugdev, lp), its password
+  and SSH key (through user_base), and the KDE screen-lock settings applied in the user's session (through
+  user_kde_lock_screen).
+outcomes:
+  - outcome: the user exists with its own primary group and exactly the desktop groups
+    from: manifests/user_desktop.pp:7-9
+    checks: [user-with-own-primary-group, desktop-groups]
+  - outcome: the given password logs the user in (a wrong one is refused), and the given key is pushed
+    from: manifests/user_desktop.pp:10
+    checks: [the-given-password-logs-in, the-given-key-is-pushed]
+  - outcome: the KDE screen-lock settings are applied in the user's Plasma session
+    from: manifests/user_desktop.pp:11
+    checks: [lock-screen-script-installed, kde-lock-settings-applied-in-the-session]
 checks:
   - id: user-with-own-primary-group
     what: the user exists with its own same-named primary group (the title is the first group of the built list)
@@ -65,3 +82,22 @@ checks:
       stat -c '%U' "$f"
       sed -n '/^\[Daemon\]/,/^\[/p' "$f" | grep -E '^(Autolock|LockOnResume|Timeout|LockGrace)=' | sort
     expect: {rc: 0, stdout: "\\Ap8testuser\\nAutolock=true\\nLockGrace=0\\nLockOnResume=true\\nTimeout=5\\n\\Z"}
+
+  - id: the-given-password-logs-in
+    what: >-
+      the password the wrapper passes to user_base works: su to p8testuser, run by an unprivileged account in a pty,
+      succeeds with the test password and is refused with a wrong one
+    control: negative
+    timeout: 90
+    derived_from:
+      - {path: manifests/user_desktop.pp, lines: "10", text: "myhash => $myhash"}
+    mutates: two su attempts as the account nobody (one with the test password, one with a wrong one); the outcomes go to /run/p8test-user/pw.txt
+    probe: |
+      install -d -m 0700 /run/p8test-user; : > /run/p8test-user/pw.txt
+      for pw in 'p8test-user-not-a-secret' 'p8test-wrong-password'; do
+        out=$( (sleep 2; printf '%s\n' "$pw"; sleep 3) | timeout 20 runuser -u nobody -- script -qec "su p8testuser -c 'echo logged-in-as-\$(id -un)'" /dev/null 2>&1 | tr -d '\r' | grep -o -e 'logged-in-as-[a-z0-9]*' -e 'Authentication failure' | head -1)
+        echo "${out:-no answer}" >> /run/p8test-user/pw.txt
+      done
+    effect: |
+      cat /run/p8test-user/pw.txt
+    expect: {rc: 0, stdout: "\\Alogged-in-as-p8testuser\\nAuthentication failure\\n\\Z"}
