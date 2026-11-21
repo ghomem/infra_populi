@@ -11,9 +11,17 @@
 # account tried (an OS user p8testsys whose password the OS accepts through PAM, refused by dovecot and SMTP AUTH).
 # Correction round 2, 2026-11-21 (review 20261121T053246Z, purpose; the last round, production use 0): a full
 # submission queued and delivered to root's local mailbox; onward relay to a remote MX as an uncovered row.
+# Correction round 3, 2026-11-21 (HQ after batch 18, item 1; review 20261121T054226Z): relay to another domain through
+# the second node. The peer ubuntu2 runs a small SMTP sink on port 25 that records what it receives; the node submits
+# to an address-literal recipient on it (P8_PEER_ADDR; relayhost is empty, so postfix's SMTP client connects straight
+# there). The params fixture now also sets do_not_warn_from_addresses_regexes [p8test@p8test\.example\.com], so the
+# smtp_header_checks warning fires for the second message (From p8test-other@...) and not for the first.
 class: postfix_smtp_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
+peer:
+  kind: ubuntu2
+  why: a relayed message must leave the node for another host, so a second machine receives it with an SMTP sink
 purpose: >-
   An SMTP submission server with TLS and layered restrictions: only listed client IPs may use it, only its own SASL
   users (dovecot's passwd-file, not system accounts) may send, only MAIL FROM addresses in a general list are allowed,
@@ -34,27 +42,29 @@ outcomes:
   - outcome: a message submitted by a logged-in user from its own address is queued (250 Ok queued) and, for a local recipient, delivered to the mailbox
     from: templates/postfix_smtp_base/main.cf.erb:76-79; templates/postfix_smtp_base/master.cf.erb:41-42, 60
     checks: [a-submission-is-queued-and-delivered-locally]
-  - outcome: onward delivery of a submitted message to a remote domain's MX (relayhost empty)
+  - outcome: >-
+      a logged-in user's message to a non-local domain is relayed (accepted at RCPT under smtpd_relay_restrictions) and
+      delivered by postfix's SMTP client straight to the recipient's host (relayhost empty), here an address-literal
+      recipient on the peer, whose sink receives it
+    from: templates/postfix_smtp_base/main.cf.erb:73, 80
+    checks: [a-mail-sink-on-the-peer, relayed-to-another-domain, the-sink-received-the-relayed-mail]
+  - outcome: a recipient domain resolved through its MX (a DNS lookup for the domain's mail exchanger)
     from: templates/postfix_smtp_base/main.cf.erb:80
     uncovered:
-      why: the lab has no mail exchanger for a fixture domain; a remote recipient's delivery would go to the internet
-      lifted_by: "capability: a mail sink inside the lab that the node resolves as a fixture domain's MX"
-      evidence: "main.cf.erb:80 relayhost empty (delivery by MX lookup); nodes.yml lists no mail-sink node kind"
+      why: the relay is exercised with an address-literal recipient, which skips the MX lookup; the lab's DNS serves no MX for a fixture domain
+      lifted_by: "capability: a lab DNS zone with an MX record for a fixture domain pointing at a peer"
+      evidence: "relayed-to-another-domain sends to p8test-rcpt@[peer address]; the node's resolvers (NAT DNS) serve no fixture zone"
   - outcome: TLS is mandatory (no AUTH offered and MAIL FROM and AUTH refused before STARTTLS)
     from: templates/postfix_smtp_base/main.cf.erb:30
     checks: [tls-and-own-users-only]
   - outcome: system accounts cannot authenticate (dovecot's passdb is the passwd-file only; an OS account whose password the OS accepts gets 535)
     from: manifests/postfix_smtp_base.pp:109-114; files/postfix_smtp_base/10-auth.conf:122-125
     checks: [tls-and-own-users-only]
-  - outcome: the From-header warning (smtp_header_checks) for addresses outside do_not_warn_from_addresses_regexes
-    from: manifests/postfix_smtp_base.pp:166-176; templates/postfix_smtp_base/smtp_header_checks.regexp.erb; templates/postfix_smtp_base/main.cf.erb:121
-    uncovered:
-      why: >-
-        smtp_header_checks applies to postfix's SMTP client, i.e. outgoing deliveries (relayhost empty: straight to the
-        recipient's MX), which the lab makes to no outside host; and the fixture keeps the default empty regex list,
-        with which the rule's negated match never fires
-      lifted_by: "capability: a mail sink the node delivers to inside the lab (MX for a fixture domain), with a second params fixture setting do_not_warn_from_addresses_regexes"
-      evidence: "main.cf.erb:121 smtp_header_checks (not smtpd_); main.cf.erb:80 relayhost empty; the params fixture sets no do_not_warn_from_addresses_regexes"
+  - outcome: >-
+      on outgoing delivery, a From header that matches none of do_not_warn_from_addresses_regexes is logged as a warning
+      (and still delivered); one that matches is not
+    from: manifests/postfix_smtp_base.pp:166-176; templates/postfix_smtp_base/smtp_header_checks.regexp.erb:2-4; templates/postfix_smtp_base/main.cf.erb:121
+    checks: [relayed-to-another-domain, the-sink-received-the-relayed-mail]
   - outcome: the extra_sec hardening (protocols, ciphers, a generated DH group) and Let's Encrypt-shaped certificate names
     from: manifests/postfix_smtp_base.pp:54-69; templates/postfix_smtp_base/main.cf.erb:37-68
     uncovered:
@@ -252,4 +262,120 @@ checks:
       p8_count '^Subject: p8test-submission-check$' /var/mail/root
       mailq | tail -1
     expect: {rc: 0, stdout: "\\Adata 250 2\\.0\\.0 Ok: queued as [0-9A-F]+\\n1\\nMail queue is empty\\n\\Z"}
+
+  - id: a-mail-sink-on-the-peer
+    what: setup for the relay, an SMTP sink on the peer's port 25 that records every command and message it receives
+    control: negative
+    host: peer
+    derived_from:
+      - {path: templates/postfix_smtp_base/main.cf.erb, lines: "80", text: "relayhost = "}
+    mutates: >-
+      writes /run/p8test-sink/sink.py (a Python asyncio SMTP sink answering 250 to every command) and starts it detached
+      on 0.0.0.0:25; it appends what it receives to /run/p8test-sink/received.txt
+    probe: |
+      install -d -m 0700 /run/p8test-sink
+      cat > /run/p8test-sink/sink.py <<'PY'
+      import asyncio
+      OUT = '/run/p8test-sink/received.txt'
+      def log(text):
+          with open(OUT, 'a') as f:
+              f.write(text + '\n')
+      async def handle(r, w):
+          def send(s):
+              w.write((s + '\r\n').encode())
+          send('220 p8test-sink ESMTP'); await w.drain()
+          in_data, buf = False, []
+          while True:
+              line = await r.readline()
+              if not line:
+                  break
+              t = line.decode(errors='replace').rstrip('\r\n')
+              if in_data:
+                  if t == '.':
+                      in_data = False
+                      log('\n'.join(buf) + '\n.'); buf = []
+                      send('250 2.0.0 accepted by p8test-sink')
+                  else:
+                      buf.append(t)
+              else:
+                  log('C: ' + t)
+                  u = t.upper()
+                  if u.startswith(('EHLO', 'HELO')):
+                      send('250 p8test-sink')
+                  elif u.startswith(('MAIL', 'RCPT', 'RSET', 'NOOP')):
+                      send('250 2.1.0 ok')
+                  elif u == 'DATA':
+                      in_data = True; send('354 end with .')
+                  elif u == 'QUIT':
+                      send('221 bye'); await w.drain(); break
+                  else:
+                      send('502 5.5.2 not implemented')
+              await w.drain()
+          w.close()
+      async def main():
+          srv = await asyncio.start_server(handle, '0.0.0.0', 25)
+          async with srv:
+              await srv.serve_forever()
+      asyncio.run(main())
+      PY
+      setsid -f python3 /run/p8test-sink/sink.py </dev/null >/run/p8test-sink/sink.log 2>&1
+      for i in $(seq 1 20); do ss -Hltn 'sport = :25' | grep -q . && break; sleep 0.5; done
+    effect: |
+      ss -Hltn 'sport = :25' | awk '{print $4}'
+    expect: {rc: 0, stdout: "\\A0\\.0\\.0\\.0:25\\n\\Z"}
+
+  - id: relayed-to-another-domain
+    what: >-
+      p8testuser (From p8test@p8test.example.com, which the regex list names) and p8testuser2 (From
+      p8test-other@p8test.example.com, which it does not) each submit one message over TLS to p8test-rcpt@[peer]: both
+      accepted at RCPT and queued; postfix's SMTP client delivers both to the peer (status=sent), and the From-header
+      warning is logged once, for the second
+    control: negative
+    timeout: 300
+    derived_from:
+      - {path: templates/postfix_smtp_base/main.cf.erb, lines: "73", text: "smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination"}
+      - {path: templates/postfix_smtp_base/main.cf.erb, lines: "121", text: "smtp_header_checks = regexp:/etc/postfix/smtp_header_checks.regexp"}
+      - {path: templates/postfix_smtp_base/smtp_header_checks.regexp.erb, lines: "3", text: "WARN \"An email was sent with this FROM header that is not expected! (it does not match the input regular expressions)\""}
+    mutates: >-
+      submits two messages to postfix on 127.0.0.1:587 (as p8testuser and as p8testuser2), which postfix queues and
+      delivers to the peer's sink on port 25, logging both and the header warning; the replies and the start time go to
+      /run/p8test-smtp/relay.txt and /run/p8test-smtp/t0
+    probe: |
+      install -d -m 0700 /run/p8test-smtp; date +%s > /run/p8test-smtp/t0
+      python3 - "$P8_PEER_ADDR" > /run/p8test-smtp/relay.txt <<'PY'
+      import smtplib, ssl, sys
+      peer = sys.argv[1]
+      def submit(user, password, sender, subject):
+          s = smtplib.SMTP('127.0.0.1', 587, timeout=30); s.ehlo('p8test.invalid')
+          s.starttls(context=ssl._create_unverified_context()); s.ehlo('p8test.invalid')
+          s.login(user, password)
+          s.mail(sender); code, msg = s.rcpt('p8test-rcpt@[%s]' % peer)
+          dcode, dmsg = s.data(("From: %s\r\nTo: p8test-rcpt@[%s]\r\nSubject: %s\r\n\r\np8test body\r\n" % (sender, peer, subject)).encode())
+          s.quit()
+          print(subject, 'rcpt', code, 'data', dcode, dmsg.decode().split(' as ')[0])
+      submit('p8testuser', 'p8test-not-a-secret', 'p8test@p8test.example.com', 'p8test-relay-1')
+      submit('p8testuser2', 'p8test-user2-not-a-secret', 'p8test-other@p8test.example.com', 'p8test-relay-2')
+      PY
+      t0=$(cat /run/p8test-smtp/t0)
+      for i in $(seq 1 90); do [ "$(journalctl -q -t postfix/smtp --since "@$t0" -o cat | grep -c 'to=<p8test-rcpt@\[.*status=sent')" -ge 2 ] && break; sleep 1; done
+    effect: |
+      cat /run/p8test-smtp/relay.txt
+      t0=$(cat /run/p8test-smtp/t0)
+      journalctl -q -t postfix/smtp --since "@$t0" -o cat | p8_count 'to=<p8test-rcpt@\[.*relay=.*status=sent'
+      journalctl -q --since "@$t0" -o cat | grep 'An email was sent with this FROM header that is not expected' | grep -o 'header From: [^ ]*' | sort | uniq -c | sed 's/^ *//'
+    expect: {rc: 0, stdout: "\\Ap8test-relay-1 rcpt 250 data 250 2\\.0\\.0 Ok: queued\\np8test-relay-2 rcpt 250 data 250 2\\.0\\.0 Ok: queued\\n2\\n1 header From: p8test-other@p8test\\.example\\.com\\n\\Z"}
+
+  - id: the-sink-received-the-relayed-mail
+    what: the peer's sink received both messages from the node, each with its envelope sender and subject
+    control: negative
+    host: peer
+    derived_from:
+      - {path: templates/postfix_smtp_base/main.cf.erb, lines: "80", text: "relayhost = "}
+    mutates: none beyond reading the sink's record (declared mutating so it runs after the relay)
+    probe: |
+      true
+    effect: |
+      grep -oE '^C: MAIL FROM:<[[:alnum:]@.-]+' /run/p8test-sink/received.txt | sed 's/^C: MAIL FROM:<//' | sort
+      grep -E '^Subject: p8test-relay-[12]$' /run/p8test-sink/received.txt | sort
+    expect: {rc: 0, stdout: "\\Ap8test-other@p8test\\.example\\.com\\np8test@p8test\\.example\\.com\\nSubject: p8test-relay-1\\nSubject: p8test-relay-2\\n\\Z"}
 
