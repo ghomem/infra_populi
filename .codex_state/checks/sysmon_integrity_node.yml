@@ -2,9 +2,35 @@
 # a Nagios check that verifies `md5sum` lines from its checklist parameter (the master's $integrity_checklist, joined by
 # ':') against the files present on the node. Fixture (params, never committed): checklist = one line for a fixture
 # file, "<md5 of 'p8test integrity fixture\n'>  /var/tmp/p8test-integrity.txt".
+# 2026-11-21 (backfill batch 9): purpose and outcomes (HQ rulings 2 and C1); a changed file and an absent file exercised.
 class: sysmon_integrity_node
 baseline: release-0.9.10 (cf477c6)
 fixture: params
+purpose: >-
+  Gives the monitoring system a Nagios check of file integrity on the node: for each md5sum line of the checklist the
+  master generated (sysmon_integrity_master), a listed file that is present must still match its checksum; a mismatch is
+  reported CRITICAL with exit 2, listed files that are absent are skipped, and otherwise the check reports OK with exit 0.
+outcomes:
+  - outcome: the check script embeds the checklist parameter, root 0755
+    from: manifests/sysmon_integrity_node.pp:3-12; templates/sysmon/nagios-integrity.sh.erb:34-36
+    checks: [check-script-carries-the-checklist]
+  - outcome: a listed file that is present and unchanged passes, and the check reports OK with exit 0
+    from: templates/sysmon/nagios-integrity.sh.erb:41-55
+    checks: [check-ok-when-the-file-matches]
+  - outcome: a listed file whose content changed is reported CRITICAL (checksum error) with exit 2
+    from: templates/sysmon/nagios-integrity.sh.erb:8-30, 45-49
+    checks: [check-critical-when-a-listed-file-changed]
+  - outcome: a listed file that is absent is skipped (the check stays OK)
+    from: templates/sysmon/nagios-integrity.sh.erb:41-45
+    checks: [check-skips-a-listed-file-that-is-absent]
+  - outcome: the checklist is the one the master generated (its 97_integrity.pp variable passed as this class's checklist)
+    from: manifests/sysmon_integrity_master.pp:1-4; templates/sysmon/checklist-integrity.sh.erb:18
+    uncovered:
+      why: >-
+        the link is made in a node definition on the master (checklist => $integrity_checklist from the generated
+        manifest), which no class declares; a phase3 set applies one class through the lab master with a params fixture
+      lifted_by: "capability: a phase3 set compiled against a site manifest on a master-role node (the master's generated 97_integrity.pp in the agent's catalog)"
+      evidence: "no baseline manifest passes $integrity_checklist (git grep integrity_checklist: only checklist-integrity.sh.erb); phase3.py applies through test_class.sh with a params fixture, and its host rules forbid running Puppet in any probe, actions included (FORBIDDEN[:3], 'runs Puppet'), so a set cannot compile the generated manifest itself"
 checks:
   - id: check-script-carries-the-checklist
     what: the Nagios integrity check (root 0755) embeds the checklist parameter
@@ -30,3 +56,30 @@ checks:
     effect: |
       /opt/puppet-infrastructure/bin/nagios-integrity.sh; echo "rc=$?"
     expect: {rc: 0, stdout: "\\AOK: exit code 0\\nrc=0\\n\\Z"}
+
+  - id: check-critical-when-a-listed-file-changed
+    what: with the listed file's content changed, the check reports CRITICAL "checksum error for <the checklist line>" and exits 2
+    control: negative
+    derived_from:
+      - {path: templates/sysmon/nagios-integrity.sh.erb, lines: "45-49", text: "handle_error $RC \"checksum error for $ITEM\""}
+      - {path: templates/sysmon/nagios-integrity.sh.erb, lines: "17-21", text: "echo \"CRITICAL: $ACTION\""}
+    mutates: rewrites /var/tmp/p8test-integrity.txt with different content (p8test integrity tampered); the effect runs the check, which only reads
+    probe: |
+      printf 'p8test integrity tampered\n' | install -m 0644 /dev/stdin /var/tmp/p8test-integrity.txt
+    effect: |
+      /opt/puppet-infrastructure/bin/nagios-integrity.sh; echo "rc=$?"
+    expect: {rc: 0, stdout: "\\ACRITICAL: checksum error for [0-9a-f]{32}  /var/tmp/p8test-integrity\\.txt\\nrc=2\\n\\Z"}
+
+  - id: check-skips-a-listed-file-that-is-absent
+    what: with the listed file removed, the check skips it and reports OK with exit 0
+    control: negative
+    derived_from:
+      - {path: templates/sysmon/nagios-integrity.sh.erb, lines: "41-45", text: "if [ -f $FILE ]; then"}
+    mutates: removes /var/tmp/p8test-integrity.txt and writes /run/p8test-integrity-absent as the marker that the file was removed by this action
+    probe: |
+      rm -f /var/tmp/p8test-integrity.txt; touch /run/p8test-integrity-absent
+    effect: |
+      [ -e /run/p8test-integrity-absent ] && [ ! -e /var/tmp/p8test-integrity.txt ] && echo "file absent"
+      /opt/puppet-infrastructure/bin/nagios-integrity.sh; echo "rc=$?"
+    expect: {rc: 0, stdout: "\\Afile absent\\nOK: exit code 0\\nrc=0\\n\\Z"}
+
