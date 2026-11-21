@@ -1,0 +1,43 @@
+{
+ "class": "firewall_addon_xrdp",
+ "at": "20261121T152726Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "an-ipv4-drop-base-and-two-listeners: lines 2-3 state the class opens ports so sysadmins reach the machine; the check is the declared setup (listeners on 3389 and the unopened 3390, the base firewall's established+22 accepts and IPv4 INPUT DROP) that the peer check needs; mutates declares every change of the action and the read-only effect (ss listeners + iptables policy) shows its result, not the action's output",
+  "the-xrdp-rules-are-in-place: lines 7-11 (proto tcp, dport 3389, accept, default iptables) give exactly '-A INPUT -p tcp -m tcp --dport 3389 ... -j ACCEPT'; lines 13-19 (tcp, iniface lo, dport 5900, ip6tables) and 35-41 (tcp, state ESTABLISHED, sport 5900, ip6tables) give the two ip6tables INPUT rules the expect names, comments = resource titles",
+  "xrdp-reaches-vnc-over-ipv6-loopback-under-a-drop: lines 13-19 accept lo dport 5900 over IPv6 and 35-41 accept ESTABLISHED replies from sport 5900, which the comment at 21-34 says is needed when IPv6 is DROPped; under an ip6tables INPUT DROP the probe expects ::1:5900 open, ::1:5901 (no rule) closed, and both rules' packet counters > 0, so the connection depends on both rules; mutates declares the listeners, the policy change and the connections, and the effect reads the recorded outcome file",
+  "purpose covered: Purpose (lines 2-3 and the 21-34 comment): open the firewall for the helpdesk feature, xrdp 3389 reachable from other hosts and xrdp reaching local VNC over IPv6 loopback with its replies. The outcomes table maps all three resources: rule presence (the-xrdp-rules-are-in-place), another host (peer ubuntu2) reaching 3389 under an IPv4 INPUT drop while unopened 3390 is dropped, and an IPv6-loopback connection to 5900 succeeding under an IPv6 DROP with both the lo-5900 and established-from-5900 rules counting packets while 5901 is dropped. Stand-in listeners replace xrdp/VNC, which the class does not install, so nothing of the class's own purpose the lab can exercise is untested; no uncovered rows are needed."
+ ],
+ "review_s": 155.1,
+ "check_file_sha256": "a5a7d2797502f8f21159da921875134ae0e9952d9293c506e68faeaac850ba39",
+ "content_sha256": "a5a7d2797502f8f21159da921875134ae0e9952d9293c506e68faeaac850ba39",
+ "reviewer_result": "20261121T152451Z-reviewer",
+ "author_result": "20261121T152114Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "6eac6126-451f-4aea-a0d4-aa8bffcc5145",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "6eac6126-451f-4aea-a0d4-aa8bffcc5145",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "4f032e08-8439-4b93-9544-a53afcc6f8c8",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "4f032e08-8439-4b93-9544-a53afcc6f8c8",
+   "fresh": true
+  }
+ }
+}

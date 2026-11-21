@@ -1,0 +1,166 @@
+{
+ "class": "firewall_addon_xrdp",
+ "role": "reviewer",
+ "at": "20261121T152451Z",
+ "runner": "67b258a",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "a5a7d2797502f8f21159da921875134ae0e9952d9293c506e68faeaac850ba39",
+ "content_sha256": "a5a7d2797502f8f21159da921875134ae0e9952d9293c506e68faeaac850ba39",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-xrdp-rules-are-in-place",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "an-ipv4-drop-base-and-two-listeners",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "another-host-reaches-xrdp-but-not-another-port",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-xrdp/reach.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "xrdp-reaches-vnc-over-ipv6-loopback-under-a-drop",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-xrdp/vnc.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "\", :ensure=>\"present\", :table=>\"filter\", :chain=>\"INPUT\"}\u001b[0m\n\u001b[mNotice: firewall[003 Allow established ipv6]: Creating: Ensuring changes to '003 Allow established ipv6' persist\u001b[0m\nUnable to persist firewall rules: Execution of '/usr/sbin/service iptables-persistent save' returned 1: iptables-persistent: unrecognized service\n\u001b[mNotice: firewall[003 Allow established ipv6]: Creating: Finished in 0.059055 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.26 seconds\u001b[0m\nRUN1_EVENTS: 3 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795274795'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.15 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::firewall_addon_xrdp: 3 concrete resources (+0 defined-type instances)\n  Firewall[3389 allow xrdp]\n  Firewall[3389 allow xrdp to vnc ipv6]\n  Firewall[003 Allow established ipv6]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP firewall_addon_xrdp 8a32146e40cb\n"
+ },
+ "applied": [
+  {
+   "id": "the-xrdp-rules-are-in-place",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A INPUT -p tcp -m tcp --dport 3389 -m comment --comment \"3389 allow xrdp\" -j ACCEPT\n-A INPUT -i lo -p tcp -m tcp --dport 5900 -m comment --comment \"3389 allow xrdp to vnc ipv6\" -j ACCEPT\n-A INPUT -p tcp -m tcp --sport 5900 -m state --state ESTABLISHED -m comment --comment \"003 Allow established ipv6\" -j ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "an-ipv4-drop-base-and-two-listeners",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0.0.0.0:3389\n0.0.0.0:3390\n-P INPUT DROP\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "starts transient units p8test-xrdp3389 and p8test-xrdp3390 (python3 -m http.server on 0.0.0.0); inserts at the top of INPUT an accept for related/established traffic and one for TCP 22 (as the base firewall has), then sets the IPv4 INPUT policy to DROP, until the next revert",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "another-host-reaches-xrdp-but-not-another-port",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "3389 in\n3390 dropped\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "two connection attempts from the peer to the class node (TCP 3389, TCP 3390); results in /run/p8test-xrdp/reach.txt on the peer",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "xrdp-reaches-vnc-over-ipv6-loopback-under-a-drop",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "::1:5900 open\n::1:5901 closed\nboth rules counted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "starts transient units p8test-vnc5900 and p8test-vnc5901 (python3 -m http.server on ::1), sets the IPv6 INPUT policy to DROP until the next revert, and makes one connection to each; the outcomes go to /run/p8test-xrdp/vnc.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "6eac6126-451f-4aea-a0d4-aa8bffcc5145",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "6eac6126-451f-4aea-a0d4-aa8bffcc5145",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "4f032e08-8439-4b93-9544-a53afcc6f8c8",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "4f032e08-8439-4b93-9544-a53afcc6f8c8",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "outcomes": [
+  {
+   "outcome": "the three rules are in place (IPv4 3389 accept; IPv6 lo 5900 accept; IPv6 established replies from 5900 accepted)",
+   "checks": [
+    "the-xrdp-rules-are-in-place"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "under an IPv4 INPUT drop, another host reaches port 3389 while a port no rule opens stays dropped",
+   "checks": [
+    "an-ipv4-drop-base-and-two-listeners",
+    "another-host-reaches-xrdp-but-not-another-port"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "under an IPv6 INPUT drop, a connection over IPv6 loopback reaches VNC's port 5900 (and gets its replies), while another loopback port stays dropped",
+   "checks": [
+    "xrdp-reaches-vnc-over-ipv6-loopback-under-a-drop"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 116.8
+}
