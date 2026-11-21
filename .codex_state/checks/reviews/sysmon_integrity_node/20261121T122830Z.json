@@ -1,0 +1,35 @@
+{
+ "class": "sysmon_integrity_node",
+ "at": "20261121T122830Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "check-ok-when-the-file-matches @ templates/sysmon/nagios-integrity.sh.erb:46: 'echo $ITEM | md5sum -c --status -' is run per ':'-split item whose file exists; the action writes exactly the contents whose md5s are in the params checklist (verified locally: f9d861282c581aefc93a5475254cec31 / 9b8d32458025f609b05711678efbb7c0), so both items verify, rc 0 each, handle_error returns, as expected",
+  "check-ok-when-the-file-matches @ templates/sysmon/nagios-integrity.sh.erb:54: 'echo \"OK: exit code $RC_OK\"' then 'exit $RC_OK' (RC_OK=0) is reached when no item exited earlier; expect 'OK: exit code 0' + rc=0 is exactly what the line produces; the effect runs the check itself, not the action's output",
+  "check-script-carries-the-checklist @ manifests/sysmon_integrity_node.pp:9-13: mode 0755, owner root, content from nagios-integrity.sh.erb (whose line 35 renders @checklist on its own line); probe checks 'root 755', bash -n, and one line equal to the params fixture's ':'-joined two-entry checklist, which is what the template renders under that fixture",
+  "purpose covered: Purpose (Nagios file-integrity check over the master-generated md5sum checklist) matches the class header and the template. The checks test the class doing its job, not just file presence: the installed script with the embedded two-entry checklist; OK/exit 0 when both listed files match (exercising the ':' split and iteration); CRITICAL 'checksum error for <second item>'/exit 2 when the second (not first) item is tampered, including the blank line from the template's newline after line 35; and the skip of an absent listed file (OK/exit 0). The one uncovered outcome (the checklist being sysmon_integrity_master's generated $integrity_checklist) is honest: at cf477c6 integrity_checklist appears only in checklist-integrity.sh.erb:18 and no manifest passes it to this class, so the link lives in an operator node definition a params-fixture phase3 run cannot compile; lifted_by names a missing capability. UNKNOWN/OUTLIM and the INV branch of handle_error are never used by the template's flow, so nothing is missing there. Observation, not a gap: with the default checklist '' the single empty item makes '[ -f $FILE ]' true and md5sum fails, so the unconfigured script reports CRITICAL; that is a default-parameter edge case outside the stated purpose (the class is meant to carry a generated checklist)."
+ ],
+ "review_s": 85.2,
+ "check_file_sha256": "6b067bf10c9ced1b7a03f0a1756161abedbc396ba0dbff570c938284c8851811",
+ "content_sha256": "6b067bf10c9ced1b7a03f0a1756161abedbc396ba0dbff570c938284c8851811",
+ "reviewer_result": "20261121T122705Z-reviewer",
+ "author_result": "20261121T122455Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "860dd7f8-4481-4212-a94d-99c70ca5c9e3",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "860dd7f8-4481-4212-a94d-99c70ca5c9e3",
+   "fresh": true
+  }
+ }
+}
