@@ -1,0 +1,35 @@
+{
+ "class": "ssl_postfix",
+ "at": "20261121T060605Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-key-is-changed-by-hand: ssl_base.pp:84-91 declares file $key_file with source $key_source and notify Service[$myservicename]; the action notes the key digest and the postfix master PID (/var/spool/postfix/pid/master.pid) then appends a stray line to /etc/ssl/private/p8test.key (key_file = /etc/ssl/private/<prefix>.key, lines 65/77, fixture sslprefix p8test), all declared in mutates; the effect only reads the file and the noted PID, so it sets up exactly the drift the managed key resource must correct",
+  "the-agent-run-restores-the-key-and-restarts-postfix: ssl_base.pp:10 (service restarted on change) and 84-91 (source + notify Service[postfix], myservicename 'postfix' from ssl_postfix.pp) mean the next agent run rewrites the key from the master source and restarts postfix; the effect compares the key digest to the pre-drift digest and requires a live master PID different from the noted one, which is what those lines produce; action is a no-op 'true', mutates states nothing changed",
+  "bundle-certificate-matches-the-key: ssl_base.pp:77-81 (non-letsencrypt branch, fixture letsencrypt_certificate false) pair key source <prefix>.key with first cert <prefix>.crt into <prefix>.postfix.bundle.crt; the probe compares the public key of the bundle's first certificate with that of /etc/ssl/private/p8test.key; the mismatch varies only the key (the node's Puppet agent private key, a different key pair), which must change the verdict, and it failed after apply as required",
+  "purpose covered: Purpose (ssl_postfix.pp header 'control ssl cert and key for postfix' + ssl_base.pp header lines 5-10 and code 56-119) is stated correctly: root-only key, cert+intermediate bundle for postfix, postfix restarted when either changes. The checks test the key path and root:root 0600, the bundle 0644 with 2 certificates and the server cert (CN p8test.invalid) first, that the bundle's cert and the key are a pair (with a mismatch control), and both restart paths end to end: a hand-changed bundle and a hand-changed key are each restored by a node agent run and the postfix master runs under a new PID (reviewer run 20261121T060403Z: all pass, agent runs rc 2). The unknown-service notify (ssl_base.pp:94-97) cannot fire for myservice 'postfix' and is not an outcome of this class. Uncovered: the letsencrypt_certificate true file names and the RedHat private dir (ssl_base.pp:56-82); the reason is true: the params fixture sets letsencrypt_certificate false, and phase3.py selects one node per class through nodes.select(cls=...) from the plan (ssl_postfix plan node = default ubuntu) with one fixture (params|defaults) per set, so lifted_by 'capability: more than one params fixture per set, and a phase3 set for a node kind other than the plan's (rhel9)' names a real missing runner capability rather than an active node kind. Minor limit: the second certificate in the bundle is counted, not identified as the intermediate."
+ ],
+ "review_s": 122.8,
+ "check_file_sha256": "99415479fa6d8884091a8dc1df1738815c847b0b6591dd8912441906e96dd634",
+ "content_sha256": "99415479fa6d8884091a8dc1df1738815c847b0b6591dd8912441906e96dd634",
+ "reviewer_result": "20261121T060403Z-reviewer",
+ "author_result": "20261121T060124Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "d7214046-cc47-4f3e-8387-799e8e45034a",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "d7214046-cc47-4f3e-8387-799e8e45034a",
+   "fresh": true
+  }
+ }
+}
