@@ -1,0 +1,35 @@
+{
+ "class": "sysmon_fs_health",
+ "at": "20261121T061222Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "nagios-may-run-it-through-sudo: manifests/sysmon_fs_health.pp:10 declares sudo::conf priority 10 with content 'nagios ALL=NOPASSWD:${bindir}/${scriptname}'; with bindir /opt/puppet-infrastructure/bin (lab Hiera) and title sysmon_fs_health the probe greps exactly that line in /etc/sudoers.d/10_nagios_fs_health_sysmon_fs_health and confirms visudo -c; supported",
+  "check-script-rendered: manifests/sysmon_fs_health.pp:13-16 declare the script root/root 0755 from check-fs-health.sh.erb, whose lines 8-10 render BASEDIR/SIZE_THRESHOLD/NFILES from the params (/var/tmp/p8test-fs-health, 8, 3); probe checks owner root, mode 755, bash -n, and those three rendered values; supported",
+  "check-reports-ok-on-a-healthy-tree: template 96-97 print 'OK: exit code $RC $OUTPUT' and exit 0 once check_size (du -sk > 8; five 4 KB files give about 24) and check_files/check_files_content pass; OUTPUT is never set, so 'OK: exit code 0 ' with the trailing space and rc=0 is what the code produces; the action only creates the tree (its mutates text also says it runs the script, which the read-only effect does: an over-declaration, harmless); supported",
+  "purpose gap: Covered: the rendered per-volume script and the sudoers drop-in (manifest 3-17), CRITICAL 'storage space is empty' rc 2 on an empty tree (template 42-52, 80-83), OK rc 0 on a healthy tree as root and as nagios through sudo -n (54-97); purpose statement matches the manifest and template. GAP: the outcome 'a file whose content cannot be read is reported CRITICAL' (template 63-74, handle_error 'error checking md5sum for $f') is marked uncovered with why 'the script runs as root, only an I/O error on the volume makes find or md5sum fail' and evidence 'phase3.py has no fault-injection step'. Neither holds: on puppet8node (read-only via lab_exec) /sys/bus/pci/rescan is a regular file (find -type f lists it, mode --w-------) and 'sudo md5sum /sys/bus/pci/rescan' fails rc 1 'Permission denied' as root, so a mutating check that bind-mounts such a file into a tree with at most NFILES=3 regular files (size still > 8 KB) deterministically hits that CRITICAL branch; dmsetup, losetup and mkfs.ext4 are also present on the node for an error-target volume. phase3 mutating actions run arbitrary root commands, so the evidence does not show the lab lacking a capability. Note (not counted): nagios-runs-the-check-through-sudo has no mismatch control (another user through sudo -n must fail), and its effect is the action's captured output."
+ ],
+ "review_s": 122.1,
+ "check_file_sha256": "4e79faa96c25455ee4049912783cec394e5682a7edc9987df366b584f4bad460",
+ "content_sha256": "4e79faa96c25455ee4049912783cec394e5682a7edc9987df366b584f4bad460",
+ "reviewer_result": "20261121T061020Z-reviewer",
+ "author_result": "20261121T060818Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "b2d61a9a-41b6-4fed-9f90-d6c02583894b",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "b2d61a9a-41b6-4fed-9f90-d6c02583894b",
+   "fresh": true
+  }
+ }
+}
