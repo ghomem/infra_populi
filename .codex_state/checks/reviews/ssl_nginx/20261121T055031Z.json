@@ -1,0 +1,35 @@
+{
+ "class": "ssl_nginx",
+ "at": "20261121T055031Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "private-key-installed-root-only: ssl_base.pp:77-78 sets key_file ${ssl_private_dir}/${myprefix}.key (Debian /etc/ssl/private, prefix p8test from the params fixture) and 85-91 file mode '0600', owner/group default root; stat expecting 'root root 600' on /etc/ssl/private/p8test.key tests exactly that",
+  "the-bundle-is-changed-by-hand: ssl_base.pp:100-103 concat $bundle_file (/etc/ssl/certs/p8test.nginx.bundle.crt) with notify => Service[nginx]; the action appends one stray line and notes nginx's MainPID, mutates declares both (line + /run/p8test-sslnginx/pid), and the read-only effect (p8_count of the line = 1, PID > 0) shows the action's result, not its own output",
+  "the-agent-run-restores-the-bundle-and-restarts-nginx: ssl_base.pp:10 ('The service is restarted if the certificate changes') and 100-103 (concat notify Service[nginx]); effect expects the stray line gone (0), a new nginx MainPID and nginx active; my run's node agent run showed Concat[...bundle.crt] content changed (corrective) and Service[nginx] 'Triggered refresh from 1 event', matching the expectation; mutates 'none beyond reading' is accurate (action is true)",
+  "purpose gap: Tested: key installed root:root 0600, bundle 0644 holding cert (CN p8test.invalid) then intermediate, cert/key pair (mismatch against the agent's own key fails as required), and a hand-changed bundle restored by the agent run with nginx restarted under a new PID (ALL_PASS in my reviewer run, agreeing with the expected outcomes). Gap: the set's own purpose says nginx is restarted 'whenever either changes', and baseline ssl_base.pp:84-91 ('Key file: always created, always notifies service'; file $key_file source puppet:///extra_files/ssl/p8test.key, notify => Service[nginx]) makes a changed private key restored on the next agent run with nginx restarted. That outcome is neither in the outcomes table nor probed, and the default ubuntu node can exercise it exactly as the bundle check does (change /etc/ssl/private/p8test.key by hand, node agent run, key digest back to the master's, new nginx MainPID). Uncovered row: RedHat paths (ssl_base.pp:47-58) - honest, phase3.py run selects only the class's plan node (nodes.select(cls)) with one params fixture, so 'capability: a phase3 set for a node kind other than the plan's' holds; the Let's Encrypt half is inaccurately lifted: ssl_nginx (ssl_nginx.pp:8-12) passes no letsencrypt_certificate and has no parameter for it, so that branch is unreachable through this class at all, not liftable by more params fixtures - the row should say so rather than name a capability."
+ ],
+ "review_s": 129.2,
+ "check_file_sha256": "761ccb76e1d370e651914bb57f982baf33eed1a9dd5b463f62bb4520ce191cb2",
+ "content_sha256": "761ccb76e1d370e651914bb57f982baf33eed1a9dd5b463f62bb4520ce191cb2",
+ "reviewer_result": "20261121T054822Z-reviewer",
+ "author_result": "20261121T054556Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "db3fe5f1-5459-4796-86d7-098992a92399",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "db3fe5f1-5459-4796-86d7-098992a92399",
+   "fresh": true
+  }
+ }
+}
