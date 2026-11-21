@@ -7,6 +7,8 @@
 # and the uncovered rows in the current form.
 # Authoring error in run 20261121T031451Z: the rendered forward line has two spaces after *.*, which the first probe
 # did not allow; it now matches any whitespace. The configuration was as expected.
+# Correction round 1, 2026-11-21 (review 20261121T032544Z, purpose): sentinels for the components the profile applies
+# and chooses (firewall_secure, filesystem_base_desktop, filesystem_apt in desktop mode), as node_base's set has.
 class: node_base_desktop
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -18,6 +20,15 @@ outcomes:
   - outcome: SSH is hardened with no password or root login, and unattended upgrades are removed
     from: manifests/node_base_desktop.pp:39-48
     checks: [ssh-hardened-without-password-or-root-login, unattended-upgrades-removed]
+  - outcome: the IPv4 firewall is firewall_secure's (INPUT and FORWARD dropped by default, the SSH whitelist and limit)
+    from: manifests/node_base_desktop.pp:54-57
+    checks: [the-ipv4-firewall-is-firewall-secure]
+  - outcome: the local directories are in place (filesystem_base_desktop), and syslog's file is left to rsyslog (customize_syslog_mode false)
+    from: manifests/node_base_desktop.pp:49-52
+    checks: [the-local-directories-are-in-place]
+  - outcome: the APT helpers are in desktop mode (the desktop surface list, the desktop link) and the relevant-updates script exists
+    from: manifests/node_base_desktop.pp:65-78
+    checks: [the-apt-helpers-are-in-desktop-mode]
   - outcome: IPv6 input and forwarding are dropped
     from: manifests/node_base_desktop.pp:54-62
     checks: [ipv6-input-and-forward-dropped]
@@ -122,4 +133,40 @@ checks:
     probe: |
       grep -oE '^\*\.\*[[:space:]]+@@[^ ;]+' /etc/rsyslog.d/40-forward.conf | sed -E 's/[[:space:]]+/ /'
     expect: {rc: 0, stdout: "\\A\\*\\.\\* @@puppet8master\\.example\\.com:6514\\n\\Z"}
+
+  - id: the-ipv4-firewall-is-firewall-secure
+    what: INPUT and FORWARD drop by default, the lab Hiera's one address is whitelisted for SSH, and firewall_secure's limit chain stands
+    control: negative
+    derived_from:
+      - {path: manifests/node_base_desktop.pp, lines: "54-57", text: "class { 'puppet_infrastructure::firewall_secure':"}
+    probe: |
+      iptables -S | grep -E '^-P (INPUT|FORWARD) '
+      iptables -S INPUT | grep -c -- '--comment "100 SSH whitelist '
+      iptables -S LIMIT_OVERALL 2>/dev/null | grep -c -- '--comment "116 SSH LIMIT_OVERALL"'
+    expect: {rc: 0, stdout: "\\A-P INPUT DROP\\n-P FORWARD DROP\\n1\\n1\\n\\Z"}
+
+  - id: the-local-directories-are-in-place
+    what: filesystem_base_desktop's local, bin and etc directories exist, root-owned 0755
+    control: negative
+    derived_from:
+      - {path: manifests/node_base_desktop.pp, lines: "49-52", text: "class { 'puppet_infrastructure::filesystem_base_desktop':"}
+      - {path: manifests/filesystem_base_desktop.pp, lines: "8-17", text: "$basedirs = [ $localdir, $bindir, $etcdir ]"}
+    probe: |
+      stat -c '%U %a %n' /opt/puppet-infrastructure /opt/puppet-infrastructure/bin /opt/puppet-infrastructure/etc
+    expect: {rc: 0, stdout: "\\Aroot 755 /opt/puppet-infrastructure\\nroot 755 /opt/puppet-infrastructure/bin\\nroot 755 /opt/puppet-infrastructure/etc\\n\\Z"}
+
+  - id: the-apt-helpers-are-in-desktop-mode
+    what: >-
+      the surface update script holds the desktop list (firefox, not the server's nginx-core or postfix), the desktop
+      compatibility link points at it, and the relevant-updates script the nightly cron runs exists, root 0755
+    control: negative
+    derived_from:
+      - {path: manifests/node_base_desktop.pp, lines: "65-68", text: "server_mode      => false,"}
+      - {path: manifests/filesystem_apt.pp, lines: "72-81", text: "target  => \"${localdir}/bin/apt-update-surface.sh\","}
+    probe: |
+      s=$(grep '^SURFACE=' /opt/puppet-infrastructure/bin/apt-update-surface.sh)
+      for p in nginx-core postfix firefox; do case " ${s#SURFACE=\"} " in *" $p "*|*" $p\""*) echo "$p listed";; *) echo "$p not listed";; esac; done
+      readlink /opt/puppet-infrastructure/bin/apt-update-surface-desktop.sh
+      stat -c '%U %a' /opt/puppet-infrastructure/bin/apt-update-relevant.sh
+    expect: {rc: 0, stdout: "\\Anginx-core not listed\\npostfix not listed\\nfirefox listed\\n/opt/puppet-infrastructure/bin/apt-update-surface\\.sh\\nroot 755\\n\\Z"}
 
