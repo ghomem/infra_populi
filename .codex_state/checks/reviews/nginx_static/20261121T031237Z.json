@@ -1,0 +1,35 @@
+{
+ "class": "nginx_static",
+ "at": "20261121T031237Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "nginx-config-valid: nginx_static.pp:51-53 declares nginx_static_domain { $domain: } with domain and www_root, which renders nginx::resource::server configs; nginx -t rc 0 / 'test is successful' tests that the produced configuration is accepted (fails on the clean node: no nginx)",
+  "package-default-site-removed: nginx_static.pp:49 includes nginx_default_removal, whose file resource at nginx_default_removal.pp:3-4 targets /etc/nginx/sites-enabled/default; the probe expects exactly 'no-default-site'; invariant plausible (clean node has no nginx, hence no default site)",
+  "other-hosts-get-404: nginx_static_domain.pp:207-212 sets default_str='404' when redirect_default is false (fixture default), returned by static_default_<domain> (default_server, lines 236-245, ensure present via server_default_create true, nginx_static.pp:28); probe asks an existing www_root file with a foreign Host and expects 404; mismatch varies only the Host to the domain's own server (static_http_, server_name=domain), which serves the file 200, so it must and did fail",
+  "purpose covered: Purpose matches the baseline code (header's ssl_nginx bundling claim is not in the code: only manage_ssl -> ssl_nginx_domain, which is under the TLS row). With the params fixture (plain HTTP, defaults) the checks test the class doing its job: nginx accepts the config, the domain's Host gets www_root files byte-identical over HTTP (mismatch on Host), any other Host gets 404 from the default server even for an existing file, a directory without index answers 403 with no 'Index of' listing (autoindex off from allow_directory_listing false; mutating check declares the dir+file it creates, effect is the HTTP response), and the package default site is gone. Uncovered: TLS, redirects, listing on, ip_whitelist, extra TLS params (nginx_static.pp:15-45) \u2014 true, the runner applies one fixture per set, lifted by capability 'more than one params fixture per set'; the evidence (single fixture in phase3.py, nginx_static_domain set covering the HTTPS/redirect/TLS combination of the same define) backs it. Reviewer run ALL_PASS, no findings."
+ ],
+ "review_s": 85.0,
+ "check_file_sha256": "ad0dce86f30a832e62f5914ed4c6dd9e4b76cef48107ca1d7c95627160039757",
+ "content_sha256": "ad0dce86f30a832e62f5914ed4c6dd9e4b76cef48107ca1d7c95627160039757",
+ "reviewer_result": "20261121T031113Z-reviewer",
+ "author_result": "20261121T030856Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "efdb4a38-257e-4c08-8e7a-1dcdafa94b6a",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "efdb4a38-257e-4c08-8e7a-1dcdafa94b6a",
+   "fresh": true
+  }
+ }
+}
