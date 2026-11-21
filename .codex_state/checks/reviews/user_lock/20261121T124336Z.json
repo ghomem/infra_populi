@@ -1,0 +1,35 @@
+{
+ "class": "user_lock",
+ "at": "20261121T124336Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "user-entry-locked-by-hashman @ manifests/user_lock.pp:11-14: the exec runs hashman's pp_auth.py lock <title>; dbutils lockpw (804-807) prefixes LOCKPREFIX '!' (config.py.erb:58) to the stored entry and setent rewrites it as $<user>_pwd_hash = '<value>' in DBFILE_USER (DBDIR/hashes.pp); probe greps that line and expects '!' + the fixture's seeded hash, which is what the code produces from the hashman_lock_standin entry",
+  "exactly-one-entry @ manifests/user_lock.pp:11-14: the same lock command; for an existing user setpw takes the getpw index path and setent replaces that line in place (no addent append), so a count of exactly 1 line is what the command yields",
+  "exactly-one-entry @ templates/hashman/libhashman/dbutils.py.erb:804-807: lockpw returns setpw(username, pwentry, True, ...) with raw=True; setpw with an existing index calls setent (in-place rewrite, comment 'we modify the line directly'), supporting the one-line expectation",
+  "purpose gap: Tested: outcome 1, hashman's pp_auth.py lock marks p8testuser's hashes.pp entry with '!' in place (both checks negative on clean, pass after apply; my reviewer run ALL_PASS, 2 checks agree). Gap: outcome 2 (a locked user refused by hashman's auth) is marked uncovered with lifted_by phrased as 'capability: ... the class's plan node moved there' (the puppetserver node). nodes.yml lists puppetserver as status active with capability puppet-server, hashman_base already runs on it (plan node column puppetserver) and its check set records lock prototyped on p8lab-puppetserver 2026-11-20. The row's evidence (an empty plan node column, the stand-in fixture, nodes.select) shows a plan choice, not the lab lacking a capability; in substance the row is lifted by an active node kind, which the set's own header calls 'a work item for the stand-in lifts'. The refusal is lab-exercisable: dbutils auth() compares crypt(password) against the stored entry, so a '!'-prefixed entry of a known test password's hash is refused where the unprefixed one is accepted, testable on the puppetserver node (or with a real-hash seed). Under HQ batch-15 ruling 3 this changed uncovered row needs either that check or a lift that the lab really lacks."
+ ],
+ "review_s": 200.5,
+ "check_file_sha256": "ef03f6ec6477fdc69eeb30152254e35b558c5550ede1f1f4668bec1aa470647a",
+ "content_sha256": "ef03f6ec6477fdc69eeb30152254e35b558c5550ede1f1f4668bec1aa470647a",
+ "reviewer_result": "20261121T124016Z-reviewer",
+ "author_result": "20261121T123714Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "7a3415c8-cc81-43bf-9817-1a959cfd2071",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "7a3415c8-cc81-43bf-9817-1a959cfd2071",
+   "fresh": true
+  }
+ }
+}
