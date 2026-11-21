@@ -1,0 +1,35 @@
+{
+ "class": "user_lock",
+ "at": "20261121T130357Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "user-entry-locked-by-hashman: config.py.erb:58 LOCKPREFIX = '!' and lockpw (dbutils.py.erb:804-807) prepends it and setpw->setent (dbutils 591-597, 676-691) rewrites the line as <lhs>'<value>'; the probe greps the $p8testuser_pwd_hash line and expects '!' + the fixture's seeded hash exactly, which is what the code produces under the params fixture {} (title p8testuser)",
+  "the-locked-user-is-refused-by-hashman: dbutils.py.erb:199-205 auth() compares crypt(password, '$'+salttype+'$'+salt+'$') to the stored entry; with the '!' prefix parts[0]='!' so the comparison fails -> E_ERR (config E_ERR=1, pp_auth exits rc). The password passes checkstr_pwd ('-' is in SYMBOLS, config.py.erb), the effect's crypt line proves it matches the entry once '!' is removed, and the node's syslog after my run shows 'user p8testuser wants to authenticate' then 'action failure for user p8testuser' (pp_auth.py main, reached after auth() returned, not a crash). So rc=1 is the lock's refusal; mutates declares the one auth attempt and its /run output, effect is a read-only cat of the recorded outcome",
+  "exactly-one-entry: dbutils.py.erb:804-807 lockpw returns setpw(..., raw=True, ...), and setpw rewrites the existing line in place via setent(index) (dbutils 591-597, 676-691), never addent for the Unix hash; the fixture seeds one line only if absent, so count 1 after lock is what the code yields",
+  "purpose gap: Tested: pp_auth.py lock marks the Unix password entry locked in place, and hashman's own auth (pp_auth auth, the same auth() extauth/hashman-web use) then refuses the user although the password matches the unlocked entry. Untested and absent from the outcomes table (neither covered nor uncovered): the lock also invalidates the user's Samba hash. The set's own cited lines dbutils.py.erb:804-807 call mk_smb_lockness (miscutils.py.erb:129-148: returns LOCKPREFIX + the current smb hash for a locked user) and setpw raw rewrites hashes_smb.pp (dbutils ~600-607), so Samba services that authenticate with that hash refuse the locked user. Users created through hashman's setpw get a Samba hash (generatesmbhash/addent to DBFILE_SMB), so a real master's user has one; the lab can exercise it by having the stand-in seed a $p8testuser_pwd_hash_smb entry in hashes_smb.pp and checking it carries '!' after the lock (today the file is absent on the node, getsmbhash returns None and that branch is skipped). Also stale: the set's header still says the refusal is NOT shown and the fixture hash is fake, contradicting correction round 1."
+ ],
+ "review_s": 277.3,
+ "check_file_sha256": "2a4ee7798adc496c7551fb0fe76eefdf9255ef8a4785fded9c6e9b31ac732448",
+ "content_sha256": "2a4ee7798adc496c7551fb0fe76eefdf9255ef8a4785fded9c6e9b31ac732448",
+ "reviewer_result": "20261121T125920Z-reviewer",
+ "author_result": "20261121T125540Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "69fe49d9-8439-4def-9e30-87ae2c94ca9f",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "69fe49d9-8439-4def-9e30-87ae2c94ca9f",
+   "fresh": true
+  }
+ }
+}
