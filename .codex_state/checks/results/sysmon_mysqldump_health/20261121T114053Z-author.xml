@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.sysmon_mysqldump_health"><testsuite name="phase3.sysmon_mysqldump_health.clean" tests="6" failures="0"><testcase classname="phase3.sysmon_mysqldump_health.clean" name="check-script-rendered" /><testcase classname="phase3.sysmon_mysqldump_health.clean" name="a-mysql-server-with-a-dump" /><testcase classname="phase3.sysmon_mysqldump_health.clean" name="restores-are-checked" /><testcase classname="phase3.sysmon_mysqldump_health.clean" name="a-file-that-is-not-a-dump-is-critical" /><testcase classname="phase3.sysmon_mysqldump_health.clean" name="a-live-database-of-the-dump-name-is-left-intact" /><testcase classname="phase3.sysmon_mysqldump_health.clean" name="a-failed-drop-is-critical" /></testsuite><testsuite name="phase3.sysmon_mysqldump_health.applied" tests="6" failures="2"><testcase classname="phase3.sysmon_mysqldump_health.applied" name="check-script-rendered" /><testcase classname="phase3.sysmon_mysqldump_health.applied" name="a-mysql-server-with-a-dump" /><testcase classname="phase3.sysmon_mysqldump_health.applied" name="restores-are-checked" /><testcase classname="phase3.sysmon_mysqldump_health.applied" name="a-file-that-is-not-a-dump-is-critical"><failure message="check failed after the class was applied (finding)">rc 0
+OK: exit code 0
+rc=0
+OK: exit code 0
+rc=0
+
+</failure></testcase><testcase classname="phase3.sysmon_mysqldump_health.applied" name="a-live-database-of-the-dump-name-is-left-intact"><failure message="check failed after the class was applied (finding)">rc 0
+CRITICAL: Create database p8testsrc
+rc=2
+
+</failure></testcase><testcase classname="phase3.sysmon_mysqldump_health.applied" name="a-failed-drop-is-critical" /></testsuite></testsuites>
