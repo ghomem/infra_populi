@@ -4,12 +4,15 @@
 # "P8 test flask hello". Probes talk to the node's own addresses only.
 # 2026-11-20 (backfill batch 7): purpose and outcomes (HQ rulings 2 and C1), and the restart chain as behaviour: a hand
 # change to the running app is undone by the next agent run, which restarts the service (gunicorn keeps the code it loaded).
+# Correction round 1, 2026-11-21 (review 20261121T003328Z, purpose): the unit-change path (a unit changed by hand to bind
+# 8081, reloaded and restarted; after the agent run the service must run the configured unit on 8080; the restart exec is
+# declared before the daemon-reload exec, so a restart on the stale definition would show here), and the RedHat row.
 class: hello_world_flask
 baseline: release-0.9.10 (cf477c6)
 fixture: params
 node_agent:
-  after: the-app-is-changed-by-hand
-  why: the define restores its files and restarts the service only on an agent run after they changed
+  after: [the-app-is-changed-by-hand, the-unit-is-changed-by-hand]
+  why: the define restores its files and unit and restarts the service only on an agent run after they changed
 purpose: >-
   Deploys a small Flask web application (a welcome page) under the local directory and runs it with gunicorn as a
   systemd service on the given address and port, restarting it whenever its files or unit change.
@@ -23,6 +26,15 @@ outcomes:
   - outcome: a hand change to the app is undone by the next agent run, which restarts the service so the configured page is served again
     from: manifests/hello_world_flask.pp:27-29, 44-65, 85-93
     checks: [the-app-is-changed-by-hand, the-agent-run-restores-and-restarts]
+  - outcome: a hand change to the unit is undone by the next agent run, and the service then runs the configured unit (daemon-reload and restart)
+    from: manifests/hello_world_flask.pp:66-73, 84-91
+    checks: [the-unit-is-changed-by-hand, the-agent-run-restores-the-unit-in-effect]
+  - outcome: on RedHat the unit starts gunicorn directly (without python3 -m)
+    from: templates/hello_world_flask/hello-world-flask.service.erb:7-8
+    uncovered:
+      why: the RedHat branch needs the set run on a RedHat node; one set holds the Debian expectations of the plan's node
+      lifted_by: "capability: a phase3 set for a node kind other than the class's plan node (rhel9)"
+      evidence: "a check set is one file per class judged on one node; the plan's node for hello_world_flask is the default ubuntu (Debian branch, service.erb:10)"
   - outcome: uninstalling (uninstall true), another address, port or message
     from: manifests/hello_world_flask.pp:3-12, 19-26
     uncovered:
@@ -100,4 +112,37 @@ checks:
     effect: |
       curl -s --max-time 5 http://127.0.0.1:8080/ | grep -o "<h1 style='color:blue'.[^<]*</h1"
     expect: {rc: 0, stdout: "\\A<h1 style='color:blue'>P8 test flask hello</h1\\n\\Z"}
+
+  - id: the-unit-is-changed-by-hand
+    what: setup for the second agent run, the unit changed by hand to bind 127.0.0.1:8081, reloaded and restarted, so the service serves on 8081
+    control: negative
+    derived_from:
+      - {path: manifests/hello_world_flask.pp, lines: "66-73", text: "notify  => $systemd_file_notify"}
+    mutates: >-
+      replaces 127.0.0.1:8080 with 127.0.0.1:8081 in /lib/systemd/system/hello-world-flask-hello_world_flask.service
+      (sed -i), runs systemctl daemon-reload and restarts hello-world-flask-hello_world_flask
+    probe: |
+      sed -i 's/127\.0\.0\.1:8080/127.0.0.1:8081/' /lib/systemd/system/hello-world-flask-hello_world_flask.service
+      systemctl daemon-reload; systemctl restart hello-world-flask-hello_world_flask; sleep 3
+    effect: |
+      curl -s -o /dev/null -w '8081: %{http_code}\n' --max-time 5 http://127.0.0.1:8081/
+      curl -s -o /dev/null --max-time 5 http://127.0.0.1:8080/; echo "8080: curl-rc=$?"
+    expect: {rc: 0, stdout: "\\A8081: 200\\n8080: curl-rc=7\\n\\Z"}
+
+  - id: the-agent-run-restores-the-unit-in-effect
+    what: >-
+      after the second agent run, the unit file is the configured one again and the running service is bound to the
+      configured 127.0.0.1:8080, not 8081: the agent restored the unit and the service runs it
+    control: negative
+    derived_from:
+      - {path: manifests/hello_world_flask.pp, lines: "66-73", text: "content => template('puppet_infrastructure/hello_world_flask/hello-world-flask.service.erb'),"}
+      - {path: manifests/hello_world_flask.pp, lines: "84-91", text: "command => \"/usr/bin/systemctl daemon-reload\","}
+    mutates: none beyond two HTTP requests to the node's own ports (declared mutating so it runs after the node's agent run)
+    probe: |
+      sleep 3
+    effect: |
+      grep -c '127\.0\.0\.1:8080 wsgi:app' /lib/systemd/system/hello-world-flask-hello_world_flask.service
+      curl -s -o /dev/null -w '8080: %{http_code}\n' --max-time 5 http://127.0.0.1:8080/
+      curl -s -o /dev/null --max-time 5 http://127.0.0.1:8081/; echo "8081: curl-rc=$?"
+    expect: {rc: 0, stdout: "\\A1\\n8080: 200\\n8081: curl-rc=7\\n\\Z"}
 
