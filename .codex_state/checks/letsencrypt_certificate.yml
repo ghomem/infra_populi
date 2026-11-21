@@ -4,8 +4,14 @@
 # DNS provider API; Phase 1 went GREEN as mock-apply (node fixture letsencrypt_cert_standin: a self-signed stand-in
 # certificate satisfies puppet-letsencrypt's domain-validation guard, so certbot never runs). Nothing the define does
 # can be observed on the lab node: the only evidence there is the stand-in the fixture wrote.
+# 2026-11-20 (backfill batch 7): purpose added (HQ ruling C1); the deferral stands until the stand-in lifts that follow
+# the backfill (a test ACME CA with a DNS-01 stand-in on ubuntu2).
 class: letsencrypt_certificate
 baseline: release-0.9.10 (cf477c6)
+purpose: >-
+  Obtains a Let's Encrypt certificate for a domain (and, on request, its parent domain) through certbot with a DNS-01
+  challenge answered by the DigitalOcean or Hetzner DNS API, stored under /etc/letsencrypt/live/<name> for the services
+  that use it.
 deferred:
   needs: second-node
   why: >-
