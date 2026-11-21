@@ -1,0 +1,43 @@
+{
+ "class": "openvpn_domain",
+ "at": "20261121T105919Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "kerberos-realms-against-the-dc: manifest 40-47 writes /etc/krb5.conf from krb5.conf.erb, whose line 6 sets default_realm from domain_netbios_name.domain_tld; the probe reads default_realm and runs kinit with and without the realm against the DC. The upper-case expectation (P8TEST.EXAMPLE) is what the current template produces under local change #17 (rules/local_changes.md row 17, upcase on line 6), and it is that row's after-check; the baseline line alone would render P8TEST.example, which is the row's before evidence. Probe+expect test the purpose (a realm-less kinit works) of the cited lines",
+  "pam-logins-through-winbind: manifest 31-38 writes pam_winbind.conf from the template whose line 30 sets require_membership_of to the prefixed groups (P8TEST+p8testgroup); smb.conf.erb:19 sets winbind use default domain = yes; openvpn_server.pp:169 pam => true (plugin via login). pamtester login auth+acct: member accepted with prefix and bare name, wrong password refused, outsider refused while wbinfo -a shows the DC accepts its password, isolating the membership rule. Matches the lines under the params fixture",
+  "the-node-is-joined-to-the-domain: manifest 86-88 runs join-domain.sh (net join -U join_user) unless the join user resolves; net rpc testjoin printing Join to 'P8TEST' is OK tests the machine account the join creates. Mismatch varies the workgroup to a nonexistent domain P8NOPE, a value whose change must change the verdict, and changes only that value",
+  "purpose covered: Purpose (join an OpenVPN node to AD so listed-group domain users log in with their domain password) matches the baseline manifest and templates. Tested: smb.conf as domain member, machine account working on the node and held by the DC, domain users/groups resolving through nsswitch+winbind (with a mismatch user), pam_winbind require_membership_of and /etc/pam.d/openvpn byte-identical, real PAM logins through login (member ok with prefix and bare name; wrong password and outsider refused; DC accepts outsider so refusal is the membership rule), Kerberos realm-less and realm kinit against the DC, WINS host resolution via nsswitch's wins source to the DNS address (with an unknown-name mismatch). Not separately probed: the package list (ntpdate, cifs-utils) and the /etc/pam.d directory attributes, which are prerequisites rather than purpose outcomes; /etc/pam.d/openvpn is used by no baseline service (openvpn_server's PAM plugin uses login), so it is honestly checked as installed only. My reviewer run 20261121T105628Z: CLEAN all 9 negatives failed, APPLIED ALL_PASS, every mismatch failed as required, no findings"
+ ],
+ "review_s": 171.5,
+ "check_file_sha256": "b3fb6fd2b855f5626b3ee980b464460290b4bb8c907f9134bc16261ad152a75f",
+ "content_sha256": "b3fb6fd2b855f5626b3ee980b464460290b4bb8c907f9134bc16261ad152a75f",
+ "reviewer_result": "20261121T105628Z-reviewer",
+ "author_result": "20261121T104225Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "a1cd6518-9aa8-4574-a8f0-d84a1dcc79e2",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "a1cd6518-9aa8-4574-a8f0-d84a1dcc79e2",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "dc",
+   "snapshot": "P8LAB_DC_BASELINE_v1",
+   "boot_id": "ecc26c79-2fb9-4e24-af43-df1b62e1e778",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "ecc26c79-2fb9-4e24-af43-df1b62e1e778",
+   "fresh": true
+  }
+ }
+}

@@ -1,4 +1,4 @@
-# openvpn_domain — Phase 3 check set past its correction cap (OPEN, for HQ)
+# openvpn_domain — Phase 3 check set past its correction cap (CLOSED 2026-11-21)
 
 Production use 0 (migration_order.md `prod` column), so the cap is two correction rounds (HQ batch-12 ruling 3). Both
 were used and the third review failed on purpose with no findings. The run continues; this set awaits a ruling.
@@ -39,3 +39,8 @@ resolution.
 - With the DC powered off (the runner stops the peer after a run), an SSH login to the node did not complete in
   400.1 s; with the DC started again it took 7.5 s. Winbind vs DNS not attributed.
 - /etc/pam.d/openvpn (password lines only) is used by no baseline service: unreachable rule, approval report.
+
+## Closed (2026-11-21)
+HQ after batch 18: option A, one more round. Round 3 added bare-name logins (member accepted, outsider refused) and,
+with HQ item 2, local change #17 (the Kerberos realm upper-cased; kinit without a realm works with the lowercase-tld
+fixture). Phase 1 PASS 20261121T105513Z; Phase 3 PASS checks/reviews/openvpn_domain/20261121T105919Z.json, no findings.
