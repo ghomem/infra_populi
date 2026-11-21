@@ -1,0 +1,38 @@
+{
+ "class": "openvpn_set_vpn_passwd_file",
+ "at": "20261121T165557Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "a-mismatch-is-asked-again (set_vpn_passwd.sh.erb:44-45): two blank answers make [ -z $PASSWORD ] true, so line 45 shows BLANK_PASSWD and the loop asks again; the probe answers blank twice and expects the 'One of the passwords was blank.' msgbox, as the lines say",
+  "cancelling-changes-nothing (set_vpn_passwd.sh.erb:30-42): kdialog exit 1 at either --password dialog shows CANCEL_OPERATION and exits before update_vpn_con_passwd; the probe cancels at the first (1 prompt) and at the second (2 prompts), expects the cancel msgbox last, rc 0 (exit after a successful msgbox) and VPN1 keeping p8test-pass-a, which is what the code produces",
+  "a-mismatch-is-asked-again (set_vpn_passwd.sh.erb:44-55): non-blank unequal answers (x, y) show UNMATCHING_PASSWD and keep GUARD=true; the equal pair then calls update_vpn_con_passwd, sets GUARD=false and line 59 shows CONF_FINISHED; expect 6 prompts, blank/mismatch/finished msgboxes in that order and VPN2 holding p8test-pass-b, matching the lines with VPN2 listed in the params fixture and its profile at /etc/NetworkManager/system-connections/VPN2 (line 15/20)",
+  "finding a-second-run-changes-the-password: after the script ran again answering p8test-pass-c twice (rc=0), VPN1 still showed 'password = p8test-pass-a' instead of p8test-pass-c; the template's line 20 only updates a listed connection whose keyfile /etc/NetworkManager/system-connections/<name> exists, and the set's header records NetworkManager 1.46 moving a modified profile to netplan and deleting the keyfile; reproduced in this reviewer run (20261121T165316Z)",
+  "purpose covered: The purpose (a script a desktop user runs to set one password on every listed NetworkManager OpenVPN connection, with double entry via kdialog) matches the baseline define (file 0755 owner/group file_owner, template content) and the template. Tested: installation with owner/mode and the rendered VPN_LIST (script-installed-with-the-list); matching answers set the listed present connection and leave the unlisted VPN3 alone while the absent listed VPN2 is skipped (matching-answers-set-the-listed-connection); cancel at either dialog changes nothing (cancelling-changes-nothing); blank and mismatched answers are refused with their messages and asked again (a-mismatch-is-asked-again); a second password change (a-second-run-changes-the-password, a finding). Left out: the agent-owned profile shape openvpn_nm_connection writes (password-flags=1, permissions=user:...), listed as uncovered; the reason holds: phase3.py session_problems/session block requires a p8test* account the applied class creates (this define creates none) and the plan row for openvpn_set_vpn_passwd_file has no required_base or node_fixture, and the runner runs probes as root over SSH, never inside the user's Plasma session with its secret agent, so lifted_by names a missing capability, not an active node kind. The kubuntu node provides kdialog and NetworkManager, so every other part of the purpose is exercised with a stub kdialog replaying answers."
+ ],
+ "review_s": 161.7,
+ "check_file_sha256": "4ea333ea33fd649347ee585ade8a3b6373342ded5fe953320f3aa9f83d2f3a19",
+ "content_sha256": "4ea333ea33fd649347ee585ade8a3b6373342ded5fe953320f3aa9f83d2f3a19",
+ "reviewer_result": "20261121T165316Z-reviewer",
+ "author_result": "20261121T164912Z-author",
+ "findings": [
+  "a-second-run-changes-the-password"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "ef9de56f-daff-4617-960f-86657552ca59",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "ef9de56f-daff-4617-960f-86657552ca59",
+   "fresh": true
+  }
+ }
+}
