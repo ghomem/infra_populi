@@ -3,13 +3,29 @@
 # script COMMON/execute_linux_policies_user.sh, and an XDG autostart entry that runs it at desktop log-in. Fixture:
 # none (no parameters).
 # Not exercised: the desktop log-in that triggers the autostart entry (needs a desktop session).
+# 2026-11-20 (backfill batch 7): purpose and outcomes (HQ rulings 2 and C1); the old uncovered note in the current form.
 class: linux_policies_common
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
-uncovered:
-  - what: the XDG autostart entry running the policies script at a user's desktop log-in
-    why: the server node has no desktop session; the entry is checked as a file only
-    lifted_by: kubuntu
+purpose: >-
+  Provides what every desktop user's Linux policies need: the linux-policies tree under the local directory, the runner
+  script that executes a user's composed policy script, and an XDG autostart entry that runs it at each desktop log-in.
+outcomes:
+  - outcome: the module's linux-policies tree is deployed under the local directory
+    from: manifests/linux_policies_common.pp:13-25
+    checks: [policies-tree-deployed]
+  - outcome: the runner executes the calling user's USER/<user>.sh when it exists and is executable, and says so in syslog
+    from: manifests/linux_policies_common.pp:34-39; templates/linux-policies/execute_linux_policies_user.sh.erb:1-17
+    checks: [runner-executes-the-users-policy]
+  - outcome: an XDG autostart entry runs the runner at a desktop log-in
+    from: manifests/linux_policies_common.pp:28-33
+    checks: [autostart-entry-runs-the-runner]
+  - outcome: the autostart entry actually running at a desktop log-in
+    from: manifests/linux_policies_common.pp:28-33
+    uncovered:
+      why: the class's plan node is a server without a desktop; the login side is exercised through linux_policies_user's set on kubuntu, which composes this class
+      lifted_by: "capability: a desktop session on the class's plan node"
+      evidence: "nodes.yml: the class's node is ubuntu (capabilities [server]); phase3.py's `session` needs the kde capability (session_problems); linux_policies_user's autostart-runs-the-policies-at-login runs it on kubuntu"
 checks:
   - id: policies-tree-deployed
     what: the module's linux-policies tree is copied to <localdir>/linux-policies (COMMON/common byte for byte, TMP and USER)
