@@ -3,9 +3,45 @@
 # postfix_port 587, smtp_users [p8testuser with the fake {PLAIN} password p8test-not-a-secret], allowed_client_ips
 # [127.0.0.1], one allowed MAIL FROM address for p8testuser; extra_sec and letsencrypt_certificate false.
 # Probes talk to the node's own postfix and dovecot on 127.0.0.1 only.
+# 2026-11-21 (backfill batch 8): purpose and outcomes (HQ rulings 2 and C1), and the restrictions as behaviour. The params
+# fixture (local) now also holds a second SASL user p8testuser2 and a second allowed address
+# p8test-other@p8test.example.com owned by it, so the sender-login rule has an address another user owns. The unlisted
+# client is the node's own ::1 (inet_protocols = all; client_access lists 127.0.0.1 only). Prototyped on the node.
 class: postfix_smtp_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
+purpose: >-
+  An SMTP submission server with TLS and layered restrictions: only listed client IPs may use it, only its own SASL
+  users (dovecot's passwd-file, not system accounts) may send, only MAIL FROM addresses in a general list are allowed,
+  and each address only for the users configured for it; TLS is mandatory.
+outcomes:
+  - outcome: smtpd listens on the configured port, greets with the configured host name and presents the site's certificate over STARTTLS
+    from: templates/postfix_smtp_base/master.cf.erb; templates/postfix_smtp_base/main.cf.erb:10, 23-30, 75
+    checks: [smtpd-on-the-configured-port-with-the-hostname, starttls-presents-the-sslprefix-bundle]
+  - outcome: the configured SASL users authenticate through dovecot, and the client-access map lists the allowed IPs
+    from: manifests/postfix_smtp_base.pp:116-133; templates/postfix_smtp_base/sasl_users.erb; templates/postfix_smtp_base/client_access.erb
+    checks: [sasl-user-authenticates-through-dovecot, client-access-map-allows-the-listed-ip]
+  - outcome: >-
+      a listed client, logged in, may send from an address in the general list that it owns (both users, each from its
+      own address); refused are an address outside the general list, an address owned by another user, a client that
+      is not logged in, a wrong password (535) and a client address that is not listed
+    from: templates/postfix_smtp_base/main.cf.erb:94-118; templates/postfix_smtp_base/client_access.erb; templates/postfix_smtp_base/sender_access.erb; templates/postfix_smtp_base/controlled_envelope_senders.erb
+    checks: [smtp-restrictions-exercised]
+  - outcome: the From-header warning (smtp_header_checks) for addresses outside do_not_warn_from_addresses_regexes
+    from: manifests/postfix_smtp_base.pp:166-176; templates/postfix_smtp_base/smtp_header_checks.regexp.erb; templates/postfix_smtp_base/main.cf.erb:121
+    uncovered:
+      why: >-
+        smtp_header_checks applies to postfix's SMTP client, i.e. outgoing deliveries (relayhost empty: straight to the
+        recipient's MX), which the lab makes to no outside host; and the fixture keeps the default empty regex list,
+        with which the rule's negated match never fires
+      lifted_by: "capability: a mail sink the node delivers to inside the lab (MX for a fixture domain), with a second params fixture setting do_not_warn_from_addresses_regexes"
+      evidence: "main.cf.erb:121 smtp_header_checks (not smtpd_); main.cf.erb:80 relayhost empty; the params fixture sets no do_not_warn_from_addresses_regexes"
+  - outcome: the extra_sec hardening (protocols, ciphers, a generated DH group) and Let's Encrypt-shaped certificate names
+    from: manifests/postfix_smtp_base.pp:54-69; templates/postfix_smtp_base/main.cf.erb:37-68
+    uncovered:
+      why: the fixture sets extra_sec and letsencrypt_certificate false; one set holds one params fixture
+      lifted_by: "capability: more than one params fixture per set"
+      evidence: "the params fixture: extra_sec false, letsencrypt_certificate false; phase3.py runs a set with one fixture"
 checks:
   # 2026-11-17 authoring correction (run 1, 20261117T023815Z, FINDINGS): the probe called smtplib.SMTP.getwelcome(),
   # which does not exist (AttributeError after a successful connect); the banner is now read from a plain socket.
@@ -71,3 +107,56 @@ checks:
       probe: |
         postmap -q 127.0.0.2 hash:/etc/postfix/client_access
     expect: {rc: 0, stdout: "\\AOK\\n\\Z"}
+
+  - id: smtp-restrictions-exercised
+    what: >-
+      seven SMTP sessions over STARTTLS, each up to RCPT TO root@localhost and then reset (no mail is queued): the two
+      owners from their own addresses are accepted; an unlisted address (554 Access denied), another user's address
+      (553 not owned), no login (553 not logged in), a wrong password (535, then 553) and the unlisted client ::1 (554
+      Client host rejected) are refused
+    control: negative
+    timeout: 300
+    derived_from:
+      - {path: templates/postfix_smtp_base/main.cf.erb, lines: "101-103", text: "check_client_access hash:/etc/postfix/client_access"}
+      - {path: templates/postfix_smtp_base/main.cf.erb, lines: "107-109", text: "check_sender_access hash:/etc/postfix/sender_access"}
+      - {path: templates/postfix_smtp_base/main.cf.erb, lines: "112", text: "smtpd_sender_login_maps = hash:/etc/postfix/controlled_envelope_senders"}
+      - {path: templates/postfix_smtp_base/main.cf.erb, lines: "115-118", text: "reject_sender_login_mismatch"}
+      - {path: templates/postfix_smtp_base/main.cf.erb, lines: "30", text: "smtpd_tls_security_level = encrypt"}
+    mutates: >-
+      opens seven SMTP sessions to the node's own postfix (127.0.0.1 and ::1, port 587), logging in as p8testuser or
+      p8testuser2 or not at all; each stops at RCPT and resets, so nothing is queued; postfix and dovecot log them; the
+      replies go to /run/p8test-smtp/attempts.txt
+    probe: |
+      install -d -m 0700 /run/p8test-smtp
+      python3 - > /run/p8test-smtp/attempts.txt <<'PY'
+      import smtplib, ssl
+      def attempt(label, host, user, password, sender):
+          try:
+              s = smtplib.SMTP(host, 587, timeout=30)
+              s.ehlo('p8test.invalid'); s.starttls(context=ssl._create_unverified_context()); s.ehlo('p8test.invalid')
+              auth = 'none'
+              if user:
+                  try:
+                      s.login(user, password); auth = '235'
+                  except smtplib.SMTPAuthenticationError as e:
+                      auth = str(e.smtp_code)
+              mail = s.mail(sender)[0]
+              code, msg = s.rcpt('root@localhost')
+              s.rset(); s.quit()
+              print(f"{label}: auth {auth} mail {mail} rcpt {code} {msg.decode()}")
+          except Exception as e:
+              print(f"{label}: error {type(e).__name__} {e}")
+      attempt('own-address', '127.0.0.1', 'p8testuser', 'p8test-not-a-secret', 'p8test@p8test.example.com')
+      attempt('owner-of-the-other', '127.0.0.1', 'p8testuser2', 'p8test-user2-not-a-secret', 'p8test-other@p8test.example.com')
+      attempt('not-in-general-list', '127.0.0.1', 'p8testuser', 'p8test-not-a-secret', 'p8test-unlisted@p8test.example.com')
+      attempt('owned-by-another', '127.0.0.1', 'p8testuser', 'p8test-not-a-secret', 'p8test-other@p8test.example.com')
+      attempt('unauthenticated', '127.0.0.1', None, None, 'p8test@p8test.example.com')
+      attempt('wrong-password', '127.0.0.1', 'p8testuser', 'p8test-wrong-password', 'p8test@p8test.example.com')
+      attempt('unlisted-client', '::1', 'p8testuser', 'p8test-not-a-secret', 'p8test@p8test.example.com')
+      PY
+    effect: |
+      cat /run/p8test-smtp/attempts.txt
+    expect:
+      rc: 0
+      stdout: "\\Aown-address: auth 235 mail 250 rcpt 250 2\\.1\\.5 Ok\\nowner-of-the-other: auth 235 mail 250 rcpt 250 2\\.1\\.5 Ok\\nnot-in-general-list: auth 235 mail 250 rcpt 554 5\\.7\\.1 <p8test-unlisted@p8test\\.example\\.com>: Sender address rejected: Access denied\\nowned-by-another: auth 235 mail 250 rcpt 553 5\\.7\\.1 <p8test-other@p8test\\.example\\.com>: Sender address rejected: not owned by user p8testuser\\nunauthenticated: auth none mail 250 rcpt 553 5\\.7\\.1 <p8test@p8test\\.example\\.com>: Sender address rejected: not logged in\\nwrong-password: auth 535 mail 250 rcpt 553 5\\.7\\.1 <p8test@p8test\\.example\\.com>: Sender address rejected: not logged in\\nunlisted-client: auth 235 mail 250 rcpt 554 5\\.7\\.1 <ip6-localhost\\[::1\\]>: Client host rejected: Access denied\\n\\Z"
+
