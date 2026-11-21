@@ -9,6 +9,9 @@
 # Correction round 1, 2026-11-21 (review 20261121T013717Z, purpose): the fixture's policies log what they do (one names
 # the user it ran as), so the checks see the policies themselves run as the user; and no policy runs before the
 # user's first session (the harness's agent runs come before the login).
+# Correction round 2, 2026-11-21 (review 20261121T014847Z, purpose): the login's own policy run is tied to the
+# autostart: policy lines logged after the user's session started and before the first agent-run policy line can only
+# come from the login (the runner's Executing line is logged before the script's own logged-in check).
 class: linux_policies_user
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -88,7 +91,11 @@ checks:
       - {path: templates/linux-policies/execute_linux_policies_user.sh.erb, lines: "9-12", text: "SYSLOG_TAG=\"linuxint-policies-${CALLER}\""}
     probe: |
       journalctl -t linuxint-policies-autostart -o cat --no-pager | grep -c -x 'Executing /opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh' | sed 's/^[1-9][0-9]*$/ran-at-login/'
-    expect: {rc: 0, stdout: "\\Aran-at-login\\n\\Z"}
+      t0=$(journalctl -u systemd-logind -o short-unix --no-pager | awk '/New session .* of user p8testuser\./ {print int($1); exit}')
+      t1=$(journalctl -t linuxint-policies-puppet-agent -o short-unix --no-pager | awk 'NR==1 {print int($1)}')
+      [ -n "$t0" ] && [ -n "$t1" ] || { echo "no session or no agent run"; exit 1; }
+      journalctl -t p8testpolicy --since "@$t0" --until "@$t1" -o cat --no-pager | p8_count '^p8test policy 1 as p8testuser$' | sed 's/^[1-9][0-9]*$/policies-ran-at-login-as-p8testuser/'
+    expect: {rc: 0, stdout: "\\Aran-at-login\\npolicies-ran-at-login-as-p8testuser\\n\\Z"}
 
   - id: no-policy-runs-before-the-session
     what: >-
