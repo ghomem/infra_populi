@@ -65,7 +65,7 @@ validate_dir() {
     then
        validate_dump $f
     else
-       handle_error $RC "SQL File $f is not a MySQLDump"
+       handle_error 1 "SQL File $f is not a MySQLDump"
     fi
   done
 }
