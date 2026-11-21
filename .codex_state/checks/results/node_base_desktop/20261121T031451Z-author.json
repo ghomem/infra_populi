@@ -1,0 +1,225 @@
+{
+ "class": "node_base_desktop",
+ "role": "author",
+ "at": "20261121T031451Z",
+ "runner": "884bb5e",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "6726231360c1c379ebb16a78ac835aadd54c95e912b456d7003017406fa00ecb",
+ "content_sha256": "6726231360c1c379ebb16a78ac835aadd54c95e912b456d7003017406fa00ecb",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "ssh-hardened-without-password-or-root-login",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "passwordauthentication yes\npermitrootlogin without-password\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "unattended-upgrades-removed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "1\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "ipv6-input-and-forward-dropped",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "nightly-relevant-updates-cron",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "gnome-lock-policy-served",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "\n(/usr/bin/dconf:2101): dconf-WARNING **: 03:15:09.911: unable to open named profile (user): using the null configuration.\n\n(/usr/bin/dconf:2102): dconf-WARNING **: 03:15:09.918: unable to open named profile (user): using the null configuration.\n\n(/usr/bin/dconf:2103): dconf-WARNING **: 03:15:09.924: unable to open named profile (user): using the null configuration.\n",
+   "ok": true
+  },
+  {
+   "id": "puppet-service-enabled-and-running",
+   "control": "negative",
+   "rc": 3,
+   "passed": false,
+   "stdout": "disabled\ninactive\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "logs-forwarded-to-the-log-target",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/rsyslog.d/40-forward.conf: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "in[INPUT:filter:IPv6]\n  File[/opt/puppet-infrastructure/bin/apt-update-pkg.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-surface.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-surface-desktop.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-kernel.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-dist.sh]\n  Package[openscap-scanner]\n  File[/opt/puppet-infrastructure/bin/get-relevant-updates-list]\n  File[/opt/puppet-infrastructure/bin/apt-check-updates.sh]\n  Cron[apt_check_updates]\n  File[/var/lib/apt-check-updates]\n  File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]\n  Cron[apt_update_relevant_daily]\n  Package[rsyslog]\n  Package[rsyslog-gnutls]\n  File[/etc/rsyslog.d/tls]\n  File[/etc/rsyslog.d/tls/ca.pem]\n  File[/etc/rsyslog.d/tls/p8lab-gnome.pem]\n  File[/etc/rsyslog.d/tls/p8lab-gnome.key]\n  Service[rsyslog]\n  Host[puppet8master.example.com]\n  File[/etc/rsyslog.d/40-forward.conf]\n  Package[dconf-cli]\n  File[/etc/dconf]\n  File[/etc/dconf/profile]\n  File[/etc/dconf/db]\n  File[/etc/dconf/profile/user]\n  File[/etc/dconf/db/local.d]\n  File[/etc/dconf/db/local.d/locks]\n  File[/etc/dconf/db/local.d/00-screenlock]\n  File[/etc/dconf/db/local.d/locks/00-screenlock]\n  Exec[dconf_update_screenlock]\n  Service[puppet]\n  File[/etc/apt/apt.conf.d/15update-stamp]\n  Concat_file[/etc/ssh/sshd_config]\n  Concat_fragment[global config]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update]) (gate v2).\nGREEN_STAMP node_base_desktop 5c4192c7ffd8\n"
+ },
+ "applied": [
+  {
+   "id": "ssh-hardened-without-password-or-root-login",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "passwordauthentication no\npermitrootlogin no\n",
+   "stderr": ""
+  },
+  {
+   "id": "unattended-upgrades-removed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\n",
+   "stderr": ""
+  },
+  {
+   "id": "ipv6-input-and-forward-dropped",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P INPUT DROP\n-P FORWARD DROP\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "nightly-relevant-updates-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "00 02 * * * /opt/puppet-infrastructure/bin/apt-update-relevant.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "gnome-lock-policy-served",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "uint32 300\ntrue\nuint32 0\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the dconf profile: a profile name that does not exist has no system-db:local line, so the three reads must not return the policy's values",
+    "rc": 0,
+    "passed": false,
+    "stdout": "",
+    "stderr": "\n(/usr/bin/dconf:10175): dconf-WARNING **: 03:17:08.363: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n\n(/usr/bin/dconf:10176): dconf-WARNING **: 03:17:08.368: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n\n(/usr/bin/dconf:10177): dconf-WARNING **: 03:17:08.372: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n"
+   }
+  },
+  {
+   "id": "puppet-service-enabled-and-running",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "enabled\nactive\n",
+   "stderr": ""
+  },
+  {
+   "id": "logs-forwarded-to-the-log-target",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": ""
+  }
+ ],
+ "findings": [
+  "logs-forwarded-to-the-log-target"
+ ],
+ "not_run": [],
+ "outcome": "FINDINGS",
+ "node": "gnome",
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "boot_id": "1b7045b7-32a8-4dbf-807b-2fe7e63c2aea",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "1b7045b7-32a8-4dbf-807b-2fe7e63c2aea",
+   "fresh": true
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "SSH is hardened with no password or root login, and unattended upgrades are removed",
+   "checks": [
+    "ssh-hardened-without-password-or-root-login",
+    "unattended-upgrades-removed"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "IPv6 input and forwarding are dropped",
+   "checks": [
+    "ipv6-input-and-forward-dropped"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the relevant updates run nightly at 02:00 from root's crontab",
+   "checks": [
+    "nightly-relevant-updates-cron"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "logs are forwarded to the configured log target and port",
+   "checks": [
+    "logs-forwarded-to-the-log-target"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "the GNOME screen lock policy is served (manage_gnome_screenlock)",
+   "checks": [
+    "gnome-lock-policy-served"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the puppet service is enabled and running",
+   "checks": [
+    "puppet-service-enabled-and-running"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the per-user KDE screen lock (screenlock_users)",
+   "uncovered": {
+    "why": "it needs a KDE session environment the GNOME plan node does not have; user_kde_lock_screen's own set exercises it on kubuntu",
+    "lifted_by": "capability: a phase3 set for a node kind other than the class's plan node (kubuntu)",
+    "evidence": "the fixture leaves screenlock_users empty on gnome; checks/user_kde_lock_screen.yml runs the define in a Plasma session on kubuntu"
+   }
+  },
+  {
+   "outcome": "the puppet agent daemon running on its interval",
+   "uncovered": {
+    "why": "a real daemon would run the catalog between the harness's two runs; the lab uses a stand-in unit body",
+    "lifted_by": "capability: a harness mode that tolerates a running agent daemon between runs 1 and 2",
+    "evidence": "node fixture puppet_agent_standin (status.py --standins: node_base_desktop)"
+   }
+  }
+ ],
+ "duration_s": 137.5
+}

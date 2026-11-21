@@ -5,6 +5,8 @@
 # Scope: what this profile itself chooses; its component classes carry their own check sets.
 # 2026-11-21 (backfill batch 8): purpose and outcomes (HQ rulings 2 and C1), the log forwarding the profile chooses,
 # and the uncovered rows in the current form.
+# Authoring error in run 20261121T031451Z: the rendered forward line has two spaces after *.*, which the first probe
+# did not allow; it now matches any whitespace. The configuration was as expected.
 class: node_base_desktop
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -118,6 +120,6 @@ checks:
       - {path: manifests/node_base_desktop.pp, lines: "80-86", text: "target      => $log_target,"}
       - {path: manifests/node_base_desktop.pp, lines: "21-24", text: "Integer $log_port                           = 6514,"}
     probe: |
-      grep -oE '^\*\.\* @@[^ ;]+' /etc/rsyslog.d/40-forward.conf
+      grep -oE '^\*\.\*[[:space:]]+@@[^ ;]+' /etc/rsyslog.d/40-forward.conf | sed -E 's/[[:space:]]+/ /'
     expect: {rc: 0, stdout: "\\A\\*\\.\\* @@puppet8master\\.example\\.com:6514\\n\\Z"}
 
