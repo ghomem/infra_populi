@@ -7,6 +7,8 @@
 # 2026-11-21 (backfill batch 9): purpose and outcomes (HQ rulings 2 and C1). The fixture hash is now the user classes'
 # known test password (p8test-user-not-a-secret), so the password the wrapper passes is exercised. user_base's own set
 # covers the key purge and the home; user_kde_lock_screen's set covers the lock settings in depth.
+# Correction round 1, 2026-11-21 (review 20261121T135622Z, purpose): the params fixture now gives mygrouplist ['users']
+# (an existing Ubuntu group), so the wrapper's prepending and user_base's primary-group rule are exercised.
 class: user_desktop
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -19,9 +21,21 @@ purpose: >-
   and SSH key (through user_base), and the KDE screen-lock settings applied in the user's session (through
   user_kde_lock_screen).
 outcomes:
-  - outcome: the user exists with its own primary group and exactly the desktop groups
-    from: manifests/user_desktop.pp:7-9
+  - outcome: >-
+      the given groups (mygrouplist) are prepended to the user's own group and the desktop groups, and the first given
+      group becomes the primary group
+    from: manifests/user_desktop.pp:7-9; manifests/user_base.pp:25-31, 63-66
     checks: [user-with-own-primary-group, desktop-groups]
+  - outcome: the other parameters (ignorekey, the ecryptfs values, non-default lock-screen values) and a first given group of sudo or wheel, passed through unchanged
+    from: manifests/user_desktop.pp:7, 10-11
+    uncovered:
+      why: >-
+        the wrapper passes them to user_base and user_kde_lock_screen as they are; their effects are those classes'
+        outcomes, tested in their own sets (user_base.yml, user_kde_lock_screen.yml; the sudo-first branch in
+        user_sudoer.yml), and one set holds one params fixture
+      lifted_by: "capability: more than one params fixture per set"
+      evidence: "manifests/user_desktop.pp:10-11 pass the parameters through; phase3.py runs a set with one fixture"
+
   - outcome: the given password logs the user in (a wrong one is refused), and the given key is pushed
     from: manifests/user_desktop.pp:10
     checks: [the-given-password-logs-in, the-given-key-is-pushed]
@@ -30,24 +44,26 @@ outcomes:
     checks: [lock-screen-script-installed, kde-lock-settings-applied-in-the-session]
 checks:
   - id: user-with-own-primary-group
-    what: the user exists with its own same-named primary group (the title is the first group of the built list)
+    what: >-
+      the user exists, and its primary group is the first given group (mygrouplist ['users'] is prepended to the built
+      list, and user_base takes the first group of the list as primary unless it is sudo or wheel)
     control: negative
     derived_from:
       - {path: manifests/user_desktop.pp, lines: "9", text: "$grouplist = flatten( [ $mygrouplist, [ $title, 'cdrom', 'dip', 'plugdev', 'lp' ] ] )"}
-      - {path: manifests/user_base.pp, lines: "25-31", text: "$myprimary = $title"}
+      - {path: manifests/user_base.pp, lines: "25-31", text: "$myprimary = $mygrouplist[0]"}
     probe: |
       IFS=: read -r name _ uid gid gecos home shell < <(getent passwd p8testuser)
       echo "$name|$gecos|$home|$shell"
       echo "primary group: $(getent group "$gid" | cut -d: -f1)"
-    expect: {rc: 0, stdout: "\\Ap8testuser\\|P8 Test User\\|/home/p8testuser\\|/bin/bash\\nprimary group: p8testuser\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Ap8testuser\\|P8 Test User\\|/home/p8testuser\\|/bin/bash\\nprimary group: users\\n\\Z"}
 
   - id: desktop-groups
-    what: the user is in exactly its own group and the desktop groups cdrom, dip, plugdev and lp
+    what: the user is in exactly the given group (users), its own group and the desktop groups cdrom, dip, plugdev and lp
     control: negative
     derived_from:
       - {path: manifests/user_desktop.pp, lines: "9-10", text: "$grouplist = flatten( [ $mygrouplist, [ $title, 'cdrom', 'dip', 'plugdev', 'lp' ] ] )"}
     probe: id -nG p8testuser | tr ' ' '\n' | sort | tr '\n' ' '
-    expect: {rc: 0, stdout: "\\Acdrom dip lp p8testuser plugdev \\Z"}
+    expect: {rc: 0, stdout: "\\Acdrom dip lp p8testuser plugdev users \\Z"}
 
   - id: the-given-key-is-pushed
     what: the key is pushed (ignorekey defaults to false), one ssh-rsa line with comment <title>@puppet
