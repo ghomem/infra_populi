@@ -1,0 +1,35 @@
+{
+ "class": "user_desktop",
+ "at": "20261121T135622Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "desktop-groups: baseline user_desktop.pp:9 builds [$mygrouplist..., $title, cdrom, dip, plugdev, lp]; fixture leaves mygrouplist at its default [], user_base.pp:65 sets groups to that list and gid to its first element (p8testuser), so id -nG sorted = 'cdrom dip lp p8testuser plugdev' exactly as expected",
+  "user-with-own-primary-group: user_base.pp:25-31 with grouplist[0] = title (not sudo/wheel) takes the else branch, myprimary = grouplist[0] = p8testuser (same value as the cited line 26); user_base.pp:63-71 with fixture myname 'P8 Test User', default home /home/<title> (lines 8-10) and default shell /bin/bash give exactly the expected passwd fields and primary group",
+  "lock-screen-script-installed: user_kde_lock_screen_common.pp:8-12 declares ${bindir}/configure_lock_screen.sh root:root 0755; filesystem::bindir on the master is /opt/puppet-infrastructure/bin, so stat '%U %a' = 'root 755' is what the lines declare (user_desktop.pp:11 declares user_kde_lock_screen, which includes the common class)",
+  "purpose gap: Tested: account with its own primary group, comment, home and shell; exactly the desktop groups with the default empty mygrouplist; the passed hash logs in via su and a wrong password is refused; the key pushed as <title>@puppet; the lock script installed and, with p8testuser logged in to Plasma, kscreenlockerrc [Daemon] Autolock/LockOnResume true, Timeout 5, LockGrace 0 (both phases agree, ALL_PASS). Left out and NOT in the outcomes table, neither mapped nor listed uncovered: the wrapper's own handling of the mygrouplist parameter (user_desktop.pp:7,9 prepends the given groups to the built list, so they become supplementary groups, and via user_base.pp:25-31 a first given group other than sudo/wheel becomes the primary group while sudo/wheel keeps the own group). That is the only logic the wrapper adds beyond passing parameters through, and production desktop users are given groups through it; the table must list it, covered by a check or as an uncovered row with evidence and lifted_by (the lab node can create such groups, so a one-fixture limit is not a lab-capability lack). Passthrough parameter variants (ignorekey, myhomemode, user_shell, ecryptfs, non-default screenlock values) are reasonably delegated to user_base's and user_kde_lock_screen's sets as the header says, but the table should say so too."
+ ],
+ "review_s": 211.3,
+ "check_file_sha256": "4ec22baa3f98cd194e225233b9d1facf2b29c2fd68eb7ed3eb8f625b560336d7",
+ "content_sha256": "4ec22baa3f98cd194e225233b9d1facf2b29c2fd68eb7ed3eb8f625b560336d7",
+ "reviewer_result": "20261121T135251Z-reviewer",
+ "author_result": "20261121T134841Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "9524ec2e-94eb-49a5-9cb9-eea9960ef3b7",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "9524ec2e-94eb-49a5-9cb9-eea9960ef3b7",
+   "fresh": true
+  }
+ }
+}
