@@ -1,0 +1,255 @@
+{
+ "class": "ssl_nginx",
+ "role": "author",
+ "at": "20261121T055336Z",
+ "runner": "fd85351",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "5b5b4fb399dc47fbaaa237a7a17c31b860ff383b21a115bd9234fe48333dd0d9",
+ "content_sha256": "5b5b4fb399dc47fbaaa237a7a17c31b860ff383b21a115bd9234fe48333dd0d9",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "private-key-installed-root-only",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/ssl/private/p8test.key': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "nginx-bundle-cert-then-intermediate",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/ssl/certs/p8test.nginx.bundle.crt': No such file or directory\ngrep: /etc/ssl/certs/p8test.nginx.bundle.crt: No such file or directory\nCould not open file or uri for loading certificate from /etc/ssl/certs/p8test.nginx.bundle.crt\n4097FFC1AF780000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n4097FFC1AF780000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/ssl/certs/p8test.nginx.bundle.crt)\nUnable to load certificate\n",
+   "ok": true
+  },
+  {
+   "id": "bundle-certificate-matches-the-key",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "missing files\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-bundle-is-changed-by-hand",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /run/p8test-sslnginx/pid: No such file or directory\nbash: line 97: [: : integer expression expected\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-bundle-and-restarts-nginx",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "0\ninactive\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-key-is-changed-by-hand",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /run/p8test-sslnginx/pid-key: No such file or directory\nbash: line 97: [: : integer expression expected\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-key-and-restarts-nginx",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "inactive\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "rt]: Scheduling refresh of Service[nginx]\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Triggered 'refresh' from 3 events\u001b[0m\n\u001b[mNotice: Applied catalog in 62.15 seconds\u001b[0m\nRUN1_EVENTS: 12 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795240528'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.67 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::ssl_nginx: 5 concrete resources (+3 defined-type instances)\n  Puppet_infrastructure::Ssl_base[puppet_infrastructure::ssl_base_nginx]\n  File[/etc/ssl/private/p8test.key]\n  Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]\n  Concat::Fragment[first_certificate_p8test]\n  Concat::Fragment[intermediate_certificates_p8test]\n  Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]\n  Concat_fragment[first_certificate_p8test]\n  Concat_fragment[intermediate_certificates_p8test]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP ssl_nginx e858dede5229\n"
+ },
+ "applied": [
+  {
+   "id": "private-key-installed-root-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 600\n",
+   "stderr": ""
+  },
+  {
+   "id": "nginx-bundle-cert-then-intermediate",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 644\n2\nsubject=CN=p8test.invalid,O=p8test lab fixture (THROWAWAY\\, not a real CA)\n",
+   "stderr": ""
+  },
+  {
+   "id": "bundle-certificate-matches-the-key",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "key-matches-certificate\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the key: the node's own Puppet agent key is a different key, so the same comparison against it must fail",
+    "rc": 1,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-bundle-is-changed-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\npid noted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "appends the line \"# p8test drift\" to /etc/ssl/certs/p8test.nginx.bundle.crt and writes nginx's main PID to /run/p8test-sslnginx/pid (/run/p8test-sslnginx created 0700)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-the-bundle-and-restarts-nginx",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\nnginx restarted\nactive\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the bundle and nginx's PID (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-key-is-changed-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\npid noted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes the key's SHA-256 and nginx's main PID to /run/p8test-sslnginx/key.sha and /run/p8test-sslnginx/pid-key, then appends the line \"# p8test drift\" to /etc/ssl/private/p8test.key",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-the-key-and-restarts-nginx",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "key restored\nnginx restarted\nactive\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the key's digest and nginx's PID (declared mutating so it runs after the second agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "16bd5057-3155-460d-864f-f1b9b3dc6abf",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "16bd5057-3155-460d-864f-f1b9b3dc6abf",
+   "fresh": true
+  }
+ },
+ "node_agent": {
+  "the-bundle-is-changed-by-hand": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssl_nginx/Puppet_infrastructure::Ssl_base[puppet_infrastructure::ssl_base_nginx]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/content:",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssl_nginx/Puppet_infrastructure::Ssl_base[puppet_infrastructure::ssl_base_nginx]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/content:",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssl_nginx/Puppet_infrastructure::Ssl_base[puppet_infrastructure::ssl_base_nginx]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/content: content changed '{sha256}9b9d30b093df8948cb810b53f4ae761accca5a3218709d43e8d05572953cbad7' to '{sha256}64c8e981bfdf7643011046f7595d98ed8526179230964dee98603cedf223dab4' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Triggered 'refresh' from 1 event\u001b[0m"
+   ],
+   "tail": "1724868 +0000\n@@ -44,4 +44,3 @@\n Pgx63qWDnchDqQmXdeQzPUGsTZYpkpyTguIqoFKPmTT2B7vyWlb+vh8QdcAvBWbb\n WA==\n -----END CERTIFICATE-----\n-# p8test drift\n\u001b[0m\n\u001b[0;32mInfo: Computing checksum on file /etc/ssl/certs/p8test.nginx.bundle.crt\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Ssl_nginx/Puppet_infrastructure::Ssl_base[puppet_infrastructure::ssl_base_nginx]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]: Filebucketed /etc/ssl/certs/p8test.nginx.bundle.crt to puppet with sum 9b9d30b093df8948cb810b53f4ae761accca5a3218709d43e8d05572953cbad7\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssl_nginx/Puppet_infrastructure::Ssl_base[puppet_infrastructure::ssl_base_nginx]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/content: \n\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssl_nginx/Puppet_infrastructure::Ssl_base[puppet_infrastructure::ssl_base_nginx]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/content: content changed '{sha256}9b9d30b093df8948cb810b53f4ae761accca5a3218709d43e8d05572953cbad7' to '{sha256}64c8e981bfdf7643011046f7595d98ed8526179230964dee98603cedf223dab4' (corrective)\u001b[0m\n\u001b[0;32mInfo: Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]: Scheduling refresh of Service[nginx]\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.89 seconds\u001b[0m\nAGENT_RC=2\n"
+  },
+  "the-key-is-changed-by-hand": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssl_nginx/Puppet_infrastructure::Ssl_base[puppet_infrastructure::ssl_base_nginx]/File[/etc/ssl/private/p8test.key]/content:",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssl_nginx/Puppet_infrastructure::Ssl_base[puppet_infrastructure::ssl_base_nginx]/File[/etc/ssl/private/p8test.key]/content:",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssl_nginx/Puppet_infrastructure::Ssl_base[puppet_infrastructure::ssl_base_nginx]/File[/etc/ssl/private/p8test.key]/content: content changed '{sha256}7708533a6c9866606b1000256ccfdcb6e57e399d6aec100f69d0c0f1a57933ce' to '{sha256}1408355e23bf8f52551c5dc0f4d7781e7797279b8b37a40379d5f1140fcc0854' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Triggered 'refresh' from 1 event\u001b[0m"
+   ],
+   "tail": "led by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795240547'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssl_nginx/Puppet_infrastructure::Ssl_base[puppet_infrastructure::ssl_base_nginx]/File[/etc/ssl/private/p8test.key]/content: \n--- /etc/ssl/private/p8test.key\t2026-11-21 05:55:40.825736700 +0000\n+++ /tmp/puppet-file20261121-2493-feyw80\t2026-11-21 05:55:48.887853387 +0000\n@@ -26,4 +26,3 @@\n PHE1QTWb+GZaB0BOkb0j8kcCqKsoxhITtRmAqv3WMoQ5ObEJKnCjwVK2KDdwwXMk\n /vz/xblOPqQ6LV4VwXwLVlo=\n -----END PRIVATE KEY-----\n-# p8test drift\n\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssl_nginx/Puppet_infrastructure::Ssl_base[puppet_infrastructure::ssl_base_nginx]/File[/etc/ssl/private/p8test.key]/content: \n\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssl_nginx/Puppet_infrastructure::Ssl_base[puppet_infrastructure::ssl_base_nginx]/File[/etc/ssl/private/p8test.key]/content: content changed '{sha256}7708533a6c9866606b1000256ccfdcb6e57e399d6aec100f69d0c0f1a57933ce' to '{sha256}1408355e23bf8f52551c5dc0f4d7781e7797279b8b37a40379d5f1140fcc0854' (corrective)\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Ssl_nginx/Puppet_infrastructure::Ssl_base[puppet_infrastructure::ssl_base_nginx]/File[/etc/ssl/private/p8test.key]: Scheduling refresh of Service[nginx]\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.81 seconds\u001b[0m\nAGENT_RC=2\n"
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "the private key is installed root-only, and the bundle holds the certificate then the intermediate, the certificate matching the key",
+   "checks": [
+    "private-key-installed-root-only",
+    "nginx-bundle-cert-then-intermediate",
+    "bundle-certificate-matches-the-key"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a changed bundle is put back on the next agent run and nginx is restarted",
+   "checks": [
+    "the-bundle-is-changed-by-hand",
+    "the-agent-run-restores-the-bundle-and-restarts-nginx"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a changed private key is put back on the next agent run and nginx is restarted",
+   "checks": [
+    "the-key-is-changed-by-hand",
+    "the-agent-run-restores-the-key-and-restarts-nginx"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the RedHat paths (/etc/pki/tls/private for the key)",
+   "uncovered": {
+    "why": "the plan's node for ssl_nginx is Debian (Ubuntu); a set runs on its class's plan node only",
+    "lifted_by": "capability: a phase3 set for a node kind other than the plan's (rhel9)",
+    "evidence": "phase3.py run selects the class's plan node (nodes.select); migration_plan.md node column for ssl_nginx"
+   }
+  }
+ ],
+ "duration_s": 132.9
+}
