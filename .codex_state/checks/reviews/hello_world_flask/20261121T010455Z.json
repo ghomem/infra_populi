@@ -1,0 +1,35 @@
+{
+ "class": "hello_world_flask",
+ "at": "20261121T010455Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "unit-runs-gunicorn-in-the-app-dir @ service.erb:13: WorkingDirectory=<%= @app_dir %> with app_dir = \"${localdir}/hello_world_flask/$title\" (manifest:34) renders /opt/puppet-infrastructure/hello_world_flask/hello_world_flask for the harness title; the probe greps exactly that line from the deployed unit",
+  "unit-runs-gunicorn-in-the-app-dir @ service.erb:10: the non-RedHat branch renders ExecStart=python3 -m gunicorn --bind <ip>:<port> wsgi:app; with the params fixture (127.0.0.1, 8080) the expected line is ExecStart=python3 -m gunicorn --bind 127.0.0.1:8080 wsgi:app, as the expect states",
+  "the-agent-run-restores-and-restarts @ manifest:85-89: the restart exec is refreshonly and notified by $files_notify from the .py file (27-29, 44-52); after the hand drift (sed + restart, page showed 'p8test drifted') the agent run restores the file and the exec restarts gunicorn, so the effect (curl of the page heading) shows the fixture message 'P8 test flask hello' again; a restore without the restart would still serve the drifted code, so the effect really evidences the restart and is not the action's own output",
+  "purpose covered: Purpose (deploy the Flask welcome app under localdir and run it with gunicorn as systemd service hello-world-flask-<title> on the given address/port, restarting on file/unit change) matches the baseline manifest, both templates and hello_world_flask_common (python3-gunicorn/python3-flask packages, exercised implicitly by gunicorn serving). Tested: service active+enabled; unit ExecStart/WorkingDirectory; the page served with the configured message; bind only on 127.0.0.1 (invariant on 10.0.2.15:8080, the node's own NAT address); app drift undone and restarted by the agent run; unit drift (8081) undone and the service runs the restored unit on 8080, which also discriminates the reload-before-restart order of local change #16 (a restart on the stale definition would leave 8081). Uncovered rows are honest: RedHat ExecStart branch (service.erb:7-8) - phase3.py selects the node from the plan row (nodes.select(cls=cls)) and holds one set file per class, so a second-node-kind run of the same set is a missing tool capability as stated; uninstall/other address/port/message - phase3.py applies one fixture (params|defaults, line 46), as stated. Minor unit attributes (KillMode, After/Wants) are not part of the purpose."
+ ],
+ "review_s": 180.9,
+ "check_file_sha256": "a8ae94b19293be2fbc7cd32d06d86f722529e49a58d584d09d0570d42a458cf9",
+ "content_sha256": "a8ae94b19293be2fbc7cd32d06d86f722529e49a58d584d09d0570d42a458cf9",
+ "reviewer_result": "20261121T010155Z-reviewer",
+ "author_result": "20261121T005315Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "4a3c9fb5-86bd-4f3a-953d-26a9ab991f6b",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "4a3c9fb5-86bd-4f3a-953d-26a9ab991f6b",
+   "fresh": true
+  }
+ }
+}
