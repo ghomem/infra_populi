@@ -1,0 +1,35 @@
+{
+ "class": "linux_policies_user",
+ "at": "20261121T015754Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "policies-run-on-an-agent-run-while-logged-in -> execute_linux_policies_user.sh.erb:9-12: SYSLOG_TAG=linuxint-policies-${CALLER} and the 'Executing ${LINUX_POLICIES_SCRIPT}' line; the exec passes caller puppet-agent (linux_policies_user.pp:72), so the probe's first line (tag linuxint-policies-puppet-agent, Executing /opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh) is exactly what these lines produce under the params fixture",
+  "user-policy-script-composed -> linux_policies_user.pp:46-51: one file_line per policy with line => $policy, appended to the tmp script that the final USER/<user>.sh (0700, owner/group the user, lines 58-63) copies; tail -2 expecting the two fixture policy lines verbatim and stat 'p8testuser p8testuser 700' match what the code produces",
+  "user-policy-script-composed -> puppet_header.sh.erb:4: '. <%= @linux_policies_dir %>/COMMON/common' renders with localdir /opt/puppet-infrastructure to the line the grep -c counts (expect 1), and head -1 '#!/bin/bash' is header line 1",
+  "purpose gap: Covered: the script's composition (owner, mode, header sourcing COMMON/common, the policy lines), the agent-run runner invocation (Executing line under tag linuxint-policies-puppet-agent), the login run tied to the autostart by the logind session start t0 and the first agent-run Executing t1, and that no policy ran before the session. Gap: the outcome 'with the user logged in, an agent run executes the policies as the user' is not observed for the agent run itself. In policies-run-on-an-agent-run-while-logged-in the 'User p8testuser loged in, executing policies' line and the 'p8test policy 1 as p8testuser' count are taken over the whole journal, and the autostart run at login alone produces both (node journal: autostart at 1795226184.39-.41 logged both before any agent run at 1795226201.42). no-policy-runs-before-the-session's 'after the session: some' is satisfied by the same autostart lines. So the set would pass if the agent-run script stopped after the runner's Executing line (e.g. sourcing COMMON/common or the login check failing in the exec's environment). The lab can exercise this: the node journal shows policy lines following each agent-run Executing line (1795226201.445, 1795226213.388), so counting the policy and logged-in lines --since the first linuxint-policies-puppet-agent line, as the autostart check already does with its window, would tie them to the agent run. Outcome table otherwise complete; the 'other users or other policy lists' uncovered row is honest (one params fixture per set)."
+ ],
+ "review_s": 160.3,
+ "check_file_sha256": "3d1275190ada7eab3be14bdb1a6c3456a3b69c1692a19dcc075ef4e2243799b7",
+ "content_sha256": "3d1275190ada7eab3be14bdb1a6c3456a3b69c1692a19dcc075ef4e2243799b7",
+ "reviewer_result": "20261121T015514Z-reviewer",
+ "author_result": "20261121T015148Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "b43bd111-a99c-47b2-a9bd-7341d4a856db",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "b43bd111-a99c-47b2-a9bd-7341d4a856db",
+   "fresh": true
+  }
+ }
+}
