@@ -1,0 +1,38 @@
+{
+ "class": "sysmon_mysqldump_health",
+ "at": "20261121T113606Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "restores-are-checked (template 50-52): line 50 loads $f into $DBNAME and 52 calls handle_error 'Load database dump $f' on a non-zero rc; the broken dump keeps the mysqldump header (so line 44 extracts DBNAME p8testbroken from the '-- Host: ... Database:' line and line 46 creates it) and then invalid SQL, so the load fails and the expected 'CRITICAL: Load database dump ./broken.sql' with rc 2 (RC_CRITICAL, line 23) is what the code produces; my run saw exactly that",
+  "restores-are-checked (template 54-56): clear_database (line 37, DROP DATABASE $DBNAME) runs after a good load, and handle_error also runs it before exiting on the failed load (line 21); the probe's 'left: 0' after each run (SHOW DATABASES LIKE p8test%) tests that the scratch databases p8testsrc and p8testbroken are dropped; the good run's 'OK: exit code 0' matches lines 80-81. The action is the check script itself, as Nagios would run it; the effect file holds its output and exit code (the outcome of a Nagios check) plus independent mysql queries of the database state; mutates declares the two runs, the scratch databases and broken.sql",
+  "check-script-rendered (template 74): DIRS=\"<%= @dirs %>\" renders the fixture's dirs /var/tmp/p8test-dumps; the probe greps the rendered DIRS (and MYSQLUSER/MYSQLPWD from lines 5-6) and stat's root 755 from the manifest's owner/mode (8-15); bash -n checks it parses; expect matches the params fixture",
+  "finding a-file-that-is-not-a-dump-is-critical: expected 'CRITICAL: SQL File ./empty.sql is not a MySQLDump' and rc=2; the probe saw 'OK: exit code 0' and rc=0. The code explains it: line 68 calls handle_error $RC without the INV flag, and $RC is 0 after the good dump's validate_dump (or unset if the empty file comes first: '[ -ne 0 ]' errors and is false), so handle_error never fires. That is an upstream defect at the baseline, and the check expects the behaviour that lines 64-69 plainly intend",
+  "purpose gap: The checks test the rendered script (owner, mode, credentials, dirs), a real restore of a good mysqldump into a scratch database that is then dropped with OK/exit 0, a dump that fails to load reported CRITICAL/exit 2 with its scratch database dropped, and a non-dump .sql file (which gives the finding). Gap: the purpose itself says that a failure to create or to drop the scratch database is reported CRITICAL. No outcome row, check or uncovered entry covers either case, and the lab can exercise both on the node's MySQL 8.0, which the set already installs. (1) Create failure (lines 46-48): pre-create a database with the dump's name, then run the check. Expected: 'CRITICAL: Create database <name>', exit 2. Line 21 also means handle_error runs clear_database (line 37, DROP DATABASE $DBNAME) on that path, so the code drops the database that already existed. On a host that holds the live database of that name, that matters. (2) Drop failure (lines 54-56): give the check's user a grant without DROP. Expected: 'CRITICAL: Drop database <name>'. Two smaller gaps, also exercisable but not listed: several space-separated dirs (line 75 loop) and the DBNAME extraction's need for a '-- Host:' header line (line 44)."
+ ],
+ "review_s": 141.6,
+ "check_file_sha256": "191a6f3c2a782448102678c637179d6382d918852434585e1963db28977cf9ea",
+ "content_sha256": "191a6f3c2a782448102678c637179d6382d918852434585e1963db28977cf9ea",
+ "reviewer_result": "20261121T113345Z-reviewer",
+ "author_result": "20261121T113058Z-author",
+ "findings": [
+  "a-file-that-is-not-a-dump-is-critical"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "463e5535-5712-4c84-8e60-0858ec699a13",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "463e5535-5712-4c84-8e60-0858ec699a13",
+   "fresh": true
+  }
+ }
+}
