@@ -3,7 +3,8 @@
 
     [libdefaults]
     ticket_lifetime = 24000
-    default_realm = <%= @domain_netbios_name %>.<%= @domain_tld %>
+<%# local change #17: an AD realm is upper-case and Kerberos compares realms case-sensitively -%>
+    default_realm = <%= @domain_netbios_name.upcase %>.<%= @domain_tld.upcase %>
 
     [realms]
     DOMAIN.LOCAL = {

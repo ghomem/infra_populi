@@ -1,4 +1,4 @@
-# Puppet 8 migration: preserve Samba domain integration for OpenVPN using the structured hostname fact.
+# Puppet 8 migration: preserve Samba domain integration for OpenVPN using the structured hostname fact; local change #17: the Kerberos default realm is upper-cased (krb5.conf.erb).
 # Module dependencies: none.
 class puppet_infrastructure::openvpn_domain (
   String $join_user,
