@@ -1,0 +1,21 @@
+{
+ "class": "letsencrypt_certificate",
+ "at": "20261121T011108Z",
+ "verdict": "PASS",
+ "deferral": true,
+ "checks": {
+  "deferral_valid": "ok",
+  "derived_from": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "manifests/letsencrypt_certificate.pp:32-34: the define's only resource is letsencrypt::certonly (custom_plugin true, additional_args), i.e. one certbot certonly run; on the default node no ACME CA is reachable and the run is suppressed by the letsencrypt_cert_standin self-signed certificate (fixture header: domain-validation guard accepts it), so no issuance is observable; a test ACME CA on ubuntu2 (active, capability second-node) is the stand-in lift HQ batch-7 ruling 2 named",
+  "manifests/letsencrypt_certificate.pp:26: the digitalocean branch passes --dns-digitalocean with a credentials file, so a DNS-01 challenge needs the DigitalOcean API (or a stand-in for it); the lab has none, confirming the stated reason",
+  "manifests/letsencrypt_certificate.pp:28: the hetzner branch passes --authenticator dns-hetzner with a credentials file, needing the Hetzner DNS API or a stand-in; same reason, and the deferral's why names a DNS challenge stand-in beside the test CA on the second node",
+  "purpose covered: Purpose (obtain a certificate for the domain, optionally plus its parent domain via split/join of components[1,-1], through certbot DNS-01 with DigitalOcean or Hetzner, stored under /etc/letsencrypt/live/<certificate_path or domain>) matches the baseline code and its line-31 comment. Every part of it is the single certbot run, which the lab cannot exercise without an ACME CA and a DNS-provider stand-in; the domain list, authenticator args and storage path have no observable effect without that run (the only file present is the fixture's stand-in). The deferral covers the whole purpose and names its lift honestly: a Pebble-style CA with a DNS-01 stand-in on ubuntu2, the scheduled stand-in lift."
+ ],
+ "check_file_sha256": "eec71f6e1571ffe397b80a415cb29000b1a3320c7bb0cb6bd129276fbbf02e2a",
+ "content_sha256": "eec71f6e1571ffe397b80a415cb29000b1a3320c7bb0cb6bd129276fbbf02e2a",
+ "findings": [],
+ "review_s": null
+}
