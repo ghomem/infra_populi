@@ -2,9 +2,29 @@
 # a checklist script that, when run on the Puppet master, writes `$integrity_checklist` (md5 sums of filelist) into the
 # master's manifests directory (puppet::manifdir) as 97_integrity.pp. Fixture (params, never committed): filelist
 # "/etc/hostname /etc/os-release". outdir comes from the lab Hiera (puppet::manifdir; it renders with a doubled slash).
+# 2026-11-21 (backfill batch 9): purpose and outcomes (HQ rulings 2 and C1); the link to the nodes as a capability row.
 class: sysmon_integrity_master
 baseline: release-0.9.10 (cf477c6)
 fixture: params
+purpose: >-
+  Generates, on the Puppet master, the integrity checklist that sysmon_integrity_node verifies on the nodes: a script
+  writes the md5sum lines of the listed files, joined by ':', as the Puppet variable $integrity_checklist into the
+  master's manifests directory (97_integrity.pp), so node definitions can pass it to sysmon_integrity_node.
+outcomes:
+  - outcome: the checklist script carries the master's manifests directory, the output file and the file list, root 0755
+    from: manifests/sysmon_integrity_master.pp:3-16; templates/sysmon/checklist-integrity.sh.erb:3-5
+    checks: [checklist-script-rendered]
+  - outcome: run, the script writes 97_integrity.pp with $integrity_checklist holding the listed files' md5sum lines joined by ':'
+    from: templates/sysmon/checklist-integrity.sh.erb:7-18
+    checks: [checklist-written-as-puppet-variable]
+  - outcome: the generated variable reaches the nodes' integrity check (compiled from the master's manifests into a node's catalog as sysmon_integrity_node's checklist)
+    from: templates/sysmon/checklist-integrity.sh.erb:18; manifests/sysmon_integrity_node.pp:3
+    uncovered:
+      why: >-
+        the link is made in a node definition on the master (checklist => $integrity_checklist), which no class
+        declares; the lab node is an agent, and a phase3 set applies one class through the lab master with a params fixture
+      lifted_by: "capability: a phase3 set compiled against a site manifest on a master-role node (the master's generated 97_integrity.pp in the agent's catalog)"
+      evidence: "no baseline manifest passes $integrity_checklist (git grep integrity_checklist: only checklist-integrity.sh.erb); phase3.py applies through test_class.sh with a params fixture, and its host rules forbid running Puppet in any probe, actions included (FORBIDDEN[:3], 'runs Puppet'), so a set cannot compile the generated manifest itself"
 checks:
   - id: checklist-script-rendered
     what: the checklist script (root 0755) carries the output directory (puppet::manifdir), the output file and the file list
