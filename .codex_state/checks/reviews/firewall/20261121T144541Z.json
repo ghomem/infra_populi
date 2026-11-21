@@ -1,0 +1,43 @@
+{
+ "class": "firewall",
+ "at": "20261121T144541Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-next-agent-run-purges-the-unmanaged-rule: manifests/firewall.pp:30-31 declare firewallchain INPUT:filter:IPv4 purge => true, policy => drop (with line 27 resources purge); after a hand-added rogue ACCEPT rule and an agent run, expecting 0 rogue rules and '-P INPUT DROP' is exactly what those lines produce under defaults",
+  "another-host-gets-icmp-and-ssh-but-not-other-ports: manifests/firewall.pp:56-60 declare '100 accept ssh' proto tcp dport 22 accept (with 34-37 icmp accept and 30-31 INPUT policy drop); from the peer, ping in, nc to 22 in and nc to the unallowed listening 8888 dropped is what the compiled rules yield for any other host",
+  "the-flush-script-clears-every-rule: files/iptables/iptables-flush.sh (baseline, sha256 af2e05ea...) sets INPUT/OUTPUT/FORWARD policies ACCEPT and flushes nat, mangle and filter (-F, -X) for IPv4 and IPv6; the effect expects root:root 755 with that digest (manifest lines 18-24), 0 rules in filter/mangle/nat and INPUT/FORWARD ACCEPT, which is what running the script produces; the action is the script itself and the effect reads state, not the script's output",
+  "purpose gap: Tested: INPUT/FORWARD DROP with OUTPUT ACCEPT (policy lines), ICMP and SSH in from the peer while an unallowed listening port is dropped, loopback reaching that port (rule 001), purge of an unmanaged rule at the next agent run, flush script installed/clears everything/firewall rebuilt by the next run, saved rules equal running (netfilter-persistent enabled). Rule 002 is honestly uncovered (prior hand-built frames from the peer never reached INPUT; lifted by capability). GAP: rule '003 accept related established rules' (manifests/firewall.pp:49-53) is missing from the outcomes table entirely (neither checks nor uncovered). Its outcome is that the node's own outbound connections get their replies despite INPUT DROP (what makes 'OUTPUT stays open' usable: without it a reply from the master:8140 or the peer:22 to an ephemeral port is dropped by policy). The lab can exercise it (e.g. from the node, p8_tcp to the peer's 22 or the master's 8140 after apply, with a negative-style contrast), yet the only OUTPUT check reads the policy line '-P OUTPUT ACCEPT', which the class never sets."
+ ],
+ "review_s": 207.3,
+ "check_file_sha256": "56723b074d4fc8873bd967f9b0cac9682cae843274e8837cc94418abc31fc72a",
+ "content_sha256": "56723b074d4fc8873bd967f9b0cac9682cae843274e8837cc94418abc31fc72a",
+ "reviewer_result": "20261121T144214Z-reviewer",
+ "author_result": "20261121T143725Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "4b289bda-71e0-4156-87b8-5750aa76c6e4",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "4b289bda-71e0-4156-87b8-5750aa76c6e4",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "59fc833a-42eb-4bea-8d21-7508d32b9041",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "59fc833a-42eb-4bea-8d21-7508d32b9041",
+   "fresh": true
+  }
+ }
+}
