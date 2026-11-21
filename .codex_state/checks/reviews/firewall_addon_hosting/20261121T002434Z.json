@@ -1,0 +1,35 @@
+{
+ "class": "firewall_addon_hosting",
+ "at": "20261121T002434Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "ntp-still-answers: baseline line 19 accepts OUTPUT udp/123; the probe sends an NTP client request to ntp.ubuntu.com (resolved via the accepted udp/53) and expects a full-length reply, which needs exactly that NEW udp/123 out under the line-14 DROP policy (replies arrive on INPUT, untouched by the class); invariant holds on the clean node (passed) and is plausible (NAT reaches public NTP)",
+  "dns-still-resolves: baseline line 18 accepts OUTPUT udp/53; getent ahostsv4 archive.ubuntu.com resolving under the DROP policy tests that the DNS path stays open (stub 127.0.0.53 over lo and the upstream query, both udp/53); invariant passed clean; the rule itself is asserted separately by related-established-dns-ntp-accepted",
+  "new-outbound-tcp-dropped: baseline lines 13-14 set OUTPUT:filter:IPv4 policy drop with purge; loopback traffic traverses OUTPUT and no accept rule matches a NEW tcp/22 to 127.0.0.1 (149 is RELATED,ESTABLISHED only, 150/151 udp, 152 only the master's /32 on 8140), so the connect to the node's own sshd must be blocked; the clean node saw it open (negative control failed as required)",
+  "purpose covered: Purpose (outbound IPv4 lockdown for a hosting server: OUTPUT DROP except replies, DNS, NTP and the ruled master rule; unmanaged OUTPUT rules purged) matches the baseline header ('COMPLEMENTARY firewall configurations for hosting servers') and every resource of the manifest (firewallchain line 14, rules 149/150/151 lines 15/18/19, ruled rule 152). Outcomes table covers all of them: policy and exact rules (output-policy-drop, related-established-dns-ntp-accepted with the effective tcp proto of 149, master-rule-follows-the-nodes-resolution), new TCP dropped on loopback and to the internet, DNS and NTP still working (invariants), purge => true exercised by an unmanaged OUTPUT rule inserted before the node's agent run and gone after it (run rc 2, 1 changed), and the agent run through the DROP policy completing with failed: 0. IPv6 is correctly out of scope (the class manages only the IPv4 chain). No uncovered rows; nothing the lab can exercise is left untested."
+ ],
+ "review_s": 443.8,
+ "check_file_sha256": "41e2f08ee038251c5afc65f809a142a2eedd23394cf7afa0e21acb8c4e28c0b7",
+ "content_sha256": "41e2f08ee038251c5afc65f809a142a2eedd23394cf7afa0e21acb8c4e28c0b7",
+ "reviewer_result": "20261121T001711Z-reviewer",
+ "author_result": "20261121T000844Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "959f3781-a583-45f4-bbee-47971f646f8a",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "959f3781-a583-45f4-bbee-47971f646f8a",
+   "fresh": true
+  }
+ }
+}
