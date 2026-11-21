@@ -1,0 +1,393 @@
+{
+ "class": "firewall",
+ "role": "author",
+ "at": "20261121T144849Z",
+ "runner": "6b8987d",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "6bc6dc6badd6f2def492466cc12467fef08a03691f43d36b18cb96b00bbc23f7",
+ "content_sha256": "6bc6dc6badd6f2def492466cc12467fef08a03691f43d36b18cb96b00bbc23f7",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "default-policies-drop-input-and-forward",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n-P OUTPUT ACCEPT\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-running-rules-are-saved-for-the-next-boot",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "not-found\n",
+   "stderr": "bash: line 99: /etc/iptables/rules.v4: No such file or directory\ngrep: /etc/iptables/rules.v4: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "flush-script-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/iptables-flush.sh': No such file or directory\nsha256sum: /opt/puppet-infrastructure/bin/iptables-flush.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "a-service-the-firewall-does-not-allow-is-listening",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "loopback-reaches-a-local-service",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "closed\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "another-host-gets-icmp-and-ssh-but-not-other-ports",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-firewall/reach.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "replies-to-the-nodes-own-connections-get-in",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-firewall/out.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "an-unmanaged-rule-is-added",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-purges-the-unmanaged-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n-P INPUT ACCEPT\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-flush-script-clears-every-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "absent\n0 0 0\n-P INPUT ACCEPT\n-P FORWARD ACCEPT\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-rebuilds-the-firewall",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n0\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "}\u001b[0m\n\u001b[mNotice: firewall[100 accept ssh]: Creating: Ensuring changes to '100 accept ssh' persist\u001b[0m\n\u001b[mNotice: firewall[100 accept ssh]: Creating: Finished in 0.074812 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 12.07 seconds\u001b[0m\nRUN1_EVENTS: 16 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795272646'\u001b[0m\n\u001b[mNotice: Applied catalog in 1.04 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::firewall: 9 concrete resources (+0 defined-type instances)\n  File[/opt/puppet-infrastructure/bin/iptables-flush.sh]\n  Resources[firewall]\n  Firewallchain[FORWARD:filter:IPv4]\n  Firewallchain[INPUT:filter:IPv4]\n  Firewall[000 accept all icmp]\n  Firewall[001 accept all to lo interface]\n  Firewall[002 reject local traffic not on loopback interface]\n  Firewall[003 accept related established rules]\n  Firewall[100 accept ssh]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP firewall 092b2a95e047\n"
+ },
+ "applied": [
+  {
+   "id": "default-policies-drop-input-and-forward",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P INPUT DROP\n-P FORWARD DROP\n-P OUTPUT ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-running-rules-are-saved-for-the-next-boot",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "enabled\nsaved-equals-running\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "flush-script-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\naf2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-service-the-firewall-does-not-allow-is-listening",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0.0.0.0:8888\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "starts a transient unit p8test-listener (python3 -m http.server 8888 on 0.0.0.0) on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "loopback-reaches-a-local-service",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "open\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond one local connection to 127.0.0.1:8888 (declared mutating so it runs after the service starts)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "another-host-gets-icmp-and-ssh-but-not-other-ports",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "icmp in\nssh in\n8888 dropped\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "three connection attempts from the peer to the class node (ICMP, TCP 22, TCP 8888); results in /run/p8test-firewall/reach.txt on the peer",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "replies-to-the-nodes-own-connections-get-in",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "outbound to the peer's ssh: open\nrule 003 counted the replies\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "one outbound TCP connection from the node to the peer's port 22 (the peer's sshd logs it); the counts go to /run/p8test-firewall/out.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "an-unmanaged-rule-is-added",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "appends `-A INPUT -s 10.255.255.1/32 -m comment --comment p8test-rogue -j ACCEPT` on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-agent-run-purges-the-unmanaged-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\n-P INPUT DROP\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rules (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-flush-script-clears-every-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root:root 755 af2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935\n0 0 0\n-P INPUT ACCEPT\n-P FORWARD ACCEPT\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs /opt/puppet-infrastructure/bin/iptables-flush.sh on the node (every IPv4 and IPv6 rule and chain removed, policies ACCEPT)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-agent-run-rebuilds-the-firewall",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P INPUT DROP\n-P FORWARD DROP\n1\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rules (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "69c97ec3-5064-476a-845d-50dadac1b15c",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "69c97ec3-5064-476a-845d-50dadac1b15c",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "6dc9df90-085c-4f91-944a-214a0b9a13ae",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "6dc9df90-085c-4f91-944a-214a0b9a13ae",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "node_agent": {
+  "an-unmanaged-rule-is-added": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall/Firewall[9006 p8test-rogue]/ensure: undefined 'ensure' from 'present'\u001b[0m"
+   ],
+   "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795272669'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall/Firewall[9006 p8test-rogue]/ensure: undefined 'ensure' from 'present'\u001b[0m\n\u001b[mNotice: firewall[9006 p8test-rogue]: Deleting: Deleting Rule '9006 p8test-rogue'\u001b[0m\n\u001b[mNotice: firewall[9006 p8test-rogue]: Deleting: Ensuring changes to '9006 p8test-rogue' persist\u001b[0m\n\u001b[mNotice: firewall[9006 p8test-rogue]: Deleting: Finished in 0.083605 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 1.15 seconds\u001b[0m\nAGENT_RC=2\n"
+  },
+  "the-flush-script-clears-every-rule": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall/Firewallchain[FORWARD:filter:IPv4]/policy: policy changed 'accept' to 'drop' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall/Firewallchain[INPUT:filter:IPv4]/policy: policy changed 'accept' to 'drop' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall/Firewall[000 accept all icmp]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall/Firewall[001 accept all to lo interface]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall/Firewall[002 reject local traffic not on loopback interface]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall/Firewall[003 accept related established rules]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall/Firewall[100 accept ssh]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m"
+   ],
+   "tail": "2 reject local traffic not on loopback interface' persist\u001b[0m\n\u001b[mNotice: firewall[002 reject local traffic not on loopback interface]: Creating: Finished in 0.094886 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall/Firewall[003 accept related established rules]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m\n\u001b[mNotice: firewall[003 accept related established rules]: Creating: Creating Rule '003 accept related established rules' with {:name=>\"003 accept related established rules\", :proto=>\"all\", :state=>[\"RELATED\", \"ESTABLISHED\"], :jump=>\"ACCEPT\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\", :chain=>\"INPUT\"}\u001b[0m\n\u001b[mNotice: firewall[003 accept related established rules]: Creating: Ensuring changes to '003 accept related established rules' persist\u001b[0m\n\u001b[mNotice: firewall[003 accept related established rules]: Creating: Finished in 0.087953 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall/Firewall[100 accept ssh]/ensure: defined 'ensure' as 'present' (corrective)\u001b[0m\n\u001b[mNotice: firewall[100 accept ssh]: Creating: Creating Rule '100 accept ssh' with {:name=>\"100 accept ssh\", :proto=>\"tcp\", :dport=>22, :jump=>\"ACCEPT\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\", :chain=>\"INPUT\"}\u001b[0m\n\u001b[mNotice: firewall[100 accept ssh]: Creating: Ensuring changes to '100 accept ssh' persist\u001b[0m\n\u001b[mNotice: firewall[100 accept ssh]: Creating: Finished in 0.097321 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 1.84 seconds\u001b[0m\nAGENT_RC=2\n"
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "INPUT and FORWARD drop by default and OUTPUT is left open (the class sets no OUTPUT policy); a port no rule allows is dropped for any other host",
+   "checks": [
+    "default-policies-drop-input-and-forward",
+    "a-service-the-firewall-does-not-allow-is-listening",
+    "another-host-gets-icmp-and-ssh-but-not-other-ports"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "ICMP and SSH are let in from any host",
+   "checks": [
+    "another-host-gets-icmp-and-ssh-but-not-other-ports"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "loopback traffic is accepted (rule 001)",
+   "checks": [
+    "a-service-the-firewall-does-not-allow-is-listening",
+    "loopback-reaches-a-local-service"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "traffic to 127.0.0.0/8 arriving on another interface is rejected (rule 002)",
+   "uncovered": {
+    "why": "the same rule in firewall_secure_extra's set (2026-11-18) counted none of 3 hand-built frames from the peer to 127.0.0.1 through the node's NIC, with route_localnet 0 and with it set to 1 (unexplained); no lab path is known that brings such a frame to INPUT",
+    "lifted_by": "capability: a frame path that reaches INPUT with a 127.0.0.0/8 destination on a non-loopback interface (route_localnet 1 did not suffice)",
+    "evidence": "firewall_secure.yml rule-002 row; the lead in escalations/firewall_secure_extra.behaviour.md"
+   }
+  },
+  {
+   "outcome": "replies to the node's own outbound connections are accepted despite the INPUT drop (rule 003, related and established)",
+   "checks": [
+    "replies-to-the-nodes-own-connections-get-in"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "rules Puppet does not manage are purged at the next agent run",
+   "checks": [
+    "an-unmanaged-rule-is-added",
+    "the-next-agent-run-purges-the-unmanaged-rule"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the emergency flush script is installed, clears every rule when run, and the next agent run rebuilds the firewall",
+   "checks": [
+    "flush-script-installed",
+    "the-flush-script-clears-every-rule",
+    "the-next-agent-run-rebuilds-the-firewall"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the running rules are saved for the next boot",
+   "checks": [
+    "the-running-rules-are-saved-for-the-next-boot"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 155.4
+}
