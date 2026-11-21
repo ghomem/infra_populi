@@ -1,0 +1,38 @@
+{
+ "class": "hello_world_flask",
+ "at": "20261121T004402Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "not-served-on-another-address: service.erb:10 binds gunicorn to <%= @ip_address %>:<%= @port %>; with the params fixture 127.0.0.1:8080 nothing listens on 10.0.2.15:8080, so curl rc 7 is what the line produces (and the invariant holds on the clean node)",
+  "the-agent-run-restores-and-restarts: hello_world_flask.pp:27 puts Exec[hello-world-flask-<title>-restart] in $files_notify, which the .py file (44-52) notifies; 85-89 is that refreshonly 'systemctl restart'; after the agent restores the file the restart reloads gunicorn, so the page shows the fixture message 'P8 test flask hello' again (agent events in my run: content corrective + restart Triggered 'refresh')",
+  "app-serves-the-welcome-message: hello_world_flask.pp:49 renders hello_world_flask.py.erb, whose lines 10-15 put welcome_msg in <h1 style='color:blue'>%s</h1>; the probe greps exactly that heading with the fixture's 'P8 test flask hello'",
+  "finding the-agent-run-restores-the-unit-in-effect: after the second agent run the unit file is restored (grep count 1) but 8080 returns 000 and 8081 still answers (curl-rc=0): the service kept the hand-changed unit. The agent events show Exec[...-restart] Triggered before Exec[...-reload]; in the baseline both are refreshonly, both notified by the unit file (pp:28, 72) with no ordering between them, and manifest order puts restart (84) before daemon-reload (88), so the restart runs on the stale definition. A real upstream ordering defect against the class's own intent (pp:83 'restart and reload the service when the files change'), not a test artifact: a Puppet-driven unit change (new port/address) would hit the same order",
+  "purpose covered: Purpose (deploy a Flask welcome page under localdir, run it with gunicorn as systemd service on the given address/port, restart on file or unit change) matches the baseline manifest, its common class and both templates. Tested: service active+enabled, unit ExecStart/WorkingDirectory, page served with the configured message, not served on the other address, a hand change to the app restored and restarted by the agent run, a hand change to the unit restored and expected in effect (this last one is the finding). The mutating checks declare exactly their sed/daemon-reload/restart or HTTP-only effects, and their effects are read-only curl/grep of the result. Uncovered rows are honest: the RedHat ExecStart branch (service.erb:7-8) needs a set run on rhel9, and phase3.py picks the node only from the plan (nodes.select(cls=cls)), with no per-set or --node override, so the capability really is missing; uninstall/other address/port/message need more than one params fixture, and the runner applies one fixture per set. wsgi.py's notify uses the same $files_notify path that the app-file check exercises."
+ ],
+ "review_s": 185.6,
+ "check_file_sha256": "a8ae94b19293be2fbc7cd32d06d86f722529e49a58d584d09d0570d42a458cf9",
+ "content_sha256": "a8ae94b19293be2fbc7cd32d06d86f722529e49a58d584d09d0570d42a458cf9",
+ "reviewer_result": "20261121T004057Z-reviewer",
+ "author_result": "20261121T003706Z-author",
+ "findings": [
+  "the-agent-run-restores-the-unit-in-effect"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "28353649-4eb7-466f-b2be-3dce54571b61",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "28353649-4eb7-466f-b2be-3dce54571b61",
+   "fresh": true
+  }
+ }
+}
