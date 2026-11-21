@@ -6,6 +6,9 @@
 # runs (Phase 3 desktop sessions); the policies then run on the agent run (the exec) and at the login (linux_policies_
 # common's XDG autostart entry, composed through required_base).
 # 2026-11-20 (backfill batch 7): purpose and outcomes (HQ rulings 2 and C1); checks unchanged.
+# Correction round 1, 2026-11-21 (review 20261121T013717Z, purpose): the fixture's policies log what they do (one names
+# the user it ran as), so the checks see the policies themselves run as the user; and no policy runs before the
+# user's first session (the harness's agent runs come before the login).
 class: linux_policies_user
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -27,10 +30,13 @@ outcomes:
     checks: [user-policy-script-composed]
   - outcome: with the user logged in, an agent run executes the policies as the user through the runner
     from: manifests/linux_policies_user.pp:70-76
-    checks: [policies-run-on-an-agent-run-while-logged-in]
+    checks: [policies-run-on-an-agent-run-while-logged-in, no-policy-runs-before-the-session]
   - outcome: at the user's desktop log-in, the autostart entry runs the policies
     from: manifests/linux_policies_common.pp:27-32
     checks: [autostart-runs-the-policies-at-login]
+  - outcome: without a login session the policies do not run (the agent runs before the user's first session run none)
+    from: manifests/linux_policies_user.pp:70-76; templates/linux-policies/puppet_header.sh.erb:9-14
+    checks: [no-policy-runs-before-the-session]
   - outcome: other users or other policy lists
     from: manifests/linux_policies_user.pp:15-20
     uncovered:
@@ -54,7 +60,7 @@ checks:
       stat -c '%U %G %a' "$f"; head -1 "$f"
       grep -c '^\. /opt/puppet-infrastructure/linux-policies/COMMON/common$' "$f"
       tail -2 "$f"
-    expect: {rc: 0, stdout: "\\Ap8testuser p8testuser 700\\n#!/bin/bash\\n1\\ntrue # p8test policy line 1\\ntrue # p8test policy line 2\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Ap8testuser p8testuser 700\\n#!/bin/bash\\n1\\nlogger -t p8testpolicy \"p8test policy 1 as \\$\\(id -un\\)\"\\nlogger -t p8testpolicy p8test-policy-2\\n\\Z"}
 
   - id: policies-run-on-an-agent-run-while-logged-in
     what: >-
@@ -68,7 +74,8 @@ checks:
     probe: |
       journalctl -t linuxint-policies-puppet-agent -o cat --no-pager | grep -c -x 'Executing /opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh' | sed 's/^[1-9][0-9]*$/ran-on-agent-run/'
       journalctl -t linuxint-policies -o cat --no-pager | grep -c -x 'User p8testuser loged in, executing policies' | sed 's/^[1-9][0-9]*$/logged-in/'
-    expect: {rc: 0, stdout: "\\Aran-on-agent-run\\nlogged-in\\n\\Z"}
+      journalctl -t p8testpolicy -o cat --no-pager | p8_count '^p8test policy 1 as p8testuser$' | sed 's/^[1-9][0-9]*$/policy-ran-as-p8testuser/'
+    expect: {rc: 0, stdout: "\\Aran-on-agent-run\\nlogged-in\\npolicy-ran-as-p8testuser\\n\\Z"}
 
   - id: autostart-runs-the-policies-at-login
     what: >-
@@ -82,3 +89,19 @@ checks:
     probe: |
       journalctl -t linuxint-policies-autostart -o cat --no-pager | grep -c -x 'Executing /opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh' | sed 's/^[1-9][0-9]*$/ran-at-login/'
     expect: {rc: 0, stdout: "\\Aran-at-login\\n\\Z"}
+
+  - id: no-policy-runs-before-the-session
+    what: >-
+      the harness's agent runs made before p8testuser's first login session ran no policy: the journal holds no policy
+      line from before logind opened that session, and one after it
+    control: negative
+    derived_from:
+      - {path: templates/linux-policies/puppet_header.sh.erb, lines: "9-14", text: "logger -p local1.notice -t $SYSLOG_TAG \"User ${USERNAME} not loged in, skipping policies execution\""}
+      - {path: manifests/linux_policies_user.pp, lines: "70-76", text: "#Execute the policies on agent run if the user is logged in"}
+    probe: |
+      t=$(journalctl -u systemd-logind -o short-unix --no-pager | awk '/New session .* of user p8testuser\./ {print int($1); exit}')
+      [ -n "$t" ] || { echo "no session"; exit 1; }
+      journalctl -t p8testpolicy --until "@$t" -o cat --no-pager | p8_count 'p8test'
+      journalctl -t p8testpolicy --since "@$t" -o cat --no-pager | p8_count 'p8test' | sed 's/^[1-9][0-9]*$/after the session: some/'
+    expect: {rc: 0, stdout: "\\A0\\nafter the session: some\\n\\Z"}
+
