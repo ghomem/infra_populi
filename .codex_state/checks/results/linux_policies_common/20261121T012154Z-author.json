@@ -1,0 +1,154 @@
+{
+ "class": "linux_policies_common",
+ "role": "author",
+ "at": "20261121T012154Z",
+ "runner": "31486d5",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "b9bbd5f99d4b1e6a65e59699abbe4022539e3524ab91a9563118e0b5297309ec",
+ "content_sha256": "b9bbd5f99d4b1e6a65e59699abbe4022539e3524ab91a9563118e0b5297309ec",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "policies-tree-deployed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "sha256sum: /opt/puppet-infrastructure/linux-policies/COMMON/common: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "autostart-entry-runs-the-runner",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/xdg/autostart/linux-policies-user.desktop': No such file or directory\ngrep: /etc/xdg/autostart/linux-policies-user.desktop: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "runner-executes-the-users-policy",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/linux-policies/COMMON/execute_linux_policies_user.sh': No such file or directory\ncat: /var/tmp/p8test-policy-ran: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-runner-reports-a-missing-script",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "64845d93668d757ba4a7e1eb7006334993520d0b05ecd05d1aee04933bb0f5'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Linux_policies_common/File[/opt/puppet-infrastructure/linux-policies/COMMON/execute_linux_policies_user.sh]/ensure: defined content as '{sha256}98607fb1cd703745efd4c0183ea028f5b375f79a52076f266ca0701a927aec33'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.39 seconds\u001b[0m\nRUN1_EVENTS: 16 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795224188'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.12 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::linux_policies_common: 3 concrete resources (+0 defined-type instances)\n  File[/opt/puppet-infrastructure/linux-policies]\n  File[/etc/xdg/autostart/linux-policies-user.desktop]\n  File[/opt/puppet-infrastructure/linux-policies/COMMON/execute_linux_policies_user.sh]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP linux_policies_common d6bbd7b031c4\n"
+ },
+ "applied": [
+  {
+   "id": "policies-tree-deployed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "96142acfd235e555756e309dfbd98e45a71024a675f6d1a47ae923d3334f147a\ntmp-and-user-present\n",
+   "stderr": ""
+  },
+  {
+   "id": "autostart-entry-runs-the-runner",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 644\nExec=/opt/puppet-infrastructure/linux-policies/COMMON/execute_linux_policies_user.sh autostart\n",
+   "stderr": ""
+  },
+  {
+   "id": "runner-executes-the-users-policy",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\np8test-policy-ran\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "adds USER/root.sh (0755) to the deployed tree, a fixture policy that writes /var/tmp/p8test-policy-ran, then runs the runner once as root with the argument p8test (it also logs one line to syslog)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-runner-reports-a-missing-script",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs the runner once as the account nobody with the argument p8testmissing (one syslog line)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "dbf537da-1892-470f-80d9-22759e24e5af",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "dbf537da-1892-470f-80d9-22759e24e5af",
+   "fresh": true
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "the module's linux-policies tree is deployed under the local directory",
+   "checks": [
+    "policies-tree-deployed"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the runner executes the calling user's USER/<user>.sh when it exists and is executable, and says so in syslog; without one it logs that the script was not found",
+   "checks": [
+    "runner-executes-the-users-policy",
+    "the-runner-reports-a-missing-script"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "an XDG autostart entry runs the runner at a desktop log-in",
+   "checks": [
+    "autostart-entry-runs-the-runner"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the autostart entry actually running at a desktop log-in",
+   "uncovered": {
+    "why": "the class's plan node is a server without a desktop; the login side is exercised through linux_policies_user's set on kubuntu, which composes this class",
+    "lifted_by": "capability: a desktop session on the class's plan node",
+    "evidence": "nodes.yml: the class's node is ubuntu (capabilities [server]); phase3.py's `session` needs the kde capability (session_problems); linux_policies_user's autostart-runs-the-policies-at-login runs it on kubuntu"
+   }
+  }
+ ],
+ "duration_s": 78.3
+}
