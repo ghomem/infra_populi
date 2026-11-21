@@ -1,0 +1,103 @@
+# Phase 3 checks for puppet_infrastructure::firewall_addon_xrdp (class; node ubuntu; no parameters, fixture defaults).
+# An add-on to a base firewall (firewall_secure's INPUT drop and the IPv6 drop): it opens xrdp's port 3389 over IPv4 and,
+# over IPv6 loopback, VNC's port 5900 with its established replies, so xrdp can reach the local VNC server (its comment:
+# xrdp tries VNC over IPv6 first and treats a dropped IPv6 connection as no failure). Applied alone here the node's
+# policies stay ACCEPT, so the exercises first set the DROP policies the add-on is meant to sit on (declared in each
+# action; IPv4 keeps an accept for established traffic and port 22 so the harness's SSH stays up, as the base firewall
+# does). Rule texts read from the applied node (HQ batch-11 ruling 4). Node probes name no other host; the peer's probe
+# names only the class node's host-only address.
+# 2026-11-21 (backfill batch 10): first set, with purpose and outcomes (HQ rulings 2 and C1). Prototyped on the node.
+class: firewall_addon_xrdp
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+purpose: >-
+  Opens the firewall so sysadmins can reach a machine with the helpdesk feature: xrdp's port 3389 accepts connections
+  from other hosts, and over IPv6 loopback xrdp reaches the local VNC server on port 5900 (its replies accepted), even
+  when the base firewall drops IPv4 input and all IPv6.
+peer:
+  kind: ubuntu2
+  why: whether another host reaches xrdp's port can only be seen from another machine
+outcomes:
+  - outcome: the three rules are in place (IPv4 3389 accept; IPv6 lo 5900 accept; IPv6 established replies from 5900 accepted)
+    from: manifests/firewall_addon_xrdp.pp:7-11, 13-19, 35-41
+    checks: [the-xrdp-rules-are-in-place]
+  - outcome: under an IPv4 INPUT drop, another host reaches port 3389 while a port no rule opens stays dropped
+    from: manifests/firewall_addon_xrdp.pp:2-3, 7-11
+    checks: [an-ipv4-drop-base-and-two-listeners, another-host-reaches-xrdp-but-not-another-port]
+  - outcome: under an IPv6 INPUT drop, a connection over IPv6 loopback reaches VNC's port 5900 (and gets its replies), while another loopback port stays dropped
+    from: manifests/firewall_addon_xrdp.pp:13-19, 20-41
+    checks: [xrdp-reaches-vnc-over-ipv6-loopback-under-a-drop]
+checks:
+  - id: the-xrdp-rules-are-in-place
+    what: iptables accepts TCP 3389 on INPUT; ip6tables accepts TCP to 5900 on lo and established TCP from 5900
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_xrdp.pp, lines: "7-11", text: "firewall { '3389 allow xrdp':"}
+      - {path: manifests/firewall_addon_xrdp.pp, lines: "13-19", text: "firewall { '3389 allow xrdp to vnc ipv6':"}
+      - {path: manifests/firewall_addon_xrdp.pp, lines: "35-41", text: "firewall { '003 Allow established ipv6':"}
+    probe: |
+      iptables -S INPUT | grep -- '--comment "3389 allow xrdp"'
+      ip6tables -S INPUT | grep -- '--comment "3389 allow xrdp to vnc ipv6"'
+      ip6tables -S INPUT | grep -- '--comment "003 Allow established ipv6"'
+    expect: {rc: 0, stdout: "\\A-A INPUT -p tcp -m tcp --dport 3389 -m comment --comment \"3389 allow xrdp\" -j ACCEPT\\n-A INPUT -i lo -p tcp -m tcp --dport 5900 -m comment --comment \"3389 allow xrdp to vnc ipv6\" -j ACCEPT\\n-A INPUT -p tcp -m tcp --sport 5900 -m state --state ESTABLISHED -m comment --comment \"003 Allow established ipv6\" -j ACCEPT\\n\\Z"}
+
+  - id: an-ipv4-drop-base-and-two-listeners
+    what: setup for the peer check, the base firewall's IPv4 drop and two TCP services (3389, and 3390 which no rule opens) on every address
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_xrdp.pp, lines: "2-3", text: "# are able to access machines with the helpdesk feature"}
+    mutates: >-
+      starts transient units p8test-xrdp3389 and p8test-xrdp3390 (python3 -m http.server on 0.0.0.0); inserts at the top of
+      INPUT an accept for related/established traffic and one for TCP 22 (as the base firewall has), then sets the
+      IPv4 INPUT policy to DROP, until the next revert
+    probe: |
+      for p in 3389 3390; do systemd-run --unit p8test-xrdp$p -q python3 -m http.server $p --bind 0.0.0.0; done
+      iptables -I INPUT 1 -p tcp --dport 22 -m comment --comment p8test-base-ssh -j ACCEPT
+      iptables -I INPUT 1 -m state --state RELATED,ESTABLISHED -m comment --comment p8test-base-established -j ACCEPT
+      iptables -P INPUT DROP
+      sleep 2
+    effect: |
+      ss -ltnH '( sport = :3389 or sport = :3390 )' | awk '{print $4}' | sort
+      iptables -S | grep -E '^-P INPUT '
+    expect: {rc: 0, stdout: "\\A0\\.0\\.0\\.0:3389\\n0\\.0\\.0\\.0:3390\\n-P INPUT DROP\\n\\Z"}
+
+  - id: another-host-reaches-xrdp-but-not-another-port
+    what: from the peer, a TCP connection to the node's port 3389 gets through and one to 3390 is dropped
+    control: negative
+    host: peer
+    derived_from:
+      - {path: manifests/firewall_addon_xrdp.pp, lines: "7-11", text: "dport  => 3389,"}
+    mutates: two connection attempts from the peer to the class node (TCP 3389, TCP 3390); results in /run/p8test-xrdp/reach.txt on the peer
+    probe: |
+      install -d -m 0700 /run/p8test-xrdp
+      {
+        nc -z -w3 192.168.56.20 3389 >/dev/null 2>&1 && echo "3389 in" || echo "3389 dropped"
+        nc -z -w3 192.168.56.20 3390 >/dev/null 2>&1 && echo "3390 in" || echo "3390 dropped"
+      } > /run/p8test-xrdp/reach.txt
+    effect: |
+      cat /run/p8test-xrdp/reach.txt
+    expect: {rc: 0, stdout: "\\A3389 in\\n3390 dropped\\n\\Z"}
+
+  - id: xrdp-reaches-vnc-over-ipv6-loopback-under-a-drop
+    what: >-
+      with the IPv6 INPUT policy DROP (the base's IPv6 drop), a connection over ::1 to port 5900 succeeds and both
+      xrdp rules count packets, while ::1 port 5901 (no rule) is dropped
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_addon_xrdp.pp, lines: "13-19", text: "iniface  => 'lo',"}
+      - {path: manifests/firewall_addon_xrdp.pp, lines: "35-41", text: "state    => ['ESTABLISHED'],"}
+    mutates: >-
+      starts transient units p8test-vnc5900 and p8test-vnc5901 (python3 -m http.server on ::1), sets the IPv6 INPUT
+      policy to DROP until the next revert, and makes one connection to each; the outcomes go to /run/p8test-xrdp/vnc.txt
+    probe: |
+      install -d -m 0700 /run/p8test-xrdp
+      for p in 5900 5901; do systemd-run --unit p8test-vnc$p -q python3 -m http.server $p --bind ::1; done
+      sleep 2; ip6tables -P INPUT DROP
+      cnt() { ip6tables -v -x -L INPUT -n | grep -F "$1" | awk '{print $1}'; }
+      {
+        for p in 5900 5901; do echo "::1:$p $(p8_tcp ::1 $p 3)"; done
+        [ "$(cnt '3389 allow xrdp to vnc ipv6')" -gt 0 ] && [ "$(cnt '003 Allow established ipv6')" -gt 0 ] && echo "both rules counted"
+      } > /run/p8test-xrdp/vnc.txt
+    effect: |
+      cat /run/p8test-xrdp/vnc.txt
+    expect: {rc: 0, stdout: "\\A::1:5900 open\\n::1:5901 closed\\nboth rules counted\\n\\Z"}
