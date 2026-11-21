@@ -1,0 +1,35 @@
+{
+ "class": "node_base_domain_desktop",
+ "at": "20261121T040410Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "ssh-hardened-but-password-login-allowed (ssh_secure.pp:66): the baseline maps the profile's password_authentication => true (node_base_domain_desktop.pp:10, ssh_secure.pp:43-47) to 'PasswordAuthentication' 'yes' in ssh::server's options; sshd -T reporting 'passwordauthentication yes' tests exactly that value",
+  "the-ipv4-firewall-is-firewall-secure (node_base_domain_desktop.pp:11): the line includes firewall_secure, whose baseline sets INPUT and FORWARD policy drop (firewall_secure.pp:44-45/49-50), declares '100 SSH whitelist ${ip}' per whitelisted address (line 83) and '116 SSH LIMIT_OVERALL' in LIMIT_OVERALL (line 100); the probe's two policies and two counts match those resources for the lab Hiera's one address",
+  "ssh-hardened-but-password-login-allowed (ssh_secure.pp:10): the KexAlgorithms default diffie-hellman-group-exchange-sha256, which the profile does not override, reaches sshd through 'KexAlgorithms' => $kex_algorithm (line 59); the probe expects exactly that single KEX",
+  "purpose gap: Tested: ssh_secure applied with passwords allowed (sshd -T), unattended-upgrades kept, firewall_secure's IPv4 policies/whitelist/limit chain, the IPv6 600/601 drops, the filesystem_base_desktop directories (baseline mode '0644' on directories, which Puppet makes 755, as expected), an ntp unit active, the puppet service enabled and running under the stand-in (the daemon on its interval honestly uncovered: the puppet_agent_standin fixture, which stays within its scope: drop-in dir, ExecStart reset + sleep, daemon-reload). Gap: the outcome 'the APT helpers are in desktop mode (server_mode false)' (node_base_domain_desktop.pp:17-20) is probed only through the compatibility link apt-update-surface-desktop.sh. With the profile's default apt_surface_list [] and server_mode false, filesystem_apt.pp:53-58 selects $apt_surface_desktop (firefox, firefox-locale-en, flashplugin-installer, no nginx-core/postfix) and apt-update-surface.sh.erb:5 renders it as SURFACE=...; that desktop surface list is the substantive effect of desktop mode, the lab can read it from /opt/puppet-infrastructure/bin/apt-update-surface.sh, and it is untested (the sibling node_base_desktop set probes it in the-apt-helpers-are-in-desktop-mode). Minor: the outcomes table does not mention customize_syslog_mode false leaving /var/log/syslog unmanaged (node_base_domain_desktop.pp:4,13-16)."
+ ],
+ "review_s": 180.5,
+ "check_file_sha256": "0324f2ecae46393547a74d3d61418e8fec43f7ac58c096a16c6ecad25eb462de",
+ "content_sha256": "0324f2ecae46393547a74d3d61418e8fec43f7ac58c096a16c6ecad25eb462de",
+ "reviewer_result": "20261121T040110Z-reviewer",
+ "author_result": "20261121T035758Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "bad2fd6c-3fb5-412c-a5b4-c878c33cac65",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "bad2fd6c-3fb5-412c-a5b4-c878c33cac65",
+   "fresh": true
+  }
+ }
+}

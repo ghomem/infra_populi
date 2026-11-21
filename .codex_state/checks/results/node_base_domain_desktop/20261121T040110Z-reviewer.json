@@ -1,0 +1,226 @@
+{
+ "class": "node_base_domain_desktop",
+ "role": "reviewer",
+ "at": "20261121T040110Z",
+ "runner": "e7c1695",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "0324f2ecae46393547a74d3d61418e8fec43f7ac58c096a16c6ecad25eb462de",
+ "content_sha256": "0324f2ecae46393547a74d3d61418e8fec43f7ac58c096a16c6ecad25eb462de",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "ssh-hardened-but-password-login-allowed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "kexalgorithms sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256\npasswordauthentication yes\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "unattended-upgrades-kept",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "install ok installed\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "ntp-daemon-running",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "inactive\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "puppet-service-enabled-and-running",
+   "control": "negative",
+   "rc": 3,
+   "passed": false,
+   "stdout": "disabled\ninactive\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "ipv6-input-and-forward-dropped",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "apt-helpers-in-desktop-mode",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-ipv4-firewall-is-firewall-secure",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n0\n0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-local-directories-are-in-place",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure': No such file or directory\nstat: cannot statx '/opt/puppet-infrastructure/bin': No such file or directory\nstat: cannot statx '/opt/puppet-infrastructure/etc': No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "  Firewall[100 SSH whitelist 127.0.0.1]\n  Firewallchain[LIMIT_INDIVIDUAL:filter:IPv4]\n  Firewallchain[LIMIT_OVERALL:filter:IPv4]\n  Firewall[110 SSH LIMIT_INDIVIDUAL]\n  Firewall[111 SSH ACCEPT ESTABLISHED]\n  Firewall[112 SSH connlimit]\n  Firewall[113 SSH set recent]\n  Firewall[114 SSH set recent]\n  Firewall[115 SSH LIMIT_INDIVIDUAL]\n  Firewall[116 SSH LIMIT_OVERALL]\n  Firewall[117 SSH DROP]\n  Firewall[600 Drop ALL IPv6 - INPUT]\n  Firewall[601 Drop ALL IPv6 - FORWARD]\n  File[/opt/puppet-infrastructure]\n  File[/opt/puppet-infrastructure/bin]\n  File[/opt/puppet-infrastructure/etc]\n  File[/opt/puppet-infrastructure/bin/apt-update-pkg.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-surface.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-surface-desktop.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-kernel.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-dist.sh]\n  Package[openscap-scanner]\n  File[/opt/puppet-infrastructure/bin/get-relevant-updates-list]\n  File[/opt/puppet-infrastructure/bin/apt-check-updates.sh]\n  Cron[apt_check_updates]\n  File[/var/lib/apt-check-updates]\n  File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]\n  Package[ntpsec]\n  File[/etc/ntpsec/ntp.conf]\n  Service[ntp]\n  Service[puppet]\n  File[/etc/apt/apt.conf.d/15update-stamp]\n  Concat_file[/etc/ssh/sshd_config]\n  Concat_fragment[global config]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update]) (gate v2).\nGREEN_STAMP node_base_domain_desktop 60d84331d2c5\n"
+ },
+ "applied": [
+  {
+   "id": "ssh-hardened-but-password-login-allowed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "kexalgorithms diffie-hellman-group-exchange-sha256\npasswordauthentication yes\n",
+   "stderr": ""
+  },
+  {
+   "id": "unattended-upgrades-kept",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "ntp-daemon-running",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\n",
+   "stderr": ""
+  },
+  {
+   "id": "puppet-service-enabled-and-running",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "enabled\nactive\n",
+   "stderr": ""
+  },
+  {
+   "id": "ipv6-input-and-forward-dropped",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "apt-helpers-in-desktop-mode",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/opt/puppet-infrastructure/bin/apt-update-surface.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-ipv4-firewall-is-firewall-secure",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P INPUT DROP\n-P FORWARD DROP\n1\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-local-directories-are-in-place",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755 /opt/puppet-infrastructure\nroot 755 /opt/puppet-infrastructure/bin\nroot 755 /opt/puppet-infrastructure/etc\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "bad2fd6c-3fb5-412c-a5b4-c878c33cac65",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "bad2fd6c-3fb5-412c-a5b4-c878c33cac65",
+   "fresh": true
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "SSH is hardened but accepts password logins, and unattended upgrades stay installed",
+   "checks": [
+    "ssh-hardened-but-password-login-allowed",
+    "unattended-upgrades-kept"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the IPv4 firewall is firewall_secure's (INPUT and FORWARD dropped by default, the SSH whitelist and limit)",
+   "checks": [
+    "the-ipv4-firewall-is-firewall-secure"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the local directories are in place (filesystem_base_desktop)",
+   "checks": [
+    "the-local-directories-are-in-place"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "all IPv6 input and forwarding are dropped (firewall_ipv6_drop)",
+   "checks": [
+    "ipv6-input-and-forward-dropped"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the APT helpers are in desktop mode (server_mode false)",
+   "checks": [
+    "apt-helpers-in-desktop-mode"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "an NTP daemon runs, and the puppet service is enabled and running",
+   "checks": [
+    "ntp-daemon-running",
+    "puppet-service-enabled-and-running"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the puppet agent daemon running on its interval",
+   "uncovered": {
+    "why": "a real daemon would run the catalog between the harness's two runs; the lab uses a stand-in unit body",
+    "lifted_by": "capability: a harness mode that tolerates a running agent daemon between runs 1 and 2",
+    "evidence": "node fixture puppet_agent_standin (status.py --standins: node_base_domain_desktop)"
+   }
+  }
+ ],
+ "duration_s": 122.8
+}
