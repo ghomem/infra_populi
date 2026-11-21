@@ -1,0 +1,35 @@
+{
+ "class": "node_base_domain_desktop",
+ "at": "20261121T041225Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "apt-helpers-in-desktop-mode: filesystem_apt.pp:53-58 selects join($apt_surface_desktop) when the list is empty and server_mode false (profile lines 17-20 pass []/false); the template writes it as SURFACE=\"...\"; $apt_surface_desktop (lines 43-50) holds firefox and not nginx-core/postfix (server-only, lines 39-40); lines 72-81 link apt-update-surface-desktop.sh to apt-update-surface.sh; lines 185-191 apt-update-relevant.sh root 0755 - probe and expect match",
+  "the-local-directories-are-in-place: filesystem_base_desktop.pp:8-17 (with 18-22) declares localdir/bindir/etcdir as root directories mode '0644', which Puppet renders as 0755 for directories; the lab Hiera localdir is /opt/puppet-infrastructure - stat expect 'root 755' for the three is what the code produces",
+  "ssh-hardened-but-password-login-allowed: ssh_secure.pp:43-47 maps the profile's password_authentication => true (profile line 10) to 'yes', passed as PasswordAuthentication (line 66); KexAlgorithms defaults to diffie-hellman-group-exchange-sha256 (lines 10, 59) - sshd -T effective config expected exactly those two values",
+  "purpose covered: Purpose matches the header ('basic desirable properties of a domain based desktop node') and every declaration of the baseline manifest (lines 9-28); the outcomes table lists each: packages_base with unattended_upgrades kept (invariant), ssh_secure with passwords accepted (sshd -T), firewall_secure's IPv4 policy/whitelist/limit, firewall_ipv6_drop rules 600/601, filesystem_base_desktop directories (syslog file untouched by default: no resource exists to probe), filesystem_apt desktop mode now read on the substance (desktop surface list, link, relevant script; the round-1 gap is closed), ntp daemon active, Service['puppet'] enabled+active. Component internals are left to the components' own sets, as the header scopes. Uncovered: the real agent daemon on its interval; the lab runs it through the puppet_agent_standin fixture (ExecStart replaced by sleep) because a live agent would apply between harness runs 1 and 2 - true, and lifted by the stated harness capability. Both runs ALL_PASS, no findings."
+ ],
+ "review_s": 153.9,
+ "check_file_sha256": "02c2c3bb1fcc40b5a422be79374fd1ce7950b92541debfb4c1985787c703a467",
+ "content_sha256": "02c2c3bb1fcc40b5a422be79374fd1ce7950b92541debfb4c1985787c703a467",
+ "reviewer_result": "20261121T040952Z-reviewer",
+ "author_result": "20261121T040640Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "28134306-8386-460d-a64e-c51b0a6cc4bc",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "28134306-8386-460d-a64e-c51b0a6cc4bc",
+   "fresh": true
+  }
+ }
+}
