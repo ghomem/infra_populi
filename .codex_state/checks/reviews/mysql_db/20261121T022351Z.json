@@ -1,0 +1,35 @@
+{
+ "class": "mysql_db",
+ "at": "20261121T022351Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "users-from-any-host-require-tls: mysql_db.pp:36-38 (and 23-25 for rw) declare host '%' and tls_options ['SSL'] for the ro (and rw) mysql::db; the probe reads mysql.user and expects both p8test users at host % with ssl_type ANY, which is what REQUIRE SSL stores under the params fixture (rw p8test_rw, ro p8test_ro)",
+  "rw-user-logs-in-over-tls: mysql_db.pp:17-25 give the rw user its password, host '%' and TLS; the probe logs in over TCP 127.0.0.1 with --ssl-mode=REQUIRED and the fixture password and expects CURRENT_USER p8test_rw@% (the wildcard account matched); the mismatch varies only the password, which must make the server refuse the login, so it discriminates",
+  "grants-on-the-database: mysql_db.pp:37 grants SELECT, SHOW VIEW to the ro user (line 24 ALL to rw); SHOW GRANTS filtered to p8test_db expects GRANT ALL PRIVILEGES for p8test_rw and GRANT SELECT, SHOW VIEW for p8test_ro on p8test_db.*, exactly what the two mysql::db grants produce",
+  "purpose gap: The purpose matches the header and code (mysql_db.pp:1-3, 17-41): database with utf8mb3 charset/collation, rw and optional ro accounts at host %, TLS required, grants; the checks test it as behaviour on the node (rw logs in over TLS and writes, ro reads and its INSERT is refused with ERROR 1142, wrong password refused, MySQL server not replaced by MariaDB). The ro-less variant and the fail() on a half-given ro pair (lines 9-15) are honestly uncovered: phase3.py applies one fixture per set. GAP: the same uncovered row also lists 'a login from another host', which the purpose states ('reachable from any host'), and its lifted_by ('capability: more than one params fixture per set') does not lift that part and its evidence (header lines 2-3 leave access to the node firewall) does not show the lab lacking anything: nodes.yml has an active second-node kind (ubuntu2, capability second-node), the runner supports peer probes allowed to reach the class node's host-only address, and the baseline server.cnf.epp binds 0.0.0.0 with no firewall on the lab node, so a peer TLS login (or, if the peer has no MySQL client, at least a peer TLS handshake to 192.168.56.20:3306 plus evidence that the client is missing, lifted by that capability) is exercisable or needs a row whose evidence and lifted_by say what is actually missing."
+ ],
+ "review_s": 188.1,
+ "check_file_sha256": "d7dd9b529ccf701f30c02dfca49fc2192b64b733b16027064dd406e1e0501666",
+ "content_sha256": "d7dd9b529ccf701f30c02dfca49fc2192b64b733b16027064dd406e1e0501666",
+ "reviewer_result": "20261121T022043Z-reviewer",
+ "author_result": "20261121T021748Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "a34340d5-95b7-4672-9a75-5a28dc7fef45",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "a34340d5-95b7-4672-9a75-5a28dc7fef45",
+   "fresh": true
+  }
+ }
+}
