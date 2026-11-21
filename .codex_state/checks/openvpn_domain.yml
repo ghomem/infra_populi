@@ -11,6 +11,8 @@
 # auth and account stacks on the node. /etc/pam.d/openvpn (password lines only, line 7 without a module) is used by no
 # baseline service: openvpn_server's plugin names login (its set checks the plugin line); it is checked as installed.
 # Prototyped 2026-11-21 on the ubuntu node with the dc peer.
+# Correction round 1, 2026-11-21 (review 20261121T042709Z, purpose): the Kerberos configuration as an outcome, measured
+# with kinit against the DC (the default realm's case follows the domain_tld parameter: batch 8 report, for HQ).
 class: openvpn_domain
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -37,6 +39,14 @@ outcomes:
       domain password; a wrong password and a domain user outside the listed groups are refused
     from: manifests/openvpn_domain.pp:14-15, 31-38; templates/openvpn/pam_winbind.conf.erb:30; manifests/openvpn_server.pp:169
     checks: [domain-users-for-the-login-checks, pam-logins-through-winbind]
+  - outcome: >-
+      Kerberos: the default realm is the NetBIOS name and the tld as given (P8TEST.example with the fixture's lowercase
+      tld) and the only realm stanza is the template's literal DOMAIN.LOCAL, so a Kerberos client finds the DC's KDC
+      through DNS; a ticket for the DC's realm (P8TEST.EXAMPLE) is granted, while one asked for the default realm is not,
+      realms being case-sensitive. Nothing in the class's login path uses Kerberos (security = domain joins over RPC;
+      pam_winbind's krb5_auth stays off); the [logging] section is read by a KDC, which the node does not run
+    from: manifests/openvpn_domain.pp:40-47; templates/openvpn/krb5.conf.erb:1-18; templates/openvpn/pam_winbind.conf.erb:21
+    checks: [kerberos-realms-against-the-dc]
 checks:
   - id: smb-conf-joins-as-a-domain-member
     what: >-
@@ -148,4 +158,30 @@ checks:
     effect: |
       cat /run/p8test-pam/logins.txt
     expect: {rc: 0, stdout: "\\Amember-right rc=0\\nmember-wrong rc=[1-9][0-9]*\\noutsider-right rc=[1-9][0-9]*\\noutsider at the DC: plaintext password authentication succeeded\\n\\Z"}
+
+  - id: kerberos-realms-against-the-dc
+    what: >-
+      krb5.conf's default realm is P8TEST.example as the template renders it; kinit for p8testvpnin in the DC's realm
+      P8TEST.EXAMPLE gets a ticket (KDC through DNS), and kinit in the default realm does not (the KDC answers for
+      P8TEST.EXAMPLE)
+    control: negative
+    timeout: 180
+    derived_from:
+      - {path: templates/openvpn/krb5.conf.erb, lines: "6", text: "default_realm = <%= @domain_netbios_name %>.<%= @domain_tld %>"}
+      - {path: templates/openvpn/krb5.conf.erb, lines: "8-14", text: "DOMAIN.LOCAL = {"}
+      - {path: manifests/openvpn_domain.pp, lines: "40-47", text: "content => template('puppet_infrastructure/openvpn/krb5.conf.erb'),"}
+    mutates: >-
+      asks the DC for two tickets for p8testvpnin (kinit, the DC logs both) into the credential cache
+      /run/p8test-krb5/cc, which is destroyed afterwards; the outcomes go to /run/p8test-krb5/kinit.txt
+    probe: |
+      install -d -m 0700 /run/p8test-krb5
+      { grep -E '^\s*default_realm' /etc/krb5.conf | sed 's/^ *//'
+        printf '%s\n' 'P8test-vpn-in-not-a-secret1' | timeout 60 kinit -c FILE:/run/p8test-krb5/cc p8testvpnin@P8TEST.EXAMPLE >/dev/null 2>&1; echo "dc realm rc=$?"
+        klist -c FILE:/run/p8test-krb5/cc 2>/dev/null | grep -o 'Default principal: .*'
+        kdestroy -c FILE:/run/p8test-krb5/cc 2>/dev/null
+        printf '%s\n' 'P8test-vpn-in-not-a-secret1' | timeout 60 kinit -c FILE:/run/p8test-krb5/cc p8testvpnin 2>&1 | grep -o 'KDC reply did not match expectations'
+        kdestroy -c FILE:/run/p8test-krb5/cc 2>/dev/null; } > /run/p8test-krb5/kinit.txt
+    effect: |
+      cat /run/p8test-krb5/kinit.txt
+    expect: {rc: 0, stdout: "\\Adefault_realm = P8TEST\\.example\\ndc realm rc=0\\nDefault principal: p8testvpnin@P8TEST\\.EXAMPLE\\nKDC reply did not match expectations\\n\\Z"}
 
