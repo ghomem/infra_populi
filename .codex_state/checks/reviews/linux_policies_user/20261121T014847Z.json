@@ -1,0 +1,35 @@
+{
+ "class": "linux_policies_user",
+ "at": "20261121T014847Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "policies-run-on-an-agent-run-while-logged-in: linux_policies_user.pp:71-74 runs '${policies_script_exec} puppet-agent' as $username; the runner template (execute_linux_policies_user.sh.erb:5-12) then logs 'Executing <dir>/USER/<whoami>.sh' under tag linuxint-policies-puppet-agent, the header (puppet_header.sh.erb:9-10) logs 'User p8testuser loged in, executing policies', and the fixture's policy 1 logs the user it ran as; probe and expect match those lines under the params fixture (localdir /opt/puppet-infrastructure)",
+  "user-policy-script-composed: line 26 sets the path <localdir>/linux-policies/USER/<username>.sh; lines 58-63 give owner/group $username, mode 0700; the header template starts with #!/bin/bash and sources <dir>/COMMON/common (line 4); file_line (46-51) appends the two fixture policies, which tail -2 matches verbatim and in order",
+  "autostart-runs-the-policies-at-login: autostart.desktop.erb:4 Exec=<dir>/COMMON/execute_linux_policies_user.sh autostart, so CALLER=autostart and the runner logs 'Executing .../USER/p8testuser.sh' under tag linuxint-policies-autostart (runner lines 9-12); the probe tests exactly that line, so the derivation holds (its coverage of the outcome is judged under purpose)",
+  "purpose gap: Covered: the composed USER/p8testuser.sh (owner, mode, header, policy lines); on an agent run with the session up the runner runs the script as the user and the policies themselves run (policy 1 logs 'as p8testuser'); no policy line before the logind session. GAP, lab-exercisable: the outcome 'at the user's desktop log-in, the autostart entry runs the policies' is mapped only to autostart-runs-the-policies-at-login, which matches the runner's 'Executing' line (logged BEFORE the script is called, runner line 12). Whether the script then passes its own who-check (header lines 9-14) and runs the policies at login is not tested: if who did not list the user at autostart time, the script would log 'not loged in' and exit 0, and every check would still pass, because 'after the session: some' in no-policy-runs-before-the-session is satisfied by the two session agent runs' policy lines alone. The lab can observe it: on this run the node journal shows linuxint-policies-autostart 'Executing' at 1795225621.96, then 'User p8testuser loged in, executing policies' and both p8testpolicy lines at 1795225622.3-622.5, before the first session agent run (1795225648.38); a probe tying the policy lines to the autostart (e.g. policy lines between the logind session start and the first linuxint-policies-puppet-agent line) would cover it. The uncovered row (other users/policy lists; one params fixture per set) is honest."
+ ],
+ "review_s": 214.5,
+ "check_file_sha256": "165f53bd9cbb302ed3cb814c19c84d54d7b9952f060b19ce2386817bcbb8c905",
+ "content_sha256": "165f53bd9cbb302ed3cb814c19c84d54d7b9952f060b19ce2386817bcbb8c905",
+ "reviewer_result": "20261121T014513Z-reviewer",
+ "author_result": "20261121T014050Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "eb7cbfcd-5f70-4175-923c-0e4abf5c7580",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "eb7cbfcd-5f70-4175-923c-0e4abf5c7580",
+   "fresh": true
+  }
+ }
+}
