@@ -1,0 +1,35 @@
+{
+ "class": "postfix_smtp_base",
+ "at": "20261121T053246Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "starttls-presents-the-sslprefix-bundle: postfix_smtp_base.pp:58-59 set certificate_filename=/etc/ssl/certs/<smtp_sslprefix>.postfix.bundle.crt when letsencrypt_certificate is false (fixture: p8test, false) and main.cf.erb:23 serves it as smtpd_tls_cert_file; the probe compares the SHA-256 fingerprint of the cert served after STARTTLS on 127.0.0.1:587 with /etc/ssl/certs/p8test.postfix.bundle.crt. The mismatch changes only the compared cert (first cert of ca-certificates.crt), which must give a different fingerprint, so it fails for the right reason",
+  "client-access-map-allows-the-listed-ip: postfix_smtp_base_config_file.pp:26 runs /usr/sbin/postmap on /etc/postfix/client_access, and client_access.erb:2-3 writes '<ip> OK' per allowed_client_ips (fixture [127.0.0.1]); 'postmap -q 127.0.0.1 hash:/etc/postfix/client_access' = OK tests exactly that. The mismatch queries only 127.0.0.2, which is not listed, so no OK can come back",
+  "smtp-restrictions-exercised: main.cf.erb:30 smtpd_tls_security_level = encrypt requires STARTTLS before AUTH, which the action does in every session. The expected replies follow from main.cf.erb:101-118 under the fixture: 554 Client host rejected for ::1 (client_access lists only 127.0.0.1; inet_protocols = all), 554 Sender address rejected: Access denied for an address missing from sender_access, 553 'not owned by user' and 'not logged in' from reject_sender_login_mismatch with controlled_envelope_senders, and 250 for each owner. mutates declares the sessions, logs and the replies file; the effect holds postfix's own replies",
+  "purpose gap: Tested: the listener on postfix_port with the smtp_hostname banner, the sslprefix certificate over STARTTLS, TLS mandatory (no AUTH offered and 530 before STARTTLS), dovecot passwd-file SASL (good and wrong password; an OS account the OS accepts through PAM gets 535), the client_access map, and every layer of the sender restrictions up to RCPT (unlisted client, unlisted address, address owned by another user, not logged in, both owners accepted). The uncovered rows hold: smtp_header_checks applies only to the SMTP client (outgoing delivery; relayhost empty), and an empty regex list never fires; extra_sec and letsencrypt need a second params fixture. GAP: the class's purpose is a server that sends mail, and the outcome 'a listed, logged-in client may send' is tested only up to RCPT. Every session ends with RSET, so no message is ever accepted (DATA, 250 queued) or delivered. The lab can exercise this. The class replaces master.cf in full (cleanup, qmgr, local, pickup), and main.cf sets mydestination=$myhostname, localhost.localdomain, localhost and alias_maps. Read on the node: mydestination includes localhost; root has no alias (postmap -q root hash:/etc/aliases rc=1); /var/mail is empty; the queue is empty. So a submission by p8testuser to root@localhost can be checked for '250 2.0.0 Ok: queued' and for delivery to /var/mail/root. That needs a mutating check that declares the queued message and the mailbox. Onward relay to a remote MX is not exercisable in the lab and belongs in an uncovered row (capability: a mail sink inside the lab)"
+ ],
+ "review_s": 207.4,
+ "check_file_sha256": "ae540f6cd0115321d689eb22eada79d2ab54f61b5d09de06c4be99aa8e73d42c",
+ "content_sha256": "ae540f6cd0115321d689eb22eada79d2ab54f61b5d09de06c4be99aa8e73d42c",
+ "reviewer_result": "20261121T052919Z-reviewer",
+ "author_result": "20261121T052610Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "ffbc8997-4ab3-49da-958a-ed8f4af3d826",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "ffbc8997-4ab3-49da-958a-ed8f4af3d826",
+   "fresh": true
+  }
+ }
+}
