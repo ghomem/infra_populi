@@ -1,0 +1,43 @@
+{
+ "class": "firewall_ipv6_drop_policy",
+ "at": "20261121T150624Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "another-host-routes-ipv6-through-the-node: line 8 sets the IPv6 FORWARD policy to DROP with no rule; the peer routes 5 pings for 2001:db8:99::/64 via the node (static neighbour entry, since INPUT DROP also drops neighbour discovery) and expects 0 received; a valid setup whose drop is attributed to FORWARD by the next check",
+  "the-forward-policy-counted-the-routed-packets: line 8 (policy => drop, purge => true, so no rule exists) means routed packets can only be dropped by the chain policy; the probe reads the FORWARD policy DROP packet counter and requires >= 5, which is exactly what line 8 declares",
+  "an-unmanaged-ipv6-rule-is-added: line 9 declares purge => true on INPUT:filter:IPv6; adding an unmanaged ACCEPT rule by hand is the correct setup for the purge check that follows (effect counts it once); it changes only the node's ip6tables, as declared in mutates",
+  "purpose gap: Purpose (DROP policy on IPv6 INPUT and FORWARD, purge of other rules in those chains, IPv6 unreachable while IPv4 works) matches the baseline header (line 2) and lines 8-9. Tested: both policies DROP (ip6tables -S), peer IPv6 ping/SSH dropped with IPv4 SSH still open, routed IPv6 dropped and counted by the FORWARD policy, IPv6 loopback dropped, and the INPUT purge at the next agent run. Gap: the outcome 'a rule Puppet does not manage in those chains is purged' (from lines 8-9) maps only to INPUT checks (an-unmanaged-ipv6-rule-is-added / the-next-agent-run-purges-the-unmanaged-ipv6-rule add and check a rule in INPUT only); the purge => true on FORWARD:filter:IPv6 (line 8) is never exercised, since FORWARD is already empty on the clean node so the 0-rule count in ip6tables-policies-drop-input-and-forward shows nothing about purging. The lab can exercise it the same way (ip6tables -A FORWARD ... then the agent run). Minor: the 2026-11-18 correction comment above another-host-routes-ipv6-through-the-node cites 'rule 600' and run 20261118T164432Z, which belong to firewall_ipv6_drop's set, not this class (this class has no rule 600)."
+ ],
+ "review_s": 173.9,
+ "check_file_sha256": "9dcf400d428ca5d620e1a007eaa26ceb39df31f6df501874ca50b3064425f76b",
+ "content_sha256": "9dcf400d428ca5d620e1a007eaa26ceb39df31f6df501874ca50b3064425f76b",
+ "reviewer_result": "20261121T150331Z-reviewer",
+ "author_result": "20261121T145934Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "b484418a-98f3-4df8-b6bc-315bce5eb5d9",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "b484418a-98f3-4df8-b6bc-315bce5eb5d9",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "0b35d006-dea7-4bef-ba54-c51f0153e804",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "0b35d006-dea7-4bef-ba54-c51f0153e804",
+   "fresh": true
+  }
+ }
+}
