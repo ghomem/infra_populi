@@ -1,0 +1,35 @@
+{
+ "class": "sysmon_integrity_master",
+ "at": "20261121T123450Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "checklist-script-rendered (manifests/sysmon_integrity_master.pp:6-8): baseline sets $outdir = lookup('puppet::manifdir') and $outfile = '97_integrity.pp'; the probe greps OUTDIR=/etc/puppetlabs/+code/environments/production/manifests (lab Hiera manifdir, doubled slash tolerated) and OUTFILE=\"97_integrity.pp\", plus owner root / mode 755 from lines 10-13 \u2014 exactly what the code renders",
+  "checklist-written-as-puppet-variable (templates/sysmon/checklist-integrity.sh.erb:9-18): the loop md5sums each FILELIST entry, joins with ':' and writes $integrity_checklist='<list>' to $OUTDIR/$OUTFILE; the action runs the installed script once (what the baseline script does) after creating only the manifests dir it needs (declared in mutates), and the read-only effect compares 97_integrity.pp to the recomputed md5sum lines of /etc/hostname and /etc/os-release joined by ':' \u2014 the script's result, not its output; no mismatch needed (no tool verdict on a name/user/key)",
+  "checklist-script-rendered (templates/sysmon/checklist-integrity.sh.erb:3-5): OUTDIR/OUTFILE/FILELIST are the template's three ERB substitutions; with the params fixture filelist '/etc/hostname /etc/os-release' the expected FILELIST line is what the template produces; bash -n confirms the rendered script parses",
+  "purpose covered: Purpose (script on the master writing the md5sum checklist as $integrity_checklist into puppet::manifdir/97_integrity.pp for sysmon_integrity_node) matches the baseline header (line 2) and code: one file resource from the template. The checks test the rendered script's parameters and permissions and exercise it end to end (run once, the generated 97_integrity.pp holds the exact md5 lines joined by ':'). Left out: the link into a node's catalog, listed uncovered; its evidence holds \u2014 git grep integrity_checklist at cf477c6 finds only the template line 18 (no node definition passes it), and phase3.py FORBIDDEN[:3] (line 155, HOST_RULES applies to mutating actions too) forbids running Puppet in any probe; the active puppetserver kind does not lift it by itself, since the consumer is a site node definition no class declares and compiling it needs the runner capability named in lifted_by. Minor: the probe checks owner and mode, not group root (line 13)."
+ ],
+ "review_s": 104.7,
+ "check_file_sha256": "c6012393136793277752733036b859c8ec44d259adef66e6ac8a84c5e13ae36a",
+ "content_sha256": "c6012393136793277752733036b859c8ec44d259adef66e6ac8a84c5e13ae36a",
+ "reviewer_result": "20261121T123306Z-reviewer",
+ "author_result": "20261121T123056Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "c126bf17-4565-418f-a30f-3d7e7a27da19",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "c126bf17-4565-418f-a30f-3d7e7a27da19",
+   "fresh": true
+  }
+ }
+}
