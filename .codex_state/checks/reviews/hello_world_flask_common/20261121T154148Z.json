@@ -1,0 +1,35 @@
+{
+ "class": "hello_world_flask_common",
+ "at": "20261121T154148Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "gunicorn-serves-a-flask-app: manifests/hello_world_flask_common.pp:7-8 install python3-gunicorn and python3-flask as the packages 'needed for the applications to run', and the consumer's Debian unit (templates/hello_world_flask/hello-world-flask.service.erb:10, else-branch of the RedHat test) runs 'python3 -m gunicorn --bind ip:port wsgi:app'; the action runs exactly that form on 127.0.0.1:18080 against a one-route Flask app, mutates declares every change (dir+app.py under /run/p8test-flask, transient unit p8test-gunicorn, out.txt), and the effect holds the server's answers (p8_http status 200 + curl body 'p8test hello'), not the action's exit; it failed on the clean node and passed after apply in my run. No name/user/key/cipher/vhost verdict is taken, so no mismatch control is required",
+  "flask-and-gunicorn-installed: manifests/hello_world_flask_common.pp:8 'package { [ python3-gunicorn, python3-flask ]: ensure => present }'; the probe checks both dpkg states 'install ok installed' and that flask and gunicorn import in the system python3; negative on clean, pass after apply",
+  "the-applications-directory: manifests/hello_world_flask_common.pp:12-17 declare ${localdir}/hello_world_flask ensure directory, owner/group root, mode 0644; localdir is filesystem::localdir = /opt/puppet-infrastructure (plan: File[/opt/puppet-infrastructure] from filesystem_base), and Puppet adds the search bit to a directory for every read bit, so 0644 becomes 755: expect 'directory root:root 755' is what the code produces; negative on clean, pass after apply",
+  "purpose covered: The baseline manifest declares only two things (python3-gunicorn + python3-flask packages, and the root-owned ${localdir}/hello_world_flask directory; $os_family is assigned but unused, no OS branch, no template), and the stated purpose (what every hello_world_flask app needs: Flask, gunicorn able to serve an app, the apps' directory) matches that and the class comments. The outcomes table lists both outcomes, mapped to checks that really probe them: the directory with owner and effective mode, the packages installed and importable, and the purpose itself exercised by gunicorn actually serving a Flask app over HTTP (200 + body) the way the consumer's Debian unit starts it. The only uncovered row is the RedHat-family case (same packages, from EPEL via the plan's required_base extra_packages_el [RedHat]); its evidence holds: phase3.py run takes the class's plan node via nodes.select (no per-run node option; the plan row's node column is empty, so ubuntu), and a set carries one node's expectations (dpkg-query here), so it is lifted by the capability of a per-node set, the same wording as the approved ssl_nginx and ssl_postfix sets; rhel9 is active, so that capability is what would lift it. Nothing the lab can exercise on the plan node is left untested."
+ ],
+ "review_s": 138.5,
+ "check_file_sha256": "a88fd767ae6a780cc25b1ac9800b8be0a4f73ff2e8fcbf20a8256ba84b1e735a",
+ "content_sha256": "a88fd767ae6a780cc25b1ac9800b8be0a4f73ff2e8fcbf20a8256ba84b1e735a",
+ "reviewer_result": "20261121T153930Z-reviewer",
+ "author_result": "20261121T153623Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "cd4c4f17-f0dc-4fe0-8d62-28970c9d7f53",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "cd4c4f17-f0dc-4fe0-8d62-28970c9d7f53",
+   "fresh": true
+  }
+ }
+}
