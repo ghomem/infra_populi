@@ -1,17 +1,49 @@
 # Phase 3 checks for puppet_infrastructure::mariadb_server (class; per-class baseline exception 874f854; migrated with
 # the ruled certificate-exec guard (upstream_defects.md mariadb_server) and the HQ batch-7 ruling-4 module-compatibility
 # change: the module's File['/var/log/mysql'] carries the class's mode and ordering through a collector override).
-# Fixture (params, never committed): a fake root password only, so no rw/ro users; generate_certificates default true.
+# Fixture (params, never committed): a fake root password and, since 2026-11-21, the users p8test_mrw (rw) and p8test_mro
+# (ro) with ed25519 hashes of p8test passwords (p8test-mrw-not-a-secret, p8test-mro-not-a-secret); generate_certificates
+# default true. The hashes were computed by the lab's MariaDB 10.11 itself (CREATE USER ... IDENTIFIED VIA ed25519 USING
+# PASSWORD(...), then mysql.user's authentication_string): the class header's `SELECT ed25519_password(...)` does not
+# exist on 10.11 (ERROR 1305), a documentation note.
 # Lab Hiera: db::organization 'My Company', db::cname 'example.com', db::email 'user@example.com' (the upstream example
 # common.yaml, first in the hierarchy; the p8test_fixtures.yaml keys of the same names come after it and never win).
 # Probes run as root, so the mysql client authenticates as root@localhost through /root/.my.cnf (puppetlabs-mysql).
 class: mariadb_server
 baseline: 874f854 (874f854)
 fixture: params
-uncovered:
-  - what: the rw/ro users authenticating with ed25519 hashes over TLS from another host (the class's users and grants)
-    why: the params fixture defines no rw_user/ro_user, and a remote client needs a second node on the lab network
-    lifted_by: ubuntu2
+peer:
+  kind: ubuntu2
+  why: the class's users are for any host, so another machine must log in to the class node over the network
+purpose: >-
+  Runs a MariaDB server whose root account is local only, with up to two users (read/write and read-only) that log in
+  from any host with ed25519 passwords and only over TLS, using certificates the class generates from Hiera's subject
+  data.
+outcomes:
+  - outcome: MariaDB runs with the class's TLS files, required secure transport, the ed25519 plugin and a bind on every address
+    from: manifests/mariadb_server.pp:40-55, 158-166
+    checks: [mariadb-server-installed-and-running, server-runs-the-override-options, ed25519-plugin-active, insecure-transport-refused]
+  - outcome: root is local only and no anonymous user remains
+    from: manifests/mariadb_server.pp:1-4, 161
+    checks: [root-is-local-only-and-no-anonymous-user]
+  - outcome: the class generates the server certificate from Hiera's subject data and deploys key, certificate and CA
+    from: manifests/mariadb_server.pp:89-130
+    checks: [server-key-matches-certificate, certificate-subject-from-hiera, certificate-files-owner-and-mode]
+  - outcome: the log directory has the class's owner and mode
+    from: manifests/mariadb_server.pp:168-174
+    checks: [log-directory-attributes]
+  - outcome: the rw and ro users exist for any host with ed25519 and required TLS; they log in over TLS, rw with every privilege, ro read-only
+    from: manifests/mariadb_server.pp:5-12, 135-164
+    checks: [the-users-are-ed25519-and-require-tls, the-users-log-in-with-their-grants]
+  - outcome: another host logs in over the network with TLS, and without TLS is refused
+    from: manifests/mariadb_server.pp:5-12, 53
+    checks: [another-host-logs-in-over-tls]
+  - outcome: custom mysqld or mariadb options, certificates not generated, a single user or none
+    from: manifests/mariadb_server.pp:30-37, 89
+    uncovered:
+      why: one set holds one params fixture (generated certificates, both users, no custom options)
+      lifted_by: "capability: more than one params fixture per set"
+      evidence: "phase3.py applies the class once with its single `fixture` (params or defaults)"
 checks:
   - id: mariadb-server-installed-and-running
     what: the MariaDB server package is installed and the running server reports itself as MariaDB
@@ -117,3 +149,62 @@ checks:
     probe: |
       stat -c '%F %U %G %a' /var/log/mysql
     expect: {rc: 0, stdout: "\\Adirectory mysql adm 755\\n\\Z"}
+
+  - id: the-users-are-ed25519-and-require-tls
+    what: p8test_mrw and p8test_mro exist for host % with the ed25519 plugin and required SSL (ssl_type 1, ANY)
+    control: negative
+    derived_from:
+      - {path: manifests/mariadb_server.pp, lines: "138", text: "plugin => 'ed25519', tls_options => [ 'SSL' ]"}
+      - {path: manifests/mariadb_server.pp, lines: "7-12", text: "# Those users can only connect using ssl (ex: --ssl flag on the command line)"}
+    probe: |
+      mysql -NB -e "SELECT user, host, plugin, JSON_VALUE(priv,'$.ssl_type') FROM mysql.global_priv g JOIN mysql.user u USING (user, host) WHERE user LIKE 'p8test_m%' ORDER BY user"
+    expect: {rc: 0, stdout: "\\Ap8test_mro\\t%\\ted25519\\t1\\np8test_mrw\\t%\\ted25519\\t1\\n\\Z"}
+
+  - id: the-users-log-in-with-their-grants
+    what: >-
+      over TCP with TLS both users log in with their passwords (CURRENT_USER at %); a wrong password is refused; the ro
+      user's CREATE DATABASE is refused (ERROR 1044) while rw creates and drops one
+    control: negative
+    derived_from:
+      - {path: manifests/mariadb_server.pp, lines: "139", text: "privileges => ['ALL'], table => '*.*'"}
+      - {path: manifests/mariadb_server.pp, lines: "149", text: "privileges => ['SELECT','SHOW VIEW'], table => '*.*'"}
+    mutates: >-
+      six TCP logins to 127.0.0.1:3306; as p8test_mrw creates and drops the database p8test_mrwdb, as p8test_mro one
+      refused CREATE DATABASE; the server records them in its data directory (/var/lib/mysql: system tables, logs); the
+      answers go to /run/p8test-mariadb/answers.txt
+    probe: |
+      install -d -m 0700 /run/p8test-mariadb; o=/run/p8test-mariadb/answers.txt
+      m="mysql --protocol=TCP -h 127.0.0.1 -P3306 --ssl -NB"
+      $m -u p8test_mrw -p'p8test-mrw-not-a-secret' -e 'SELECT CURRENT_USER()' > $o 2>/dev/null
+      $m -u p8test_mro -p'p8test-mro-not-a-secret' -e 'SELECT CURRENT_USER()' >> $o 2>/dev/null
+      $m -u p8test_mrw -p'p8test-wrong-password' -e 'SELECT 1' 2>&1 | grep -oE 'ERROR [0-9]+' | head -1 | sed 's/^/wrong password: /' >> $o
+      $m -u p8test_mro -p'p8test-mro-not-a-secret' -e 'CREATE DATABASE p8test_mrodb' 2>&1 | grep -oE 'ERROR [0-9]+' | head -1 | sed 's/^/ro create: /' >> $o
+      $m -u p8test_mrw -p'p8test-mrw-not-a-secret' -e 'CREATE DATABASE p8test_mrwdb; DROP DATABASE p8test_mrwdb' 2>&1 | grep -oE 'ERROR [0-9]+' | head -1 | sed 's/^/rw create: /' >> $o
+    effect: |
+      cat /run/p8test-mariadb/answers.txt
+    expect: {rc: 0, stdout: "\\Ap8test_mrw@%\\np8test_mro@%\\nwrong password: ERROR 1045\\nro create: ERROR 1044\\n\\Z"}
+
+  - id: another-host-logs-in-over-tls
+    what: >-
+      from another machine (the peer), p8test_mrw logs in to the class node's MariaDB over TLS (ed25519) and the class
+      node answers; the same login without TLS is refused
+    control: negative
+    host: peer
+    timeout: 300
+    derived_from:
+      - {path: manifests/mariadb_server.pp, lines: "1-12", text: "# 3. and 2 other users that can access from any host"}
+      - {path: manifests/mariadb_server.pp, lines: "53", text: "'bind-address'             => \"0.0.0.0\","}
+    mutates: >-
+      installs mariadb-client-core on the peer if absent; makes three TCP logins from the peer to the class node's port
+      3306; the answers go to /run/p8test-mariadb-peer/answers.txt
+    probe: |
+      command -v mariadb >/dev/null || DEBIAN_FRONTEND=noninteractive apt-get -qq -y install mariadb-client-core >/dev/null 2>&1
+      install -d -m 0700 /run/p8test-mariadb-peer; o=/run/p8test-mariadb-peer/answers.txt
+      m="mariadb --protocol=TCP -h 192.168.56.20 -P3306 -u p8test_mrw -pp8test-mrw-not-a-secret -NB"
+      $m --ssl -e 'SELECT CURRENT_USER(), @@hostname' 2>/dev/null > $o
+      $m --ssl -e "SHOW SESSION STATUS LIKE 'Ssl_version'" 2>/dev/null | cut -f2 | sed 's/^TLSv1\.[23]$/TLS/' >> $o
+      $m --skip-ssl -e 'SELECT 1' 2>&1 | grep -oE 'ERROR [0-9]+' | head -1 >> $o
+    effect: |
+      cat /run/p8test-mariadb-peer/answers.txt
+    expect: {rc: 0, stdout: "\\Ap8test_mrw@%\\tpuppet8node\\nTLS\\nERROR 1045\\n\\Z"}
+
