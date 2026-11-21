@@ -81,9 +81,12 @@ checks:
       id -nG p8testuser | tr ' ' '\n' | p8_count '^p8testgroup$'
     expect: {rc: 0, stdout: "\\Aroot 755 /srv/p8test-jail\\np8testuser 770 /srv/p8test-jail/upload\\n1\\n\\Z"}
 
+  # 2026-11-21 authoring correction (run 1, 20261121T154535Z, FINDINGS): curl asks for mode 0644 by default, which
+  # umask 007 leaves at 640; the upload now asks for 0666 (--new-file-perms), which the umask must turn into 660. The
+  # behaviour was as expected.
   - id: sftp-works-in-the-jail-and-nothing-else
     what: >-
-      from 127.0.0.1 the user uploads a file with sftp (it lands in the directory, mode 0660 from umask 007) and the
+      from 127.0.0.1 the user uploads a file with sftp (it lands in the directory, mode 0660: 0666 requested, umask 007) and the
       jail's root lists only the directory; an ssh command is refused (internal-sftp forced); from ::1 the login is
       refused
     control: negative
@@ -100,7 +103,7 @@ checks:
       echo p8test-content > /run/p8test-jail/p8test.txt
       K='--key /run/p8test-jail/key --pubkey /run/p8test-jail/key.pub --insecure --max-time 20'
       {
-        curl -s $K -T /run/p8test-jail/p8test.txt sftp://p8testuser@127.0.0.1/upload/ && echo "upload: done"
+        curl -s $K --new-file-perms 666 -T /run/p8test-jail/p8test.txt sftp://p8testuser@127.0.0.1/upload/ && echo "upload: done"
         curl -s $K --list-only sftp://p8testuser@127.0.0.1/ | grep -v -E '^\.{1,2}$' | sed 's/^/listing: \//'
         stat -c 'uploaded: %U %a %n' /srv/p8test-jail/upload/p8test.txt 2>&1
         ssh -n $O p8testuser@127.0.0.1 'echo shell-for-$(id -un)' 2>&1 | grep -o -e 'shell-for-[a-z0-9]*' -e 'allows .ftp connections only' | head -1 | sed 's/^/command: /'
