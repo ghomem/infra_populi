@@ -4,6 +4,8 @@
 # none (no parameters).
 # Not exercised: the desktop log-in that triggers the autostart entry (needs a desktop session).
 # 2026-11-20 (backfill batch 7): purpose and outcomes (HQ rulings 2 and C1); the old uncovered note in the current form.
+# Correction round 1, 2026-11-21 (review 20261121T011850Z, purpose): the runner's syslog line is read, the not-found
+# branch is exercised, and two `from` references are corrected to the baseline's lines.
 class: linux_policies_common
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -14,14 +16,14 @@ outcomes:
   - outcome: the module's linux-policies tree is deployed under the local directory
     from: manifests/linux_policies_common.pp:13-25
     checks: [policies-tree-deployed]
-  - outcome: the runner executes the calling user's USER/<user>.sh when it exists and is executable, and says so in syslog
-    from: manifests/linux_policies_common.pp:34-39; templates/linux-policies/execute_linux_policies_user.sh.erb:1-17
-    checks: [runner-executes-the-users-policy]
+  - outcome: the runner executes the calling user's USER/<user>.sh when it exists and is executable, and says so in syslog; without one it logs that the script was not found
+    from: manifests/linux_policies_common.pp:33-38; templates/linux-policies/execute_linux_policies_user.sh.erb:1-17
+    checks: [runner-executes-the-users-policy, the-runner-reports-a-missing-script]
   - outcome: an XDG autostart entry runs the runner at a desktop log-in
-    from: manifests/linux_policies_common.pp:28-33
+    from: manifests/linux_policies_common.pp:27-32
     checks: [autostart-entry-runs-the-runner]
   - outcome: the autostart entry actually running at a desktop log-in
-    from: manifests/linux_policies_common.pp:28-33
+    from: manifests/linux_policies_common.pp:27-32
     uncovered:
       why: the class's plan node is a server without a desktop; the login side is exercised through linux_policies_user's set on kubuntu, which composes this class
       lifted_by: "capability: a desktop session on the class's plan node"
@@ -53,7 +55,8 @@ checks:
 
   - id: runner-executes-the-users-policy
     what: >-
-      the exercise: the runner (root 0755) executes USER/<the calling user>.sh when it exists and is executable
+      the exercise: the runner (root 0755) executes USER/<the calling user>.sh when it exists and is executable, and
+      logs "Executing <script>" under the tag linuxint-policies-<caller>
     control: negative
     derived_from:
       - {path: manifests/linux_policies_common.pp, lines: "33-37", text: "content   => template('puppet_infrastructure/linux-policies/execute_linux_policies_user.sh.erb'),"}
@@ -67,4 +70,18 @@ checks:
     effect: |
       stat -c '%U %a' /opt/puppet-infrastructure/linux-policies/COMMON/execute_linux_policies_user.sh
       cat /var/tmp/p8test-policy-ran
-    expect: {rc: 0, stdout: "\\Aroot 755\\np8test-policy-ran\\n\\Z"}
+      journalctl -t linuxint-policies-p8test -o cat --no-pager | p8_count '^Executing /opt/puppet-infrastructure/linux-policies/USER/root\.sh$'
+    expect: {rc: 0, stdout: "\\Aroot 755\\np8test-policy-ran\\n1\\n\\Z"}
+
+  - id: the-runner-reports-a-missing-script
+    what: run by a user without a USER/<user>.sh (the account nobody), the runner executes nothing and logs "Policies script <script> not found"
+    control: negative
+    derived_from:
+      - {path: templates/linux-policies/execute_linux_policies_user.sh.erb, lines: "11-16", text: "logger -p local1.notice -t ${SYSLOG_TAG} \"Policies script ${LINUX_POLICIES_SCRIPT} not found\""}
+    mutates: runs the runner once as the account nobody with the argument p8testmissing (one syslog line)
+    probe: |
+      cd /tmp && runuser -u nobody -- /opt/puppet-infrastructure/linux-policies/COMMON/execute_linux_policies_user.sh p8testmissing
+    effect: |
+      journalctl -t linuxint-policies-p8testmissing -o cat --no-pager | p8_count '^Policies script /opt/puppet-infrastructure/linux-policies/USER/nobody\.sh not found$'
+    expect: {rc: 0, stdout: "\\A1\\n\\Z"}
+
