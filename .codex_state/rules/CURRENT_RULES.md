@@ -2,7 +2,12 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-127 entries; 6 marked superseded (in whole or part); newest first.
+128 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-21 — backfill batch 8: an uncovered row's "capability" is tried first
+- 1. **Try before claiming.** Reviewers rejected three of my uncovered rows in batch 8 because the lab could do what the
+- 2. **Restore-and-restart behaviour** (ssl_base and similar): each notifying resource gets its own drift and its own
+- 3. **Peers powered off after a run** (HQ 2026-11-17 ruling 5) leave a domain-member node waiting on its DC: a by-hand
 
 ## 2026-11-20 — HQ after batch 16, items 1 and 2: the backup directory and loud failures
 - 1. **Local change #14:** the backup define receives the target, so it declares the directory once for every caller

@@ -2333,3 +2333,14 @@ the engine's tools, which take the lock themselves, are unaffected. 21 tests; th
    (test_repo_sweep_result_is_8_verified) while the reviewer refused the uncommitted fix. The test now accepts a class
    out of the verified set only while its latest review is a recorded FAIL of its current migration; moving the FAIL
    review aside was refused as undermining oversight and was not done.
+
+## 2026-11-21 — backfill batch 8: an uncovered row's "capability" is tried first
+1. **Try before claiming.** Reviewers rejected three of my uncovered rows in batch 8 because the lab could do what the
+   row said it could not: a VPN connection without a desktop session (`nmcli ... passwd-file`), read errors under a
+   monitored tree (a loop-mounted image under a device-mapper error target), and onward mail relay (a peer sink with an
+   address-literal recipient). From now on, before writing `lifted_by: "capability: ..."`, the advisor tries the
+   capability on the node (or the peer) and writes the attempt's result as the row's evidence.
+2. **Restore-and-restart behaviour** (ssl_base and similar): each notifying resource gets its own drift and its own
+   agent run (`node_agent.after` as a list), so a restart is attributed to one resource.
+3. **Peers powered off after a run** (HQ 2026-11-17 ruling 5) leave a domain-member node waiting on its DC: a by-hand
+   command on such a node after a run needs the peer started first (measured in the batch 18 report).
