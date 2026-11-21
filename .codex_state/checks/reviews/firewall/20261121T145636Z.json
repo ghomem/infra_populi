@@ -1,0 +1,43 @@
+{
+ "class": "firewall",
+ "at": "20261121T145636Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "default-policies-drop-input-and-forward: firewall.pp:30-31 set policy drop on FORWARD:filter:IPv4 and INPUT:filter:IPv4 and the class sets no OUTPUT policy, so iptables -S showing -P INPUT DROP, -P FORWARD DROP, -P OUTPUT ACCEPT is exactly what those lines produce under defaults",
+  "the-next-agent-run-purges-the-unmanaged-rule: firewall.pp:30-31 declare INPUT with purge => true (and line 27 purges unmanaged firewall resources), so after the agent run the hand-added p8test-rogue INPUT rule must be gone (count 0) with the drop policy still in place; the effect reads iptables after the run, not the action's output",
+  "a-service-the-firewall-does-not-allow-is-listening: setup check; firewall.pp:30-31 drop INPUT by default and no rule (000-003, 100) opens 8888, so a 0.0.0.0:8888 listener is the right target for the drop/loopback probes; mutates declares the transient unit and the effect (ss -ltn) shows the action's result, not its output",
+  "purpose covered: Purpose matches the header (lines 1-3: drop INPUT/FORWARD, allow OUTPUT, SSH and ICMP in) and the code (purge line 27, rules 000-003 and 100, flush script lines 17-24). Tested behaviourally: policies; ICMP and SSH in from the peer while a listening 8888 is dropped (policy); loopback reaches 8888 (rule 001, the SYN is NEW so only 001 admits it); an outbound node->peer:22 connection opens, which under INPUT drop only rule 003 can allow (its counter check is weaker since the harness's own SSH also hits 003, but the 'open' result alone proves the rule acts); unmanaged rule purged at the next agent run; flush script installed (owner/mode/sha), clears all IPv4 rules and sets ACCEPT, next agent run rebuilds; rules saved to rules.v4 with netfilter-persistent enabled (module base class, stated as such). Uncovered: rule 002 (127.0.0.0/8 on a non-lo interface), evidence a recorded measurement from firewall_secure_extra's reviewed set (0 of 3 hand-built frames counted, route_localnet 0 and 1), lifted_by a capability, honest that the cause is unexplained. Minor: the flush effect checks IPv4 tables only; the clean node carries no IPv6 rules for it to clear, so nothing observable is lost."
+ ],
+ "review_s": 210.9,
+ "check_file_sha256": "6bc6dc6badd6f2def492466cc12467fef08a03691f43d36b18cb96b00bbc23f7",
+ "content_sha256": "6bc6dc6badd6f2def492466cc12467fef08a03691f43d36b18cb96b00bbc23f7",
+ "reviewer_result": "20261121T145306Z-reviewer",
+ "author_result": "20261121T144849Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "76ae996b-85c9-4b9c-a801-656db7891a4c",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "76ae996b-85c9-4b9c-a801-656db7891a4c",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "aff7511c-c150-4fd7-ade6-fd72a2403761",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "aff7511c-c150-4fd7-ade6-fd72a2403761",
+   "fresh": true
+  }
+ }
+}
