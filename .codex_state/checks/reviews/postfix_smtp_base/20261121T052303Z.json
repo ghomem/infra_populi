@@ -1,0 +1,35 @@
+{
+ "class": "postfix_smtp_base",
+ "at": "20261121T052303Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "smtp-restrictions-exercised: main.cf.erb:101-103 (check_client_access hash:client_access, then reject) means a client not in allowed_client_ips is refused; the fixture lists only 127.0.0.1 and inet_protocols = all, so the ::1 session must get 554 Client host rejected, while the 127.0.0.1 owners get 250. The other expected replies match sender_access (554 Access denied), reject_sender_login_mismatch (553 not owned / not logged in) and a dovecot 535",
+  "starttls-presents-the-sslprefix-bundle: main.cf.erb:23 smtpd_tls_cert_file=@certificate_filename, which is /etc/ssl/certs/p8test.postfix.bundle.crt when letsencrypt_certificate is false (manifest:58). The probe compares the fingerprint served after STARTTLS on 587 with that file. The mismatch changes only the compared certificate (the system CA bundle), which must change the verdict",
+  "client-access-map-allows-the-listed-ip: client_access.erb:2-3 writes '<ip> OK' for each allowed_client_ips entry, and the config_file define postmaps it, so 'postmap -q 127.0.0.1 hash:/etc/postfix/client_access' must give OK under the fixture [127.0.0.1]. The mismatch queries only 127.0.0.2, which is not listed: no entry, a real change of verdict",
+  "purpose gap: Tested: smtpd on 587 with the configured banner and host name; the sslprefix certificate over STARTTLS; dovecot passwd-file SASL for p8testuser; the client_access map; and in live SMTP sessions the layered restrictions (listed client and owner accepted; unlisted MAIL FROM, another user's address, no login, wrong password and the unlisted client ::1 refused). The header-check warning and extra_sec/letsencrypt are honestly uncovered: smtp_header_checks is client-side with no lab MX, and a set holds one params fixture. GAP 1: the stated purpose says 'TLS is mandatory' (main.cf.erb:30 smtpd_tls_security_level = encrypt, also cited in the restrictions check's derived_from). Every session starts with STARTTLS, so a plaintext MAIL FROM or AUTH is never tried; with 'may' instead of 'encrypt' all checks would still pass. The lab can exercise this on the node's own 587, so it is neither covered nor listed as uncovered. GAP 2 (smaller): the purpose says 'not system accounts' (files/10-auth.conf comments out auth-system.conf.ext and includes only auth-passwdfile). No outcome row cites 10-auth.conf and no check shows a system account is refused by dovecot or postfix SASL, for example a passdb lookup for an existing OS user. This is exercisable on the node."
+ ],
+ "review_s": 146.3,
+ "check_file_sha256": "6c48812f1f8f6507596c8cadd57a3e0ae201cc6bb2b69ab53cb752ecfd183ac5",
+ "content_sha256": "6c48812f1f8f6507596c8cadd57a3e0ae201cc6bb2b69ab53cb752ecfd183ac5",
+ "reviewer_result": "20261121T052037Z-reviewer",
+ "author_result": "20261121T051749Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "63747a14-fbee-4382-b138-d6ac0e35197f",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "63747a14-fbee-4382-b138-d6ac0e35197f",
+   "fresh": true
+  }
+ }
+}
