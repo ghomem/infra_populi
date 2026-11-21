@@ -1,0 +1,35 @@
+{
+ "class": "firewall_addon_hosting",
+ "at": "20261121T000538Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "output-policy-drop: firewall_addon_hosting.pp:14 declares firewallchain OUTPUT:filter:IPv4 policy => drop; the probe reads the first line of iptables -S OUTPUT and expects '-P OUTPUT DROP' (seen on the applied node, ACCEPT on the clean node)",
+  "new-outbound-tcp-dropped: line 14 policy drop with purge, and the only accepts are 149 (effective proto tcp, RELATED/ESTABLISHED), 150/151 (udp 53/123) and the ruled 152 (tcp 8140 to the master's /32); a NEW tcp SYN to 127.0.0.1:22 matches none of them and crosses OUTPUT, so 'blocked' is what the code produces; open on the clean node",
+  "an-agent-run-is-due: lines 13-14 (the OUTPUT drop that would cut the agent, which the ruled 152 complements) motivate the agent run; the action only writes a time marker under /run/p8test-fah, which mutates declares in full, and the effect tests the file exists (the action's result, not its output); the substantive evidence is the following check plus the runner's node_agent record (my run: rc 0, 'Catalog compiled by puppet8master', 0 changed; puppet agent -t implies no-usecacheonfailure, so a cut agent cannot pass on a cached catalog)",
+  "purpose gap: Tested: OUTPUT policy DROP; accepts for replies (149, effective proto tcp), DNS udp/53, NTP udp/123 and the ruled 152 master rule to the node-resolved address; new TCP dropped on loopback and to the internet; DNS and NTP still answer (invariants); an agent run through the firewall fetches a fresh catalog and applies with failed: 0. Gap: line 14 also declares purge => true (the 'override the default OUTPUT ... can't touch this!' mechanism: unmanaged OUTPUT rules are removed), and the outcomes table neither lists it nor marks it uncovered. The clean node's OUTPUT chain has no other rules (iptables -S OUTPUT after apply shows only the policy and rules 149-152), so purge was never exercised. The lab CAN exercise it: the an-agent-run-is-due action could insert an unmanaged OUTPUT ACCEPT rule (declared in mutates) and an effect after the node_agent run could show it removed. IPv6 OUTPUT is untouched by the class (ip6tables OUTPUT policy ACCEPT), consistent with the IPv4-only code; the purpose wording 'cannot open new connections out' could say IPv4."
+ ],
+ "review_s": 470.0,
+ "check_file_sha256": "010f52d6871c7b7d5f272e2ea8dc81e62636cf6e84a07efaa927fcff9061a398",
+ "content_sha256": "010f52d6871c7b7d5f272e2ea8dc81e62636cf6e84a07efaa927fcff9061a398",
+ "reviewer_result": "20261120T235748Z-reviewer",
+ "author_result": "20261120T234929Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "72a70566-88e0-4334-809a-e3870824077a",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "72a70566-88e0-4334-809a-e3870824077a",
+   "fresh": true
+  }
+ }
+}
