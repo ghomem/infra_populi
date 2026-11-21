@@ -1,0 +1,35 @@
+{
+ "class": "sysmon_integrity_node",
+ "at": "20261121T121820Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "check-critical-when-a-listed-file-changed: nagios-integrity.sh.erb:17-21 (handle_error with empty INV: CODE!=0 -> echo \"CRITICAL: $ACTION\", exit $RC_CRITICAL=2) with :45-49 (md5sum -c of the item, handle_error $RC \"checksum error for $ITEM\") supports the action (rewrite the listed file to different content) and the expect 'CRITICAL: checksum error for <md5>  /var/tmp/p8test-integrity.txt', blank line, rc=2; the blank line is the template's newline at :35-36 carried in the last ':'-item, and the effect only runs the check",
+  "check-script-carries-the-checklist: nagios-integrity.sh.erb:35 '<%= @checklist %>' with sysmon_integrity_node.pp:8-13 (root:root 0755 file in filesystem::bindir) supports stat 'root 755' plus exactly one line equal to the params fixture checklist; I confirmed the fixture value 'f9d861282c581aefc93a5475254cec31  /var/tmp/p8test-integrity.txt' is md5sum of 'p8test integrity fixture\\n'",
+  "check-ok-when-the-file-matches: nagios-integrity.sh.erb:54 'echo \"OK: exit code $RC_OK\"' (reached when no item fails, :41-51) supports writing the file with exactly the content the fixture hash was computed from (md5 verified by me) and expecting 'OK: exit code 0', rc=0; the effect runs the read-only check",
+  "purpose gap: Tested on my run (ALL_PASS, clean-phase negatives all failed): the script's content/owner/mode, OK for a present matching file, CRITICAL exit 2 for a changed file, skip of an absent file. The uncovered row (checklist link from the master's generated 97_integrity.pp via a node definition) is honest: git grep at cf477c6 finds integrity_checklist only in checklist-integrity.sh.erb:18, and no class passes it. Gap: the purpose (and the set header) is a checklist of MANY md5sum lines joined by ':' (checklist-integrity.sh.erb:9-15, nagios-integrity.sh.erb:38-42 IFS=':' iteration), but the params fixture holds a single entry, so the ':' split and per-item iteration are never exercised: a script that did not split on ':' would pass every check. The lab can exercise it with a two-entry fixture (e.g. one matching present file plus one changed or absent file, verifying the later item is reached and judged), and the outcomes table neither covers nor lists it as uncovered."
+ ],
+ "review_s": 86.4,
+ "check_file_sha256": "d23715a437b3c20a287864d7936ba0dcf7ffe2badae65ddee77fc0c9c60bdabd",
+ "content_sha256": "d23715a437b3c20a287864d7936ba0dcf7ffe2badae65ddee77fc0c9c60bdabd",
+ "reviewer_result": "20261121T121654Z-reviewer",
+ "author_result": "20261121T121459Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "1d71ec0c-2704-405b-8d9a-9cd099e2a173",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "1d71ec0c-2704-405b-8d9a-9cd099e2a173",
+   "fresh": true
+  }
+ }
+}
