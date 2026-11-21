@@ -1,0 +1,35 @@
+{
+ "class": "linux_policies_common",
+ "at": "20261121T011850Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "runner-executes-the-users-policy @ manifests/linux_policies_common.pp:33-37: the runner is declared root 0755 from execute_linux_policies_user.sh.erb, whose lines 6-14 set USERNAME=whoami and execute USER/${USERNAME}.sh when -x; the action installs USER/root.sh 0755 and runs the runner as root, mutates declares both plus the syslog line, and the effect (stat 'root 755' + the marker file the fixture policy wrote) shows the policy's result, not the action's output",
+  "policies-tree-deployed @ files/linux-policies/COMMON/common (whole file): the probe's expected sha256 96142acf...f147a is the baseline file's hash, so a byte-for-byte copy under /opt/puppet-infrastructure/linux-policies/COMMON is what the recursive source copy must produce",
+  "policies-tree-deployed @ manifests/linux_policies_common.pp:22-23: recurse => true with source puppet:///modules/puppet_infrastructure/linux-policies/ copies the whole tree, so TMP/.placeholder and USER/.placeholder must exist beside COMMON/common under ${localdir}/linux-policies (localdir /opt/puppet-infrastructure from lab Hiera, lines 13-14); fails clean, passes applied",
+  "purpose gap: Tested: the tree deployed (COMMON/common byte for byte, TMP, USER), the XDG autostart entry (root 0644, Exec= runner with caller autostart), and the runner executing the calling user's USER/<user>.sh (exercised as root). The login-triggered run is honestly uncovered on the server node and is exercised by linux_policies_user's autostart-runs-the-policies-at-login on kubuntu (PASS in 20261117T231656Z-reviewer.json, which also greps the 'Executing ...' journal line). GAP: the outcomes row 'the runner executes the calling user's USER/<user>.sh ... and says so in syslog' maps to runner-executes-the-users-policy, whose effect never reads the journal: the syslog clause (logger -p local1.notice -t linuxint-policies-${CALLER} 'Executing ...', template lines 11-12) is claimed covered but untested, though the ubuntu node can exercise it (e.g. journalctl -t linuxint-policies-p8test after the action); the 'not found' branch (lines 14-15) is likewise unprobed. Also the outcomes' from refs are off by one against the baseline: the autostart file is lines 27-32 (row says 28-33) and the runner file lines 33-38 (row says 34-39)."
+ ],
+ "review_s": 130.3,
+ "check_file_sha256": "6eb4c1ca90ed2d09a94bf320de50c0abd01da893cf7e6d1dbf6dc5c71a818985",
+ "content_sha256": "6eb4c1ca90ed2d09a94bf320de50c0abd01da893cf7e6d1dbf6dc5c71a818985",
+ "reviewer_result": "20261121T011640Z-reviewer",
+ "author_result": "20261121T011358Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "6ba9a78e-4136-4bfc-9b94-60c435c0f1ca",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "6ba9a78e-4136-4bfc-9b94-60c435c0f1ca",
+   "fresh": true
+  }
+ }
+}
