@@ -1,6 +1,7 @@
 # Phase 3 checks for puppet_infrastructure::openvpn_set_vpn_passwd_file (define; harness title the fixture's path; node
 # kubuntu since 2026-11-21: a KDE desktop with kdialog and NetworkManager, which the ubuntu server node lacks). Fixture
-# (params, never committed): file_path /usr/local/bin/set_vpn_passwd.sh, vpn_list [VPN1, VPN2], file_owner root.
+# (params, never committed): file_path /usr/local/bin/set_vpn_passwd.sh, vpn_list [VPN1, VPN2, VPN4] (VPN4 since
+# 2026-11-21), file_owner root.
 # The script asks the user twice for a VPN password with kdialog and, when both match, sets it as the secret of every
 # listed NetworkManager connection whose profile file /etc/NetworkManager/system-connections/<name> exists (the path
 # openvpn_nm_connection writes). The exercise replaces the user at the dialogs with a stub kdialog
@@ -9,6 +10,9 @@
 # Measured while writing (2026-11-21, NetworkManager 1.46 on Kubuntu 24.04): modifying such a profile makes NetworkManager
 # move it into netplan (/etc/netplan/90-NM-<uuid>.yaml) and delete the keyfile, so a second run of the script no longer
 # finds it; escalations/openvpn_set_vpn_passwd_file.behaviour.md.
+# Correction round 1, 2026-11-21 (review 20261121T163511Z, purpose): blank answers asked again; VPN4, a listed profile
+# exactly as openvpn_nm_connection's template writes it (password-flags=1, permissions=user:p8testuser:;), expected to
+# keep the password; cancel at either dialog leaving a listed connection's password as it was.
 # 2026-11-21 (backfill batch 10): first set, with purpose and outcomes (HQ rulings 2 and C1).
 class: openvpn_set_vpn_passwd_file
 baseline: release-0.9.10 (cf477c6)
@@ -24,10 +28,13 @@ outcomes:
   - outcome: with both answers matching, every listed connection present gets the password, and an unlisted one is left alone
     from: templates/openvpn/set_vpn_passwd.sh.erb:12-25, 44-50
     checks: [vpn-profiles-and-a-dialog-stub, matching-answers-set-the-listed-connection]
-  - outcome: cancelling at the dialog changes nothing
+  - outcome: openvpn_nm_connection's own profiles (agent-owned password) get the password
+    from: templates/openvpn/set_vpn_passwd.sh.erb:12-25; templates/openvpn/connection_file.erb:5, 11
+    checks: [vpn-profiles-and-a-dialog-stub, matching-answers-set-the-listed-connection, an-openvpn-nm-connection-profile-keeps-the-password]
+  - outcome: cancelling at either dialog changes nothing
     from: templates/openvpn/set_vpn_passwd.sh.erb:30-42
     checks: [cancelling-changes-nothing]
-  - outcome: mismatched answers are refused with a message and asked again, then a match sets the password
+  - outcome: blank or mismatched answers are refused with a message and asked again, then a match sets the password
     from: templates/openvpn/set_vpn_passwd.sh.erb:44-55
     checks: [a-mismatch-is-asked-again]
   - outcome: running the script again changes the password of a listed connection (the next password change)
@@ -35,7 +42,7 @@ outcomes:
     checks: [a-second-run-changes-the-password]
 checks:
   - id: script-installed-with-the-list
-    what: the script at the fixture's path is root-owned 0755 and lists VPN1 and VPN2
+    what: the script at the fixture's path is root-owned 0755 and lists VPN1, VPN2 and VPN4
     control: negative
     derived_from:
       - {path: manifests/openvpn_set_vpn_passwd_file.pp, lines: "29-34", text: "content => template('puppet_infrastructure/openvpn/set_vpn_passwd.sh.erb'),"}
@@ -43,27 +50,32 @@ checks:
     probe: |
       stat -c '%U:%G %a' /usr/local/bin/set_vpn_passwd.sh
       grep -E '^ *VPN_LIST=' /usr/local/bin/set_vpn_passwd.sh | sed 's/^ *//'
-    expect: {rc: 0, stdout: "\\Aroot:root 755\\nVPN_LIST=\" VPN1 VPN2\"\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Aroot:root 755\\nVPN_LIST=\" VPN1 VPN2 VPN4\"\\n\\Z"}
 
   - id: vpn-profiles-and-a-dialog-stub
-    what: setup, VPN1 (listed) and VPN3 (not listed) as openvpn_nm_connection writes them (password stored by NetworkManager), and the dialog stub
+    what: >-
+      setup, VPN1 (listed) and VPN3 (not listed) at openvpn_nm_connection's path with the password stored by
+      NetworkManager, VPN4 (listed) exactly as openvpn_nm_connection's template writes it, and the dialog stub
     control: negative
     derived_from:
       - {path: templates/openvpn/set_vpn_passwd.sh.erb, lines: "15-20", text: "VPN_CON_FILE_LOCATION=\"/etc/NetworkManager/system-connections/\""}
     mutates: >-
       writes the NetworkManager profiles /etc/NetworkManager/system-connections/VPN1 and VPN3 (OpenVPN, password auth,
-      password-flags=0, remote 203.0.113.9) and reloads NetworkManager; writes the stub /var/tmp/p8test-kd/kdialog
+      password-flags=0, remote 203.0.113.9) and VPN4 (password-flags=1, permissions=user:p8testuser:;) and reloads
+      NetworkManager; writes the stub /var/tmp/p8test-kd/kdialog
       (replays /var/tmp/p8test-kd/answers, logs to /var/tmp/p8test-kd/calls)
     probe: |
       mk() { printf '%s\n' '[connection]' "id=$1" "uuid=$(cat /proc/sys/kernel/random/uuid)" 'type=vpn' '' '[vpn]' 'connection-type=password' 'password-flags=0' 'remote=203.0.113.9' 'username=p8testuser' 'service-type=org.freedesktop.NetworkManager.openvpn' '' '[ipv4]' 'method=auto' > /etc/NetworkManager/system-connections/$1; chmod 0600 /etc/NetworkManager/system-connections/$1; }
-      mk VPN1; mk VPN3; nmcli connection reload
+      mk VPN1; mk VPN3
+      printf '%s\n' '[connection]' 'id=VPN4' "uuid=$(cat /proc/sys/kernel/random/uuid)" 'type=vpn' 'permissions=user:p8testuser:;' '' '[vpn]' 'connection-type=password' 'password-flags=1' 'remote=203.0.113.9' 'username=p8testuser' 'service-type=org.freedesktop.NetworkManager.openvpn' '' '[ipv4]' 'method=auto' > /etc/NetworkManager/system-connections/VPN4
+      chmod 0600 /etc/NetworkManager/system-connections/VPN4; nmcli connection reload
       install -d -m 0755 /var/tmp/p8test-kd
       printf '%s\n' '#!/bin/sh' 'echo "$*" >> /var/tmp/p8test-kd/calls' 'case "$*" in *--password*) l=$(head -1 /var/tmp/p8test-kd/answers); sed -i 1d /var/tmp/p8test-kd/answers; echo "${l%|*}"; exit "${l##*|}";; esac' 'exit 0' > /var/tmp/p8test-kd/kdialog
       chmod 0755 /var/tmp/p8test-kd/kdialog
     effect: |
-      nmcli -g NAME connection show | grep -x -e VPN1 -e VPN3 | sort
+      nmcli -g NAME connection show | grep -x -e VPN1 -e VPN3 -e VPN4 | sort
       [ -x /var/tmp/p8test-kd/kdialog ] && echo "stub ready"
-    expect: {rc: 0, stdout: "\\AVPN1\\nVPN3\\nstub ready\\n\\Z"}
+    expect: {rc: 0, stdout: "\\AVPN1\\nVPN3\\nVPN4\\nstub ready\\n\\Z"}
 
   - id: matching-answers-set-the-listed-connection
     what: answering p8test-pass-a twice, the script sets it on VPN1 (listed; VPN2 is listed but absent) and not on VPN3, and ends with its finished message
@@ -84,45 +96,66 @@ checks:
       cat /var/tmp/p8test-kd/run1.txt
     expect: {rc: 0, stdout: "\\Arc=0\\npassword prompts: 2\\n--msgbox Configuration finished\\.\\nVPN1: \\[password = p8test-pass-a\\]\\nVPN3: \\[\\]\\n\\Z"}
 
+  - id: an-openvpn-nm-connection-profile-keeps-the-password
+    what: >-
+      VPN4, a listed profile exactly as openvpn_nm_connection writes it (agent-owned password), holds the password the
+      first run set
+    control: negative
+    derived_from:
+      - {path: templates/openvpn/set_vpn_passwd.sh.erb, lines: "18-23", text: "nmcli connection modify \"${vpn_name}\" vpn.secrets \"password=${VPN_USER_PASSWD}\""}
+      - {path: templates/openvpn/connection_file.erb, lines: "11", text: "password-flags=1"}
+    mutates: none beyond reading the connection (declared mutating so it runs after the first run)
+    probe: |
+      true
+    effect: |
+      echo "VPN4: [$(nmcli -s -g vpn.secrets connection show VPN4)]"
+    expect: {rc: 0, stdout: "\\AVPN4: \\[password = p8test-pass-a\\]\\n\\Z"}
+
   - id: cancelling-changes-nothing
-    what: cancelling at the first password dialog (kdialog exit 1) shows the cancel message and ends; no connection's password changes
+    what: >-
+      cancelling at the first dialog, then (another run) at the second, shows the cancel message and ends; VPN1 (listed,
+      set to p8test-pass-a by the first run) keeps that password
     control: negative
     timeout: 120
     derived_from:
-      - {path: templates/openvpn/set_vpn_passwd.sh.erb, lines: "30-35", text: "kdialog --msgbox \"$CANCEL_OPERATION\""}
-    mutates: runs the script once with the stub answering "cancel" (exit 1); the outcomes go to /var/tmp/p8test-kd/cancel.txt
+      - {path: templates/openvpn/set_vpn_passwd.sh.erb, lines: "30-42", text: "kdialog --msgbox \"$CANCEL_OPERATION\""}
+    mutates: runs the script twice with the stub (cancel at the first dialog; a password, then cancel at the second); the outcomes go to /var/tmp/p8test-kd/cancel.txt
     probe: |
-      D=/var/tmp/p8test-kd; : > $D/calls; printf '%s\n' '|1' > $D/answers
-      PATH=$D:$PATH timeout 30 /usr/local/bin/set_vpn_passwd.sh >/dev/null 2>&1; echo "rc=$?" > $D/cancel.txt
-      tail -1 $D/calls >> $D/cancel.txt
-      echo "VPN3: [$(nmcli -s -g vpn.secrets connection show VPN3)]" >> $D/cancel.txt
+      D=/var/tmp/p8test-kd; : > $D/cancel.txt
+      for a in '|1' 'p8test-pass-z|0
+      |1'; do
+        : > $D/calls; printf '%s\n' "$a" > $D/answers
+        PATH=$D:$PATH timeout 30 /usr/local/bin/set_vpn_passwd.sh >/dev/null 2>&1; echo "rc=$? prompts=$(grep -c -- '--password' $D/calls) last=$(tail -1 $D/calls)" >> $D/cancel.txt
+      done
+      echo "VPN1: [$(nmcli -s -g vpn.secrets connection show VPN1)]" >> $D/cancel.txt
     effect: |
       cat /var/tmp/p8test-kd/cancel.txt
-    expect: {rc: 0, stdout: "\\Arc=0\\n--msgbox You canceled this operation\\.\\nVPN3: \\[\\]\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Arc=0 prompts=1 last=--msgbox You canceled this operation\\.\\nrc=0 prompts=2 last=--msgbox You canceled this operation\\.\\nVPN1: \\[password = p8test-pass-a\\]\\n\\Z"}
 
   - id: a-mismatch-is-asked-again
     what: >-
-      with VPN2 (listed) now present, answering two different passwords shows the mismatch message and asks again; the
-      matching pair then sets VPN2's password
+      with VPN2 (listed) now present, two blank answers show the blank message and ask again, two different passwords
+      show the mismatch message and ask again, and the matching pair then sets VPN2's password
     control: negative
     timeout: 120
     derived_from:
       - {path: templates/openvpn/set_vpn_passwd.sh.erb, lines: "44-55", text: "kdialog --msgbox \"$UNMATCHING_PASSWD\""}
+      - {path: templates/openvpn/set_vpn_passwd.sh.erb, lines: "44-45", text: "kdialog --msgbox \"$BLANK_PASSWD\""}
     mutates: >-
       writes the profile VPN2 (as VPN1) and reloads NetworkManager; runs the script once with the stub answering
-      x, y, then p8test-pass-b twice; NetworkManager stores VPN2's password; the outcomes go to /var/tmp/p8test-kd/mismatch.txt
+      two blanks, x, y, then p8test-pass-b twice; NetworkManager stores VPN2's password; the outcomes go to /var/tmp/p8test-kd/mismatch.txt
     probe: |
       D=/var/tmp/p8test-kd
       printf '%s\n' '[connection]' 'id=VPN2' "uuid=$(cat /proc/sys/kernel/random/uuid)" 'type=vpn' '' '[vpn]' 'connection-type=password' 'password-flags=0' 'remote=203.0.113.9' 'username=p8testuser' 'service-type=org.freedesktop.NetworkManager.openvpn' '' '[ipv4]' 'method=auto' > /etc/NetworkManager/system-connections/VPN2
       chmod 0600 /etc/NetworkManager/system-connections/VPN2; nmcli connection reload
-      : > $D/calls; printf '%s\n' 'p8test-x|0' 'p8test-y|0' 'p8test-pass-b|0' 'p8test-pass-b|0' > $D/answers
+      : > $D/calls; printf '%s\n' '|0' '|0' 'p8test-x|0' 'p8test-y|0' 'p8test-pass-b|0' 'p8test-pass-b|0' > $D/answers
       PATH=$D:$PATH timeout 30 /usr/local/bin/set_vpn_passwd.sh >/dev/null 2>&1; echo "rc=$?" > $D/mismatch.txt
       grep -c -- '--password' $D/calls | sed 's/^/password prompts: /' >> $D/mismatch.txt
       grep -- '--msgbox' $D/calls | sed 's/\\n.*//' >> $D/mismatch.txt
       echo "VPN2: [$(nmcli -s -g vpn.secrets connection show VPN2)]" >> $D/mismatch.txt
     effect: |
       cat /var/tmp/p8test-kd/mismatch.txt
-    expect: {rc: 0, stdout: "\\Arc=0\\npassword prompts: 4\\n--msgbox Passwords didn't match\\.[^\\n]*\\n--msgbox Configuration finished\\.\\nVPN2: \\[password = p8test-pass-b\\]\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Arc=0\\npassword prompts: 6\\n--msgbox One of the passwords was blank\\.[^\\n]*\\n--msgbox Passwords didn't match\\.[^\\n]*\\n--msgbox Configuration finished\\.\\nVPN2: \\[password = p8test-pass-b\\]\\n\\Z"}
 
   - id: a-second-run-changes-the-password
     what: running the script again with p8test-pass-c changes VPN1's password to it (VPN1 was set by the first run)
