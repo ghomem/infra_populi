@@ -1,0 +1,43 @@
+{
+ "class": "openvpn_domain",
+ "at": "20261121T042709Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-node-is-joined-to-the-domain @ manifests/openvpn_domain.pp:86-88: exec 'join domain' runs join-domain.sh (guarded by id of the join user); net rpc testjoin reporting \"Join to 'P8TEST' is OK\" tests that the join left a working machine account for workgroup P8TEST (smb.conf.erb:9 workgroup = domain_netbios_name = P8TEST under the params fixture); the mismatch varies only the workgroup (-w P8NOPE), which must change the verdict, and it failed after apply",
+  "pam-winbind-requires-the-group-and-openvpn-pam-installed @ manifests/openvpn_domain.pp:14-15: prefixed_groups maps each group to ${domain_netbios_name}${winbind_separator}${group} and joins with ','; with fixture P8TEST, '+', [p8testgroup] that is exactly P8TEST+p8testgroup, which pam_winbind.conf.erb:30 writes as require_membership_of; the grep -x expects that line; the sha256 matches files/openvpn/openvpn_pam installed by lines 58-65",
+  "the-node-is-joined-to-the-domain @ templates/openvpn/join-domain.sh.erb (whole file, sha 44727c6b39ee): the script runs net join -U<join_user>%<join_password> then restarts winbind; a successful testjoin for P8TEST is the direct result of that net join, so the reference supports the probe",
+  "purpose gap: Tested: smb.conf domain-member settings (security=domain, netbios name, realm, wins server, workgroup, separator); the join (net rpc testjoin on the node, machine account PUPPET8NODE$ on the DC); domain user and groups resolving through nsswitch/winbind (id of the join user, mismatch p8nouser); pam_winbind require_membership_of P8TEST+p8testgroup and /etc/pam.d/openvpn byte-identical; real PAM logins through the login service openvpn_server's plugin uses (member with right password accepted, wrong password refused, a non-member refused while wbinfo -a shows the DC accepts its password, isolating the membership rule). All 7 checks passed in my run (20261121T042105Z-reviewer), clean-phase negatives failed as required. GAP: the set's own purpose says the class configures 'Samba/winbind and Kerberos', and the manifest writes /etc/krb5.conf (manifests/openvpn_domain.pp:40-47, templates/openvpn/krb5.conf.erb: default_realm <netbios>.<tld>, a [realms] stanza for literal DOMAIN.LOCAL with kdc fileserver.<netbios>.<tld>, logging to /var/log/krb5lib.log), but no outcome row names the Kerberos configuration, no check probes krb5.conf or a Kerberos operation, and no uncovered row explains its absence. The lab can exercise it: the peer p8lab-dc is a Samba AD DC (a KDC) and the fixture users have known passwords, so at least the installed default realm and a kinit against the DC are observable; if Kerberos is judged outside the login purpose (security = domain joins over RPC and pam_winbind.conf.erb:21 leaves krb5_auth off), the table must say so in an outcome row with that reason. Other packages (cifs-utils, ntpdate) carry no configured outcome."
+ ],
+ "review_s": 364.3,
+ "check_file_sha256": "70c7426b9db4557d1743eacfe1b66d9aada6fe548a262d01132a75c9906f551a",
+ "content_sha256": "70c7426b9db4557d1743eacfe1b66d9aada6fe548a262d01132a75c9906f551a",
+ "reviewer_result": "20261121T042105Z-reviewer",
+ "author_result": "20261121T041737Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "0555e765-92e4-4214-8d82-bd8edd04c3ea",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "0555e765-92e4-4214-8d82-bd8edd04c3ea",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "dc",
+   "snapshot": "P8LAB_DC_BASELINE_v1",
+   "boot_id": "36ca6627-0696-453b-b4ef-4e51e778dea1",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "36ca6627-0696-453b-b4ef-4e51e778dea1",
+   "fresh": true
+  }
+ }
+}
