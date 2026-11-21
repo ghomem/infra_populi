@@ -1,0 +1,35 @@
+{
+ "class": "ssl_nginx",
+ "at": "20261121T055913Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "nginx-bundle-cert-then-intermediate (ssl_base.pp:79-81): with letsencrypt_certificate=false and myservice 'nginx' (ssl_nginx.pp) the bundle is ${ssl_certs_dir}/${myprefix}.${myservice}.bundle.crt = /etc/ssl/certs/p8test.nginx.bundle.crt on Debian, first fragment from <prefix>.crt and second from <prefix>.intermediate.crt; the probe's 2 certificates with the first one's subject CN=p8test.invalid (the fixture's server cert) tests exactly that order",
+  "nginx-bundle-cert-then-intermediate (ssl_base.pp:100-107): concat with mode '0644' and owner $owner (default 'root'); the probe's 'root 644' matches the defaults ssl_nginx passes through (no owner/group given)",
+  "bundle-certificate-matches-the-key (ssl_base.pp:77-81): key from <prefix>.key and first certificate from <prefix>.crt of the same prefix; comparing the public keys of the bundle's first certificate and /etc/ssl/private/p8test.key tests that the class installs a usable pair; the mismatch swaps only the key (the node's Puppet agent key, a different key), which must change the verdict, and it failed after apply as required",
+  "purpose covered: Purpose matches ssl_nginx.pp (ssl_base with myservice/myservicename nginx, letsencrypt default false) and ssl_base's header (key file, service bundle, restart on change). Tested: key at /etc/ssl/private/p8test.key root:root 0600; bundle root 0644 with server cert then intermediate; cert matches key (with mismatch control); a hand-changed bundle and, separately, a hand-changed key are put back by the node's agent run and nginx restarts (new MainPID, active) - the reviewer run's agent logs show only the corrective content change and Service[nginx] 'Triggered refresh from 1 event' each time, so the restart is caused by the class's notify. Mutating checks declare all they change (the drift line, PID/digest notes under /run/p8test-sslnginx) and are judged on read-only effects, not the action's output. Left out: RedHat paths (ssl_base.pp:56-68) - uncovered row honest: phase3.py selects one node per class via nodes.select(cls) and the set holds one fixed Debian path set, so a rhel9 run of this class needs a per-node set capability (same lifted_by as other approved sets); the Let's Encrypt branch is correctly excluded as unreachable (ssl_nginx passes no letsencrypt_certificate). nginx actually serving TLS with the bundle needs a vhost declared by other classes (ssl_nginx declares none), so it is not this class's outcome."
+ ],
+ "review_s": 136.1,
+ "check_file_sha256": "5b5b4fb399dc47fbaaa237a7a17c31b860ff383b21a115bd9234fe48333dd0d9",
+ "content_sha256": "5b5b4fb399dc47fbaaa237a7a17c31b860ff383b21a115bd9234fe48333dd0d9",
+ "reviewer_result": "20261121T055657Z-reviewer",
+ "author_result": "20261121T055336Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "7f0f1434-8185-4ac8-928d-aba8428ec15e",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "7f0f1434-8185-4ac8-928d-aba8428ec15e",
+   "fresh": true
+  }
+ }
+}
