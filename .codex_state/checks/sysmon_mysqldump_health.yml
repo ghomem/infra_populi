@@ -12,6 +12,8 @@
 # reproduced): the create and drop failures, a header-less dump, a second directory (the params fixture's dirs now names
 # two). A failed create drops an existing database of the dump's name: a second finding, escalated
 # (escalations/sysmon_mysqldump_health.behaviour.md).
+# Correction round 2, 2026-11-21 (review 20261121T114625Z, purpose; the last round, production use 0): the broken dump
+# sits in a dated subdirectory (find recurses); the script's group is read.
 class: sysmon_mysqldump_health
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -33,8 +35,8 @@ outcomes:
   - outcome: a .sql file that is not a mysqldump (the empty file a failed dump leaves, or a dump without its header comments) is reported CRITICAL with exit 2
     from: templates/sysmon/check-mysqldump-health.sh.erb:60-70
     checks: [a-file-that-is-not-a-dump-is-critical]
-  - outcome: every configured directory is checked (a broken dump in the second directory is reported)
-    from: templates/sysmon/check-mysqldump-health.sh.erb:74-78
+  - outcome: every configured directory is checked, subdirectories included (a broken dump in a dated subdirectory of the second directory is reported)
+    from: templates/sysmon/check-mysqldump-health.sh.erb:60-62, 74-78
     checks: [restores-are-checked]
   - outcome: a scratch database that cannot be created (one of that name exists) is reported CRITICAL (Create database) with exit 2, and the existing database is left intact
     from: templates/sysmon/check-mysqldump-health.sh.erb:11-39, 46-48
@@ -52,8 +54,8 @@ checks:
       - {path: templates/sysmon/check-mysqldump-health.sh.erb, lines: "74", text: "DIRS=\"<%= @dirs %>\""}
     probe: |
       f=/opt/puppet-infrastructure/bin/check-mysqldump-health.sh
-      stat -c '%U %a' "$f"; bash -n "$f" && grep -E '^(MYSQLUSER|MYSQLPWD|DIRS)=' "$f"
-    expect: {rc: 0, stdout: "\\Aroot 755\\nMYSQLUSER=\"p8test_check\"\\nMYSQLPWD=\"p8test-not-a-secret\"\\nDIRS=\"/var/tmp/p8test-dumps /var/tmp/p8test-dumps2\"\\n\\Z"}
+      stat -c '%U %G %a' "$f"; bash -n "$f" && grep -E '^(MYSQLUSER|MYSQLPWD|DIRS)=' "$f"
+    expect: {rc: 0, stdout: "\\Aroot root 755\\nMYSQLUSER=\"p8test_check\"\\nMYSQLPWD=\"p8test-not-a-secret\"\\nDIRS=\"/var/tmp/p8test-dumps /var/tmp/p8test-dumps2\"\\n\\Z"}
 
   - id: a-mysql-server-with-a-dump
     what: setup for the restores, a MySQL server on the node, the fixture user, and a mysqldump of a source database (the source dropped afterwards)
@@ -80,8 +82,8 @@ checks:
   - id: restores-are-checked
     what: >-
       with the good dump alone the check reports OK (exit 0); with a dump that does not load (a MySQL dump header for
-      p8testbroken, then invalid SQL) in the second configured directory it reports CRITICAL "Load database dump
-      ./broken.sql" (exit 2); neither run leaves a p8test database behind
+      p8testbroken, then invalid SQL) in a dated subdirectory of the second configured directory it reports CRITICAL
+      "Load database dump ./2026-11-21/broken.sql" (exit 2); neither run leaves a p8test database behind
     control: negative
     timeout: 300
     derived_from:
@@ -90,18 +92,19 @@ checks:
       - {path: templates/sysmon/check-mysqldump-health.sh.erb, lines: "80-81", text: "echo \"OK: exit code $RC_OK\""}
     mutates: >-
       runs the check twice as root (it creates and drops the scratch databases p8testsrc and p8testbroken); writes
-      /var/tmp/p8test-dumps2/broken.sql between the runs and removes it after; the outputs go to /run/p8test-dumps/out.txt
+      /var/tmp/p8test-dumps2/2026-11-21/broken.sql between the runs and removes that directory after; the outputs go to /run/p8test-dumps/out.txt
     probe: |
       install -d -m 0700 /run/p8test-dumps; D=/var/tmp/p8test-dumps; C=/opt/puppet-infrastructure/bin/check-mysqldump-health.sh
       { cd /tmp; $C 2>/dev/null; echo "good rc=$?"
         mysql -N -e "SHOW DATABASES LIKE 'p8test%'" | p8_count . | sed 's/^/left: /'
-        { head -5 $D/good.sql | sed 's/p8testsrc/p8testbroken/'; echo 'CREATE TABLE broken ( this is not sql'; } > ${D}2/broken.sql
+        install -d ${D}2/2026-11-21
+        { head -5 $D/good.sql | sed 's/p8testsrc/p8testbroken/'; echo 'CREATE TABLE broken ( this is not sql'; } > ${D}2/2026-11-21/broken.sql
         $C 2>/dev/null; echo "broken rc=$?"
         mysql -N -e "SHOW DATABASES LIKE 'p8test%'" | p8_count . | sed 's/^/left: /'
-        rm -f ${D}2/broken.sql; } > /run/p8test-dumps/out.txt
+        rm -rf ${D}2/2026-11-21; } > /run/p8test-dumps/out.txt
     effect: |
       cat /run/p8test-dumps/out.txt
-    expect: {rc: 0, stdout: "\\AOK: exit code 0\\ngood rc=0\\nleft: 0\\nCRITICAL: Load database dump \\./broken\\.sql\\nbroken rc=2\\nleft: 0\\n\\Z"}
+    expect: {rc: 0, stdout: "\\AOK: exit code 0\\ngood rc=0\\nleft: 0\\nCRITICAL: Load database dump \\./2026-11-21/broken\\.sql\\nbroken rc=2\\nleft: 0\\n\\Z"}
 
   - id: a-file-that-is-not-a-dump-is-critical
     what: >-
