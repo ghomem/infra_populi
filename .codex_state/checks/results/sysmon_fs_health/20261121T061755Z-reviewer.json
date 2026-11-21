@@ -1,0 +1,213 @@
+{
+ "class": "sysmon_fs_health",
+ "role": "reviewer",
+ "at": "20261121T061755Z",
+ "runner": "3b8c70b",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "bb84f6c2b8c60fb20447f2ca9a8f679bb9bc2c54eb739c879e6c9194edb0306f",
+ "content_sha256": "bb84f6c2b8c60fb20447f2ca9a8f679bb9bc2c54eb739c879e6c9194edb0306f",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "check-script-rendered",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh': No such file or directory\nbash: /opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "nagios-may-run-it-through-sudo",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "sudoers-valid\n",
+   "stderr": "grep: /etc/sudoers.d/10_nagios_fs_health_sysmon_fs_health: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "check-reports-critical-on-an-empty-tree",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 96: /opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "check-reports-ok-on-a-healthy-tree",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 96: /opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "nagios-runs-the-check-through-sudo",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-fs-health/sudo.out: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "check-reports-critical-on-read-errors",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-fsh/out.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "rastructure::Sysmon_fs_health[sysmon_fs_health]/Sudo::Conf[nagios_fs_health_sysmon_fs_health]/Exec[sudo-syntax-check for file /etc/sudoers.d/10_nagios_fs_health_sysmon_fs_health]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.51 seconds\u001b[0m\nRUN1_EVENTS: 10 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795241923'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.51 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::sysmon_fs_health: 3 concrete resources (+2 defined-type instances)\n  Puppet_infrastructure::Sysmon_fs_health[sysmon_fs_health]\n  Sudo::Conf[nagios_fs_health_sysmon_fs_health]\n  File[/opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh]\n  File[10_nagios_fs_health_sysmon_fs_health]\n  Exec[sudo-syntax-check for file /etc/sudoers.d/10_nagios_fs_health_sysmon_fs_health]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP sysmon_fs_health d0c218396901\n"
+ },
+ "applied": [
+  {
+   "id": "check-script-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\nBASEDIR=\"/var/tmp/p8test-fs-health\"\nSIZE_THRESHOLD=\"8\"\nNFILES=\"3\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "nagios-may-run-it-through-sudo",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nagios ALL=NOPASSWD:/opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh\nsudoers-valid\n",
+   "stderr": ""
+  },
+  {
+   "id": "check-reports-critical-on-an-empty-tree",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "CRITICAL: storage space is empty\nrc=2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the empty directory /var/tmp/p8test-fs-health (the check itself only reads)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "check-reports-ok-on-a-healthy-tree",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK: exit code 0 \nrc=0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates /var/tmp/p8test-fs-health with five 4 KB files of random data (20 KB, above the 8 KB threshold); the read-only effect runs the check script, which only reads the tree",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "nagios-runs-the-check-through-sudo",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK: exit code 0 \nrc=0\nnobody rc=1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the system account nagios if absent (production's monitoring base provides it), then runs the check once as nagios through sudo -n and tries it once as nobody (refused; sudo logs both to the journal and /var/log/auth.log); the outputs go to /run/p8test-fs-health/sudo.out",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "check-reports-critical-on-read-errors",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "CRITICAL: error checking md5sum for /var/tmp/p8test-fs-health/f1\nfile error rc=2\nCRITICAL: error listing files on the storage space\ndir error rc=2\nOK: exit code 0 \nintact rc=0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "replaces /var/tmp/p8test-fs-health with the mount point of a 16 MB ext4 image (/run/p8test-fsh/img on a loop device) holding f1, f2 and sub/f3 (8 KB each, NFILES 3 so every file is read); mounts it read-only three times: through a device-mapper device p8test-fsh whose table maps f1's blocks to the error target, then the subdirectory's block, then the plain loop device; the kernel logs the I/O errors; everything is unmounted and removed afterwards; the outputs go to /run/p8test-fsh/out.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "7ec6f06d-9ba5-4ff0-894b-171645c37915",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "7ec6f06d-9ba5-4ff0-894b-171645c37915",
+   "fresh": true
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "the per-volume check script carries the base directory, the size threshold and the file count, and nagios may run it through sudo",
+   "checks": [
+    "check-script-rendered",
+    "nagios-may-run-it-through-sudo"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "an empty tree (at or under the size threshold) is reported CRITICAL with exit 2",
+   "checks": [
+    "check-reports-critical-on-an-empty-tree"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a readable tree above the threshold is listed, a sample of its files read, and reported OK with exit 0, also when nagios runs it through sudo",
+   "checks": [
+    "check-reports-ok-on-a-healthy-tree",
+    "nagios-runs-the-check-through-sudo"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a file whose content cannot be read, or a tree that cannot be listed (I/O errors on the volume), is reported CRITICAL with exit 2; the intact volume is OK",
+   "checks": [
+    "check-reports-critical-on-read-errors"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "only nagios may run the check through sudo without a password",
+   "checks": [
+    "nagios-runs-the-check-through-sudo"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 52.1
+}

@@ -1,0 +1,35 @@
+{
+ "class": "sysmon_fs_health",
+ "at": "20261121T061925Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "check-script-rendered @ manifests/sysmon_fs_health.pp:8: $scriptname = check-fs-health-${volname}.sh with the harness title sysmon_fs_health and lab bindir /opt/puppet-infrastructure/bin gives exactly the probed path; mode 0755/owner root from lines 12-15 match 'root 755'",
+  "check-script-rendered @ templates/sysmon/check-fs-health.sh.erb:8-10: BASEDIR/SIZE_THRESHOLD/NFILES are rendered from @basedir/@size_threshold/@nfiles; the params fixture (/var/tmp/p8test-fs-health, 8, 3) yields the expected quoted values; cut -d' ' -f1 only strips the trailing comments; bash -n confirms the rendered script parses",
+  "check-reports-critical-on-read-errors @ templates/sysmon/check-fs-health.sh.erb:85-88: check_files runs 'find $BASEDIR' and handle_error exits 2 with 'CRITICAL: error listing files on the storage space' on non-zero rc; with the subdirectory's block mapped to the dm error target, du still reports >8 KB (check_size compares only the total) and find fails, so that line and rc 2 are what the code produces; the f1-block case reaches md5sum (lines 63-74, NFILES 3 = every file, only f1 fails so the name is deterministic) and the intact mount reaches 'OK: exit code 0 ' (lines 96-97, empty $OUTPUT gives the trailing space). Mutates declares the loop image, dm device, mounts and /run/p8test-fsh/out.txt; the image file itself stays in /run/p8test-fsh (declared path, tmpfs), not removed as the wording 'removed afterwards' could suggest - cosmetic. The effect reads the check script's captured verdicts, not the fault injection's own output",
+  "purpose covered: Purpose read from the baseline code (the header comment 'puppet runs, cpu, memory and zimbra' is a copy-paste lead the code does not support; the define only renders check-fs-health.sh.erb and a sudo::conf). Every reachable outcome of the template is probed on the applied node: render + sudoers drop-in (check-script-rendered, nagios-may-run-it-through-sudo, visudo valid), empty/below-threshold tree CRITICAL rc 2 (lines 42-52, 80-83), healthy tree listed, sampled and OK rc 0 also as nagios through sudo -n, nobody refused (rc 1, user varied with a verdict that must change), unreadable file content -> CRITICAL md5sum rc 2 and unlistable subtree -> CRITICAL listing rc 2 via device-mapper fault injection. Line 93 ('error acessing files content') is unreachable in the baseline (check_files_content always returns 0; handle_error exits inside the loop), so it is rightly not an outcome. Not tested and outside the class: the Nagios/NRPE server invoking the plugin (production's monitoring base), which the class does not declare. No uncovered rows are needed."
+ ],
+ "review_s": 90.6,
+ "check_file_sha256": "bb84f6c2b8c60fb20447f2ca9a8f679bb9bc2c54eb739c879e6c9194edb0306f",
+ "content_sha256": "bb84f6c2b8c60fb20447f2ca9a8f679bb9bc2c54eb739c879e6c9194edb0306f",
+ "reviewer_result": "20261121T061755Z-reviewer",
+ "author_result": "20261121T061551Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "7ec6f06d-9ba5-4ff0-894b-171645c37915",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "7ec6f06d-9ba5-4ff0-894b-171645c37915",
+   "fresh": true
+  }
+ }
+}
