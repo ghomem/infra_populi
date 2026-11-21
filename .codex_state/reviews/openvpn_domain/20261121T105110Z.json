@@ -1,0 +1,126 @@
+{
+ "schema": 1,
+ "class": "openvpn_domain",
+ "verdict": "FAIL",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-21T10:51:10Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "6b967302dcd7",
+ "migrate_subject": "P8: migrate puppet_infrastructure::openvpn_domain",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 6b967302dcd7; 2 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "3 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/openvpn_domain.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `openvpn_domain Done [from: release-0.9.10; local changes: #17; mock-apply: lab domain DNS resolver]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "error",
+   "detail": "cannot read NICs/accounts from puppet8node"
+  },
+  "idempotent": {
+   "status": "fail",
+   "detail": [
+    "Notice: /Stage[main]/Puppet_infrastructure::Openvpn_domain/File[/root/join-domain.sh]/ensure: defined content as '{sha256}f3307e93c5bbf7d5f7d87510684fad780cde397d149e3cb70439300be7084ddd'",
+    "Notice: /Stage[main]/Puppet_infrastructure::Openvpn_domain/Exec[join domain]/returns: Failed to join domain: failed to find DC for domain P8TEST - A domain controller for this domain was not found.",
+    "Notice: /Stage[main]/Puppet_infrastructure::Openvpn_domain/Exec[join domain]/returns: Job for winbind.service failed because the control process exited with error code.",
+    "Notice: /Stage[main]/Puppet_infrastructure::Openvpn_domain/Exec[join domain]/returns: See \"systemctl status winbind.service\" and \"journalctl -xeu winbind.service\" for details.",
+    "Notice: Applied catalog in 196.30 seconds",
+    "ERROR: Agent run 1 failed (exit 6)."
+   ]
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A manifest :1-2: the 2-line migration header (purpose + 'Module dependencies: none'); comment only",
+   "DIFF A manifest :13 '$hostname = $facts['networking']['hostname']': legacy top-scope fact -> facts hash; templates/openvpn/smb.conf.erb:5 'netbios name = <%= @hostname %>' reads it, nil under Puppet 8 without legacy facts; no resource, attribute or logic changed (all 9 resources and the exec guard identical to baseline)",
+   "DIFF A krb5.conf.erb:6-7: local change #17 exactly as its row (rules/local_changes.md row 17): default_realm upcases netbios name and tld, plus an ERB comment with -%> that renders nothing; minimal for kerberos-realms-against-the-dc (before 20261121T103037Z FAIL, after 20261121T104225Z PASS); the other realm/host lines (kdc, admin_server, default_domain, domain_realm) untouched",
+   "DIFF B: only the header sentence naming #17 and the same krb5.conf.erb hunk; the earlier migrated $hostname line is unchanged and is judged in DIFF A",
+   "idempotent=fail is environmental, not the migration: run 1 Exec[join domain] 'failed to find DC for domain P8TEST'; VBoxManage list runningvms at review time shows only ubuntu24-puppet8-Node and Ubuntu24-puppet8-Master, p8lab-dc (192.168.56.25, the fixture header's stated precondition 'p8lab-dc must be running during the run') was not running; fixtures=error 'cannot read NICs/accounts from puppet8node' also mechanical. Re-run the review with p8lab-dc up"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 5,
+  "removed": 1,
+  "non_comment_changes": 4,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: preserve Samba domain integration for OpenVPN using the structured hostname fact; local change #17: the Kerberos default realm is upper-cased (krb5.conf.erb).",
+  "# Module dependencies: none."
+ ],
+ "harness": {
+  "rc": 1,
+  "run1_catalog_events": null,
+  "coverage": [],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 22.091,
+   "master_check_s": 0.311,
+   "poweroff_s": 0.831,
+   "restore_s": 0.218,
+   "boot_to_ssh_s": 13.194,
+   "apt_update_s": 7.189,
+   "verify_s": 0.348,
+   "nic1_rx_bytes": 13178178,
+   "apt_mirror": "primary"
+  },
+  "log": ".codex_state/logs/reviews/openvpn_domain.20261121T104636Z.harness.log",
+  "revert_first": false,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "ubuntu",
+ "mock_apply": "lab domain DNS resolver (node fixture p8test_domain_dns: behaviour NOT verified)",
+ "node_fixture": {
+  "name": "p8test_domain_dns",
+  "header": [
+   "# MOCK-APPLY node fixture `p8test_domain_dns` (HQ 2026-10-27 ruling 7; HQ batch-8 ruling 6) for openvpn_domain. The class",
+   "# joins the node to an Active Directory domain and finds its DC by name (smb.conf `wins server`, the realm's DNS SRV",
+   "# records); in production a domain member's DNS is the domain's. The lab node resolves through a static",
+   "# /etc/resolv.conf (1.1.1.1, 8.8.8.8; systemd-resolved in foreign mode, so libc and Samba read only that file), which",
+   "# knows nothing of the lab domain p8test.example. This puts the lab DC p8lab-dc's DNS (Samba internal DNS on",
+   "# 192.168.56.25, forwarding everything else to 10.0.2.3) first, ahead of the node's own resolvers.",
+   "# p8lab-dc must be running during the run (nodes.yml kind dc).",
+   "# 2026-11-17: first version routed the domain through a systemd-resolved drop-in; libc never consults resolved here",
+   "# (Codex run 1 BLOCKED: getent failed, net join could not find the DC). A manual join with this file succeeded.",
+   "# Lifted by: a node on a network whose DNS (DHCP) serves the AD domain, as production's"
+  ],
+  "resources": [
+   "file[/etc/resolv.conf]"
+  ],
+  "scope_evidence": "p8test_domain_dns declares one resource, File[/etc/resolv.conf] (root:root 0644, 'domain lan' + nameserver 192.168.56.25 ahead of the node's 1.1.1.1/8.8.8.8, before the class): it only points the node's libc resolver at the lab DC's DNS so the realm/DC names resolve, the stated stand-in for a production domain member's DNS; the class declares no resolv.conf resource and the fixture touches nothing the class declares"
+ }
+}
