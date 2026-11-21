@@ -57,6 +57,9 @@ checks:
       /opt/puppet-infrastructure/bin/nagios-integrity.sh; echo "rc=$?"
     expect: {rc: 0, stdout: "\\AOK: exit code 0\\nrc=0\\n\\Z"}
 
+  # 2026-11-21 authoring correction (run 1, 20261121T121139Z, FINDINGS): the checklist item ends with the template's
+  # newline (nagios-integrity.sh.erb:35-36), so the CRITICAL message is followed by an empty line; the expectation now
+  # allows it. The behaviour (CRITICAL, exit 2) was as expected.
   - id: check-critical-when-a-listed-file-changed
     what: with the listed file's content changed, the check reports CRITICAL "checksum error for <the checklist line>" and exits 2
     control: negative
@@ -68,7 +71,7 @@ checks:
       printf 'p8test integrity tampered\n' | install -m 0644 /dev/stdin /var/tmp/p8test-integrity.txt
     effect: |
       /opt/puppet-infrastructure/bin/nagios-integrity.sh; echo "rc=$?"
-    expect: {rc: 0, stdout: "\\ACRITICAL: checksum error for [0-9a-f]{32}  /var/tmp/p8test-integrity\\.txt\\nrc=2\\n\\Z"}
+    expect: {rc: 0, stdout: "\\ACRITICAL: checksum error for [0-9a-f]{32}  /var/tmp/p8test-integrity\\.txt\\n\\nrc=2\\n\\Z"}
 
   - id: check-skips-a-listed-file-that-is-absent
     what: with the listed file removed, the check skips it and reports OK with exit 0
