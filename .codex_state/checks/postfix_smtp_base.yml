@@ -9,6 +9,8 @@
 # client is the node's own ::1 (inet_protocols = all; client_access lists 127.0.0.1 only). Prototyped on the node.
 # Correction round 1, 2026-11-21 (review 20261121T052303Z, purpose): plaintext tried (TLS mandatory) and a system
 # account tried (an OS user p8testsys whose password the OS accepts through PAM, refused by dovecot and SMTP AUTH).
+# Correction round 2, 2026-11-21 (review 20261121T053246Z, purpose; the last round, production use 0): a full
+# submission queued and delivered to root's local mailbox; onward relay to a remote MX as an uncovered row.
 class: postfix_smtp_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -29,6 +31,15 @@ outcomes:
       is not logged in, a wrong password (535) and a client address that is not listed
     from: templates/postfix_smtp_base/main.cf.erb:94-118; templates/postfix_smtp_base/client_access.erb; templates/postfix_smtp_base/sender_access.erb; templates/postfix_smtp_base/controlled_envelope_senders.erb
     checks: [smtp-restrictions-exercised]
+  - outcome: a message submitted by a logged-in user from its own address is queued (250 Ok queued) and, for a local recipient, delivered to the mailbox
+    from: templates/postfix_smtp_base/main.cf.erb:76-79; templates/postfix_smtp_base/master.cf.erb:41-42, 60
+    checks: [a-submission-is-queued-and-delivered-locally]
+  - outcome: onward delivery of a submitted message to a remote domain's MX (relayhost empty)
+    from: templates/postfix_smtp_base/main.cf.erb:80
+    uncovered:
+      why: the lab has no mail exchanger for a fixture domain; a remote recipient's delivery would go to the internet
+      lifted_by: "capability: a mail sink inside the lab that the node resolves as a fixture domain's MX"
+      evidence: "main.cf.erb:80 relayhost empty (delivery by MX lookup); nodes.yml lists no mail-sink node kind"
   - outcome: TLS is mandatory (no AUTH offered and MAIL FROM and AUTH refused before STARTTLS)
     from: templates/postfix_smtp_base/main.cf.erb:30
     checks: [tls-and-own-users-only]
@@ -209,4 +220,36 @@ checks:
     effect: |
       cat /run/p8test-smtp/tls-own.txt
     expect: {rc: 0, stdout: "\\Aos accepts p8testsys rc=0\\npassdb: p8testsys auth failed\\nplaintext: auth not offered\\nplaintext: mail 530 5\\.7\\.0 Must issue a STARTTLS command first\\nplaintext: auth 530 5\\.7\\.0 Must issue a STARTTLS command first\\nsystem-account: auth 535\\n\\Z"}
+
+  - id: a-submission-is-queued-and-delivered-locally
+    what: >-
+      p8testuser, logged in over TLS, submits a message from its own address to root@localhost: postfix answers 250
+      Ok queued, the local agent delivers it to /var/mail/root (the subject appears there once) and the queue is empty
+    control: negative
+    timeout: 180
+    derived_from:
+      - {path: templates/postfix_smtp_base/main.cf.erb, lines: "79", text: "mydestination = $myhostname, localhost.localdomain, , localhost"}
+      - {path: templates/postfix_smtp_base/master.cf.erb, lines: "60", text: "local     unix  -       n       n       -       -       local"}
+      - {path: templates/postfix_smtp_base/main.cf.erb, lines: "115-118", text: "permit_sasl_authenticated"}
+    mutates: >-
+      submits one message (subject p8test-submission-check) as p8testuser to root@localhost: postfix queues it and
+      delivers it to /var/mail/root (created root:mail 0600 if absent), and logs both; the replies go to
+      /run/p8test-smtp/submission.txt
+    probe: |
+      install -d -m 0700 /run/p8test-smtp
+      python3 - > /run/p8test-smtp/submission.txt <<'PY'
+      import smtplib, ssl
+      s = smtplib.SMTP('127.0.0.1', 587, timeout=30); s.ehlo('p8test.invalid')
+      s.starttls(context=ssl._create_unverified_context()); s.ehlo('p8test.invalid')
+      s.login('p8testuser', 'p8test-not-a-secret')
+      s.mail('p8test@p8test.example.com'); s.rcpt('root@localhost')
+      code, msg = s.data(b"From: p8test@p8test.example.com\r\nTo: root@localhost\r\nSubject: p8test-submission-check\r\n\r\np8test body\r\n")
+      print('data', code, msg.decode()); s.quit()
+      PY
+      for i in $(seq 1 60); do grep -q '^Subject: p8test-submission-check$' /var/mail/root 2>/dev/null && break; sleep 1; done
+    effect: |
+      cat /run/p8test-smtp/submission.txt
+      p8_count '^Subject: p8test-submission-check$' /var/mail/root
+      mailq | tail -1
+    expect: {rc: 0, stdout: "\\Adata 250 2\\.0\\.0 Ok: queued as [0-9A-F]+\\n1\\nMail queue is empty\\n\\Z"}
 
