@@ -1,0 +1,185 @@
+# Phase 3 checks for puppet_infrastructure::firewall (class; node ubuntu; required_base filesystem_base; required_external
+# firewall, the module's base class that saves the rules for the boot). No parameters (fixture: defaults). The class's
+# own comment recommends firewall_secure instead; this is the plain base firewall: drop by default, ICMP and SSH from
+# any host, unmanaged rules purged, the emergency flush script. Adapted from firewall_secure's reviewed set (the same
+# peer probes, purge, flush and rebuild); firewall has no whitelist or rate limits. Node probes name no other host; peer
+# probes name only the class node's host-only address.
+# 2026-11-21 (backfill batch 10): first set, with purpose and outcomes (HQ rulings 2 and C1).
+class: firewall
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+purpose: >-
+  A base firewall: INPUT and FORWARD drop by default, OUTPUT stays open, ICMP and SSH are let in from any host,
+  loopback is accepted, and rules Puppet does not manage are purged; an emergency script flushes every rule.
+peer:
+  kind: ubuntu2
+  why: what a firewall lets in or drops can only be seen from another machine on the network
+node_agent:
+  after: [an-unmanaged-rule-is-added, the-flush-script-clears-every-rule]
+  why: >-
+    the class purges firewall rules it does not manage, and its rules come back after the emergency flush; only its
+    next agent run can show either
+outcomes:
+  - outcome: INPUT and FORWARD drop by default and OUTPUT stays open; a port no rule allows is dropped for any other host
+    from: manifests/firewall.pp:1-3, 30-31
+    checks: [default-policies-drop-input-and-forward, a-service-the-firewall-does-not-allow-is-listening, another-host-gets-icmp-and-ssh-but-not-other-ports]
+  - outcome: ICMP and SSH are let in from any host
+    from: manifests/firewall.pp:2-3, 34-37, 56-60
+    checks: [another-host-gets-icmp-and-ssh-but-not-other-ports]
+  - outcome: loopback traffic is accepted (rule 001)
+    from: manifests/firewall.pp:38-42
+    checks: [a-service-the-firewall-does-not-allow-is-listening, loopback-reaches-a-local-service]
+  - outcome: traffic to 127.0.0.0/8 arriving on another interface is rejected (rule 002)
+    from: manifests/firewall.pp:43-48
+    uncovered:
+      why: >-
+        the same rule in firewall_secure_extra's set (2026-11-18) counted none of 3 hand-built frames from the peer to
+        127.0.0.1 through the node's NIC, with route_localnet 0 and with it set to 1 (unexplained); no lab path is known
+        that brings such a frame to INPUT
+      lifted_by: "capability: a frame path that reaches INPUT with a 127.0.0.0/8 destination on a non-loopback interface (route_localnet 1 did not suffice)"
+      evidence: "firewall_secure.yml rule-002 row; the lead in escalations/firewall_secure_extra.behaviour.md"
+  - outcome: rules Puppet does not manage are purged at the next agent run
+    from: manifests/firewall.pp:27
+    checks: [an-unmanaged-rule-is-added, the-next-agent-run-purges-the-unmanaged-rule]
+  - outcome: the emergency flush script is installed, clears every rule when run, and the next agent run rebuilds the firewall
+    from: manifests/firewall.pp:17-23
+    checks: [flush-script-installed, the-flush-script-clears-every-rule, the-next-agent-run-rebuilds-the-firewall]
+  - outcome: the running rules are saved for the next boot
+    from: manifests/firewall.pp:34-60 (the rules), with the firewall module's base class (plan required_external firewall)
+    checks: [the-running-rules-are-saved-for-the-next-boot]
+checks:
+  - id: default-policies-drop-input-and-forward
+    what: INPUT and FORWARD drop by default, OUTPUT accepts
+    control: negative
+    derived_from:
+      - {path: manifests/firewall.pp, lines: "30-31", text: "firewallchain { 'INPUT:filter:IPv4':   ensure => present, purge => true, policy => drop   }"}
+    probe: |
+      iptables -S | grep -E '^-P (INPUT|FORWARD|OUTPUT) '
+    expect: {rc: 0, stdout: "\\A-P INPUT DROP\\n-P FORWARD DROP\\n-P OUTPUT ACCEPT\\n\\Z"}
+
+  - id: the-running-rules-are-saved-for-the-next-boot
+    what: the saved rule set the boot loads (netfilter-persistent, enabled) equals the running one, with the SSH rule in it
+    control: negative
+    derived_from:
+      - {path: manifests/firewall.pp, lines: "27", text: "resources { 'firewall': purge => true, }"}
+      - {path: manifests/firewall.pp, lines: "56", text: "firewall { '100 accept ssh':"}
+    probe: |
+      systemctl is-enabled netfilter-persistent
+      norm() { grep -v -E '^(#|:)' | sed -E 's/ \[[0-9]+:[0-9]+\]//'; }
+      diff <(iptables-save -t filter | norm) <(norm < /etc/iptables/rules.v4) >/dev/null && echo saved-equals-running
+      grep -c -- '--comment "100 accept ssh"' /etc/iptables/rules.v4
+    expect: {rc: 0, stdout: "\\Aenabled\\nsaved-equals-running\\n1\\n\\Z"}
+
+  - id: flush-script-installed
+    what: the emergency flush script is installed root-owned 0755 as the module's file
+    control: negative
+    derived_from:
+      - {path: manifests/firewall.pp, lines: "18-22", text: "source  => 'puppet:///modules/puppet_infrastructure/iptables/iptables-flush.sh',"}
+      - {path: files/iptables/iptables-flush.sh, sha256: "af2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935"}
+    probe: |
+      stat -c '%U %a' /opt/puppet-infrastructure/bin/iptables-flush.sh
+      sha256sum /opt/puppet-infrastructure/bin/iptables-flush.sh | cut -d' ' -f1
+    expect: {rc: 0, stdout: "\\Aroot 755\\naf2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935\\n\\Z"}
+
+  - id: a-service-the-firewall-does-not-allow-is-listening
+    what: setup for the next checks, a TCP service on port 8888 of the node, listening on every address
+    control: negative
+    derived_from:
+      - {path: manifests/firewall.pp, lines: "30-31", text: "firewallchain { 'INPUT:filter:IPv4':   ensure => present, purge => true, policy => drop   }"}
+    mutates: starts a transient unit p8test-listener (python3 -m http.server 8888 on 0.0.0.0) on the node
+    probe: |
+      systemd-run --unit p8test-listener -q python3 -m http.server 8888 --bind 0.0.0.0
+      sleep 2
+    effect: |
+      ss -ltnH 'sport = :8888' | awk '{print $4}'
+    expect: {rc: 0, stdout: "\\A0\\.0\\.0\\.0:8888\\n\\Z"}
+
+  - id: loopback-reaches-a-local-service
+    what: on the node, a connection over loopback to the port no rule allows (8888) gets through
+    control: negative
+    derived_from:
+      - {path: manifests/firewall.pp, lines: "38-42", text: "-> firewall { '001 accept all to lo interface':"}
+    mutates: none beyond one local connection to 127.0.0.1:8888 (declared mutating so it runs after the service starts)
+    probe: |
+      true
+    effect: |
+      p8_tcp 127.0.0.1 8888
+    expect: {rc: 0, stdout: "\\Aopen\\n\\Z"}
+
+  - id: another-host-gets-icmp-and-ssh-but-not-other-ports
+    what: >-
+      from the peer: ping and an SSH connection get through, a connection to the listening port 8888 does not (dropped
+      by the INPUT policy)
+    control: negative
+    host: peer
+    derived_from:
+      - {path: manifests/firewall.pp, lines: "34-37", text: "firewall { '000 accept all icmp':"}
+      - {path: manifests/firewall.pp, lines: "56-60", text: "firewall { '100 accept ssh':"}
+      - {path: manifests/firewall.pp, lines: "30-31", text: "firewallchain { 'INPUT:filter:IPv4':   ensure => present, purge => true, policy => drop   }"}
+    mutates: three connection attempts from the peer to the class node (ICMP, TCP 22, TCP 8888); results in /run/p8test-firewall/reach.txt on the peer
+    probe: |
+      install -d -m 0700 /run/p8test-firewall
+      {
+        ping -c2 -W2 -q 192.168.56.20 >/dev/null 2>&1 && echo "icmp in" || echo "icmp dropped"
+        nc -z -w2 192.168.56.20 22 >/dev/null 2>&1 && echo "ssh in" || echo "ssh dropped"
+        nc -z -w2 192.168.56.20 8888 >/dev/null 2>&1 && echo "8888 in" || echo "8888 dropped"
+      } > /run/p8test-firewall/reach.txt
+    effect: |
+      cat /run/p8test-firewall/reach.txt
+    expect: {rc: 0, stdout: "\\Aicmp in\\nssh in\\n8888 dropped\\n\\Z"}
+
+  - id: an-unmanaged-rule-is-added
+    what: setup for the purge check, a rule Puppet does not manage added to INPUT by hand
+    control: negative
+    derived_from:
+      - {path: manifests/firewall.pp, lines: "27", text: "resources { 'firewall': purge => true, }"}
+    mutates: appends `-A INPUT -s 10.255.255.1/32 -m comment --comment p8test-rogue -j ACCEPT` on the node
+    probe: |
+      iptables -A INPUT -s 10.255.255.1/32 -m comment --comment p8test-rogue -j ACCEPT
+    effect: |
+      iptables -S INPUT | grep -c p8test-rogue
+    expect: {rc: 0, stdout: "\\A1\\n\\Z"}
+
+  - id: the-next-agent-run-purges-the-unmanaged-rule
+    what: after the node's agent run, the hand-added rule is gone and the policies stand
+    control: negative
+    derived_from:
+      - {path: manifests/firewall.pp, lines: "27", text: "resources { 'firewall': purge => true, }"}
+      - {path: manifests/firewall.pp, lines: "30-31", text: "firewallchain { 'INPUT:filter:IPv4':   ensure => present, purge => true, policy => drop   }"}
+    mutates: none beyond reading the rules (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      iptables -S INPUT | grep -c p8test-rogue
+      iptables -S | grep -E '^-P INPUT '
+    expect: {rc: 0, stdout: "\\A0\\n-P INPUT DROP\\n\\Z"}
+
+  - id: the-flush-script-clears-every-rule
+    what: the installed flush script leaves no rule and every policy ACCEPT, so SSH stays up
+    control: negative
+    derived_from:
+      - {path: manifests/firewall.pp, lines: "17", text: "# Script that clears all firewall rules to be used only in exceptional cases (see issue 119)"}
+      - {path: files/iptables/iptables-flush.sh, sha256: "af2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935"}
+    mutates: runs /opt/puppet-infrastructure/bin/iptables-flush.sh on the node (every IPv4 and IPv6 rule and chain removed, policies ACCEPT)
+    probe: |
+      /opt/puppet-infrastructure/bin/iptables-flush.sh
+    effect: |
+      p8_digest /opt/puppet-infrastructure/bin/iptables-flush.sh | cut -d' ' -f2-
+      for t in filter mangle nat; do iptables -t "$t" -S | p8_count '^-A'; done | paste -sd' '
+      iptables -S | grep -E '^-P (INPUT|FORWARD) '
+    expect: {rc: 0, stdout: "\\Aroot:root 755 af2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935\\n0 0 0\\n-P INPUT ACCEPT\\n-P FORWARD ACCEPT\\n\\Z"}
+
+  - id: the-next-agent-run-rebuilds-the-firewall
+    what: after the node's agent run, the policies drop again and the ICMP and SSH rules are back
+    control: negative
+    derived_from:
+      - {path: manifests/firewall.pp, lines: "30-31", text: "firewallchain { 'INPUT:filter:IPv4':   ensure => present, purge => true, policy => drop   }"}
+      - {path: manifests/firewall.pp, lines: "56", text: "firewall { '100 accept ssh':"}
+    mutates: none beyond reading the rules (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      iptables -S | grep -E '^-P (INPUT|FORWARD) '
+      iptables -S INPUT | p8_count '--comment "100 accept ssh"'
+      iptables -S INPUT | p8_count '--comment "000 accept all icmp"'
+    expect: {rc: 0, stdout: "\\A-P INPUT DROP\\n-P FORWARD DROP\\n1\\n1\\n\\Z"}
