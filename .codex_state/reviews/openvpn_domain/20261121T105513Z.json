@@ -1,0 +1,120 @@
+{
+ "schema": 1,
+ "class": "openvpn_domain",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-21T10:55:13Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "6b967302dcd7",
+ "migrate_subject": "P8: migrate puppet_infrastructure::openvpn_domain",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 6b967302dcd7; 3 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "3 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/openvpn_domain.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `openvpn_domain Done [from: release-0.9.10; local changes: #17; mock-apply: lab domain DNS resolver]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 15 catalog events; COVERAGE puppet_infrastructure::openvpn_domain: 15 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A manifests/openvpn_domain.pp lines 1-2: migration header comment only (purpose + 'Module dependencies: none', names local change #17).",
+   "DIFF A manifests/openvpn_domain.pp +$hostname = $facts['networking']['hostname']: legacy top-scope fact -> facts hash; it feeds the unchanged smb.conf.erb 'netbios name = <%= @hostname %>' (line 5) with the same value; no resource, attribute, default or logic changed.",
+   "DIFF A templates/openvpn/krb5.conf.erb:6: exactly local change #17 (default_realm upcases @domain_netbios_name and @domain_tld) plus a non-rendering ERB comment line (<%# ... -%>); minimal fix for check kerberos-realms-against-the-dc (before 20261121T103037Z-author FINDINGS, after 20261121T104225Z-author ALL_PASS); template used only by this class (manifests grep); other krb5 lines unchanged.",
+   "DIFF B: re-migration replaced the earlier header line and added the #17 template change; final content judged in full via DIFF A."
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 5,
+  "removed": 1,
+  "non_comment_changes": 4,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: preserve Samba domain integration for OpenVPN using the structured hostname fact; local change #17: the Kerberos default realm is upper-cased (krb5.conf.erb).",
+  "# Module dependencies: none."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 15,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::openvpn_domain: 15 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 21.579,
+   "master_check_s": 0.32,
+   "poweroff_s": 0.88,
+   "restore_s": 0.224,
+   "boot_to_ssh_s": 12.775,
+   "apt_update_s": 7.055,
+   "verify_s": 0.325,
+   "nic1_rx_bytes": 13179598,
+   "apt_mirror": "primary"
+  },
+  "log": ".codex_state/logs/reviews/openvpn_domain.20261121T105316Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "ubuntu",
+ "mock_apply": "lab domain DNS resolver (node fixture p8test_domain_dns: behaviour NOT verified)",
+ "node_fixture": {
+  "name": "p8test_domain_dns",
+  "header": [
+   "# MOCK-APPLY node fixture `p8test_domain_dns` (HQ 2026-10-27 ruling 7; HQ batch-8 ruling 6) for openvpn_domain. The class",
+   "# joins the node to an Active Directory domain and finds its DC by name (smb.conf `wins server`, the realm's DNS SRV",
+   "# records); in production a domain member's DNS is the domain's. The lab node resolves through a static",
+   "# /etc/resolv.conf (1.1.1.1, 8.8.8.8; systemd-resolved in foreign mode, so libc and Samba read only that file), which",
+   "# knows nothing of the lab domain p8test.example. This puts the lab DC p8lab-dc's DNS (Samba internal DNS on",
+   "# 192.168.56.25, forwarding everything else to 10.0.2.3) first, ahead of the node's own resolvers.",
+   "# p8lab-dc must be running during the run (nodes.yml kind dc).",
+   "# 2026-11-17: first version routed the domain through a systemd-resolved drop-in; libc never consults resolved here",
+   "# (Codex run 1 BLOCKED: getent failed, net join could not find the DC). A manual join with this file succeeded.",
+   "# Lifted by: a node on a network whose DNS (DHCP) serves the AD domain, as production's"
+  ],
+  "resources": [
+   "file[/etc/resolv.conf]"
+  ],
+  "scope_evidence": "p8test_domain_dns declares only File[/etc/resolv.conf] (nameserver 192.168.56.25 first, then 1.1.1.1/8.8.8.8), before Class[openvpn_domain]: it points the node's libc resolver at the lab DC's DNS so the domain/DC names resolve as a production domain member's DHCP DNS would; it touches no resource the class declares (smb.conf, krb5.conf, pam, nsswitch, join script, exec) and stays within the stated DNS-resolver stand-in."
+ }
+}
