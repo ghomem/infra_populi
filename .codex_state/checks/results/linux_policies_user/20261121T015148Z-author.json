@@ -1,0 +1,163 @@
+{
+ "class": "linux_policies_user",
+ "role": "author",
+ "at": "20261121T015148Z",
+ "runner": "7c2a5ab",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "3d1275190ada7eab3be14bdb1a6c3456a3b69c1692a19dcc075ef4e2243799b7",
+ "content_sha256": "3d1275190ada7eab3be14bdb1a6c3456a3b69c1692a19dcc075ef4e2243799b7",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "user-policy-script-composed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh': No such file or directory\nhead: cannot open '/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh' for reading: No such file or directory\ngrep: /opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh: No such file or directory\ntail: cannot open '/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh' for reading: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "policies-run-on-an-agent-run-while-logged-in",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "autostart-runs-the-policies-at-login",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\nno session or no agent run\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "no-policy-runs-before-the-session",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "no session\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": " File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_0] File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_1] Exec[Execute linux policies for: p8testuser] [own: File[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp], File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_0], File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_1], Exec[Execute linux policies for: p8testuser]; inherited: none] (plan expected_run2_events)\nCOVERAGE puppet_infrastructure::linux_policies_user: 6 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::Linux_policies_user[linux_policies_user]\n  File[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp]\n  File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_0]\n  File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_1]\n  File[/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh]\n  Tidy[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp]\n  Exec[Execute linux policies for: p8testuser]\nGREEN: run 2 events limited to the plan's expected_run2_events (File[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp] File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_0] File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_1] Exec[Execute linux policies for: p8testuser]) (gate v2).\nGREEN_STAMP linux_policies_user 3e435e5a35d1\n"
+ },
+ "applied": [
+  {
+   "id": "user-policy-script-composed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser p8testuser 700\n#!/bin/bash\n1\nlogger -t p8testpolicy \"p8test policy 1 as $(id -un)\"\nlogger -t p8testpolicy p8test-policy-2\n",
+   "stderr": ""
+  },
+  {
+   "id": "policies-run-on-an-agent-run-while-logged-in",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ran-on-agent-run\nlogged-in\npolicy-ran-as-p8testuser\n",
+   "stderr": ""
+  },
+  {
+   "id": "autostart-runs-the-policies-at-login",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ran-at-login\npolicies-ran-at-login-as-p8testuser\n",
+   "stderr": ""
+  },
+  {
+   "id": "no-policy-runs-before-the-session",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\nafter the session: some\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "kubuntu",
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "28fbf168-131a-4e52-923d-b8e0a14333db",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "28fbf168-131a-4e52-923d-b8e0a14333db",
+   "fresh": true
+  }
+ },
+ "session": {
+  "user": "p8testuser",
+  "up": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Puppet_infrastructure::Linux_policies_user[linux_policies_user]/Exec[Execute linux policies for: p8testuser]/returns: executed successfully (corrective)\u001b[0m"
+    ],
+    "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-kubuntu\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795226031'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Puppet_infrastructure::Linux_policies_user[linux_policies_user]/Exec[Execute linux policies for: p8testuser]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 0.28 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Puppet_infrastructure::Linux_policies_user[linux_policies_user]/Exec[Execute linux policies for: p8testuser]/returns: executed successfully (corrective)\u001b[0m"
+    ],
+    "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-kubuntu\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795226045'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Puppet_infrastructure::Linux_policies_user[linux_policies_user]/Exec[Execute linux policies for: p8testuser]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 0.24 seconds\u001b[0m\nAGENT_RC=2\n"
+   }
+  ]
+ },
+ "outcomes": [
+  {
+   "outcome": "USER/<user>.sh is composed from the header and the given policies, owned by the user, 0700",
+   "checks": [
+    "user-policy-script-composed"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "with the user logged in, an agent run executes the policies as the user through the runner",
+   "checks": [
+    "policies-run-on-an-agent-run-while-logged-in",
+    "no-policy-runs-before-the-session"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "at the user's desktop log-in, the autostart entry runs the policies",
+   "checks": [
+    "autostart-runs-the-policies-at-login"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "without a login session the policies do not run (the agent runs before the user's first session run none)",
+   "checks": [
+    "no-policy-runs-before-the-session"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "other users or other policy lists",
+   "uncovered": {
+    "why": "one set holds one params fixture (p8testuser, two no-op lines)",
+    "lifted_by": "capability: more than one params fixture per set",
+    "evidence": "phase3.py applies the class once with its single `fixture` (params or defaults)"
+   }
+  }
+ ],
+ "duration_s": 137.8
+}
