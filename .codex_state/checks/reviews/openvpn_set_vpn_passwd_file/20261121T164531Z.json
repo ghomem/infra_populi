@@ -1,0 +1,40 @@
+{
+ "class": "openvpn_set_vpn_passwd_file",
+ "at": "20261121T164531Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "a-mismatch-is-asked-again: template 44-55 shows BLANK_PASSWD when either answer is empty (an unquoted empty $PASSWORD makes [ -z ] true), UNMATCHING_PASSWD when x$PASSWORD != x$PASSWORD_CONFIRM, and update_vpn_con_passwd + GUARD=false on a match; the stub's answers (two blanks, x/y, pass-b twice) produce 6 password prompts, the blank msgbox, the mismatch msgbox, then 'Configuration finished.' (line 59) and VPN2's secret p8test-pass-b (VPN2 listed, keyfile written at line 15's path, password-flags=0). Reviewer run saw exactly that",
+  "cancelling-changes-nothing: template 30-42 shows CANCEL_OPERATION and exits when either kdialog --password returns 1; the stub's '|1' gives 1 prompt, 'p8test-pass-z|0' then '|1' gives 2 prompts, both ending with the cancel msgbox and rc 0 (exit after a successful msgbox), and update_vpn_con_passwd never runs, so VPN1 (listed) keeps p8test-pass-a from the first run. Reviewer run saw exactly that",
+  "script-installed-with-the-list: manifest 29-34 declares the file 0755 owner/group $file_owner (default root; params fixture sets only file_path and vpn_list [VPN1, VPN2, VPN4]); template line 16 renders each element with a leading space, so VPN_LIST=\" VPN1 VPN2 VPN4\"; stat + grep expecting 'root:root 755' and that line is what the code produces. Reviewer run: passed",
+  "finding a-second-run-changes-the-password: expected VPN1 secret p8test-pass-c, saw 'rc=0 / VPN1: [password = p8test-pass-a]'. Confirmed afterwards via lab_exec: /etc/NetworkManager/system-connections holds only VPN3; VPN1/VPN2/VPN4 are now /run/NetworkManager/system-connections/netplan-NM-<uuid>.nmconnection backed by /etc/netplan/90-NM-<uuid>.yaml, so line 20's [ -f /etc/NetworkManager/system-connections/VPN1 ] is false and the second run skips VPN1 silently while still saying 'Configuration finished.'",
+  "finding an-openvpn-nm-connection-profile-keeps-the-password: expected 'VPN4: [password = p8test-pass-a]', saw 'VPN4: []'. The NM audit log shows the script's connection-update of VPN4 vpn.secrets by uid=0 result=success; the migrated /etc/netplan/90-NM-b8e3c46d-...yaml holds no password line (VPN1's holds one), as expected for password-flags=1 (agent-owned: NM does not persist it and hands it to a secret agent). The run had no agent: the script and the probe ran as root over ssh, and the profile's permissions name p8testuser, a user that does not exist on the node (id: no such user). So this result does not show how the class behaves for its real user; see the purpose evidence",
+  "purpose gap: Tested: the install (owner, mode, rendered list); matching answers set the password on the listed, present password-flags=0 profile and leave the listed-but-absent VPN2 and the unlisted VPN3 alone; blank answers and a mismatch are refused with their messages and asked again, then a match sets VPN2; cancel at either dialog shows the cancel message and leaves VPN1's password as it was; a second run (finding: the profile has moved into netplan). Gap: the outcome 'openvpn_nm_connection's own profiles (agent-owned password) get the password' is mapped to an-openvpn-nm-connection-profile-keeps-the-password, but that check cannot observe the outcome. For password-flags=1 NetworkManager stores the secret only through a secret agent in the requesting user's session, and GetSecrets (nmcli -s) returns only persisted secrets or ones from an agent in the caller's session. The check runs the script and the probe as root over ssh with no agent, and VPN4's permissions=user:p8testuser names a user the node lacks (its desktop user is uid 1000 salatiel; sddm/plasma run there). So 'VPN4: []' is what this context always gives, and it is not evidence about the class. The script's real context is a desktop user running it inside their Plasma session (plasma-nm agent, KWallet) on a profile whose permissions name that user. The kubuntu node is active with desktop and kde capabilities, so the set must exercise that context or list it under uncovered with evidence (a command result showing the lab cannot provide the session) and lifted_by. As written, the outcome row claims coverage and has no uncovered row. Minor: the header says the stub replaces the user at the dialogs, but it does not say that every run is root, not the desktop user"
+ ],
+ "review_s": 168.3,
+ "check_file_sha256": "4a6dc3d180be5ccfe076f1b33c68210a4b21779c1ad59a79453e210d940c1573",
+ "content_sha256": "4a6dc3d180be5ccfe076f1b33c68210a4b21779c1ad59a79453e210d940c1573",
+ "reviewer_result": "20261121T164243Z-reviewer",
+ "author_result": "20261121T163922Z-author",
+ "findings": [
+  "an-openvpn-nm-connection-profile-keeps-the-password",
+  "a-second-run-changes-the-password"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "f43139fc-0c4b-45ae-b9a7-885254cc1e5e",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "f43139fc-0c4b-45ae-b9a7-885254cc1e5e",
+   "fresh": true
+  }
+ }
+}
