@@ -19,11 +19,12 @@ openvpn_nm_connection writes them:
 - The set's check `a-second-run-changes-the-password` expects the second run to change the password.
 
 Two related effects:
-- **openvpn_nm_connection's own profiles keep no password** (now a check: `an-openvpn-nm-connection-profile-keeps-the-password`,
-  run 20261121T163922Z, `VPN4: []`). They set `password-flags=1` (agent-owned).
-  NetworkManager accepts the modification (its audit log: connection-update ... vpn.secrets ... success) but stores no
-  agent-owned secret, so the script leaves nothing behind for those connections. The set uses `password-flags=0`
-  profiles to show the script's own behaviour.
+- **openvpn_nm_connection's own profiles (`password-flags=1`, agent-owned): not established.** Run as root over SSH,
+  the script's update of such a profile was accepted (audit log: connection-update ... vpn.secrets ... success) and no
+  secret could be read back (`VPN4: []`, run 20261121T163922Z). Review 20261121T164531Z showed this says nothing about
+  the class: an agent-owned secret is saved only through the desktop user's session agent (plasma-nm with its wallet),
+  and the run had no such session. That check was removed in round 2. The question stays open, as an uncovered row,
+  until a fixture user's Plasma session can run the script.
 - **A profile managed by openvpn_nm_connection and migrated to netplan** would get its keyfile written back by the next
   agent run, beside the netplan copy (the same uuid in two places). Not exercised.
 
@@ -43,3 +44,7 @@ The set now also exercises blank answers, cancel at either dialog (a listed conn
 a listed profile exactly as openvpn_nm_connection's template writes it. Run 20261121T163922Z: every dialog path passes.
 Two checks fail, both findings described above: `a-second-run-changes-the-password` and
 `an-openvpn-nm-connection-profile-keeps-the-password`.
+
+## Round 2 (2026-11-21, the last; review 20261121T164531Z)
+The agent-owned check was removed, being unobservable as root, and its outcome is an uncovered row. The one finding
+stays: a second run cannot find a profile that NetworkManager moved into netplan.

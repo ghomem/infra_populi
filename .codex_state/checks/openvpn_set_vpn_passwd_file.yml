@@ -13,6 +13,9 @@
 # Correction round 1, 2026-11-21 (review 20261121T163511Z, purpose): blank answers asked again; VPN4, a listed profile
 # exactly as openvpn_nm_connection's template writes it (password-flags=1, permissions=user:p8testuser:;), expected to
 # keep the password; cancel at either dialog leaving a listed connection's password as it was.
+# Correction round 2, 2026-11-21 (review 20261121T164531Z, purpose; the last round, production use 0): every run here is
+# root over SSH, with no desktop session or secret agent, so it cannot show what an agent-owned profile keeps; that check
+# is removed and the outcome is an uncovered row (VPN4 stays in the setup as openvpn_nm_connection's profile shape).
 # 2026-11-21 (backfill batch 10): first set, with purpose and outcomes (HQ rulings 2 and C1).
 class: openvpn_set_vpn_passwd_file
 baseline: release-0.9.10 (cf477c6)
@@ -28,9 +31,16 @@ outcomes:
   - outcome: with both answers matching, every listed connection present gets the password, and an unlisted one is left alone
     from: templates/openvpn/set_vpn_passwd.sh.erb:12-25, 44-50
     checks: [vpn-profiles-and-a-dialog-stub, matching-answers-set-the-listed-connection]
-  - outcome: openvpn_nm_connection's own profiles (agent-owned password) get the password
+  - outcome: openvpn_nm_connection's own profiles (agent-owned password, the desktop user's) get the password when the user runs the script in their session
     from: templates/openvpn/set_vpn_passwd.sh.erb:12-25; templates/openvpn/connection_file.erb:5, 11
-    checks: [vpn-profiles-and-a-dialog-stub, matching-answers-set-the-listed-connection, an-openvpn-nm-connection-profile-keeps-the-password]
+    uncovered:
+      why: >-
+        an agent-owned secret is saved only through a secret agent in the requesting user's desktop session (plasma-nm
+        with its wallet); the set's runs are root over SSH, with no agent, and the profile's permitted user must exist
+        and be logged in. The runner's session block logs in a p8test* account, but this define creates none and its
+        plan gives no base or node fixture that would
+      lifted_by: "capability: a node fixture user for this define, logged in to Plasma by the runner, with the script run inside that session (its secret agent and wallet)"
+      evidence: "phase3.py session_problems (session.user must be a p8test* fixture account, desktop plasma, a kde node); migration_plan.md: openvpn_set_vpn_passwd_file has no required_base and no node_fixture; run 20261121T163922Z: as root, VPN4 (password-flags=1) showed no secret, while the audit log showed the update accepted (review 20261121T164531Z)"
   - outcome: cancelling at either dialog changes nothing
     from: templates/openvpn/set_vpn_passwd.sh.erb:30-42
     checks: [cancelling-changes-nothing]
@@ -95,21 +105,6 @@ checks:
     effect: |
       cat /var/tmp/p8test-kd/run1.txt
     expect: {rc: 0, stdout: "\\Arc=0\\npassword prompts: 2\\n--msgbox Configuration finished\\.\\nVPN1: \\[password = p8test-pass-a\\]\\nVPN3: \\[\\]\\n\\Z"}
-
-  - id: an-openvpn-nm-connection-profile-keeps-the-password
-    what: >-
-      VPN4, a listed profile exactly as openvpn_nm_connection writes it (agent-owned password), holds the password the
-      first run set
-    control: negative
-    derived_from:
-      - {path: templates/openvpn/set_vpn_passwd.sh.erb, lines: "18-23", text: "nmcli connection modify \"${vpn_name}\" vpn.secrets \"password=${VPN_USER_PASSWD}\""}
-      - {path: templates/openvpn/connection_file.erb, lines: "11", text: "password-flags=1"}
-    mutates: none beyond reading the connection (declared mutating so it runs after the first run)
-    probe: |
-      true
-    effect: |
-      echo "VPN4: [$(nmcli -s -g vpn.secrets connection show VPN4)]"
-    expect: {rc: 0, stdout: "\\AVPN4: \\[password = p8test-pass-a\\]\\n\\Z"}
 
   - id: cancelling-changes-nothing
     what: >-
