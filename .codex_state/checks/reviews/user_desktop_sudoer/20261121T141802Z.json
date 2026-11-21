@@ -1,0 +1,35 @@
+{
+ "class": "user_desktop_sudoer",
+ "at": "20261121T141802Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "kde-lock-settings-applied-in-the-session: configure_lock_screen.sh:66-95 writes kscreenlockerrc [Daemon] Autolock=true, LockOnResume=true, Timeout=$1 and LockGrace=$2 (script head: LOCK_TIMEOUT=$1, LOCK_GRACE=$2, unconverted; runs only while the user is logged in, hence the session block); the wrapper passes its defaults 5/0 (pp:7,12), so the expected Autolock=true/LockOnResume=true/Timeout=5/LockGrace=0, owned by p8testuser, is what the code produces",
+  "user-with-own-primary-group: user_base.pp:25-31 takes $mygrouplist[0] as primary unless the list is empty or starts with sudo/wheel; the wrapper (pp:9) prepends the fixture's mygrouplist ['users'], so the primary group is users; name/comment/home/shell follow user_base's user resource (comment=myname 'P8 Test User', home /home/<title>, user_shell default /bin/bash)",
+  "desktop-and-admin-groups: pp:9-10 build flatten([['users'], [title, cdrom, dip, plugdev, lp, lpadmin, sambashare, adm, sudo]]) and pass it as user_base's groups; the sorted id -nG set expected (adm cdrom dip lp lpadmin p8testuser plugdev sambashare sudo users) is exactly that list; mismatch on sudo -l uses nobody, a user outside sudo, which must change the verdict (it failed after apply as required)",
+  "purpose covered: Purpose (a desktop user who is also in adm/sudo and can become root) matches the header and pp:9-12. Tested on the kubuntu node with a real Plasma session: primary/supplementary groups incl. the prepended given group, the sudo right (sudo -l, with a nobody mismatch), real sudo to root with the test password plus wrong-password and non-member refusals, real su login with the password and a wrong-password refusal, the pushed key line, the lock script install and the KDE lock settings applied in-session. Left uncovered: non-default pass-through values (ignorekey, ecryptfs, non-default lock values); the reason holds (pp:10-12 pass them unchanged to user_base/user_kde_lock_screen, whose own sets test their effects; one set runs one params fixture, so non-default lock values would trade off the default-value check), lifted by capability: more than one params fixture per set. Note: wrapper and user_kde_lock_screen share the 5/0 defaults, so the lock check does not distinguish the wrapper's pass-through from the inner define's defaults; that is part of the honest uncovered row."
+ ],
+ "review_s": 201.5,
+ "check_file_sha256": "4fdb9f17639229c54cbd95ae69124b2a7e0e12637e2af94646c379c71a69a614",
+ "content_sha256": "4fdb9f17639229c54cbd95ae69124b2a7e0e12637e2af94646c379c71a69a614",
+ "reviewer_result": "20261121T141441Z-reviewer",
+ "author_result": "20261121T141022Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "9949d865-e7dc-4cb1-a687-f76ae3a4b9a0",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "9949d865-e7dc-4cb1-a687-f76ae3a4b9a0",
+   "fresh": true
+  }
+ }
+}
