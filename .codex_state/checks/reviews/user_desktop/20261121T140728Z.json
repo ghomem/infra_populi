@@ -1,0 +1,35 @@
+{
+ "class": "user_desktop",
+ "at": "20261121T140728Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "desktop-groups: user_desktop.pp:9 builds flatten([mygrouplist, [title, cdrom, dip, plugdev, lp]]) and :10 passes it to user_base as mygrouplist (user groups => list, gid => first entry); with fixture mygrouplist ['users'] id -nG must list exactly cdrom dip lp p8testuser plugdev users, which is what the expect pins",
+  "the-given-password-logs-in: user_desktop.pp:10 passes myhash to user_base, whose user resource sets password => $myhash; the action runs su as the unprivileged nobody in a pty with the fixture's test password and a wrong one, mutates declares both attempts and the /run/p8test-user/pw.txt file, and the read-only effect holds the outcome of the login (id -un run as p8testuser) vs Authentication failure, so the wrong password is the built-in control that must change the verdict",
+  "the-given-key-is-pushed: user_desktop.pp:7 defaults ignorekey to false, so user_base.pp declares ssh_authorized_key '<title>@puppet' type ssh-rsa key $mykey (hash has no '!', mykey non-empty -> $sshkey = $mykey); expect one ssh-rsa line with the fixture key's prefix and comment p8testuser@puppet matches",
+  "purpose covered: Purpose (desktop user: own group plus cdrom/dip/plugdev/lp, password and key via user_base, KDE lock via user_kde_lock_screen) matches the baseline header and manifest lines 9-11. Tested: the wrapper's own logic (given group users prepended and made primary, own and desktop groups as supplementary, name/home/default shell), the password logging in with a wrong one refused, the key pushed, the lock script installed and the lock settings (Autolock, LockOnResume, Timeout 5, LockGrace 0) applied in a real Plasma session. Uncovered row (pass-through of ignorekey, ecryptfs values, homemode, non-default lock values, sudo/wheel-first) is honest: lines 10-11 pass them unchanged, their effects are tested in user_base/user_kde_lock_screen/user_sudoer sets, and phase3.py takes exactly one fixture (params or defaults, phase3.py:475-481), which also covers the default empty mygrouplist case (own group primary, the same first-entry rule exercised here). Reviewer run 20261121T140407Z: CLEAN controls all failed as required, APPLIED all pass, no findings."
+ ],
+ "review_s": 201.8,
+ "check_file_sha256": "653076f86a8dd7faf95c18cd0f41c1238c34521d59ebe92454e8ed09618abfce",
+ "content_sha256": "653076f86a8dd7faf95c18cd0f41c1238c34521d59ebe92454e8ed09618abfce",
+ "reviewer_result": "20261121T140407Z-reviewer",
+ "author_result": "20261121T135948Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "c9865090-01bf-4846-8011-e59d01aff149",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "c9865090-01bf-4846-8011-e59d01aff149",
+   "fresh": true
+  }
+ }
+}
