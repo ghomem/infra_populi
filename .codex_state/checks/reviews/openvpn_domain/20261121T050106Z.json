@@ -1,0 +1,43 @@
+{
+ "class": "openvpn_domain",
+ "at": "20261121T050106Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "pam-logins-through-winbind @ templates/openvpn/pam_winbind.conf.erb:30: require_membership_of = <%= @comma_separated_groups %> renders P8TEST+p8testgroup under the params fixture (manifest lines 14-15: netbios P8TEST, separator +, groups [p8testgroup]); the probe runs the login service's auth+account stacks with pamtester: the member with the right password is accepted (rc=0), the member with a wrong password and the outsider p8testvpnout are refused, while wbinfo -a shows the DC accepts the outsider's password, so the refusal is the membership rule the line declares; the effect is a file the action wrote, not the action's own output",
+  "pam-winbind-requires-the-group-and-openvpn-pam-installed @ files/openvpn/openvpn_pam (whole file, sha256 e664b2eb0c14...): manifest lines 58-65 install that file as /etc/pam.d/openvpn via source =>; the probe's sha256sum of /etc/pam.d/openvpn is expected to equal exactly that file hash, i.e. byte for byte the baseline file; the grep -x of require_membership_of = P8TEST+p8testgroup matches pam_winbind.conf.erb:30 under the fixture",
+  "kerberos-realms-against-the-dc @ manifests/openvpn_domain.pp:40-47: /etc/krb5.conf is written from krb5.conf.erb, whose line 6 renders default_realm = P8TEST.example with the fixture's lowercase tld and whose only [realms] stanza is the literal DOMAIN.LOCAL (lines 8-14), so no KDC is configured for P8TEST.EXAMPLE and the client finds the DC's KDC through DNS; the probe greps the rendered default_realm, gets a ticket for p8testvpnin@P8TEST.EXAMPLE (rc 0, principal shown) and shows kinit in the default realm P8TEST.example failing with 'KDC reply did not match expectations' (case-sensitive realm); the credential cache is destroyed, matching mutates; that is what the referenced lines produce",
+  "purpose gap: Tested (reviewer run 20261121T044529Z-reviewer, ALL_PASS, every clean-phase negative failed, both mismatches failed after apply): smb.conf member settings; the join (net rpc testjoin on the node, PUPPET8NODE$ on the DC); domain user and groups resolving through nsswitch/winbind; pam_winbind require_membership_of and /etc/pam.d/openvpn byte-identical; real PAM logins through login (member accepted, wrong password and non-member refused, the DC accepting the non-member's password); Kerberos default realm and kinit against the DC in both realms. GAP: files/openvpn/nsswitch.conf (installed by manifests/openvpn_domain.pp:49-56) also rewrites host resolution: line 14 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4 wins', marked by its own comment line 13 'LD7 Modified the following line adding mdns4 wins', i.e. NetBIOS/WINS host-name resolution against the WINS server smb.conf.erb:8 names (wins server = p8lab-dc.P8TEST.example). The outcomes table's nsswitch row covers only users and groups; no outcome row, check or uncovered reason addresses host resolution through WINS. The lab can exercise it: on the applied node (lab_exec, after my run) libnss_wins.so.2 is installed (libnss-mdns is not), the hosts line is as above, and 'getent -s wins hosts p8lab-dc' and 'getent -s wins hosts PUPPET8NODE' both returned rc=2 after 21 s and 19 s (nmblookup p8lab-dc: name_query failed), so whether the DC answers as the WINS server, or why it cannot, must be stated as an outcome (checked, or uncovered with evidence and lifted_by). Not counted as a gap: cifs-utils and ntpdate (manifest line 11) are installed with no configured outcome, and /etc/pam.d's mode 0644 (lines 67-73) has no observable effect on a directory because Puppet adds search bits where read is set."
+ ],
+ "review_s": 937.4,
+ "check_file_sha256": "e8040024f721cf5a71a4edb3ce6f3486d6d6e5c115ff9899fb363b446a3895b0",
+ "content_sha256": "e8040024f721cf5a71a4edb3ce6f3486d6d6e5c115ff9899fb363b446a3895b0",
+ "reviewer_result": "20261121T044529Z-reviewer",
+ "author_result": "20261121T044200Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "43ad143b-2589-4c60-a346-0599f77d322e",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "43ad143b-2589-4c60-a346-0599f77d322e",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "dc",
+   "snapshot": "P8LAB_DC_BASELINE_v1",
+   "boot_id": "f5b01542-eaac-4dc3-b7bf-c466526d9248",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "f5b01542-eaac-4dc3-b7bf-c466526d9248",
+   "fresh": true
+  }
+ }
+}
