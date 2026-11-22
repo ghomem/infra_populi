@@ -32,7 +32,7 @@ outcomes:
     checks: [a-fixture-ca-with-a-long-lived-certificate, ok-when-every-certificate-is-far-from-expiry, warns-under-30-days, critical-under-10-days, critical-when-a-certificate-has-expired]
 checks:
   - id: script-and-dependency-installed
-    what: the check script is the module's file, root:root 0755, and python3-yaml is installed
+    what: the check script is the module's file (local change #19, 2026-11-22: the expiry read from the certificates), root:root 0755, and python3-yaml is installed
     control: negative
     derived_from:
       - {path: manifests/sysmon_puppet_cert_status.pp, lines: "12-19", text: "source  => 'puppet:///modules/puppet_infrastructure/sysmon/check_puppet_cert_health.py',"}
@@ -41,7 +41,7 @@ checks:
     probe: |
       p8_digest /opt/puppet-infrastructure/bin/check_puppet_cert_health.py | cut -d' ' -f2-
       dpkg-query -W -f '${Package} ${Status}\n' python3-yaml
-    expect: {rc: 0, stdout: "\\Aroot:root 755 dcc07a961db070d9dc54691ef52929f3c85312ddf91dcfbc9f9b3c28c0b28282\\npython3-yaml install ok installed\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Aroot:root 755 44bd2e58a18407a060285f0c685d72e2598b1745e8481bc5e5a01cb8a5af8061\\npython3-yaml install ok installed\\n\\Z"}
 
   - id: naemon-may-run-it-through-sudo
     what: a sudoers drop-in (priority 20) lets naemon run exactly this script without a password, and sudoers stays valid
