@@ -39,7 +39,10 @@ Steps, all required:
      default or resource type; new or changed logic/conditionals; a different mechanism (e.g. replacing a
      parameter with `$settings::...`, replacing a module resource with an exec); whole-file
      re-indentation/reformatting of unchanged code; any deleted upstream comment or warning (the
-     `comments_preserved` check lists them).
+     `comments_preserved` check lists them). Exception (HQ 2026-11-22 ruling 2): an upstream comment line that the
+     class's local-change row lists as ``comment `<old>` -> `<new>` `` or ``-> (removed)`` is accepted by the check,
+     which prints it as "listed in the local-change row"; confirm each such line describes behaviour the local change
+     replaced (a justified change), and FAIL it otherwise.
    - If the tracker marker reads `[from: release-0.9.10; upstream defect fixed: <short>]`, the check output
      prints the RULED UPSTREAM-DEFECT CHANGE from `.codex_state/upstream_defects.md` (you may read that
      file). DIFF A may then also contain exactly that change — no more, no less; any other non-translation hunk

@@ -456,3 +456,41 @@ def test_a_local_change_without_a_current_passing_after_check_is_refused(tmp_pat
 def test_the_after_check_gate_ignores_other_classes_rows(tmp_path):
     lc, res = after_fixture(tmp_path, "chk-a: PASS after: pending", {})
     assert rc.local_change_after_problems("another", ["m.pp"], lc, res, changed=lambda r, f: False) == []
+
+
+# HQ 2026-11-22 ruling 2: a changed or removed upstream comment line passes comments_preserved only when the class's
+# local-change row lists that exact line and its replacement.
+LC_TABLE = ("| # | class | change (file:line) | check | reviewer | date |\n|---|---|---|---|---|---|\n"
+            "| 30 | p8test_klass | files/x.py: reads it directly; comment `# This runs the command` -> "
+            "`# This reads the file`; comment `#the old list of dicts` -> (removed) | c | r | d |\n"
+            "| 31 | other_klass | comment `# not ours` -> (removed) | c | r | d |\n")
+
+
+def test_listed_comment_changes_are_read_from_the_class_rows_only(tmp_path):
+    p = tmp_path / "local_changes.md"
+    p.write_text(LC_TABLE)
+    assert rc.listed_comment_changes("p8test_klass", p) == [("# This runs the command", "# This reads the file"),
+                                                            ("#the old list of dicts", None)]
+    assert rc.listed_comment_changes("nobody", p) == []
+
+
+def test_a_listed_change_is_accepted_only_with_its_replacement_present(tmp_path):
+    p = tmp_path / "local_changes.md"
+    p.write_text(LC_TABLE)
+    listed = rc.listed_comment_changes("p8test_klass", p)
+    removed = [("files/x.py", "        # This runs the command"), ("files/x.py", "    #the old list of dicts"),
+               ("files/x.py", "    # an unlisted upstream comment")]
+    unlisted, accepted = rc.unlisted_comment_removals(removed, listed, {"# This reads the file", "code()"})
+    assert unlisted == ["files/x.py: # an unlisted upstream comment"]
+    assert accepted == ["files/x.py: # This runs the command", "files/x.py: #the old list of dicts"]
+    # the listed replacement missing from the final file: the line is not accepted
+    unlisted, accepted = rc.unlisted_comment_removals(removed[:1], listed, {"code()"})
+    assert unlisted == ["files/x.py: # This runs the command"] and accepted == []
+
+
+def test_another_class_rows_do_not_excuse_a_removal(tmp_path):
+    p = tmp_path / "local_changes.md"
+    p.write_text(LC_TABLE)
+    unlisted, _ = rc.unlisted_comment_removals([("f.pp", "# not ours")], rc.listed_comment_changes("p8test_klass", p),
+                                               set())
+    assert unlisted == ["f.pp: # not ours"]

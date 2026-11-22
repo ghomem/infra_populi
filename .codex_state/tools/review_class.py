@@ -210,6 +210,31 @@ def local_change_numbers(cls: str, path: Path | None = None) -> list[int]:
     return out
 
 
+# HQ 2026-11-22 ruling 2: an upstream comment line a local change replaces or removes is accepted by comments_preserved
+# only when the class's local-change row lists that exact line and its replacement:
+#   comment `<old line>` -> `<new line>`      or      comment `<old line>` -> (removed)
+COMMENT_CHANGE_RE = re.compile(r"comment `([^`]+)` -> (?:`([^`]+)`|\(removed\))")
+
+
+def listed_comment_changes(cls: str, path: Path | None = None) -> list[tuple[str, str | None]]:
+    """(old line, replacement line or None) for each comment change the class's local-change rows list (stripped)."""
+    entry = local_change_entry(cls, path) or ""
+    return [(m.group(1).strip(), None if m.group(2) is None else m.group(2).strip())
+            for m in COMMENT_CHANGE_RE.finditer(entry)]
+
+
+def unlisted_comment_removals(removed: list[tuple[str, str]], listed: list[tuple[str, str | None]],
+                              final_lines: set[str]) -> tuple[list[str], list[str]]:
+    """Split removed baseline comment lines [(path, line)] into (unlisted, accepted). A line is accepted only when a
+    listed change names it exactly (stripped) and, for a replacement, the replacement line is in the final files."""
+    unlisted, accepted = [], []
+    for path, line in removed:
+        old = line.strip()
+        ok = any(o == old and (new is None or new in final_lines) for o, new in listed)
+        (accepted if ok else unlisted).append(f"{path}: {old}")
+    return unlisted, accepted
+
+
 AFTER_RE = re.compile(r"PASS after \((?:checks/)?results/([a-z0-9_]+)/(\d{8}T\d{6}Z)-(author|reviewer)")
 
 
@@ -488,6 +513,7 @@ def run_checks(cls: str, harness: bool) -> dict:
     parent = f"{commit}^"
     pre_drift, migrate_diff, final_diff = [], [], []
     added_all, removed_all, removed_comments, changed_manifest = [], [], [], False
+    final_lines: set[str] = set()
     for path in paths:
         # byte comparisons: a binary class file (an image) is compared exactly, never through a lossy decode
         up = baseline.git_show(base.upstream, base.commit, path)
@@ -504,7 +530,8 @@ def run_checks(cls: str, harness: bool) -> dict:
                 a, r = diff_lines(as_text(up), as_text(now))
                 added_all += a
                 removed_all += r
-                removed_comments += [f"{path}: {l.strip()}" for l in r if is_comment(l)]
+                removed_comments += [(path, l) for l in r if is_comment(l)]
+                final_lines |= {l.strip() for l in (as_text(now) or "").splitlines()}
             changed_manifest |= path.endswith(".pp")
     out["diffs"] = {"final_vs_baseline": "".join(final_diff) or "(identical to baseline)",
                     "migrate_commit": "".join(migrate_diff) or "(the migrate commit changed no class file)"}
@@ -513,8 +540,11 @@ def run_checks(cls: str, harness: bool) -> dict:
                            "header_only": not code_changes}
     prov, prov_ok = provenance_problems(migrate_diff, pre_drift, remigration)
     c["provenance"] = result("fail" if prov else "ok", prov or prov_ok)
-    c["comments_preserved"] = result("fail" if removed_comments else "ok",
-                                     removed_comments or "no baseline comment line removed")
+    unlisted, accepted = unlisted_comment_removals(removed_comments, listed_comment_changes(cls), final_lines)
+    c["comments_preserved"] = result(
+        "fail" if unlisted else "ok",
+        unlisted or ([f"listed in the local-change row (confirm each is justified): {a}" for a in accepted]
+                     or "no baseline comment line removed"))
 
     # records
     rec = []
