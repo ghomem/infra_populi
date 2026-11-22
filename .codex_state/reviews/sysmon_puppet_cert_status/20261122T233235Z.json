@@ -1,0 +1,106 @@
+{
+ "schema": 1,
+ "class": "sysmon_puppet_cert_status",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-22T23:32:35Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "0b42f84a6a5d",
+ "migrate_subject": "P8: migrate puppet_infrastructure::sysmon_puppet_cert_status",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 0b42f84a6a5d; 2 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "1 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['files/sysmon/check_puppet_cert_health.py', 'manifests/sysmon_puppet_cert_status.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": [
+    "listed in the local-change row (confirm each is justified): files/sysmon/check_puppet_cert_health.py: # This runs the command and collects the output",
+    "listed in the local-change row (confirm each is justified): files/sysmon/check_puppet_cert_health.py: #This will be the list where we will store the dictionaries containing the information about each machine's health"
+   ]
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `sysmon_puppet_cert_status Done [from: release-0.9.10; local changes: #19]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('saz-sudo', '9.0.2'), ('puppetlabs-apt', '11.3.2')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 12 catalog events; COVERAGE puppet_infrastructure::sysmon_puppet_cert_status: 4 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "manifests/sysmon_puppet_cert_status.pp: DIFF A is the 2-line header only (migration + local change #19 + saz-sudo 9.0.2 / puppetlabs-apt 11.3.2, matching the master); package python3-yaml, the file and sudo::conf are unchanged",
+   "check_puppet_cert_health.py imports: +glob, +timezone (used by the cert listing and tz-aware dates), -yaml (certregen YAML no longer parsed); subprocess moved one line above sys within the same edited import block (alphabetical, no behaviour); all part of local change #19",
+   "check_puppet_cert_health.py CA_SIGNED_DIRS + read_expiry(): the ruled #19 mechanism (HQ after batch 20 item 3, option C; DESIGN_DECISIONS 2026-11-22): openssl x509 -enddate on puppetserver/ca/signed or Puppet<=6 ssl/ca/signed, notAfter parsed as UTC; replaces the 'puppet certregen healthcheck --all --render-as yaml' call that does not exist on OpenVox 8",
+   "main() root check: 'if geteuid()==0: try certregen... else: please run as root, exit 1' becomes 'if geteuid()!=0: please run as root, exit 1' \u2014 same non-root behaviour; the certregen failure path (exit 1) is replaced by the equivalent no-certificates / read-failure messages, exit 1, required by the new mechanism",
+   "loop: status ':expired' -> expiration_date <= now (same meaning, Critical exit 2 with the same message); earliest-expiry tracking unchanged in logic; expires_in string -> '%d days' computed from the certificate since certregen's field no longer exists; datetime.now() -> one tz-aware now; thresholds 10/30 days and the Critical/Warning/OK lines and exit codes 2/1/0 unchanged (OK branch untouched)",
+   "comments: '# This runs the command and collects the output' removed and the dictionaries comment replaced, both listed in row #19 per HQ 2026-11-22 ruling 2; both described the certregen call/YAML dicts that #19 replaced, so justified; the 'Here we will check...' comment is kept",
+   "DIFF B: only removes the leftover upstream 'This runs the command' line above the replacement comment (the ruling-2 correction); re-migration, DIFF A carries the claim; records ok confirms row #19's after-check passed on the current code"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 38,
+  "removed": 26,
+  "non_comment_changes": 56,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest; local change #19: the check reads the certificates' expiry directly (check_puppet_cert_health.py).",
+  "# Module dependencies: saz-sudo 9.0.2 (sudo::conf), puppetlabs-apt 11.3.2 (Exec['apt_update'])."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 12,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::sysmon_puppet_cert_status: 4 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 22.517,
+   "master_check_s": 0.319,
+   "poweroff_s": 0.866,
+   "restore_s": 0.247,
+   "boot_to_ssh_s": 13.059,
+   "apt_update_s": 7.697,
+   "verify_s": 0.329,
+   "nic1_rx_bytes": 13179430,
+   "apt_mirror": "primary"
+  },
+  "log": ".codex_state/logs/reviews/sysmon_puppet_cert_status.20261122T233058Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "ubuntu"
+}
