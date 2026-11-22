@@ -29,7 +29,9 @@ def main():
         print("no signed certificates found in %s" % " or ".join(CA_SIGNED_DIRS))
         sys.exit(1)
 
-    # This will be the list of each machine's certificate expiry, read from the certificate itself
+    # This runs the command and collects the output
+    # This will be the list of each machine's certificate expiry, read from the certificate itself (local change
+    # #19; the upstream comment here described certregen's dictionaries)
     try:
         list_of_certs = [(os.path.basename(path)[:-len(".pem")], read_expiry(path)) for path in certificates]
     except Exception:
