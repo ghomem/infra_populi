@@ -10,6 +10,8 @@
 # (/etc/puppetlabs/puppetserver/ca/signed, as on the OpenVox master): a 400-day one, then one expiring in 20 days,
 # then 5 days, then one that expired on 2025-01-02 (made with `openssl ca` and explicit dates). Before evidence on the
 # baseline script (certregen); after evidence on local change #19 (the expiry read from the certificates).
+# 2026-11-22 (HQ ruling 2): the moved upstream comment "This runs the command ..." removed (listed in row #19); the
+# script digest updated.
 class: sysmon_puppet_cert_status
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -41,7 +43,7 @@ checks:
     probe: |
       p8_digest /opt/puppet-infrastructure/bin/check_puppet_cert_health.py | cut -d' ' -f2-
       dpkg-query -W -f '${Package} ${Status}\n' python3-yaml
-    expect: {rc: 0, stdout: "\\Aroot:root 755 cf56fd4bf16a6032c56d50389a3e427e2fe04df427217f7255e7d8f8f11f2b3a\\npython3-yaml install ok installed\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Aroot:root 755 67a4d350a289f263a4a6325bd778c8843d2f4cc60d9a7fe59837d7c7dd32b0f3\\npython3-yaml install ok installed\\n\\Z"}
 
   - id: naemon-may-run-it-through-sudo
     what: a sudoers drop-in (priority 20) lets naemon run exactly this script without a password, and sudoers stays valid
