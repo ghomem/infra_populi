@@ -1,0 +1,103 @@
+{
+ "schema": 1,
+ "class": "sysmon_mysqldump_health",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-22T23:53:48Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "287a517dc4d5",
+ "migrate_subject": "P8: migrate puppet_infrastructure::sysmon_mysqldump_health",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 287a517dc4d5; 2 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "3 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/sysmon_mysqldump_health.pp', 'templates/sysmon/check-mysqldump-health.sh.erb']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `sysmon_mysqldump_health Done [from: release-0.9.10; local changes: #18, #20]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 8 catalog events; COVERAGE puppet_infrastructure::sysmon_mysqldump_health: 1 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A manifests/sysmon_mysqldump_health.pp: only the 2-line migration header (release-0.9.10 manifest; local changes #18, #20 named; module dependencies none); no resource, attribute or logic change",
+   "DIFF A template line 68 handle_error 1 \"SQL File $f is not a MySQLDump\" (was $RC): exactly local change #18, the minimal fix for a-file-that-is-not-a-dump-is-critical (baseline passed the previous step's status 0/unset so the non-dump branch never fired)",
+   "DIFF A template clear_database: DROP DATABASE $DBNAME replaced by a loop over $CREATED with DROP DATABASE IF EXISTS, CREATED reset after the drop: local change #20, HQ 2026-11-22 ruling 1 'drops only databases it created in that run'; the reset is needed because handle_error calls clear_database again after the final drop",
+   "DIFF A template new dump_databases (header Database:, CREATE DATABASE and USE lines, sort -u) and the existence loop in validate_dump (SHOW DATABASES LIKE + grep -qxF exact match; on a hit tail -n 5 | grep '-- Dump completed' -> handle_error 'Dump ... is incomplete', append SKIPPED note, return 0): local change #20, the ruling's 'list the databases the dump would create or use; if any exists do not restore, validate the file only, say the restore test was skipped'",
+   "DIFF A template CREATED=\"\" at validate_dump start and CREATED=\"$DUMP_DBS\" after a successful CREATE DATABASE: local change #20, marks only databases verified absent before the restore as created; restore path (CREATE/load/clear/handle_error) otherwise unchanged from baseline",
+   "DIFF A template final line echo \"OK: exit code $RC_OK$SKIPPED\": local change #20, the ruling's required output that the restore test was skipped; unchanged output when nothing is skipped",
+   "Row #20 after-check confirmed in results/sysmon_mysqldump_health/20261122T234851Z-author.json (outcome ALL_PASS, valid); records=ok; no hunk beyond rows #18/#20 and the header; comments_preserved ok"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 30,
+  "removed": 4,
+  "non_comment_changes": 28,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest; local changes #18: a .sql file that is not a mysqldump is reported CRITICAL; #20: a dump whose database exists is validated, not restored, and a restore drops only the databases it created (check-mysqldump-health.sh.erb).",
+  "# Module dependencies: none (core file resource only)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 8,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::sysmon_mysqldump_health: 1 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "total_s": 21.133,
+   "master_check_s": 0.297,
+   "poweroff_s": 0.539,
+   "restore_s": 0.233,
+   "boot_to_ssh_s": 12.387,
+   "apt_update_s": 7.346,
+   "verify_s": 0.331,
+   "nic1_rx_bytes": 13178311,
+   "apt_mirror": "primary"
+  },
+  "log": ".codex_state/logs/reviews/sysmon_mysqldump_health.20261122T235223Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "ubuntu"
+}
