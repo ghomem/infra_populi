@@ -1,4 +1,4 @@
-# sysmon_puppet_cert_status — behaviour finding (OPEN, for HQ: more than one reasonable design)
+# sysmon_puppet_cert_status — behaviour finding (RULED 2026-11-22, HQ after batch 20 item 3; fixed by local change #19)
 
 Production use 0 (migration_order.md). The class installs `files/sysmon/check_puppet_cert_health.py` (baseline cf477c6),
 a Nagios check meant for the Puppet master. Line 11 runs `puppet certregen healthcheck --all --render-as yaml` and
@@ -34,3 +34,9 @@ behaviour state stays "finding" until HQ rules.
 Review 20261121T161208Z reproduced the finding. It also confirmed by hand that `puppet certregen` is an unknown
 subcommand on the lab master puppet8master (openvox 8.24.2), as on the agent node and p8lab-puppetserver. The set passed
 on purpose; the thresholds row stays uncovered until this is resolved.
+
+## Ruled and fixed (2026-11-22)
+HQ after batch 20, item 3: replace the missing certregen call with a direct read of the certificates' expiry dates,
+keeping the thresholds and output (the escalation's option C). Local change #19. Before (20261122T213617Z): every fixture
+case printed the certregen failure. After (20261122T214533Z): a 400-day certificate OK, 20 days Warning, 5 days
+Critical, an expired one Critical. Phase 1 and Phase 3 reviews follow.
