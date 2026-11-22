@@ -34,18 +34,44 @@ function handle_error
 }
 
 clear_database() {
-  mysql -u $MYSQLUSER -p$MYSQLPWD -e "DROP DATABASE $DBNAME;" > /dev/null 2>&1
-  return $?
+  # local change #20: drop only the databases this run may have created (each one was absent before the restore)
+  CLEAR_RC=0
+  for db in $CREATED; do
+    mysql -u $MYSQLUSER -p$MYSQLPWD -e "DROP DATABASE IF EXISTS \`$db\`;" > /dev/null 2>&1 || CLEAR_RC=1
+  done
+  CREATED=""
+  return $CLEAR_RC
+}
+
+# local change #20: the databases a dump would create or use (its header's database, CREATE DATABASE and USE lines)
+dump_databases() {
+  { [ -n "$DBNAME" ] && echo "$DBNAME"
+    sed -n 's/^CREATE DATABASE \(\/\*!32312 IF NOT EXISTS\*\/ \)\{0,1\}`\([^`]*\)`.*/\2/p' "$1"
+    sed -n 's/^USE `\([^`]*\)`;$/\1/p' "$1"; } | sort -u
 }
 
 
 validate_dump() {
   f=$1
   DBNAME=`grep Database: $1 |grep '\-\- Host:'| sed -e "s/.*Database:\(.*\)/\1/" | tr -d " " | head -n 1`
+  CREATED=""
+
+  # local change #20: if a database the dump would create or use already exists, the restore test is skipped and
+  # the file is validated only (a complete mysqldump ends with its '-- Dump completed' line)
+  DUMP_DBS=`dump_databases $f`
+  for db in $DUMP_DBS; do
+    if mysql -u $MYSQLUSER -p$MYSQLPWD -N -e "SHOW DATABASES LIKE '$db';" 2>/dev/null | grep -qxF "$db"; then
+      tail -n 5 $f | grep -q -- "-- Dump completed"
+      handle_error $? "Dump $f is incomplete (no '-- Dump completed' line)"
+      SKIPPED="$SKIPPED; restore test skipped for $f because database $db exists (file validated)"
+      return 0
+    fi
+  done
 
   mysql -u $MYSQLUSER -p$MYSQLPWD -e "CREATE DATABASE $DBNAME;" > /dev/null 2>&1
   RC=$?
   handle_error $RC "Create database $DBNAME"
+  CREATED="$DUMP_DBS"
 
   mysql $DBNAME -u $MYSQLUSER -p$MYSQLPWD < $f > /dev/null 2>&1
   RC=$?
@@ -77,5 +103,5 @@ do
   validate_dir $d
 done
 
-echo "OK: exit code $RC_OK"
+echo "OK: exit code $RC_OK$SKIPPED"
 exit $RC_OK
