@@ -5,10 +5,10 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 
 ## Summary
 
-- Done classes: 90 (90 verified by the Phase 1 reviewer). Owner-validated: postfix_smtp_base_config_file. Retired: nginx_proxy_smtp_auth_ppa. Blocked: none.
-- Behaviour (Phase 3): 1 deferred, 5 finding, 84 pass.
-- Open rows (outcomes no check probes): 121 in 74 classes.
-- Stand-ins: 11. Local changes: 18 (in 15 classes).
+- Done classes: 90 (89 verified by the Phase 1 reviewer). Owner-validated: postfix_smtp_base_config_file. Retired: nginx_proxy_smtp_auth_ppa. Blocked: none.
+- Behaviour (Phase 3): 1 deferred, 4 finding, 84 pass, 1 stale.
+- Open rows (outcomes no check probes): 120 in 73 classes.
+- Stand-ins: 11. Local changes: 19 (in 16 classes).
 
 ## For Salatiel's decision
 
@@ -18,7 +18,6 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 - **openvpn_server** — the-data-channel-is-compressed-both-ways (escalations/openvpn_server.behaviour.md)
 - **openvpn_set_vpn_passwd_file** — a-second-run-changes-the-password (escalations/openvpn_set_vpn_passwd_file.behaviour.md)
 - **sysmon_mysqldump_health** — a-live-database-of-the-dump-name-is-left-intact (escalations/sysmon_mysqldump_health.behaviour.md)
-- **sysmon_puppet_cert_status** — reports-certificate-health (escalations/sysmon_puppet_cert_status.behaviour.md)
 
 ### Stand-ins
 
@@ -38,7 +37,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 
 - escalations/openvpn_set_vpn_passwd_file.behaviour.md: openvpn_set_vpn_passwd_file — behaviour finding (OPEN, for HQ: more than one reasonable design)
 - escalations/sysmon_mysqldump_health.behaviour.md: sysmon_mysqldump_health — behaviour findings (finding 1 FIXED, local change #18; finding 2 OPEN, for HQ)
-- escalations/sysmon_puppet_cert_status.behaviour.md: sysmon_puppet_cert_status — behaviour finding (OPEN, for HQ: more than one reasonable design)
+- escalations/sysmon_puppet_cert_status.phase1.md: sysmon_puppet_cert_status — Phase 1 review FAIL twice on comment preservation (OPEN, for HQ: the run is stopped)
 
 ## One row per class
 
@@ -122,7 +121,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 | sysmon_integrity_master | 0 | ubuntu | pass | 2 | 1 |  |  |  |
 | sysmon_integrity_node | 0 | ubuntu | pass | 4 | 1 |  |  |  |
 | sysmon_mysqldump_health | 0 | ubuntu | finding | 7 | 0 |  | yes | #18 |
-| sysmon_puppet_cert_status | 0 | ubuntu | finding | 3 | 1 |  | yes |  |
+| sysmon_puppet_cert_status | 0 | ubuntu | stale | 3 | 0 |  |  | #19 |
 | user | 2 | ubuntu | pass | 4 | 3 |  |  |  |
 | user_base | 3 | ubuntu | pass | 3 | 4 |  |  |  |
 | user_desktop | 0 | kubuntu | pass | 3 | 1 |  |  |  |
@@ -1248,15 +1247,13 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### sysmon_puppet_cert_status
 
 - **Purpose:** Gives the monitoring system (naemon, through sudo) a Nagios check on the Puppet master that reports the certificate expiry of every node the CA signed: Critical when one has expired or expires within 10 days, Warning within 30, OK otherwise, naming the certificate that expires first.
-- **Behaviour:** finding — reports-certificate-health; node ubuntu; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the check script (the module's file, root 0755) and its dependency python3-yaml are installed (`script-and-dependency-installed`)
   - naemon may run the check as root through sudo, and the check refuses to run unprivileged (`naemon-may-run-it-through-sudo`, `refuses-to-run-unprivileged`)
-  - run as root, the check reports the certificates' expiry in Nagios form (OK, Warning or Critical with the certificate that expires first) (`reports-certificate-health`)
-- **Open rows:**
-  - the thresholds (expired, 10 and 30 days) against a CA whose certificates expire at chosen dates — why: the check cannot produce any expiry report on OpenVox 8 (puppet certregen is an unknown subcommand, measured on the agent node and on the master-role node), so the thresholds cannot be reached until the finding is resolved — lifted by: capability: a certificate-health source on OpenVox 8 (the finding's resolution), then a lab CA with certificates near expiry
-- **Finding:** reports-certificate-health (escalations/sysmon_puppet_cert_status.behaviour.md)
+  - run as root on the master, the check reads every signed certificate's expiry and reports OK when the earliest is 30 days or more away, Warning under 30 days and Critical under 10 days (naming that certificate), and Critical when a certificate has expired (`a-fixture-ca-with-a-long-lived-certificate`, `ok-when-every-certificate-is-far-from-expiry`, `warns-under-30-days`, `critical-under-10-days`, `critical-when-a-certificate-has-expired`)
+- **Local changes:** #19: files/sysmon/check_puppet_cert_health.py: the expiry dates are read directly from the CA's signed certificates (`openssl x509 -enddate` on /etc/puppetlabs/puppetserver/ca/signed, or Puppet <= 6's /etc/puppetlabs/puppet/ssl/ca/signed) instead of `puppet certregen healthcheck`, which does not exist on OpenVox 8;
 
 ### user
 

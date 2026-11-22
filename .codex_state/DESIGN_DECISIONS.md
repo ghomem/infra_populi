@@ -2368,3 +2368,32 @@ the engine's tools, which take the lock themselves, are unaffected. 21 tests; th
 2. **Command chains that filter a commit's output run with `set -o pipefail`.** A trailing `grep -vE` hid a failed
    edit, and a run executed an unchanged set against a changed fixture (sysmon_integrity_node 20261121T122111Z,
    committed as an operator error).
+
+## 2026-11-22 — HQ after batch 20 (after the laptop's power-off; the lab travels)
+0. State check first: every lab VM was in a clean poweroff (the battery guard took the lab down on 2026-11-21 at 19:43
+   UTC, because the advisor had left the master, node and kubuntu up after a run); HEAD = origin/main = a1cc094; no
+   uncommitted change in this clone (an old stash of 2026-11-18 only). The run rule "lab down when stopping" applies
+   at every stop, without exception.
+1. The backfill is accepted: 90 classes with a reviewed set.
+2. sysmon_mysqldump_health: fix now: restore into a scratch database with its own unique name, drop only that one,
+   UNKNOWN when that cannot be done; a live database of the dump's name keeps every row. The advisor's escalation had
+   recommended a different option (A: drop only what the check created, restoring under the dump's name), so per
+   item 2-4's condition the class stops and HQ is shown the difference (dumps made with --databases carry their own
+   CREATE DATABASE/USE lines, which a scratch name must rewrite or filter).
+3. sysmon_puppet_cert_status: the certregen call replaced by a direct read of the certificates' expiry dates, the
+   thresholds and output kept; checked with fixture certificates (local change #19; the escalation's option C, which
+   HQ's wording matches; the advisor had recommended B, listing through puppetserver ca, a difference of how the
+   certificates are found, not of substance).
+4. openvpn_set_vpn_passwd_file: the password through NetworkManager's own interface so it works wherever profiles are
+   stored; set twice, the VPN connecting after each (the escalation's option A: the script already set the password
+   with nmcli; its profile-file existence test is what is replaced).
+5. The approval report, generated from the recorded state (approval_report.py), first version now and regenerated as
+   the work changes it.
+6. Stand-in lifts with small lab additions: user_lock, the desktop login, a lab ACME endpoint, an extra network card on
+   a gateway node, a harness mode that tolerates a running agent. The Zentyal and monitoring-server stand-ins stay and
+   go to Salatiel for explicit acceptance in the report.
+7. Then the sweep of open uncovered rows, the final approval report (stop for Salatiel), the test-suite design note,
+   and the rename.
+8. Stop at a clean point and run `lab down` when Salatiel says he is closing the laptop.
+9. **Run stopped 2026-11-22 ~22:05 UTC** on a standing Phase 1 FAIL: sysmon_puppet_cert_status's review failed twice
+   on the mechanical comments_preserved check after local change #19 (escalations/sysmon_puppet_cert_status.phase1.md).

@@ -2,7 +2,19 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-130 entries; 6 marked superseded (in whole or part); newest first.
+131 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-22 — HQ after batch 20 (after the laptop's power-off; the lab travels)
+- 0. State check first: every lab VM was in a clean poweroff (the battery guard took the lab down on 2026-11-21 at 19:43
+- 1. The backfill is accepted: 90 classes with a reviewed set.
+- 2. sysmon_mysqldump_health: fix now: restore into a scratch database with its own unique name, drop only that one,
+- 3. sysmon_puppet_cert_status: the certregen call replaced by a direct read of the certificates' expiry dates, the
+- 4. openvpn_set_vpn_passwd_file: the password through NetworkManager's own interface so it works wherever profiles are
+- 5. The approval report, generated from the recorded state (approval_report.py), first version now and regenerated as
+- 6. Stand-in lifts with small lab additions: user_lock, the desktop login, a lab ACME endpoint, an extra network card on
+- 7. Then the sweep of open uncovered rows, the final approval report (stop for Salatiel), the test-suite design note,
+- 8. Stop at a clean point and run `lab down` when Salatiel says he is closing the laptop.
+- 9. **Run stopped 2026-11-22 ~22:05 UTC** on a standing Phase 1 FAIL: sysmon_puppet_cert_status's review failed twice
 
 ## 2026-11-21 — batch 19: a Phase 1 review that fails on a missing peer; masked chain failures
 - 1. **A Phase 1 review of a class whose harness needs a peer** (openvpn_domain needs the dc) runs only with the peer up.
