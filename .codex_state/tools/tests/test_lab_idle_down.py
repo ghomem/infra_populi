@@ -33,15 +33,22 @@ def vm_states(lab):
     return {vm: lab.state()["vms"][vm]["state"] for vm in (MASTER, NODE)}
 
 
+def run(lab, argv, e):
+    """lab.run after reloading the world: FakeLab.run saves its in-memory world first, which would otherwise undo VM
+    state changes the watcher's lab_power.sh down made meanwhile (and leave down waiting on a master turned back on)."""
+    lab.world = lab.state()
+    return lab.run(argv, env=e)
+
+
 def status(lab, e):
-    return lab.run([IDLE, "status"], env=e).stdout.strip()
+    return run(lab, [IDLE, "status"], e).stdout.strip()
 
 
 @pytest.fixture
 def disarmed_at_the_end(lab):
     yield
     e = env(lab)
-    lab.run([IDLE, "disarm"], env=e)
+    run(lab, [IDLE, "disarm"], e)
     assert wait_until(lambda: not (lab.root / "idle" / "idle_down.pid").exists(), seconds=30)
 
 
@@ -78,9 +85,8 @@ def test_a_lab_tool_process_keeps_the_lab_up(lab, disarmed_at_the_end):
     assert lab.run([IDLE, "arm"], env=e).returncode == 0
     time.sleep(2.5)
     assert vm_states(lab) == {MASTER: "running", NODE: "running"}
-    world = lab.state()
-    world["busy"] = ""
-    lab.world = world
+    lab.world = lab.state()
+    lab.world["busy"] = ""
     lab.save()
     assert wait_until(lambda: vm_states(lab) == {MASTER: "poweroff", NODE: "poweroff"}, seconds=20)
 
