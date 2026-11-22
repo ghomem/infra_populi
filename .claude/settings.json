@@ -77,6 +77,26 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.codex_state/tools/lab_idle_down.sh arm"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.codex_state/tools/lab_idle_down.sh disarm"
+          }
+        ]
+      }
     ]
   }
 }

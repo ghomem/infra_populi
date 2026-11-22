@@ -28,8 +28,11 @@ with open(os.environ["FAKE_CALLS"], "a") as f:
 args = sys.argv[1:]
 
 def save():
-    with open(world_path, "w") as f:
+    # atomic: a stub or test reading the world while it is rewritten never sees a half-written file
+    tmp = f"{world_path}.{os.getpid()}.tmp"
+    with open(tmp, "w") as f:
         json.dump(world, f)
+    os.replace(tmp, world_path)
 
 if name == "VBoxManage":
     vms = world["vms"]
@@ -168,7 +171,9 @@ class FakeLab:
         }
 
     def save(self):
-        self.world_path.write_text(json.dumps(self.world))
+        tmp = self.world_path.with_name(f"{self.world_path.name}.{os.getpid()}.tmp")
+        tmp.write_text(json.dumps(self.world))
+        os.replace(tmp, self.world_path)  # atomic, as the stubs' own save()
 
     def run(self, argv, **kw):
         self.save()
