@@ -1,0 +1,35 @@
+{
+ "class": "sysmon_puppet_cert_status",
+ "at": "20261122T233606Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "warns-under-30-days: files/sysmon/check_puppet_cert_health.py:43-45 print Warning and exit 1 when the earliest expiry is under 30 days (and not under 10); with p8test-long (400 d) and p8test-soon (20 d) the earliest is p8test-soon, abs((now-exp).days)=20 -> Warning naming it, expires_in (exp-now).days = 19 or 20, rc=1; the expect matches exactly that, and also proves the earliest certificate is chosen",
+  "script-and-dependency-installed: manifest lines 3-4 (python3-yaml) and 12-19 (file from the module source, root:root 0755) plus the script file reference; the expected digest 67a4d350... is the current module file (sha256sum of files/sysmon/check_puppet_cert_health.py, local change #19), the baseline file hash dcc07a96... matches the cited reference; probe checks owner/mode/digest and dpkg status",
+  "refuses-to-run-unprivileged: baseline lines 12-21 print 'please run as root' and exit 1 when euid != 0; probe runs as nobody and expects exactly that with rc=1; the mismatch varies only the account (root), for which the euid test passes so that verdict cannot appear (on the applied node root gets 'no signed certificates found' before the fixtures), and it failed as required",
+  "purpose covered: Purpose (naemon-run Nagios check on the master reporting the earliest CA-signed certificate expiry: OK >=30 d, Warning <30, Critical <10 or expired, naming the certificate) matches the manifest and the script. The checks test the installed script (module digest, root 0755) and python3-yaml, the exact sudoers rule for naemon plus visudo validity, the root-only guard, and the script's verdicts on fixture certificates in /etc/puppetlabs/puppetserver/ca/signed: OK 400 d (rc 0), Warning 20 d (rc 1), Critical 5 d (rc 2), Critical has-expired via openssl ca with explicit past dates (rc 2), each naming the earliest certificate. My run: clean phase every negative failed, applied phase ALL_PASS. Left out: an actual sudo invocation as naemon (the account is not on the node: getent passwd naemon rc=2, sudo -l -U naemon 'unknown user'; the class does not create it), so the grant is tested by its exact rule text and sudoers validity; and a real OpenVox CA (the fixture stands in for the signed directory). Every outcome in the table is mapped to checks that probe it."
+ ],
+ "review_s": 101.6,
+ "check_file_sha256": "91515d9e6969e6a29e913156cea5d115c7a93afa0133d368c54429c1daf06d46",
+ "content_sha256": "91515d9e6969e6a29e913156cea5d115c7a93afa0133d368c54429c1daf06d46",
+ "reviewer_result": "20261122T233425Z-reviewer",
+ "author_result": "20261122T232809Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "2f3c37b9-b38b-4f0c-b0ae-7f8888e2b4b2",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "2f3c37b9-b38b-4f0c-b0ae-7f8888e2b4b2",
+   "fresh": true
+  }
+ }
+}

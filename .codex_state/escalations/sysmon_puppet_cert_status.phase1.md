@@ -1,4 +1,4 @@
-# sysmon_puppet_cert_status — Phase 1 review FAIL twice on comment preservation (OPEN, for HQ: the run is stopped)
+# sysmon_puppet_cert_status — Phase 1 review FAIL twice on comment preservation (CLOSED: HQ 2026-11-22 ruling 2, option B; Phase 1 PASS 20261122T233235Z)
 
 The class carries local change #19 (HQ after batch 20, item 3): `files/sysmon/check_puppet_cert_health.py` reads the
 certificates' expiry with openssl instead of `puppet certregen`. The Phase 3 after-check passes on the current code
@@ -34,3 +34,16 @@ Phase 1 review.
 - **A:** allow that fix and one more Phase 1 review.
 - **B:** a ruling on the check itself: a comment line that a local-change row records as reworded need not appear
   verbatim. That is a tool change, with tests.
+
+## Resolution (2026-11-22)
+HQ ruled option B: a comment that describes replaced behaviour is not kept verbatim; the mechanical check accepts a
+changed or removed upstream comment line only when the local-change row lists that exact line and its replacement, and
+the reviewer confirms each is justified. Done in order:
+- tool change 559979d (review_class.py `comments_preserved`, reviewer.md; 3 tests);
+- row #19 lists both lines (a69a30a): `# This runs the command and collects the output` -> (removed) (the moved copy left
+  in the file was removed too: the command it described, certregen, is gone); the dictionaries comment -> the
+  certificate-expiry line;
+- harness GREEN and record_green (c8c6ed4), the after-run on the recorded code ALL_PASS (ad49928,
+  results/sysmon_puppet_cert_status/20261122T232809Z-author);
+- Phase 1 review PASS (30e8bc4, reviews/sysmon_puppet_cert_status/20261122T233235Z: comments_preserved ok, both changes
+  judged justified).
