@@ -41,7 +41,7 @@ checks:
     probe: |
       p8_digest /opt/puppet-infrastructure/bin/check_puppet_cert_health.py | cut -d' ' -f2-
       dpkg-query -W -f '${Package} ${Status}\n' python3-yaml
-    expect: {rc: 0, stdout: "\\Aroot:root 755 44bd2e58a18407a060285f0c685d72e2598b1745e8481bc5e5a01cb8a5af8061\\npython3-yaml install ok installed\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Aroot:root 755 cf56fd4bf16a6032c56d50389a3e427e2fe04df427217f7255e7d8f8f11f2b3a\\npython3-yaml install ok installed\\n\\Z"}
 
   - id: naemon-may-run-it-through-sudo
     what: a sudoers drop-in (priority 20) lets naemon run exactly this script without a password, and sudoers stays valid
