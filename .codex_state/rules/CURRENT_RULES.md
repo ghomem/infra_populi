@@ -2,7 +2,13 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-131 entries; 6 marked superseded (in whole or part); newest first.
+132 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-22 — HQ rulings after the run stopped
+- 1. **sysmon_mysqldump_health:** the scratch-name design is withdrawn; the advisor's design, with conditions. Before any
+- 2. **sysmon_puppet_cert_status: option B.** A comment describing replaced behaviour is not kept verbatim. The mechanical
+- 3. **Lab down at pauses is enforced mechanically,** not by memory: a hook that runs when the advisor's turn ends brings
+- 4. **Then continue:** item 4 (openvpn_set_vpn_passwd_file), the stand-in lifts, the sweep, the final approval report
 
 ## 2026-11-22 — HQ after batch 20 (after the laptop's power-off; the lab travels)
 - 0. State check first: every lab VM was in a clean poweroff (the battery guard took the lab down on 2026-11-21 at 19:43

@@ -2397,3 +2397,18 @@ the engine's tools, which take the lock themselves, are unaffected. 21 tests; th
 8. Stop at a clean point and run `lab down` when Salatiel says he is closing the laptop.
 9. **Run stopped 2026-11-22 ~22:05 UTC** on a standing Phase 1 FAIL: sysmon_puppet_cert_status's review failed twice
    on the mechanical comments_preserved check after local change #19 (escalations/sysmon_puppet_cert_status.phase1.md).
+
+## 2026-11-22 — HQ rulings after the run stopped
+1. **sysmon_mysqldump_health:** the scratch-name design is withdrawn; the advisor's design, with conditions. Before any
+   restore, list the databases the dump would create or use. If any of them already exists, do not restore: validate
+   the file only, and say in the output that the restore test was skipped because the database exists. When it does
+   restore, it drops only databases it created in that run. Checks: a live database with the dump's name keeps every
+   row; a dump whose database is absent gets the full restore test and leaves nothing behind.
+2. **sysmon_puppet_cert_status: option B.** A comment describing replaced behaviour is not kept verbatim. The mechanical
+   comments_preserved check accepts a changed or removed upstream comment line only when the class's local-change row
+   lists that exact line and its replacement; anything not listed still fails. The reviewer confirms each listed line is
+   justified by the change. A tool change with tests, then one more review of this class.
+3. **Lab down at pauses is enforced mechanically,** not by memory: a hook that runs when the advisor's turn ends brings
+   the lab down unless a run holds the lock. Tested.
+4. **Then continue:** item 4 (openvpn_set_vpn_passwd_file), the stand-in lifts, the sweep, the final approval report
+   (stop for Salatiel), the test-suite design note, the rename.
