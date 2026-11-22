@@ -29,7 +29,6 @@ def main():
         print("no signed certificates found in %s" % " or ".join(CA_SIGNED_DIRS))
         sys.exit(1)
 
-    # This runs the command and collects the output
     # This will be the list of each machine's certificate expiry, read from the certificate itself (local change
     # #19; the upstream comment here described certregen's dictionaries)
     try:
