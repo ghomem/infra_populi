@@ -1,46 +1,59 @@
 #!/usr/bin/python3
 
+import glob
 import os
-import sys
 import subprocess
-import yaml
-from datetime import datetime
+import sys
+from datetime import datetime, timezone
+
+# Local change #19 (HQ after batch 20, item 3): `puppet certregen healthcheck` does not exist on OpenVox 8, so the
+# expiry dates are read directly from the CA's signed certificates (openssl). Thresholds and output are kept.
+CA_SIGNED_DIRS = ["/etc/puppetlabs/puppetserver/ca/signed",  # Puppet >= 7 / OpenVox
+                  "/etc/puppetlabs/puppet/ssl/ca/signed"]    # Puppet <= 6
+
+
+def read_expiry(path):
+    output = subprocess.check_output(["openssl", "x509", "-enddate", "-noout", "-in", path], text=True)
+    when = datetime.strptime(output.strip().split("=", 1)[1], "%b %d %H:%M:%S %Y %Z")
+    return when.replace(tzinfo=timezone.utc)
+
 
 def main():
 
-    healthcheck_command = ["puppet", "certregen", "healthcheck", "--all",  "--render-as", "yaml"]
-    if os.geteuid() == 0:
-        # This runs the command and collects the output
-        try:
-            output = subprocess.check_output(healthcheck_command)
-        except Exception:
-            print ("command '%s' failed" % " ".join(healthcheck_command))
-            sys.exit(1)
-    else:
+    if os.geteuid() != 0:
         print("please run as root")
         sys.exit(1)
+    signed_dir = next((d for d in CA_SIGNED_DIRS if os.path.isdir(d)), None)
+    certificates = sorted(glob.glob(os.path.join(signed_dir, "*.pem"))) if signed_dir else []
+    if not certificates:
+        print("no signed certificates found in %s" % " or ".join(CA_SIGNED_DIRS))
+        sys.exit(1)
 
-    #This will be the list where we will store the dictionaries containing the information about each machine's health
-    list_of_dicts = yaml.safe_load(output)
-    expiring_machine = {}
-    earliest_expiration_date = datetime.max
+    # This will be the list of each machine's certificate expiry, read from the certificate itself
+    try:
+        list_of_certs = [(os.path.basename(path)[:-len(".pem")], read_expiry(path)) for path in certificates]
+    except Exception:
+        print("reading the certificates in %s failed" % signed_dir)
+        sys.exit(1)
+    now = datetime.now(timezone.utc)
+    expiring_machine_name = None
+    earliest_expiration_date = datetime.max.replace(tzinfo=timezone.utc)
 
     # Here we will check the status of each machine and report the result in Nagios format
-    for element in list_of_dicts:
-        if (element[':expiry'][':status'] == ':expired'):
-            print("Critical: certificate of %s has expired on %s." % (element[':name'], element[':expiry'][':expiration_date']))
+    for name, expiration_date in list_of_certs:
+        if expiration_date <= now:
+            print("Critical: certificate of %s has expired on %s." % (name, expiration_date))
             sys.exit(2)
-        if (element[':expiry'][':expiration_date'] < earliest_expiration_date):
-            earliest_expiration_date = element[':expiry'][':expiration_date']
-            expiring_machine = element
+        if expiration_date < earliest_expiration_date:
+            earliest_expiration_date = expiration_date
+            expiring_machine_name = name
 
-    expiring_machine_name = expiring_machine[':name'].strip()
-    expiring_time = expiring_machine[':expiry'][':expires_in'].strip()
+    expiring_time = "%d days" % (earliest_expiration_date - now).days
 
-    if (abs((datetime.now() - earliest_expiration_date).days) < 10):
+    if (abs((now - earliest_expiration_date).days) < 10):
         print ("Critical: certificate of %s will expire in %s" % (expiring_machine_name, expiring_time))
         sys.exit(2)
-    elif (abs((datetime.now() - earliest_expiration_date).days) < 30):
+    elif (abs((now - earliest_expiration_date).days) < 30):
         print ("Warning: Certificate of %s will expire in %s" % (expiring_machine_name, expiring_time))
         sys.exit(1)
     else:

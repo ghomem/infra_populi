@@ -1,4 +1,4 @@
-# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Puppet 8 migration: release-0.9.10 manifest; local change #19: the check reads the certificates' expiry directly (check_puppet_cert_health.py).
 # Module dependencies: saz-sudo 9.0.2 (sudo::conf), puppetlabs-apt 11.3.2 (Exec['apt_update']).
 class puppet_infrastructure::sysmon_puppet_cert_status {
 
