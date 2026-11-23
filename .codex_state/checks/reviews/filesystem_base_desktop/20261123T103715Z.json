@@ -1,0 +1,35 @@
+{
+ "class": "filesystem_base_desktop",
+ "at": "20261123T103715Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-agent-run-restores-the-syslog-file: baseline 30-36 declares File[/var/log/syslog] owner syslog, group adm, mode $syslog_mode when customize_syslog_mode (fixture true, mode default u=rw,g=r,o= = 640); after the hand-made drift and the node's agent run (rc 2, 3 changed) the effect reads syslog adm 640 and the drift marker, the enforcement those lines declare; on the clean node the marker is absent so it fails",
+  "the-syslog-file-drifts: baseline 4-5 says rsyslog may set other permissions and puppet will change them; the action only chowns/chmods /var/log/syslog to root:root 0644 and writes a /run marker, exactly what mutates declares, and the read-only effect (stat) shows the action's result, not its output; it is the setup for the restore check",
+  "a-script-in-bindir-runs-for-an-unprivileged-user: baseline 16-22 declares localdir/bindir/etcdir as root:root 0644 directories 'for custom scripts'; Puppet adds search bits to directories with read set (0755 effective), so a 0755 script in bindir runs and a 0644 file in etcdir reads for nobody; mutates declares both written files and the /run output, and the effect cats the output file (the action's result); on the clean node the dirs are absent and it fails",
+  "purpose covered: Purpose matches the header (basic filesystem definitions for desktops) and the whole 38-line baseline manifest: base-directories probes the three lookup() dirs root:root 755-effective; the bindir/etcdir check shows them usable by an unprivileged user; with customize_syslog_mode the syslog file is syslog:adm 640 (an honest invariant: rsyslog on 24.04 already creates it so, held on the clean run) and the drift pair proves the class's enforcement through a real agent run; variant default (customize_syslog_mode false, what both desktop composites default to) shows the catalog has no File[/var/log/syslog] while the dirs exist; variant mode (u=rw,g=,o=) shows syslog:adm 600. Every outcome of the class is mapped and every parameter value is exercised; no uncovered rows and nothing the lab can test is left out. Reviewer run ALL_PASS in base and both variants, every clean-phase control valid."
+ ],
+ "review_s": 651.8,
+ "check_file_sha256": "f8cb1198ddf13b2b9b31ede1230d4ed5d6ea09a3b2ea140cb5205678030cebeb",
+ "content_sha256": "f8cb1198ddf13b2b9b31ede1230d4ed5d6ea09a3b2ea140cb5205678030cebeb",
+ "reviewer_result": "20261123T102624Z-reviewer",
+ "author_result": "20261123T093613Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "46a112eb-2467-4d7a-9f45-2a355ec9198b",
+   "apt_mirror": "fallback http://mirrors.edge.kernel.org/ubuntu/",
+   "boot_id_at_end": "46a112eb-2467-4d7a-9f45-2a355ec9198b",
+   "fresh": true
+  }
+ }
+}
