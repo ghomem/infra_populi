@@ -4,6 +4,7 @@
 # Required external (plan): class firewall (puppetlabs-firewall 8.3.0). The probes read the installed iptables rules
 # and the forwarding sysctl (direct state reads). Real VPN-bridge forwarding needs the bridge and a second host and is
 # not tested here.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1d): the client_isolation row names what is missing, with its evidence.
 class: firewall_addon_openvpn_server
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -36,7 +37,12 @@ outcomes:
     checks: [forward-bridge-loopback, a-lan-and-a-wan-behind-the-node, a-lan-host-reaches-another-subnet-on-the-bridge, the-forward-rules-counted-the-flows]
   - outcome: client isolation (client_isolation)
     from: manifests/firewall_addon_openvpn_server.pp:4-5, 11
-    uncovered: {why: "the parameter is declared but no code uses it (the class's own warning: still to be implemented); there is no behaviour to test", lifted_by: ubuntu}
+    uncovered:
+      why: the parameter is declared but no code uses it, so it has no behaviour to test
+      lifted_by: "capability: an implementation of client_isolation in the class (the class's own warning: still to be implemented)"
+      evidence: >-
+        manifests/firewall_addon_openvpn_server.pp (2026-11-23): client_isolation appears only in its declaration
+        (line 13) and the class's own warning; no resource or condition reads it
 checks:
   - id: forward-bridge-to-wan
     what: FORWARD accepts traffic from the LAN bridge interface out of the WAN interface (rule 202)
