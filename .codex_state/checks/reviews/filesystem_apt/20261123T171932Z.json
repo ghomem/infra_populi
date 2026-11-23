@@ -1,0 +1,37 @@
+{
+ "class": "filesystem_apt",
+ "at": "20261123T171932Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-full-update-script-leaves-nothing-to-upgrade: files/apt/apt-update-dist.sh (whole file, sha256 c240c676) runs 'apt-get -y -o DPkg::Options::=--force-confdef -o DPkg::Options::=--force-confold dist-upgrade' with DEBIAN_FRONTEND=noninteractive; the action runs the installed script as an operator would, and the read-only effect reads its exit code and a fresh 'apt-get -s dist-upgrade' summary expecting 0 upgraded/0 not upgraded, which is what a completed dist-upgrade leaves. mutates declares the dist-upgrade and the result file",
+  "the-wrapper-never-installs-a-missing-package: manifests/filesystem_apt.pp:23 ('wrapper for apt-get install the avoid undesired installs') plus apt-update-pkg.sh, whose check_installed (dpkg -s) failing prints 'package $PKGNAME not installed' and exits RC_ERR=1 before any apt-get install; the action calls the wrapper on cowsay (not installed on the node) and the effect reads that exact message, rc=1, and dpkg's installed count 0 for cowsay. Probe and expect match the script",
+  "the-daily-job-lists-relevant-updates: manifests/filesystem_apt.pp:149-155 install apt-check-updates.sh from apt-check-updates-v2.sh.erb, which downloads com.ubuntu.<codename>.usn.oval.xml.bz2, evaluates it with oscap and calls get-relevant-updates-list -of <update_cache_dir>/list (106-107: /var/lib/apt-check-updates) -pt <threshold>; the action runs it with High as the cron does (163-176 default), the effect checks rc 0, the list file written one name per line, at least one entry, and every entry installed below its candidate (the tool lists installed dpkginfo_items of true High+ definitions). Matches the code under the defaults fixture",
+  "correction-round check the-no-kernel-job-lists-no-kernel-package (variant nokernel, params {relevant_updates_no_kernel: true}), read against the baseline: manifests/filesystem_apt.pp:139-144 set apt_check_updates_no_kernel=1, the template (103-104, 110) then appends --no-kernel to the get-relevant-updates-list command, and the tool (10-13, 236-238) skips names starting with 'linux' and amd64/intel-microcode. The probe traces the installed job under sh -x (the expanded '$COMMAND' line must end in --no-kernel) and feeds the installed tool a results fixture whose element layout matches the tool's parser (oval_definitions/definitions/definition with advisory severity High; results/system/definitions with a true criterion; collected_objects variable_values; system_data dpkginfo_item names). It expects all three packages without the flag and only p8test-tool with it, which is what lines 236-238 produce. My run: 'the job passes --no-kernel: 1', without = intel-microcode linux-image-p8test p8test-tool, with = p8test-tool; it failed on the clean node",
+  "finding no-kernel-and-a-custom-surface-list (variant custom): reproduced. NO_KERNEL=\"1\" as expected, but the probe saw SURFACE=\"[\"vim\", \"less\"]\" where \"vim less\" was expected. Baseline manifests/filesystem_apt.pp:59-61 assign the Array parameter unjoined (the default lists are join()ed at 52-58), and apt-update-surface.sh.erb:5 renders it with Array#to_s. This is an upstream defect in the baseline-identical code, not a derivation error",
+  "purpose covered: The purpose (apt update tooling for Ubuntu 24.04 servers: the never-install wrapper; surface, kernel and full update scripts; a daily OVAL/openscap job listing High+ updates; a script installing that list) matches the baseline manifest's header and code. My run tested every part of it on the node. The base run: scripts installed root 0755 (static ones byte for byte), openscap-scanner, the cache directory, the cron line (00:00, High); the wrapper refuses a missing package and upgrades an outdated one; the surface script upgrades an outdated server-surface package; the job, run as cron runs it, writes a non-empty list of outdated installed packages from Canonical's OVAL data; apt-update-relevant.sh installs that list and a planted entry; the kernel metapackage ends at its candidate; dist-upgrade leaves nothing pending. Variants: desktop (desktop list and compatibility link), method0 (no relevant-updates scripts), custom (NO_KERNEL line and the custom-list finding). The earlier gap, relevant_updates_no_kernel's effect, is now covered by nokernel. It shows that the installed job hands --no-kernel to the tool, and that the installed tool drops linux*/microcode packages from a High issue only with that flag. A synthetic results file stands in for real data, justified in the header by the measurement that Canonical's OVAL data marks no kernel package on the node at any priority. Left out honestly: the Hiera prio_threshold/checkhour/checkmin keys (uncovered, lifted_by capability: a Hiera variant per run; phase3.py variants vary only node and params) and the 20.04/22.04 libopenscap8 branch (excluded by the purpose's target release; no such node)"
+ ],
+ "review_s": 1103.2,
+ "check_file_sha256": "e64270fd731b1f5a26b618e585f0a8945faddc6f6c5d959a0e686d777d4be08f",
+ "content_sha256": "e64270fd731b1f5a26b618e585f0a8945faddc6f6c5d959a0e686d777d4be08f",
+ "reviewer_result": "20261123T170109Z-reviewer",
+ "author_result": "20261123T164325Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "c8ffb4b2-dd1b-4877-9c90-e3448e2266ea",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "c8ffb4b2-dd1b-4877-9c90-e3448e2266ea",
+   "fresh": true
+  }
+ }
+}
