@@ -384,3 +384,23 @@ def test_an_unreadable_daemon_log_fails_closed(lab):
     daemon_log(lab, "", rc=1)
     proc = harness(lab)
     assert proc.returncode == 1 and "between-runs gate fails closed" in proc.stderr
+
+
+def test_zero_coverage_is_green_only_for_a_params_variant_that_declares_nothing(lab, tmp_path):
+    """HQ 2026-11-23 ruling 1a: a Phase 3 params variant with no_resources (its class declares nothing)."""
+    home = tmp_path / "home"
+    variant = home / ".config" / "infra_populi" / "params" / "variants" / "none"
+    variant.mkdir(parents=True)
+    (variant / "puppet_infrastructure::puppet_backup.json").write_text("{}\n")
+    agent_runs(lab, *CLEAN)
+    lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "rc": 3, "stdout":
+        "COVERAGE puppet_infrastructure::puppet_backup: 0 concrete resources (+0 defined-type instances)\n"})
+    env = {"HOME": str(home), "P8_PARAMS_VARIANT": "none"}
+    proc = lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"], env={**env, "P8_VARIANT_NO_RESOURCES": "1"})
+    assert proc.returncode == 0, proc.stderr
+    assert "COVERAGE: no concrete resources, as the params variant none declares (no_resources)" in proc.stdout
+    assert "GREEN_STAMP: none (a Phase 3 variant run" in proc.stdout
+    lab.world["ssh"][0]["_i"] = 0
+    agent_runs(lab, *CLEAN)
+    proc = lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"], env=env)  # no opt-in: still RED
+    assert proc.returncode == 1 and "no concrete resources" in proc.stderr

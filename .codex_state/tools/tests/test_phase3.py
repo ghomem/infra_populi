@@ -1190,7 +1190,8 @@ def p3v(p3, tmp_path):
     (params / "variants" / "strict").mkdir(parents=True)
     (params / "variants" / "strict" / f"puppet_infrastructure::{CLS}.json").write_text('{"strict": true}\n')
     harness = tmp_path / "harness.sh"
-    harness.write_text("#!/bin/sh\necho \"harness $* params=${P8_PARAMS_VARIANT:-}\" >> \"$(dirname \"$0\")/log\"\n"
+    harness.write_text("#!/bin/sh\necho \"harness $* params=${P8_PARAMS_VARIANT:-}${P8_VARIANT_NO_RESOURCES:+ nores}\" "
+                       ">> \"$(dirname \"$0\")/log\"\n"
                        "echo 'NODE_FRESH: yes (boot x)'\necho 'GREEN: run 2 exited 0 with no change events (gate v2).'\n")
     labvm = tmp_path / "labvm.sh"
     labvm.write_text("#!/bin/sh\necho \"labvm $*\" >> \"$(dirname \"$0\")/log\"\n")
@@ -1207,6 +1208,8 @@ def p3v(p3, tmp_path):
     (lambda d: d["variants"][0].update(why="short"), "why (>= 20 characters)"),
     (lambda d: d["checks"][2].update(control="invariant", why_invariant="x"), "variant strict: needs >= 1 negative"),
     (lambda d: d.pop("variants"), "names no variant"),
+    (lambda d: d["variants"][0].update(no_resources=True), "no_resources is `true`, for a params variant"),
+    (lambda d: d["variants"][1].update(no_resources="yes"), "no_resources is `true`, for a params variant"),
 ])
 def test_bad_variants_are_refused(p3v, mutate, message):
     data = variant_set()
@@ -1281,3 +1284,13 @@ def test_an_accepted_gap_is_only_a_variant_no_production_node_sets(tmp_path, mon
     used = phase3.uncovered_problems({**row, "accepted_gap": ["lan_iface"]}, "o", True,
                                      "firewall_addon_caching_nameserver")
     assert used and "production sets lan_iface on 4 node statement(s)" in used[0]
+
+
+def test_a_no_resources_variant_tells_the_harness(p3v):
+    data = variant_set()
+    data["variants"][1]["no_resources"] = True
+    p3v.write(data)
+    for marker in ("probe-conf", "probe-rhel", "probe-strict"):
+        p3v.probe_rule(marker, FAIL, OK)
+    assert p3v.run("run", CLS, P8_PHASE3_LABVM=str(p3v.labvm)).returncode == 0
+    assert f"harness --node ubuntu puppet_infrastructure::{CLS} params=strict nores" in p3v.log.read_text().splitlines()

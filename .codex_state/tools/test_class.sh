@@ -555,6 +555,11 @@ PY
 )" && rc=0 || rc=$?
   echo "$report"
   COVERAGE_REPORT="$report"
+  if [[ $rc -eq 3 && -n "${P8_PARAMS_VARIANT:-}" && "${P8_VARIANT_NO_RESOURCES:-}" == 1 ]]; then
+    # HQ 2026-11-23 ruling 1a: a Phase 3 params variant whose behaviour is to declare nothing (no_resources: true)
+    echo "COVERAGE: no concrete resources, as the params variant ${P8_PARAMS_VARIANT} declares (no_resources)"
+    return 0
+  fi
   [[ $rc -ne 3 ]] || die "Coverage: a target has no concrete resources in the applied catalog (body skipped by a conditional? wrong fixture?)."
   [[ $rc -eq 0 ]] || die "Coverage check could not read the node's cached catalog (exit ${rc})."
 }

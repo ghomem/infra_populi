@@ -63,6 +63,8 @@ Check file .codex_state/checks/<class>.yml:
       why: <why this run exists (>= 20 characters)>  #   one result file; the result's outcome combines them all
       node: <another active node kind>               # the run's lab node (default: the plan's node), and/or
       params: <slug>              # the run's params fixture: params/variants/<slug>/puppet_infrastructure::<class>.json
+      no_resources: true          # optional, with params: the variant's class declares nothing (the harness's coverage
+                                  #   gate then reports the empty target instead of failing)
       # A check with `variant: <name>` runs only in that run (and needs >= 1 negative control there); a check without
       # it runs in the base run only. Variant runs have no peer, session or agent blocks.
   checks:
@@ -648,7 +650,7 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
     return problems, data, raw
 
 
-VARIANT_KEYS = {"name", "why", "node", "params"}
+VARIANT_KEYS = {"name", "why", "node", "params", "no_resources"}
 
 
 def variant_params(cls: str, name: str) -> Path:
@@ -685,6 +687,8 @@ def variant_problems(cls: str, data: dict, checks: list) -> list[str]:
                 out.append(f"{where}: node {kind!r} is not an active node kind (nodes.yml)")
             elif kind == plan_node and "params" not in v:
                 out.append(f"{where}: node {kind} is the plan's own node; a variant there needs params")
+        if "no_resources" in v and (v["no_resources"] is not True or "params" not in v):
+            out.append(f"{where}: no_resources is `true`, for a params variant whose class declares nothing")
         if "params" in v:
             if not SLUG.fullmatch(str(v["params"])):
                 out.append(f"{where}: params must be a slug")
@@ -1138,6 +1142,8 @@ def run_variants(cls: str, data: dict, record: dict) -> None:
             NODE = node["alias"]
             HARNESS_ARGS = ["--node", node["kind"]]
             HARNESS_ENV = {"P8_PARAMS_VARIANT": v["params"]} if "params" in v else {}
+            if v.get("no_resources"):
+                HARNESS_ENV["P8_VARIANT_NO_RESOURCES"] = "1"
             print(f"==> VARIANT {v['name']}: node {node['kind']}" + (f", params {v['params']}" if "params" in v else ""))
             vdata = {k: val for k, val in data.items() if k not in ("peer", "session", "node_agent", "peer_agent")}
             vdata["checks"] = [c for c in data["checks"] if c.get("variant") == v["name"]]
