@@ -1,0 +1,35 @@
+{
+ "class": "node_base_domain_desktop",
+ "at": "20261123T034707Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "ssh-hardened-but-password-login-allowed (ssh_secure.pp:10): the baseline default kex_algorithm 'diffie-hellman-group-exchange-sha256', which the profile does not override, is passed as KexAlgorithms (ssh_secure.pp:59); sshd -T expecting exactly that single kexalgorithms value tests it",
+  "apt-helpers-in-desktop-mode (filesystem_apt.pp:53-58): with the default empty apt_surface_list and the profile's server_mode => false, _apt_surface_list joins apt_surface_desktop (firefox, no nginx-core or postfix), and the template writes it to SURFACE=\"...\" (apt-update-surface.sh.erb:5). The probe reading SURFACE and expecting firefox listed and nginx-core/postfix not listed tests that selection",
+  "ssh-hardened-but-password-login-allowed (ssh_secure.pp:66): the profile passes password_authentication => true (node_base_domain_desktop.pp:10), which lines 43-47 map to 'yes', so PasswordAuthentication yes; sshd -T expecting 'passwordauthentication yes' tests it",
+  "purpose gap: Covered: the checks test SSH hardened with password logins (sshd -T), unattended-upgrades kept, firewall_secure's IPv4 policy, whitelist and limit chain, the IPv6 INPUT/FORWARD drop rules 600/601, the filesystem_base_desktop directories, the desktop-mode APT surface list and link, a running ntp unit, and puppet.service enabled and active. Reviewer run 20261123T034314Z: ALL_PASS, every control valid on the clean node. GAP: the outcome 'the puppet agent daemon running on its interval' is still 'uncovered' with a reason that is no longer true. why = 'the lab uses a stand-in unit body'; evidence = 'node fixture puppet_agent_standin (status.py --standins: node_base_domain_desktop)'; lifted_by = 'capability: a harness mode that tolerates a running agent daemon'. That capability now exists: the tracker marker lost mock-apply in f60a1af ('stand-in lifted: the harness tolerates the running agent daemon'), status.py --standins no longer lists the class, and the author's own run 20261123T033108Z and this reviewer run applied with no stand-in. On the node after this run, puppet.service has no drop-in directory, ExecStart is '/opt/puppetlabs/puppet/bin/puppet agent $PUPPET_EXTRA_OPTS --no-daemonize', the MainPID process is 'puppet agent --no-daemonize', and runinterval is 1800. So the lab CAN now test the daemon outcome, for example by checking that the unit's main process is the real 'puppet agent' daemon (not a sleep), or that a run happens after the service starts, but no check does. The set also still describes the stand-in: the header says 'MOCK-APPLY for Service[puppet]: node fixture puppet_agent_standin', and puppet-service-enabled-and-running says 'stand-in unit body in the lab'. Fix: a check on the real agent daemon, with that outcome mapped to it and the stale stand-in text removed."
+ ],
+ "review_s": 234.0,
+ "check_file_sha256": "02c2c3bb1fcc40b5a422be79374fd1ce7950b92541debfb4c1985787c703a467",
+ "content_sha256": "02c2c3bb1fcc40b5a422be79374fd1ce7950b92541debfb4c1985787c703a467",
+ "reviewer_result": "20261123T034314Z-reviewer",
+ "author_result": "20261123T033108Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "e52d023c-2585-47c8-bc63-a3398f67023c",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "e52d023c-2585-47c8-bc63-a3398f67023c",
+   "fresh": true
+  }
+ }
+}
