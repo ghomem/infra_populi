@@ -1,0 +1,35 @@
+{
+ "class": "rsyslog_base",
+ "at": "20261123T180038Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-agent-run-restores-the-file-and-restarts-rsyslog-once: manifests/rsyslog_base.pp:49-55 copy ca.pem from ${ssldir}/certs/ca.pem, which with the fixture's ssldir_override /etc/puppetlabs/puppet/ssl is the file the effect compares against (cmp -> ca-restored after the hand-appended line); the 'restarted once' half rests on line 73's comment and local change #1 (the service now subscribes to the three TLS files, current manifest line 80), so a new main PID and exactly one 'Started rsyslog.service' after the noted journal cursor is what the code produces; the action is 'true' and the effect only reads state",
+  "the-tls-directory-drifts: manifests/rsyslog_base.pp:41-47 declare /etc/rsyslog.d/tls as a directory with mode 0755; the setup chmods it 0700 and notes rsyslog's MainPID under /run/p8test-rsyslog (both declared in mutates); the effect reads the mode back with stat (the action's result on the file, not its output) and the PID file's presence, which the following check needs to show the restart through subscribe at 73-80",
+  "rsyslog-can-read-the-key-as-the-user-it-runs-as: manifests/rsyslog_base.pp:65-71 copy the private key owner syslog, group syslog, mode 0600; runuser -u syslog openssl pkey reading it is what that ownership allows, with Ubuntu's PrivDropToUser syslog and rsyslogd's process user read as context; the mismatch changes only the user to nobody, which the 0600 syslog ownership must refuse, and it failed after apply in my run",
+  "purpose covered: My run 20261123T175541Z-reviewer is ALL_PASS on both runs (default ubuntu, variant rhel on rhel9), all 10 negatives failing on the clean nodes. Tested: rsyslog and rsyslog-gnutls installed with the gtls driver, rsyslog active and enabled; the CA, certificate and key copied byte for byte from the override ssldir, syslog-owned with key 0600, the certificate verifying against the copied CA (mismatch: the system bundle fails); the syslog user rsyslog drops to reads the key, nobody cannot; a stopped rsyslog (socket too) runs again after the agent run; a TLS-directory drift is restored and restarts rsyslog; a changed CA file is restored and restarts rsyslog exactly once (local change #1); on rhel9 the syslog group and user with ids 0 exist, the TLS files are the Puppet identity byte for byte owned 0:0 with key 0600, and rsyslog runs as root (this closes the secondary point of review 20261123T174701Z). The one uncovered row, the default arm undef => '/var/lib/puppet/ssl' of 32-35, is honest and its evidence holds: master_fixtures.sh:144 binds puppet_infrastructure::rsyslog_base::ssldir_override to /etc/puppetlabs/puppet/ssl in the lab Hiera for every run, and rsyslog_client passes its undef through, so automatic lookup always wins; phase3.py variant_problems allows a variant to vary only node and params, so no run can reach the undef arm; I confirmed through lab_exec that /var/lib/puppet/ssl does not exist on puppet8node and that the agent's ssldir is /etc/puppetlabs/puppet/ssl (every active node kind is an OpenVox agent per nodes.yml). The counts it cites match diagnosis/fleet_variant_usage.md lines 110 and 113-114 (1 on rsyslog_base, 1 of 36 rsyslog_client statements). lifted_by names a capability, not an active node kind. What production would get, copies with no source on an OpenVox agent, is recorded as documentation_list.md cutover row 10 for HQ to confirm. No part of the purpose that the lab can exercise is left untested."
+ ],
+ "review_s": 297.2,
+ "check_file_sha256": "9dafb885219119daac9cbf02bc3b10d27645eae712ac9a9ad34417ec0400c25a",
+ "content_sha256": "9dafb885219119daac9cbf02bc3b10d27645eae712ac9a9ad34417ec0400c25a",
+ "reviewer_result": "20261123T175541Z-reviewer",
+ "author_result": "20261123T175016Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "6c939dcb-3dac-4522-9f10-511fafe4be89",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "6c939dcb-3dac-4522-9f10-511fafe4be89",
+   "fresh": true
+  }
+ }
+}
