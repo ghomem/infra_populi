@@ -10,7 +10,8 @@ class the node declares sets it, or a puppet_infrastructure composite the node (
 parameter the node sets to it (`component_param => $composite_param`). Only parameter NAMES are read; values are
 never recorded. Production = every group of the fleet except deleted/ and tests/; the passwd/ layer is never read
 (off-limits), so a class whose production declarations live there (the diagnosis's list) is `undeterminable`, not 0.
-Sources: P8_FLEET_DIR (default ~/work/puppet-nodes), P8_COMPANY_DIR (default ~/work/meaningful_puppet), the
+Values a class reads from Hiera (lookup(), or a parameter defaulting to one) are not seen: the fleet's Hiera data is
+not among the sources, so a parameter absent here may still be set there. Sources: P8_FLEET_DIR (default ~/work/puppet-nodes), P8_COMPANY_DIR (default ~/work/meaningful_puppet), the
 repository's own manifests (composites).
 """
 

@@ -339,6 +339,9 @@ def accepted_gap_problems(cls: str, u: dict, where: str) -> list[str]:
     for g in gap:
         if not re.search(rf"\${g}\b", text):
             out.append(f"{where}: accepted_gap: {g} is not a parameter of manifests/{cls}.pp")
+        elif re.search(rf"\${g}\s*=\s*lookup\(", text):
+            out.append(f"{where}: accepted_gap: {g} defaults to a Hiera lookup(), which production may set in Hiera, "
+                       "and fleet_variant_usage.md reads node files only (undeterminable)")
         elif counts.get(g, "0") != "0":
             out.append(f"{where}: accepted_gap: production sets {g} on {counts[g]} node statement(s) "
                        "(fleet_variant_usage.md): a variant production uses becomes a check")

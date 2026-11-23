@@ -1270,6 +1270,8 @@ def test_an_accepted_gap_is_only_a_variant_no_production_node_sets(tmp_path, mon
     assert used and "production sets strict on 3 node statement(s)" in used[0]
     bogus = phase3.uncovered_problems({**row, "accepted_gap": ["no_such_param"]}, "o", True, "firewall_secure")
     assert bogus and "not a parameter of manifests/firewall_secure.pp" in bogus[0]
+    hiera = phase3.uncovered_problems({**row, "accepted_gap": ["whitelist"]}, "o", True, "firewall_secure")
+    assert hiera and "Hiera lookup()" in hiera[0]
     passwd = phase3.uncovered_problems({**row, "accepted_gap": ["shell"]}, "o", True, "user_base")
     assert passwd and "undeterminable" in passwd[0]
     shape = phase3.uncovered_problems({"why": row["why"], "accepted_gap": ["strict_purge"]}, "o", True,
