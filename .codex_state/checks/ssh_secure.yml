@@ -18,6 +18,19 @@
 # the lab's own silent SSH session to the node (exit 255), so the params fixture moved from 10 to 30 s (room for the
 # harness's agent runs), and the idle check runs its test session detached, 60 s silent, with the probe printing while
 # it waits; it now also checks the session ended within 30 to 45 s, not merely at some point.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): the RedHat branch and the older sshd's idle behaviour are checks in
+# the variant run `rhel` (rhel9); the Protocol 2 row names what is missing.
+# 2026-11-23 authoring correction (sweep run 20261123T123442Z-author): the idle session ended, measured 29 s, under the
+# window's 30 s floor. The window's floor does not allow for whole-second clocks: sshd keeps a channel's last use and
+# checks its deadline in whole seconds (OpenSSH's monotime() returns time_t), so it may end the session up to 1 s before
+# 30 s of real idle time, and the probe's start and end (`date +%s`) are whole seconds too; together the measured value
+# is at least 29. The floor is now 29 s; it still tells an idle timeout from a session refused or cut at once.
+# 2026-11-23 second authoring correction (sweep re-run 20261123T142843Z-author): with the 29 s floor the session ended,
+# measured 28 s, so whole seconds did not explain it. The probe timed the session by the wall clock, and on this uplink
+# the clean node's timesyncd steps that clock by about a second at each 32 s poll (measured 2026-11-23: offset
+# -1.145530 s, jitter 427.644 ms, delay 196.258 ms to ntp.ubuntu.com); a backward step shortens a wall-clock interval.
+# Both idle probes (Ubuntu and the rhel variant) now time the session by the monotonic clock (/proc/uptime, one decimal)
+# and record the wall-clock seconds beside it; the 29 s floor stays for sshd's whole-second deadline.
 class: ssh_secure
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -41,7 +54,7 @@ outcomes:
     checks: [client-alive, login-test-accounts-and-key, an-idle-session-is-ended-after-the-interval]
   - outcome: on an sshd older than 9.2 (RHEL 9) the idle disconnect is not enforced (HQ batch-14 ruling 3; approval_conditions.md)
     from: manifests/ssh_secure.pp:5, 75-76
-    uncovered: {why: "an sshd without ChannelTimeout/UnusedConnectionTimeout; this set runs on Ubuntu 24.04 (OpenSSH 9.6)", lifted_by: rhel9}
+    checks: [rhel-login-account-and-key, on-redhat-an-idle-session-is-not-ended]
   - outcome: the host keys are offered in the given order, and the class's own moduli file is used
     from: manifests/ssh_secure.pp:9, 26-33, 58
     checks: [host-keys-in-order, moduli-file]
@@ -50,10 +63,21 @@ outcomes:
     checks: [unchanged-hardening-defaults]
   - outcome: Protocol 2 and UsePrivilegeSeparation yes
     from: manifests/ssh_secure.pp:57, 77
-    uncovered: {why: "deprecated and ignored by OpenSSH 7.5 and later (the node runs 9.6p1), so they have no behaviour to test (Phase 5 backlog #3)", lifted_by: ubuntu}
+    uncovered:
+      why: deprecated and ignored by OpenSSH 7.5 and later, so they have no behaviour on any lab sshd (Phase 5 backlog #3)
+      lifted_by: "capability: an OpenSSH older than 7.5 in the lab"
+      evidence: >-
+        sshd -V on the lab nodes (2026-11-23 runs): OpenSSH 9.6p1 on Ubuntu 24.04 and OpenSSH 8.7p1 on RHEL 9; both
+        ignore Protocol and UsePrivilegeSeparation
   - outcome: the RedHat branch (service sshd, admin group wheel)
     from: manifests/ssh_secure.pp:15-19
-    uncovered: {why: "the RedHat branch; this set runs on the plan's Ubuntu node", lifted_by: rhel9}
+    checks: [on-redhat-the-service-and-the-admin-group]
+variants:
+  - name: rhel
+    why: >-
+      the RedHat branch (service sshd, admin group wheel) and an sshd older than 9.2 (OpenSSH 8.7), on the rhel9 node
+      with the set's own params fixture
+    node: rhel9
 checks:
   - id: kex-only-dh-gex-sha256
     what: the effective KexAlgorithms is exactly diffie-hellman-group-exchange-sha256
@@ -300,7 +324,7 @@ checks:
 
   - id: an-idle-session-is-ended-after-the-interval
     what: >-
-      a session that sends nothing for 60 s is ended by the server once the 30 s interval has passed (30 to 45 s; sshd's
+      a session that sends nothing for 60 s is ended by the server once the 30 s interval has passed (29 to 45 s as measured; sshd's
       idle timeouts from client_alive_interval, local change #8), so its remote command never prints
     control: negative
     timeout: 180
@@ -313,12 +337,69 @@ checks:
     probe: |
       rm -f /run/p8test-ssh/idle.txt
       cat > /run/p8test-ssh/idle.sh <<'T'
-      start=$(date +%s)
+      start=$(cut -d' ' -f1 /proc/uptime); wall=$(date +%s)
       out=$(timeout 90 ssh -n -i /run/p8test-ssh/key -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=0 p8testin@127.0.0.1 'sleep 60; echo still-connected' 2>/dev/null)
-      echo "${out:-ended} after $(( $(date +%s) - start ))s" > /run/p8test-ssh/idle.txt
+      echo "${out:-ended} after $(awk -v s="$start" '{printf "%.1f", $1 - s}' /proc/uptime)s (wall clock $(( $(date +%s) - wall ))s)" > /run/p8test-ssh/idle.txt
       T
       systemd-run --unit p8test-ssh-idle -q bash /run/p8test-ssh/idle.sh
       for i in $(seq 30); do [ -s /run/p8test-ssh/idle.txt ] && break; echo waiting; sleep 5; done
     effect: |
-      awk '{t=$3; sub(/s$/, "", t); print $1 " " ((t + 0 < 30 || 45 < t + 0) ? "after " t "s" : "within the interval window")}' /run/p8test-ssh/idle.txt
+      awk '{t=$3; sub(/s$/, "", t); print $1 " " ((t + 0 < 29 || 45 < t + 0) ? "after " t "s" : "within the interval window")}' /run/p8test-ssh/idle.txt
     expect: {rc: 0, stdout: "\\Aended within the interval window\\n\\Z"}
+
+  - id: on-redhat-the-service-and-the-admin-group
+    variant: rhel
+    what: on RedHat the service sshd runs and AllowGroups starts with the RedHat admin group wheel, then naemon
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "15-19", text: "$admin_group = 'wheel'"}
+      - {path: manifests/ssh_secure.pp, lines: "79", text: "'AllowGroups'             => \"${admin_group} naemon ${othergroups}\" ,"}
+    probe: |
+      systemctl is-active sshd
+      sshd -T 2>/dev/null | awk '$1 == "allowgroups" { for (i = 2; i <= NF; i++) print $i }' | head -2
+    expect: {rc: 0, stdout: "\\Aactive\\nwheel\\nnaemon\\n\\Z"}
+
+  - id: rhel-login-account-and-key
+    variant: rhel
+    what: setup for the idle check on RedHat, the fixture account p8testin in ssh_in with one throwaway key
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "35-38", text: "group {'ssh_in':"}
+    mutates: >-
+      creates /run/p8test-ssh/key (an ed25519 key pair) and the account p8testin (in ssh_in) with that key in
+      ~/.ssh/authorized_keys
+    probe: |
+      install -d -m 0700 /run/p8test-ssh
+      [ -f /run/p8test-ssh/key ] || ssh-keygen -q -t ed25519 -N '' -f /run/p8test-ssh/key
+      id p8testin >/dev/null 2>&1 || useradd -m -s /bin/bash p8testin
+      install -d -m 0700 -o p8testin -g p8testin /home/p8testin/.ssh
+      install -m 0600 -o p8testin -g p8testin /run/p8test-ssh/key.pub /home/p8testin/.ssh/authorized_keys
+      usermod -aG ssh_in p8testin
+    effect: |
+      id -nG p8testin | tr ' ' '\n' | p8_count '^ssh_in$'
+    expect: {rc: 0, stdout: "\\A1\\n\\Z"}
+
+  - id: on-redhat-an-idle-session-is-not-ended
+    variant: rhel
+    what: >-
+      on RHEL 9 (OpenSSH 8.7, older than 9.2) a session that sends nothing for 60 s is not ended by the server: the
+      idle disconnect is not enforced there (HQ batch-14 ruling 3; approval_conditions.md), so its command prints
+    control: negative
+    timeout: 180
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "75-76", text: "'ClientAliveInterval'     => $client_alive_interval,"}
+    mutates: >-
+      one SSH session over loopback as p8testin, idle for 60 s, run detached as transient unit p8test-ssh-idle; the
+      outcome goes to /run/p8test-ssh/idle.txt, and the probe prints a line every 5 s while it waits
+    probe: |
+      rm -f /run/p8test-ssh/idle.txt
+      cat > /run/p8test-ssh/idle.sh <<'T'
+      start=$(cut -d' ' -f1 /proc/uptime); wall=$(date +%s)
+      out=$(timeout 90 ssh -n -i /run/p8test-ssh/key -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=0 p8testin@127.0.0.1 'sleep 60; echo still-connected' 2>/dev/null)
+      echo "${out:-ended} after $(awk -v s="$start" '{printf "%.1f", $1 - s}' /proc/uptime)s (wall clock $(( $(date +%s) - wall ))s)" > /run/p8test-ssh/idle.txt
+      T
+      systemd-run --unit p8test-ssh-idle -q bash /run/p8test-ssh/idle.sh
+      for i in $(seq 30); do [ -s /run/p8test-ssh/idle.txt ] && break; echo waiting; sleep 5; done
+    effect: |
+      cut -d' ' -f1 /run/p8test-ssh/idle.txt
+    expect: {rc: 0, stdout: "\\Astill-connected\\n\\Z"}
