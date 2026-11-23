@@ -116,6 +116,11 @@ read `.codex_state/checks/results/<class>/*-author.*`: the verdict tool compares
    WHOLE manifest, its templates and files, and its header comments) in it; does each mapped check really probe its
    outcome; is each `uncovered` reason true? Check the purpose
    against the class's own header comments and baseline code (`baseline.py show --for <class> manifests/<class>.pp`).
+   A set may declare `variants` (HQ 2026-11-23 ruling 1a): more runs of the same set, each with its own node kind
+   and/or params fixture; the run's result holds each under `variants`, with its own clean and applied phases. Judge
+   every run, base and variants, the same way. An `uncovered` row with `accepted_gap` (ruling 1c) is a parameter
+   variant no production node statement sets: the validator checked the count in diagnosis/fleet_variant_usage.md;
+   you judge that the row really is that parameter's variant and that nothing the lab can test hides behind it.
    Then judge: do the checks, taken together, test that purpose (the class doing its job: a service answering, a user
    able to log in, a backup restorable, a rule blocking), or only that files and packages exist? `covered` when every
    part of the purpose the lab can exercise is tested, and every part it cannot is listed honestly under `uncovered`

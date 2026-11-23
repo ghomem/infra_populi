@@ -1170,3 +1170,108 @@ def test_an_approved_set_with_new_form_rows_stays_valid(p3):
     proc = p3.run("validate", CLS)
     assert proc.returncode == 0, proc.stderr
     assert "SWEEP" not in proc.stdout
+
+
+# ------------------------------------------------------------------ variants (HQ 2026-11-23 ruling 1a)
+
+VARIANTS = [{"name": "on-rhel", "why": "the RedHat branch, on the rhel9 node", "node": "rhel9"},
+            {"name": "strict", "why": "the strict parameter variant, on the plan's node", "params": "strict"}]
+
+
+def variant_set(*extra_checks):
+    return check_set(check("conf", "probe-conf"), check("conf-rhel", "probe-rhel", variant="on-rhel"),
+                     check("conf-strict", "probe-strict", variant="strict"), *extra_checks,
+                     variants=copy.deepcopy(VARIANTS))
+
+
+@pytest.fixture
+def p3v(p3, tmp_path):
+    params = tmp_path / "home" / ".config" / "infra_populi" / "params"
+    (params / "variants" / "strict").mkdir(parents=True)
+    (params / "variants" / "strict" / f"puppet_infrastructure::{CLS}.json").write_text('{"strict": true}\n')
+    harness = tmp_path / "harness.sh"
+    harness.write_text("#!/bin/sh\necho \"harness $* params=${P8_PARAMS_VARIANT:-}\" >> \"$(dirname \"$0\")/log\"\n"
+                       "echo 'NODE_FRESH: yes (boot x)'\necho 'GREEN: run 2 exited 0 with no change events (gate v2).'\n")
+    labvm = tmp_path / "labvm.sh"
+    labvm.write_text("#!/bin/sh\necho \"labvm $*\" >> \"$(dirname \"$0\")/log\"\n")
+    labvm.chmod(0o755)
+    p3.labvm = labvm
+    return p3
+
+
+@pytest.mark.parametrize("mutate, message", [
+    (lambda d: d["checks"][1].update(variant="nope"), "variant 'nope' is not declared"),
+    (lambda d: d["variants"][0].update(node="nosuchkind"), "is not an active node kind"),
+    (lambda d: d["variants"][1].update(params="missing"), "params missing but"),
+    (lambda d: d["variants"][1].pop("params"), "needs node and/or params"),
+    (lambda d: d["variants"][0].update(why="short"), "why (>= 20 characters)"),
+    (lambda d: d["checks"][2].update(control="invariant", why_invariant="x"), "variant strict: needs >= 1 negative"),
+    (lambda d: d.pop("variants"), "names no variant"),
+])
+def test_bad_variants_are_refused(p3v, mutate, message):
+    data = variant_set()
+    mutate(data)
+    p3v.write(data)
+    proc = p3v.run("validate", CLS)
+    assert proc.returncode != 0 and message in proc.stderr, proc.stderr
+
+
+def test_variants_run_on_their_node_with_their_params_in_one_result(p3v, lab):
+    p3v.write(variant_set())
+    for marker in ("probe-conf", "probe-rhel", "probe-strict"):
+        p3v.probe_rule(marker, FAIL, OK)
+    proc = p3v.run("run", CLS, P8_PHASE3_LABVM=str(p3v.labvm))
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    record, xml = p3v.result()
+    assert record["outcome"] == "ALL_PASS"
+    assert [r["id"] for r in record["applied"]] == ["conf"]
+    assert {n: [r["id"] for r in v["applied"]] for n, v in record["variants"].items()} == \
+        {"on-rhel": ["conf-rhel"], "strict": ["conf-strict"]}
+    assert record["variants"]["on-rhel"]["node"] == "rhel9" and record["variants"]["strict"]["params"] == "strict"
+    assert p3v.log.read_text().splitlines() == [
+        "reverted", f"harness puppet_infrastructure::{CLS} params=",
+        "reverted", f"harness --node rhel9 puppet_infrastructure::{CLS} params=", "labvm stop p8lab-rhel9",
+        "reverted", f"harness --node ubuntu puppet_infrastructure::{CLS} params=strict"]
+    hosts = {c[-2] for c in lab.calls("ssh") if c[-1] == "sudo -n bash -s"}
+    assert hosts == {"puppet8node", "p8lab-rhel9"}
+    assert [s.get("name") for s in xml.iter("testsuite")] == [
+        f"phase3.{CLS}.clean", f"phase3.{CLS}.applied", f"phase3.{CLS}.on-rhel.clean", f"phase3.{CLS}.on-rhel.applied",
+        f"phase3.{CLS}.strict.clean", f"phase3.{CLS}.strict.applied"]
+    assert all(o.get("passed") for o in record["outcomes"])
+
+
+def test_a_finding_in_a_variant_run_is_the_result_outcome(p3v):
+    p3v.write(variant_set())
+    p3v.probe_rule("probe-conf", FAIL, OK)
+    p3v.probe_rule("probe-rhel", FAIL, FAIL)
+    p3v.probe_rule("probe-strict", FAIL, OK)
+    proc = p3v.run("run", CLS, P8_PHASE3_LABVM=str(p3v.labvm))
+    assert proc.returncode == 1
+    record, _ = p3v.result()
+    assert record["outcome"] == "FINDINGS" and record["variants"]["on-rhel"]["findings"] == ["conf-rhel"]
+    assert record["findings"] == [] and record["variants"]["strict"]["outcome"] == "ALL_PASS"
+
+
+# ------------------------------------------------------------------ accepted gaps (HQ 2026-11-23 ruling 1c)
+
+def test_an_accepted_gap_is_only_a_variant_no_production_node_sets(tmp_path, monkeypatch):
+    import sys
+    sys.path.insert(0, str(TOOLS))
+    import phase3  # noqa: PLC0415
+    usage = tmp_path / "fleet_variant_usage.md"
+    usage.write_text("| class | parameter | production node statements |\n|---|---|---:|\n"
+                     "| firewall_secure | strict | 3 |\n| firewall_secure | ignore_patterns | 0 |\n")
+    monkeypatch.setattr(phase3, "FLEET_USAGE", usage)
+    row = {"why": "a fixture variant: one set holds one fixture", "evidence": "fleet_variant_usage.md, 2026-11-23"}
+    ok = phase3.uncovered_problems({**row, "accepted_gap": ["ignore_patterns", "strict_purge"]}, "o", True,
+                                   "firewall_secure")
+    assert ok == []  # strict_purge is absent from the table: no production node statement sets it
+    used = phase3.uncovered_problems({**row, "accepted_gap": ["strict"]}, "o", True, "firewall_secure")
+    assert used and "production sets strict on 3 node statement(s)" in used[0]
+    bogus = phase3.uncovered_problems({**row, "accepted_gap": ["no_such_param"]}, "o", True, "firewall_secure")
+    assert bogus and "not a parameter of manifests/firewall_secure.pp" in bogus[0]
+    passwd = phase3.uncovered_problems({**row, "accepted_gap": ["shell"]}, "o", True, "user_base")
+    assert passwd and "undeterminable" in passwd[0]
+    shape = phase3.uncovered_problems({"why": row["why"], "accepted_gap": ["strict_purge"]}, "o", True,
+                                      "firewall_secure")
+    assert shape and "accepted_gap and evidence" in shape[0]

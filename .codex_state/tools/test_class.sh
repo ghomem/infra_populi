@@ -73,6 +73,14 @@ json_params_path_for_class() {
       return
     fi
   done
+  # HQ 2026-11-23 ruling 1a: a Phase 3 variant run's own params fixture for the target class (P8_PARAMS_VARIANT).
+  local first="puppet_infrastructure::${PARAMS_TARGETS[0]#puppet_infrastructure::}"
+  if [[ -n "${P8_PARAMS_VARIANT:-}" && "$cls" == "$first" ]]; then
+    [[ -f "${PARAMS_DIR}/variants/${P8_PARAMS_VARIANT}/${cls}.json" ]] ||
+      die "params variant ${P8_PARAMS_VARIANT}: ${PARAMS_DIR}/variants/${P8_PARAMS_VARIANT}/${cls}.json is missing"
+    echo "${PARAMS_DIR}/variants/${P8_PARAMS_VARIANT}/${cls}.json"
+    return
+  fi
   if [[ -n "$NODE_KIND" && -f "${PARAMS_DIR}/${NODE_KIND}/${cls}.json" ]]; then
     echo "${PARAMS_DIR}/${NODE_KIND}/${cls}.json"
   else
@@ -968,7 +976,9 @@ main() {
   else
     echo "GREEN: run 2 exited 0 with no change events (gate v2)."
   fi
-  if [[ -z "${FIXTURE_NAME:-}" ]]; then
+  if [[ -n "${P8_PARAMS_VARIANT:-}" ]]; then
+    echo "GREEN_STAMP: none (a Phase 3 variant run with params variant ${P8_PARAMS_VARIANT}; never a Phase 1 record)"
+  elif [[ -z "${FIXTURE_NAME:-}" ]]; then
     # Step 3.2: stamp the code that went GREEN; record_green.sh refuses anything else.
     local -a stamp_opts=(--run1-events "$run1_events" --coverage "${COVERAGE_REPORT:-}")
     [[ $revert_first -eq 1 ]] && stamp_opts+=(--revert-first)

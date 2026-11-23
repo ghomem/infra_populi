@@ -94,7 +94,8 @@ def class_row(cls: str, plan_row, tracker_entry, prod: int, standin: tuple[str, 
         if "uncovered" in r:
             u = r["uncovered"] or {}
             open_rows.append({"outcome": one_line(r.get("outcome")), "why": one_line(u.get("why")),
-                              "lifted_by": one_line(u.get("lifted_by"))})
+                              "lifted_by": one_line(u.get("lifted_by")),
+                              "accepted_gap": list(u.get("accepted_gap") or [])})
         else:
             proven.append({"outcome": one_line(r.get("outcome")), "checks": list(r.get("checks") or [])})
     escalation = ESCALATIONS / f"{cls}.behaviour.md"
@@ -174,6 +175,10 @@ def render(rows: list[dict], meta: dict) -> str:
         L.append(f"- **{r['class']}** — fixture `{fixture}`; lifted by: {lifted}. *{standin_plan(r['class'])}*")
     if not standins:
         L.append("- none")
+    # HQ 2026-11-23 ruling 1c: parameter variants no production node statement sets, for Salatiel's acceptance
+    L += ["", "### Accepted gaps (parameter variants production does not use)", ""]
+    gaps = [(r["class"], o) for r in rows for o in r["open"] if o.get("accepted_gap")]
+    L += [f"- **{c}** — {', '.join(o['accepted_gap'])}: {o['outcome']} — {o['why']}" for c, o in gaps] or ["- none"]
     L += ["", "### Open escalations", ""]
     L += [f"- {e}" for e in open_escalations()] or ["- none"]
     L += ["", "## One row per class", "",
@@ -199,7 +204,9 @@ def render(rows: list[dict], meta: dict) -> str:
             L += [f"  - {p['outcome']} (`{'`, `'.join(p['checks'])}`)" for p in r["proven"]]
         if r["open"]:
             L.append("- **Open rows:**")
-            L += [f"  - {o['outcome']} — why: {o['why']} — lifted by: {o['lifted_by']}" for o in r["open"]]
+            L += [f"  - {o['outcome']} — why: {o['why']} — "
+                  + (f"accepted gap (production does not use {', '.join(o['accepted_gap'])})" if o.get("accepted_gap")
+                     else f"lifted by: {o['lifted_by']}") for o in r["open"]]
         if r["standin"]:
             L.append(f"- **Stand-in:** `{r['standin'][0]}` — lifted by: {r['standin'][1]}. Plan: "
                      f"{standin_plan(r['class'])}")
@@ -234,7 +241,8 @@ def main(argv: list[str]) -> int:
 
 def rows_of(text: str) -> list[str]:
     return [line for line in text.splitlines() if line.startswith("### ") and not line.startswith("### Behaviour")
-            and not line.startswith("### Stand-ins") and not line.startswith("### Open escalations")]
+            and not line.startswith("### Stand-ins") and not line.startswith("### Open escalations")
+            and not line.startswith("### Accepted gaps")]
 
 
 if __name__ == "__main__":

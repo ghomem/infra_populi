@@ -54,6 +54,17 @@ Check file .codex_state/checks/<class>.yml:
                   or `capability: <what is missing>`>, evidence: <a command result, or the capability the node
                   inventory lacks (>= 20 characters)>}   # HQ batch-15 ruling 3; an approved, unchanged set keeps
                   # the earlier {why, lifted_by} until the sweep (`phase3.py sweep`)
+      uncovered: {why: <...>, accepted_gap: [<parameter>, ...], evidence: <...>}
+                  # HQ 2026-11-23 ruling 1c: a parameter variant no production node statement sets (each parameter
+                  # 0 in diagnosis/fleet_variant_usage.md; a class of the unread passwd/ layer never qualifies). The
+                  # approval report lists these for Salatiel's acceptance.
+  variants:                       # optional (HQ 2026-11-23 ruling 1a): more runs of the same set, each a full run
+    - name: <slug>                #   (revert, clean phase, apply, applied phase) recorded under `variants` in the
+      why: <why this run exists (>= 20 characters)>  #   one result file; the result's outcome combines them all
+      node: <another active node kind>               # the run's lab node (default: the plan's node), and/or
+      params: <slug>              # the run's params fixture: params/variants/<slug>/puppet_infrastructure::<class>.json
+      # A check with `variant: <name>` runs only in that run (and needs >= 1 negative control there); a check without
+      # it runs in the base run only. Variant runs have no peer, session or agent blocks.
   checks:
     - id: <slug>
       what: <one line>
@@ -304,12 +315,47 @@ PURPOSE_MISSING = "purpose: the class's purpose (one or two sentences, >= 40 cha
 OUTCOMES_MISSING = "outcomes: the purpose as observable outcomes, each mapped to checks or uncovered, is required (HQ ruling 2)"
 
 
-def uncovered_problems(u, where: str, strict: bool) -> list[str]:
+FLEET_USAGE = REPO / ".codex_state" / "diagnosis" / "fleet_variant_usage.md"
+
+
+def accepted_gap_problems(cls: str, u: dict, where: str) -> list[str]:
+    """HQ 2026-11-23 ruling 1c: an accepted gap is a parameter variant no production node statement sets: each named
+    parameter of the class's manifest reads 0 in diagnosis/fleet_variant_usage.md (absent = 0); a class of the passwd/
+    layer, which the engine never reads, is undeterminable and never qualifies."""
+    import fleet_variants  # noqa: PLC0415
+    gap, out = u.get("accepted_gap"), []
+    if not isinstance(gap, list) or not gap or not all(isinstance(g, str) and re.fullmatch(r"\w+", g) for g in gap):
+        return [f"{where}: accepted_gap lists the class's parameter names"]
+    if cls in fleet_variants.PASSWD_LAYER:
+        return [f"{where}: accepted_gap: {cls}'s production use lives in the passwd/ layer, which is never read "
+                "(undeterminable): not an accepted gap; a check, or a row naming what is missing"]
+    counts = {}
+    for line in (FLEET_USAGE.read_text().splitlines() if FLEET_USAGE.is_file() else []):
+        cells = [c.strip() for c in line.split("|")]
+        if len(cells) == 5 and cells[1] == cls:
+            counts[cells[2]] = cells[3]
+    manifest = REPO / "manifests" / f"{cls}.pp"
+    text = manifest.read_text() if manifest.is_file() else ""
+    for g in gap:
+        if not re.search(rf"\${g}\b", text):
+            out.append(f"{where}: accepted_gap: {g} is not a parameter of manifests/{cls}.pp")
+        elif counts.get(g, "0") != "0":
+            out.append(f"{where}: accepted_gap: production sets {g} on {counts[g]} node statement(s) "
+                       "(fleet_variant_usage.md): a variant production uses becomes a check")
+    return out
+
+
+def uncovered_problems(u, where: str, strict: bool, cls: str = "") -> list[str]:
     """An outcome left uncovered. Strict (HQ batch-15 ruling 3, applied capability-based): why, lifted_by and evidence
     for the reason (a command result, or a capability the node inventory lacks); lifted_by names a node kind that is
     not active, or the missing capability as `capability: ...`. A row lifted by an active node kind is refused: the
     node exists, so the outcome is a work item to test there. Not strict: the rule before it (why and lifted_by)."""
     import nodes  # noqa: PLC0415
+    if isinstance(u, dict) and "accepted_gap" in u:
+        if set(u) != {"why", "accepted_gap", "evidence"} or len(str(u.get("why", ""))) < 20 or \
+                len(str(u.get("evidence", "")).strip()) < 20:
+            return [f"{where}: an accepted gap takes why (>= 20 characters), accepted_gap and evidence"]
+        return accepted_gap_problems(cls, u, where)
     allowed = [{"why", "lifted_by", "evidence"}] if strict else [{"why", "lifted_by"}, {"why", "lifted_by", "evidence"}]
     if not isinstance(u, dict) or set(u) not in allowed or len(str(u.get("why", ""))) < 20:
         return [f"{where}: uncovered takes why (>= 20 characters), lifted_by" + (" and evidence" if strict else "")]
@@ -424,7 +470,7 @@ def outcome_problems(data: dict, strict: bool = True) -> list[str]:
             else:
                 out += [f"{where}: no check {r!r} in the set" for r in refs if r not in ids]
         else:
-            out += uncovered_problems(row["uncovered"], f"{where}.uncovered", strict)
+            out += uncovered_problems(row["uncovered"], f"{where}.uncovered", strict, str(data.get("class", "")))
     return out
 
 
@@ -574,9 +620,64 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
                         re.compile(exp[key], re.M)
                     except (re.error, TypeError) as err:
                         problems.append(f"{where}: expect.{key} is not a regex ({err})")
-    if not any(isinstance(c, dict) and c.get("control") == "negative" for c in checks):
-        problems.append("no negative control: at least one check must fail on the clean node")
+    if not any(isinstance(c, dict) and c.get("control") == "negative" and "variant" not in c for c in checks):
+        problems.append("no negative control: at least one check of the base run must fail on the clean node")
+    problems += variant_problems(cls, data, checks)
     return problems, data, raw
+
+
+VARIANT_KEYS = {"name", "why", "node", "params"}
+
+
+def variant_params(cls: str, name: str) -> Path:
+    return PARAMS_DIR / "variants" / name / f"puppet_infrastructure::{cls}.json"
+
+
+def variant_problems(cls: str, data: dict, checks: list) -> list[str]:
+    """HQ 2026-11-23 ruling 1a: more than one params fixture per set, and a set's checks on a second node kind."""
+    import nodes  # noqa: PLC0415
+    variants = data.get("variants")
+    tagged = [c for c in checks if isinstance(c, dict) and "variant" in c]
+    if variants is None:
+        return [f"check {c.get('id')}: `variant` names no variant (the set has no `variants`)" for c in tagged]
+    if not isinstance(variants, list) or not variants:
+        return ["variants must be a non-empty list"]
+    out, names = [], set()
+    inventory = nodes.load()["nodes"]
+    plan_node = nodes.select(nodes.load(), cls=cls)["kind"]
+    for i, v in enumerate(variants):
+        where = f"variant {v.get('name', i) if isinstance(v, dict) else i}"
+        if not isinstance(v, dict) or not set(v) <= VARIANT_KEYS or not {"name", "why"} <= set(v):
+            out.append(f"{where}: takes name, why and node and/or params")
+            continue
+        if not SLUG.fullmatch(str(v["name"])) or v["name"] in names:
+            out.append(f"{where}: name must be a unique slug")
+        names.add(v["name"])
+        if len(str(v["why"]).strip()) < 20:
+            out.append(f"{where}: why (>= 20 characters) says what this run adds")
+        if "node" not in v and "params" not in v:
+            out.append(f"{where}: needs node and/or params")
+        if "node" in v:
+            kind = v["node"]
+            if kind not in inventory or inventory[kind].get("status") != "active":
+                out.append(f"{where}: node {kind!r} is not an active node kind (nodes.yml)")
+            elif kind == plan_node and "params" not in v:
+                out.append(f"{where}: node {kind} is the plan's own node; a variant there needs params")
+        if "params" in v:
+            if not SLUG.fullmatch(str(v["params"])):
+                out.append(f"{where}: params must be a slug")
+            elif not variant_params(cls, v["params"]).is_file():
+                out.append(f"{where}: params {v['params']} but {variant_params(cls, v['params'])} is missing")
+    for c in tagged:
+        if c["variant"] not in names:
+            out.append(f"check {c.get('id')}: variant {c['variant']!r} is not declared")
+        if c.get("host") == "peer":
+            out.append(f"check {c.get('id')}: a variant run has no peer")
+    for name in names:
+        mine = [c for c in tagged if c.get("variant") == name]
+        if not any(c.get("control") == "negative" for c in mine):
+            out.append(f"variant {name}: needs >= 1 negative control of its own")
+    return out
 
 
 def sweep_pending(cls: str, data: dict) -> list[str]:
@@ -852,6 +953,13 @@ def git_head() -> str:
 
 def junit(cls: str, record: dict) -> bytes:
     suites = ET.Element("testsuites", name=f"phase3.{cls}")
+    junit_suites(suites, cls, record)
+    for name, v in (record.get("variants") or {}).items():  # HQ 2026-11-23 ruling 1a: one suite pair per run
+        junit_suites(suites, f"{cls}.{name}", v)
+    return ET.tostring(suites, encoding="utf-8", xml_declaration=True)
+
+
+def junit_suites(suites, cls: str, record: dict) -> None:
     for phase, rows, rule in (("clean", record["clean"], "control"), ("applied", record["applied"], "pass")):
         suite = ET.SubElement(suites, "testsuite", name=f"phase3.{cls}.{phase}", tests=str(len(rows)))
         bad = 0
@@ -881,8 +989,7 @@ def junit(cls: str, record: dict) -> bytes:
         suite.set("failures", str(bad))
         if phase == "applied" and not rows:
             ET.SubElement(suite, "testcase", classname=f"phase3.{cls}.applied", name="not-run").append(
-                ET.Element("skipped", message=record["outcome"]))
-    return ET.tostring(suites, encoding="utf-8", xml_declaration=True)
+                ET.Element("skipped", message=str(record["outcome"])))
 
 
 def write_outputs(cls: str, record: dict) -> Path:
@@ -905,15 +1012,10 @@ def cmd_run(cls: str, role: str) -> int:
     t0 = time.monotonic()
 
     def finish(outcome: str, rc: int) -> int:
-        # HQ 2026-11-17 batch-8 ruling 3: each node reverted for this run is fresh if it kept the boot of that revert
-        # through the run (the class node also needs the harness's NODE_FRESH). Read here, still under the lab lock.
-        for role_name, entry in (record.get("nodes") or {}).items():
-            if entry.get("boot_id"):
-                entry["boot_id_at_end"] = node_boot(entry["kind"])
-                entry["fresh"] = entry["boot_id_at_end"] == entry["boot_id"] and \
-                    (role_name != "node" or bool((record.get("apply") or {}).get("node_fresh")))
+        mark_fresh(record)
         record["outcome"] = outcome
-        record["outcomes"] = outcome_results(data, record["applied"])
+        applied = record["applied"] + [r for v in (record.get("variants") or {}).values() for r in v["applied"]]
+        record["outcomes"] = outcome_results(data, applied)
         record["duration_s"] = round(time.monotonic() - t0, 1)
         stem = write_outputs(cls, record)
         shown = stem.relative_to(REPO) if stem.is_relative_to(REPO) else stem
@@ -952,12 +1054,80 @@ def cmd_run(cls: str, role: str) -> int:
         if peer and peer["status"] != "active":
             record["problems"].append(f"peer node {peer['kind']} is {peer['status']}")
             return finish("ENVIRONMENT_FAILED", 3)
-        return run_locked(cls, data, record, finish)
+        base = {**data, "checks": [c for c in data["checks"] if "variant" not in c]}
+        run_locked(cls, base, record, settle(record))
+        mark_fresh(record)  # before a variant run may revert the same node
+        if data.get("variants") and record["outcome"] != "ENVIRONMENT_FAILED":
+            run_variants(cls, data, record)
+        outcome = combined_outcome([record["outcome"]] + [v["outcome"] for v in (record.get("variants") or {}).values()])
+        return finish(outcome, OUTCOME_RC[outcome])
     finally:
         if peer:  # only the nodes a run needs stay powered on (HQ 2026-11-17 ruling 5)
             labvm = os.environ.get("P8_PHASE3_LABVM") or str(TOOLS / "lab_vm.sh")
             subprocess.run([labvm, "stop", peer["vm"]], capture_output=True, text=True)
         subprocess.run([str(TOOLS / "lab_lock.sh"), "release", str(os.getpid())], capture_output=True)
+
+
+OUTCOME_RC = {"ALL_PASS": 0, "FINDINGS": 1, "INVALID_SET": 2, "APPLY_FAILED": 3, "ENVIRONMENT_FAILED": 3}
+OUTCOME_ORDER = ["INVALID_SET", "ENVIRONMENT_FAILED", "APPLY_FAILED", "FINDINGS", "ALL_PASS"]
+HARNESS_ARGS: list[str] = []      # a variant run: the harness's --node (HQ 2026-11-23 ruling 1a)
+HARNESS_ENV: dict[str, str] = {}  # a variant run: P8_PARAMS_VARIANT
+
+
+def combined_outcome(outcomes: list[str | None]) -> str:
+    """The worst of the base run's and the variant runs' outcomes."""
+    return min((o or "ENVIRONMENT_FAILED" for o in outcomes), key=OUTCOME_ORDER.index)
+
+
+def settle(rec: dict):
+    """A run's `finish` that records its outcome only (the whole result is written once, after every run)."""
+    def done(outcome: str, rc: int) -> int:
+        rec["outcome"] = outcome
+        return rc
+    return done
+
+
+def mark_fresh(rec: dict) -> None:
+    """HQ 2026-11-17 batch-8 ruling 3: each node reverted for a run is fresh if it kept the boot of that revert through
+    the run (the class node also needs the harness's NODE_FRESH). Read while still under the lab lock."""
+    for role_name, entry in (rec.get("nodes") or {}).items():
+        if entry.get("boot_id") and "fresh" not in entry:
+            entry["boot_id_at_end"] = node_boot(entry["kind"])
+            entry["fresh"] = entry["boot_id_at_end"] == entry["boot_id"] and \
+                (role_name != "node" or bool((rec.get("apply") or {}).get("node_fresh")))
+    for v in (rec.get("variants") or {}).values():
+        mark_fresh(v)
+
+
+def run_variants(cls: str, data: dict, record: dict) -> None:
+    """HQ 2026-11-23 ruling 1a: each variant is a full run (revert, clean phase, apply, applied phase) of its own checks
+    on its node with its params fixture, recorded under record["variants"][name]."""
+    global NODE, HARNESS_ARGS, HARNESS_ENV
+    import nodes  # noqa: PLC0415
+    base_alias = NODE
+    record["variants"] = {}
+    try:
+        for v in data["variants"]:
+            node = nodes.select(nodes.load(), kind=v["node"]) if "node" in v else nodes.select(nodes.load(), cls=cls)
+            sub = {"name": v["name"], "node": node["kind"], "params": v.get("params"),
+                   "nodes": {"node": {"kind": node["kind"], "snapshot": node.get("baseline_snapshot")}},
+                   "clean": [], "apply": None, "applied": [], "findings": [], "not_run": [], "problems": [],
+                   "valid": True, "outcome": None}
+            NODE = node["alias"]
+            HARNESS_ARGS = ["--node", node["kind"]]
+            HARNESS_ENV = {"P8_PARAMS_VARIANT": v["params"]} if "params" in v else {}
+            print(f"==> VARIANT {v['name']}: node {node['kind']}" + (f", params {v['params']}" if "params" in v else ""))
+            vdata = {k: val for k, val in data.items() if k not in ("peer", "session", "node_agent", "peer_agent")}
+            vdata["checks"] = [c for c in data["checks"] if c.get("variant") == v["name"]]
+            run_locked(cls, vdata, sub, settle(sub))
+            mark_fresh(sub)
+            record["variants"][v["name"]] = sub
+            print(f"==> VARIANT {v['name']}: {sub['outcome']}")
+            if node["kind"] != record["node"] and str(node.get("vm", "")).startswith("p8lab-"):
+                labvm = os.environ.get("P8_PHASE3_LABVM") or str(TOOLS / "lab_vm.sh")
+                subprocess.run([labvm, "stop", node["vm"]], capture_output=True, text=True)
+    finally:
+        NODE, HARNESS_ARGS, HARNESS_ENV = base_alias, [], {}
 
 
 def run_locked(cls: str, data: dict, record: dict, finish) -> int:
@@ -999,7 +1169,9 @@ def run_locked(cls: str, data: dict, record: dict, finish) -> int:
     print(f"==> Applying {cls} with the gate-v2 harness on the fresh node")
     env = node_env()
     env["P8_METRICS_DIR"] = str(REPO / ".codex_state" / "logs" / "phase3-metrics")
-    proc = subprocess.run([harness, f"puppet_infrastructure::{cls}"], capture_output=True, text=True, env=env)
+    env.update(HARNESS_ENV)
+    proc = subprocess.run([harness, *HARNESS_ARGS, f"puppet_infrastructure::{cls}"], capture_output=True, text=True,
+                          env=env)
     green = proc.returncode == 0 and "GREEN:" in proc.stdout
     record["apply"] = {"rc": proc.returncode, "green": green,
                        "node_fresh": "NODE_FRESH: yes" in proc.stdout,

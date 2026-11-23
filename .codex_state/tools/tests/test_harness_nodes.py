@@ -113,3 +113,18 @@ def test_a_debian_qualified_base_is_applied_on_ubuntu(lab):
     proc = lab.run([SCRIPT, "--render-only", "puppet_infrastructure::sysmon_base"])
     assert proc.returncode == 0, proc.stderr
     assert "puppet_infrastructure::filesystem_lib64" in proc.stdout
+
+
+def test_a_phase3_params_variant_wins_and_a_missing_one_stops_the_harness(lab, tmp_path):
+    """HQ 2026-11-23 ruling 1a: a Phase 3 variant run's own params fixture (P8_PARAMS_VARIANT), never a silent default."""
+    home = tmp_path / "home"
+    shared = home / ".config" / "infra_populi" / "params"
+    (shared / "variants" / "strict").mkdir(parents=True)
+    cls = "puppet_infrastructure::backup_rsnapshot"
+    (shared / f"{cls}.json").write_text('{"basedir": "/etc", "prefix": "shared", "backdir": "/b", "ndays": 1}\n')
+    (shared / "variants" / "strict" / f"{cls}.json").write_text(
+        '{"basedir": "/etc", "prefix": "variantonly", "backdir": "/b", "ndays": 1}\n')
+    out = lab.run([SCRIPT, "--render-only", cls], env={"HOME": str(home), "P8_PARAMS_VARIANT": "strict"}).stdout
+    assert "variantonly" in out and "shared" not in out
+    proc = lab.run([SCRIPT, "--render-only", cls], env={"HOME": str(home), "P8_PARAMS_VARIANT": "absent"})
+    assert proc.returncode != 0 and "params variant absent" in proc.stderr

@@ -58,7 +58,8 @@ def test_a_set_splits_into_proven_and_open_rows(tmp_path, monkeypatch):
     row = approval_report.class_row("p8test_klass", None, None, 3, ("fx", "a lift"), [("5", "a change")])
     assert row["purpose"] == "Does a thing well."
     assert row["proven"] == [{"outcome": "the thing is done", "checks": ["a", "b"]}]
-    assert row["open"] == [{"outcome": "the other thing", "why": "no node", "lifted_by": "capability: one"}]
+    assert row["open"] == [{"outcome": "the other thing", "why": "no node", "lifted_by": "capability: one",
+                            "accepted_gap": []}]
     assert row["node"] == "ubuntu" and row["prod"] == 3 and row["standin"] == ("fx", "a lift")
 
 
@@ -88,3 +89,21 @@ def test_check_mode_reports_a_stale_report(tmp_path, monkeypatch, capsys):
     assert approval_report.main(["--check"]) == 1
     assert "APPROVAL REPORT STALE" in capsys.readouterr().err
     assert approval_report.main(["--bogus"]) == 2
+
+
+def test_accepted_gaps_are_listed_for_salatiels_acceptance(tmp_path, monkeypatch):
+    """HQ 2026-11-23 ruling 1c: a parameter variant no production node sets is listed for Salatiel's acceptance."""
+    (tmp_path / "p8test_klass.yml").write_text(
+        "class: p8test_klass\nbaseline: release-0.9.10 (cf477c6)\nfixture: defaults\n"
+        "purpose: >-\n  Does a thing well.\n"
+        "outcomes:\n"
+        "  - outcome: the strict mode refuses unknown rules\n    from: manifests/x.pp:1\n"
+        "    uncovered: {why: one set holds one fixture, accepted_gap: [strict_purge], evidence: e}\n"
+        "checks: []\n")
+    monkeypatch.setenv("P8_PHASE3_DIR", str(tmp_path))
+    row = approval_report.class_row("p8test_klass", None, None, 0, None, [])
+    assert row["open"][0]["accepted_gap"] == ["strict_purge"]
+    text = approval_report.render([row], {"blocked": [], "done": 1, "owner_validated": [], "retired": [], "verified": 1})
+    assert "### Accepted gaps (parameter variants production does not use)" in text
+    assert "- **p8test_klass** — strict_purge: the strict mode refuses unknown rules — one set holds one fixture" in text
+    assert "accepted gap (production does not use strict_purge)" in text
