@@ -3,6 +3,9 @@
 # their defaults. The master's extra_files mount holds the lab's throwaway PKI (master_fixtures.sh): p8test.key and
 # p8test.crt are a server key and certificate (CN p8test.invalid), and p8test.intermediate.crt is the throwaway CA's
 # certificate that signed it, standing in for an intermediate. Probes read only the node.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): Let's Encrypt material and other owners (production uses both) and
+# the RedHat branch are checks in the variant runs `letsencrypt`, `owners` and `rhel`; the other-service warning names
+# what is missing.
 class: ssl_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -29,13 +32,33 @@ outcomes:
   # variants; none does. It is now three rows that say what is untested and what would lift it.
   - outcome: Let's Encrypt material (<prefix>-key.pem into the private directory, <prefix>.pem then <prefix>-chain.pem into <prefix>.<service>.bundle.pem)
     from: manifests/ssl_base.pp:44, 70-76
-    uncovered: {why: "a fixture variant (letsencrypt_certificate true; one set holds one fixture). Covered elsewhere in part: nginx_frontend_mail's set (fixture letsencrypt_certificate true, reaching ssl_base through ssl_nginx_domain) checks, in smtps-and-imaps-serve-the-frontend-certificate, that 465 and 993 serve the first certificate of p8test.nginx.bundle.pem, which nginx loads with p8test-key.pem, so the file names and the leaf-first order hold there. Checked by no set: the -chain.pem second certificate in the bundle, the two files' modes and owners, and the restart on change. The lab's test PKI already provides the -key.pem, .pem and -chain.pem files", lifted_by: ubuntu}
+    checks: [letsencrypt-key-and-bundle]
   - outcome: on RedHat the key goes to /etc/pki/tls/private
     from: manifests/ssl_base.pp:57-62
-    uncovered: {why: "the RedHat branch; this set runs on the plan's Ubuntu node", lifted_by: rhel9}
-  - outcome: other owners and groups for the files, and a warning notify for services other than nginx and postfix
-    from: manifests/ssl_base.pp:46-50, 94-97
-    uncovered: {why: "untested: no consumer at the baseline (ssl_nginx, ssl_nginx_domain, ssl_postfix) passes owner or group or a service other than nginx or postfix, and this set's fixture uses the defaults", lifted_by: ubuntu}
+    checks: [on-redhat-the-key-is-in-pki-tls-private]
+  - outcome: other owners and groups for the files
+    from: manifests/ssl_base.pp:85-92
+    checks: [other-owners-and-groups]
+  - outcome: a warning notify for services other than nginx and postfix
+    from: manifests/ssl_base.pp:94-97
+    uncovered:
+      why: >-
+        the warning is a notify resource, which reports an event on every agent run, so the harness's run-2 gate refuses
+        the apply of such a variant (the plan lists no expected run-2 event for this define)
+      lifted_by: "capability: an expected run-2 event per variant run (expected_run2_events is per class in the plan)"
+      evidence: >-
+        manifests/ssl_base.pp:94-97 at the baseline (notify { "WARNING: ..." }); test_class.sh RUN2_FORBIDDEN_RE matches
+        "defined 'message' as"; migration_plan.md expected_run2_events for ssl_base is empty
+variants:
+  - name: letsencrypt
+    why: letsencrypt_certificate true, which production sets (20 node statements, through the nginx frontends)
+    params: letsencrypt
+  - name: owners
+    why: other owners and groups, which a production node sets (1 node statement each)
+    params: owners
+  - name: rhel
+    why: the RedHat branch (the key under /etc/pki/tls/private), on the rhel9 node with the set's own params fixture
+    node: rhel9
 checks:
   - id: the-key-is-private-and-matches-the-certificate
     what: the key file is root:root 0600, and its public key is the bundle's first certificate's
@@ -116,3 +139,47 @@ checks:
       [ -n "$now" ] && [ "$now" != 0 ] && [ "$now" != "$pid" ] && echo restarted
       journalctl -u nginx --after-cursor "$cursor" --no-pager -q | grep -c 'Started nginx.service'
     expect: {rc: 0, stdout: "\\A0 0\\nrestarted\\n1\\n\\Z"}
+
+  - id: letsencrypt-key-and-bundle
+    variant: letsencrypt
+    what: >-
+      with letsencrypt_certificate true the key is /etc/ssl/private/p8test-key.pem (root:root 0600), the bundle is
+      /etc/ssl/certs/p8test.nginx.bundle.pem (the certificate then its chain), and the key is the first certificate's
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "70-76", text: "$key_file                 = \"${ssl_private_dir}/${myprefix}-key.pem\""}
+      - {path: manifests/ssl_base.pp, lines: "70-76", text: "$bundle_file              = \"${ssl_certs_dir}/${myprefix}.${myservice}.bundle.pem\""}
+    probe: |
+      k=/etc/ssl/private/p8test-key.pem; b=/etc/ssl/certs/p8test.nginx.bundle.pem
+      stat -c '%U:%G %a' "$k"
+      grep -c 'BEGIN CERTIFICATE' "$b" | sed 's/^[2-9]$/two or more certificates/'
+      [ "$(openssl pkey -in "$k" -pubout 2>/dev/null)" = "$(openssl x509 -in "$b" -noout -pubkey 2>/dev/null)" ] && echo key-matches-certificate || echo key-does-not-match
+    mismatch:
+      varies: the certificate compared (the bundle's second one, the chain's, instead of the first)
+      probe: |
+        k=/etc/ssl/private/p8test-key.pem; b=/etc/ssl/certs/p8test.nginx.bundle.pem
+        stat -c '%U:%G %a' "$k"
+        grep -c 'BEGIN CERTIFICATE' "$b" | sed 's/^[2-9]$/two or more certificates/'
+        second=$(awk '/BEGIN CERT/{i++} i==2' "$b")
+        [ "$(openssl pkey -in "$k" -pubout 2>/dev/null)" = "$(echo "$second" | openssl x509 -noout -pubkey 2>/dev/null)" ] && echo key-matches-certificate || echo key-does-not-match
+    expect: {rc: 0, stdout: "\\Aroot:root 600\\ntwo or more certificates\\nkey-matches-certificate\\n\\Z"}
+
+  - id: other-owners-and-groups
+    variant: owners
+    what: with owner and group www-data, the key is www-data:www-data 0600 and the bundle www-data:www-data 0644
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "85-92", text: "owner  => $owner,"}
+    probe: |
+      stat -c '%U:%G %a' /etc/ssl/private/p8test.key /etc/ssl/certs/p8test.nginx.bundle.crt
+    expect: {rc: 0, stdout: "\\Awww-data:www-data 600\\nwww-data:www-data 644\\n\\Z"}
+
+  - id: on-redhat-the-key-is-in-pki-tls-private
+    variant: rhel
+    what: on RedHat the key is /etc/pki/tls/private/p8test.key, root:root 0600, and the bundle is in /etc/ssl/certs
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "57-62", text: "$ssl_private_dir = '/etc/pki/tls/private'"}
+    probe: |
+      stat -c '%n %U:%G %a' /etc/pki/tls/private/p8test.key /etc/ssl/certs/p8test.nginx.bundle.crt
+    expect: {rc: 0, stdout: "\\A/etc/pki/tls/private/p8test\\.key root:root 600\\n/etc/ssl/certs/p8test\\.nginx\\.bundle\\.crt root:root 644\\n\\Z"}
