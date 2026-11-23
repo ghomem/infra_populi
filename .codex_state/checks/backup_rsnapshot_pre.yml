@@ -8,6 +8,8 @@
 # pairs (the loop ran once), and my reason for leaving interactive mode uncovered was untrue: `read` takes stdin and
 # `clear` only complains on stderr without a terminal. Three snapshots now, and interactive mode with ENTERs on stdin
 # (measured on the applied node at 18:36:12Z: both reports in order, two prompts, Done!, exit 0).
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1d): the outcome that rsnapshot is driven from /etc/rsnapshot.d is now
+# a check here (a configuration placed there and run as backup_rsnapshot's cron line runs it).
 class: backup_rsnapshot_pre
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -26,7 +28,7 @@ outcomes:
     checks: [rdiff-installed, two-snapshots-are-planted, rdiff-reports-what-changed-between-snapshots]
   - outcome: rsnapshot driven from /etc/rsnapshot.d by backup_rsnapshot
     from: manifests/backup_rsnapshot_pre.pp:1-2
-    uncovered: {why: "backup_rsnapshot's behaviour, checked in backup_rsnapshot's set, which runs on this class as its required base", lifted_by: ubuntu}
+    checks: [a-config-in-the-directory-drives-rsnapshot]
   - outcome: in interactive mode (a second argument) rdiff.sh waits for ENTER after each pair's report and ends with Done!
     from: files/backups/rdiff.sh:55-58, 92-94, 111-118
     checks: [two-snapshots-are-planted, rdiff-pages-the-pairs-in-interactive-mode]
@@ -109,3 +111,23 @@ checks:
       grep -cx 'press ENTER for next difference' /run/p8test-rdiff/interactive.txt
       tail -n 1 /run/p8test-rdiff/interactive.txt
     expect: {rc: 0, stdout: "\\Arc 0\\n2\\nDone!\\n\\Z"}
+
+  - id: a-config-in-the-directory-drives-rsnapshot
+    what: >-
+      a configuration placed in /etc/rsnapshot.d as backup_rsnapshot names it (rsnapshot-<title>.conf), run as
+      backup_rsnapshot's cron line runs it (/usr/bin/rsnapshot -c <file> daily), takes a snapshot with the installed
+      rsnapshot
+    control: negative
+    timeout: 120
+    derived_from:
+      - {path: manifests/backup_rsnapshot_pre.pp, lines: "9-14", text: "file { '/etc/rsnapshot.d':"}
+      - {path: manifests/backup_rsnapshot_pre.pp, lines: "7", text: "package { [ 'rsnapshot' ]: ensure => present, }"}
+    mutates: >-
+      writes /etc/rsnapshot.d/rsnapshot-p8testpre.conf (snapshot root /var/tmp/p8test-pre-snap, one backup point
+      /etc/hostname) and runs rsnapshot daily with it once, which creates /var/tmp/p8test-pre-snap/daily.0
+    probe: |
+      printf 'config_version\t1.2\nsnapshot_root\t/var/tmp/p8test-pre-snap/\ncmd_rsync\t/usr/bin/rsync\nretain\tdaily\t2\nbackup\t/etc/hostname\tlocalhost/\n' > /etc/rsnapshot.d/rsnapshot-p8testpre.conf
+      /usr/bin/rsnapshot -c /etc/rsnapshot.d/rsnapshot-p8testpre.conf daily
+    effect: |
+      cmp /etc/hostname /var/tmp/p8test-pre-snap/daily.0/localhost/etc/hostname && echo "the snapshot holds /etc/hostname"
+    expect: {rc: 0, stdout: "\\Athe snapshot holds /etc/hostname\\n\\Z"}
