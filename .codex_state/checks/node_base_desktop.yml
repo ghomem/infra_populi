@@ -1,5 +1,5 @@
-# Phase 3 checks for puppet_infrastructure::node_base_desktop (class; node gnome; MOCK-APPLY for Service['puppet']: node
-# fixture puppet_agent_standin, as node_base_domain_desktop). Synced to release-0.9.10 on 2026-11-17 (hazard 8).
+# Phase 3 checks for puppet_infrastructure::node_base_desktop (class; node gnome; until 2026-11-23 MOCK-APPLY for
+# Service['puppet'] with node fixture puppet_agent_standin, as node_base_domain_desktop). Synced to release-0.9.10 on 2026-11-17 (hazard 8).
 # Fixture (params, never committed): log_target puppet8master.example.com / 192.168.56.10, manage_gnome_screenlock true;
 # defaults: password_authentication false, ssh_allow_root_login false, screenlock 5 min / grace 0, screenlock_users [].
 # Scope: what this profile itself chooses; its component classes carry their own check sets.
@@ -9,6 +9,9 @@
 # did not allow; it now matches any whitespace. The configuration was as expected.
 # Correction round 1, 2026-11-21 (review 20261121T032544Z, purpose): sentinels for the components the profile applies
 # and chooses (firewall_secure, filesystem_base_desktop, filesystem_apt in desktop mode), as node_base's set has.
+# 2026-11-23 (HQ after batch 20, item 6, the stand-in lift; not a correction round): the harness tolerates a running
+# agent daemon (6e007df), so the agent-daemon outcome is now tested: the real daemon, restarted, makes a catalog run
+# of its own that changes nothing but Exec[apt_update].
 class: node_base_desktop
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -52,10 +55,7 @@ outcomes:
       evidence: "the fixture leaves screenlock_users empty on gnome; checks/user_kde_lock_screen.yml runs the define in a Plasma session on kubuntu"
   - outcome: the puppet agent daemon running on its interval
     from: manifests/node_base_desktop.pp:104-108
-    uncovered:
-      why: a real daemon would run the catalog between the harness's two runs; the lab uses a stand-in unit body
-      lifted_by: "capability: a harness mode that tolerates a running agent daemon between runs 1 and 2"
-      evidence: "node fixture puppet_agent_standin (status.py --standins: node_base_desktop)"
+    checks: [the-agent-daemon-runs-the-catalog]
 checks:
   - id: ssh-hardened-without-password-or-root-login
     what: ssh_secure runs with the profile's defaults, so sshd refuses passwords and root logins
@@ -116,13 +116,37 @@ checks:
     expect: {rc: 0, stdout: "\\Auint32 300\\ntrue\\nuint32 0\\n\\Z"}
 
   - id: puppet-service-enabled-and-running
-    what: the profile declares the puppet service running and enabled (desktops run puppet directly); stand-in unit body in the lab
+    what: the profile declares the puppet service running and enabled (desktops run puppet directly)
     control: negative
     derived_from:
       - {path: manifests/node_base_desktop.pp, lines: "104-108", text: "service { 'puppet':"}
     probe: |
       systemctl is-enabled puppet; systemctl is-active puppet
     expect: {rc: 0, stdout: "\\Aenabled\\nactive\\n\\Z"}
+
+  - id: the-agent-daemon-runs-the-catalog
+    what: >-
+      the puppet service is the real agent daemon (its main process runs `agent --no-daemonize`, no stand-in body), and
+      restarted it makes a catalog run of its own that changes nothing besides Exec[apt_update] (the plan's expected
+      run-2 event: puppetlabs-apt with update frequency 'always' runs it on every agent run)
+    control: negative
+    timeout: 420
+    derived_from:
+      - {path: manifests/node_base_desktop.pp, lines: "104-108", text: "service { 'puppet':"}
+    mutates: >-
+      restarts puppet.service (the daemon makes a catalog run at start, applying the node's catalog from the lab
+      master); the restart time goes to /run/p8test-agentd.since
+    probe: |
+      date +%s > /run/p8test-agentd.since; systemctl restart puppet
+    effect: |
+      since=$(cat /run/p8test-agentd.since)
+      pid=$(systemctl show puppet -p MainPID --value)
+      tr '\0' ' ' < /proc/$pid/cmdline | grep -c 'agent --no-daemonize' | sed 's/^1$/the daemon is the real agent/'
+      for i in $(seq 360); do journalctl --no-pager -q -o cat -u puppet.service --since @$since | grep -q 'Applied catalog in' && break; sleep 1; done
+      log=$(journalctl --no-pager -q -o cat -u puppet.service --since @$since)
+      printf '%s\n' "$log" | grep -c 'Applied catalog in' | sed 's/^[1-9][0-9]*$/a daemon run applied the catalog/'
+      printf '%s\n' "$log" | grep '^(/Stage\[main\]' | grep -vc 'Apt::Update/Exec\[apt_update\]' | sed 's/^/resource events besides Exec[apt_update]: /'
+    expect: {rc: 0, stdout: "\\Athe daemon is the real agent\\na daemon run applied the catalog\\nresource events besides Exec\\[apt_update\\]: 0\\n\\Z"}
 
   - id: logs-forwarded-to-the-log-target
     what: rsyslog forwards every message over TCP to the profile's log target and port (6514, the default)
