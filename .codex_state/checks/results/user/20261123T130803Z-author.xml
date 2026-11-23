@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.user"><testsuite name="phase3.user.clean" tests="10" failures="0"><testcase classname="phase3.user.clean" name="user-and-own-primary-group" /><testcase classname="phase3.user.clean" name="no-supplementary-groups" /><testcase classname="phase3.user.clean" name="home-created-and-owned" /><testcase classname="phase3.user.clean" name="password-hash-set" /><testcase classname="phase3.user.clean" name="the-given-key-is-pushed" /><testcase classname="phase3.user.clean" name="key-file-owned-and-private" /><testcase classname="phase3.user.clean" name="the-password-logs-in-and-a-wrong-one-is-refused" /><testcase classname="phase3.user.clean" name="no-ecryptfs-passphrase-files" /><testcase classname="phase3.user.clean" name="an-out-of-band-key-is-planted" /><testcase classname="phase3.user.clean" name="the-agent-run-purges-the-out-of-band-key" /></testsuite><testsuite name="phase3.user.applied" tests="10" failures="0"><testcase classname="phase3.user.applied" name="user-and-own-primary-group" /><testcase classname="phase3.user.applied" name="no-supplementary-groups" /><testcase classname="phase3.user.applied" name="home-created-and-owned" /><testcase classname="phase3.user.applied" name="password-hash-set" /><testcase classname="phase3.user.applied" name="the-given-key-is-pushed" /><testcase classname="phase3.user.applied" name="key-file-owned-and-private" /><testcase classname="phase3.user.applied" name="no-ecryptfs-passphrase-files" /><testcase classname="phase3.user.applied" name="the-password-logs-in-and-a-wrong-one-is-refused" /><testcase classname="phase3.user.applied" name="an-out-of-band-key-is-planted" /><testcase classname="phase3.user.applied" name="the-agent-run-purges-the-out-of-band-key" /></testsuite><testsuite name="phase3.user.locked.clean" tests="1" failures="0"><testcase classname="phase3.user.locked.clean" name="the-wrapper-passes-a-locked-hash-home-shell-and-groups" /></testsuite><testsuite name="phase3.user.locked.applied" tests="1" failures="1"><testcase classname="phase3.user.locked.applied" name="the-wrapper-passes-a-locked-hash-home-shell-and-groups"><failure message="check failed after the class was applied (finding)">rc 0
+/srv/p8testhome:/bin/sh
+users
+700
+L
+HEADER:
+HEADER:
+HEADER:
+userlocked
+
+</failure></testcase></testsuite></testsuites>

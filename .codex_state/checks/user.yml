@@ -12,6 +12,13 @@
 # Correction round 2, 2026-11-19 (review 20261119T181328Z FAIL, purpose): my uncovered row said the variants are
 # checked in user_base's set, which is untrue (that set leaves them untested too); the row is split into what
 # user_base's set covers, the untested variants, and a login with the pushed key.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): the purge behind the wrapper is checked here (an agent run after a
+# planted key); the passed-on parameters are a check in the variant run `locked`; the refusal and the key login name
+# what is missing.
+# 2026-11-23 authoring correction (sweep run 20261123T130803Z-author): the key-prefix probes of the locked variant
+# printed field 2 of every line of authorized_keys, the three `# HEADER:` comment lines Puppet's ssh_authorized_key
+# provider writes included; they now skip comment and empty lines, as the set's other key probes do. The keys were as
+# the baseline makes it (userlocked...).
 class: user
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -31,15 +38,37 @@ outcomes:
   - outcome: no ecryptfs passphrase is managed (the wrapper cannot pass myppsigs or myppwrapped)
     from: manifests/user.pp:6-8
     checks: [no-ecryptfs-passphrase-files]
-  - outcome: user_base's own behaviour behind the wrapper, the purge of other keys and the empty-hash refusal
-    from: manifests/user.pp:5, 8
-    uncovered: {why: "checked in user_base's set: the purge by a check after an agent run, the refusal by a compile-only run (compile time); this wrapper passes the same parameters on", lifted_by: ubuntu}
+  - outcome: a key added out of band is purged by the next agent run (user_base's purge, behind the wrapper)
+    from: manifests/user.pp:8
+    checks: [an-out-of-band-key-is-planted, the-agent-run-purges-the-out-of-band-key]
+  - outcome: the empty-hash refusal behind the wrapper
+    from: manifests/user.pp:8
+    uncovered:
+      why: a refusal at compile time (user_base's fail()), which ends a run APPLY_FAILED, never a check
+      lifted_by: "capability: a variant run whose expected outcome is a compile refusal"
+      evidence: >-
+        phase3.py run_locked: a red harness is APPLY_FAILED; user_base's set records the compile-only refusal
+        (2026-11-19T17:23:25Z, COMPILE_FAILED "Can't touch this - hash is empty!"); this wrapper passes myhash on (user.pp:8)
   - outcome: a login with the pushed key
     from: manifests/user.pp:6-8
-    uncovered: {why: "the private half of the fixture key would have to be on the node, and the repository keeps no private keys; the key line, owner and modes are checked instead, as in user_base's set", lifted_by: ubuntu}
+    uncovered:
+      why: a login needs the private half of the pushed key on the node; the repository keeps no private keys and no run hands a file from the laptop to the node
+      lifted_by: "capability: a run step that hands a private key from the laptop to the node"
+      evidence: >-
+        phase3.py fetch_node_files hands files from the node to the peer only; the key's line, owner and modes are
+        checked instead
   - outcome: the parameter variants the wrapper passes on (a group list, another home, a home mode, another shell) and the locked or keyless placeholders
     from: manifests/user.pp:6-8
-    uncovered: {why: "parameter variants (one set holds one params fixture); untested here and in user_base's set", lifted_by: ubuntu}
+    checks: [the-wrapper-passes-a-locked-hash-home-shell-and-groups]
+node_agent:
+  after: [an-out-of-band-key-is-planted]
+  why: user_base purges keys it does not manage, so the agent run after a planted key is the evidence
+variants:
+  - name: locked
+    why: >-
+      the parameters the wrapper passes on (a locked hash, a group list, another home, home mode and shell); production's
+      users are declared in the passwd/ layer, never read, so their use is undeterminable and they are tested
+    params: locked
 checks:
   - id: user-and-own-primary-group
     what: the wrapped user exists with its own same-named primary group, the comment, /home/<title> and /bin/bash
@@ -133,3 +162,45 @@ checks:
       getent passwd p8testuser >/dev/null && echo account-exists
       find /home/.ecryptfs/p8testuser -type f 2>/dev/null | wc -l
     expect: {rc: 0, stdout: "\\Aaccount-exists\\n0\\n\\Z"}
+
+  - id: an-out-of-band-key-is-planted
+    what: setup for the purge check, a second key appended by hand to the user's authorized_keys
+    control: negative
+    derived_from:
+      - {path: manifests/user.pp, lines: "8", text: "puppet_infrastructure::user_base { $title : myname => $myname"}
+    mutates: appends a throwaway public key line (comment p8test-out-of-band) to /home/p8testuser/.ssh/authorized_keys
+    probe: |
+      ssh-keygen -q -t ed25519 -N '' -C p8test-out-of-band -f /run/p8test-oob-key <<< y >/dev/null 2>&1
+      cat /run/p8test-oob-key.pub >> /home/p8testuser/.ssh/authorized_keys
+    effect: |
+      grep -c p8test-out-of-band /home/p8testuser/.ssh/authorized_keys
+    expect: {rc: 0, stdout: "\\A1\\n\\Z"}
+
+  - id: the-agent-run-purges-the-out-of-band-key
+    what: after the node's agent run, the out-of-band key is gone and the pushed key is the only one
+    control: negative
+    derived_from:
+      - {path: manifests/user.pp, lines: "8", text: "puppet_infrastructure::user_base { $title : myname => $myname"}
+    mutates: none beyond reading the file (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      grep -c p8test-out-of-band /home/p8testuser/.ssh/authorized_keys || true
+      grep -cvE '^(#|$)' /home/p8testuser/.ssh/authorized_keys
+    expect: {rc: 0, stdout: "\\A0\\n1\\n\\Z"}
+
+  - id: the-wrapper-passes-a-locked-hash-home-shell-and-groups
+    variant: locked
+    what: >-
+      through the wrapper, a locked hash, mygrouplist [users], home /srv/p8testhome mode 0700 and shell /bin/sh reach the
+      account, and the pushed key is the unusable userlocked one
+    control: negative
+    derived_from:
+      - {path: manifests/user.pp, lines: "6-8", text: "mygrouplist => $mygrouplist, myhome => $myhome, myhomemode => $myhomemode"}
+    probe: |
+      getent passwd p8testuser | cut -d: -f6,7
+      id -gn p8testuser
+      stat -c '%a' /srv/p8testhome
+      passwd -S p8testuser | awk '{print $2}'
+      awk '!/^(#|$)/ {print substr($2, 1, 10)}' /srv/p8testhome/.ssh/authorized_keys
+    expect: {rc: 0, stdout: "\\A/srv/p8testhome:/bin/sh\\nusers\\n700\\nL\\nuserlocked\\n\\Z"}
