@@ -26,3 +26,7 @@ Collected 2026-11-22/23 while committing; each is measured, with its evidence.
   agent lock). Proposal: filter the daemon's lines through the plan's expected_run2_events as run 2's are.
 - the-agent-daemon-runs-the-catalog fails on the clean node by a probe timeout (no restart file), not by its output
   (review 20261123T041051Z): a valid but weak negative control.
+- operator error 2026-11-23: files staged while a background commit's pre-commit hook was running went into that commit
+  (42e7252, a tool commit, also carries filesystem_apt's and filesystem_base_desktop's sweep results and
+  escalations/filesystem_apt.behaviour.md); git writes the commit from the index after the hook. Proposal: the hook
+  records the staged list at its start and refuses if the index changed by its end.
