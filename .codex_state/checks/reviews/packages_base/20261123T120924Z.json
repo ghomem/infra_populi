@@ -1,0 +1,35 @@
+{
+ "class": "packages_base",
+ "at": "20261123T120924Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "package-lists-refresh-on-every-agent-run: packages_base.pp:11-19 declares class { 'apt': update => { frequency => 'always' } } on non-RedHat, so Exec[apt_update] runs on every agent run; the probe counts its 'changed: true' in the last run report (harness run 2) and expects 1, which is what the line produces",
+  "the-tools-work: packages_base.pp:43-46 installs $package_list (lines 26-27: monitoring-plugins-standard, acl, ecryptfs-utils, aptitude, ...); the probe runs check_disk from monitoring-plugins-standard, getfacl from acl and finds ecryptfs-setup-private and aptitude on the path, all from packages on that list",
+  "supervisor-cloud-init-and-unattended-upgrades-are-removed: packages_base.pp:59-61 (unattended_upgrades false, Debian) declares package unattended-upgrades ensure absent, with line 51 removing supervisor and cloud-init; under the defaults fixture the probe expects all three not installed, and its case pattern ' installed' does not match 'not-installed' or 'config-files'",
+  "purpose gap: Tested: Debian package list installed and the monitoring/ACL/ecryptfs/aptitude tools usable, supervisor/cloud-init/unattended-upgrades removed, apt lists refreshed every run, the update-package-lists exec honestly shown unreachable (ruling batch-12 1), unattended-upgrades installed with unattended_upgrades true, and on rhel9 the RedHat list (minus vim) installed with dnf-automatic and cloud-init absent. Gap 1: the outcome row 'the RedHat branch (dnf makecache every run, ...)' maps to on-redhat-the-package-list-and-dnf-automatic-absent, which does not probe Exec[dnf-makecache] (lines 12-17, refreshonly false) running on every agent run. The active rhel9 node can exercise this: in my run its harness run 2 showed Exec[dnf-makecache] executed, but no check looks at it the way package-lists-refresh-on-every-agent-run does for Exec[apt_update]. That check also omits vim from the RedHat list (line 32). Gap 2: the 'unattended upgrades installed when asked' row cites lines 53-58, including line 57 (dnf-automatic installed on RedHat), but its only check runs Debian. rhel9 with the unattended params is testable in the lab, and the gap has no uncovered/accepted_gap row. Minor: iptables-persistent is checked only as an installed package, not as working rule persistence. extra_packages_el is covered by its own set. My first reviewer run (20261123T112927Z) failed to apply: agent run 1 timed out at 600s while installing the package list, and the next revert found the primary archive unreachable and switched to the fallback mirror. The rerun 20261123T115709Z was ALL_PASS on base, unattended and rhel."
+ ],
+ "review_s": 735.3,
+ "check_file_sha256": "991ed6ce21648bc99dc862a32e8b963b5a8de789dbd08cd57a7a6817f32dcdb9",
+ "content_sha256": "991ed6ce21648bc99dc862a32e8b963b5a8de789dbd08cd57a7a6817f32dcdb9",
+ "reviewer_result": "20261123T115709Z-reviewer",
+ "author_result": "20261123T095501Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "4a23d316-f866-430f-b0ed-bf9f0fd3a8da",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "4a23d316-f866-430f-b0ed-bf9f0fd3a8da",
+   "fresh": true
+  }
+ }
+}
