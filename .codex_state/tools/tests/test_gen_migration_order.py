@@ -232,7 +232,7 @@ def test_repo_node_fixtures_exist_for_the_planned_classes(gen):
     assert rows["user_samba"].node_fixture == "samba_dc_standin"
     assert rows["hashman_base"].node_fixture == ""  # HQ 2026-11-17 ruling 2: a plain GREEN (the agent ships the code tree)
     assert rows["hashman_web"].node_fixture == "hashman_master_standin"  # the site logo files
-    assert rows["user_lock"].node_fixture == "hashman_lock_standin"  # one fake hashman user entry
+    assert rows["user_lock"].node_fixture == "hashman_user_via_hashman"  # a user hashman creates (a test asset)
     assert rows["letsencrypt_certificate"].node_fixture == "letsencrypt_cert_standin"  # stand-in live certificate
     assert rows["node_base_domain_desktop"].node_fixture == "puppet_agent_standin"  # Service['puppet'] without a daemon
     assert rows["openvpn_server"].node_fixture == "p8test_dhcp_primary"  # stand-in DHCP primary interface (veth + netns)
