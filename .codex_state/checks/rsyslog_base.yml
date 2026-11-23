@@ -3,6 +3,7 @@
 # packages does not exist on the node). The node's
 # certname is its host name. Probes read the node's own files and rsyslog; the use of this material by a forwarding
 # client and a TLS server is tested end to end in rsyslog_client's and rsyslog_server's sets.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1b): the RedHat syslog account is a check in the variant run `rhel` (rhel9).
 class: rsyslog_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -31,7 +32,11 @@ outcomes:
     checks: [a-tls-file-changes, the-agent-run-restores-the-file-and-restarts-rsyslog-once]
   - outcome: on RedHat, a syslog user and group (uid/gid 0) exist for the copied files' ownership
     from: manifests/rsyslog_base.pp:14-28
-    uncovered: {why: "these checks run on the Ubuntu node, where the syslog account exists already", lifted_by: rhel9}
+    checks: [on-redhat-a-syslog-account-with-ids-0-exists]
+variants:
+  - name: rhel
+    why: the RedHat branch (the syslog user and group with uid/gid 0), on the rhel9 node with the set's own params fixture
+    node: rhel9
 node_agent:
   after: [rsyslog-is-stopped, the-tls-directory-drifts, a-tls-file-changes]
   why: >-
@@ -195,3 +200,15 @@ checks:
       journalctl -u rsyslog --after-cursor "$cursor" --no-pager -q | grep -c 'Started rsyslog.service'
     expect: {rc: 0, stdout: "\\Aca-restored\\nrestarted\\n1\\n\\Z"}
 
+  - id: on-redhat-a-syslog-account-with-ids-0-exists
+    variant: rhel
+    what: on RedHat the syslog group (gid 0) and the syslog user (uid 0) exist, and rsyslog runs
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_base.pp, lines: "16-28", text: "user { 'syslog':"}
+      - {path: manifests/rsyslog_base.pp, lines: "16-28", text: "gid       => 0,"}
+    probe: |
+      getent group syslog | cut -d: -f1,3
+      getent passwd syslog | cut -d: -f1,3
+      systemctl is-active rsyslog
+    expect: {rc: 0, stdout: "\\Asyslog:0\\nsyslog:0\\nactive\\n\\Z"}
