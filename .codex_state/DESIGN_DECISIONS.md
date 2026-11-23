@@ -2458,3 +2458,15 @@ the engine's tools, which take the lock themselves, are unaffected. 21 tests; th
 3. **Run stopped ~01:15 UTC** on that standing Phase 1 FAIL (escalations/user_lock.phase1.md, options A/B). Not started:
    the other stand-in lifts (a draft node fixture for mount_shares_desktop's real first GNOME login is in the advisor's
    scratch, not committed), the sweep, the final report.
+
+## 2026-11-23 — HQ rulings on the user_lock stop
+1. **user_lock: option A, kept narrow.** record_green refuses a migrate commit that changes no class file and points to
+   `--fix`. The provenance check ignores such an empty migrate commit only when an earlier migrate commit for the class
+   did change its files, and the verdict lists the ignored commit. Tests for both, then one more review.
+2. **sysmon_mysqldump_health's set:** a third correction round is approved for the one missing check (the
+   create-failure path).
+3. **Scratch is not storage:** /tmp does not survive a reboot, and the laptop is shut down for travel. The test-suite
+   notes and the desktop-login draft are committed as drafts (`.codex_state/drafts/`); anything worth keeping lives in
+   the repo from now on.
+4. **Continue:** the remaining stand-in lifts, the sweep, the final approval report (stop for Salatiel), the test-suite
+   design note, the rename. When Salatiel says he is closing the laptop: stop at a clean point, commit, push, lab down.

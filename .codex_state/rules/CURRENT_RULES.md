@@ -2,7 +2,13 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-134 entries; 6 marked superseded (in whole or part); newest first.
+135 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-23 — HQ rulings on the user_lock stop
+- 1. **user_lock: option A, kept narrow.** record_green refuses a migrate commit that changes no class file and points to
+- 2. **sysmon_mysqldump_health's set:** a third correction round is approved for the one missing check (the
+- 3. **Scratch is not storage:** /tmp does not survive a reboot, and the laptop is shut down for travel. The test-suite
+- 4. **Continue:** the remaining stand-in lifts, the sweep, the final approval report (stop for Salatiel), the test-suite
 
 ## 2026-11-23 — item 6 started; the run stops on user_lock's Phase 1 FAIL
 - 1. **user_lock's stand-in lifted** (7175bca): on the master-role node, hashman itself creates the user (node fixture
