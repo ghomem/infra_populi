@@ -1,0 +1,35 @@
+{
+ "class": "gnome_lock_screen",
+ "at": "20261123T173952Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "keyfile-and-locks-rendered @ manifests/gnome_lock_screen.pp:63-75: the /L heredoc renders [org/gnome/desktop/session] idle-delay=uint32 ${screenlock_timeout_seconds}, a blank line, [org/gnome/desktop/screensaver] lock-enabled=true, lock-delay=uint32 ${screenlock_grace_seconds} with a trailing newline; under defaults (no params file) that is exactly the expected 300/true/0 text, followed by the locks file's three key paths (lines 80-89)",
+  "dconf-cli-installed @ manifests/gnome_lock_screen.pp:11-13: package dconf-cli ensure installed; dpkg-query Status 'install ok installed' is precisely that state, and it failed on the clean node",
+  "keyfile-and-locks-rendered @ manifests/gnome_lock_screen.pp:5-9: defaults timeout_minutes 5 and grace_seconds 0, timeout_seconds = 5*60 = 300; the expected idle-delay=uint32 300 and lock-delay=uint32 0 are what these lines produce under fixture defaults",
+  "purpose covered: The purpose (idle after the timeout, lock with no grace, users cannot change it) is tested end to end: on the server node the compiled system db serves 300/true/0 through profile user (mismatch with an absent profile fails), and a real account in its own D-Bus session with dconf-service writes all three locked keys plus text-scaling-factor; its own user database (read through a user-db-only profile) holds only 1.25 for the unlocked key, so the locked writes were refused, and the served values stay the class's (my run: exactly that). Variant timing (10 min, 30 s) serves 600/true/30. Variant gnome on the active gnome node (1 min, 10 s) logs p8testuser in through GDM automatic login and observed LockedHint yes while the session was under 300 s old, which stock GNOME (idle-delay 300) could not produce, plus GSettings in the session serving 60/true/10 with writable false for all three: the real lock and the lock enforcement in a live session. All outcomes map to checks; no uncovered rows remain. Not separately probed: the modes of the intermediate dconf directories and of the keyfile/locks files (only the profile's 644 root:root is checked), which do not bear on the purpose."
+ ],
+ "review_s": 281.6,
+ "check_file_sha256": "e3144563df887a78cca09acc1b2465b68dd321bd595964cc62450dfc114bc102",
+ "content_sha256": "e3144563df887a78cca09acc1b2465b68dd321bd595964cc62450dfc114bc102",
+ "reviewer_result": "20261123T173511Z-reviewer",
+ "author_result": "20261123T172900Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "c53fb550-9827-4c0d-9924-3fb99d0a90a0",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "c53fb550-9827-4c0d-9924-3fb99d0a90a0",
+   "fresh": true
+  }
+ }
+}
