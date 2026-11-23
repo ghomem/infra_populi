@@ -1,0 +1,43 @@
+{
+ "class": "firewall_ipv6_drop_policy_desktop",
+ "at": "20261123T112138Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-agent-run-purges-it: baseline :21-22 declare both IPv6 chains with purge => true and policy => drop, so an agent run must delete hand-added rules from INPUT and FORWARD and keep the managed lo rule; the effect counts 0 planted rules, 1 lo rule and both -P DROP lines after the node agent run (rc 2, 2 changed = the two purged rules)",
+  "a-desktop-login-works-under-the-drop-policy: baseline :5-7 say desktop session components may use ::1 during login and :13-19 accept all IPv6 on lo for that; on the kubuntu node with the class applied, a fresh user's SDDM autologin brings up plasmashell within 180 s while INPUT is still DROP. The probe tests that login works under the policy; it does not time the login against a version without the lo rule, so it shows no hang rather than no delay",
+  "the-forward-policy-counted-the-routed-packets: baseline :21 sets the IPv6 FORWARD policy to drop with no rules, so packets the peer routes through the node can only end at the policy; the effect reads the FORWARD policy-DROP packet counter (>= 5 after the peer's 5 routed pings) and fails on the clean node, where the policy is ACCEPT",
+  "purpose covered: The purpose (IPv6 INPUT/FORWARD dropped by default, IPv6 loopback open on lo for desktop logins, no unmanaged IPv6 rules) matches the baseline header comment (:1-7) and code (:13-22: one lo accept rule, two firewallchains with purge and policy drop). The checks test what the class does: exact policies and the lo rule; ping and TCP to ::1 working on the node; a peer on the link dropped over IPv6 (ICMPv6 and SSH) but still reaching SSH over IPv4; packets routed through the node dropped by the FORWARD policy (counter); a hand-planted rule in each chain purged by the next agent run; and a real Plasma/SDDM login on the kubuntu variant under the DROP policy. The outcomes table has no uncovered rows and maps every outcome to a check that probes it. My run: all 8 base negative controls failed on the clean node and passed after apply; the desktop variant control failed clean and passed applied (ALL_PASS). What is left out: the claim that dropping ::1 causes login delays is not measured, because no run without the lo rule is timed. That would test the comment, not the class, which keeps ::1 open; the purpose outcome (login works under the policy) is tested."
+ ],
+ "review_s": 925.8,
+ "check_file_sha256": "29f37f57d611af9a14a5466532f9638f98b7ddd87d46bec670ee97b56f199b33",
+ "content_sha256": "29f37f57d611af9a14a5466532f9638f98b7ddd87d46bec670ee97b56f199b33",
+ "reviewer_result": "20261123T110613Z-reviewer",
+ "author_result": "20261123T094925Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "f0b4ccde-1ee2-4a0c-a8c2-f0804e0804d1",
+   "apt_mirror": "fallback http://mirrors.edge.kernel.org/ubuntu/",
+   "boot_id_at_end": "f0b4ccde-1ee2-4a0c-a8c2-f0804e0804d1",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "94595694-b87d-4073-8fe1-90539bc0abb8",
+   "apt_mirror": "fallback http://mirrors.edge.kernel.org/ubuntu/",
+   "boot_id_at_end": "94595694-b87d-4073-8fe1-90539bc0abb8",
+   "fresh": true
+  }
+ }
+}
