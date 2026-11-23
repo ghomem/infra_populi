@@ -1,0 +1,35 @@
+{
+ "class": "dns_client",
+ "at": "20261123T085355Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "resolv-conf-names-exactly-the-given-servers: dns_client.pp:8-12 passes $nameservers to class resolv_conf, which renders /etc/resolv.conf; under the fixture [10.0.2.3, 1.1.1.1] the probe's grep of nameserver lines expecting exactly those two, in order, tests what the lines declare (clean node holds 1.1.1.1/8.8.8.8, so it fails there as a negative control should)",
+  "the-next-agent-run-keeps-only-the-given-servers: dns_client.pp:8-12 declares resolv_conf with only the given nameservers, so the managed file is enforced on every agent run; the read-only effect after the node agent run (my run: one corrective File[/etc/resolv.conf] content change removing 'nameserver 9.9.9.9') expects exactly 10.0.2.3 then 1.1.1.1, the result of the agent run, not of the no-op action 'true'; mutates honestly declares nothing",
+  "a-nameserver-is-added-by-hand: setup drift for the previous check, cited to the same lines (nameservers => $nameservers); mutates declares exactly the append of 'nameserver 9.9.9.9' the action performs, and the read-only effect shows the file with the extra line after the applied fixture servers, which is what the baseline-managed file plus the hand edit produces",
+  "purpose covered: Purpose (point the resolver at the given servers, only those, keep it so, names resolve through them) matches the header 'configures the DNS servers for the client' and lines 8-12. Tested: exact nameserver list and order in /etc/resolv.conf with 8.8.8.8 from the clean file excluded; a real lookup through the system resolver answered NOERROR from the first given server 10.0.2.3 (mismatch on p8test.invalid fails as required, so the verdict tracks the real answer); drift (9.9.9.9 added by hand) removed by the next agent run; the empty-list guard (line 8, node_base's default for every server, node_base.pp:49/171 locally, 46/167-169 at the baseline) in variant 'empty': dns_client in the applied catalog, 0 resolv_conf resources, resolv.conf older than the applied catalog. My run ALL_PASS in base and variant. Nothing the lab can exercise is left: the class has no OS branch (rhel9 would only re-test the same resolv_conf declaration), and the network-manager incompatibility comment is a warning, not an outcome. No uncovered rows."
+ ],
+ "review_s": 194.9,
+ "check_file_sha256": "88a299c7aee034bb19ae6d4cbfd64966eee04bcec9a244516ed82a2acb86b3ce",
+ "content_sha256": "88a299c7aee034bb19ae6d4cbfd64966eee04bcec9a244516ed82a2acb86b3ce",
+ "reviewer_result": "20261123T085041Z-reviewer",
+ "author_result": "20261123T084021Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "2b241c9d-c016-4119-a2f4-d2d9f0148abf",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "2b241c9d-c016-4119-a2f4-d2d9f0148abf",
+   "fresh": true
+  }
+ }
+}
