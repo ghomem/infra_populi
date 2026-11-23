@@ -1,0 +1,36 @@
+{
+ "class": "filesystem_apt",
+ "at": "20261123T160714Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-surface-script-updates-an-outdated-surface-package: manifests/filesystem_apt.pp:63-70 install apt-update-surface.sh from apt-update-surface.sh.erb, which runs apt-get update then the wrapper (UPDATE_CMD) on each SURFACE package; the action downgrades less/gzip/vim (all on the server list, lines 33-41) and runs the script, and the read-only effect reads the installed version vs the candidate plus the wrapper's own 'package <p> updated to version <v>' line (apt-update-pkg.sh). The probe and expect test what the lines declare; the action is what an operator would run",
+  "the-job-s-list-is-installed-by-the-relevant-updates-script: templates/apt/apt-update-relevant.sh.erb (whole file) reads SURFACE from <update_cache_dir>/list and calls the wrapper on each entry after apt-get update; the action runs it on the list the daily job just wrote (copied first), and the effect checks that every listed package is now at its candidate and that the list had at least one entry. Matches the template; mutates declares the copy and the upgrades",
+  "surface-list-and-daily-job: manifests/filesystem_apt.pp:33-41 (the server surface list, joined with spaces at lines 52-56 under server_mode true) and 163-176 (cron apt_check_updates, command <localdir>/bin/apt-check-updates.sh <prio_threshold>, hour/minute from Hiera, default High at 0 0); the expected SURFACE string is exactly the 22 baseline names in order, and the crontab line is '0 0 * * * .../apt-check-updates.sh High', what the defaults produce",
+  "finding no-kernel-and-a-custom-surface-list (variant custom): the probe saw NO_KERNEL=\"1\" as expected, but SURFACE=\"[\"vim\", \"less\"]\" where \"vim less\" was expected. The baseline code (manifests/filesystem_apt.pp:59-61) assigns the Array parameter unjoined to $_apt_surface_list, and templates/apt/apt-update-surface.sh.erb:5 renders it with Ruby's Array#to_s, so bash splits it into '[vim,' and 'less]' and the wrapper reports both as not installed. The default and desktop lists are join()ed (lines 52-58) and render correctly. This is an upstream defect present in the baseline (and on Puppet 5, Ruby >= 1.9), not a migration change: the manifest is baseline-identical. The expectation follows the parameter's stated interface (line 5: 'list of critical surface packages'), so it is a real Phase 3 finding, not a derivation error",
+  "purpose gap: Tested on the node: all helper scripts installed root 0755 (static ones byte for byte), openscap-scanner installed, the cache dir; the wrapper refuses a missing package and upgrades an outdated one; the surface script upgrades an outdated server-surface package; the daily job run as cron runs it fetches Canonical's OVAL data, evaluates it with oscap and writes a non-empty list of installed, outdated packages; apt-update-relevant.sh installs that list and a planted entry; the kernel script leaves the metapackage at its candidate; the full update leaves nothing to upgrade; the cron line (00:00, High); variants desktop (desktop list, compatibility link), method0 (no relevant-updates scripts) and custom. The Hiera prio_threshold/checkhour/checkmin row is honestly uncovered: phase3.py variant_problems accepts only name/why/node/params for a variant, so no run can vary the master's Hiera. The 20.04/22.04 libopenscap8 branch is excluded in the purpose statement (target release 24.04; no such node), acceptable. GAP: relevant_updates_no_kernel true is checked only as the NO_KERNEL=\"1\" line in apt-check-updates.sh; its effect, that the daily list leaves out kernel packages (get-relevant-updates-list:10-13, 236-238 skip names starting with 'linux' and the microcode packages under --no-kernel), is exercisable in the custom variant (run apt-check-updates.sh High as the base check does and assert no linux*/microcode line, with the base run showing a kernel package would otherwise be listed) and is untested. Also the custom surface list is checked only as rendered text, not by running the surface script (moot while the finding above stands)."
+ ],
+ "review_s": 876.3,
+ "check_file_sha256": "5e6c2476d6ac31eedba8939d6f63a5428aea7745d5b0c9b2682d9a3074cf64e8",
+ "content_sha256": "5e6c2476d6ac31eedba8939d6f63a5428aea7745d5b0c9b2682d9a3074cf64e8",
+ "reviewer_result": "20261123T155238Z-reviewer",
+ "author_result": "20261123T090614Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "84052195-de3e-450b-9585-e3ceee3b8c7e",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "84052195-de3e-450b-9585-e3ceee3b8c7e",
+   "fresh": true
+  }
+ }
+}
