@@ -1,0 +1,35 @@
+{
+ "class": "filesystem_sec",
+ "at": "20261123T104916Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "restricted-commands-belong-to-the-sudo-group (filesystem_sec.pp:15-19): the file resource over $restricted_cmds sets owner root, the group and the mode; with the fixture (mode 0750, no group) stat of the installed regular files (wget, curl, sftp, scp, ssh) expecting root:sudo 750 is what those lines produce",
+  "restricted-commands-belong-to-the-sudo-group (filesystem_sec.pp:7-13): an empty restricted_group becomes sudo off RedHat (wheel on RedHat); the fixture gives no group and the node is Ubuntu, so the sudo group in the expectation is what the lines yield",
+  "uninstalled-commands-are-left-alone (filesystem_sec.pp:15-19): the file resource has no ensure, so Puppet does not create a listed path that is absent; the probe checks the six uninstalled paths stay absent; the invariant is plausible (absent on the clean node, passed there)",
+  "purpose covered: Purpose (restrict intruder-useful commands to one group, kept restricted) matches the header comment (pp:1-2) and code. Checks test owner/group/mode of the regular files, real execution denied for an ordinary account and allowed for a sudo-group account, the linked commands nc/telnet/ftp restricted through the link (local change #6), uninstalled ones not created, and drift (chmod 0755 wget) restored by the next agent run. Variants: custom (adm, 0710) on ubuntu and the RedHat default group wheel on rhel9, both pass; no uncovered rows remain. Not exercised: execution as a member of the custom group or wheel, only owner/group/mode there; the same mechanism as the base run's execution tests, so no part the lab can exercise is left untested in substance. Reviewer run 20261123T103911Z ALL_PASS in base and both variants"
+ ],
+ "review_s": 605.4,
+ "check_file_sha256": "d7b66faa114a43bd6253d09b73f1eeab65449fe5e196af2d9eea2cc462e530a5",
+ "content_sha256": "d7b66faa114a43bd6253d09b73f1eeab65449fe5e196af2d9eea2cc462e530a5",
+ "reviewer_result": "20261123T103911Z-reviewer",
+ "author_result": "20261123T094020Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "dee91b40-0968-4898-aabe-ab6b8598c5bc",
+   "apt_mirror": "fallback http://mirrors.edge.kernel.org/ubuntu/",
+   "boot_id_at_end": "dee91b40-0968-4898-aabe-ab6b8598c5bc",
+   "fresh": true
+  }
+ }
+}
