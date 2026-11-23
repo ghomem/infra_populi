@@ -16,6 +16,9 @@
 # the dump would create or use; if one exists it validates the file only and says the restore test was skipped; a
 # restore drops only databases it created in that run (local change #20). The live-database check expects that; an
 # incomplete dump of an existing database and a --databases dump of an absent one are added.
+# Correction round 3, 2026-11-23 (review 20261122T235949Z, purpose; approved by HQ 2026-11-23 ruling 2): the
+# create-failure path after #20 (a database the pre-check did not see cannot be created): with CREATE revoked from
+# the check's user, the check reports CRITICAL "Create database" with exit 2 and drops nothing (CREATED is empty).
 # Correction round 2, 2026-11-21 (review 20261121T114625Z, purpose; the last round, production use 0): the broken dump
 # sits in a dated subdirectory (find recurses); the script's group is read.
 class: sysmon_mysqldump_health
@@ -51,6 +54,11 @@ outcomes:
   - outcome: a dump made with --databases (its own CREATE DATABASE and USE lines) whose database is absent gets the full restore test and leaves nothing behind
     from: templates/sysmon/check-mysqldump-health.sh.erb:42-57 (local change #20)
     checks: [a-databases-dump-is-restored-and-removed]
+  - outcome: >-
+      a database the dump needs that cannot be created (absent at the pre-check, CREATE refused) is reported CRITICAL
+      (Create database) with exit 2, and nothing is dropped
+    from: templates/sysmon/check-mysqldump-health.sh.erb:46-48 (baseline); local change #20 (CREATED is empty until the create succeeds)
+    checks: [a-failed-create-is-critical-and-drops-nothing]
   - outcome: a scratch database that cannot be dropped is reported CRITICAL (Drop database) with exit 2
     from: templates/sysmon/check-mysqldump-health.sh.erb:54-56
     checks: [a-failed-drop-is-critical]
@@ -209,6 +217,31 @@ checks:
     effect: |
       cat /run/p8test-dumps/multi.txt
     expect: {rc: 0, stdout: "\\Acreate and use lines: 2\\nOK: exit code 0\\nrc=0\\nleft: 0\\n\\Z"}
+
+  - id: a-failed-create-is-critical-and-drops-nothing
+    what: >-
+      with CREATE revoked from the check's user p8test_check and p8testsrc absent, the check reports CRITICAL "Create
+      database p8testsrc" with exit 2, and the server's p8test databases are the same before and after (nothing dropped)
+    control: negative
+    timeout: 300
+    derived_from:
+      - {path: templates/sysmon/check-mysqldump-health.sh.erb, lines: "46-48", text: "handle_error $RC \"Create database $DBNAME\""}
+      - {path: templates/sysmon/check-mysqldump-health.sh.erb, lines: "19-23", text: "clear_database"}
+    mutates: >-
+      creates the database p8testkeep (1 row) as a witness, revokes CREATE from p8test_check, runs the check once as
+      root, then grants ALL again and drops p8testkeep; the outputs go to /run/p8test-dumps/create.txt
+    probe: |
+      install -d -m 0700 /run/p8test-dumps
+      mysql -e "CREATE DATABASE p8testkeep; CREATE TABLE p8testkeep.t (id INT PRIMARY KEY); INSERT INTO p8testkeep.t VALUES (1); REVOKE CREATE ON *.* FROM 'p8test_check'@'localhost';"
+      before=$(mysql -N -e "SHOW DATABASES LIKE 'p8test%'" | sort | tr '\n' ' ')
+      { cd /tmp; /opt/puppet-infrastructure/bin/check-mysqldump-health.sh 2>/dev/null; echo "rc=$?"
+        after=$(mysql -N -e "SHOW DATABASES LIKE 'p8test%'" | sort | tr '\n' ' ')
+        [ "$before" = "$after" ] && echo "p8test databases unchanged: $after"
+        mysql -N -e "SELECT COUNT(*) FROM p8testkeep.t" | sed 's/^/witness rows: /'; } > /run/p8test-dumps/create.txt
+      mysql -e "GRANT ALL ON *.* TO 'p8test_check'@'localhost'; DROP DATABASE IF EXISTS p8testkeep;"
+    effect: |
+      cat /run/p8test-dumps/create.txt
+    expect: {rc: 0, stdout: "\\ACRITICAL: Create database p8testsrc\\nrc=2\\np8test databases unchanged: p8testkeep \\nwitness rows: 1\\n\\Z"}
 
   - id: a-failed-drop-is-critical
     what: >-
