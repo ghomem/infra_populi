@@ -3,6 +3,9 @@
 # High at 00:00). The class installs update helper scripts, openscap-scanner (24.04) and a daily cron that keeps the
 # list of updates of priority >= High in /var/lib/apt-check-updates/list. Probes read the node's own files; mutating
 # checks run the helpers as an operator or the cron would, against the Ubuntu archive and Canonical's OVAL data.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): the desktop mode, relevant_updates_method 0, no_kernel and a custom
+# surface list are checks in the variant runs `desktop`, `method0` and `custom` (composites pass them); the Hiera
+# keys name what is missing.
 class: filesystem_apt
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -33,10 +36,30 @@ outcomes:
     checks: [the-full-update-script-leaves-nothing-to-upgrade]
   - outcome: "the desktop variant (server_mode false): the desktop surface list and the compatibility link"
     from: manifests/filesystem_apt.pp:10, 54-58, 72-82
-    uncovered: {why: "a fixture variant: the fixture is a server and one set holds one fixture; untested", lifted_by: gnome}
-  - outcome: "the other parameter variants: relevant_updates_method 0 (no relevant-updates job), relevant_updates_no_kernel true, a custom apt_surface_list, and Hiera prio_threshold/checkhour/checkmin"
+    checks: [the-desktop-surface-list-and-link]
+  - outcome: "the parameter variants: relevant_updates_method 0 (no relevant-updates script), relevant_updates_no_kernel true and a custom apt_surface_list"
     from: manifests/filesystem_apt.pp:12-18, 52-61, 113-176
-    uncovered: {why: "fixture variants of the same server (one set holds one fixture, the defaults); untested", lifted_by: ubuntu}
+    checks: [method-0-installs-no-relevant-updates-script, no-kernel-and-a-custom-surface-list]
+  - outcome: "the Hiera variants prio_threshold, checkhour and checkmin (the daily job's priority and time)"
+    from: manifests/filesystem_apt.pp:163-176
+    uncovered:
+      why: the daily job's priority and time come from Hiera keys (per node or global), which a variant run does not vary
+      lifted_by: "capability: a Hiera variant per run (phase3.py variants vary the node kind and the class's params fixture)"
+      evidence: >-
+        phase3.py variant_problems (2026-11-23): a variant takes node and/or params only; the lab Hiera on the master is
+        the same for every run
+variants:
+  - name: desktop
+    why: server_mode false, which node_base_desktop and node_base_domain_desktop pass to this class (composites)
+    params: desktop
+  - name: method0
+    why: relevant_updates_method 0, which node_base passes through from its own parameter (node_base.pp:117-122)
+    params: method0
+  - name: custom
+    why: >-
+      relevant_updates_no_kernel true and a custom surface list, both passed through by node_base (node_base.pp:117-122)
+      from parameters a node may set
+    params: custom
 checks:
   - id: helper-scripts-installed
     what: the helper scripts are installed root-owned 0755 (the static ones byte for byte), and openscap-scanner is installed
@@ -279,3 +302,49 @@ checks:
       apt-get -s dist-upgrade | grep -E '^[0-9]+ upgraded' 
     expect: {rc: 0, stdout: "\\Arc=0\\n0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded\\.\\n\\Z"}
 
+  - id: the-desktop-surface-list-and-link
+    variant: desktop
+    what: >-
+      with server_mode false the surface script lists the desktop packages (firefox, not nginx-core or postfix), and
+      apt-update-surface-desktop.sh links to apt-update-surface.sh
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_apt.pp, lines: "52-58", text: "$_apt_surface_list = join($apt_surface_desktop, \" \")"}
+      - {path: manifests/filesystem_apt.pp, lines: "72-82", text: "if ( ! $server_mode ) {"}
+      - {path: templates/apt/apt-update-surface.sh.erb, lines: "5", text: "SURFACE=\"<%= @_apt_surface_list %>\""}
+    probe: |
+      b=/opt/puppet-infrastructure/bin
+      sed -n 's/^SURFACE="\(.*\)"$/\1/p' $b/apt-update-surface.sh | tr ' ' '\n' | grep -cxE 'firefox|nginx-core|postfix' | sed 's/^/listed of firefox, nginx-core, postfix: /'
+      sed -n 's/^SURFACE="\(.*\)"$/\1/p' $b/apt-update-surface.sh | tr ' ' '\n' | grep -x firefox
+      readlink $b/apt-update-surface-desktop.sh
+    expect: {rc: 0, stdout: "\\Alisted of firefox, nginx-core, postfix: 1\\nfirefox\\n/opt/puppet-infrastructure/bin/apt-update-surface\\.sh\\n\\Z"}
+
+  - id: method-0-installs-no-relevant-updates-script
+    variant: method0
+    what: >-
+      with relevant_updates_method 0 the class is applied (the surface script is installed) but installs neither the
+      relevant-updates script nor apt-check-updates.sh
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_apt.pp, lines: "113-116", text: "if ($relevant_updates_method == 0) {"}
+    probe: |
+      b=/opt/puppet-infrastructure/bin
+      test -x $b/apt-update-surface.sh && echo "surface script installed"
+      for f in get-relevant-updates-list apt-check-updates.sh; do test -e $b/$f && echo "$f present" || echo "$f absent"; done
+    expect: {rc: 0, stdout: "\\Asurface script installed\\nget-relevant-updates-list absent\\napt-check-updates\\.sh absent\\n\\Z"}
+
+  - id: no-kernel-and-a-custom-surface-list
+    variant: custom
+    what: >-
+      with relevant_updates_no_kernel true the daily job's script sets NO_KERNEL=1 (it passes --no-kernel), and with a
+      custom apt_surface_list the surface script lists exactly the given packages
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_apt.pp, lines: "139-144", text: "$apt_check_updates_no_kernel = 1"}
+      - {path: templates/apt/apt-check-updates-v2.sh.erb, lines: "24", text: "NO_KERNEL=\"<%= @apt_check_updates_no_kernel %>\""}
+      - {path: manifests/filesystem_apt.pp, lines: "59-61", text: "$_apt_surface_list = $apt_surface_list"}
+    probe: |
+      b=/opt/puppet-infrastructure/bin
+      grep -E '^NO_KERNEL=' $b/apt-check-updates.sh
+      sed -n 's/^SURFACE=//p' $b/apt-update-surface.sh
+    expect: {rc: 0, stdout: "\\ANO_KERNEL=\"1\"\\nSURFACE=\"vim less\"\\n\\Z"}

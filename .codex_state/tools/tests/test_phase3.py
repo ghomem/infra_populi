@@ -1307,3 +1307,15 @@ def test_a_node_agent_anchor_in_a_variant_runs_the_agent_in_that_variant_run(p3v
     assert p3v.run("run", CLS, P8_PHASE3_LABVM=str(p3v.labvm)).returncode == 0
     record, _ = p3v.result()
     assert "node_agent" in record["variants"]["strict"] and "node_agent" not in record
+
+
+def test_a_composite_forwarding_its_own_parameter_with_the_same_default_is_no_variant():
+    """2026-11-23: fleet_variant_usage.md follows `param => $own` forwarding; only a composite whose own default differs
+    from the class's (node_base's nameservers [] for dns_client's required list) makes its default a variant."""
+    import sys
+    sys.path.insert(0, str(TOOLS))
+    import phase3  # noqa: PLC0415
+    assert phase3.composite_sets("dns_client", "nameservers") == ["node_base"]
+    assert phase3.composite_sets("nginx_frontend_domain", "servers_create") == []
+    assert phase3.param_default("class x (\n  Boolean $a = true,\n  $b,\n  $c = 'x', # note\n) {\n", "a") == "true"
+    assert phase3.param_default("class x (\n  Boolean $a = true,\n  $b,\n) {\n", "b") is None

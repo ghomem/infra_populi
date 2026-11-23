@@ -4,6 +4,8 @@
 # Puppet adds search permission to a directory wherever read is set, so the effective mode is read on the node. rsyslog
 # on Ubuntu 24.04 already creates /var/log/syslog as syslog:adm 0640, the class's own values, so the class's part is
 # shown as enforcement: the file's owner and mode are changed by hand and the next agent run must restore them.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): the option's default and another syslog_mode, both passed by the
+# desktop composites, are checks in the variant runs `default` and `mode`.
 class: filesystem_base_desktop
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -26,7 +28,14 @@ outcomes:
     checks: [syslog-file-owner-and-mode, the-syslog-file-drifts, the-agent-run-restores-the-syslog-file]
   - outcome: without customize_syslog_mode (the default) the syslog file is left alone; another syslog_mode
     from: manifests/filesystem_base_desktop.pp:6-7, 30
-    uncovered: {why: "parameter variants (one set holds one params fixture, which turns the option on); untested", lifted_by: ubuntu}
+    checks: [the-syslog-file-is-left-alone-by-default, another-syslog-mode-is-applied]
+variants:
+  - name: default
+    why: customize_syslog_mode false, passed by node_base_desktop and node_base_domain_desktop (composites)
+    params: default
+  - name: mode
+    why: another syslog_mode (u=rw,g=,o=), a parameter the same composites pass through
+    params: mode
 checks:
   - id: base-directories
     what: /opt/puppet-infrastructure, its bin and its etc are directories, root:root, mode 755 in effect
@@ -87,3 +96,25 @@ checks:
       test -e /run/p8test-fsd/drifted && echo "changed by hand earlier"
       stat -c '%U %G %a' /var/log/syslog
     expect: {rc: 0, stdout: "\\Achanged by hand earlier\\nsyslog adm 640\\n\\Z"}
+
+  - id: the-syslog-file-is-left-alone-by-default
+    variant: default
+    what: with customize_syslog_mode false the class is applied (its base directories exist) and the catalog manages no syslog file
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_base_desktop.pp, lines: "30-37", text: "if ($customize_syslog_mode) {"}
+    probe: |
+      test -d /opt/puppet-infrastructure/bin && echo "base directories"
+      python3 -c 'import json,sys; r=json.load(open(sys.argv[1]))["resources"]; print("syslog file resources:", sum(1 for x in r if x["type"]=="File" and x["title"]=="/var/log/syslog"))' $(ls /opt/puppetlabs/puppet/cache/client_data/catalog/*.json 2>/dev/null | head -1) 2>/dev/null || echo "no catalog"
+    expect: {rc: 0, stdout: "\\Abase directories\\nsyslog file resources: 0\\n\\Z"}
+
+  - id: another-syslog-mode-is-applied
+    variant: mode
+    what: with customize_syslog_mode true and syslog_mode u=rw,g=,o= the syslog file is syslog:adm 0600
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_base_desktop.pp, lines: "30-37", text: "mode   => $syslog_mode,"}
+      - {path: manifests/filesystem_base_desktop.pp, lines: "7", text: "String $syslog_mode            = 'u=rw,g=r,o=',"}
+    probe: |
+      stat -c '%U:%G %a' /var/log/syslog
+    expect: {rc: 0, stdout: "\\Asyslog:adm 600\\n\\Z"}

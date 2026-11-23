@@ -321,19 +321,36 @@ OUTCOMES_MISSING = "outcomes: the purpose as observable outcomes, each mapped to
 FLEET_USAGE = REPO / ".codex_state" / "diagnosis" / "fleet_variant_usage.md"
 
 
+def param_default(text: str, param: str) -> str | None:
+    """A class's default for `param` as written (spaces removed), or None when it has none (a required parameter)."""
+    head = text[:text.find("{", text.find("("))] if "(" in text else ""
+    m = re.search(rf"\${param}\s*(?:=\s*([^,\n#]+?))?\s*(?:,|\)|#|\n)", head)
+    return re.sub(r"\s+", "", m.group(1)) if m and m.group(1) else None
+
+
 def composite_sets(cls: str, param: str) -> list[str]:
-    """The repository's classes that declare `cls` with `param` set (its value reaches every node declaring them)."""
+    """The repository's classes that declare `cls` with `param` set, so that their value reaches every node declaring
+    them. A composite that forwards its own parameter (`param => $own`) with the same default as `cls` is not counted:
+    fleet_variant_usage.md already follows that forwarding, and its default is no variant (2026-11-23)."""
     import fleet_variants  # noqa: PLC0415
+    own_file = REPO / "manifests" / f"{cls}.pp"
+    own_default = param_default(fleet_variants.strip_comments(own_file.read_text()), param) if own_file.is_file() else None
     found = []
     for path in sorted((REPO / "manifests").glob("*.pp")):
         if path.stem == cls:
             continue
         text = fleet_variants.strip_comments(path.read_text(errors="replace"))
         for m in fleet_variants.DECL.finditer(text):
-            if (m.group(2) or m.group(4)) == cls and param in fleet_variants.top_level_params(
-                    fleet_variants.body_at(text, m.start())):
-                found.append(path.stem)
-                break
+            if (m.group(2) or m.group(4)) != cls:
+                continue
+            body = fleet_variants.body_at(text, m.start())
+            if param not in fleet_variants.top_level_params(body):
+                continue
+            fwd = re.search(rf"(?:^|[,{{\s]){param}\s*=>\s*\$(\w+)\s*(?:,|$)", body, re.M)
+            if fwd and own_default is not None and param_default(text, fwd.group(1)) == own_default:
+                continue
+            found.append(path.stem)
+            break
     return found
 
 
