@@ -1,0 +1,43 @@
+{
+ "class": "openvpn_set_vpn_passwd_file",
+ "at": "20261123T003637Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "a-mismatch-is-asked-again: set_vpn_passwd.sh.erb:44-45 (and 47-52) refuse a blank answer with BLANK_PASSWD and a differing pair with UNMATCHING_PASSWD, then loop; the stub answers two blanks (unquoted [ -z ] is true), x/y, then p8test-pass-b twice, and the expect requires 6 password prompts, the blank msgbox, the mismatch msgbox, 'Configuration finished.' and VPN2's NetworkManager secret = p8test-pass-b, which is exactly what those lines produce with VPN2 listed in the fixture",
+  "vpn-profiles-and-a-dialog-stub: set_vpn_passwd.sh.erb:15-20 look for a listed connection's profile at /etc/NetworkManager/system-connections/<name>; the setup writes VPN1/VPN3/VPN4 keyfiles at that path (VPN1 to the peer server with the throwaway CA, VPN4 in openvpn_nm_connection's shape) and the kdialog stub, and the effect reads NetworkManager's connection list and the stub, so the profiles exist both for the baseline file test and for local change #21's nmcli lookup",
+  "script-installed-with-the-list: set_vpn_passwd.sh.erb:16 renders each vpn_list entry preceded by a space, so the params fixture [VPN1, VPN2, VPN4] gives VPN_LIST=\" VPN1 VPN2 VPN4\"; the manifest's file resource (mode 0755, owner and group = file_owner default root) gives root:root 755, as the probe expects",
+  "purpose covered: Purpose (header: a script to set the password of several OpenVPN connections; template: ask twice with kdialog, on match nmcli-set the secret of every listed connection present) is tested end to end on the kubuntu node with a stub kdialog: install with owner/list (script-installed-with-the-list); a matching pair sets VPN1 (listed) and not VPN3 (unlisted), VPN2 (listed, absent) skipped without error, and VPN1 then really connects to an OpenVPN server on the ubuntu2 peer that accepts only that password (matching-answers-set-the-listed-connection); cancel at either dialog leaves VPN1's password (cancelling-changes-nothing); blank and mismatched answers re-asked (a-mismatch-is-asked-again); a second run changes the password after NetworkManager moved the profile into netplan, proven by the peer switching to accept only p8test-pass-c and VPN1 connecting (a-second-run-changes-the-password, the local change #21 outcome). Left out honestly: an agent-owned profile (openvpn_nm_connection's password-flags=1, user permission) keeping the password needs a secret agent in a p8test* user's Plasma session; the runner's session block requires such a fixture account and this define's plan row has no required_base or node_fixture (verified in migration_plan.md and phase3.py session_problems), lifted_by a named capability, not an active node kind. My reviewer run: CLEAN all 9 negatives failed, APPLIED all 9 passed (ALL_PASS)."
+ ],
+ "review_s": 181.6,
+ "check_file_sha256": "4cab5fc160d6db27e50f10616c931c93a814c25de59b1acdbcd921ba4b015d93",
+ "content_sha256": "4cab5fc160d6db27e50f10616c931c93a814c25de59b1acdbcd921ba4b015d93",
+ "reviewer_result": "20261123T003336Z-reviewer",
+ "author_result": "20261123T002025Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v1",
+   "boot_id": "88d254f9-931b-46d4-9264-3dd938b58b7d",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "88d254f9-931b-46d4-9264-3dd938b58b7d",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "f4aedea2-32c3-48a3-b155-0e481ac71591",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "f4aedea2-32c3-48a3-b155-0e481ac71591",
+   "fresh": true
+  }
+ }
+}

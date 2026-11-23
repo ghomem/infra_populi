@@ -1,4 +1,4 @@
-# openvpn_set_vpn_passwd_file — behaviour finding (OPEN, for HQ: more than one reasonable design)
+# openvpn_set_vpn_passwd_file — behaviour finding (FIXED: local change #21, HQ after batch 20 item 4, option A)
 
 Production use 0 (migration_order.md). The define installs `templates/openvpn/set_vpn_passwd.sh.erb` (baseline cf477c6):
 a script that asks a desktop user twice for a VPN password (kdialog) and, when both match, runs `nmcli connection
@@ -48,3 +48,16 @@ Two checks fail, both findings described above: `a-second-run-changes-the-passwo
 ## Round 2 (2026-11-21, the last; review 20261121T164531Z)
 The agent-owned check was removed, being unobservable as root, and its outcome is an uncovered row. The one finding
 stays: a second run cannot find a profile that NetworkManager moved into netplan.
+
+## Resolution (2026-11-23)
+HQ after batch 20, item 4 chose option A: the script asks NetworkManager whether each listed connection exists
+(`nmcli -g NAME connection show`, matched exactly) instead of testing its keyfile; the password is still set through
+`nmcli connection modify ... vpn.secrets`. Local change #21 (a776f84). The set now proves it end to end: VPN1 connects to
+an OpenVPN server on the ubuntu2 peer that accepts one password at a time, switched between the two runs.
+- before (results/openvpn_set_vpn_passwd_file/20261123T000353Z-author): run 1 sets p8test-pass-a and VPN1 connects; run
+  2 leaves p8test-pass-a and the connection fails (up rc 4);
+- after (20261123T002025Z-author, on the recorded code): run 2 sets p8test-pass-c and VPN1 connects with it;
+- Phase 1 review PASS (20261123T003152Z; the first review, 20261123T002612Z, failed on records only: a '|' in row
+  #21's change cell); Phase 3 review PASS (20261123T003637Z).
+The agent-owned profile (openvpn_nm_connection's password-flags=1) stays an uncovered row, lifted by a fixture user's
+Plasma session.
