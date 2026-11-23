@@ -1,0 +1,35 @@
+{
+ "class": "rsyslog_base",
+ "at": "20261123T174701Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-next-agent-run-starts-rsyslog-again: manifests/rsyslog_base.pp:75-80 'ensure => running' keeps rsyslog running; after the node's agent run following a hand stop (socket and service), the effect reads systemctl is-active = active plus the key present at /etc/rsyslog.d/tls/<hostname>.key (certname = hostname, as the header states); the reference supports the probe and expect",
+  "on-redhat-a-syslog-account-with-ids-0-exists: manifests/rsyslog_base.pp:16-28 declare, under os.family RedHat, group syslog gid 0 and user syslog uid 0 (allowdupe); getent group/passwd syslog cut to name:id = syslog:0 twice is exactly what those lines produce on rhel9 (variant rhel); the trailing 'active' line comes from the service at 75-80, which the class also declares",
+  "rsyslog-can-read-the-key-as-the-user-it-runs-as: manifests/rsyslog_base.pp:65-71 copy the private key owner syslog, group syslog, mode 0600; runuser -u syslog openssl pkey reads it (Ubuntu's rsyslog.conf PrivDropToUser syslog and rsyslogd's process user are read as context); the mismatch varies only the user to nobody, which 0600 syslog ownership must refuse, and it failed after apply as required",
+  "purpose gap: Tested (my run 20261123T174155Z-reviewer, ALL_PASS, default and rhel): rsyslog and rsyslog-gnutls installed with the gtls driver, rsyslog active and enabled; the CA, certificate and key copied byte for byte from the OpenVox ssldir with syslog ownership and modes, the certificate verifying against the copied CA; the syslog user reads the key and nobody cannot; a stopped rsyslog (socket too) runs again after the agent run; a TLS-directory drift is restored and restarts rsyslog; a changed CA file is restored and restarts rsyslog exactly once (local change #1); on rhel9 the syslog group and user with ids 0 exist. GAP: the selector at manifests/rsyslog_base.pp:32-35 has a default arm, undef => '/var/lib/puppet/ssl', and production uses it: diagnosis/fleet_variant_usage.md counts ssldir_override set by 1 node statement for rsyslog_base and by 1 of the 36 rsyslog_client statements (target 36), and rsyslog_client passes its undef through, so the other client nodes get the default. Under HQ 2026-11-23 ruling 1c/1d a variant production uses becomes a check, or a row naming what is missing with evidence; the set has neither: the outcomes table cites 32-35 only for the copy outcome, which every run exercises with the override (the params fixture, and the lab Hiera binding at master_fixtures.sh:144 applies the override to every lab run), and the default arm appears only in the header comment. On the lab node /var/lib/puppet/ssl does not exist (lab_exec: 'No such file or directory'), so the lab can observe what the default does on an OpenVox agent (the copies have no source) or the row must state the missing capability (an agent keeping its ssldir at /var/lib/puppet/ssl) with that evidence. Secondary: the rhel outcome says the account exists 'for the copied files' ownership', but the rhel run checks only the account and rsyslog active, not that the TLS files exist there owned by syslog (uid 0) and readable by rsyslog, which the rhel9 node could show."
+ ],
+ "review_s": 306.9,
+ "check_file_sha256": "109543077efa0eb0a3d55f4e24a08a705033b0963e29bfe7e6d797379690b86b",
+ "content_sha256": "109543077efa0eb0a3d55f4e24a08a705033b0963e29bfe7e6d797379690b86b",
+ "reviewer_result": "20261123T174155Z-reviewer",
+ "author_result": "20261123T122500Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "24cfe8bc-618e-447f-8b6d-c02694feff7c",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "24cfe8bc-618e-447f-8b6d-c02694feff7c",
+   "fresh": true
+  }
+ }
+}
