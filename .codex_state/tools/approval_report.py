@@ -41,7 +41,15 @@ LIFT_STANDINS = {
 ACCEPTANCE_STANDINS = {"user_samba", "user_sysmon"}
 
 
+# A lift that needs a design choice or a new VM is escalated in escalations/<file> (2026-11-23).
+LIFT_ESCALATIONS = {"letsencrypt_certificate": "letsencrypt_certificate.standin.md",
+                    "openvpn_server": "openvpn_server.standin.md", "network_vpn": "openvpn_server.standin.md"}
+
+
 def standin_plan(cls: str) -> str:
+    if cls in LIFT_STANDINS and (ESCALATIONS / LIFT_ESCALATIONS.get(cls, "-")).is_file():
+        return (f"lift escalated: {LIFT_STANDINS[cls]} needs a design choice (escalations/{LIFT_ESCALATIONS[cls]}; "
+                "HQ after batch 20, item 6)")
     if cls in LIFT_STANDINS:
         return f"to be lifted: {LIFT_STANDINS[cls]} (HQ after batch 20, item 6)"
     if cls in ACCEPTANCE_STANDINS:

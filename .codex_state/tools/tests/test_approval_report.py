@@ -68,6 +68,8 @@ def test_a_set_splits_into_proven_and_open_rows(tmp_path, monkeypatch):
     ("user_samba", "stays; for Salatiel's explicit acceptance"),
     ("user_sysmon", "stays; for Salatiel's explicit acceptance"),
     ("openvpn_domain", "not in HQ's lift list"),
+    ("letsencrypt_certificate", "lift escalated:"),
+    ("network_vpn", "lift escalated:"),
 ])
 def test_standin_plans_follow_hq_item_6(cls, start):
     assert approval_report.standin_plan(cls).startswith(start)
