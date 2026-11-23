@@ -234,14 +234,14 @@ def test_repo_node_fixtures_exist_for_the_planned_classes(gen):
     assert rows["hashman_web"].node_fixture == "hashman_master_standin"  # the site logo files
     assert rows["user_lock"].node_fixture == "hashman_user_via_hashman"  # a user hashman creates (a test asset)
     assert rows["letsencrypt_certificate"].node_fixture == "letsencrypt_cert_standin"  # stand-in live certificate
-    assert rows["node_base_domain_desktop"].node_fixture == "puppet_agent_standin"  # Service['puppet'] without a daemon
+    assert rows["node_base_domain_desktop"].node_fixture == ""  # the real agent daemon runs: the harness tolerates it (item 6)
     assert rows["openvpn_server"].node_fixture == "p8test_dhcp_primary"  # stand-in DHCP primary interface (veth + netns)
     assert rows["network_vpn"].node_fixture == "p8test_dhcp_primary"  # declares openvpn_server: same stand-in
-    assert rows["node_base_desktop"].node_fixture == "puppet_agent_standin"  # Service['puppet'] without a daemon
+    assert rows["node_base_desktop"].node_fixture == ""  # the real agent daemon runs: the harness tolerates it (item 6)
     assert rows["openvpn_nm_connection"].node_fixture == "p8test_vpn_ca"  # the CA file it requires, never declares
     assert rows["mount_shares_desktop"].node_fixture == "p8test_desktop_login"  # a real first login makes ~/Desktop
     assert rows["openvpn_domain"].node_fixture == "p8test_domain_dns"  # the lab domain's DNS (the DC p8lab-dc)
-    assert sum(1 for r in rows.values() if r.node_fixture) == 12
+    assert sum(1 for r in rows.values() if r.node_fixture) == 10  # 2026-11-23: the two puppet_agent_standin rows lifted (item 6)
 
 
 def test_expected_run2_events_parse(gen):

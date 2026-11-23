@@ -158,4 +158,4 @@ def test_standins_flag_prints_only_tab_separated_rows():
     assert proc.returncode == 0, proc.stderr
     rows = [line.split("\t") for line in proc.stdout.splitlines()]
     assert rows and all(len(r) == 3 and r[2] for r in rows)
-    assert {"letsencrypt_certificate", "node_base_domain_desktop"} <= {r[0] for r in rows}
+    assert {"letsencrypt_certificate", "openvpn_server"} <= {r[0] for r in rows}
