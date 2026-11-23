@@ -3,6 +3,11 @@
 # below runs one of them on the node as the monitoring server would, with thresholds chosen to reach a known state.
 # Values were measured on the node after one harness apply (2026-11-18) before writing them; the netstat scripts and
 # nagios-puppet.sh did not reach their intended results there (see the outcomes table).
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1b): the RedHat branch is checked in the variant run `rhel` (rhel9).
+# 2026-11-23 authoring correction (sweep run 20261123T122804Z-author, variant rhel): the package-count probe piped the
+# check into `head -1` and took the check's exit status from PIPESTATUS; head closed the pipe after the first line, so
+# the check died of SIGPIPE (rc=141) after printing `OK -`. The probe now captures the output first and takes the
+# check's own exit status.
 class: sysmon_base
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -60,10 +65,14 @@ outcomes:
     checks: [the-elastic-check-is-unknown-without-elasticsearch, the-elastic-check-is-ok-with-no-events, the-elastic-check-is-critical-with-events, the-elastic-check-asks-for-the-query]
   - outcome: on RedHat the package-count check counts the security updates of a severity (dnf or yum updateinfo, Important by default)
     from: files/sysmon/check_package_count.sh:36-46
-    uncovered: {why: "the RedHat branch of the script; the set runs on the plan's Ubuntu node", lifted_by: rhel9}
+    checks: [on-redhat-the-package-count-uses-updateinfo]
   - outcome: on RedHat the same checks are installed (the computed package name nagios-plugins-disk is not used by any resource)
     from: manifests/sysmon_base.pp:4-15
-    uncovered: {why: "the set runs on the plan's Ubuntu node; sysmon_base's RedHat run is the Phase 1 per-node verdict on rhel9", lifted_by: rhel9}
+    checks: [on-redhat-the-checks-are-installed]
+variants:
+  - name: rhel
+    why: the RedHat branch (the same checks installed; the package count from dnf updateinfo), on the rhel9 node
+    node: rhel9
 checks:
   - id: the-checks-are-installed
     what: every check root:root 0755; the module's files byte for byte (nagios-puppet.sh by owner and mode only); check_cpu.py runs under the local mypython
@@ -417,3 +426,36 @@ checks:
     effect: |
       cat /run/p8test-sysmon/failed.txt
     expect: {rc: 0, stdout: "\\ACRITICAL: exit code [46] rc=2\\n\\Z"}
+
+  - id: on-redhat-the-checks-are-installed
+    variant: rhel
+    what: on RedHat the check scripts are installed root:root 0755 in bin, and check_cpu.py in /usr/lib64/nagios/plugins
+    control: negative
+    derived_from:
+      - {path: manifests/sysmon_base.pp, lines: "23-31", text: "file { \"${localdir}/bin/nagios-puppet.sh\":"}
+      - {path: manifests/sysmon_base.pp, lines: "68-76", text: "file { \"${localdir}/bin/check_package_count.sh\":"}
+      - {path: manifests/sysmon_base.pp, lines: "95-100", text: "file { '/usr/lib64/nagios/plugins/check_cpu.py':"}
+    probe: |
+      cd /opt/puppet-infrastructure/bin && stat -c '%n %U:%G %a' nagios-puppet.sh check_reboot_required.sh check_package_count.sh check_dd_latency.sh
+      test -f /usr/lib64/nagios/plugins/check_cpu.py && echo "check_cpu.py installed"
+    expect: {rc: 0, stdout: "\\Anagios-puppet\\.sh root:root 755\\ncheck_reboot_required\\.sh root:root 755\\ncheck_package_count\\.sh root:root 755\\ncheck_dd_latency\\.sh root:root 755\\ncheck_cpu\\.py installed\\n\\Z"}
+
+  - id: on-redhat-the-package-count-uses-updateinfo
+    variant: rhel
+    what: >-
+      on RedHat the package-count check counts the security updates of the Important severity through dnf updateinfo
+      (no apt there) and answers OK below a threshold no count reaches, with exit 0
+    control: negative
+    timeout: 300
+    derived_from:
+      - {path: files/sysmon/check_package_count.sh, sha256: "a2a5bd075742a0073e201fc418fb5692177b4081d5f19d8082cbc83bd439f351"}
+    mutates: >-
+      runs the package-count check once (dnf may refresh its metadata cache); the outcome goes to /run/p8test-pkgcount.txt
+    probe: |
+      command -v apt >/dev/null && echo "apt present" > /run/p8test-pkgcount.txt || : > /run/p8test-pkgcount.txt
+      out=$(/opt/puppet-infrastructure/bin/check_package_count.sh 100000 Important 2>/dev/null); rc=$?
+      printf '%s\n' "$out" | head -1 | cut -d' ' -f1-2 >> /run/p8test-pkgcount.txt
+      echo "rc=$rc" >> /run/p8test-pkgcount.txt
+    effect: |
+      cat /run/p8test-pkgcount.txt
+    expect: {rc: 0, stdout: "\\AOK -\\nrc=0\\n\\Z"}
