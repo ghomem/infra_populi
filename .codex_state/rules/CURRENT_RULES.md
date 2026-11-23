@@ -2,7 +2,15 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-132 entries; 6 marked superseded (in whole or part); newest first.
+133 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-23 — HQ rulings after the stop: carried out
+- 1. **Ruling 3, lab down at pauses (lab_idle_down.sh, 5066ec7).** A Stop hook (`.claude/settings.json`) runs
+- 2. **The fake lab writes its world atomically** (conftest.py, both writers): a stub read a half-written world file
+- 3. **Ruling 2 done:** review_class.py `comments_preserved` accepts a listed comment change (559979d, 3 tests; reviewer.md
+- 4. **Ruling 1 done as local change #20** (287a517): the dump's databases (header, CREATE DATABASE, USE) are listed before
+- 5. **Item 4 (openvpn_set_vpn_passwd_file), local change #21:** VPN1 connects to a real OpenVPN server on the ubuntu2 peer
+- 6. **Commits with a path argument** (`git commit -- <path>`) run the pre-commit hook with GIT_INDEX_FILE set to a
 
 ## 2026-11-22 — HQ rulings after the run stopped
 - 1. **sysmon_mysqldump_health:** the scratch-name design is withdrawn; the advisor's design, with conditions. Before any

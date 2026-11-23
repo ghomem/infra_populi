@@ -5,10 +5,10 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 
 ## Summary
 
-- Done classes: 90 (89 verified by the Phase 1 reviewer). Owner-validated: postfix_smtp_base_config_file. Retired: nginx_proxy_smtp_auth_ppa. Blocked: none.
-- Behaviour (Phase 3): 1 deferred, 4 finding, 84 pass, 1 stale.
+- Done classes: 90 (90 verified by the Phase 1 reviewer). Owner-validated: postfix_smtp_base_config_file. Retired: nginx_proxy_smtp_auth_ppa. Blocked: none.
+- Behaviour (Phase 3): 1 deferred, 2 finding, 86 pass, 1 review-failed.
 - Open rows (outcomes no check probes): 120 in 73 classes.
-- Stand-ins: 11. Local changes: 19 (in 16 classes).
+- Stand-ins: 11. Local changes: 21 (in 17 classes).
 
 ## For Salatiel's decision
 
@@ -16,8 +16,6 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 
 - **firewall_secure_extra** — the-rst-limit-dropped-the-third (escalations/firewall_secure_extra.behaviour.md)
 - **openvpn_server** — the-data-channel-is-compressed-both-ways (escalations/openvpn_server.behaviour.md)
-- **openvpn_set_vpn_passwd_file** — a-second-run-changes-the-password (escalations/openvpn_set_vpn_passwd_file.behaviour.md)
-- **sysmon_mysqldump_health** — a-live-database-of-the-dump-name-is-left-intact (escalations/sysmon_mysqldump_health.behaviour.md)
 
 ### Stand-ins
 
@@ -35,9 +33,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 
 ### Open escalations
 
-- escalations/openvpn_set_vpn_passwd_file.behaviour.md: openvpn_set_vpn_passwd_file — behaviour finding (OPEN, for HQ: more than one reasonable design)
-- escalations/sysmon_mysqldump_health.behaviour.md: sysmon_mysqldump_health — behaviour findings (finding 1 FIXED, local change #18; finding 2 OPEN, for HQ)
-- escalations/sysmon_puppet_cert_status.phase1.md: sysmon_puppet_cert_status — Phase 1 review FAIL twice on comment preservation (OPEN, for HQ: the run is stopped)
+- escalations/sysmon_mysqldump_health.behaviour.md: sysmon_mysqldump_health — behaviour findings (findings 1 and 2 FIXED, local changes #18 and #20; the check set OPEN, for HQ: past the correction cap)
 
 ## One row per class
 
@@ -96,7 +92,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 | openvpn_domain | 0 | ubuntu + dc | pass | 6 | 0 | yes |  | #17 |
 | openvpn_nm_connection | 0 | gnome + ubuntu2 | pass | 4 | 1 | yes |  |  |
 | openvpn_server | 3 | ubuntu + ubuntu2 | finding | 8 | 1 | yes | yes | #7 |
-| openvpn_set_vpn_passwd_file | 0 | kubuntu | finding | 5 | 1 |  | yes |  |
+| openvpn_set_vpn_passwd_file | 0 | kubuntu + ubuntu2 | pass | 5 | 1 |  |  | #21 |
 | packages_base | 78 | ubuntu | pass | 4 | 2 |  |  |  |
 | postfix_smtp_base | 0 | ubuntu + ubuntu2 | pass | 8 | 2 |  |  |  |
 | postfix_smtp_node | 3 | ubuntu + ubuntu2 | pass | 5 | 2 |  |  |  |
@@ -120,8 +116,8 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 | sysmon_fs_health | 0 | ubuntu | pass | 5 | 0 |  |  |  |
 | sysmon_integrity_master | 0 | ubuntu | pass | 2 | 1 |  |  |  |
 | sysmon_integrity_node | 0 | ubuntu | pass | 4 | 1 |  |  |  |
-| sysmon_mysqldump_health | 0 | ubuntu | finding | 7 | 0 |  | yes | #18 |
-| sysmon_puppet_cert_status | 0 | ubuntu | stale | 3 | 0 |  |  | #19 |
+| sysmon_mysqldump_health | 0 | ubuntu | review-failed | 8 | 0 |  |  | #18, #20 |
+| sysmon_puppet_cert_status | 0 | ubuntu | pass | 3 | 0 |  |  | #19 |
 | user | 2 | ubuntu | pass | 4 | 3 |  |  |  |
 | user_base | 3 | ubuntu | pass | 3 | 4 |  |  |  |
 | user_desktop | 0 | kubuntu | pass | 3 | 1 |  |  |  |
@@ -892,17 +888,17 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### openvpn_set_vpn_passwd_file
 
 - **Purpose:** Installs a script with which a desktop user sets the password of several OpenVPN connections at once: it asks for the password twice (kdialog), and when both match it stores it as the secret of every listed NetworkManager connection present on the machine; blank or mismatched answers are asked again, and cancelling changes nothing.
-- **Behaviour:** finding — a-second-run-changes-the-password; node kubuntu; production machines: 0.
+- **Behaviour:** pass; node kubuntu, peer ubuntu2; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the script is installed with the owner and the listed connections (`script-installed-with-the-list`)
-  - with both answers matching, every listed connection present gets the password, and an unlisted one is left alone (`vpn-profiles-and-a-dialog-stub`, `matching-answers-set-the-listed-connection`)
+  - with both answers matching, every listed connection present gets the password, and an unlisted one is left alone; the listed connection then connects with it (`a-test-vpn-pki-and-route`, `vpn-profiles-and-a-dialog-stub`, `the-peer-serves-openvpn-accepting-pass-a`, `matching-answers-set-the-listed-connection`)
   - cancelling at either dialog changes nothing (`cancelling-changes-nothing`)
   - blank or mismatched answers are refused with a message and asked again, then a match sets the password (`a-mismatch-is-asked-again`)
-  - running the script again changes the password of a listed connection (the next password change) (`a-second-run-changes-the-password`)
+  - running the script again changes the password of a listed connection (the next password change), and the connection then connects with the new one (`the-peer-now-accepts-pass-c`, `a-second-run-changes-the-password`)
 - **Open rows:**
   - openvpn_nm_connection's own profiles (agent-owned password, the desktop user's) get the password when the user runs the script in their session — why: an agent-owned secret is saved only through a secret agent in the requesting user's desktop session (plasma-nm with its wallet); the set's runs are root over SSH, with no agent, and the profile's permitted user must exist and be logged in. The runner's session block logs in a p8test* account, but this define creates none and its plan gives no base or node fixture that would — lifted by: capability: a node fixture user for this define, logged in to Plasma by the runner, with the script run inside that session (its secret agent and wallet)
-- **Finding:** a-second-run-changes-the-password (escalations/openvpn_set_vpn_passwd_file.behaviour.md)
+- **Local changes:** #21: templates/openvpn/set_vpn_passwd.sh.erb:15-20: the script asks NetworkManager whether each listed connection exists (`nmcli -g NAME connection show`, its output matched exactly against the name with `grep -qxF`) instead of testing for its keyfile /etc/NetworkManager/system-connections/<name> (`VPN_CON_FILE_LOCATION` and `CONN_LOCATION` removed);
 
 ### packages_base
 
@@ -1231,7 +1227,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### sysmon_mysqldump_health
 
 - **Purpose:** Gives the monitoring system a Nagios check that proves the MySQL dumps under the configured directories can be restored: each .sql file that is a mysqldump is loaded into a scratch database of its own name, which is then dropped; any failure (create, load, drop), or a .sql file that is not a mysqldump, is reported CRITICAL with exit 2, and OK with exit 0 otherwise.
-- **Behaviour:** finding — a-live-database-of-the-dump-name-is-left-intact; node ubuntu; production machines: 0.
+- **Behaviour:** review-failed — purpose; node ubuntu; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the check script carries the MySQL user and password and the dump directories, root 0755 (`check-script-rendered`)
@@ -1239,15 +1235,15 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - a dump that does not load is reported CRITICAL (Load database dump) with exit 2, and its scratch database is dropped (`restores-are-checked`)
   - a .sql file that is not a mysqldump (the empty file a failed dump leaves, or a dump without its header comments) is reported CRITICAL with exit 2 (`a-file-that-is-not-a-dump-is-critical`)
   - every configured directory is checked, subdirectories included (a broken dump in a dated subdirectory of the second directory is reported) (`restores-are-checked`)
-  - a scratch database that cannot be created (one of that name exists) is reported CRITICAL (Create database) with exit 2, and the existing database is left intact (`a-live-database-of-the-dump-name-is-left-intact`)
+  - a dump that would create or use a database that already exists is not restored: the file is validated only (a complete mysqldump), the output says the restore test was skipped because the database exists, and the existing database keeps every row; an incomplete dump of such a database is reported CRITICAL (`a-live-database-of-the-dump-name-is-left-intact`, `an-incomplete-dump-of-an-existing-database-is-critical`)
+  - a dump made with --databases (its own CREATE DATABASE and USE lines) whose database is absent gets the full restore test and leaves nothing behind (`a-databases-dump-is-restored-and-removed`)
   - a scratch database that cannot be dropped is reported CRITICAL (Drop database) with exit 2 (`a-failed-drop-is-critical`)
-- **Finding:** a-live-database-of-the-dump-name-is-left-intact (escalations/sysmon_mysqldump_health.behaviour.md)
-- **Local changes:** #18: templates/sysmon/check-mysqldump-health.sh.erb:68: `handle_error 1 "SQL File $f is not a MySQLDump"` (was `handle_error $RC ...`);
+- **Local changes:** #18: templates/sysmon/check-mysqldump-health.sh.erb:68: `handle_error 1 "SQL File $f is not a MySQLDump"` (was `handle_error $RC ...`);; #20: templates/sysmon/check-mysqldump-health.sh.erb: before any restore the check lists the databases the dump would create or use (its header's `Database:`, its `CREATE DATABASE` and `USE` lines;
 
 ### sysmon_puppet_cert_status
 
 - **Purpose:** Gives the monitoring system (naemon, through sudo) a Nagios check on the Puppet master that reports the certificate expiry of every node the CA signed: Critical when one has expired or expires within 10 days, Warning within 30, OK otherwise, naming the certificate that expires first.
-- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 0.
+- **Behaviour:** pass; node ubuntu; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the check script (the module's file, root 0755) and its dependency python3-yaml are installed (`script-and-dependency-installed`)

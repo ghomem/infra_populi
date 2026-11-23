@@ -2412,3 +2412,37 @@ the engine's tools, which take the lock themselves, are unaffected. 21 tests; th
    the lab down unless a run holds the lock. Tested.
 4. **Then continue:** item 4 (openvpn_set_vpn_passwd_file), the stand-in lifts, the sweep, the final approval report
    (stop for Salatiel), the test-suite design note, the rename.
+
+## 2026-11-23 — HQ rulings after the stop: carried out
+1. **Ruling 3, lab down at pauses (lab_idle_down.sh, 5066ec7).** A Stop hook (`.claude/settings.json`) runs
+   `lab_idle_down.sh arm` when the advisor's turn ends; a UserPromptSubmit hook runs `disarm`. Armed, a detached watcher
+   runs `lab_power.sh down` once the lab has been idle for 600 s: no lab lock holder and no lab tool process
+   (phase3.py run, test_class.sh, revert_node.sh, record_green.sh, review_class.py, codex_migrate_class, lab_exec.sh,
+   lab_power.sh, snapshot_master.sh, lab_vm.sh). A lock holder or lab process resets the idle clock; with no lab VM
+   running it does nothing. The watcher does not act at the instant a turn ends, because turns end while background
+   reviewer or harness runs still use the lab between two lock-holding steps. Tests on the fake lab (8). The hook fired
+   in this session (~/.cache/infra_populi/idle_down.log). Consequence for the advisor: a turn that ends while waiting on
+   a long laptop-only step (a full-suite commit) may let the lab go down; a GREEN stamp then needs a new harness run.
+2. **The fake lab writes its world atomically** (conftest.py, both writers): a stub read a half-written world file
+   under load, the sleep-guard flake noted in batch 20. Two test races in the new idle-down tests were mine and are
+   fixed (135d01c, and the 'armed' assertion with a 1 s idle time).
+3. **Ruling 2 done:** review_class.py `comments_preserved` accepts a listed comment change (559979d, 3 tests; reviewer.md
+   exception). Row #19 lists `# This runs the command and collects the output` -> (removed) and the dictionaries
+   comment -> its replacement; the moved copy of the first line was removed from the file, as it described the certregen
+   call. Re-recorded (c8c6ed4), after-run ALL_PASS (ad49928), Phase 1 PASS (30e8bc4), Phase 3 PASS (fb5ce96);
+   escalations/sysmon_puppet_cert_status.phase1.md closed.
+4. **Ruling 1 done as local change #20** (287a517): the dump's databases (header, CREATE DATABASE, USE) are listed before
+   any restore; an existing one means file validation only (a complete mysqldump ends with "-- Dump completed") and an
+   OK line saying the restore test was skipped; a restore drops only the databases this run created (CREATED, reset
+   after each drop). Before: the live database was dropped by the old error path (20261122T233809Z). After: ALL_PASS
+   (20261122T234851Z). Phase 1 PASS (01e4f81). The set's Phase 3 review FAILed on purpose (the create-failure path after
+   #20 has no row); the set had used its two correction rounds, so it is escalated with a one-check fix
+   (escalations/sysmon_mysqldump_health.behaviour.md) and the run continued.
+5. **Item 4 (openvpn_set_vpn_passwd_file), local change #21:** VPN1 connects to a real OpenVPN server on the ubuntu2 peer
+   that accepts one password at a time, switched between the two runs. Before (20261123T000353Z): run 1 connects; run 2
+   leaves the old password and the connection fails (up rc 4). After (20261123T002025Z): run 2 sets the new password and
+   VPN1 connects with it. Phase 1 PASS (the first review failed on records only: a '|' inside row #21's change cell
+   shifted the row parser's cells; the row was reworded) and Phase 3 PASS; the behaviour escalation is fixed.
+6. **Commits with a path argument** (`git commit -- <path>`) run the pre-commit hook with GIT_INDEX_FILE set to a
+   temporary index, which the tests' own git calls inherit; such commits are not used. Noted for the test-suite design
+   note, with a row-shape check for local_changes.md.
