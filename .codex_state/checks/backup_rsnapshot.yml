@@ -5,6 +5,8 @@
 # judged on the snapshot it leaves). `rsnapshot -t` in daily-plan is test mode (prints, executes nothing).
 # Outcomes table added 2026-11-19 (backfill batch 5, HQ batch-10 rulings 2 and C1), with retention as behaviour: eight
 # more daily runs after the first must leave exactly ndays (7) snapshots, daily.0 to daily.6.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): other parameters (undeterminable production use: the passwd/ layer)
+# are a check in the variant run `other`; the 23:00 firing names what is missing.
 class: backup_rsnapshot
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -26,10 +28,21 @@ outcomes:
     checks: [daily-retention-keeps-ndays]
   - outcome: cron itself firing at 23:00
     from: manifests/backup_rsnapshot.pp:13-19
-    uncovered: {why: "a run would have to wait for 23:00; the crontab entry is checked and its exact command is run by hand", lifted_by: ubuntu}
+    uncovered:
+      why: a run would have to wait for 23:00; the crontab entry is checked and its exact command is run by hand
+      lifted_by: "capability: a wall-clock trigger in phase3.py runs (waiting for, or shifting, the node's time)"
+      evidence: >-
+        clock_check.py (HQ 2026-11-17 batch-8 ruling 4) requires every lab clock to agree with the laptop's, and
+        phase3.py has no step that waits for a time of day
   - outcome: other users, times, backup points, prefixes or retention counts
     from: manifests/backup_rsnapshot.pp:3
-    uncovered: {why: "parameter variants (one set holds one params fixture); untested", lifted_by: ubuntu}
+    checks: [other-parameters-render-the-config-and-the-cron-entry]
+variants:
+  - name: other
+    why: >-
+      other parameters (directory, prefix, retention, user, time); production's backups are declared in the passwd/
+      layer, which the engine never reads, so whether production uses them is undeterminable and they are tested
+    params: other
 checks:
   - id: conf-file-mode
     what: the per-title rsnapshot config exists at /etc/rsnapshot.d/rsnapshot-<title>.conf, 0644 root:root
@@ -113,3 +126,19 @@ checks:
     effect: |
       ls -1 /opt/puppet-infrastructure/backup | sort -V | tr '\n' ' '; echo
     expect: {rc: 0, stdout: "\\Adaily\\.0 daily\\.1 daily\\.2 daily\\.3 daily\\.4 daily\\.5 daily\\.6 \\n\\Z"}
+
+  - id: other-parameters-render-the-config-and-the-cron-entry
+    variant: other
+    what: >-
+      with basedir /etc/default, prefix p8test-default, backdir /var/tmp/p8test-backups, ndays 3, user nobody, 04:17,
+      the configuration holds those values and nobody's crontab runs rsnapshot daily at 04:17
+    control: negative
+    derived_from:
+      - {path: templates/backup/rsnapshot.conf.erb, lines: "4", text: "snapshot_root\t<%= @backdir %>"}
+      - {path: templates/backup/rsnapshot.conf.erb, lines: "7", text: "retain\tdaily\t<%= @ndays %>"}
+      - {path: templates/backup/rsnapshot.conf.erb, lines: "12", text: "backup\t<%= @basedir %>\t./<%= @prefix %>"}
+      - {path: manifests/backup_rsnapshot.pp, lines: "13-19", text: "command => \"/usr/bin/rsnapshot -c ${myconffile} daily\","}
+    probe: |
+      grep -E '^(snapshot_root|retain|backup)[[:space:]]' /etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf | tr -s '\t ' ' '
+      crontab -l -u nobody | grep -v '^#'
+    expect: {rc: 0, stdout: "\\Asnapshot_root /var/tmp/p8test-backups\\nretain daily 3\\nbackup /etc/default \\./p8test-default\\n17 4 \\* \\* \\* /usr/bin/rsnapshot -c /etc/rsnapshot\\.d/rsnapshot-backup_rsnapshot\\.conf daily\\n\\Z"}
