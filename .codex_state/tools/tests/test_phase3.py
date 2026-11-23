@@ -1294,3 +1294,16 @@ def test_a_no_resources_variant_tells_the_harness(p3v):
         p3v.probe_rule(marker, FAIL, OK)
     assert p3v.run("run", CLS, P8_PHASE3_LABVM=str(p3v.labvm)).returncode == 0
     assert f"harness --node ubuntu puppet_infrastructure::{CLS} params=strict nores" in p3v.log.read_text().splitlines()
+
+
+def test_a_node_agent_anchor_in_a_variant_runs_the_agent_in_that_variant_run(p3v, lab):
+    data = variant_set(check("strict-drift", "act-drift", variant="strict", mutates="plants a rule by hand",
+                             effect="eff-drift"))
+    data["node_agent"] = {"after": ["strict-drift"], "why": "the agent run after the drift is the evidence"}
+    p3v.write(data)
+    for marker in ("probe-conf", "probe-rhel", "probe-strict", "eff-drift"):
+        p3v.probe_rule(marker, FAIL, OK)
+    lab.world["ssh"].insert(0, {"match": "puppet agent", "stdout": "AGENT_RC=0\n"})
+    assert p3v.run("run", CLS, P8_PHASE3_LABVM=str(p3v.labvm)).returncode == 0
+    record, _ = p3v.result()
+    assert "node_agent" in record["variants"]["strict"] and "node_agent" not in record

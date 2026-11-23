@@ -66,7 +66,8 @@ Check file .codex_state/checks/<class>.yml:
       no_resources: true          # optional, with params: the variant's class declares nothing (the harness's coverage
                                   #   gate then reports the empty target instead of failing)
       # A check with `variant: <name>` runs only in that run (and needs >= 1 negative control there); a check without
-      # it runs in the base run only. Variant runs have no peer, session or agent blocks.
+      # it runs in the base run only. Variant runs have no peer, session or peer_agent; a node_agent anchor that is a
+      # variant's check makes the agent run in that variant's run, on its node.
   checks:
     - id: <slug>
       what: <one line>
@@ -1145,7 +1146,8 @@ def run_variants(cls: str, data: dict, record: dict) -> None:
             if v.get("no_resources"):
                 HARNESS_ENV["P8_VARIANT_NO_RESOURCES"] = "1"
             print(f"==> VARIANT {v['name']}: node {node['kind']}" + (f", params {v['params']}" if "params" in v else ""))
-            vdata = {k: val for k, val in data.items() if k not in ("peer", "session", "node_agent", "peer_agent")}
+            # node_agent anchors are check ids: an anchor among the variant's checks runs the agent on the variant's node
+            vdata = {k: val for k, val in data.items() if k not in ("peer", "session", "peer_agent")}
             vdata["checks"] = [c for c in data["checks"] if c.get("variant") == v["name"]]
             run_locked(cls, vdata, sub, settle(sub))
             mark_fresh(sub)
