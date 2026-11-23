@@ -1,0 +1,35 @@
+{
+ "class": "puppet_commush",
+ "at": "20261123T112736Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "a-run-on-another-branch-warns-and-goes-on (commush.sh:32-37): the guard only echoes 'error: your current branch is $MYBRANCH but you are trying to commush to $BRANCH' and has no exit, so on branch feature naming master the probe expecting that exact line once and the run going on (rc 0, commit 'p8test on feature' on feature) is what the lines declare",
+  "a-run-on-another-branch-warns-and-goes-on (commush.sh:58-60): git commit -a commits on the current branch and 'git push origin $BRANCH' pushes the local master ref, which equals origin master after the confirmed run, so origin master unchanged with rc 0 is the code's result; mutates names the run with a confirming answer (its commit on feature follows) and the global identity it rewrites is the same one the earlier checks declare",
+  "a-confirmed-run-commits-and-pushes (commush.sh:42-43): git config --global user.name/user.email set the identity the following git commit -a uses, so origin master's last commit by 'P8 Test p8test@example.invalid' with the typed message tests those lines; the effect reads origin and the clone (not the action's output), and mutates declares the global identity change, the commit and the push",
+  "purpose covered: The purpose (commit a deployment clone's tracked changes as a given name/email with a typed message after a confirmation, then push to origin's branch) matches the class header and commush.sh. The checks test: the file root:root 0755 byte-identical in <localdir>/bin (manifest 6-13); a confirmed run with no branch argument (default master, empty answer = yes) committing only tracked changes as the given identity with the typed message and pushing to origin while the untracked file stays out; a declined run (n) leaving the change uncommitted, origin unchanged and rc 0; a missing email printing the usage with rc 1; a branch mismatch warning without stopping. Left out: the https remote and token prompt (lines 6, 39), which are git's and the deployment server's behaviour, not the script's; the uncovered row says so, and nodes.yml shows no node kind with a git-server capability, so lifted_by 'capability: an https git server' is honest. Run: clean phase all 5 negatives failed, applied phase all 5 passed (20261123T112329Z-reviewer)."
+ ],
+ "review_s": 247.1,
+ "check_file_sha256": "8c75a1515a42686547089cde16daa7e40b8bc636bdd01631fb1cf5793087dde5",
+ "content_sha256": "8c75a1515a42686547089cde16daa7e40b8bc636bdd01631fb1cf5793087dde5",
+ "reviewer_result": "20261123T112329Z-reviewer",
+ "author_result": "20261123T095407Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "89577936-5880-4786-9e2a-3dee69def2ce",
+   "apt_mirror": "fallback http://mirrors.edge.kernel.org/ubuntu/",
+   "boot_id_at_end": "89577936-5880-4786-9e2a-3dee69def2ce",
+   "fresh": true
+  }
+ }
+}
