@@ -1,4 +1,4 @@
-# sysmon_mysqldump_health — behaviour findings (findings 1 and 2 FIXED, local changes #18 and #20; the check set OPEN, for HQ: past the correction cap)
+# sysmon_mysqldump_health — behaviour findings (findings 1 and 2 FIXED, local changes #18 and #20; the check set PASS after the HQ-approved third round)
 
 Production use 0 (migration_order.md). Both findings are in the baseline template
 `templates/sysmon/check-mysqldump-health.sh.erb` (cf477c6), measured on the lab node with Ubuntu's MySQL 8.0.46.
@@ -65,3 +65,10 @@ p8test_check, run the check once, GRANT ALL again; expect "CRITICAL: Create data
 count of p8test databases unchanged. Then the run, and one more Phase 3 review.
 
 - **For HQ:** allow that round, or let the set stand with the create-failure path as an open row.
+
+## Round 3 (2026-11-23, HQ ruling 2)
+The check `a-failed-create-is-critical-and-drops-nothing` (CREATE revoked from the check's user: CRITICAL "Create
+database p8testsrc", exit 2, the p8test databases unchanged) and its outcome row were added (b73583f); run ALL_PASS
+(20261123T015655Z-author); Phase 3 review PASS (20261123T020343Z). The reviewer notes that on this path "nothing
+dropped" cannot be told apart from the pre-#20 code with this fixture (the dump's database is absent); under #20 any
+database at risk takes the skip path, which `a-live-database-of-the-dump-name-is-left-intact` tests.

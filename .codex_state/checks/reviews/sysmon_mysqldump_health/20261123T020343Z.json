@@ -1,0 +1,35 @@
+{
+ "class": "sysmon_mysqldump_health",
+ "at": "20261123T020343Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "a-databases-dump-is-restored-and-removed (template 50-56): the lines load the dump into DBNAME and then drop the scratch database, reporting CRITICAL on either failure; a --databases dump of the absent p8testmulti (its header Database: p8testmulti, its own CREATE DATABASE/USE lines, counted as 2 in the probe) is created, loaded and dropped by the current code (#20 CREATED = dump_databases), and the good p8testsrc dump beside it likewise, so 'OK: exit code 0', rc 0 and no p8test database left is what the code produces; the mutates declaration covers everything the action changes, and the effect reads the recorded outputs, not the action's rc",
+  "check-script-rendered (template 5-6): MYSQLUSER/MYSQLPWD render @mysqluser/@mysqlpassword; the params fixture holds p8test_check / p8test-not-a-secret, and the probe greps exactly those rendered lines; owner root, group root, mode 0755 match manifest 9-15 (file in lookup('filesystem::bindir') = /opt/puppet-infrastructure/bin); bash -n checks that the render is valid bash",
+  "check-script-rendered (template 74): DIRS renders @dirs; the fixture's dirs '/var/tmp/p8test-dumps /var/tmp/p8test-dumps2' is expected verbatim",
+  "purpose covered: I read the whole baseline manifest and template and the current template (local changes #18 and #20). The purpose (a Nagios check that proves the dumps under dirs restore: each mysqldump is loaded into a scratch database that is then dropped, failures and non-dump .sql files are CRITICAL exit 2, otherwise OK exit 0) matches the header ('trigger and monitor MYSQL db test restores') and the code. All 9 outcomes are mapped to checks that exercise them on a real MySQL 8.0 on the node, with no uncovered rows: rendered script and permissions; a good dump restored and dropped, OK rc 0; a dump that does not load is CRITICAL 'Load database dump' rc 2 and leaves no scratch database; an empty file and a --skip-comments dump are CRITICAL 'not a MySQLDump'; both configured dirs are checked, including a dated subdirectory (find recursion); #20's skip path keeps a live database's 3 rows and the OK line says the restore was skipped, and an incomplete dump of an existing database is CRITICAL; a --databases dump is restored and removed; CREATE revoked gives CRITICAL 'Create database' rc 2 with the p8test databases unchanged; DROP revoked gives CRITICAL 'Drop database' rc 2. Revoking privileges from p8test_check changes the verdict, which shows the script really authenticates as the configured user. Note: on the create-failure path, 'nothing dropped' cannot be told apart from the old behaviour on this fixture, because the dump's database is absent and the witness p8testkeep is never at risk. The outcome as stated still holds, and under #20 any database at risk takes the skip path, which a-live-database-of-the-dump-name-is-left-intact tests. Left out: nothing the lab can exercise. The unused INV branch of handle_error and RC_UNKNOWN are not reachable from any caller. My run: VALID, all 9 negative controls failed on the clean node, ALL_PASS after apply, no findings."
+ ],
+ "review_s": 176.0,
+ "check_file_sha256": "90d18f7a52fc9c652d9da4b21e34164555634755999ff3d1becfc253d18ccf89",
+ "content_sha256": "90d18f7a52fc9c652d9da4b21e34164555634755999ff3d1becfc253d18ccf89",
+ "reviewer_result": "20261123T020048Z-reviewer",
+ "author_result": "20261123T015655Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "76bb5150-e66f-46a9-b42e-c970c1ce7148",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "76bb5150-e66f-46a9-b42e-c970c1ce7148",
+   "fresh": true
+  }
+ }
+}
