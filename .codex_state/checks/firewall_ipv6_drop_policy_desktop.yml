@@ -4,6 +4,8 @@
 # INPUT drop also drops neighbour discovery, so the peer adds a static neighbour entry) and routes IPv6 through it. This
 # variant drops by chain policy (no drop rule to count: the FORWARD policy counter is read), accepts IPv6 on lo (::1
 # must work on the node), and purges unmanaged IPv6 rules (a planted rule must be gone after an agent run).
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1d): the desktop login under the drop policy is now a check in the
+# variant run `desktop` on the kubuntu node (a fresh user's automatic Plasma login through SDDM).
 class: firewall_ipv6_drop_policy_desktop
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -35,7 +37,11 @@ outcomes:
     checks: [an-unmanaged-ipv6-rule-is-planted, the-agent-run-purges-it]
   - outcome: a desktop login using ::1
     from: manifests/firewall_ipv6_drop_policy_desktop.pp:5-7
-    uncovered: {why: "the plan's node has no desktop session; ::1 itself is checked on the node", lifted_by: kubuntu}
+    checks: [a-desktop-login-works-under-the-drop-policy]
+variants:
+  - name: desktop
+    why: a desktop login under the IPv6 drop policy, on the kubuntu desktop node (Plasma, SDDM) with the set's own fixture
+    node: kubuntu
 checks:
   - id: policies-and-the-lo-rule
     what: the IPv6 INPUT and FORWARD policies are DROP, and INPUT's only rule accepts all traffic on lo
@@ -160,3 +166,29 @@ checks:
       ip6tables -S INPUT | p8_count '000 accept all IPv6 to lo interface'
       ip6tables -S INPUT | head -1; ip6tables -S FORWARD | head -1
     expect: {rc: 0, stdout: "\\A0\\n1\\n-P INPUT DROP\\n-P FORWARD DROP\\n\\Z"}
+
+  - id: a-desktop-login-works-under-the-drop-policy
+    variant: desktop
+    what: >-
+      with the IPv6 drop policy applied (INPUT DROP, lo accepted), a desktop login of a fresh user comes up: SDDM logs
+      p8testlogin in to Plasma and plasmashell runs, while the policy is still DROP
+    control: negative
+    timeout: 240
+    derived_from:
+      - {path: manifests/firewall_ipv6_drop_policy_desktop.pp, lines: "5-9", text: "Silently dropping ::1 can"}
+      - {path: manifests/firewall_ipv6_drop_policy_desktop.pp, lines: "15-19", text: "iniface  => 'lo',"}
+    mutates: >-
+      creates the local user p8testlogin (no password), writes the SDDM drop-in /etc/sddm.conf.d/zz-p8test-login.conf
+      for its automatic Plasma login and restarts sddm (the graphical login screen restarts); the outcome goes to
+      /run/p8test-login.txt
+    probe: |
+      id p8testlogin >/dev/null 2>&1 || useradd -m -s /bin/bash p8testlogin
+      install -d -m 0755 /etc/sddm.conf.d
+      printf '[Autologin]\nUser=p8testlogin\nSession=plasma\nRelogin=false\n' > /etc/sddm.conf.d/zz-p8test-login.conf
+      systemctl restart sddm
+      up=no; for i in $(seq 180); do if who | awk '{print $1}' | grep -qx p8testlogin && pgrep -u p8testlogin -x plasmashell >/dev/null; then up=yes; break; fi; sleep 1; done
+      echo "session up: $up" > /run/p8test-login.txt
+    effect: |
+      cat /run/p8test-login.txt
+      ip6tables -S INPUT | head -1
+    expect: {rc: 0, stdout: "\\Asession up: yes\\n-P INPUT DROP\\n\\Z"}
