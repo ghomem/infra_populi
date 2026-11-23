@@ -1260,20 +1260,24 @@ def test_an_accepted_gap_is_only_a_variant_no_production_node_sets(tmp_path, mon
     import phase3  # noqa: PLC0415
     usage = tmp_path / "fleet_variant_usage.md"
     usage.write_text("| class | parameter | production node statements |\n|---|---|---:|\n"
-                     "| firewall_secure | strict | 3 |\n| firewall_secure | ignore_patterns | 0 |\n")
+                     "| firewall_secure | strict | 3 |\n| firewall_secure | ignore_patterns | 0 |\n"
+                     "| firewall_addon_caching_nameserver | lan_iface | 4 |\n")
     monkeypatch.setattr(phase3, "FLEET_USAGE", usage)
     row = {"why": "a fixture variant: one set holds one fixture", "evidence": "fleet_variant_usage.md, 2026-11-23"}
-    ok = phase3.uncovered_problems({**row, "accepted_gap": ["ignore_patterns", "strict_purge"]}, "o", True,
-                                   "firewall_secure")
-    assert ok == []  # strict_purge is absent from the table: no production node statement sets it
-    used = phase3.uncovered_problems({**row, "accepted_gap": ["strict"]}, "o", True, "firewall_secure")
-    assert used and "production sets strict on 3 node statement(s)" in used[0]
+    ok = phase3.uncovered_problems({**row, "accepted_gap": ["port"]}, "o", True, "firewall_addon_caching_nameserver")
+    assert ok == []  # absent from the table and set by no composite: no production node statement sets it
     bogus = phase3.uncovered_problems({**row, "accepted_gap": ["no_such_param"]}, "o", True, "firewall_secure")
     assert bogus and "not a parameter of manifests/firewall_secure.pp" in bogus[0]
     hiera = phase3.uncovered_problems({**row, "accepted_gap": ["whitelist"]}, "o", True, "firewall_secure")
     assert hiera and "Hiera lookup()" in hiera[0]
+    composite = phase3.uncovered_problems({**row, "accepted_gap": ["nameservers"]}, "o", True, "dns_client")
+    assert composite and "node_base set(s) nameservers on dns_client" in composite[0]
     passwd = phase3.uncovered_problems({**row, "accepted_gap": ["shell"]}, "o", True, "user_base")
     assert passwd and "undeterminable" in passwd[0]
     shape = phase3.uncovered_problems({"why": row["why"], "accepted_gap": ["strict_purge"]}, "o", True,
                                       "firewall_secure")
     assert shape and "accepted_gap and evidence" in shape[0]
+    monkeypatch.setattr(phase3, "composite_sets", lambda c, p: [])  # the count branch on its own
+    used = phase3.uncovered_problems({**row, "accepted_gap": ["lan_iface"]}, "o", True,
+                                     "firewall_addon_caching_nameserver")
+    assert used and "production sets lan_iface on 4 node statement(s)" in used[0]

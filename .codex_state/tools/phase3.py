@@ -318,6 +318,22 @@ OUTCOMES_MISSING = "outcomes: the purpose as observable outcomes, each mapped to
 FLEET_USAGE = REPO / ".codex_state" / "diagnosis" / "fleet_variant_usage.md"
 
 
+def composite_sets(cls: str, param: str) -> list[str]:
+    """The repository's classes that declare `cls` with `param` set (its value reaches every node declaring them)."""
+    import fleet_variants  # noqa: PLC0415
+    found = []
+    for path in sorted((REPO / "manifests").glob("*.pp")):
+        if path.stem == cls:
+            continue
+        text = fleet_variants.strip_comments(path.read_text(errors="replace"))
+        for m in fleet_variants.DECL.finditer(text):
+            if (m.group(2) or m.group(4)) == cls and param in fleet_variants.top_level_params(
+                    fleet_variants.body_at(text, m.start())):
+                found.append(path.stem)
+                break
+    return found
+
+
 def accepted_gap_problems(cls: str, u: dict, where: str) -> list[str]:
     """HQ 2026-11-23 ruling 1c: an accepted gap is a parameter variant no production node statement sets: each named
     parameter of the class's manifest reads 0 in diagnosis/fleet_variant_usage.md (absent = 0); a class of the passwd/
@@ -342,6 +358,9 @@ def accepted_gap_problems(cls: str, u: dict, where: str) -> list[str]:
         elif re.search(rf"\${g}\s*=\s*lookup\(", text):
             out.append(f"{where}: accepted_gap: {g} defaults to a Hiera lookup(), which production may set in Hiera, "
                        "and fleet_variant_usage.md reads node files only (undeterminable)")
+        elif composite_sets(cls, g):
+            out.append(f"{where}: accepted_gap: {', '.join(composite_sets(cls, g))} set(s) {g} on {cls}, so production "
+                       "nodes declaring that composite get its value (not counted by fleet_variant_usage.md): a check")
         elif counts.get(g, "0") != "0":
             out.append(f"{where}: accepted_gap: production sets {g} on {counts[g]} node statement(s) "
                        "(fleet_variant_usage.md): a variant production uses becomes a check")
