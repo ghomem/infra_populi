@@ -21,6 +21,8 @@
 # status=sent, the mailbox holds the message with ESMTPSA): the peer's submission service logs under the tag
 # postfix/smtpd (the master.cf entry sets no syslog_name), not postfix/submission/smtpd; read on the peer's journal
 # ('client=unknown[...], sasl_method=PLAIN, sasl_username=p8test-relay').
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): the RedHat branch is a check in the variant run `rhel` (rhel9); the
+# per-node Hiera variants name what is missing.
 class: postfix_smtp_node
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -49,10 +51,19 @@ outcomes:
     checks: [root-alias-rendered-from-default]
   - outcome: a non-default root alias, mynetworks, mydestination or size limit (per-node Hiera keys)
     from: manifests/postfix_smtp_node.pp:8-14
-    uncovered: {why: "fixture variants (one set holds one lab Hiera fixture, which leaves these at their defaults); untested", lifted_by: ubuntu}
+    uncovered:
+      why: these come from per-node Hiera keys, which a variant run does not vary (the lab Hiera is the same for every run)
+      lifted_by: "capability: a Hiera variant per run (phase3.py variants vary the node kind and the class's params fixture)"
+      evidence: >-
+        manifests/postfix_smtp_node.pp:8-14 reads them with lookup(); phase3.py variant_problems (2026-11-23): a variant
+        takes node and/or params only; fleet_variant_usage.md does not read the fleet's Hiera data
   - outcome: the RedHat branch (cyrus-sasl-plain, /etc/ssl/certs/ca-bundle.crt)
     from: manifests/postfix_smtp_node.pp:24-28
-    uncovered: {why: "the RedHat branch; this set runs on the plan's Ubuntu node", lifted_by: rhel9}
+    checks: [on-redhat-sasl-plain-and-the-ca-bundle]
+variants:
+  - name: rhel
+    why: the RedHat branch (cyrus-sasl-plain, /etc/ssl/certs/ca-bundle.crt), on the rhel9 node (the lab Hiera has its relay keys)
+    node: rhel9
 checks:
   - id: effective-relay-config
     what: postfix's effective configuration is the template rendered from Hiera and the lookup defaults
@@ -273,3 +284,16 @@ checks:
           print("no session", e.__class__.__name__)
       EOF
     expect: {rc: 0, stdout: "\\A454 Relay access denied\\n\\Z"}
+
+  - id: on-redhat-sasl-plain-and-the-ca-bundle
+    variant: rhel
+    what: on RedHat cyrus-sasl-plain is installed, postfix trusts /etc/ssl/certs/ca-bundle.crt for the relay, and postfix runs
+    control: negative
+    derived_from:
+      - {path: manifests/postfix_smtp_node.pp, lines: "24-28", text: "$smtp_tls_CAfile = '/etc/ssl/certs/ca-bundle.crt'"}
+      - {path: manifests/postfix_smtp_node.pp, lines: "24-28", text: "$cyrus_sasl_package = 'cyrus-sasl-plain'"}
+    probe: |
+      rpm -q --qf '%{NAME}\n' cyrus-sasl-plain
+      postconf -h smtp_tls_CAfile
+      systemctl is-active postfix
+    expect: {rc: 0, stdout: "\\Acyrus-sasl-plain\\n/etc/ssl/certs/ca-bundle\\.crt\\nactive\\n\\Z"}
