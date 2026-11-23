@@ -1,0 +1,35 @@
+{
+ "class": "firewall_addon_caching_nameserver",
+ "at": "20261123T105803Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-nameserver-rule: baseline line 11 declares firewall '1301 accept nameserver' with proto udp, iniface $lan_iface, dport $port, action accept; under the params fixture (lan_iface p8test0, port default '53') iptables -S INPUT must show '-i p8test0 -p udp ... --dport 53 ... -j ACCEPT' for that comment, which is exactly what the probe extracts and expects (chain INPUT is the firewall type's default)",
+  "a-lan-client-a-responder-and-a-default-drop: lines 1-2 state the class serves a caching nameserver's clients; the check only builds that client (namespace p8testns over veth p8test0/p8testpeer), UDP responders on 10.250.0.1:53/5353 and a stand-in default drop appended after rule 1301; mutates declares every change the action makes (netns, veth pair and addresses, two transient units, one iptables rule), all on the node, and the read-only effect reads the resulting state (peer address, unit activity, rule count), not the action's output",
+  "the-lan-client-reaches-port-53-only: line 11 accepts UDP to dport 53 arriving on the LAN interface and nothing else, so over the stand-in drop a datagram from the namespace client to 10.250.0.1:53 must be answered and one to 5353 (not in the rule) must not; expect '53 answered / 5353 no answer' is what the code would produce, and the 5353 leg proves the drop is effective so the 53 answer is attributable to rule 1301",
+  "purpose covered: The class's whole baseline is one firewall rule (line 11) under the header 'firewall configurations for caching nameservers'; the stated purpose (LAN clients reach the nameserver over UDP on its port, over the base firewall's default drop) matches it. The checks test the rule's effective attributes (interface p8test0, udp, port 53, ACCEPT), then behaviourally a real client on the LAN interface getting a UDP answer on 53 while 5353 is dropped by the stand-in default drop, and the rule's own packet counter (and the drop's) counting those datagrams. Clean phase: all four negative controls failed; applied phase: all passed (reviewer run 20261123T105112Z, ALL_PASS). Left out: a non-default port, an accepted_gap row for parameter port, which is that parameter's variant only; fleet_variant_usage.md lists no production statement setting it (absent = 0) and network_vpn, the only in-repo declarer, passes lan_iface only; nothing else the lab can test hides behind it. Interface restriction is covered via the rule's -i p8test0 attribute rather than a second-interface probe, which is adequate for a single-iniface rule."
+ ],
+ "review_s": 411.4,
+ "check_file_sha256": "36c82540391c56c2a51b97ae3cccbe89f279d4ef080db6ec16802019b2577583",
+ "content_sha256": "36c82540391c56c2a51b97ae3cccbe89f279d4ef080db6ec16802019b2577583",
+ "reviewer_result": "20261123T105112Z-reviewer",
+ "author_result": "20261123T094558Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "1b0a810a-77fb-4616-b838-3a4d71490b81",
+   "apt_mirror": "fallback http://mirrors.edge.kernel.org/ubuntu/",
+   "boot_id_at_end": "1b0a810a-77fb-4616-b838-3a4d71490b81",
+   "fresh": true
+  }
+ }
+}
