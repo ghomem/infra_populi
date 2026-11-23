@@ -4,6 +4,8 @@
 # cloud-init and keeps unattended-upgrades off. The clean node has cloud-init, unattended-upgrades, vim and wget, and
 # lacks aptitude, acl, monitoring-plugins-standard, ecryptfs-utils and iptables-persistent (node inventory
 # P8NODE_BASELINE_GREEN_v4). Probes read the node's own packages, tools and Puppet's last run report.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): unattended_upgrades true (a production node sets it) and the RedHat
+# branch on rhel9 are checks in the variant runs `unattended` and `rhel`.
 class: packages_base
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -27,10 +29,17 @@ outcomes:
     checks: [the-update-package-lists-exec-never-runs]
   - outcome: unattended upgrades installed when asked (unattended_upgrades true)
     from: manifests/packages_base.pp:4, 53-58
-    uncovered: {why: "a fixture variant (one set holds one fixture), untested: this fixture leaves unattended_upgrades at its default false", lifted_by: ubuntu}
+    checks: [unattended-upgrades-installed-when-asked]
   - outcome: the RedHat branch (dnf makecache every run, extra_packages_el, the RedHat package list and dnf-automatic)
     from: manifests/packages_base.pp:12-17, 28-33, 56-57, 62-63
-    uncovered: {why: "the RedHat branch; this set runs on the plan's Ubuntu node (the class's Phase 1 verdict on rhel9 covers its apply, not its behaviour)", lifted_by: rhel9}
+    checks: [on-redhat-the-package-list-and-dnf-automatic-absent]
+variants:
+  - name: unattended
+    why: unattended_upgrades true, which a production node sets (diagnosis/fleet_variant_usage.md, 1 node statement)
+    params: unattended
+  - name: rhel
+    why: the RedHat branch (dnf, the RedHat package list, extra_packages_el, dnf-automatic), on the rhel9 node
+    node: rhel9
 checks:
   - id: the-package-list-is-installed
     what: every package of the Debian list is installed
@@ -98,3 +107,28 @@ checks:
       p8_count '^exec\[update-package-lists\]$' /opt/puppetlabs/puppet/cache/state/resources.txt
       p8_count '^  Exec\[update-package-lists\]:$' /opt/puppetlabs/puppet/cache/state/last_run_report.yaml
     expect: {rc: 0, stdout: "\\A1\\n0\\n\\Z"}
+
+  - id: unattended-upgrades-installed-when-asked
+    variant: unattended
+    what: with unattended_upgrades true the class is applied (iptables-persistent installed, supervisor absent) and unattended-upgrades is installed
+    control: negative
+    derived_from:
+      - {path: manifests/packages_base.pp, lines: "53-56", text: "package { 'unattended-upgrades': ensure => installed, }"}
+    probe: |
+      dpkg-query -W -f '${Package} ${Status}\n' iptables-persistent unattended-upgrades 2>/dev/null | sort
+      dpkg-query -W -f '${Status}\n' supervisor 2>/dev/null | grep -c 'install ok installed' | sed 's/^/supervisor installed: /'
+    expect: {rc: 0, stdout: "\\Aiptables-persistent install ok installed\\nunattended-upgrades install ok installed\\nsupervisor installed: 0\\n\\Z"}
+
+  - id: on-redhat-the-package-list-and-dnf-automatic-absent
+    variant: rhel
+    what: >-
+      on RedHat the RedHat package list is installed (iptables-services, nagios-plugins-all, yum-utils, wget, acl) and,
+      with unattended_upgrades false, dnf-automatic and cloud-init are absent
+    control: negative
+    derived_from:
+      - {path: manifests/packages_base.pp, lines: "28-32", text: "$package_list = ['iptables-services', $nagios_package_name, 'vim', 'wget', 'yum-utils', 'acl']"}
+      - {path: manifests/packages_base.pp, lines: "61-64", text: "package { 'dnf-automatic': ensure => absent, }"}
+    probe: |
+      rpm -q --qf '%{NAME}\n' iptables-services nagios-plugins-all yum-utils wget acl
+      for p in dnf-automatic cloud-init; do rpm -q $p >/dev/null 2>&1 && echo "$p installed" || echo "$p absent"; done
+    expect: {rc: 0, stdout: "\\Aiptables-services\\nnagios-plugins-all\\nyum-utils\\nwget\\nacl\\ndnf-automatic absent\\ncloud-init absent\\n\\Z"}

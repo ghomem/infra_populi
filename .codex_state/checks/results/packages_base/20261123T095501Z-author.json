@@ -1,0 +1,262 @@
+{
+ "class": "packages_base",
+ "role": "author",
+ "at": "20261123T095501Z",
+ "runner": "6924bbb",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "991ed6ce21648bc99dc862a32e8b963b5a8de789dbd08cd57a7a6817f32dcdb9",
+ "content_sha256": "991ed6ce21648bc99dc862a32e8b963b5a8de789dbd08cd57a7a6817f32dcdb9",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-package-list-is-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "acl unknown ok not-installed\naptitude unknown ok not-installed\necryptfs-utils unknown ok not-installed\niptables-persistent unknown ok not-installed\nvim install ok installed\nwget install ok installed\n",
+   "stderr": "dpkg-query: no packages found matching monitoring-plugins-standard\n",
+   "ok": true
+  },
+  {
+   "id": "the-tools-work",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 96: /usr/lib/nagios/plugins/check_disk: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "supervisor-cloud-init-and-unattended-upgrades-are-removed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "supervisor absent\ncloud-init installed\nunattended-upgrades installed\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "package-lists-refresh-on-every-agent-run",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-update-package-lists-exec-never-runs",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795428004'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 62.94 seconds\u001b[0m\nRUN2_EXPECTED_EVENTS: 1 from Exec[apt_update] Exec[dnf-makecache] [own: Exec[apt_update], Exec[dnf-makecache]; inherited: none] (plan expected_run2_events)\nCOVERAGE puppet_infrastructure::packages_base: 22 concrete resources (+1 defined-type instances)\n  Exec[apt_update]\n  Apt::Setting[conf-update-stamp]\n  File[sources.list]\n  File[sources.list.d]\n  File[preferences]\n  File[preferences.d]\n  File[apt.conf.d]\n  File[auth.conf.d]\n  File[keyrings]\n  File[/etc/apt/auth.conf]\n  Package[gnupg]\n  Exec[update-package-lists]\n  Package[iptables-persistent]\n  Package[monitoring-plugins-standard]\n  Package[ecryptfs-utils]\n  Package[vim]\n  Package[wget]\n  Package[aptitude]\n  Package[acl]\n  Package[supervisor]\n  Package[cloud-init]\n  Package[unattended-upgrades]\n  File[/etc/apt/apt.conf.d/15update-stamp]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\nGREEN_STAMP packages_base f0a98fad12ca\n"
+ },
+ "applied": [
+  {
+   "id": "the-package-list-is-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "acl install ok installed\naptitude install ok installed\necryptfs-utils install ok installed\niptables-persistent install ok installed\nmonitoring-plugins-standard install ok installed\nvim install ok installed\nwget install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-tools-work",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "DISK OK\n# file: /etc/hostname\n/usr/bin/ecryptfs-setup-private\n/usr/bin/aptitude\n",
+   "stderr": ""
+  },
+  {
+   "id": "supervisor-cloud-init-and-unattended-upgrades-are-removed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "supervisor absent\ncloud-init absent\nunattended-upgrades absent\n",
+   "stderr": ""
+  },
+  {
+   "id": "package-lists-refresh-on-every-agent-run",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-update-package-lists-exec-never-runs",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n0\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "6fd6f9be-02c8-4d24-92ce-2b6e8f12049f",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "6fd6f9be-02c8-4d24-92ce-2b6e8f12049f",
+   "fresh": true
+  }
+ },
+ "variants": {
+  "unattended": {
+   "name": "unattended",
+   "node": "ubuntu",
+   "params": "unattended",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "snapshot": "P8NODE_BASELINE_GREEN_v4",
+     "boot_id": "16f21001-737a-4a11-9690-7c1fdf93b8f8",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "16f21001-737a-4a11-9690-7c1fdf93b8f8",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "unattended-upgrades-installed-when-asked",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "iptables-persistent unknown ok not-installed\nunattended-upgrades install ok installed\nsupervisor installed: 0\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": ": Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795428293'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 59.83 seconds\u001b[0m\nRUN2_EXPECTED_EVENTS: 1 from Exec[apt_update] Exec[dnf-makecache] [own: Exec[apt_update], Exec[dnf-makecache]; inherited: none] (plan expected_run2_events)\nCOVERAGE puppet_infrastructure::packages_base: 22 concrete resources (+1 defined-type instances)\n  Exec[apt_update]\n  Apt::Setting[conf-update-stamp]\n  File[sources.list]\n  File[sources.list.d]\n  File[preferences]\n  File[preferences.d]\n  File[apt.conf.d]\n  File[auth.conf.d]\n  File[keyrings]\n  File[/etc/apt/auth.conf]\n  Package[gnupg]\n  Exec[update-package-lists]\n  Package[iptables-persistent]\n  Package[monitoring-plugins-standard]\n  Package[ecryptfs-utils]\n  Package[vim]\n  Package[wget]\n  Package[aptitude]\n  Package[acl]\n  Package[supervisor]\n  Package[cloud-init]\n  Package[unattended-upgrades]\n  File[/etc/apt/apt.conf.d/15update-stamp]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant unattended; never a Phase 1 record)\n"
+   },
+   "applied": [
+    {
+     "id": "unattended-upgrades-installed-when-asked",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "iptables-persistent install ok installed\nunattended-upgrades install ok installed\nsupervisor installed: 0\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  },
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "snapshot": "P8LAB_RHEL9_BASELINE_v2",
+     "boot_id": "5fdaae32-c902-4e33-8e68-bc13d0f371fb",
+     "apt_mirror": null,
+     "boot_id_at_end": "5fdaae32-c902-4e33-8e68-bc13d0f371fb",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "on-redhat-the-package-list-and-dnf-automatic-absent",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "package iptables-services is not installed\npackage nagios-plugins-all is not installed\npackage yum-utils is not installed\npackage wget is not installed\nacl\ndnf-automatic absent\ncloud-init absent\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795428568'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Exec[dnf-makecache]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 13.70 seconds\u001b[0m\nRUN2_EXPECTED_EVENTS: 1 from Exec[apt_update] Exec[dnf-makecache] [own: Exec[apt_update], Exec[dnf-makecache]; inherited: none] (plan expected_run2_events)\nCOVERAGE puppet_infrastructure::packages_base: 13 concrete resources (+0 defined-type instances)\n  Exec[dnf-makecache]\n  Exec[install-epel-release]\n  Exec[enable-codeready-builder-repo]\n  Exec[update-package-lists]\n  Package[iptables-services]\n  Package[nagios-plugins-all]\n  Package[vim]\n  Package[wget]\n  Package[yum-utils]\n  Package[acl]\n  Package[supervisor]\n  Package[cloud-init]\n  Package[dnf-automatic]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\nGREEN_STAMP packages_base f0a98fad12ca\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-the-package-list-and-dnf-automatic-absent",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "iptables-services\nnagios-plugins-all\nyum-utils\nwget\nacl\ndnf-automatic absent\ncloud-init absent\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "the base tools are installed and usable (monitoring plugins, ACLs, ecryptfs, the firewall's persistence, vim, wget, aptitude)",
+   "checks": [
+    "the-package-list-is-installed",
+    "the-tools-work"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "supervisor and cloud-init are removed, and unattended upgrades are off by default",
+   "checks": [
+    "supervisor-cloud-init-and-unattended-upgrades-are-removed"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the package lists are refreshed on every agent run",
+   "checks": [
+    "package-lists-refresh-on-every-agent-run"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the exec update-package-lists refreshes the lists before the packages are installed",
+   "checks": [
+    "the-update-package-lists-exec-never-runs"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "unattended upgrades installed when asked (unattended_upgrades true)",
+   "checks": [
+    "unattended-upgrades-installed-when-asked"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the RedHat branch (dnf makecache every run, extra_packages_el, the RedHat package list and dnf-automatic)",
+   "checks": [
+    "on-redhat-the-package-list-and-dnf-automatic-absent"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 886.0
+}
