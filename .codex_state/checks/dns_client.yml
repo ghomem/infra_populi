@@ -4,6 +4,10 @@
 # order and exclusion of 8.8.8.8 make the class's effect visible.
 # 2026-11-18 purpose correction (review 20261118T114959Z): the single-server fixture could not show order or "only
 # those", and the empty-list guard was not listed; the fixture now has two servers and the guard is listed below. saz-resolv_conf 8.0.1 renders the file. Probes read the node's own resolver and query through it.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1: variants): the empty-list variant, which node_base passes by
+# default to every server, is now a check in the variant run `empty` (params/variants/empty).
+# Authoring correction 2026-11-23 (run 20261123T083652Z): the expectation named systemd-resolved's stub, but the
+# reverted node's resolv.conf holds static servers; the check now shows the file was not written by the run.
 class: dns_client
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -25,7 +29,14 @@ outcomes:
     checks: [a-nameserver-is-added-by-hand, the-next-agent-run-keeps-only-the-given-servers]
   - outcome: an empty list leaves the node's resolver untouched
     from: manifests/dns_client.pp:8
-    uncovered: {why: "a fixture variant (one set holds one fixture, and this one sets servers); exercised elsewhere: node_base's fixture passes nameservers [] to this class, and node_base's check dns-is-left-alone (review PASS 20261118T194756Z) shows /etc/resolv.conf unchanged", lifted_by: ubuntu}
+    checks: [an-empty-list-leaves-the-resolver-alone]
+variants:
+  - name: empty
+    why: >-
+      the empty list, which node_base passes to this class by default on every server (node_base.pp:49, 171), so
+      production uses it although no node file sets it
+    params: empty
+    no_resources: true
 checks:
   - id: resolv-conf-names-exactly-the-given-servers
     what: /etc/resolv.conf names the given nameservers, in order, and no other
@@ -80,3 +91,16 @@ checks:
       grep -E '^nameserver ' /etc/resolv.conf
     expect: {rc: 0, stdout: "\\Anameserver 10\\.0\\.2\\.3\\nnameserver 1\\.1\\.1\\.1\\n\\Z"}
 
+  - id: an-empty-list-leaves-the-resolver-alone
+    variant: empty
+    what: >-
+      with nameservers [] the class is applied but declares no resolv_conf, so /etc/resolv.conf keeps the node's own
+      content (last written before the catalog the run applied)
+    control: negative
+    derived_from:
+      - {path: manifests/dns_client.pp, lines: "8-12", text: "if ($nameservers != []) {"}
+    probe: |
+      python3 -c 'import json,sys; c=json.load(open(sys.argv[1])); r=c["resources"]; print("dns_client applied:", any(x["type"]=="Class" and x["title"]=="Puppet_infrastructure::Dns_client" for x in r)); print("resolv_conf resources:", sum(1 for x in r if "resolv_conf" in x["title"].lower() or "Resolv_conf" in x["type"]))' $(ls /opt/puppetlabs/puppet/cache/client_data/catalog/*.json 2>/dev/null | head -1) 2>/dev/null || echo "no catalog"
+      c=$(ls /opt/puppetlabs/puppet/cache/client_data/catalog/*.json 2>/dev/null | head -1)
+      [ -n "$c" ] && [ /etc/resolv.conf -ot "$c" ] && echo "resolv.conf last written before the applied catalog"
+    expect: {rc: 0, stdout: "\\Adns_client applied: True\\nresolv_conf resources: 0\\nresolv\\.conf last written before the applied catalog\\n\\Z"}

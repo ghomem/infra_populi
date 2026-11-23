@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.dns_client"><testsuite name="phase3.dns_client.clean" tests="4" failures="0"><testcase classname="phase3.dns_client.clean" name="resolv-conf-names-exactly-the-given-servers" /><testcase classname="phase3.dns_client.clean" name="names-resolve-through-the-given-server" /><testcase classname="phase3.dns_client.clean" name="a-nameserver-is-added-by-hand" /><testcase classname="phase3.dns_client.clean" name="the-next-agent-run-keeps-only-the-given-servers" /></testsuite><testsuite name="phase3.dns_client.applied" tests="5" failures="0"><testcase classname="phase3.dns_client.applied" name="resolv-conf-names-exactly-the-given-servers" /><testcase classname="phase3.dns_client.applied" name="names-resolve-through-the-given-server" /><testcase classname="phase3.dns_client.applied" name="names-resolve-through-the-given-server.mismatch" /><testcase classname="phase3.dns_client.applied" name="a-nameserver-is-added-by-hand" /><testcase classname="phase3.dns_client.applied" name="the-next-agent-run-keeps-only-the-given-servers" /></testsuite><testsuite name="phase3.dns_client.empty.clean" tests="1" failures="0"><testcase classname="phase3.dns_client.empty.clean" name="an-empty-list-leaves-the-resolver-alone" /></testsuite><testsuite name="phase3.dns_client.empty.applied" tests="1" failures="1"><testcase classname="phase3.dns_client.empty.applied" name="an-empty-list-leaves-the-resolver-alone"><failure message="check failed after the class was applied (finding)">rc 0
+dns_client applied: True
+resolv_conf resources: 0
+nameserver 1.1.1.1
+nameserver 8.8.8.8
+
+</failure></testcase></testsuite></testsuites>
