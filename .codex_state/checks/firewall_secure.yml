@@ -9,6 +9,8 @@
 # and the per-host limits (8 simultaneous, 15 new per minute) were not told apart from the overall limit; three
 # behaviour checks now show each (whitelisted-host-is-not-limited, held-connections-stop-at-eight,
 # new-connections-stop-at-fifteen-a-minute).
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): strict mode, and strict_purge false with ignore_patterns (production
+# uses both) are checks in the variant runs `strict` and `keep`; the rule-002 row names what is missing.
 class: firewall_secure
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -19,7 +21,7 @@ peer:
   kind: ubuntu2
   why: what a firewall lets in or drops can only be seen from another machine on the network
 node_agent:
-  after: [an-unmanaged-rule-is-added, the-flush-script-clears-every-rule]
+  after: [an-unmanaged-rule-is-added, the-flush-script-clears-every-rule, keep-two-unmanaged-rules-are-planted]
   why: >-
     the class purges firewall rules it does not manage, and rebuilds its rules after the emergency flush its comment
     names; only its next agent run can show either
@@ -38,7 +40,15 @@ outcomes:
     checks: [a-service-the-firewall-does-not-allow-is-listening, loopback-reaches-a-local-service]
   - outcome: traffic to 127.0.0.0/8 arriving on another interface is rejected (rule 002)
     from: manifests/firewall_secure.pp:64-69
-    uncovered: {why: "no node kind in nodes.yml would show this rule act: the same rule in firewall_secure_extra's set (2026-11-18) counted none of 3 hand-built frames from the peer to 127.0.0.1 through the node's NIC, with route_localnet 0 (the kernel drops that destination before INPUT) and with it set to 1 (unexplained); a lead in escalations/firewall_secure_extra.behaviour.md", lifted_by: ubuntu}
+    uncovered:
+      why: >-
+        a packet to 127.0.0.0/8 that arrives on a non-loopback interface never reached INPUT on a lab node, so rule 002
+        has nothing to act on there
+      lifted_by: "capability: a node kind whose kernel passes a 127.0.0.0/8 destination from another interface to INPUT"
+      evidence: >-
+        measured 2026-11-18 on the ubuntu node (firewall_secure_extra's set, the same rule): 3 hand-built frames from the
+        peer to 127.0.0.1 through the node's NIC were counted 0 by rule 002 with route_localnet 0 (the kernel drops that
+        destination before INPUT) and again 0 with route_localnet 1 (escalations/firewall_secure_extra.behaviour.md)
   - outcome: whitelisted hosts (the Hiera list plus the acl) reach SSH without any limit
     from: manifests/firewall_secure.pp:29-34, 81-84
     checks: [whitelist-is-the-hiera-list-plus-the-acl, a-whitelisted-host-is-not-limited]
@@ -56,7 +66,16 @@ outcomes:
     checks: [the-running-rules-are-saved-for-the-next-boot]
   - outcome: strict mode (only listed hosts reach SSH), and strict_purge false with ignore_patterns (unmanaged rules matching a pattern kept)
     from: manifests/firewall_secure.pp:10-12, 39-46, 86-90
-    uncovered: {why: "fixture variants (one set holds one fixture), untested: this fixture leaves strict, strict_purge and ignore_patterns at their defaults", lifted_by: ubuntu}
+    checks: [strict-mode-has-no-rate-limit-only-the-whitelist, keep-two-unmanaged-rules-are-planted, keep-the-agent-run-keeps-the-matching-rule]
+variants:
+  - name: strict
+    why: strict true, which production sets (37 node statements, directly and through node_base's ssh_strict)
+    params: strict
+  - name: keep
+    why: >-
+      strict_purge false with ignore_patterns, which production sets (12 node statements, directly and through
+      node_base's firewall_strict_purge and firewall_ignore_patterns)
+    params: keep
 checks:
   - id: default-policies-drop-input-and-forward
     what: INPUT and FORWARD drop by default, OUTPUT accepts
@@ -326,3 +345,49 @@ checks:
       iptables -S INPUT | p8_count '--comment "100 SSH whitelist '
       iptables -S LIMIT_OVERALL | p8_count '--comment "116 SSH LIMIT_OVERALL"'
     expect: {rc: 0, stdout: "\\A-P INPUT DROP\\n-P FORWARD DROP\\n3\\n1\\n\\Z"}
+
+  - id: strict-mode-has-no-rate-limit-only-the-whitelist
+    variant: strict
+    what: >-
+      in strict mode INPUT drops by policy, accepts SSH only from the whitelisted sources, and has no rate-limit rules
+      (no 110 rule, no LIMIT_INDIVIDUAL chain)
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "86-90", text: "if ( $strict == true ) {"}
+      - {path: manifests/firewall_secure.pp, lines: "82-84", text: "firewall { \"100 SSH whitelist ${ip}\":  chain => 'INPUT', proto  => 'tcp', dport  => $ssh_port, source => $ip,  action => 'accept', }"}
+    probe: |
+      iptables -S | grep -E '^-P INPUT '
+      iptables -S INPUT | grep -c 'SSH whitelist' | sed 's/^[1-9][0-9]*$/whitelist rules present/'
+      iptables -S INPUT | grep -c '110 SSH' | sed 's/^/rate-limit rules: /'
+      iptables -S LIMIT_INDIVIDUAL >/dev/null 2>&1 && echo "LIMIT_INDIVIDUAL present" || echo "no LIMIT_INDIVIDUAL chain"
+    expect: {rc: 0, stdout: "\\A-P INPUT DROP\\nwhitelist rules present\\nrate-limit rules: 0\\nno LIMIT_INDIVIDUAL chain\\n\\Z"}
+
+  - id: keep-two-unmanaged-rules-are-planted
+    variant: keep
+    what: setup for the next check, two rules Puppet does not manage added to INPUT by hand, one matching the ignore pattern
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "39-44", text: "if ( ! $strict_purge and ! $ignore_patterns.empty )"}
+    mutates: >-
+      appends two ACCEPT rules to INPUT on the node, commented p8test-keep-me (source 10.255.255.2) and p8test-other
+      (source 10.255.255.3)
+    probe: |
+      iptables -A INPUT -s 10.255.255.2/32 -m comment --comment p8test-keep-me -j ACCEPT
+      iptables -A INPUT -s 10.255.255.3/32 -m comment --comment p8test-other -j ACCEPT
+    effect: |
+      iptables -S INPUT | grep -cE 'p8test-(keep-me|other)'
+    expect: {rc: 0, stdout: "\\A2\\n\\Z"}
+
+  - id: keep-the-agent-run-keeps-the-matching-rule
+    variant: keep
+    what: after the node's agent run, the rule matching the ignore pattern stays and the other unmanaged rule is purged
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "39-44", text: "$regex_ignore_patterns = $ignore_patterns.map | $pattern | { \"[^\\\"]*(?i:${pattern})[^\\\"]*\" }"}
+    mutates: none beyond reading the rules (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      iptables -S INPUT | grep -c p8test-keep-me | sed 's/^/kept: /'
+      iptables -S INPUT | grep -c p8test-other | sed 's/^/other: /'
+    expect: {rc: 0, stdout: "\\Akept: 1\\nother: 0\\n\\Z"}
