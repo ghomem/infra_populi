@@ -1,0 +1,174 @@
+# Phase 3 checks for puppet_infrastructure::nginx_base (class; required_external apt for Exec['apt_update']). Fixture:
+# defaults (my_configs {}, ad_hoc_configs [], dh_params_bits 2048). Written for HQ batch-8 ruling 1: with puppet-nginx
+# 8.4.0 the baseline's own `nginx_cfg_prepend` include of /etc/nginx/modules-enabled is a second include beside the
+# module's (Debian `include_modules_enabled => true`), so the first dynamic module installed is loaded twice and nginx
+# refuses to start (escalations/nginx_base.md). The mutating check installs one dynamic module (libnginx-mod-stream,
+# Ubuntu 24.04) and judges the effect: exactly one include of the directory, `nginx -t` passes, the service runs.
+# Probes read the node's own files and nginx only.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): my_configs and ad-hoc lines (production uses both) are a check in
+# the variant run `custom`; another DH size and extra log formats are an accepted gap; the stream row names what is
+# missing.
+class: nginx_base
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+purpose: >-
+  The common nginx base of every web frontend: nginx installed and running from the distribution's package with a
+  valid configuration (dynamic modules loaded once), auto worker processes, no version in the Server header, the
+  site's two log formats, and a strong Diffie-Hellman group kept private, plus ad-hoc configuration when given.
+# Purpose and outcomes table added 2026-11-19 (backfill batch 3, HQ batch-10 rulings 2 and C1), with the Server
+# header (server_tokens off) checked as behaviour and the default absence of the ad-hoc file.
+outcomes:
+  # Correction round 1 (2026-11-19, review 20261119T032919Z): nginx from the distribution (manage_repo false) got a row
+  # and a check.
+  - outcome: nginx comes from the distribution's archive (manage_repo false), with no nginx.org repository added
+    from: manifests/nginx_base.pp:78, 96
+    checks: [nginx-comes-from-the-ubuntu-archive]
+  - outcome: nginx is installed and runs with a configuration that passes nginx -t, dynamic modules loaded once
+    from: manifests/nginx_base.pp:80-110
+    checks: [nginx-config-valid, a-dynamic-module-is-loaded-once-and-nginx-runs]
+  - outcome: worker processes are auto, and nginx sends no version in its Server header (server_tokens off)
+    from: manifests/nginx_base.pp:82-84
+    checks: [workers-auto-and-server-tokens-off, the-server-header-names-no-version]
+  - outcome: the main and compact log formats are defined for the servers to use
+    from: manifests/nginx_base.pp:63-74
+    checks: [log-formats-main-and-compact]
+  - outcome: the Diffie-Hellman group /etc/nginx/dhparams.pem has dh_params_bits (2048) bits and is readable by owner and group only
+    from: manifests/nginx_base.pp:36, 136-145
+    checks: [dh-group-2048-bits-not-world-readable]
+  - outcome: with no ad-hoc configuration given, the ad-hoc file is absent
+    from: manifests/nginx_base.pp:112-127
+    checks: [no-ad-hoc-file-by-default]
+  - outcome: the stream block logs nothing (stream_access_log off, HQ 2026-11-18 ruling A1, a module-compatibility change in class_rulings.txt)
+    from: class_rulings.txt (nginx_base, ruling A1)
+    uncovered:
+      why: the stream block exists only when a stream server is declared, which is another class's resource, not a parameter of this one
+      lifted_by: "capability: a stream server declared alongside nginx_base in a run (a variant varies the class's own params only)"
+      evidence: >-
+        nginx_frontend_mail declares stream servers; its set's check streams-listen-and-stream-access-log-off shows
+        access_log off in the stream block (review PASS)
+  - outcome: ad-hoc configuration and my_configs overrides
+    from: manifests/nginx_base.pp:91-94, 112-127
+    checks: [my-configs-and-ad-hoc-lines-reach-nginx]
+  - outcome: additional log formats and another DH size
+    from: manifests/nginx_base.pp:36-40, 72-75
+    uncovered:
+      why: parameter variants no production node uses (the fixture keeps the default 2048 bits and the two formats)
+      accepted_gap: [log_formats_additional, dh_params_bits]
+      evidence: >-
+        diagnosis/fleet_variant_usage.md (2026-11-23): no production node statement sets either, and no class of the
+        repository sets them on nginx_base
+variants:
+  - name: custom
+    why: my_configs and ad_hoc_configs, which production sets (7 and 1 node statements)
+    params: custom
+checks:
+  - id: nginx-config-valid
+    what: the nginx configuration the class produces passes `nginx -t`
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "101-105", text: "class { 'nginx':"}
+    probe: nginx -t 2>&1
+    expect: {rc: 0, stdout: "test is successful"}
+
+  - id: workers-auto-and-server-tokens-off
+    what: nginx.conf sets worker_processes auto and server_tokens off (the class's default configs)
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "82", text: "worker_processes  => 'auto',"}
+      - {path: manifests/nginx_base.pp, lines: "84", text: "server_tokens     => 'off',"}
+    probe: |
+      grep -c -E '^\s*worker_processes\s+auto;' /etc/nginx/nginx.conf
+      grep -c -E '^\s*server_tokens\s+off;' /etc/nginx/nginx.conf
+    expect: {rc: 0, stdout: "\\A1\\n1\\n\\Z"}
+
+  - id: log-formats-main-and-compact
+    what: nginx.conf defines the class's two log formats, main and compact
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "63-67", text: "$log_formats_main = {"}
+      - {path: manifests/nginx_base.pp, lines: "72-75", text: "$log_formats = merge("}
+    probe: |
+      grep -c -E '^\s*log_format\s+main\s' /etc/nginx/nginx.conf
+      grep -c -E '^\s*log_format\s+compact\s' /etc/nginx/nginx.conf
+    expect: {rc: 0, stdout: "\\A1\\n1\\n\\Z"}
+
+  - id: dh-group-2048-bits-not-world-readable
+    what: the custom DH group /etc/nginx/dhparams.pem has 2048 bits and mode u=rw,g=r,o=
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "36", text: "$dh_params_bits = 2048,"}
+      - {path: manifests/nginx_base.pp, lines: "140-143", text: "command => \"/usr/bin/openssl dhparam -out ${base_dh_params} ${dh_params_bits} && chmod u=rw,g=r,o= ${base_dh_params}\","}
+    probe: |
+      stat -c '%a' /etc/nginx/dhparams.pem
+      openssl dhparam -in /etc/nginx/dhparams.pem -noout -text | grep -o 'DH Parameters: ([0-9]* bit)'
+    expect: {rc: 0, stdout: "\\A640\\nDH Parameters: \\(2048 bit\\)\\n\\Z"}
+
+  - id: a-dynamic-module-is-loaded-once-and-nginx-runs
+    what: >-
+      with a dynamic module enabled, nginx.conf includes /etc/nginx/modules-enabled exactly once, `nginx -t` passes
+      and the service is running (the class includes the enabled modules; a second include loads each one twice)
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "86", text: "nginx_cfg_prepend => {'include' => '/etc/nginx/modules-enabled/*'},"}
+      - {path: manifests/nginx_base.pp, lines: "79-80", text: "package_name      => 'nginx',"}
+    mutates: >-
+      installs the Ubuntu dynamic-module package libnginx-mod-stream (it enables /etc/nginx/modules-enabled/50-mod-stream.conf)
+      and restarts nginx
+    probe: |
+      DEBIAN_FRONTEND=noninteractive apt-get -qq -y install libnginx-mod-stream >/dev/null 2>&1
+      systemctl restart nginx >/dev/null 2>&1 || true
+    effect: |
+      ls /etc/nginx/modules-enabled/ | grep -c 'mod-stream'
+      grep -c -E '^\s*include\s+/etc/nginx/modules-enabled/' /etc/nginx/nginx.conf
+      nginx -t 2>&1 | grep -c 'test is successful'
+      systemctl is-active nginx
+    expect: {rc: 0, stdout: "\\A1\\n1\\n1\\nactive\\n\\Z"}
+
+  - id: the-server-header-names-no-version
+    what: a request to nginx gets a Server header that says nginx and no version
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "84", text: "server_tokens     => 'off',"}
+    probe: |
+      curl -s -o /dev/null -D - --max-time 5 http://127.0.0.1/ | tr -d '\r' | grep -i '^server:'
+    mismatch:
+      varies: the header's expected value is checked against nginx -v's version string instead (which server_tokens off must keep out)
+      probe: |
+        curl -s -o /dev/null -D - --max-time 5 http://127.0.0.1/ | tr -d '\r' | grep -i '^server:' | sed "s|\$|/$(nginx -v 2>&1 | sed 's|.*nginx/||')|"
+    expect: {rc: 0, stdout: "\\AServer: nginx\\n\\Z"}
+
+  - id: no-ad-hoc-file-by-default
+    what: with no ad-hoc configuration given, /etc/nginx/conf.d/puppet_infrastructure.conf does not exist
+    control: invariant
+    why_invariant: the clean node has no nginx and so no such file, and with ad_hoc_configs empty the class keeps it absent
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "112-114", text: "$config_ensure = 'absent'"}
+    probe: |
+      test -e /etc/nginx/conf.d/puppet_infrastructure.conf && echo present || echo absent
+    expect: {rc: 0, stdout: "\\Aabsent\\n\\Z"}
+
+  - id: nginx-comes-from-the-ubuntu-archive
+    what: no apt source names nginx.org, and the installed nginx version is the one the Ubuntu archive offers
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "78", text: "manage_repo       => false,"}
+      - {path: manifests/nginx_base.pp, lines: "96", text: "# we install nginx from the distribution repository"}
+    probe: |
+      grep -rl 'nginx\.org' /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null | wc -l
+      v=$(dpkg-query -W -f '${Version}' nginx 2>/dev/null)
+      apt-cache madison nginx | awk -F'|' -v v="$v" '{gsub(/ /, "", $2)} $2 == v && $3 ~ /ubuntu\.com\/ubuntu/ {f = 1} END {print (f ? "from the Ubuntu archive" : "not from the Ubuntu archive")}'
+    expect: {rc: 0, stdout: "\\A0\\nfrom the Ubuntu archive\\n\\Z"}
+
+  - id: my-configs-and-ad-hoc-lines-reach-nginx
+    variant: custom
+    what: >-
+      a my_configs entry (worker_connections 2048) reaches the nginx class's configuration, and the ad-hoc line
+      (client_max_body_size 21m) is written to conf.d/puppet_infrastructure.conf; the running configuration holds both
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "91-94", text: "$my_configs,"}
+      - {path: manifests/nginx_base.pp, lines: "112-127", text: "$ad_hoc_content = join($ad_hoc_configs,"}
+    probe: |
+      cat /etc/nginx/conf.d/puppet_infrastructure.conf
+      nginx -T 2>/dev/null | grep -E '^\s*(worker_connections|client_max_body_size) ' | sed 's/^\s*//' | sort -u
+    expect: {rc: 0, stdout: "\\Aclient_max_body_size 21m;\\nclient_max_body_size 21m;\\nworker_connections 2048;\\n\\Z"}

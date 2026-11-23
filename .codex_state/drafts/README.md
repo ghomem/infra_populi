@@ -2,3 +2,6 @@
 Work in progress worth keeping, committed as drafts: nothing here is applied by a tool. A draft moves to its real place
 (and out of this directory) when it is used.
 - test_suite_notes.md — observations for the test-suite design note (HQ after batch 20, item 7).
+- sweep/ — check-set drafts of the sweep (HQ 2026-11-23 ruling 1) not yet run, kept here until each is run, reviewed
+  and committed as .codex_state/checks/<class>.yml; their variant params files are local (~/.config/infra_populi/params/
+  variants/), never committed. runbatch.sh copies drafts into place and runs them.
