@@ -26,6 +26,8 @@
 # zero-filled pings) but sends uncompressed ones (1237 bytes per packet; "Sent packets are not compressed unless
 # allow-compression yes"). The expectations stay the baseline's (both directions compressed; the class's cipher
 # usable); the two new behaviour checks are expected to fail as findings.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): another DNS server, cipher and isolation off are a check in the
+# variant run `other`; force_ifupdown and compression none are an accepted gap.
 class: openvpn_server
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -63,9 +65,23 @@ outcomes:
   - outcome: clients cannot reach each other (client isolation, the default)
     from: manifests/openvpn_server.pp:25, 43-45, 211
     checks: [client-isolation-on-the-bridge, a-second-vpn-account, a-second-client-reaches-the-server-side-but-not-the-first]
-  - outcome: the variants force_ifupdown, client_isolation false, compression none, another cipher or DNS server
-    from: manifests/openvpn_server.pp:18-30, 50-70
-    uncovered: {why: "parameter variants (one set holds one params fixture, which keeps their defaults); untested", lifted_by: ubuntu}
+  - outcome: another DNS server pushed to clients, another cipher, and client isolation off (proxy_arp_pvlan on the bridge)
+    from: manifests/openvpn_server.pp:18-25, 45, 172-177, 211
+    checks: [another-dns-cipher-and-isolation-off]
+  - outcome: force_ifupdown true and compression none
+    from: manifests/openvpn_server.pp:26-30, 166
+    uncovered:
+      why: parameter variants no production node uses (the fixture keeps their defaults)
+      accepted_gap: [force_ifupdown, compression]
+      evidence: >-
+        diagnosis/fleet_variant_usage.md (2026-11-23): no production node statement sets either, and no class of the
+        repository sets them on openvpn_server (network_vpn passes cipher, client_isolation and push_dns_server)
+variants:
+  - name: other
+    why: >-
+      another DNS server (a production node sets push_dns_server), another cipher and client isolation off, both passed
+      by network_vpn (a composite)
+    params: other
 checks:
   - id: server-listens-on-the-bound-address
     what: the OpenVPN server listens on UDP 1194 at the `local` address
@@ -300,3 +316,19 @@ checks:
       grep -o "Data Channel: cipher '[^']*'" /run/p8vpncbc/client.log | head -1
       grep -o 'AUTH_FAILED,.*)' /run/p8vpncbc/client.log | head -1
     expect: {rc: 0, stdout: "\\A1\\nData Channel: cipher 'AES-256-CBC'\\n\\Z"}
+
+  - id: another-dns-cipher-and-isolation-off
+    variant: other
+    what: >-
+      with push_dns_server 9.9.9.9, cipher AES-128-CBC and client_isolation false, the server pushes DNS 9.9.9.9, names
+      that cipher, and proxy_arp_pvlan on br0 is 1
+    control: negative
+    derived_from:
+      - {path: manifests/openvpn_server.pp, lines: "172", text: "\"dhcp-option DNS ${push_dns_server}\"]"}
+      - {path: manifests/openvpn_server.pp, lines: "177", text: "cipher                   => $cipher,"}
+      - {path: manifests/openvpn_server.pp, lines: "45", text: "$proxy_arp = Numeric(!$client_isolation)"}
+    probe: |
+      grep -E '^push "dhcp-option DNS ' /etc/openvpn/server/puppet_infrastructure.conf
+      grep -E '^cipher ' /etc/openvpn/server/puppet_infrastructure.conf
+      sysctl -n net.ipv4.conf.br0.proxy_arp_pvlan
+    expect: {rc: 0, stdout: "\\Apush \"dhcp-option DNS 9\\.9\\.9\\.9\"\\ncipher AES-128-CBC\\n1\\n\\Z"}
