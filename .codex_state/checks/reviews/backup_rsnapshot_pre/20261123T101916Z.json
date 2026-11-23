@@ -1,0 +1,35 @@
+{
+ "class": "backup_rsnapshot_pre",
+ "at": "20261123T101916Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "config-directory (manifests/backup_rsnapshot_pre.pp:11, mode => '0644'): Puppet's file type adds search permission wherever read is set on a directory, so 0644 declared yields 755 in effect; stat expecting 'directory root root 755' tests what the line produces, and the check states that translation openly",
+  "config-directory (manifests/backup_rsnapshot_pre.pp:9-14, file '/etc/rsnapshot.d' ensure directory, owner/group root): stat %F %U %G %a probes exactly type, owner, group and mode the block declares",
+  "a-config-in-the-directory-drives-rsnapshot (manifests/backup_rsnapshot_pre.pp:7, package rsnapshot ensure present): the action writes rsnapshot-<title>.conf into /etc/rsnapshot.d and runs '/usr/bin/rsnapshot -c <file> daily', the same command as the baseline backup_rsnapshot cron (manifests/backup_rsnapshot.pp:5,14); mutates declares the conf file and the snapshot root/daily.0 it creates; the read-only effect cmp's /etc/hostname against the snapshot copy, so it shows the action's result, not its output; on the clean node the effect alone failed as a negative control should",
+  "purpose covered: Purpose (prerequisites for backup_rsnapshot: rsnapshot, /etc/rsnapshot.d, rdiff.sh) matches the code: the baseline header names a backup_base_rsync define that does not exist at cf477c6, but the only consumer of /etc/rsnapshot.d is backup_rsnapshot (myconffile /etc/rsnapshot.d/rsnapshot-${title}.conf, cron /usr/bin/rsnapshot -c), and node-examples backups01/03 include this class beside it. The outcome table holds every resource of the 3-resource manifest: package (installed and rsnapshot -V answers), the directory (type/owner/effective mode), rdiff.sh (owner/mode/sha256 of the baseline file), and the job: a config placed in the directory drives a real rsnapshot snapshot. rdiff.sh is exercised as behaviour on three planted snapshots: non-interactive mode reports both consecutive pairs in sort -V order with the ' and ' stripped by the sed (I traced lines 60-115 against the expected text: daily.1->daily.0 then daily.2->daily.1, Only-in and Files-differ lines, nothing for same.txt), and interactive mode (lines 55-58, 92-94, 111-118) gives two prompts, Done!, exit 0. Nothing is uncovered. Not mapped: rdiff.sh's usage/exit 1 path for a missing or non-directory argument (lines 27-32, 47-53), an error path outside the class's purpose, not a gap in it. My run 20261123T101458Z-reviewer: clean phase all 7 negatives failed, applied phase all 7 pass, no findings."
+ ],
+ "review_s": 258.7,
+ "check_file_sha256": "83578cb591cd1f2010ef840f307f68730c00b3efbc496c0b4bc308d42a22cff8",
+ "content_sha256": "83578cb591cd1f2010ef840f307f68730c00b3efbc496c0b4bc308d42a22cff8",
+ "reviewer_result": "20261123T101458Z-reviewer",
+ "author_result": "20261123T090152Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "b24b9eb4-c016-4407-83b3-3bcab38c12be",
+   "apt_mirror": "fallback http://mirrors.edge.kernel.org/ubuntu/",
+   "boot_id_at_end": "b24b9eb4-c016-4407-83b3-3bcab38c12be",
+   "fresh": true
+  }
+ }
+}
