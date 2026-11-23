@@ -2,6 +2,7 @@
 # BaseOS + AppStream enabled at the baseline, CodeReady Builder available but off, no content overrides).
 # Fixture: none. The revert clears content overrides after every restore (an enabled repository survives a snapshot
 # restore on the subscription server), so the clean node starts with CRB off.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1d): the RHEL 8 row names what is missing, with its evidence.
 class: extra_packages_el
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -22,7 +23,12 @@ outcomes:
     checks: [baseos-appstream-still-enabled]
   - outcome: the same on RHEL 8
     from: manifests/extra_packages_el.pp:3-4
-    uncovered: {why: "the lab has a RHEL 9 node only; nodes.yml has no RHEL 8 kind", lifted_by: rhel9}
+    uncovered:
+      why: the lab has a RHEL 9 node only, so the RHEL 8 branch of the package list is not applied anywhere
+      lifted_by: "capability: a RHEL 8 node kind in nodes.yml"
+      evidence: >-
+        nodes.py list (2026-11-23): ubuntu, rhel9, kubuntu, gnome, ubuntu2, dc and puppetserver; no RHEL 8 kind, active or
+        planned
 checks:
   - id: epel-release-installed
     what: the EPEL release package for the node's major version is installed and its repository is enabled
