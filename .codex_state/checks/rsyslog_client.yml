@@ -5,6 +5,8 @@
 # The peer (ubuntu2) plays the remote log server: an rsyslog TLS listener on 6514 with the peer's own Puppet
 # certificate from the same lab CA (x509/certvalid on both sides). Node probes name no other host; peer probes name
 # only the class node's host-only address.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): forward_auth_log, check_names and a failover target are a check in
+# the variant run `options`; the failover switch itself names what is missing.
 class: rsyslog_client
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -32,9 +34,25 @@ outcomes:
   - outcome: a changed forwarding rule is restored by the next agent run, which restarts rsyslog once
     from: manifests/rsyslog_client.pp:40-55
     checks: [the-forwarding-rule-drifts, the-agent-run-restores-the-rule-and-restarts-rsyslog-once]
-  - outcome: the failover target (forwarding switches to it while the first target is suspended), forward_auth_log and check_names
-    from: manifests/rsyslog_client.pp:7-11, 31-38
-    uncovered: {why: "fixture variants: the fixture forwards to one live target and sets none of them; failover needs a second fixture (a dead target, the peer as failover), which one set cannot hold; untested", lifted_by: ubuntu2}
+  - outcome: forward_auth_log, check_names and a failover target render their rules (auth.log read and forwarded on its own ruleset, the peer name enforced, a failover action only while the first is suspended)
+    from: manifests/rsyslog_client.pp:7-11, 31-38; templates/rsyslog/forward_simple.conf.epp:15-25, 26-77
+    checks: [options-render-the-forwarding-rules]
+  - outcome: forwarding switches to the failover target while the first target is suspended
+    from: templates/rsyslog/forward_simple.conf.epp:21-25
+    uncovered:
+      why: >-
+        a switch needs a dead first target and a live failover, the peer: a second fixture with the peer, and a variant
+        run has no peer
+      lifted_by: "capability: a peer in a variant run (phase3.py variant runs have none)"
+      evidence: >-
+        phase3.py variant_problems (2026-11-23) refuses `host: peer` in a variant's check; the base fixture forwards to
+        the live peer only
+variants:
+  - name: options
+    why: >-
+      forward_auth_log (a production node sets it), check_names (node_base_desktop passes it) and a failover target
+      (production use undeterminable from node files: no statement sets it, no composite either; tested with the others)
+    params: options
 checks:
   - id: forwarding-rule-sends-everything-over-tls
     what: >-
@@ -184,3 +202,24 @@ checks:
       [ -n "$now" ] && [ "$now" != 0 ] && [ "$now" != "$pid" ] && echo restarted
       journalctl -u rsyslog --after-cursor "$cursor" --no-pager -q | p8_count 'Started rsyslog.service'
     expect: {rc: 0, stdout: "\\A0\\nrestarted\\n1\\n\\Z"}
+
+  - id: options-render-the-forwarding-rules
+    variant: options
+    what: >-
+      with check_names, a failover target and forward_auth_log: the rule authenticates by name and permits the target,
+      a failover action runs only while the first is suspended, auth.log is read into its own forwarding ruleset, the
+      failover name is pinned in /etc/hosts, and rsyslog accepts the configuration
+    control: negative
+    derived_from:
+      - {path: templates/rsyslog/forward_simple.conf.epp, lines: "15-18", text: "$ActionSendStreamDriverPermittedPeer <%= $target %>"}
+      - {path: templates/rsyslog/forward_simple.conf.epp, lines: "21-25", text: "$ActionExecOnlyWhenPreviousIsSuspended on"}
+      - {path: templates/rsyslog/forward_simple.conf.epp, lines: "26-77", text: "ruleset(name=\"forward_authlog_only\") {"}
+    probe: |
+      f=/etc/rsyslog.d/40-forward.conf
+      grep -c 'AuthMode  *x509/name' $f
+      grep -c '^\$ActionSendStreamDriverPermittedPeer ' $f
+      grep -c '^\*\.\*  @@p8test-failover\.invalid:6514' $f
+      grep -c 'ruleset(name="forward_authlog_only")' $f
+      grep -E '^203\.0\.113\.77[[:space:]]' /etc/hosts | awk '{print $2}'
+      rsyslogd -N1 2>&1 | grep -c 'End of config validation run'
+    expect: {rc: 0, stdout: "\\A1\\n1\\n1\\n1\\np8test-failover\\.invalid\\n1\\n\\Z"}
