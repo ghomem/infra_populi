@@ -23,6 +23,8 @@
 # 0.14-0.67 s); disabling IPv6 on the host did not stop the attempts. The lab fixture therefore tells named the network
 # is IPv4-only (-4 in /etc/default/named, a file no composed class manages). Whether an IPv4-only production host
 # meets the same limit is a question for HQ (batch-4 report), not something this lab can show.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): another client DNS (production sets it) is a check in the variant
+# run `clientdns`; the other parameter variants are an accepted gap; the composed behaviours name what is missing.
 class: network_vpn
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -48,10 +50,30 @@ outcomes:
     checks: [a-client-on-the-class-cipher-connects]
   - outcome: client isolation, the bridge and the server at boot, the hairpin rule, the data channel's compression, and each composed class's own behaviours
     from: manifests/network_vpn.pp:14, 41-60
-    uncovered: {why: "covered as behaviour by the composed classes' own sets (openvpn_server, firewall_addon_openvpn_server, caching_nameserver, firewall_addon_caching_nameserver) under their own fixtures, where openvpn_server's compression is a finding (escalations/openvpn_server.behaviour.md); this set covers what the composition adds (the VPN network wired through all four) and the cipher this class passes", lifted_by: ubuntu}
-  - outcome: parameter variants (another VPN network, another cipher, renegotiation, client DNS, client_isolation false)
+    uncovered:
+      why: >-
+        these are the composed classes' own behaviours, checked by their own sets under their own fixtures (openvpn_server,
+        firewall_addon_openvpn_server, caching_nameserver, firewall_addon_caching_nameserver; openvpn_server's compression
+        is a finding, escalations/openvpn_server.behaviour.md); this set covers what the composition adds
+      lifted_by: "capability: running each composed class's checks inside network_vpn's own run (a set holds its own class's checks)"
+      evidence: >-
+        phase3.py runs the checks of one set per run; the composed classes' sets each pass their own reviews
+        (phase3.py state, 2026-11-23)
+  - outcome: another client DNS server pushed to VPN clients (openvpn_client_dns)
+    from: manifests/network_vpn.pp:26, 56
+    checks: [another-client-dns-is-pushed]
+  - outcome: another VPN network size, cipher, renegotiation interval or client isolation off
     from: manifests/network_vpn.pp:14-26
-    uncovered: {why: "parameter variants (one set holds one params fixture); untested", lifted_by: ubuntu}
+    uncovered:
+      why: parameter variants no production node uses (the fixture sets the network itself, wan_iface as production does)
+      accepted_gap: [openvpn_netmask, openvpn_cipher, openvpn_reneg_sec, client_isolation]
+      evidence: >-
+        diagnosis/fleet_variant_usage.md (2026-11-23): production sets openvpn_client_dns and wan_iface on network_vpn and
+        none of these; no class of the repository sets them on network_vpn
+variants:
+  - name: clientdns
+    why: another client DNS server, which a production node sets (diagnosis/fleet_variant_usage.md, 1 node statement)
+    params: clientdns
 checks:
   - id: nameserver-serves-the-vpn-network
     what: bind listens on the VPN bridge address and allows queries from the VPN network
@@ -246,3 +268,14 @@ checks:
       grep -o "Data Channel: cipher '[^']*'" /run/p8vpncbc/client.log | head -1
       grep -o 'AUTH_FAILED,.*)' /run/p8vpncbc/client.log | head -1
     expect: {rc: 0, stdout: "\\A1\\nData Channel: cipher 'AES-256-CBC'\\n\\Z"}
+
+  - id: another-client-dns-is-pushed
+    variant: clientdns
+    what: with openvpn_client_dns 9.9.9.9 the composed OpenVPN server pushes DNS 9.9.9.9 to its clients
+    control: negative
+    derived_from:
+      - {path: manifests/network_vpn.pp, lines: "56", text: "push_dns_server  => $openvpn_client_dns,"}
+      - {path: manifests/openvpn_server.pp, lines: "172", text: "\"dhcp-option DNS ${push_dns_server}\"]"}
+    probe: |
+      grep -E '^push "dhcp-option DNS ' /etc/openvpn/server/puppet_infrastructure.conf
+    expect: {rc: 0, stdout: "\\Apush \"dhcp-option DNS 9\\.9\\.9\\.9\"\\n\\Z"}
