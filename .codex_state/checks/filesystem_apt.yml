@@ -6,6 +6,14 @@
 # 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): the desktop mode, relevant_updates_method 0, no_kernel and a custom
 # surface list are checks in the variant runs `desktop`, `method0` and `custom` (composites pass them); the Hiera
 # keys name what is missing.
+# 2026-11-23 correction round 1 (review FAIL 42b65dd, purpose): relevant_updates_no_kernel's effect, the daily list
+# leaving out kernel packages, was checked only as the rendered NO_KERNEL line; the custom variant now runs the job and,
+# for contrast, a copy without --no-kernel (check the-no-kernel-job-lists-no-kernel-package). Its first run (20261123T160957Z)
+# left it not run behind the custom list's finding; it moved to its own variant `nokernel` (relevant_updates_no_kernel only).
+# Its second run (20261123T162415Z) showed the copy without --no-kernel listing no kernel package either: measured the same
+# day, the reverted node has 9 kernel-related packages upgradable, but Canonical's OVAL data marks none of them at any
+# priority (68 packages listed at Negligible, none kernel-related), so real data cannot show the filter. The check now
+# traces the installed job (it hands --no-kernel to the tool) and runs the installed tool on a p8test results fixture.
 class: filesystem_apt
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -39,7 +47,7 @@ outcomes:
     checks: [the-desktop-surface-list-and-link]
   - outcome: "the parameter variants: relevant_updates_method 0 (no relevant-updates script), relevant_updates_no_kernel true and a custom apt_surface_list"
     from: manifests/filesystem_apt.pp:12-18, 52-61, 113-176
-    checks: [method-0-installs-no-relevant-updates-script, no-kernel-and-a-custom-surface-list]
+    checks: [method-0-installs-no-relevant-updates-script, no-kernel-and-a-custom-surface-list, the-no-kernel-job-lists-no-kernel-package]
   - outcome: "the Hiera variants prio_threshold, checkhour and checkmin (the daily job's priority and time)"
     from: manifests/filesystem_apt.pp:163-176
     uncovered:
@@ -60,6 +68,11 @@ variants:
       relevant_updates_no_kernel true and a custom surface list, both passed through by node_base (node_base.pp:117-122)
       from parameters a node may set
     params: custom
+  - name: nokernel
+    why: >-
+      relevant_updates_no_kernel true alone (node_base passes it through, node_base.pp:117-122), so the job's run is not
+      held back by the custom surface list's finding in `custom` (a run's mutating checks wait for its read-only ones)
+    params: nokernel
 checks:
   - id: helper-scripts-installed
     what: the helper scripts are installed root-owned 0755 (the static ones byte for byte), and openscap-scanner is installed
@@ -348,3 +361,58 @@ checks:
       grep -E '^NO_KERNEL=' $b/apt-check-updates.sh
       sed -n 's/^SURFACE=//p' $b/apt-update-surface.sh
     expect: {rc: 0, stdout: "\\ANO_KERNEL=\"1\"\\nSURFACE=\"vim less\"\\n\\Z"}
+
+  - id: the-no-kernel-job-lists-no-kernel-package
+    variant: nokernel
+    what: >-
+      with relevant_updates_no_kernel true, the installed daily job, run as the cron runs it (traced with sh -x), hands
+      --no-kernel to get-relevant-updates-list; and that installed tool, given an OVAL results file (a p8test fixture
+      written by the probe) in which a High issue involves linux-image-p8test, intel-microcode and p8test-tool, lists all
+      three without --no-kernel and only p8test-tool with it
+    control: negative
+    timeout: 600
+    derived_from:
+      - {path: manifests/filesystem_apt.pp, lines: "139-144", text: "$apt_check_updates_no_kernel = 1"}
+      - {path: templates/apt/apt-check-updates-v2.sh.erb, lines: "103-104", text: "NO_KERNEL_OPT='--no-kernel'"}
+      - {path: templates/apt/apt-check-updates-v2.sh.erb, lines: "110", text: "-pt ${PRIO_THRESHOLD} -dp ${DEFAULT_PRIO} ${NO_KERNEL_OPT}\""}
+      - {path: files/apt/get-relevant-updates-list, lines: "10-13", text: "return (bin_pkg_name.startswith('linux') or"}
+      - {path: files/apt/get-relevant-updates-list, lines: "236-238", text: "if no_kernel_updates and is_kernel_package(bin_pkg_name):"}
+    mutates: >-
+      runs /opt/puppet-infrastructure/bin/apt-check-updates.sh High under sh -x (downloads the release's OVAL file into a
+      temporary directory, writes /var/lib/apt-check-updates/list), its trace and exit code kept under /run/p8test-apt;
+      writes the fixture results file there and runs get-relevant-updates-list on it twice, its lists kept there too
+    probe: |
+      install -d -m 0700 /run/p8test-apt
+      sh -x /opt/puppet-infrastructure/bin/apt-check-updates.sh High > /dev/null 2> /run/p8test-apt/job-trace.txt; echo "job rc=$?" > /run/p8test-apt/nk.txt
+      cat > /run/p8test-apt/fixture.xccdf <<'X'
+      <root>
+        <oval_definitions><definitions>
+          <definition id="p8test:def:1"><metadata><advisory><severity>High</severity></advisory></metadata><criteria/></definition>
+        </definitions></oval_definitions>
+        <results><system>
+          <definitions>
+            <definition definition_id="p8test:def:1" result="true"><criteria result="true"><criterion test_ref="p8test:tst:1" result="true"/></criteria></definition>
+          </definitions>
+          <tests/>
+          <oval_system_characteristics>
+            <collected_objects>
+              <object id="p8test:obj:1"><variable_value>linux-image-p8test</variable_value><variable_value>intel-microcode</variable_value><variable_value>p8test-tool</variable_value></object>
+            </collected_objects>
+            <system_data>
+              <dpkginfo_item><name>linux-image-p8test</name></dpkginfo_item>
+              <dpkginfo_item><name>intel-microcode</name></dpkginfo_item>
+              <dpkginfo_item><name>p8test-tool</name></dpkginfo_item>
+            </system_data>
+          </oval_system_characteristics>
+        </system></results>
+      </root>
+      X
+      g=/opt/puppet-infrastructure/bin/get-relevant-updates-list
+      $g -q -if /run/p8test-apt/fixture.xccdf -of /run/p8test-apt/without.txt -pt High -dp High; echo "without rc=$?" >> /run/p8test-apt/nk.txt
+      $g -q -if /run/p8test-apt/fixture.xccdf -of /run/p8test-apt/with.txt -pt High -dp High --no-kernel; echo "with rc=$?" >> /run/p8test-apt/nk.txt
+    effect: |
+      cat /run/p8test-apt/nk.txt
+      echo "the job passes --no-kernel: $(p8_count '^\+ /opt/puppet-infrastructure/bin/get-relevant-updates-list .* --no-kernel$' /run/p8test-apt/job-trace.txt)"
+      echo "without --no-kernel: $(sort /run/p8test-apt/without.txt | tr '\n' ' ')"
+      echo "with --no-kernel: $(sort /run/p8test-apt/with.txt | tr '\n' ' ')"
+    expect: {rc: 0, stdout: "\\Ajob rc=0\\nwithout rc=0\\nwith rc=0\\nthe job passes --no-kernel: 1\\nwithout --no-kernel: intel-microcode linux-image-p8test p8test-tool \\nwith --no-kernel: p8test-tool \\n\\Z"}
