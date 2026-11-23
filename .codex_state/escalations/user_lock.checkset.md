@@ -1,4 +1,4 @@
-# user_lock — the check set after the stand-in lift: purpose FAIL past the correction cap (OPEN, for HQ)
+# user_lock — the check set after the stand-in lift: purpose FAIL past the correction cap (CLOSED: HQ 2026-11-23 ruling 2, third round; Phase 3 PASS 20261123T082417Z)
 
 Phase 1 PASS (review 20261123T014847Z). The set after the lift (7175bca: on the master-role node, the user created by
 hashman itself) ran ALL_PASS (14522e1); Phase 3 review 20261123T015435Z reproduced it and found no behaviour finding.
@@ -23,3 +23,8 @@ in the fixture's own output) that the hash had no '!' before the lock; the refus
 `$6$` form. Then the run and one more Phase 3 review.
 
 - **For HQ:** allow that third round, or let the set stand with the Samba part as an open row.
+
+## Resolution (2026-11-23)
+HQ approved the third round. The fixture now also runs `pp_auth.py unexpire` and records the Samba hash state before
+the lock (valid); run ALL_PASS (20261123T080436Z-author, 9340e1e); Phase 1 review PASS (20261123T081919Z) and Phase 3
+review PASS (20261123T082417Z).

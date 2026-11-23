@@ -1,0 +1,35 @@
+{
+ "class": "user_lock",
+ "at": "20261123T082417Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-samba-hash-is-locked-too / dbutils.py.erb:804-807: lockpw prefixes the Unix entry with LOCKPREFIX, computes the Samba entry via mk_smb_lockness and writes both through setpw (in place via setent); the probe reads p8testuser's single _pwd_hash_smb line in hashes_smb.pp (DBFILE_SMB, SUFFIX_SMB per config.py.erb) and expects '!' + a 24-char base64 NT hash, which is what these lines produce",
+  "the-samba-hash-is-locked-too / miscutils.py.erb:129-148: mk_smb_lockness returns LOCKPREFIX + currentsmbhash when the Unix entry is locked and the Samba hash is not yet locked; the fixture records the pre-lock Samba state as 'valid' (after unlock + unexpire, since an expired user's hash is already '!'), so the post-apply '!' is the lock's own change; expectation matches the code",
+  "user-entry-locked-by-hashman / config.py.erb:59 (EXPIREPREFIX = '!'): cited to explain the expected shape: hashman's useradd leaves '$!6$' (expiry on the salt type), the fixture runs unexpire, so the locked entry is LOCKPREFIX + '$6$salt$86-char-hash' and is_pwlocked (startswith '!') holds; the probe's regex '!$6$...' is what lockpw produces from that entry under the fixture",
+  "purpose covered: Purpose (lock an existing hashman user so hashman and the services authenticating through it refuse the user) matches the manifest (one exec running pp_auth.py lock <user> DUMMYARG, header 'locks an existing user', require hashman_base). Outcomes table covers: the Unix entry locked with '!' (user-entry-locked-by-hashman), in place, one line (exactly-one-entry), the Samba hash invalidated with '!' from a recorded valid pre-lock state (the-samba-hash-is-locked-too), and the actual refusal: pp_auth auth returns 1 with hashman's own initial password while that password still crypt-matches the entry minus the lock prefix, so the refusal comes from the lock (the-locked-user-is-refused-by-hashman; auth in dbutils.py.erb:168-206 compares the full entry incl. '!' so it cannot match). All four negatives failed on the clean node and passed after apply in my run (20261123T082106Z-reviewer). The node fixture hashman_user_via_hashman is a listed test asset: it only creates p8testuser via hashman's own useradd, unlock, unexpire and records the initial password / pre-lock Samba state, gated before Exec[user_lock_p8testuser]; it touches no resource user_lock declares. Not tested, and not user_lock's own outcome: the ondbchange plugin hooks (mco/puppet/git/ipbrick under hashman_base's plugins dirs) that run after any write command; DUMMYARG sets ignorenotif so no email is sent for the Puppet-driven lock. Run-2 no-op on an already-locked user is covered by the harness's idempotence gate."
+ ],
+ "review_s": 191.3,
+ "check_file_sha256": "77d6a6453fd6fb1d829a4397c6d0d43a06508e008b9566bdba2f55451749a85d",
+ "content_sha256": "77d6a6453fd6fb1d829a4397c6d0d43a06508e008b9566bdba2f55451749a85d",
+ "reviewer_result": "20261123T082106Z-reviewer",
+ "author_result": "20261123T080436Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "boot_id": "a6e25a30-5ee8-4164-b3c7-6c07b926a08c",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "a6e25a30-5ee8-4164-b3c7-6c07b926a08c",
+   "fresh": true
+  }
+ }
+}
