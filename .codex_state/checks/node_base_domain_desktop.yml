@@ -1,11 +1,14 @@
-# Phase 3 checks for puppet_infrastructure::node_base_domain_desktop (class; MOCK-APPLY for Service['puppet']: node
-# fixture puppet_agent_standin replaces puppet.service's ExecStart with a sleep, so no agent daemon runs in the lab).
+# Phase 3 checks for puppet_infrastructure::node_base_domain_desktop (class; until 2026-11-23 MOCK-APPLY for
+# Service['puppet']: node fixture puppet_agent_standin replaced puppet.service's ExecStart with a sleep).
 # Fixture: defaults (the class's own parameters only reach filesystem_base_desktop and filesystem_apt).
 # Scope: what this profile itself chooses. Its component classes (packages_base, ssh_secure, firewall_secure,
 # firewall_ipv6_drop, filesystem_base_desktop, filesystem_apt) carry their own check sets; here only the parameters
 # the profile passes them and the resources it declares itself.
 # 2026-11-21 (backfill batch 8): purpose and outcomes (HQ rulings 2 and C1), the IPv6 drop and the APT desktop mode
 # the profile chooses, and the uncovered row in the current form.
+# Correction round 2, 2026-11-23 (review 20261123T034707Z, purpose): the stand-in was lifted (HQ after batch 20, item 6:
+# the harness tolerates a running agent daemon, 6e007df), so the agent-daemon outcome is now tested: the real daemon,
+# restarted, makes a catalog run of its own that changes nothing but Exec[apt_update].
 class: node_base_domain_desktop
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -34,10 +37,7 @@ outcomes:
     checks: [ntp-daemon-running, puppet-service-enabled-and-running]
   - outcome: the puppet agent daemon running on its interval
     from: manifests/node_base_domain_desktop.pp:23-27
-    uncovered:
-      why: a real daemon would run the catalog between the harness's two runs; the lab uses a stand-in unit body
-      lifted_by: "capability: a harness mode that tolerates a running agent daemon between runs 1 and 2"
-      evidence: "node fixture puppet_agent_standin (status.py --standins: node_base_domain_desktop)"
+    checks: [the-agent-daemon-runs-the-catalog]
 checks:
   - id: ssh-hardened-but-password-login-allowed
     what: >-
@@ -77,7 +77,7 @@ checks:
     expect: {rc: 0, stdout: "\\Aactive\\n\\Z"}
 
   - id: puppet-service-enabled-and-running
-    what: the profile declares the puppet service running and enabled (desktops run puppet directly); stand-in unit body in the lab
+    what: the profile declares the puppet service running and enabled (desktops run puppet directly)
     control: negative
     derived_from:
       - {path: manifests/node_base_domain_desktop.pp, lines: "24-28", text: "service { 'puppet':"}
@@ -85,6 +85,31 @@ checks:
     probe: |
       systemctl is-enabled puppet; systemctl is-active puppet
     expect: {rc: 0, stdout: "\\Aenabled\\nactive\\n\\Z"}
+
+  - id: the-agent-daemon-runs-the-catalog
+    what: >-
+      the puppet service is the real agent daemon (its main process runs `agent --no-daemonize`, no stand-in body), and
+      restarted it makes a catalog run of its own that changes nothing besides Exec[apt_update] (the plan's expected
+      run-2 event: puppetlabs-apt with update frequency 'always' runs it on every agent run)
+    control: negative
+    timeout: 420
+    derived_from:
+      - {path: manifests/node_base_domain_desktop.pp, lines: "24-28", text: "service { 'puppet':"}
+      - {path: manifests/node_base_domain_desktop.pp, lines: "26-27", text: "enable => true,"}
+    mutates: >-
+      restarts puppet.service (the daemon makes a catalog run at start, applying the node's catalog from the lab
+      master); the restart time goes to /run/p8test-agentd.since
+    probe: |
+      date +%s > /run/p8test-agentd.since; systemctl restart puppet
+    effect: |
+      since=$(cat /run/p8test-agentd.since)
+      pid=$(systemctl show puppet -p MainPID --value)
+      tr '\0' ' ' < /proc/$pid/cmdline | grep -c 'agent --no-daemonize' | sed 's/^1$/the daemon is the real agent/'
+      for i in $(seq 360); do journalctl --no-pager -q -o cat -u puppet.service --since @$since | grep -q 'Applied catalog in' && break; sleep 1; done
+      log=$(journalctl --no-pager -q -o cat -u puppet.service --since @$since)
+      printf '%s\n' "$log" | grep -c 'Applied catalog in' | sed 's/^[1-9][0-9]*$/a daemon run applied the catalog/'
+      printf '%s\n' "$log" | grep '^(/Stage\[main\]' | grep -vc 'Apt::Update/Exec\[apt_update\]' | sed 's/^/resource events besides Exec[apt_update]: /'
+    expect: {rc: 0, stdout: "\\Athe daemon is the real agent\\na daemon run applied the catalog\\nresource events besides Exec\\[apt_update\\]: 0\\n\\Z"}
 
   - id: ipv6-input-and-forward-dropped
     what: ip6tables drops all IPv6 input and forwarding (rules 600 and 601 of firewall_ipv6_drop)
