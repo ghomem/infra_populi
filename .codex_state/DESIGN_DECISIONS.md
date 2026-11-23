@@ -2470,3 +2470,26 @@ the engine's tools, which take the lock themselves, are unaffected. 21 tests; th
    the repo from now on.
 4. **Continue:** the remaining stand-in lifts, the sweep, the final approval report (stop for Salatiel), the test-suite
    design note, the rename. When Salatiel says he is closing the laptop: stop at a clean point, commit, push, lab down.
+
+## 2026-11-23 — HQ rulings on the user_lock stop carried out; item 6 stand-in lifts; the run stops before the sweep
+1. **Ruling 1** (a3df1b6): record_green refuses a migrate commit that changes no class file and points to --fix;
+   provenance ignores such a commit only after an earlier migrate commit that changed the class's files, and lists it
+   (`ignored_migrate_commits`). user_lock Phase 1 PASS (20261123T014847Z; the review before it failed on fixtures=error
+   only, the master-role node being powered off: `lab_power.sh up` starts the master and the default node only).
+2. **Ruling 2:** sysmon_mysqldump_health's third round (the create-failure check), Phase 3 PASS; escalation closed.
+3. **Ruling 3:** drafts live in `.codex_state/drafts/` (the test-suite notes; the desktop-login fixture, since used).
+4. **Item 6 stand-in lifts:**
+   - user_lock: on the master-role node hashman itself creates the user (test-asset fixture hashman_user_via_hashman).
+     Phase 1 PASS; its set's Phase 3 review failed on purpose (hashman expires a new user, so the Samba hash carries
+     '!' before the lock): escalated past the correction cap with the one-line fixture fix (escalations/user_lock.checkset.md);
+   - mount_shares_desktop: a real first GNOME login (test-asset fixture p8test_desktop_login) creates ~/Desktop; both
+     reviews PASS;
+   - node_base_desktop, node_base_domain_desktop: the harness tolerates a running agent daemon (6e007df: runs wait
+     for the agent lock; a between-runs gate fails a daemon run that logged a resource event or an error, read from
+     puppet.service's journal, since the master names stored reports by the minute and the harness's own runs log
+     from the ssh session's scope); the agent-daemon outcome is now a check; both reviews PASS for both classes;
+   - letsencrypt_certificate (a lab ACME endpoint) and openvpn_server/network_vpn (an extra NIC on a gateway node):
+     escalated, each needing a design choice, the second a new VM (escalations/*.standin.md).
+   - Marker-only re-records now go through `record_green.sh --fix`.
+5. **The run stops before the sweep** (~04:45 UTC): its approach is a design choice affecting 34 sets
+   (escalations/sweep.md: record the real gaps, or build two runner capabilities first). The lab is down.

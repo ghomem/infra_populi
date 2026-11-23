@@ -6,9 +6,9 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ## Summary
 
 - Done classes: 90 (89 verified by the Phase 1 reviewer). Owner-validated: postfix_smtp_base_config_file. Retired: nginx_proxy_smtp_auth_ppa. Blocked: none.
-- Behaviour (Phase 3): 1 deferred, 2 finding, 85 pass, 1 review-failed, 1 stale.
-- Open rows (outcomes no check probes): 120 in 73 classes.
-- Stand-ins: 10. Local changes: 21 (in 17 classes).
+- Behaviour (Phase 3): 1 deferred, 2 finding, 86 pass, 1 review-failed.
+- Open rows (outcomes no check probes): 118 in 72 classes.
+- Stand-ins: 7. Local changes: 21 (in 17 classes).
 
 ## For Salatiel's decision
 
@@ -19,21 +19,20 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 
 ### Stand-ins
 
-- **letsencrypt_certificate** — fixture `letsencrypt_cert_standin`; lifted by: an ACME test endpoint in the lab, so certbot obtains a real certificate (HQ batch-7 ruling 2). *to be lifted: a lab ACME endpoint (HQ after batch 20, item 6)*
-- **mount_shares_desktop** — fixture `p8test_desktop_home`; lifted by: a first graphical login of the user on a lab desktop node (xdg-user-dirs creates ~/Desktop). *to be lifted: the desktop login (HQ after batch 20, item 6)*
-- **network_vpn** — fixture `p8test_dhcp_primary`; lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). *to be lifted: an extra network card on a gateway node (HQ after batch 20, item 6)*
-- **node_base_desktop** — fixture `puppet_agent_standin`; lifted by: a harness mode that tolerates a running agent daemon between runs 1 and 2 (HQ batch-7 ruling 2). *to be lifted: a harness mode that tolerates a running agent (HQ after batch 20, item 6)*
-- **node_base_domain_desktop** — fixture `puppet_agent_standin`; lifted by: a harness mode that tolerates a running agent daemon between runs 1 and 2 (HQ batch-7 ruling 2). *to be lifted: a harness mode that tolerates a running agent (HQ after batch 20, item 6)*
+- **letsencrypt_certificate** — fixture `letsencrypt_cert_standin`; lifted by: an ACME test endpoint in the lab, so certbot obtains a real certificate (HQ batch-7 ruling 2). *lift escalated: a lab ACME endpoint needs a design choice (escalations/letsencrypt_certificate.standin.md; HQ after batch 20, item 6)*
+- **network_vpn** — fixture `p8test_dhcp_primary`; lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). *lift escalated: an extra network card on a gateway node needs a design choice (escalations/openvpn_server.standin.md; HQ after batch 20, item 6)*
 - **openvpn_domain** — fixture `p8test_domain_dns`; lifted by: a node on a network whose DNS (DHCP) serves the AD domain, as production's. *not in HQ's lift list (item 6): stays as it is, for Salatiel's attention*
 - **openvpn_nm_connection** — fixture `p8test_vpn_ca`; lifted by: a class or node definition that ships the VPN CA to desktops (none in the code tree). *not in HQ's lift list (item 6): stays as it is, for Salatiel's attention*
-- **openvpn_server** — fixture `p8test_dhcp_primary`; lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). *to be lifted: an extra network card on a gateway node (HQ after batch 20, item 6)*
+- **openvpn_server** — fixture `p8test_dhcp_primary`; lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). *lift escalated: an extra network card on a gateway node needs a design choice (escalations/openvpn_server.standin.md; HQ after batch 20, item 6)*
 - **user_samba** — fixture `samba_dc_standin`; lifted by: a Zentyal/Samba AD domain controller node with Zentyal's user scripts (none yet; the planned dc kind, p8lab-dc, is a plain Samba AD DC). *stays; for Salatiel's explicit acceptance (HQ after batch 20, item 6)*
 - **user_sysmon** — fixture `sysmon_server`; lifted by: a monitoring-server node running Naemon + Thruk from the monitoring repository (no nodes.yml kind). *stays; for Salatiel's explicit acceptance (HQ after batch 20, item 6)*
 
 ### Open escalations
 
-- escalations/sysmon_mysqldump_health.behaviour.md: sysmon_mysqldump_health — behaviour findings (findings 1 and 2 FIXED, local changes #18 and #20; the check set OPEN, for HQ: past the correction cap)
-- escalations/user_lock.phase1.md: user_lock — Phase 1 review FAIL on provenance after the stand-in lift (OPEN, for HQ: the run is stopped)
+- escalations/letsencrypt_certificate.standin.md: letsencrypt_certificate — stand-in lift "a lab ACME endpoint" (OPEN, for HQ: more than one reasonable design)
+- escalations/openvpn_server.standin.md: openvpn_server (and network_vpn) — stand-in lift "an extra network card on a gateway node" (OPEN, for Salatiel/HQ)
+- escalations/sweep.md: The sweep of open uncovered rows — approach (OPEN, for HQ: the run is stopped before it)
+- escalations/user_lock.checkset.md: user_lock — the check set after the stand-in lift: purpose FAIL past the correction cap (OPEN, for HQ)
 
 ## One row per class
 
@@ -73,7 +72,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 | linux_policies_common | 0 | ubuntu | pass | 3 | 1 |  |  |  |
 | linux_policies_user | 0 | kubuntu | pass | 4 | 1 |  |  |  |
 | mariadb_server | 0 | ubuntu + ubuntu2 | pass | 6 | 1 |  |  |  |
-| mount_shares_desktop | 0 | gnome + ubuntu2 | pass | 3 | 1 | yes |  |  |
+| mount_shares_desktop | 0 | gnome + ubuntu2 | pass | 3 | 1 |  |  |  |
 | mysql_db | 0 | ubuntu + ubuntu2 | pass | 5 | 1 |  |  |  |
 | mysql_server | 1 | ubuntu | pass | 5 | 0 |  |  |  |
 | network_dhcp | 3 | ubuntu | pass | 5 | 1 |  |  | #10 |
@@ -87,8 +86,8 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 | nginx_static | 0 | ubuntu | pass | 3 | 1 |  |  |  |
 | nginx_static_domain | 1 | ubuntu | pass | 4 | 2 |  |  |  |
 | node_base | 58 | ubuntu | pass | 9 | 2 |  |  |  |
-| node_base_desktop | 0 | gnome | pass | 9 | 2 | yes |  |  |
-| node_base_domain_desktop | 0 | ubuntu | pass | 6 | 1 | yes |  |  |
+| node_base_desktop | 0 | gnome | pass | 10 | 1 |  |  |  |
+| node_base_domain_desktop | 0 | ubuntu | pass | 7 | 0 |  |  |  |
 | openvpn_domain | 0 | ubuntu + dc | pass | 6 | 0 | yes |  | #17 |
 | openvpn_nm_connection | 0 | gnome + ubuntu2 | pass | 4 | 1 | yes |  |  |
 | openvpn_server | 3 | ubuntu + ubuntu2 | finding | 8 | 1 | yes | yes | #7 |
@@ -116,7 +115,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 | sysmon_fs_health | 0 | ubuntu | pass | 5 | 0 |  |  |  |
 | sysmon_integrity_master | 0 | ubuntu | pass | 2 | 1 |  |  |  |
 | sysmon_integrity_node | 0 | ubuntu | pass | 4 | 1 |  |  |  |
-| sysmon_mysqldump_health | 0 | ubuntu | review-failed | 8 | 0 |  |  | #18, #20 |
+| sysmon_mysqldump_health | 0 | ubuntu | pass | 9 | 0 |  |  | #18, #20 |
 | sysmon_puppet_cert_status | 0 | ubuntu | pass | 3 | 0 |  |  | #19 |
 | user | 2 | ubuntu | pass | 4 | 3 |  |  |  |
 | user_base | 3 | ubuntu | pass | 3 | 4 |  |  |  |
@@ -124,7 +123,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 | user_desktop_sudoer | 0 | kubuntu | pass | 4 | 1 |  |  |  |
 | user_kde_lock_screen | 20 | kubuntu | pass | 5 | 3 |  |  |  |
 | user_kde_lock_screen_common | 20 | ubuntu | pass | 2 | 1 |  |  |  |
-| user_lock | 0 | puppetserver | stale | 2 | 0 |  |  |  |
+| user_lock | 0 | puppetserver | review-failed | 2 | 0 |  |  |  |
 | user_samba | 0 | ubuntu | pass | 1 | 1 | yes |  |  |
 | user_sudoer | 1 | ubuntu | pass | 3 | 1 |  |  |  |
 | user_sysmon | 0 | ubuntu | pass | 2 | 1 | yes |  |  |
@@ -559,7 +558,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 - **Behaviour:** deferred — second-node, lifted by ubuntu2; node ubuntu; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Deferred:** needs second-node, lifted by ubuntu2
-- **Stand-in:** `letsencrypt_cert_standin` — lifted by: an ACME test endpoint in the lab, so certbot obtains a real certificate (HQ batch-7 ruling 2). Plan: to be lifted: a lab ACME endpoint (HQ after batch 20, item 6)
+- **Stand-in:** `letsencrypt_cert_standin` — lifted by: an ACME test endpoint in the lab, so certbot obtains a real certificate (HQ batch-7 ruling 2). Plan: lift escalated: a lab ACME endpoint needs a design choice (escalations/letsencrypt_certificate.standin.md; HQ after batch 20, item 6)
 
 ### linux_policies_common
 
@@ -612,7 +611,6 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the unmount script unmounts the shares it lists (`the-unmount-script-unmounts-it`)
 - **Open rows:**
   - the password asked in a kdialog box, the file manager opened on the mount (explorer), symlinks and the cache/delay options — why: the dialog needs input to a desktop session; the explorer (dolphin, the class's default) is on the kubuntu kind, not on this class's plan node gnome, and a set is judged on its plan node only; symlinks, cache and delay are parameter variants — lifted by: capability: a phase3 set for a node kind other than the class's plan node (kubuntu), input to a desktop session, and more than one params fixture per set
-- **Stand-in:** `p8test_desktop_home` — lifted by: a first graphical login of the user on a lab desktop node (xdg-user-dirs creates ~/Desktop). Plan: to be lifted: the desktop login (HQ after batch 20, item 6)
 
 ### mysql_db
 
@@ -684,7 +682,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 - **Open rows:**
   - client isolation, the bridge and the server at boot, the hairpin rule, the data channel's compression, and each composed class's own behaviours — why: covered as behaviour by the composed classes' own sets (openvpn_server, firewall_addon_openvpn_server, caching_nameserver, firewall_addon_caching_nameserver) under their own fixtures, where openvpn_server's compression is a finding (escalations/openvpn_server.behaviour.md); this set covers what the composition adds (the VPN network wired through all four) and the cipher this class passes — lifted by: ubuntu
   - parameter variants (another VPN network, another cipher, renegotiation, client DNS, client_isolation false) — why: parameter variants (one set holds one params fixture); untested — lifted by: ubuntu
-- **Stand-in:** `p8test_dhcp_primary` — lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). Plan: to be lifted: an extra network card on a gateway node (HQ after batch 20, item 6)
+- **Stand-in:** `p8test_dhcp_primary` — lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). Plan: lift escalated: an extra network card on a gateway node needs a design choice (escalations/openvpn_server.standin.md; HQ after batch 20, item 6)
 
 ### nginx_base
 
@@ -815,10 +813,9 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - logs are forwarded to the configured log target and port (`logs-forwarded-to-the-log-target`)
   - the GNOME screen lock policy is served (manage_gnome_screenlock) (`gnome-lock-policy-served`)
   - the puppet service is enabled and running (`puppet-service-enabled-and-running`)
+  - the puppet agent daemon running on its interval (`the-agent-daemon-runs-the-catalog`)
 - **Open rows:**
   - the per-user KDE screen lock (screenlock_users) — why: it needs a KDE session environment the GNOME plan node does not have; user_kde_lock_screen's own set exercises it on kubuntu — lifted by: capability: a phase3 set for a node kind other than the class's plan node (kubuntu)
-  - the puppet agent daemon running on its interval — why: a real daemon would run the catalog between the harness's two runs; the lab uses a stand-in unit body — lifted by: capability: a harness mode that tolerates a running agent daemon between runs 1 and 2
-- **Stand-in:** `puppet_agent_standin` — lifted by: a harness mode that tolerates a running agent daemon between runs 1 and 2 (HQ batch-7 ruling 2). Plan: to be lifted: a harness mode that tolerates a running agent (HQ after batch 20, item 6)
 
 ### node_base_domain_desktop
 
@@ -832,9 +829,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - all IPv6 input and forwarding are dropped (firewall_ipv6_drop) (`ipv6-input-and-forward-dropped`)
   - the APT helpers are in desktop mode (server_mode false; the desktop surface list, the desktop link) and the relevant-updates script exists (`apt-helpers-in-desktop-mode`)
   - an NTP daemon runs, and the puppet service is enabled and running (`ntp-daemon-running`, `puppet-service-enabled-and-running`)
-- **Open rows:**
-  - the puppet agent daemon running on its interval — why: a real daemon would run the catalog between the harness's two runs; the lab uses a stand-in unit body — lifted by: capability: a harness mode that tolerates a running agent daemon between runs 1 and 2
-- **Stand-in:** `puppet_agent_standin` — lifted by: a harness mode that tolerates a running agent daemon between runs 1 and 2 (HQ batch-7 ruling 2). Plan: to be lifted: a harness mode that tolerates a running agent (HQ after batch 20, item 6)
+  - the puppet agent daemon running on its interval (`the-agent-daemon-runs-the-catalog`)
 
 ### openvpn_domain
 
@@ -881,7 +876,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - clients cannot reach each other (client isolation, the default) (`client-isolation-on-the-bridge`, `a-second-vpn-account`, `a-second-client-reaches-the-server-side-but-not-the-first`)
 - **Open rows:**
   - the variants force_ifupdown, client_isolation false, compression none, another cipher or DNS server — why: parameter variants (one set holds one params fixture, which keeps their defaults); untested — lifted by: ubuntu
-- **Stand-in:** `p8test_dhcp_primary` — lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). Plan: to be lifted: an extra network card on a gateway node (HQ after batch 20, item 6)
+- **Stand-in:** `p8test_dhcp_primary` — lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). Plan: lift escalated: an extra network card on a gateway node needs a design choice (escalations/openvpn_server.standin.md; HQ after batch 20, item 6)
 - **Finding:** the-data-channel-is-compressed-both-ways (escalations/openvpn_server.behaviour.md)
 - **Local changes:** #7: `$data_ciphers = join(unique(['AES-256-GCM', 'AES-128-GCM', 'CHACHA20-POLY1305', $cipher]), ':')` (openvpn_server.pp:157-159, with a two-line comment) and `'data-ciphers' => $data_ciphers` added to the server's custom_options (:185;
 
@@ -1227,7 +1222,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### sysmon_mysqldump_health
 
 - **Purpose:** Gives the monitoring system a Nagios check that proves the MySQL dumps under the configured directories can be restored: each .sql file that is a mysqldump is loaded into a scratch database of its own name, which is then dropped; any failure (create, load, drop), or a .sql file that is not a mysqldump, is reported CRITICAL with exit 2, and OK with exit 0 otherwise.
-- **Behaviour:** review-failed — purpose; node ubuntu; production machines: 0.
+- **Behaviour:** pass; node ubuntu; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the check script carries the MySQL user and password and the dump directories, root 0755 (`check-script-rendered`)
@@ -1237,6 +1232,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - every configured directory is checked, subdirectories included (a broken dump in a dated subdirectory of the second directory is reported) (`restores-are-checked`)
   - a dump that would create or use a database that already exists is not restored: the file is validated only (a complete mysqldump), the output says the restore test was skipped because the database exists, and the existing database keeps every row; an incomplete dump of such a database is reported CRITICAL (`a-live-database-of-the-dump-name-is-left-intact`, `an-incomplete-dump-of-an-existing-database-is-critical`)
   - a dump made with --databases (its own CREATE DATABASE and USE lines) whose database is absent gets the full restore test and leaves nothing behind (`a-databases-dump-is-restored-and-removed`)
+  - a database the dump needs that cannot be created (absent at the pre-check, CREATE refused) is reported CRITICAL (Create database) with exit 2, and nothing is dropped (`a-failed-create-is-critical-and-drops-nothing`)
   - a scratch database that cannot be dropped is reported CRITICAL (Drop database) with exit 2 (`a-failed-drop-is-critical`)
 - **Local changes:** #18: templates/sysmon/check-mysqldump-health.sh.erb:68: `handle_error 1 "SQL File $f is not a MySQLDump"` (was `handle_error $RC ...`);; #20: templates/sysmon/check-mysqldump-health.sh.erb: before any restore the check lists the databases the dump would create or use (its header's `Database:`, its `CREATE DATABASE` and `USE` lines;
 
@@ -1336,7 +1332,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### user_lock
 
 - **Purpose:** Locks an existing user in hashman, the fleet's user database on the Puppet master: hashman's own pp_auth.py marks the user's password entry locked, so hashman (and the services that authenticate through it) refuse the user.
-- **Behaviour:** stale — the check file changed after its review; node puppetserver; production machines: 0.
+- **Behaviour:** review-failed — purpose; node puppetserver; production machines: 0.
 - **Tracker:** `[from: release-0.9.10; upstream defect fixed: exec guarded by its post-condition]`
 - **Proven:**
   - hashman's pp_auth.py lock marks the user's entry locked, in place (one entry, not a duplicate), and invalidates the user's Samba hash the same way (`user-entry-locked-by-hashman`, `exactly-one-entry`, `the-samba-hash-is-locked-too`)

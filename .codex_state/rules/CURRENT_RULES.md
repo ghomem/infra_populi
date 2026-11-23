@@ -2,7 +2,14 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-135 entries; 6 marked superseded (in whole or part); newest first.
+136 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-23 — HQ rulings on the user_lock stop carried out; item 6 stand-in lifts; the run stops before the sweep
+- 1. **Ruling 1** (a3df1b6): record_green refuses a migrate commit that changes no class file and points to --fix;
+- 2. **Ruling 2:** sysmon_mysqldump_health's third round (the create-failure check), Phase 3 PASS; escalation closed.
+- 3. **Ruling 3:** drafts live in `.codex_state/drafts/` (the test-suite notes; the desktop-login fixture, since used).
+- 4. **Item 6 stand-in lifts:**
+- 5. **The run stops before the sweep** (~04:45 UTC): its approach is a design choice affecting 34 sets
 
 ## 2026-11-23 — HQ rulings on the user_lock stop
 - 1. **user_lock: option A, kept narrow.** record_green refuses a migrate commit that changes no class file and points to
