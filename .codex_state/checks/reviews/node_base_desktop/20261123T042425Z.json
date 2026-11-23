@@ -1,0 +1,35 @@
+{
+ "class": "node_base_desktop",
+ "at": "20261123T042425Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "ssh-hardened-without-password-or-root-login: node_base_desktop.pp:17-18 default password_authentication and ssh_allow_root_login to false, passed to ssh_secure (43-46), which maps false to 'no' for PasswordAuthentication/PermitRootLogin (ssh_secure.pp:43-52); the fixture leaves both at default, so sshd -T expecting 'passwordauthentication no' and 'permitrootlogin no' tests exactly those lines",
+  "the-apt-helpers-are-in-desktop-mode: filesystem_apt.pp:72-81 declare, when server_mode is false (node_base_desktop.pp:65-68 passes false), the link apt-update-surface-desktop.sh -> ${localdir}/bin/apt-update-surface.sh; with apt_surface_list empty, filesystem_apt.pp:43-57 select the desktop list (firefox, not nginx-core/postfix), so the readlink and list membership expectations follow from the baseline",
+  "logs-forwarded-to-the-log-target: node_base_desktop.pp:21-24 make log_target required and log_port default 6514; rsyslog_client renders forward_simple.conf.epp into /etc/rsyslog.d/40-forward.conf whose rule is '*.*  @@<target>:<port>'; with the fixture target puppet8master.example.com the expected '*.* @@puppet8master.example.com:6514' (whitespace normalised) is what the code produces",
+  "purpose covered: The outcomes table covers every part of the baseline manifest (lines 39-108): SSH hardening and unattended-upgrades removal, firewall_secure's IPv4 policy, filesystem_base_desktop dirs, filesystem_apt desktop mode, the IPv6 drop policy, the 02:00 relevant-updates cron, the rsyslog forward rule, the GNOME dconf lock policy (read back through dconf with a mismatch control on the profile name), the puppet service enabled/active, and, after the stand-in lift, the real agent daemon restarted making its own catalog run with no events besides Exec[apt_update] (mutating check: declares the restart and the /run timestamp file, effect reads the journal and /proc, not the action's output). All 11 negatives failed clean and passed applied in run 20261123T041738Z-reviewer. Only the per-user KDE lock (87-93) is uncovered: the gnome fixture leaves screenlock_users empty and the behaviour needs a Plasma session, which user_kde_lock_screen's own set exercises on kubuntu; the reason and evidence hold. Log delivery and package contents beyond the profile's choices are left to the component sets (rsyslog_client, packages_base), consistent with the stated scope."
+ ],
+ "review_s": 407.6,
+ "check_file_sha256": "32ec5c203fed1d945ce95e49ec7c3f9ce24ab6ad0c44ab13740003fc063fd19f",
+ "content_sha256": "32ec5c203fed1d945ce95e49ec7c3f9ce24ab6ad0c44ab13740003fc063fd19f",
+ "reviewer_result": "20261123T041738Z-reviewer",
+ "author_result": "20261123T035624Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "boot_id": "bfce5f6c-c201-4604-8ad9-1da8c53aa5d9",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "bfce5f6c-c201-4604-8ad9-1da8c53aa5d9",
+   "fresh": true
+  }
+ }
+}
