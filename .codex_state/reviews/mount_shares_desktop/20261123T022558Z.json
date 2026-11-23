@@ -1,0 +1,118 @@
+{
+ "schema": 1,
+ "class": "mount_shares_desktop",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-23T02:25:58Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "61bcbfde205e",
+ "migrate_subject": "P8: migrate puppet_infrastructure::mount_shares_desktop",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 61bcbfde205e; 903 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `mount_shares_desktop Done [from: release-0.9.10]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 5 catalog events; COVERAGE puppet_infrastructure::mount_shares_desktop: 2 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A: header comment only (lines 1-2 added: 'release-0.9.10 manifest validated unchanged' + 'Module dependencies: none'); the define's two file resources, attributes and the defaults are byte-identical to cf477c6",
+   "DIFF B (migrate commit 61bcbfde205e) is the same 2-line header; templates/shares/shares.sh.erb and unmount-shares.sh.erb compared by hand against baseline.py show --for mount_shares_desktop: identical"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 2,
+  "removed": 0,
+  "non_comment_changes": 0,
+  "header_only": true
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.",
+  "# Module dependencies: none (core file resources and ERB templates only)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 5,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::mount_shares_desktop: 2 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "node": "gnome",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "total_s": 18.743,
+   "master_check_s": 0.248,
+   "poweroff_s": 0.828,
+   "restore_s": 0.217,
+   "boot_to_ssh_s": 9.373,
+   "apt_update_s": 7.744,
+   "verify_s": 0.333,
+   "nic1_rx_bytes": 13604190,
+   "apt_mirror": "primary"
+  },
+  "log": ".codex_state/logs/reviews/mount_shares_desktop.20261123T022439Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "gnome",
+ "mock_apply": null,
+ "node_fixture": {
+  "name": "p8test_desktop_login",
+  "header": [
+   "# Node fixture `p8test_desktop_login` for mount_shares_desktop on the GNOME node (kind gnome). It replaces the stand-in",
+   "# `p8test_desktop_home` (HQ after batch 20, item 6: the lift \"the desktop login\"). The define writes its two scripts into",
+   "# /home/<username>/Desktop (mount_shares_desktop.pp:7-8) and never declares it: on a desktop the user's first graphical",
+   "# login creates ~/Desktop (xdg-user-dirs, started by the session). Here that login happens for real: the fixture",
+   "# declares the test user p8testuser (never a real account) and logs it in to GNOME once through GDM's automatic login,",
+   "# then waits until the session has created ~/Desktop. The directory is not declared: it is the login's.",
+   "# Runs only while ~/Desktop is absent, and before the define's files.",
+   "# Lifted by: nothing needed \u2014 a test asset (rules/test_asset_fixtures.txt): ~/Desktop comes from a real first login."
+  ],
+  "resources": [
+   "user[p8testuser]",
+   "file[/usr/local/sbin/p8test-first-desktop-login]",
+   "exec[p8test first desktop login of p8testuser]"
+  ],
+  "scope_evidence": "p8test_desktop_login (listed in rules/test_asset_fixtures.txt as a test asset, no mock-apply marker): user[p8testuser] is the fixture test identity (not a real account) that owns the home the define writes into; file[/usr/local/sbin/p8test-first-desktop-login] is a script that temporarily sets GDM AutomaticLogin=p8testuser in /etc/gdm3/custom.conf, restarts gdm3, waits up to 180s for the session to create /home/p8testuser/Desktop, then restores the original custom.conf; exec[p8test first desktop login of p8testuser] runs it only while ~/Desktop is absent (creates guard) and is ordered before the define. None of these declares or alters the define's two file resources or ~/Desktop itself (it comes from the real login); all stay within the stated asset: the test user plus one real first GNOME login"
+ }
+}
