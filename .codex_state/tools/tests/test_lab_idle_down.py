@@ -54,9 +54,8 @@ def disarmed_at_the_end(lab):
 
 def test_an_idle_lab_goes_down_after_the_turn_ends(lab, disarmed_at_the_end):
     e = env(lab)
-    assert lab.run([IDLE, "arm"], env=e).returncode == 0
-    assert status(lab, e).startswith("armed ")
-    assert wait_until(lambda: vm_states(lab) == {MASTER: "poweroff", NODE: "poweroff"}, seconds=20)
+    assert lab.run([IDLE, "arm"], env=e).returncode == 0  # "armed" is asserted with a long idle time (below): here
+    assert wait_until(lambda: vm_states(lab) == {MASTER: "poweroff", NODE: "poweroff"}, seconds=20)  # 1 s may pass first
     assert wait_until(lambda: "LAB DOWN" in (lab.root / "idle.log").read_text(), seconds=20)
     assert "turn ended and the lab idle for 1s" in (lab.root / "idle.log").read_text()
     assert wait_until(lambda: status(lab, e) == "disarmed")
@@ -114,6 +113,7 @@ def test_arming_twice_starts_one_watcher(lab, disarmed_at_the_end):
     e = env(lab, idle_s="30")
     assert lab.run([IDLE, "arm"], env=e).returncode == 0
     first = (lab.root / "idle" / "idle_down.pid").read_text()
+    assert status(lab, e) == f"armed {first.strip()}"
     assert lab.run([IDLE, "arm"], env=e).returncode == 0
     assert (lab.root / "idle" / "idle_down.pid").read_text() == first
 
