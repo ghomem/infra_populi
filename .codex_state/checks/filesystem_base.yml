@@ -3,6 +3,8 @@
 # local tree at /opt/puppet-infrastructure (bin, etc, backup, pkgsdir). On the clean node /etc/default/locale is
 # Ubuntu's link to /etc/locale.conf and /var/log/syslog already has 0640 syslog:adm, so the syslog mode is shown by a
 # drift that the class's next agent run corrects. Probes read the node's own files and run its tools.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): the default variant (customize_syslog_mode false, node_base's
+# default) and the RedHat branch on rhel9 are now checks in the variant runs `default` and `rhel`.
 class: filesystem_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -26,10 +28,19 @@ outcomes:
     checks: [the-syslog-mode-drifts, the-next-agent-run-restores-the-syslog-mode]
   - outcome: by default (customize_syslog_mode false) the syslog file is left alone
     from: manifests/filesystem_base.pp:6, 56
-    uncovered: {why: "a fixture variant (one set holds one fixture, and this one sets it true to test the managed mode); untested", lifted_by: ubuntu}
+    checks: [the-syslog-file-is-left-alone-by-default]
   - outcome: the RedHat paths (/var/log/messages owned root:root)
     from: manifests/filesystem_base.pp:36-41
-    uncovered: {why: "the RedHat branch; this set runs on the plan's Ubuntu node", lifted_by: rhel9}
+    checks: [on-redhat-the-messages-file-is-managed]
+variants:
+  - name: default
+    why: >-
+      customize_syslog_mode false, which node_base passes to this class by default on every server (node_base.pp:9,
+      108-110), so production uses it although no node file sets it
+    params: default
+  - name: rhel
+    why: the RedHat branch (/var/log/messages owned root:root), on the rhel9 node with the set's own params fixture
+    node: rhel9
 node_agent:
   after: the-syslog-mode-drifts
   why: the class keeps the syslog file's mode, which only its next agent run after a change can show
@@ -95,3 +106,30 @@ checks:
       stat -c '%U:%G %a' /var/log/syslog
       test -L /opt/puppet-infrastructure/bin/mypython && echo class-applied
     expect: {rc: 0, stdout: "\\Asyslog:adm 640\\nclass-applied\\n\\Z"}
+
+  - id: the-syslog-file-is-left-alone-by-default
+    variant: default
+    what: >-
+      with customize_syslog_mode false the class is applied (bin/mypython links to python3) and the catalog manages no
+      syslog file
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_base.pp, lines: "56-63", text: "if ($customize_syslog_mode) {"}
+    probe: |
+      readlink /opt/puppet-infrastructure/bin/mypython
+      python3 -c 'import json,sys; r=json.load(open(sys.argv[1]))["resources"]; print("syslog file resources:", sum(1 for x in r if x["type"]=="File" and x["title"] in ("/var/log/syslog", "/var/log/messages")))' $(ls /opt/puppetlabs/puppet/cache/client_data/catalog/*.json 2>/dev/null | head -1) 2>/dev/null || echo "no catalog"
+    expect: {rc: 0, stdout: "\\A/usr/bin/python3\\nsyslog file resources: 0\\n\\Z"}
+
+  - id: on-redhat-the-messages-file-is-managed
+    variant: rhel
+    what: >-
+      on RedHat, with customize_syslog_mode true, /var/log/messages is root:root with the u=rw,g=r,o= mode (0640), and
+      bin/mypython links to /usr/bin/python3
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_base.pp, lines: "36-41", text: "$syslog_filepath = '/var/log/messages'"}
+      - {path: manifests/filesystem_base.pp, lines: "56-63", text: "file { $syslog_filepath:"}
+    probe: |
+      stat -c '%U:%G %a' /var/log/messages
+      readlink /opt/puppet-infrastructure/bin/mypython
+    expect: {rc: 0, stdout: "\\Aroot:root 640\\n/usr/bin/python3\\n\\Z"}
