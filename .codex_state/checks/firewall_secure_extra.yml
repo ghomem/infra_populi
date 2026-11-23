@@ -7,6 +7,9 @@
 # addresses it adds to its own NIC: its primary one (on no list), +100 (whitelisted for the service) and +150
 # (blacklisted). Node probes name no other host; peer probes name only the class node's host-only address and compute
 # their own addresses.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): anti_ddos without ip_filter, and no anti_ddos with strict mode, are
+# checks in the variant runs `ddosonly` and `plain`; rule 002, fragments, geoip and internal forwarding name what is
+# missing, with their evidence.
 class: firewall_secure_extra
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -48,7 +51,12 @@ outcomes:
     checks: [a-service-listens, loopback-reaches-a-local-service]
   - outcome: traffic to 127.0.0.0/8 arriving on another interface is rejected (rule 002)
     from: manifests/firewall_secure_extra.pp:113-118
-    uncovered: {why: "no node kind in nodes.yml would show this rule act; measured on the ubuntu node 2026-11-18: 3 hand-built Ethernet frames from the peer to 127.0.0.1 through the node's NIC were counted 0 by rule 002 with route_localnet 0 (the kernel drops such a destination before INPUT) and again 0 with route_localnet set to 1 on the node, for a reason not found; no check can show the rule act, and it is listed as a lead in escalations/firewall_secure_extra.behaviour.md", lifted_by: ubuntu}
+    uncovered:
+      why: a packet to 127.0.0.0/8 that arrives on a non-loopback interface never reached INPUT on a lab node
+      lifted_by: "capability: a node kind whose kernel passes a 127.0.0.0/8 destination from another interface to INPUT"
+      evidence: >-
+        measured 2026-11-18 on the ubuntu node: 3 hand-built frames from the peer to 127.0.0.1 through the node's NIC were
+        counted 0 by rule 002 with route_localnet 0 and again 0 with route_localnet 1 (escalations/firewall_secure_extra.behaviour.md)
   - outcome: SSH from a host on no list is limited against brute force (overall 20 a minute with a burst of 5, 8 held per host, 15 new a minute per host)
     from: manifests/firewall_secure_extra.pp:129-132, 144-155
     checks: [an-ssh-burst-is-cut-at-the-overall-limit, the-ssh-rule-counters-are-recorded, held-ssh-connections-stop-at-eight, only-the-per-host-limit-dropped-the-held-connections, new-ssh-connections-stop-at-fifteen-a-minute]
@@ -60,7 +68,12 @@ outcomes:
     checks: [the-mangle-counters-are-zeroed, a-low-mss-syn-is-dropped, the-mss-rule-dropped-it]
   - outcome: TCP fragments are dropped (rule 518; tcp by the type's default)
     from: manifests/firewall_secure_extra.pp:184-185
-    uncovered: {why: "no node kind in nodes.yml would show this rule act (Phase 5 backlog #8); measured on the ubuntu node 2026-11-18: 5 TCP-fragmented SYNs from the peer (hping3 -f) reached the node's NIC (tcpdump: 8-byte fragments) and were counted 0 by rule 518 and 0 by 501; the kernel's connection tracking reassembles fragments at a hook that runs before the mangle table (defrag priority -400, mangle -150), so the rule only ever sees whole packets. An unreachable rule like the RST limit, reported to HQ in escalations/firewall_secure_extra.behaviour.md", lifted_by: ubuntu}
+    uncovered:
+      why: TCP fragments never reached rule 518 on a lab node (connection tracking reassembles them before the filter)
+      lifted_by: "capability: a node kind where fragments reach the filter table unreassembled (Phase 5 backlog #8)"
+      evidence: >-
+        measured 2026-11-18 on the ubuntu node: 5 TCP-fragmented SYNs from the peer (hping3 -f) reached the node's NIC
+        (tcpdump: 8-byte fragments) and were counted 0 by rule 518 and 0 by 501
   - outcome: ICMP echo requests are limited to 2 per second
     from: manifests/firewall_secure_extra.pp:87-99
     checks: [icmp-echo-is-rate-limited]
@@ -84,16 +97,33 @@ outcomes:
     checks: [the-flush-script-clears-every-rule, the-next-agent-run-rebuilds-the-firewall]
   - outcome: sources from whitelisted countries reach the services (country_whitelist, src_cc)
     from: manifests/firewall_secure_extra.pp:203-206
-    uncovered: {why: "the geoip match (xt_geoip) is not on Ubuntu 24.04 without xtables-addons and a GeoIP database, which no class installs; whether production sets country_whitelist is a production read", lifted_by: ubuntu}
+    uncovered:
+      why: the geoip match (xt_geoip) needs xtables-addons and a GeoIP database, which no class installs
+      lifted_by: "capability: xt_geoip with a GeoIP database on a lab node"
+      evidence: >-
+        Ubuntu 24.04's kernel and iptables carry no xt_geoip without xtables-addons; no class of the repository installs
+        it; production's country_whitelist is not set in node files (diagnosis/fleet_variant_usage.md)
   - outcome: unlisted sources on the service port are forwarded to an internal landing server (internal_forward)
     from: manifests/firewall_secure_extra.pp:213-221, 254-266
-    uncovered: {why: "needs an internal network behind the node with a server on it; the lab's nodes share one host-only link", lifted_by: ubuntu2}
+    uncovered:
+      why: forwarding to an internal landing server needs an internal network behind the node with a server on it
+      lifted_by: "capability: an internal network behind a lab node (the lab's nodes share one host-only link)"
+      evidence: >-
+        nodes.yml (2026-11-23): every node kind has NIC1 NAT and NIC2 on vboxnet0 only; no internal network exists
   - outcome: with anti_ddos but without ip_filter, every source is held to the per-source connection and rate limits on the listed services in INPUT
     from: manifests/firewall_secure_extra.pp:269-303
-    uncovered: {why: "a fixture variant of the same node (one set holds one fixture); this one exercises the side-chain variant of the same limits (lines 225-250), which pass", lifted_by: ubuntu}
+    checks: [anti-ddos-without-ip-filter-limits-every-source]
   - outcome: without anti_ddos the listed service ports are simply opened, and strict mode admits only listed SSH sources
     from: manifests/firewall_secure_extra.pp:139-143, 306-312
-    uncovered: {why: "fixture variants of the same node (one set holds one fixture); this one exercises the class's DDoS and filter extras", lifted_by: ubuntu}
+    checks: [without-anti-ddos-the-port-is-opened-and-ssh-is-strict]
+variants:
+  - name: ddosonly
+    why: anti_ddos without ip_filter, which node_base passes through from its own parameters (a composite)
+    params: ddosonly
+  - name: plain
+    why: >-
+      without anti_ddos and in strict mode; production sets strict (37 node statements) and node_base passes anti_ddos
+    params: plain
 checks:
   - id: policies-and-ssh-rules
     what: INPUT and FORWARD drop, OUTPUT accepts, the two whitelist entries (lab Hiera's and the acl's) accept SSH and the SSH limit chain is in place
@@ -561,3 +591,31 @@ checks:
       iptables -t mangle -S PREROUTING | grep -c -E -- '--comment "5(0[1-9]|1[0-8]) [^"]*" -j DROP'
       iptables -S WHITELIST_SIDE_CHAIN | grep -c -- '524 drop all traffic in the side chain'
     expect: {rc: 0, stdout: "\\A-P INPUT DROP\\n-P FORWARD DROP\\n18\\n1\\n\\Z"}
+
+  - id: anti-ddos-without-ip-filter-limits-every-source
+    variant: ddosonly
+    what: with anti_ddos and no ip_filter, INPUT holds the per-source connection limit and the new-connection rate rules for port 8888
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "269-303", text: "firewall { \"521 limit connections per source IP ${service}\":"}
+    probe: |
+      for r in '521 limit connections per source IP' '522 limit mew connections per source IP and time unit' '523 limit mew connections'; do
+        iptables -S INPUT | grep -F -- "$r" | grep -c -- '--dport 8888'
+      done
+    expect: {rc: 0, stdout: "\\A1\\n1\\n1\\n\\Z"}
+
+  - id: without-anti-ddos-the-port-is-opened-and-ssh-is-strict
+    variant: plain
+    what: >-
+      without anti_ddos the service port 8888 is simply accepted (rule 555) with no DDoS rules, and in strict mode INPUT
+      has no SSH rate-limit rule (only listed sources reach SSH)
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "306-312", text: "firewall { \"555 open service ports: ${service}\": chain => 'INPUT', proto => $service[1], dport => $service[0], action => 'accept', }"}
+      - {path: manifests/firewall_secure_extra.pp, lines: "139-143", text: "if ( $strict == true ) {"}
+    probe: |
+      iptables -S INPUT | grep -F '555 open service ports' | grep -c -- '--dport 8888'
+      iptables -S INPUT | grep -cE '52[123] limit' || true
+      iptables -S INPUT | grep -c '110 SSH' || true
+      iptables -S | grep -E '^-P INPUT '
+    expect: {rc: 0, stdout: "\\A1\\n0\\n0\\n-P INPUT DROP\\n\\Z"}
