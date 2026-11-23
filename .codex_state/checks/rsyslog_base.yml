@@ -4,6 +4,9 @@
 # certname is its host name. Probes read the node's own files and rsyslog; the use of this material by a forwarding
 # client and a TLS server is tested end to end in rsyslog_client's and rsyslog_server's sets.
 # 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1b): the RedHat syslog account is a check in the variant run `rhel` (rhel9).
+# 2026-11-23 correction round 1 (review FAIL 02690f2, purpose): the default ssldir arm, which production nodes use unless
+# their Hiera sets the key, is now a row naming what the lab lacks, with evidence (and documentation list cutover row
+# 10); the rhel run now also checks the TLS files there (byte for byte, ids 0, key 0600) and that rsyslog runs as root.
 class: rsyslog_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -15,9 +18,23 @@ outcomes:
   - outcome: rsyslog and its GnuTLS driver are installed, and rsyslog runs and starts at boot
     from: manifests/rsyslog_base.pp:10-12, 75-80
     checks: [rsyslog-and-its-tls-driver-are-installed-and-running]
-  - outcome: the node's Puppet CA, certificate and key are copied for rsyslog, byte for byte, and form a valid identity
-    from: manifests/rsyslog_base.pp:32-35, 49-71
-    checks: [the-tls-files-are-the-nodes-puppet-identity]
+  - outcome: the node's Puppet CA, certificate and key are copied for rsyslog, byte for byte, and form a valid identity (from the ssldir_override given)
+    from: manifests/rsyslog_base.pp:32-35 (the override arm), 49-71
+    checks: [the-tls-files-are-the-nodes-puppet-identity, on-redhat-a-syslog-account-with-ids-0-exists]
+  - outcome: with no ssldir_override, the copies come from the default ssldir /var/lib/puppet/ssl
+    from: manifests/rsyslog_base.pp:32-35 (the undef arm)
+    uncovered:
+      why: >-
+        no lab run can leave ssldir_override unset, and no lab agent keeps its ssldir at /var/lib/puppet/ssl (the pre-AIO
+        packages' path); production uses the arm unless its Hiera sets the key: of the 36 production node statements
+        that set rsyslog_client's target, 1 sets ssldir_override, and 1 node statement sets it on rsyslog_base (names
+        only; Hiera not read). On an OpenVox agent the copies would have no source: documentation list, cutover row 10
+      lifted_by: "capability: a Hiera variant per run, and an agent whose ssldir is /var/lib/puppet/ssl"
+      evidence: >-
+        master_fixtures.sh binds puppet_infrastructure::rsyslog_base::ssldir_override to /etc/puppetlabs/puppet/ssl in
+        the lab Hiera for every run, and phase3.py variant_problems (2026-11-23) lets a variant vary only its node and
+        params; on the node, ls /var/lib/puppet/ssl gives "No such file or directory" (the reviewer, 20261123T174701Z);
+        diagnosis/fleet_variant_usage.md (2026-11-23) for the counts
   - outcome: the user rsyslog drops to (syslog) can read the key, and other users cannot
     from: manifests/rsyslog_base.pp:41-47, 65-71
     checks: [rsyslog-can-read-the-key-as-the-user-it-runs-as]
@@ -202,13 +219,21 @@ checks:
 
   - id: on-redhat-a-syslog-account-with-ids-0-exists
     variant: rhel
-    what: on RedHat the syslog group (gid 0) and the syslog user (uid 0) exist, and rsyslog runs
+    what: >-
+      on RedHat the syslog group (gid 0) and the syslog user (uid 0) exist, the TLS files are the node's Puppet CA,
+      certificate and key byte for byte, owned by them (ids 0) with the key 0600, rsyslog runs, as root (RHEL's rsyslog
+      drops no privileges), so it can read the key
     control: negative
     derived_from:
       - {path: manifests/rsyslog_base.pp, lines: "16-28", text: "user { 'syslog':"}
       - {path: manifests/rsyslog_base.pp, lines: "16-28", text: "gid       => 0,"}
+      - {path: manifests/rsyslog_base.pp, lines: "49-71", text: "source  => \"${ssldir}/private_keys/${certname}.pem\","}
     probe: |
       getent group syslog | cut -d: -f1,3
       getent passwd syslog | cut -d: -f1,3
+      s=/etc/puppetlabs/puppet/ssl; c=$(hostname); t=/etc/rsyslog.d/tls
+      cmp -s $s/certs/ca.pem $t/ca.pem && cmp -s $s/certs/$c.pem $t/$c.pem && cmp -s $s/private_keys/$c.pem $t/$c.key && echo same-as-puppet
+      stat -c '%u:%g %a' $t $t/ca.pem $t/$c.pem $t/$c.key
       systemctl is-active rsyslog
-    expect: {rc: 0, stdout: "\\Asyslog:0\\nsyslog:0\\nactive\\n\\Z"}
+      ps -o user= -C rsyslogd | sort -u
+    expect: {rc: 0, stdout: "\\Asyslog:0\\nsyslog:0\\nsame-as-puppet\\n0:0 755\\n0:0 644\\n0:0 644\\n0:0 600\\nactive\\nroot\\n\\Z"}
