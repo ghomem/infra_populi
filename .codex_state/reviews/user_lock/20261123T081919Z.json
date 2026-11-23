@@ -1,0 +1,121 @@
+{
+ "schema": 1,
+ "class": "user_lock",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-23T08:19:19Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "a795d9885fb2",
+ "migrate_subject": "P8: migrate puppet_infrastructure::user_lock",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit a795d9885fb2; 1205 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "3 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "migration started from baseline content; the migrate commit changed class files; ignored migrate commit(s) 3731d975804f: no class file changed, an earlier migrate commit (a795d9885fb2) did (HQ 2026-11-23 ruling 1)"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `user_lock Done [from: release-0.9.10; upstream defect fixed: exec guarded by its post-condition]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims none match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 45 catalog events; COVERAGE puppet_infrastructure::user_lock: 1 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-2): 2-line migration header comment only; baseline comments '### Purpose', '# This class locks an existing user', '# the last part is to avoid E_ERR...' all kept",
+   "DIFF A hunk 2: '$hashmandb = lookup('hashman::dbdir')' plus 'unless => \"/bin/grep -Eq \\\"^[[:space:]]*[\\$]${myuser}_pwd_hash[[:space:]]*=[[:space:]]*'!\\\" ${hashmandb}/hashes.pp\"' is character-for-character the RULED UPSTREAM-DEFECT CHANGE of upstream_defects.md '## user_lock' (incl. the 2026-11-16 /bin/grep and [\\$] amendments); it matches baseline hashman config.py.erb (DBFILE_USER = DBDIR/hashes.pp, SUFFIX_USER '_pwd_hash'); exec title, command, require unchanged; no other non-comment change",
+   "DIFF B = DIFF A (migrate commit a795d9885fb2 changed only these lines from baseline content); later migrate commit 3731d975804f changed no class file and is ignored per HQ 2026-11-23 ruling 1; idempotent ok: run 2 no events, so the guard matches the locked entry"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 4,
+  "removed": 0,
+  "non_comment_changes": 2,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: lock an existing Hashman user; skip when already locked.",
+  "# Module dependencies: none (core exec resource only)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 45,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::user_lock: 1 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "node": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "total_s": 22.655,
+   "master_check_s": 0.302,
+   "poweroff_s": 0.629,
+   "restore_s": 0.233,
+   "boot_to_ssh_s": 13.374,
+   "apt_update_s": 7.782,
+   "verify_s": 0.335,
+   "nic1_rx_bytes": 13175661,
+   "apt_mirror": "primary"
+  },
+  "log": ".codex_state/logs/reviews/user_lock.20261123T081655Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "puppetserver",
+ "mock_apply": null,
+ "node_fixture": {
+  "name": "hashman_user_via_hashman",
+  "header": [
+   "# Node fixture `hashman_user_via_hashman` for user_lock (harness title p8testuser) on the master-role node (kind",
+   "# puppetserver). It replaces the stand-in `hashman_lock_standin` (HQ after batch 20, item 6: the lift \"the master-role",
+   "# node's hashman database\"). user_lock locks a user that already exists in hashman's database; on a real master the",
+   "# user was created through hashman beforehand. Here hashman itself creates p8testuser, as an administrator would:",
+   "# `pp_auth.py useradd ... SILENT` (a new user starts locked, with an initial password hashman generates and prints),",
+   "# then `pp_auth.py unlock` and `unexpire`, so that the lock user_lock applies is its own (on the Unix and the Samba",
+   "# hash); the Samba hash's state before the lock goes to /root/p8test-hashman-smb-before-lock. No hash is seeded. The initial password is",
+   "# kept in /root/p8test-hashman-initial (0600) for the behaviour check that the locked user is refused although the",
+   "# password matches; it is a throwaway password of a p8test account on a lab node, never a real user's.",
+   "# Runs only if hashman's database has no entry for p8testuser yet, and before user_lock's exec.",
+   "# Lifted by: nothing needed \u2014 a test asset (rules/test_asset_fixtures.txt): the user is created by hashman itself."
+  ],
+  "resources": [
+   "file[/usr/local/sbin/p8test-create-hashman-user]",
+   "exec[p8test create p8testuser through hashman]"
+  ],
+  "scope_evidence": "hashman_user_via_hashman (listed in rules/test_asset_fixtures.txt, so no mock-apply marker): file /usr/local/sbin/p8test-create-hashman-user is a script that creates p8testuser via hashman's own pp_auth.py useradd SILENT, stores the throwaway initial password and the pre-lock Samba hash state under /root, then pp_auth.py unlock and unexpire so the lock is user_lock's own; exec 'p8test create p8testuser through hashman' runs it guarded by '--check' (grep for $p8testuser_pwd_hash in hashes.pp), requires hashman_base and is ordered before Exec[user_lock_p8testuser]. Both only supply the pre-existing hashman user the define assumes; neither changes any attribute of the class's exec (only an ordering edge) nor anything beyond that test asset"
+ }
+}
