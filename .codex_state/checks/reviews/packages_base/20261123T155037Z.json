@@ -1,0 +1,35 @@
+{
+ "class": "packages_base",
+ "at": "20261123T155037Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-update-package-lists-exec-never-runs: baseline 36-40 declares exec update-package-lists refreshonly => true and line 49 'Exec[update-package-lists] ~> Package[$package_list]' makes the exec the notifier, so nothing ever refreshes it; the probe (in resources.txt = 1, absent from last_run_report.yaml = 0) tests exactly that it is in the catalog and made no change",
+  "supervisor-cloud-init-and-unattended-upgrades-are-removed: baseline 51 'package { [ supervisor , cloud-init ]: ensure => absent }' (plus 59-61 unattended-upgrades absent under the default unattended_upgrades false); the dpkg-query status probe expects all three not installed, as the defaults fixture produces",
+  "on-redhat-the-package-list-and-dnf-automatic-absent: baseline 11-17 declares exec dnf-makecache with refreshonly => false and no guard, so it runs on every agent run; the probe reads Exec[dnf-makecache] changed: true in run 2's report (=1), with the RedHat list of 28-32 installed (vim resolved as vim-enhanced via --whatprovides) and dnf-automatic absent per 61-64 under the default",
+  "purpose covered: Purpose matches the baseline header ('minimum set of packages for a generic Ubuntu node') and code. Reviewer run 20261123T153848Z ALL_PASS in base and all three variants (unattended, rhel, rhel-unattended), each negative control failing on the clean node. Tested: the Debian list installed (dpkg status of all 7) and the tools working (check_disk on /, getfacl, ecryptfs-setup-private and aptitude on the path); supervisor, cloud-init and unattended-upgrades removed by default; Exec[apt_update] refreshing the lists on every run (class apt frequency always); the unreachable refreshonly update-package-lists exec recorded as never running; unattended-upgrades installed with unattended_upgrades true (the one production statement's variant); on rhel9 the RedHat list, dnf makecache on every run, dnf-automatic absent by default and installed when asked. Left out: vim/wget/iptables-persistent are checked as installed rather than exercised (wget would need another host; the class configures none of them), and the included extra_packages_el's EPEL/CodeReady execs are covered only indirectly (nagios-plugins-all comes from EPEL) since that class has its own check set (.codex_state/checks/extra_packages_el.yml). Nothing the lab can exercise of this class's own purpose is untested."
+ ],
+ "review_s": 709.5,
+ "check_file_sha256": "408421f5fd8372f2d1c0581debc8da333f643e081b6df2c574d6ef0ba2ca961c",
+ "content_sha256": "408421f5fd8372f2d1c0581debc8da333f643e081b6df2c574d6ef0ba2ca961c",
+ "reviewer_result": "20261123T153848Z-reviewer",
+ "author_result": "20261123T121144Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "02746ab1-d93a-4947-a3f6-907501c35264",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "02746ab1-d93a-4947-a3f6-907501c35264",
+   "fresh": true
+  }
+ }
+}
