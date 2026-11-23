@@ -1,0 +1,287 @@
+{
+ "class": "filesystem_base",
+ "role": "reviewer",
+ "at": "20261123T085550Z",
+ "runner": "c66428a",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "771ecf6e110ae45fd94bed7e1071ba769af48828dbeb7c8a1889d3b72866a230",
+ "content_sha256": "771ecf6e110ae45fd94bed7e1071ba769af48828dbeb7c8a1889d3b72866a230",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-local-tree-exists",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 96: cd: /opt/puppet-infrastructure: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-locale-setting-works",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "link\nLANG=en_US.UTF-8 LC_ALL=\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "mypython-runs-python-3",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: /opt/puppet-infrastructure/bin/mypython: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-syslog-mode-drifts",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "640\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-restores-the-syslog-mode",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "syslog:adm 640\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.11 seconds\u001b[0m\nRUN1_EVENTS: 7 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795424200'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.08 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::filesystem_base: 8 concrete resources (+0 defined-type instances)\n  File[/opt/puppet-infrastructure]\n  File[/opt/puppet-infrastructure/bin]\n  File[/opt/puppet-infrastructure/etc]\n  File[/opt/puppet-infrastructure/backup]\n  File[/opt/puppet-infrastructure/pkgsdir]\n  File[/etc/default/locale]\n  File[/opt/puppet-infrastructure/bin/mypython]\n  File[/var/log/syslog]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP filesystem_base b0af4b48c814\n"
+ },
+ "applied": [
+  {
+   "id": "the-local-tree-exists",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": ". root:root 755\nbin root:root 755\netc root:root 755\nbackup root:root 755\npkgsdir root:root 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-locale-setting-works",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb\nLANG=en_US.UTF-8 LC_ALL=en_US.UTF-8\n",
+   "stderr": ""
+  },
+  {
+   "id": "mypython-runs-python-3",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/usr/bin/python3\npython 3\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-syslog-mode-drifts",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "644\nclass-applied\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "chmod 0644 /var/log/syslog on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-agent-run-restores-the-syslog-mode",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "syslog:adm 640\nclass-applied\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the file's mode (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "c9f2204c-9529-4013-8f30-22a2a51ae7d8",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "c9f2204c-9529-4013-8f30-22a2a51ae7d8",
+   "fresh": true
+  }
+ },
+ "node_agent": {
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/var/log/syslog]/mode: mode changed '0644' to '0640' (u=rw,g=r,o=) (corrective)\u001b[0m"
+  ],
+  "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795424210'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/var/log/syslog]/mode: mode changed '0644' to '0640' (u=rw,g=r,o=) (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 0.09 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "variants": {
+  "default": {
+   "name": "default",
+   "node": "ubuntu",
+   "params": "default",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "snapshot": "P8NODE_BASELINE_GREEN_v4",
+     "boot_id": "d59d99d1-1b1d-445a-b1ae-f5b9ea3f4555",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "d59d99d1-1b1d-445a-b1ae-f5b9ea3f4555",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "the-syslog-file-is-left-alone-by-default",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "syslog file resources: 0\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "'{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.14 seconds\u001b[0m\nRUN1_EVENTS: 7 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795424288'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.07 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::filesystem_base: 7 concrete resources (+0 defined-type instances)\n  File[/opt/puppet-infrastructure]\n  File[/opt/puppet-infrastructure/bin]\n  File[/opt/puppet-infrastructure/etc]\n  File[/opt/puppet-infrastructure/backup]\n  File[/opt/puppet-infrastructure/pkgsdir]\n  File[/etc/default/locale]\n  File[/opt/puppet-infrastructure/bin/mypython]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant default; never a Phase 1 record)\n"
+   },
+   "applied": [
+    {
+     "id": "the-syslog-file-is-left-alone-by-default",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "/usr/bin/python3\nsyslog file resources: 0\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  },
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "snapshot": "P8LAB_RHEL9_BASELINE_v2",
+     "boot_id": "3f852be2-d3ae-41dc-b65e-a48bb0e99525",
+     "apt_mirror": null,
+     "boot_id_at_end": "3f852be2-d3ae-41dc-b65e-a48bb0e99525",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "on-redhat-the-messages-file-is-managed",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "root:root 600\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "reated\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/var/log/messages]/mode: mode changed '0600' to '0640' (u=rw,g=r,o=)\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 0.12 seconds\u001b[0m\nRUN1_EVENTS: 8 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795424382'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.10 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::filesystem_base: 8 concrete resources (+0 defined-type instances)\n  File[/opt/puppet-infrastructure]\n  File[/opt/puppet-infrastructure/bin]\n  File[/opt/puppet-infrastructure/etc]\n  File[/opt/puppet-infrastructure/backup]\n  File[/opt/puppet-infrastructure/pkgsdir]\n  File[/etc/default/locale]\n  File[/opt/puppet-infrastructure/bin/mypython]\n  File[/var/log/messages]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP filesystem_base b0af4b48c814\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-the-messages-file-is-managed",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "root:root 640\n/usr/bin/python3\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "the local tree for custom scripts and data exists (localdir, bin, etc, backup, pkgsdir), root-owned",
+   "checks": [
+    "the-local-tree-exists"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the locale setting stops locale errors in ssh sessions",
+   "checks": [
+    "the-locale-setting-works"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "mypython runs the system Python 3",
+   "checks": [
+    "mypython-runs-python-3"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "when asked (customize_syslog_mode true), the syslog file's owner and mode are kept as set",
+   "checks": [
+    "the-syslog-mode-drifts",
+    "the-next-agent-run-restores-the-syslog-mode"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "by default (customize_syslog_mode false) the syslog file is left alone",
+   "checks": [
+    "the-syslog-file-is-left-alone-by-default"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the RedHat paths (/var/log/messages owned root:root)",
+   "checks": [
+    "on-redhat-the-messages-file-is-managed"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 237.1
+}

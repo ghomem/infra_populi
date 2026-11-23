@@ -1,0 +1,35 @@
+{
+ "class": "filesystem_base",
+ "at": "20261123T090005Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-locale-setting-works: files/locale/locale (whole file, sha256 26c9d6e9...) is LANG=\"en_US.UTF-8\" / LC_ALL=\"en_US.UTF-8\"; manifest 26-32 sources it to /etc/default/locale. The probe compares the node file's sha256 to that exact baseline digest and sources it in a clean env, requiring both variables and no locale error on stderr; applied run saw the digest and LANG/LC_ALL=en_US.UTF-8, clean node saw Ubuntu's link with LC_ALL unset",
+  "the-syslog-file-is-left-alone-by-default: manifest 56-63 declares File[$syslog_filepath] only inside if ($customize_syslog_mode); variant default runs with params default (customize_syslog_mode false, the class default and node_base's default at node_base.pp:9,108-110). The probe proves the class applied (mypython -> /usr/bin/python3) and counts File[/var/log/syslog|/var/log/messages] in the node's cached catalog JSON: 0 observed after apply, as the code produces",
+  "the-local-tree-exists: manifest 10-24 declares the five lookup()ed dirs (localdir, bin, etc, backup, pkgsdir) ensure directory root:root mode 0644; Puppet adds x to directories for each r bit, so 755 is what the code yields. The probe stats /opt/puppet-infrastructure and its bin/etc/backup/pkgsdir (the lab Hiera's filesystem::* values) and observed root:root 755 for all five after apply, nothing on the clean node",
+  "purpose covered: Purpose (basic filesystem of non-desktop machines: local tree, locale fix for ssh sessions, mypython link, optional syslog owner/mode) matches the class header and baseline code. Every outcome-table row maps to a check that probes it behaviourally: tree dirs and ownership; the locale file sourced as PAM would, with no locale error; mypython executed and reporting Python 3; syslog mode drifted to 0644 by hand and restored to syslog:adm 0640 by the node's next agent run (rc 2, 1 changed); variant default (customize_syslog_mode false) shows no syslog File in the catalog; variant rhel on rhel9 shows /var/log/messages moved from root:root 600 to root:root 640 and mypython -> /usr/bin/python3. No uncovered rows; nothing the lab can exercise is left untested (the locale file's own owner/mode 0644 is not probed, but its content and effect are, which is the stated purpose)."
+ ],
+ "review_s": 255.9,
+ "check_file_sha256": "771ecf6e110ae45fd94bed7e1071ba769af48828dbeb7c8a1889d3b72866a230",
+ "content_sha256": "771ecf6e110ae45fd94bed7e1071ba769af48828dbeb7c8a1889d3b72866a230",
+ "reviewer_result": "20261123T085550Z-reviewer",
+ "author_result": "20261123T084253Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "c9f2204c-9529-4013-8f30-22a2a51ae7d8",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "c9f2204c-9529-4013-8f30-22a2a51ae7d8",
+   "fresh": true
+  }
+ }
+}
