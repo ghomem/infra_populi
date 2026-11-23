@@ -13,6 +13,13 @@
 # Correction round 1, 2026-11-19 (review 20261119T172145Z FAIL, purpose): the empty-hash refusal (:19-22) was in the
 # purpose but in no outcome row. It is a row of its own now, uncovered (compile time), with a compile-only run as its
 # evidence (the params fixture's myhash blanked for that one compile and restored, sha256 unchanged).
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): a locked hash with other home, shell and groups, and an empty key
+# (undeterminable production use: the passwd/ layer) are checks in the variant runs `locked` and `emptykey`; the
+# compile refusal, the key login and ecryptfs name what is missing.
+# 2026-11-23 authoring correction (sweep run 20261123T130519Z-author): the key-prefix probes of the locked and emptykey variant
+# printed field 2 of every line of authorized_keys, the three `# HEADER:` comment lines Puppet's ssh_authorized_key
+# provider writes included; they now skip comment and empty lines, as the set's other key probes do. The keys were as
+# the baseline makes them (userlocked..., emptykey...).
 class: user_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -32,19 +39,49 @@ outcomes:
     checks: [password-hash-set, the-password-logs-in-and-a-wrong-one-is-refused]
   - outcome: an empty password hash is refused, so no account is created without one
     from: manifests/user_base.pp:19-22
-    uncovered: {why: "a refusal at compile time (fail()), which no probe on the node can see and which needs a second params fixture; shown instead by test_class.sh --compile-only with myhash '' on 2026-11-19T17:23:25Z: COMPILE_FAILED, \"Can't touch this - hash is empty! Where is the user database?\"", lifted_by: ubuntu}
+    uncovered:
+      why: >-
+        a refusal at compile time (fail()): a variant run whose apply is refused ends APPLY_FAILED, never a check; shown
+        by test_class.sh --compile-only with myhash '' on 2026-11-19T17:23:25Z: COMPILE_FAILED, "Can't touch this - hash
+        is empty! Where is the user database?"
+      lifted_by: "capability: a variant run whose expected outcome is a compile refusal"
+      evidence: >-
+        phase3.py run_locked: a red harness is APPLY_FAILED and no applied check runs; the compile-only run above shows
+        the refusal
   - outcome: the given key is pushed as the user's only authorized key, and a key added out of band is purged by the next agent run
     from: manifests/user_base.pp:56-59, 72, 93-102
     checks: [the-pushed-key-is-the-only-authorized-key, an-out-of-band-key-is-planted, the-agent-run-purges-the-out-of-band-key]
   - outcome: a login with the pushed key
     from: manifests/user_base.pp:93-102
-    uncovered: {why: "the private half of the fixture key would have to be on the node, and the repository keeps no private keys; the key's line, owner and modes are checked instead (key logins as behaviour are in ssh_secure's set)", lifted_by: ubuntu}
+    uncovered:
+      why: >-
+        a login needs the private half of the pushed key on the node; the repository keeps no private keys and no run
+        hands a file from the laptop to the node (the key's line, owner and modes are checked; key logins as behaviour
+        are in ssh_secure's set)
+      lifted_by: "capability: a run step that hands a private key from the laptop to the node"
+      evidence: >-
+        phase3.py fetch_node_files hands files from the node to the peer only; .gitignore and the params rule keep keys
+        out of the repository
   - outcome: a locked hash or an empty key pushes an unusable key; a group list sets the primary group; another home, home mode or shell
     from: manifests/user_base.pp:4, 8-15, 24-31, 41-61, 81-91
-    uncovered: {why: "parameter variants (one set holds one params fixture); untested", lifted_by: ubuntu}
+    checks: [a-locked-hash-with-other-home-shell-and-groups, an-empty-key-pushes-an-unusable-key]
   - outcome: the ecryptfs branch (wrapped passphrase written from the .b64 file, with the HQ-ruled exec guard)
     from: manifests/user_base.pp:104-135
-    uncovered: {why: "the fixture user has no ecryptfs home, and the lab node has no ecryptfs setup to create /home/.ecryptfs/<user>/.ecryptfs (HQ 2026-11-16 item 7a: an ecryptfs fixture user)", lifted_by: kubuntu}
+    uncovered:
+      why: the fixture user has no ecryptfs home, and no lab node has an ecryptfs setup to create /home/.ecryptfs/<user>/.ecryptfs
+      lifted_by: "capability: an ecryptfs fixture user with a mounted private directory (HQ 2026-11-16 item 7a)"
+      evidence: >-
+        node_inventory.py (2026-11-23): no node kind's clean inventory has /home/.ecryptfs; no class of the repository
+        creates an ecryptfs home
+variants:
+  - name: locked
+    why: >-
+      a locked hash, a group list, another home, home mode and shell; production's users are declared in the passwd/
+      layer, which the engine never reads, so whether production uses them is undeterminable and they are tested
+    params: locked
+  - name: emptykey
+    why: an empty key (undeterminable production use, as above)
+    params: emptykey
 checks:
   - id: user-and-own-primary-group
     what: the user exists with its own same-named primary group, the comment, /home/<title> and /bin/bash
@@ -149,3 +186,31 @@ checks:
       p8_count 'p8test-out-of-band$' /home/p8testuser/.ssh/authorized_keys
       ssh-keygen -lf /home/p8testuser/.ssh/authorized_keys | awk '{print $2, $3}'
     expect: {rc: 0, stdout: "\\A1\\n0\\nSHA256:c3nO5XoVs1uB2\\+1IZ7smzFyWjvF8SXWkfav4BUMd4/E p8testuser@puppet\\n\\Z"}
+
+  - id: a-locked-hash-with-other-home-shell-and-groups
+    variant: locked
+    what: >-
+      with a locked hash ('!'), mygrouplist [users], home /srv/p8testhome mode 0700 and shell /bin/sh: the account has
+      those, its primary group is users, its password is locked, and the pushed key is the unusable userlocked one
+    control: negative
+    derived_from:
+      - {path: manifests/user_base.pp, lines: "41-49", text: "$sshkey = join ( [ 'userlocked', $random_string ] )"}
+      - {path: manifests/user_base.pp, lines: "24-31", text: "$myprimary = $mygrouplist[0]"}
+      - {path: manifests/user_base.pp, lines: "81-91", text: "mode    => $myhomemode,"}
+    probe: |
+      getent passwd p8testuser | cut -d: -f6,7
+      id -gn p8testuser
+      stat -c '%a' /srv/p8testhome
+      passwd -S p8testuser | awk '{print $2}'
+      awk '!/^(#|$)/ {print substr($2, 1, 10)}' /srv/p8testhome/.ssh/authorized_keys
+    expect: {rc: 0, stdout: "\\A/srv/p8testhome:/bin/sh\\nusers\\n700\\nL\\nuserlocked\\n\\Z"}
+
+  - id: an-empty-key-pushes-an-unusable-key
+    variant: emptykey
+    what: with an empty key (and an unlocked hash) the pushed key is the unusable emptykey one
+    control: negative
+    derived_from:
+      - {path: manifests/user_base.pp, lines: "51-55", text: "$sshkey = join ( [ 'emptykey', $random_string ] )"}
+    probe: |
+      awk '!/^(#|$)/ {print substr($2, 1, 8)}' /home/p8testuser/.ssh/authorized_keys
+    expect: {rc: 0, stdout: "\\Aemptykey\\n\\Z"}
