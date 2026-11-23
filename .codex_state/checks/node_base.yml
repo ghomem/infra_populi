@@ -5,6 +5,17 @@
 # filesystem_lib64, filesystem_apt, filesystem_sec, dns_client). These checks cover what node_base itself decides:
 # which components it applies on this OS, the parameters it passes them, and the NTP service it adds. Values were read
 # on the node after one harness apply (2026-11-18, before writing them).
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): the RedHat branch and the parameters production sets are checks in
+# the variant runs `rhel` and `prod`; custom NTP, nameservers and the extra firewall are an accepted gap.
+# 2026-11-23, ntp-keeps-the-time in the sweep: it failed in runs 20261123T132939Z (a source selected, the clock not
+# synchronised) and 20261123T142843Z (with a 105 s wait tried as an authoring correction: no source). Measured by hand the
+# same day (node_base applied on a reverted node, ntpq every 10 s for 600 s): ntpsec reached its server at once, stepped
+# the clock by -0.808363 s, selected the server from 10 s to at least 81 s, and selected nothing from 143 s on; ntpq gave
+# offset -13125.3 ms then -14723.6 ms with jitter 6880.704 ms then 6949.192 ms, and the node's wall clock read about
+# 5.5 s ahead of the laptop's synchronised clock. The node's own clock was unstable that day, not the class's NTP
+# configuration (it passed on 2026-11-18, runs 20261118T193806Z and 20261118T194317Z). The wait was a wrong diagnosis
+# and is withdrawn; the check is unchanged from its review.
+
 class: node_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -42,10 +53,28 @@ outcomes:
     checks: [no-boot-run-by-default]
   - outcome: on RedHat, firewalld is stopped, disabled and masked, chrony keeps the time, and filesystem_yum replaces the apt scripts
     from: manifests/node_base.pp:61-76, 110-111, 135-147
-    uncovered: {why: "the set runs on the plan's Ubuntu node; the RedHat branch needs a run of node_base on the rhel9 node, which one set (one node) does not hold", lifted_by: rhel9}
-  - outcome: custom NTP servers, nameservers, the extra firewall and the boot run when their parameters are set
-    from: manifests/node_base.pp:8-25, 27, 33-34, 46, 137-157
-    uncovered: {why: "fixture variants (one set holds one fixture); each component's own set covers it with its parameters set (firewall_secure_extra, dns_client, puppet_boot_run)", lifted_by: ubuntu}
+    checks: [on-redhat-firewalld-masked-chrony-and-the-yum-scripts]
+  - outcome: strict SSH, firewall purge off with ignore patterns, and the boot run, when their parameters are set
+    from: manifests/node_base.pp:4, 27, 101, 164
+    checks: [production-parameters-strict-keep-and-boot-run]
+  - outcome: custom NTP servers, nameservers and the extra firewall when their parameters are set
+    from: manifests/node_base.pp:8-25, 33-34, 46, 137-157
+    uncovered:
+      why: parameter variants no production node uses on node_base (each component's own set covers it with its parameters set)
+      accepted_gap: [custom_ntp, ntp_servers, nameservers, firewall_secure_extra]
+      evidence: >-
+        diagnosis/fleet_variant_usage.md (2026-11-23): production sets firewall_ignore_patterns, firewall_strict_purge,
+        run_puppet_on_boot, ssh_acl and ssh_strict on node_base, none of these; no class of the repository declares
+        node_base
+variants:
+  - name: rhel
+    why: the RedHat branch (firewalld masked, chrony, filesystem_yum), on the rhel9 node with the set's own params fixture
+    node: rhel9
+  - name: prod
+    why: >-
+      the parameters production sets on node_base (ssh_strict, firewall_strict_purge false with firewall_ignore_patterns:
+      37, 11 and 11 node statements; run_puppet_on_boot: 2)
+    params: prod
 checks:
   - id: the-base-components-are-all-applied
     what: one sentinel per component node_base applies on Ubuntu, each from that component's code
@@ -165,3 +194,37 @@ checks:
       test -e /etc/systemd/system/puppet_boot_run.service && echo unit || echo no-unit
       test -e /opt/puppet-infrastructure/bin/puppet_boot_run.sh && echo script || echo no-script
     expect: {rc: 0, stdout: "\\Ano-unit\\nno-script\\n\\Z"}
+
+  - id: on-redhat-firewalld-masked-chrony-and-the-yum-scripts
+    variant: rhel
+    what: >-
+      on RedHat firewalld is masked and stopped, chronyd keeps the time, and the local bin holds filesystem_yum's
+      scripts and none of filesystem_apt's
+    control: negative
+    derived_from:
+      - {path: manifests/node_base.pp, lines: "63-76", text: "command => '/bin/systemctl mask firewalld',"}
+      - {path: manifests/node_base.pp, lines: "140-147", text: "include ::chrony"}
+      - {path: manifests/node_base.pp, lines: "110-111", text: "include puppet_infrastructure::filesystem_yum"}
+    probe: |
+      systemctl is-enabled firewalld 2>/dev/null
+      systemctl is-active firewalld 2>/dev/null || true
+      systemctl is-active chronyd
+      ls /opt/puppet-infrastructure/bin | grep -c yum | sed 's/^[1-9][0-9]*$/yum scripts present/'
+      ls /opt/puppet-infrastructure/bin | grep -c '^apt-update' || true
+    expect: {rc: 0, stdout: "\\Amasked\\ninactive\\nactive\\nyum scripts present\\n0\\n\\Z"}
+
+  - id: production-parameters-strict-keep-and-boot-run
+    variant: prod
+    what: >-
+      with ssh_strict, firewall_strict_purge false with an ignore pattern, and run_puppet_on_boot: INPUT has no SSH
+      rate-limit rule (strict mode), the boot-run unit is enabled and its script installed root 0750
+    control: negative
+    derived_from:
+      - {path: manifests/node_base.pp, lines: "101", text: "class { 'puppet_infrastructure::firewall_secure': strict => $ssh_strict, acl => $ssh_acl, strict_purge => $firew"}
+      - {path: manifests/node_base.pp, lines: "162-165", text: "include puppet_infrastructure::puppet_boot_run"}
+    probe: |
+      iptables -S | grep -E '^-P INPUT '
+      iptables -S INPUT | grep -c '110 SSH' | sed 's/^/rate-limit rules: /'
+      systemctl is-enabled puppet_boot_run.service
+      stat -c '%U:%G %a' /opt/puppet-infrastructure/bin/puppet_boot_run.sh
+    expect: {rc: 0, stdout: "\\A-P INPUT DROP\\nrate-limit rules: 0\\nenabled\\nroot:root 750\\n\\Z"}
