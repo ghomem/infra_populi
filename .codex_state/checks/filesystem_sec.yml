@@ -4,6 +4,8 @@
 # /usr/bin/ssh, /usr/bin/gcc], restricted_mode 0750, restricted_group '' (so sudo on Ubuntu). On the clean node wget,
 # curl, sftp, scp and ssh are regular files; nc, telnet and ftp are links (Puppet manages a link's owner, not a mode it
 # cannot have); the others are not installed. Probes read the node's files and run the tools as two fixture accounts.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): a custom group and mode (production's come from per-node Hiera
+# through node_base) and the RedHat default group are now checks in the variant runs `custom` and `rhel`.
 class: filesystem_sec
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -31,13 +33,22 @@ outcomes:
     checks: [a-restricted-command-is-opened-by-hand, the-next-agent-run-restricts-it-again]
   - outcome: the RedHat default group (wheel)
     from: manifests/filesystem_sec.pp:7-9
-    uncovered: {why: "the RedHat branch; this set runs on the plan's Ubuntu node", lifted_by: rhel9}
+    checks: [on-redhat-the-commands-belong-to-wheel]
   - outcome: a custom restricted_group or restricted_mode
     from: manifests/filesystem_sec.pp:3
-    uncovered: {why: "a fixture variant (one set holds one fixture, and this one uses the default group and 0750); node_base passes the lab Hiera's group to this define, and node_base's check the-tools-are-restricted-to-the-hiera-group (review PASS 20261118T194756Z) shows it, which is again sudo", lifted_by: ubuntu}
+    checks: [a-custom-group-and-mode-are-applied]
 node_agent:
   after: a-restricted-command-is-opened-by-hand
   why: the class keeps the commands restricted, which its next agent run after a hand change shows
+variants:
+  - name: custom
+    why: >-
+      a custom group and mode: production passes both through node_base from per-node Hiera keys
+      (node_base.pp:127-135), whose values the engine does not read, so a non-default pair is tested (adm, 0710)
+    params: custom
+  - name: rhel
+    why: the RedHat branch (the default group wheel), on the rhel9 node with the set's own params fixture
+    node: rhel9
 checks:
   - id: restricted-commands-belong-to-the-sudo-group
     what: each installed restricted command that is a regular file is root:sudo 0750
@@ -136,3 +147,24 @@ checks:
       runuser -u p8testuser -- /usr/bin/wget -V </dev/null 2>&1 >/dev/null | grep -q 'Permission denied' && echo denied || echo runs
     expect: {rc: 0, stdout: "\\Aroot:sudo 750\\ndenied\\n\\Z"}
 
+  - id: a-custom-group-and-mode-are-applied
+    variant: custom
+    what: with restricted_group adm and restricted_mode 0710, each installed restricted command that is a regular file is root:adm 0710
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_sec.pp, lines: "3", text: "$restricted_group = '' , $restricted_mode = '0750'"}
+      - {path: manifests/filesystem_sec.pp, lines: "15-19", text: "file { $restricted_cmds:"}
+    probe: |
+      stat -c '%n %U:%G %a' /usr/bin/{wget,curl,ssh}
+    expect: {rc: 0, stdout: "\\A/usr/bin/wget root:adm 710\\n/usr/bin/curl root:adm 710\\n/usr/bin/ssh root:adm 710\\n\\Z"}
+
+  - id: on-redhat-the-commands-belong-to-wheel
+    variant: rhel
+    what: on RedHat, with no group given, each installed restricted command that is a regular file is root:wheel 0750
+    control: negative
+    derived_from:
+      - {path: manifests/filesystem_sec.pp, lines: "7-13", text: "$restricted_group = 'wheel'"}
+      - {path: manifests/filesystem_sec.pp, lines: "15-19", text: "file { $restricted_cmds:"}
+    probe: |
+      stat -c '%n %U:%G %a' /usr/bin/curl /usr/bin/ssh
+    expect: {rc: 0, stdout: "\\A/usr/bin/curl root:wheel 750\\n/usr/bin/ssh root:wheel 750\\n\\Z"}
