@@ -2,3 +2,4 @@
 # mock-apply marker. Format: <fixture name>  <what it supplies>. Advisor-only file.
 hashman_master_standin  placeholder files at the lab Hiera's example logo paths (a site supplies its own images)
 hashman_user_via_hashman  the user p8testuser created through hashman's own `pp_auth.py useradd ... SILENT` and unlocked, as an administrator creates a user before locking it (user_lock on the master-role node; HQ after batch 20, item 6)
+p8test_desktop_login  the test user p8testuser and one real first GNOME login (GDM automatic login, removed again), whose session creates ~/Desktop (mount_shares_desktop on the GNOME node; HQ after batch 20, item 6)
