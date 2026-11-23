@@ -12,12 +12,11 @@ CONF_FINISHED="Configuration finished."
 update_vpn_con_passwd() {
 
     VPN_USER_PASSWD=$1
-    VPN_CON_FILE_LOCATION="/etc/NetworkManager/system-connections/"
     VPN_LIST="<% @vpn_list.each do |vpn_name| %> <%= vpn_name %><% end %>"
     
     for vpn_name in $VPN_LIST; do
-        CONN_LOCATION="${VPN_CON_FILE_LOCATION}${vpn_name}"
-        if [ -f "$CONN_LOCATION" ];then
+        # local change #21: ask NetworkManager whether the connection exists, wherever its profile is stored
+        if nmcli -g NAME connection show | grep -qxF -- "${vpn_name}"; then
             nmcli connection modify "${vpn_name}" vpn.secrets "password=${VPN_USER_PASSWD}"
         fi
     done

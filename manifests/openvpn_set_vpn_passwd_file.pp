@@ -1,4 +1,4 @@
-# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Puppet 8 migration: release-0.9.10 manifest; local change #21: the script asks NetworkManager whether a connection exists, wherever its profile is stored (set_vpn_passwd.sh.erb).
 # Module dependencies: none.
 ### Purpose ########
 # Placement and configuration of a script that allows
