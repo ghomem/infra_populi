@@ -1,0 +1,43 @@
+{
+ "class": "sysmon_base",
+ "at": "20261123T181136Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-puppet-check-is-critical-when-a-resource-fails: nagios-puppet.sh (whole file) prints 'CRITICAL: exit code $RC' and exits 2 when the agent's exit is above 2 (lines 26-28); an immutable check_os_version.sh with the wrong mode makes the agent's file fix fail, so 'puppet agent --test' exits 4 or 6, and the expect 'CRITICAL: exit code [46] rc=2' is what the code produces",
+  "the-cpu-plugin-is-critical-under-load: manifests/sysmon_base.pp:95-101 installs check_cpu.py from the template, whose check_status sets result 2 and 'CRITICAL: ' when Total > crit (template lines 171-173, 208-210); with -w 30 -c 50 and two busy loops the expect 'CRITICAL rc=2' matches, and it passed on the applied node",
+  "the-bandwidth-check-is-critical-above-its-threshold: check_bandwidth.sh (whole file) with warn=crit=0 gives OK only below 0, WARNING when RX or TX bits equal 0, CRITICAL when either exceeds 0 (the decision block after the metrics); the peer's pings make RX and TX both non-zero, and field 8 of the status line is 'CRITICAL!' with exit 2 as expected",
+  "purpose gap: Tested on the Ubuntu node: every installed check runs as a monitoring server would and reaches its alarm states: the Puppet check (OK, UNKNOWN under the run lock, CRITICAL when disabled and when a resource fails), the reboot check (OK, WARNING), file handles against the kernel, the netstat checks counting real connections, the package count (OK, WARNING, stale-list CRITICAL), bandwidth (OK, WARNING, CRITICAL with the peer's traffic), disk latency (OK, CRITICAL), CPU and memory (OK, CRITICAL), the OS release, the TLS expiry wrapper (OK, WARNING) and the Elasticsearch check (Unknown, OK, Critical, the request). GAP, the RedHat row 'on RedHat the package-count check counts the security updates of a severity' (now mapped to on-redhat-the-package-count-uses-updateinfo instead of the earlier uncovered row): the probe runs the check with a threshold of 100000, drops stderr and keeps only 'OK -' and rc 0, so it cannot tell a correct count from a failed yum/dnf updateinfo call (check_package_count.sh:44-45: an empty LIST gives RESULT=0, which also prints 'OK -' with rc 0). It shows only that the RHEL branch was chosen, not that it counts anything. The rhel9 node is registered (BaseOS + AppStream, capability rhel-subscription), so the count can be checked there: compare the check's pkg_count with the node's own 'dnf updateinfo list --sec-severity=Important', or use a threshold that the count reaches and expect WARNING. Smaller points in the same RHEL run: on-redhat-the-checks-are-installed checks 4 of the 11 bin and plugin files and only that check_cpu.py exists (check_mem.pl, the other scripts and their content are not checked), and no check runs check_os_version.sh on rhel9, whose /etc/os-release branch (lines 10-13) is the one used on a host without lsb_release. I did not confirm on the node whether lsb_release is present: the VM was powered off after the run."
+ ],
+ "review_s": 536.2,
+ "check_file_sha256": "f115cdc8173ab8c93233b16c354ae0ed3e8ad2ebdb32566a8cafa8768ef20d16",
+ "content_sha256": "f115cdc8173ab8c93233b16c354ae0ed3e8ad2ebdb32566a8cafa8768ef20d16",
+ "reviewer_result": "20261123T180240Z-reviewer",
+ "author_result": "20261123T142158Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "3a7b3461-e781-4761-931b-45d9e557dd61",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "3a7b3461-e781-4761-931b-45d9e557dd61",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "27388ba1-8851-4f67-9014-1c873f33ac17",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "27388ba1-8851-4f67-9014-1c873f33ac17",
+   "fresh": true
+  }
+ }
+}
