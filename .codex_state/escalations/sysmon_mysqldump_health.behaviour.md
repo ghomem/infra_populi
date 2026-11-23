@@ -1,4 +1,4 @@
-# sysmon_mysqldump_health — behaviour findings (finding 1 FIXED, local change #18; finding 2 OPEN, for HQ)
+# sysmon_mysqldump_health — behaviour findings (findings 1 and 2 FIXED, local changes #18 and #20; the check set OPEN, for HQ: past the correction cap)
 
 Production use 0 (migration_order.md). Both findings are in the baseline template
 `templates/sysmon/check-mysqldump-health.sh.erb` (cf477c6), measured on the lab node with Ubuntu's MySQL 8.0.46.
@@ -39,3 +39,29 @@ Production use 0 (migration_order.md). Both findings are in the baseline templat
   results/sysmon_mysqldump_health/20261121T115445Z-author and in the reviewer run.
 - Finding 2 was reproduced by review 20261121T120256Z. That review passed the set on purpose: 7 outcomes, no uncovered
   rows. It awaits HQ's choice of A, B or C.
+
+## Finding 2 resolved (2026-11-22)
+HQ ruling 1 withdrew the scratch-name design and took the advisor's, with conditions: before any restore, list the
+databases the dump would create or use; if any exists, do not restore, validate the file only and say so in the output;
+a restore drops only databases it created in that run. Local change #20 (row in rules/local_changes.md):
+- before (results/sysmon_mysqldump_health/20261122T233809Z-author): with a live p8testsrc the check printed "CRITICAL:
+  Create database p8testsrc" and its error path dropped the live database (no rows afterwards);
+- after (20261122T234851Z-author, on the recorded code 287a517): the live p8testsrc keeps its 3 rows and the OK line
+  says the restore test was skipped because it exists; a cut dump of an existing database is CRITICAL "incomplete"
+  with the rows kept; a --databases dump of an absent database is restored and nothing is left behind.
+- Phase 1 review PASS (01e4f81, reviews/sysmon_mysqldump_health/20261122T235348Z).
+
+## The check set after #20: Phase 3 review FAIL on purpose, past the correction cap (OPEN, for HQ)
+Review 20261122T235949Z (c9e48a4) reproduced every check (reviewer run ALL_PASS) and found no behaviour finding. It
+failed purpose: the stated purpose says any failure (create, load, drop) is CRITICAL, but this set version replaced
+the old "Create database" outcome with the skip outcome, so the remaining create-failure path (template lines 71-73:
+CREATE fails for a database the pre-check did not see) has no outcome row, check or uncovered row. That path is also
+where #20's rule must hold with nothing created: CREATED is empty, so nothing may be dropped.
+
+The set used its two correction rounds on 2026-11-21 (production use 0: cap two), so a third round needs HQ.
+
+The fix I would make (one check, one outcome row): `a-failed-create-is-critical-and-drops-nothing` — REVOKE CREATE from
+p8test_check, run the check once, GRANT ALL again; expect "CRITICAL: Create database p8testsrc" with exit 2 and the
+count of p8test databases unchanged. Then the run, and one more Phase 3 review.
+
+- **For HQ:** allow that round, or let the set stand with the create-failure path as an open row.
