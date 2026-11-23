@@ -60,6 +60,7 @@ RECORD_START="${EPOCHREALTIME/,/.}"
 
 # 2. the worktree holds only this class's files and the tracker.
 mapfile -t allowed < <("${RECORDS[@]}" class-files "$CLS")
+class_files=("${allowed[@]}")
 allowed+=("$TRACKER" "$PUPPETFILE_EXPORT")
 mapfile -t dirty < <(git status --porcelain --untracked-files=all | cut -c4-)
 for path in "${dirty[@]}"; do
@@ -74,6 +75,11 @@ done
 "${RECORDS[@]}" verify-fresh "$CLS" ||
   refuse "the GREEN run did not start after the node's latest revert: test_class.sh --revert-first ${CLS}"
 "${RECORDS[@]}" header-check "$CLS" || refuse "migration header missing or incomplete"
+# 4a. a migrate commit records a content change (HQ 2026-11-23 ruling 1): with no class file changed, a marker or
+# comment change is a records commit (--fix), never a `P8: migrate` commit, which the reviewer's provenance reads.
+if [[ -z "$FIX" && -z "$(git status --porcelain -- "${class_files[@]}")" ]]; then
+  refuse "no file of ${CLS} changed: a migrate commit records a content change; for a marker-only change use --fix \"<what>\""
+fi
 if [[ -n "$FIX" ]]; then
   python3 .codex_state/gen_migration_order.py --classify "$CLS" >/dev/null
   grep -qE "^(${CLS} Done|Done ${CLS})( |$)" "$TRACKER" || refuse "--fix is for an already-recorded class; ${CLS} is not Done"

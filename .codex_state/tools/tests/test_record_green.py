@@ -209,6 +209,20 @@ def test_fix_mode_commits_comment_and_tracker_only_as_a_record_commit(clone, lab
     assert git(clone.root, "log", "--format=%s", "-2").splitlines()[1] == f"P8: record {done}: header wording"
 
 
+def test_a_migrate_commit_without_a_class_change_is_refused_and_points_to_fix(clone, lab):
+    """HQ 2026-11-23 ruling 1: re-recording a class whose files did not change (a marker-only change) is a records
+    commit (--fix), never a `P8: migrate` commit that changes no class file."""
+    done = "backup"
+    env = {"P8_GREEN_DIR": str(clone.root.parent / "green")}
+    stamp(lab, clone.root, done, env)
+    head = git(clone.root, "rev-parse", "HEAD")
+    proc = lab.run(["bash", str(clone.root / ".codex_state/tools/record_green.sh"), done, "--no-push"],
+                   env={**env, "P8_COMPOSITE_CMD": "true", "P8_PUPPETFILE_CMD": "true"}, cwd=clone.root)
+    assert proc.returncode != 0
+    assert f"no file of {done} changed" in proc.stderr and "--fix" in proc.stderr
+    assert git(clone.root, "rev-parse", "HEAD") == head and git(clone.root, "status", "--porcelain") == ""
+
+
 def test_fix_mode_refuses_a_code_change(clone, lab):
     done = "backup"
     env = {"P8_GREEN_DIR": str(clone.root.parent / "green")}

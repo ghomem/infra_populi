@@ -196,6 +196,21 @@ def test_migrate_commits_lists_newest_first(monkeypatch):
     assert rc.migrate_commit("x")[0] == "c3"
 
 
+def test_an_empty_migrate_commit_is_ignored_only_after_one_that_changed_class_files():
+    """HQ 2026-11-23 ruling 1: provenance reads the newest migrate commit that changed class files and lists the newer
+    empty ones; with none that changed class files, the newest is read (and fails)."""
+    commits = [("c3", "s"), ("c2", "s"), ("c1", "s")]
+    found, ignored = rc.effective_migrate_commit(commits, lambda c: c in {"c1", "c2"})
+    assert found == ("c2", "s") and ignored == ["c3"]
+    found, ignored = rc.effective_migrate_commit(commits, lambda c: True)
+    assert found == ("c3", "s") and ignored == []
+    found, ignored = rc.effective_migrate_commit(commits, lambda c: False)
+    assert found == ("c3", "s") and ignored == []
+    found, ignored = rc.effective_migrate_commit([("c1", "s")], lambda c: False)
+    assert found == ("c1", "s") and ignored == []
+    assert rc.effective_migrate_commit([], lambda c: True) == (None, [])
+
+
 def test_defect_registry_entries_parse(tmp_path):
     reg = tmp_path / "upstream_defects.md"
     reg.write_text("# x\n\n## filesystem_sec\n- Short: s\n- Ruled change: assign into a new\n  variable only\n"

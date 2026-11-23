@@ -151,6 +151,17 @@ def migrate_commit(cls: str) -> tuple[str, str] | None:
     return found[0] if found else None
 
 
+def effective_migrate_commit(commits: list[tuple[str, str]], changed) -> tuple[tuple[str, str] | None, list[str]]:
+    """HQ 2026-11-23 ruling 1: the migrate commit provenance reads. The newest one, unless it changed no class file
+    while an earlier migrate commit for the class did: such empty commits (a marker-only re-record, which record_green
+    now refuses) are ignored and returned for the verdict to list. With no migrate commit that changed class files, the
+    newest is read (and fails provenance). `changed(commit)` says whether the commit changed a class file."""
+    for i, found in enumerate(commits):
+        if changed(found[0]):
+            return found, [c for c, _ in commits[:i]]
+    return (commits[0] if commits else None), []
+
+
 def provenance_problems(migrate_diff: list[str], pre_drift: list[str], remigration: bool) -> tuple[list[str], str]:
     """A first migration must start from baseline content. A RE-migration (an earlier migrate commit exists)
     starts from the previous migration by definition: its pre-existing drift is what it replaces, and DIFF A
@@ -476,13 +487,17 @@ def run_checks(cls: str, harness: bool) -> dict:
     base = baseline.for_class(cls)
     out: dict = {"class": cls, "baseline": f"{base.name} ({base.commit[:7]})", "checks": {}, "diffs": {}}
     c = out["checks"]
-    found = migrate_commit(cls)
-    if not found:
+    commits = migrate_commits(cls)
+    if not commits:
         c["git"] = result("fail", f"no `P8: migrate puppet_infrastructure::{cls}` commit")
         return out
+    paths = class_paths(cls, base)
+    found, ignored = effective_migrate_commit(
+        commits, lambda cm: any(show_bytes(f"{cm}^", p) != show_bytes(cm, p) for p in paths))
     commit, subject = found
     out["migrate_commit"], out["migrate_subject"] = commit[:12], subject
-    remigration = len(migrate_commits(cls)) > 1
+    out["ignored_migrate_commits"] = [cm[:12] for cm in ignored]
+    remigration = commits.index(found) < len(commits) - 1
     out["remigration"] = remigration
 
     # git
@@ -497,9 +512,8 @@ def run_checks(cls: str, harness: bool) -> dict:
     out["commits_since_migrate"] = len(later)
     c["git"] = result("fail" if problems else "ok", problems or f"migrate commit {commit[:12]}; {len(later)} commits since")
 
-    paths = class_paths(cls, base)
-    # scope
-    touched = [p for p in git("show", "--name-only", "--format=", commit).splitlines() if p]
+    # scope (an ignored empty migrate commit is in scope too)
+    touched = [p for cm in [commit, *ignored] for p in git("show", "--name-only", "--format=", cm).splitlines() if p]
     allowed = set(paths) | STATE_FILES
     extra = [p for p in touched if p not in allowed and not p.startswith(f".codex_state/candidates/{cls}.")]
     blocked_delta = [l[1:] for l in git("show", "--format=", commit, "--", ".codex_state/blocked.txt").splitlines()
@@ -539,6 +553,9 @@ def run_checks(cls: str, harness: bool) -> dict:
     out["diff_summary"] = {"added": len(added_all), "removed": len(removed_all), "non_comment_changes": len(code_changes),
                            "header_only": not code_changes}
     prov, prov_ok = provenance_problems(migrate_diff, pre_drift, remigration)
+    if ignored and not prov:
+        prov_ok += (f"; ignored migrate commit(s) {', '.join(cm[:12] for cm in ignored)}: no class file changed, an "
+                    f"earlier migrate commit ({commit[:12]}) did (HQ 2026-11-23 ruling 1)")
     c["provenance"] = result("fail" if prov else "ok", prov or prov_ok)
     unlisted, accepted = unlisted_comment_removals(removed_comments, listed_comment_changes(cls), final_lines)
     c["comments_preserved"] = result(

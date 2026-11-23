@@ -76,7 +76,9 @@ Steps, all required:
    - DIFF B (the newest migrate commit itself) shows what the migration changed; `provenance` reports drift
      that predates it. For a RE-migration (the class has an earlier migrate commit) DIFF B replaces the earlier
      migrated content: that content is expected to differ from the baseline, and DIFF A carries the whole
-     claim. Cite concrete lines either way.
+     claim. Cite concrete lines either way. A newer migrate commit that changed no class file, after an earlier one
+     that did, is ignored by provenance and listed under `ignored_migrate_commits` (HQ 2026-11-23 ruling 1): DIFF B
+     is then the earlier commit; name the ignored commit in your evidence.
 3. Record the verdict: `python3 .codex_state/tools/review_class.py verdict <class> --faithful ok|fail
    --evidence "<one concrete reason per hunk or 'DIFF A: header comment only'>" [--evidence ...]`.
    If `idempotent=needs-justification` (run 1 changed nothing after a revert), either pass
