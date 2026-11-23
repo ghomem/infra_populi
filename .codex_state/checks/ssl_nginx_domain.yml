@@ -4,6 +4,8 @@
 # p8test.crt are a server key and certificate (CN p8test.invalid), and p8test.intermediate.crt is the throwaway CA's
 # certificate that signed it, standing in for an intermediate. Probes read only the node; the TLS check connects to
 # the node's own loopback.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): Let's Encrypt material (production uses it) and the RedHat branch
+# are checks in the variant runs `letsencrypt` and `rhel`.
 class: ssl_nginx_domain
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -32,10 +34,17 @@ outcomes:
     checks: [the-bundle-alone-drifts, the-agent-run-restores-the-bundle-and-restarts-nginx-once, the-key-alone-drifts, the-agent-run-restores-the-key-and-restarts-nginx-once]
   - outcome: on RedHat (ssl_base's CentOS/RHEL branch) the key goes to /etc/pki/tls/private
     from: manifests/ssl_base.pp:57-62
-    uncovered: {why: "the RedHat branch; this set runs on the plan's Ubuntu node", lifted_by: rhel9}
+    checks: [on-redhat-the-key-is-in-pki-tls-private]
   - outcome: a Let's Encrypt certificate (letsencrypt_certificate true, passed to ssl_base)
     from: manifests/ssl_nginx_domain.pp:5, 13
-    uncovered: {why: "a fixture variant (one set holds one fixture). Covered elsewhere in part: nginx_frontend_mail's set (fixture letsencrypt_certificate true, which reaches this define) checks that 465 and 993 serve the first certificate of p8test.nginx.bundle.pem, loaded with p8test-key.pem. Checked by no set: the -chain.pem second certificate, the files' modes and owners, and the restart on change", lifted_by: ubuntu}
+    checks: [letsencrypt-pair-served-by-nginx]
+variants:
+  - name: letsencrypt
+    why: letsencrypt_certificate true, which production sets (19 node statements, through the nginx frontends)
+    params: letsencrypt
+  - name: rhel
+    why: the RedHat branch of ssl_base (the key under /etc/pki/tls/private), on the rhel9 node with the set's own fixture
+    node: rhel9
 checks:
   - id: the-key-is-private-and-matches-the-certificate
     what: the key file is root:root 0600, and its public key is the bundle's first certificate's
@@ -164,3 +173,35 @@ checks:
       [ -n "$now" ] && [ "$now" != 0 ] && [ "$now" != "$pid" ] && echo restarted
       journalctl -u nginx --after-cursor "$cursor" --no-pager -q | grep -c 'Started nginx.service'
     expect: {rc: 0, stdout: "\\A0\\nrestarted\\n1\\n\\Z"}
+
+  - id: letsencrypt-pair-served-by-nginx
+    variant: letsencrypt
+    what: >-
+      with letsencrypt_certificate true ssl_base installs p8test-key.pem (root:root 0600) and the bundle
+      p8test.nginx.bundle.pem, and the key is the bundle's first certificate's
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_nginx_domain.pp, lines: "9-14", text: "letsencrypt_certificate => $letsencrypt_certificate,"}
+      - {path: manifests/ssl_base.pp, lines: "70-76", text: "$key_file                 = \"${ssl_private_dir}/${myprefix}-key.pem\""}
+    probe: |
+      k=/etc/ssl/private/p8test-key.pem; b=/etc/ssl/certs/p8test.nginx.bundle.pem
+      stat -c '%U:%G %a' "$k"
+      [ "$(openssl pkey -in "$k" -pubout 2>/dev/null)" = "$(openssl x509 -in "$b" -noout -pubkey 2>/dev/null)" ] && echo key-matches-certificate || echo key-does-not-match
+    mismatch:
+      varies: the certificate compared (the bundle's second one, the chain's, instead of the first)
+      probe: |
+        k=/etc/ssl/private/p8test-key.pem; b=/etc/ssl/certs/p8test.nginx.bundle.pem
+        stat -c '%U:%G %a' "$k"
+        second=$(awk '/BEGIN CERT/{i++} i==2' "$b")
+        [ "$(openssl pkey -in "$k" -pubout 2>/dev/null)" = "$(echo "$second" | openssl x509 -noout -pubkey 2>/dev/null)" ] && echo key-matches-certificate || echo key-does-not-match
+    expect: {rc: 0, stdout: "\\Aroot:root 600\\nkey-matches-certificate\\n\\Z"}
+
+  - id: on-redhat-the-key-is-in-pki-tls-private
+    variant: rhel
+    what: on RedHat the key is /etc/pki/tls/private/p8test.key, root:root 0600
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "57-62", text: "$ssl_private_dir = '/etc/pki/tls/private'"}
+    probe: |
+      stat -c '%n %U:%G %a' /etc/pki/tls/private/p8test.key
+    expect: {rc: 0, stdout: "\\A/etc/pki/tls/private/p8test\\.key root:root 600\\n\\Z"}
