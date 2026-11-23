@@ -5,10 +5,10 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 
 ## Summary
 
-- Done classes: 90 (90 verified by the Phase 1 reviewer). Owner-validated: postfix_smtp_base_config_file. Retired: nginx_proxy_smtp_auth_ppa. Blocked: none.
-- Behaviour (Phase 3): 1 deferred, 2 finding, 86 pass, 1 review-failed.
+- Done classes: 90 (89 verified by the Phase 1 reviewer). Owner-validated: postfix_smtp_base_config_file. Retired: nginx_proxy_smtp_auth_ppa. Blocked: none.
+- Behaviour (Phase 3): 1 deferred, 2 finding, 85 pass, 1 review-failed, 1 stale.
 - Open rows (outcomes no check probes): 120 in 73 classes.
-- Stand-ins: 11. Local changes: 21 (in 17 classes).
+- Stand-ins: 10. Local changes: 21 (in 17 classes).
 
 ## For Salatiel's decision
 
@@ -27,13 +27,13 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 - **openvpn_domain** — fixture `p8test_domain_dns`; lifted by: a node on a network whose DNS (DHCP) serves the AD domain, as production's. *not in HQ's lift list (item 6): stays as it is, for Salatiel's attention*
 - **openvpn_nm_connection** — fixture `p8test_vpn_ca`; lifted by: a class or node definition that ships the VPN CA to desktops (none in the code tree). *not in HQ's lift list (item 6): stays as it is, for Salatiel's attention*
 - **openvpn_server** — fixture `p8test_dhcp_primary`; lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). *to be lifted: an extra network card on a gateway node (HQ after batch 20, item 6)*
-- **user_lock** — fixture `hashman_lock_standin`; lifted by: a master-role node whose hashman database holds the user (the planned nodes.yml kind puppetserver; HQ batch-5 ruling 6; HQ 2026-11-17 ruling 2). *to be lifted: the master-role node's hashman database (HQ after batch 20, item 6)*
 - **user_samba** — fixture `samba_dc_standin`; lifted by: a Zentyal/Samba AD domain controller node with Zentyal's user scripts (none yet; the planned dc kind, p8lab-dc, is a plain Samba AD DC). *stays; for Salatiel's explicit acceptance (HQ after batch 20, item 6)*
 - **user_sysmon** — fixture `sysmon_server`; lifted by: a monitoring-server node running Naemon + Thruk from the monitoring repository (no nodes.yml kind). *stays; for Salatiel's explicit acceptance (HQ after batch 20, item 6)*
 
 ### Open escalations
 
 - escalations/sysmon_mysqldump_health.behaviour.md: sysmon_mysqldump_health — behaviour findings (findings 1 and 2 FIXED, local changes #18 and #20; the check set OPEN, for HQ: past the correction cap)
+- escalations/user_lock.phase1.md: user_lock — Phase 1 review FAIL on provenance after the stand-in lift (OPEN, for HQ: the run is stopped)
 
 ## One row per class
 
@@ -124,7 +124,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 | user_desktop_sudoer | 0 | kubuntu | pass | 4 | 1 |  |  |  |
 | user_kde_lock_screen | 20 | kubuntu | pass | 5 | 3 |  |  |  |
 | user_kde_lock_screen_common | 20 | ubuntu | pass | 2 | 1 |  |  |  |
-| user_lock | 0 | ubuntu | pass | 2 | 0 | yes |  |  |
+| user_lock | 0 | puppetserver | stale | 2 | 0 |  |  |  |
 | user_samba | 0 | ubuntu | pass | 1 | 1 | yes |  |  |
 | user_sudoer | 1 | ubuntu | pass | 3 | 1 |  |  |  |
 | user_sysmon | 0 | ubuntu | pass | 2 | 1 | yes |  |  |
@@ -1336,12 +1336,11 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### user_lock
 
 - **Purpose:** Locks an existing user in hashman, the fleet's user database on the Puppet master: hashman's own pp_auth.py marks the user's password entry locked, so hashman (and the services that authenticate through it) refuse the user.
-- **Behaviour:** pass; node ubuntu; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node puppetserver; production machines: 0.
 - **Tracker:** `[from: release-0.9.10; upstream defect fixed: exec guarded by its post-condition]`
 - **Proven:**
   - hashman's pp_auth.py lock marks the user's entry locked, in place (one entry, not a duplicate), and invalidates the user's Samba hash the same way (`user-entry-locked-by-hashman`, `exactly-one-entry`, `the-samba-hash-is-locked-too`)
   - the locked user is refused by hashman's authentication (pp_auth auth, which hashman's web interface and services use), although the password matches the entry under the lock prefix (`the-locked-user-is-refused-by-hashman`)
-- **Stand-in:** `hashman_lock_standin` — lifted by: a master-role node whose hashman database holds the user (the planned nodes.yml kind puppetserver; HQ batch-5 ruling 6; HQ 2026-11-17 ruling 2). Plan: to be lifted: the master-role node's hashman database (HQ after batch 20, item 6)
 
 ### user_samba
 

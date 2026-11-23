@@ -2,7 +2,12 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-133 entries; 6 marked superseded (in whole or part); newest first.
+134 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-23 — item 6 started; the run stops on user_lock's Phase 1 FAIL
+- 1. **user_lock's stand-in lifted** (7175bca): on the master-role node, hashman itself creates the user (node fixture
+- 2. **Operator error, recorded:** to drop the tracker's mock-apply marker I re-ran record_green without a content change,
+- 3. **Run stopped ~01:15 UTC** on that standing Phase 1 FAIL (escalations/user_lock.phase1.md, options A/B). Not started:
 
 ## 2026-11-23 — HQ rulings after the stop: carried out
 - 1. **Ruling 3, lab down at pauses (lab_idle_down.sh, 5066ec7).** A Stop hook (`.claude/settings.json`) runs

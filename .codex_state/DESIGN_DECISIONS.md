@@ -2446,3 +2446,15 @@ the engine's tools, which take the lock themselves, are unaffected. 21 tests; th
 6. **Commits with a path argument** (`git commit -- <path>`) run the pre-commit hook with GIT_INDEX_FILE set to a
    temporary index, which the tests' own git calls inherit; such commits are not used. Noted for the test-suite design
    note, with a row-shape check for local_changes.md.
+
+## 2026-11-23 — item 6 started; the run stops on user_lock's Phase 1 FAIL
+1. **user_lock's stand-in lifted** (7175bca): on the master-role node, hashman itself creates the user (node fixture
+   hashman_user_via_hashman, listed as a test asset); the set matches hashman's own entries and authenticates with
+   hashman's initial password; ALL_PASS (14522e1).
+2. **Operator error, recorded:** to drop the tracker's mock-apply marker I re-ran record_green without a content change,
+   which made a `P8: migrate` commit touching only the tracker (3731d97). The reviewer's provenance check fails on it
+   (review 20261123T011346Z). Marker-only changes belong to `record_green.sh --fix`; record_green does not refuse the
+   other path today.
+3. **Run stopped ~01:15 UTC** on that standing Phase 1 FAIL (escalations/user_lock.phase1.md, options A/B). Not started:
+   the other stand-in lifts (a draft node fixture for mount_shares_desktop's real first GNOME login is in the advisor's
+   scratch, not committed), the sweep, the final report.
