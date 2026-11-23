@@ -1,0 +1,43 @@
+{
+ "class": "mount_shares_desktop",
+ "at": "20261123T023040Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "scripts-render-the-share-and-options @ templates/shares/unmount-shares.sh.erb:10-12: the template renders one '$SUDO umount $MDIR/<share_name>' line per share; with the fixture's single share p8share the probe's exact-line grep '$SUDO umount $MDIR/p8share' (count 1) is what the code produces",
+  "the-server-serves-the-test-share @ templates/shares/shares.sh.erb:153-157: the rendered script mounts //SERVER/SHARENAME with the fixture's server and share, so the peer must serve p8share to p8testuser; the action (samba install, nologin account, fake smbpasswd, read-only [p8share] with one file, smbd restart) is fully declared in mutates and confined to the peer, and the read-only effect (testparm lists [p8share], smbd active) shows the action's result, not its output",
+  "the-mount-script-mounts-the-share @ templates/shares/shares.sh.erb:8: MDIR=/tmp/$USER/mnt-manual with USER=p8testuser gives /tmp/p8testuser/mnt-manual; the script mkdirs it as the user and chmods it 700 (line 93) and mounts with uid=$UID,dir_mode=0700,file_mode=0600 (line 125), so 'rc 0 / cifs / p8testuser 700 / file content / nobody: Permission denied' is what the code produces; the action is the generated script itself run as the user, and the wrong-password check (same script, only $PASSWORD changed, must leave nothing mounted and exit 1 at lines 127-130) acts as the mismatch control for the server's verdict on the credentials",
+  "purpose covered: Purpose (two Desktop scripts that mount/unmount the user's CIFS shares under /tmp with the user's credentials) matches the header comment and manifest/templates. The checks test it end to end on gnome against a real Samba share on ubuntu2: scripts present root:root 0755 in ~/Desktop (now created by a real first GDM login, fixture p8test_desktop_login, which only declares p8testuser and triggers that login, test asset) and rendered with share/CIFS version/$USER/explorer off; run as p8testuser with the right password the share mounts as cifs, private to the user (nobody denied) with the server file readable; a wrong password exits 1 with the template's error message and mounts nothing; the unmount script unmounts it. Cache/delay defaults are exercised implicitly (no cache=none, sleep 0.5). Honestly uncovered: the kdialog password prompt (needs input to a desktop session), explorer=True (dolphin, the default, exists only on kubuntu while phase3.py runs a set on its plan node gnome only) and the symlinks/cache=False/delay variants (one params fixture per set); evidence states the fixture's explorer False/$PASSWORD choice and the runner's single-fixture, single-node limits, lifted by a named capability. Rows unchanged since correction round 1 (only header comments changed). Not covered and not listed: the 'already mounted, will not remount' branch (lines 100-110), a minor idempotence path."
+ ],
+ "review_s": 171.5,
+ "check_file_sha256": "956bb590e3b38dd8d969785f93d441dec7a4b4775928715a5a1a1267a902fd78",
+ "content_sha256": "956bb590e3b38dd8d969785f93d441dec7a4b4775928715a5a1a1267a902fd78",
+ "reviewer_result": "20261123T022749Z-reviewer",
+ "author_result": "20261123T022035Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "boot_id": "777534b7-092d-4618-a6c6-07f4c967b1d5",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "777534b7-092d-4618-a6c6-07f4c967b1d5",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "970c36e4-a675-417e-a93d-09661d8808dd",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "970c36e4-a675-417e-a93d-09661d8808dd",
+   "fresh": true
+  }
+ }
+}
