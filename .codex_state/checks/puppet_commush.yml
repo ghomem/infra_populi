@@ -6,6 +6,7 @@
 # Correction round 1, 2026-11-19 (review 20261119T184905Z FAIL, purpose): every run named master, so the default branch
 # was never exercised, and the clone held no untracked file. The confirmed run now passes no branch, and the clone has
 # an untracked file that must stay untracked and out of origin.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1d): the https-remote row names what is missing, with its evidence.
 class: puppet_commush
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -27,7 +28,14 @@ outcomes:
     checks: [a-run-on-another-branch-warns-and-goes-on]
   - outcome: an https remote with a token prompt
     from: files/puppet/commush.sh:6, 39
-    uncovered: {why: "the https URL and the token prompt belong to git and the deployment's server, not to the script, whose commands are the same against any remote (the local origin here); the lab has no https git server", lifted_by: ubuntu}
+    uncovered:
+      why: >-
+        the https URL and the token prompt belong to git and the deployment's server, not to the script, whose commands
+        are the same against any remote (the set pushes to a local origin)
+      lifted_by: "capability: an https git server in the lab that asks for a token"
+      evidence: >-
+        nodes.yml (2026-11-23): no node kind has a git server capability, and no class of the repository installs one;
+        the script's git commands are tested against the local origin by this set's checks
 checks:
   - id: commush-installed
     what: commush.sh is in /opt/puppet-infrastructure/bin, root:root 0755, byte-identical to the module's file
