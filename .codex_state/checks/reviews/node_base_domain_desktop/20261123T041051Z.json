@@ -1,0 +1,35 @@
+{
+ "class": "node_base_domain_desktop",
+ "at": "20261123T041051Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-agent-daemon-runs-the-catalog (node_base_domain_desktop.pp:26-27): ensure => running, enable => true on Service['puppet'] ('desktops run puppet directly', line 24) means the real agent daemon runs and applies the catalog. The action (systemctl restart puppet) is what starting that service runs; mutates declares it, the daemon's catalog run and the /run/p8test-agentd.since file. The read-only effect reads the unit's MainPID cmdline and the unit journal since the restart, not the action's output. On the node after my run: no puppet.service.d drop-in, ExecStart '/opt/puppetlabs/puppet/bin/puppet agent $PUPPET_EXTRA_OPTS --no-daemonize', and the journal shows 'Catalog compiled by puppet8master', '(/Stage[main]/Apt::Update/Exec[apt_update]/returns) executed successfully (corrective)', 'Applied catalog in 34.15 seconds'. So the event-line pattern '^(/Stage[main]' really matches this journal format, and the count of 0 is not vacuous; Service[puppet] is in the applied catalog's resources.txt. On the clean node the negative control failed through a probe timeout at 120s (no since file, so the journal loop never broke), not through an output mismatch. It is still a failure, but a weak one.",
+  "puppet-service-enabled-and-running (node_base_domain_desktop.pp:26-27): enable => true and ensure => running; 'systemctl is-enabled puppet; systemctl is-active puppet' expecting enabled/active tests exactly that",
+  "ipv6-input-and-forward-dropped (firewall_ipv6_drop.pp:8): rule '600 Drop ALL IPv6 - INPUT' is chain INPUT, proto all, action drop, provider ip6tables (lines 8-13), so ip6tables -S INPUT carries the commented rule ending '-j DROP'; the probe also counts rule 601 on FORWARD, from lines 14-19 of the same file, which are not cited but declare the same thing for FORWARD; the expectation of 1 and 1 is what the code produces",
+  "purpose covered: The purpose matches the header ('basic desirable properties of a domain based desktop node') and every declaration in the baseline manifest, lines 9-28. Each outcome maps to a check that probes it: packages_base keeps unattended-upgrades (invariant); ssh_secure has the single KEX and PasswordAuthentication yes (sshd -T); firewall_secure's INPUT/FORWARD DROP policy, SSH whitelist and LIMIT_OVERALL; firewall_ipv6_drop rules 600 and 601; filesystem_base_desktop's three root directories at 0755; filesystem_apt in desktop mode (the desktop surface list in SURFACE, the desktop compatibility link, apt-update-relevant.sh); the ntp unit active; Service[puppet] enabled and active. The round-2 gap is closed: the agent-daemon outcome now maps to the-agent-daemon-runs-the-catalog, which proves that the real daemon (no stand-in) makes its own catalog run with no events besides Exec[apt_update], and the stale stand-in text is gone from the set. Not tested: (a) the daemon's 1800s re-run interval, which is a puppet default the class does not set, so the start-up run is the observable behaviour; (b) the 'syslog file left to rsyslog' half of the directories outcome, which by default has no resource to probe, and the default mode u=rw,g=r,o= equals rsyslog's own 0640, so no node state tells the two apart. Component internals are left to the components' own sets, as the header scopes. My run 20261123T040507Z: ALL_PASS, every control valid on the clean node, no findings."
+ ],
+ "review_s": 344.7,
+ "check_file_sha256": "24c191ed51848b504d55b896012723eb3968d0eea449c8989437fea2f7eb5fc0",
+ "content_sha256": "24c191ed51848b504d55b896012723eb3968d0eea449c8989437fea2f7eb5fc0",
+ "reviewer_result": "20261123T040507Z-reviewer",
+ "author_result": "20261123T034950Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "a3873885-ed5f-4bb9-bd4e-0134e428db26",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "a3873885-ed5f-4bb9-bd4e-0134e428db26",
+   "fresh": true
+  }
+ }
+}

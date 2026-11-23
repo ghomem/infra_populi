@@ -20,3 +20,9 @@ Collected 2026-11-22/23 while committing; each is measured, with its evidence.
 - review_class.py's fixtures check reads the class's node over ssh before the harness starts it; with the node powered
   off (lab_power.sh up starts only the master and the default node) it reports fixtures=error (user_lock review
   20261123T014324Z). Proposal: start/revert the class's node first, or name the cause ("the class's node is not running").
+- test_class.sh's between-runs gate (6e007df) treats any resource event in a daemon run as a failure; for a class whose
+  plan lists expected_run2_events (Exec[apt_update]), a daemon run in the window would fail the harness although run 2
+  may report that event: a false RED, never a false GREEN. Not yet seen (the daemon skips while the harness holds the
+  agent lock). Proposal: filter the daemon's lines through the plan's expected_run2_events as run 2's are.
+- the-agent-daemon-runs-the-catalog fails on the clean node by a probe timeout (no restart file), not by its output
+  (review 20261123T041051Z): a valid but weak negative control.
