@@ -1,0 +1,750 @@
+{
+ "class": "sysmon_base",
+ "role": "author",
+ "at": "20261123T182222Z",
+ "runner": "cc10c36",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "a574d104a879bcfa83f10c356f4e1b981aec43c9df9253b718fb8e4b4fc24373",
+ "content_sha256": "a574d104a879bcfa83f10c356f4e1b981aec43c9df9253b718fb8e4b4fc24373",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-checks-are-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/nagios-puppet.sh': No such file or directory\nbash: line 99: cd: /opt/puppet-infrastructure/bin: No such file or directory\nsha256sum: /usr/lib64/nagios/plugins/check_mem.pl: No such file or directory\nstat: cannot statx '/opt/puppet-infrastructure/bin/check_*.sh': No such file or directory\nstat: cannot statx '/opt/puppet-infrastructure/bin/elastic_query_check.py': No such file or directory\nstat: cannot statx '/usr/lib64/nagios/plugins/check_mem.pl': No such file or directory\nstat: cannot statx '/usr/lib64/nagios/plugins/check_cpu.py': No such file or directory\nhead: cannot open '/usr/lib64/nagios/plugins/check_cpu.py' for reading: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-reboot-check-says-ok",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 97: /opt/puppet-infrastructure/bin/check_reboot_required.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-file-handle-check-reports-the-kernel-counts",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 97: /opt/puppet-infrastructure/bin/check_file_handles.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-connection-checks-count-real-connections",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-bandwidth-check-reports-throughput",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\nrc=127\n",
+   "stderr": "bash: line 97: /opt/puppet-infrastructure/bin/check_bandwidth.sh: No such file or directory\nbash: line 98: /opt/puppet-infrastructure/bin/check_bandwidth.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "cpu-and-memory-are-reported",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\nrc=127\nrc=127\n",
+   "stderr": "bash: line 98: /usr/lib64/nagios/plugins/check_cpu.py: No such file or directory\nbash: line 99: /usr/lib64/nagios/plugins/check_mem.pl: No such file or directory\nbash: line 100: /usr/lib64/nagios/plugins/check_mem.pl: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-elastic-check-is-unknown-without-elasticsearch",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 97: /opt/puppet-infrastructure/bin/elastic_query_check.py: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-os-check-reports-the-release",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 97: /opt/puppet-infrastructure/bin/check_os_version.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-puppet-check-ok-then-unknown-under-lock",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-sysmon/puppet.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-pending-reboot-gives-a-warning",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 97: /opt/puppet-infrastructure/bin/check_reboot_required.sh: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-package-count-check-warns-at-its-threshold",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\nrc=127\n",
+   "stderr": "bash: line 98: /opt/puppet-infrastructure/bin/check_package_count.sh: No such file or directory\nbash: line 99: /opt/puppet-infrastructure/bin/check_package_count.sh: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-latency-check-times-a-write",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\nrc=127\n0\n",
+   "stderr": "bash: line 98: /opt/puppet-infrastructure/bin/check_dd_latency.sh: No such file or directory\nbash: line 99: /opt/puppet-infrastructure/bin/check_dd_latency.sh: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-certificate-check-reports-expiry-in-short-words",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\nrc=127\n",
+   "stderr": "bash: line 98: /opt/puppet-infrastructure/bin/check_http_ssl_cert.sh: No such file or directory\nbash: line 99: /opt/puppet-infrastructure/bin/check_http_ssl_cert.sh: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-puppet-check-is-critical-when-the-agent-is-disabled",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-sysmon/disabled.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-stale-package-list-raises-the-alarm",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 97: /opt/puppet-infrastructure/bin/check_package_count.sh: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-cpu-plugin-is-critical-under-load",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 97: /usr/lib64/nagios/plugins/check_cpu.py: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-peer-sends-traffic",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "inactive\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-bandwidth-check-is-critical-above-its-threshold",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 97: /opt/puppet-infrastructure/bin/check_bandwidth.sh: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-elastic-check-is-ok-with-no-events",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 97: /opt/puppet-infrastructure/bin/elastic_query_check.py: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-elastic-check-is-critical-with-events",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 97: /opt/puppet-infrastructure/bin/elastic_query_check.py: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-elastic-check-asks-for-the-query",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "head: cannot open '/run/p8test-sysmon/es-request.txt' for reading: No such file or directory\ntail: cannot open '/run/p8test-sysmon/es-request.txt' for reading: No such file or directory\nTraceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/usr/lib/python3.12/json/__init__.py\", line 293, in load\n    return loads(fp.read(),\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/json/__init__.py\", line 346, in loads\n    return _default_decoder.decode(s)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/json/decoder.py\", line 337, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/json/decoder.py\", line 355, in raw_decode\n    raise JSONDecodeError(\"Expecting value\", s, err.value) from None\njson.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-puppet-check-is-critical-when-a-resource-fails",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-sysmon/failed.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "led by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795458277'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 2.58 seconds\u001b[0m\nRUN2_EXPECTED_EVENTS: 1 from Exec[apt_update] Exec[dnf-makecache] [own: none; inherited: Exec[apt_update] via packages_base, Exec[dnf-makecache] via packages_base] (plan expected_run2_events)\nCOVERAGE puppet_infrastructure::sysmon_base: 14 concrete resources (+0 defined-type instances)\n  Package[net-tools]\n  File[/opt/puppet-infrastructure/bin/nagios-puppet.sh]\n  File[/opt/puppet-infrastructure/bin/check_reboot_required.sh]\n  File[/opt/puppet-infrastructure/bin/check_file_handles.sh]\n  File[/opt/puppet-infrastructure/bin/check_netstat_conns.sh]\n  File[/opt/puppet-infrastructure/bin/check_netstat_cip.sh]\n  File[/opt/puppet-infrastructure/bin/check_package_count.sh]\n  File[/opt/puppet-infrastructure/bin/check_bandwidth.sh]\n  File[/opt/puppet-infrastructure/bin/check_dd_latency.sh]\n  File[/usr/lib64/nagios/plugins/check_cpu.py]\n  File[/usr/lib64/nagios/plugins/check_mem.pl]\n  File[/opt/puppet-infrastructure/bin/check_os_version.sh]\n  File[/opt/puppet-infrastructure/bin/check_http_ssl_cert.sh]\n  File[/opt/puppet-infrastructure/bin/elastic_query_check.py]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\nGREEN_STAMP sysmon_base 711164d347c4\n"
+ },
+ "applied": [
+  {
+   "id": "the-checks-are-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root:root 755\n9bacf362399850082a6bedaafd7989b5c6241909672bde173eddef2ef8b53835 7e4e37bfea8176710919ce81a4e8a9884005b2596bca0249c1060dd72b6878d4 7857765d96f23f987d877311fabd00c51624f25d890c28cef8d068673903f700 b23b5c205237f0e3c35c93657ffbb63336f60587a52f6b88f785e535092a242c a2a5bd075742a0073e201fc418fb5692177b4081d5f19d8082cbc83bd439f351 93923b2ac8f27d18472598c51edd3a56c7a612607ae92aea1615161f87222e8d d2a32fb788053263612dbcf6765ef1cc0269e5f18c4d5522bf4ff691e5280b84 0a586c32bcefc10c45bf150c81f520310a2f949ca5013acda6a3c9818342a43e c1d17f8f136d3c5542ff09553cd3713578a99f8d0a1e900394aabcb161c97e77 901a03a3b60e6f3b7c433cf94ef056b4de2247b58d0b4b483a874d3c0927a168\naadc9c91a7faa555bcf3662860cddc69b5e884176f91f9170f0533baf887e560\nroot:root 755\n#!/opt/puppet-infrastructure/bin/mypython\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-reboot-check-says-ok",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK - No reboot required\nrc=0\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-file-handle-check-reports-the-kernel-counts",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "kernel counts, max as the kernel says\nrc=0\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-connection-checks-count-real-connections",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "tcp listen counted established counted\nremote IPs on 22 counted\n0\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-bandwidth-check-reports-throughput",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "IN N Mbit/s OUT N Mbit/s - OK - B Bytes in 1 sec | InUsage=N% OutUsage=N% inBandwidth=NMbps;100;200 outBandwidth=NMbps;100;200\nrc=0\nWARNING!\nrc=1\n",
+   "stderr": ""
+  },
+  {
+   "id": "cpu-and-memory-are-reported",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK: Total=N%\nrc=0\nOK\nrc=0\nCRITICAL\nrc=2\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-elastic-check-is-unknown-without-elasticsearch",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Unknown\n<urlopen error [Errno 111] Connection refused\nrc=3\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-os-check-reports-the-release",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK - OS: Ubuntu 24.04\nrc=0\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-puppet-check-ok-then-unknown-under-lock",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "first: OK: exit code 2 rc=0\nsecond: UNKNOWN: exit code 1 rc=3\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs the class's Puppet check twice on the node (the first makes one agent run, which applies the node's catalog; the second starts while that run holds the lock); outputs and exit codes in /run/p8test-sysmon/puppet.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-pending-reboot-gives-a-warning",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "WARNING - Reboot required to update host (/var/run/reboot-required found)\nrc=1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates /var/run/reboot-required on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-package-count-check-warns-at-its-threshold",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK - 3\nrc=0\nWARNING - 3\nrc=1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes /var/lib/apt-check-updates/list (3 names, p8test-a p8test-b p8test-c) on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-latency-check-times-a-write",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK\nrc=0\nCRITICAL\nrc=2\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "two 1 MB test files written to and removed from /tmp on the node by the check itself",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-certificate-check-reports-expiry-in-short-words",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK - 'p8test.local' expires on DATE\nrc=0\nWARNING - 'p8test.local' expires in N days\nrc=1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "starts openssl s_server on 127.0.0.1:8443 with a self-signed 10-day certificate (CN p8test.local) in /run/p8test-sysmon, as transient unit p8test-tls",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-puppet-check-is-critical-when-the-agent-is-disabled",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "CRITICAL: exit code 1 rc=2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes the agent's disable lock (/opt/puppetlabs/puppet/cache/state/agent_disabled.lock, message p8test), runs the class's Puppet check once, then removes the lock; the result goes to /run/p8test-sysmon/disabled.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-stale-package-list-raises-the-alarm",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "FILE_AGE CRITICAL:\nrc=1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "sets the modification time of /var/lib/apt-check-updates/list (written by the package-count check above) to two days ago",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-cpu-plugin-is-critical-under-load",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "CRITICAL\nrc=2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs two busy loops (yes into /dev/null) for 20 s as transient unit p8test-load on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-peer-sends-traffic",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "starts a transient unit p8test-traffic on the peer that pings the class node every 10 ms for 20 s",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-bandwidth-check-is-critical-above-its-threshold",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "CRITICAL!\nrc=2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond a 1 s sample of the NIC's counters (declared mutating so it runs while the peer's pings arrive)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-elastic-check-is-ok-with-no-events",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK\nrc=0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes a stand-in search server (/run/p8test-sysmon/es.py, answering every POST with /run/p8test-sysmon/es.json and recording the request's path and body in /run/p8test-sysmon/es-request.txt) and starts it on 127.0.0.1:9200 as transient unit p8test-es, with an answer of no hits",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-elastic-check-is-critical-with-events",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Critical\nNov 18 10:01:00 - p8testsudo - p8test-host-a\nNov 18 10:05:00 - p8testuser - p8test-host-b\nrc=2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "rewrites the stand-in's answer (/run/p8test-sysmon/es.json) to two hits, given out of time order",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-elastic-check-asks-for-the-query",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/_search?size=10\nquery p8test-query\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs the Elasticsearch check once more with the query p8test-query (the stand-in records the request)",
+    "rc": 2,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-puppet-check-is-critical-when-a-resource-fails",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "CRITICAL: exit code 6 rc=2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "sets /opt/puppet-infrastructure/bin/check_os_version.sh to mode 0700 and immutable (chattr +i), runs the class's Puppet check once (one agent run, whose fix of that file fails), then removes the immutable flag; the check's output and exit code go to /run/p8test-sysmon/failed.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "6109c87a-b463-4971-9242-ee1c6a72ef72",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "6109c87a-b463-4971-9242-ee1c6a72ef72",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "f3b879b5-d7b6-467f-b8db-18f83caadd28",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "f3b879b5-d7b6-467f-b8db-18f83caadd28",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "variants": {
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "snapshot": "P8LAB_RHEL9_BASELINE_v2",
+     "boot_id": "ce63d6e2-e51c-4192-996e-3714a7fe4a31",
+     "apt_mirror": null,
+     "boot_id_at_end": "ce63d6e2-e51c-4192-996e-3714a7fe4a31",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "on-redhat-the-checks-are-installed",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "",
+     "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/nagios-puppet.sh': No such file or directory\nbash: line 99: cd: /opt/puppet-infrastructure/bin: No such file or directory\nsha256sum: /usr/lib64/nagios/plugins/check_mem.pl: No such file or directory\nstat: cannot statx '/opt/puppet-infrastructure/bin/check_*.sh': No such file or directory\nstat: cannot statx '/opt/puppet-infrastructure/bin/elastic_query_check.py': No such file or directory\nstat: cannot statx '/usr/lib64/nagios/plugins/check_mem.pl': No such file or directory\nstat: cannot statx '/usr/lib64/nagios/plugins/check_cpu.py': No such file or directory\nhead: cannot open '/usr/lib64/nagios/plugins/check_cpu.py' for reading: No such file or directory\n",
+     "ok": true
+    },
+    {
+     "id": "on-redhat-the-os-version-check-reads-os-release",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "no lsb_release\ngot: \nrc=127\n",
+     "stderr": "bash: line 99: /opt/puppet-infrastructure/bin/check_os_version.sh: No such file or directory\n",
+     "ok": true
+    },
+    {
+     "id": "on-redhat-the-package-count-uses-updateinfo",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": " rc=\ncount , dnf lists 0\n",
+     "stderr": "head: cannot open '/run/p8test-pkgcount/out' for reading: No such file or directory\ncat: /run/p8test-pkgcount/rc: No such file or directory\nsed: can't read /run/p8test-pkgcount/out: No such file or directory\nawk: fatal: cannot open file `/run/p8test-pkgcount/dnf' for reading: No such file or directory\n",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795458525'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Exec[dnf-makecache]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 13.63 seconds\u001b[0m\nRUN2_EXPECTED_EVENTS: 1 from Exec[apt_update] Exec[dnf-makecache] [own: none; inherited: Exec[apt_update] via packages_base, Exec[dnf-makecache] via packages_base] (plan expected_run2_events)\nCOVERAGE puppet_infrastructure::sysmon_base: 14 concrete resources (+0 defined-type instances)\n  Package[net-tools]\n  File[/opt/puppet-infrastructure/bin/nagios-puppet.sh]\n  File[/opt/puppet-infrastructure/bin/check_reboot_required.sh]\n  File[/opt/puppet-infrastructure/bin/check_file_handles.sh]\n  File[/opt/puppet-infrastructure/bin/check_netstat_conns.sh]\n  File[/opt/puppet-infrastructure/bin/check_netstat_cip.sh]\n  File[/opt/puppet-infrastructure/bin/check_package_count.sh]\n  File[/opt/puppet-infrastructure/bin/check_bandwidth.sh]\n  File[/opt/puppet-infrastructure/bin/check_dd_latency.sh]\n  File[/usr/lib64/nagios/plugins/check_cpu.py]\n  File[/usr/lib64/nagios/plugins/check_mem.pl]\n  File[/opt/puppet-infrastructure/bin/check_os_version.sh]\n  File[/opt/puppet-infrastructure/bin/check_http_ssl_cert.sh]\n  File[/opt/puppet-infrastructure/bin/elastic_query_check.py]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\nGREEN_STAMP sysmon_base 711164d347c4\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-the-checks-are-installed",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "root:root 755\n9bacf362399850082a6bedaafd7989b5c6241909672bde173eddef2ef8b53835 7e4e37bfea8176710919ce81a4e8a9884005b2596bca0249c1060dd72b6878d4 7857765d96f23f987d877311fabd00c51624f25d890c28cef8d068673903f700 b23b5c205237f0e3c35c93657ffbb63336f60587a52f6b88f785e535092a242c a2a5bd075742a0073e201fc418fb5692177b4081d5f19d8082cbc83bd439f351 93923b2ac8f27d18472598c51edd3a56c7a612607ae92aea1615161f87222e8d d2a32fb788053263612dbcf6765ef1cc0269e5f18c4d5522bf4ff691e5280b84 0a586c32bcefc10c45bf150c81f520310a2f949ca5013acda6a3c9818342a43e c1d17f8f136d3c5542ff09553cd3713578a99f8d0a1e900394aabcb161c97e77 901a03a3b60e6f3b7c433cf94ef056b4de2247b58d0b4b483a874d3c0927a168\naadc9c91a7faa555bcf3662860cddc69b5e884176f91f9170f0533baf887e560\nroot:root 755\n#!/opt/puppet-infrastructure/bin/mypython\n",
+     "stderr": ""
+    },
+    {
+     "id": "on-redhat-the-os-version-check-reads-os-release",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "no lsb_release\nOK from os-release: Red Hat Enterprise Linux\nrc=0\n",
+     "stderr": ""
+    },
+    {
+     "id": "on-redhat-the-package-count-uses-updateinfo",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "WARNING rc=1\ncount equals dnf's list\ncount at least 1\n",
+     "stderr": "",
+     "mutating": true,
+     "action": {
+      "mutates": "runs the package-count check once (dnf may refresh its metadata cache), its output and exit code kept in /run/p8test-pkgcount; then lists dnf's Important security updates from that cache into the same directory",
+      "rc": 0,
+      "stdout": "",
+      "stderr": ""
+     }
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "the checks are installed root-owned 0755 as the module's files (check_cpu.py from its template, run by the local python)",
+   "checks": [
+    "the-checks-are-installed"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the Puppet check runs the agent and reports OK with the agent's exit code, UNKNOWN (not CRITICAL) when another agent run holds the lock, CRITICAL when the agent exits 1 otherwise (an agent disabled by an administrator), and CRITICAL when resources fail during the run (agent exit above 2)",
+   "checks": [
+    "the-puppet-check-ok-then-unknown-under-lock",
+    "the-puppet-check-is-critical-when-the-agent-is-disabled",
+    "the-puppet-check-is-critical-when-a-resource-fails"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the reboot check says OK, and WARNING once a package asks for a reboot",
+   "checks": [
+    "the-reboot-check-says-ok",
+    "a-pending-reboot-gives-a-warning"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the file-handle check reports the kernel's used and maximum handles",
+   "checks": [
+    "the-file-handle-check-reports-the-kernel-counts"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the connection checks count the node's listening and established connections, and the remote IPs on a port",
+   "checks": [
+    "the-connection-checks-count-real-connections"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the package-count check warns at the given number of upgradable packages from the update list, and alarms when the list is older than 26 hours",
+   "checks": [
+    "the-package-count-check-warns-at-its-threshold",
+    "a-stale-package-list-raises-the-alarm"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the bandwidth check reports the interface's throughput against its thresholds, WARNING inside them and CRITICAL above them",
+   "checks": [
+    "the-bandwidth-check-reports-throughput",
+    "the-peer-sends-traffic",
+    "the-bandwidth-check-is-critical-above-its-threshold"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the disk latency check times a synchronous write and goes CRITICAL past its threshold",
+   "checks": [
+    "the-latency-check-times-a-write"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the CPU and memory plugins report usage, and each goes CRITICAL past its threshold",
+   "checks": [
+    "cpu-and-memory-are-reported",
+    "the-cpu-plugin-is-critical-under-load"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the OS check reports the release",
+   "checks": [
+    "the-os-check-reports-the-release"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the TLS certificate check reports a certificate's expiry in short words, WARNING inside the warning window",
+   "checks": [
+    "the-certificate-check-reports-expiry-in-short-words"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the Elasticsearch query check asks localhost:9200 for matching sshd events, OK when there are none, Critical listing each event's time, user and host, and Unknown with the error when Elasticsearch cannot be asked",
+   "checks": [
+    "the-elastic-check-is-unknown-without-elasticsearch",
+    "the-elastic-check-is-ok-with-no-events",
+    "the-elastic-check-is-critical-with-events",
+    "the-elastic-check-asks-for-the-query"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "on RedHat the package-count check counts the security updates of a severity (dnf or yum updateinfo, Important by default)",
+   "checks": [
+    "on-redhat-the-package-count-uses-updateinfo"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "on RedHat the same checks are installed (the computed package name nagios-plugins-disk is not used by any resource)",
+   "checks": [
+    "on-redhat-the-checks-are-installed",
+    "on-redhat-the-os-version-check-reads-os-release"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 410.0
+}

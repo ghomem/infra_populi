@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.sysmon_base"><testsuite name="phase3.sysmon_base.clean" tests="22" failures="0"><testcase classname="phase3.sysmon_base.clean" name="the-checks-are-installed" /><testcase classname="phase3.sysmon_base.clean" name="the-reboot-check-says-ok" /><testcase classname="phase3.sysmon_base.clean" name="the-file-handle-check-reports-the-kernel-counts" /><testcase classname="phase3.sysmon_base.clean" name="the-connection-checks-count-real-connections" /><testcase classname="phase3.sysmon_base.clean" name="the-bandwidth-check-reports-throughput" /><testcase classname="phase3.sysmon_base.clean" name="cpu-and-memory-are-reported" /><testcase classname="phase3.sysmon_base.clean" name="the-elastic-check-is-unknown-without-elasticsearch" /><testcase classname="phase3.sysmon_base.clean" name="the-os-check-reports-the-release" /><testcase classname="phase3.sysmon_base.clean" name="the-puppet-check-ok-then-unknown-under-lock" /><testcase classname="phase3.sysmon_base.clean" name="a-pending-reboot-gives-a-warning" /><testcase classname="phase3.sysmon_base.clean" name="the-package-count-check-warns-at-its-threshold" /><testcase classname="phase3.sysmon_base.clean" name="the-latency-check-times-a-write" /><testcase classname="phase3.sysmon_base.clean" name="the-certificate-check-reports-expiry-in-short-words" /><testcase classname="phase3.sysmon_base.clean" name="the-puppet-check-is-critical-when-the-agent-is-disabled" /><testcase classname="phase3.sysmon_base.clean" name="a-stale-package-list-raises-the-alarm" /><testcase classname="phase3.sysmon_base.clean" name="the-cpu-plugin-is-critical-under-load" /><testcase classname="phase3.sysmon_base.clean" name="the-peer-sends-traffic" /><testcase classname="phase3.sysmon_base.clean" name="the-bandwidth-check-is-critical-above-its-threshold" /><testcase classname="phase3.sysmon_base.clean" name="the-elastic-check-is-ok-with-no-events" /><testcase classname="phase3.sysmon_base.clean" name="the-elastic-check-is-critical-with-events" /><testcase classname="phase3.sysmon_base.clean" name="the-elastic-check-asks-for-the-query" /><testcase classname="phase3.sysmon_base.clean" name="the-puppet-check-is-critical-when-a-resource-fails" /></testsuite><testsuite name="phase3.sysmon_base.applied" tests="22" failures="0"><testcase classname="phase3.sysmon_base.applied" name="the-checks-are-installed" /><testcase classname="phase3.sysmon_base.applied" name="the-reboot-check-says-ok" /><testcase classname="phase3.sysmon_base.applied" name="the-file-handle-check-reports-the-kernel-counts" /><testcase classname="phase3.sysmon_base.applied" name="the-connection-checks-count-real-connections" /><testcase classname="phase3.sysmon_base.applied" name="the-bandwidth-check-reports-throughput" /><testcase classname="phase3.sysmon_base.applied" name="cpu-and-memory-are-reported" /><testcase classname="phase3.sysmon_base.applied" name="the-elastic-check-is-unknown-without-elasticsearch" /><testcase classname="phase3.sysmon_base.applied" name="the-os-check-reports-the-release" /><testcase classname="phase3.sysmon_base.applied" name="the-puppet-check-ok-then-unknown-under-lock" /><testcase classname="phase3.sysmon_base.applied" name="a-pending-reboot-gives-a-warning" /><testcase classname="phase3.sysmon_base.applied" name="the-package-count-check-warns-at-its-threshold" /><testcase classname="phase3.sysmon_base.applied" name="the-latency-check-times-a-write" /><testcase classname="phase3.sysmon_base.applied" name="the-certificate-check-reports-expiry-in-short-words" /><testcase classname="phase3.sysmon_base.applied" name="the-puppet-check-is-critical-when-the-agent-is-disabled" /><testcase classname="phase3.sysmon_base.applied" name="a-stale-package-list-raises-the-alarm" /><testcase classname="phase3.sysmon_base.applied" name="the-cpu-plugin-is-critical-under-load" /><testcase classname="phase3.sysmon_base.applied" name="the-peer-sends-traffic" /><testcase classname="phase3.sysmon_base.applied" name="the-bandwidth-check-is-critical-above-its-threshold" /><testcase classname="phase3.sysmon_base.applied" name="the-elastic-check-is-ok-with-no-events" /><testcase classname="phase3.sysmon_base.applied" name="the-elastic-check-is-critical-with-events" /><testcase classname="phase3.sysmon_base.applied" name="the-elastic-check-asks-for-the-query" /><testcase classname="phase3.sysmon_base.applied" name="the-puppet-check-is-critical-when-a-resource-fails" /></testsuite><testsuite name="phase3.sysmon_base.rhel.clean" tests="3" failures="0"><testcase classname="phase3.sysmon_base.rhel.clean" name="on-redhat-the-checks-are-installed" /><testcase classname="phase3.sysmon_base.rhel.clean" name="on-redhat-the-os-version-check-reads-os-release" /><testcase classname="phase3.sysmon_base.rhel.clean" name="on-redhat-the-package-count-uses-updateinfo" /></testsuite><testsuite name="phase3.sysmon_base.rhel.applied" tests="3" failures="1"><testcase classname="phase3.sysmon_base.rhel.applied" name="on-redhat-the-checks-are-installed" /><testcase classname="phase3.sysmon_base.rhel.applied" name="on-redhat-the-os-version-check-reads-os-release" /><testcase classname="phase3.sysmon_base.rhel.applied" name="on-redhat-the-package-count-uses-updateinfo"><failure message="check failed after the class was applied (finding)">rc 0
+_64
+python3-3.9.25-7.el9_8.3.x86_64
+python3-3.9.25-7.el9_8.6.x86_64
+python3-3.9.25-7.el9_8.x86_64
+python3-libs-3.9.21-2.el9_6.1.x86_64
+python3-libs-3.9.25-3.el9_7.2.x86_64
+python3-libs-3.9.25-3.el9_7.3.x86_64
+python3-libs-3.9.25-7.el9_8.2.x86_64
+python3-libs-3.9.25-7.el9_8.3.x86_64
+python3-libs-3.9.25-7.el9_8.6.x86_64
+python3-libs-3.9.25-7.el9_8.x86_64
+python3-urllib3-1.26.5-6.el9_7.1.noarch
+python3-urllib3-1.26.5-8.el9_8.2.noarch
+python3-urllib3-1.26.5-8.el9_8.noarch
+rhc-1:0.2.7-11.el9_8.x86_64
+rhc-1:0.2.7-13.el9_8.x86_64
+rhc-1:0.2.7-15.el9_9.x86_64
+rhc-1:0.2.7-16.el9_8.x86_64
+rhc-1:0.2.7-18.el9_9.x86_64
+rhc-1:0.2.7-2.el9_7.x86_64
+rhc-1:0.2.7-3.el9_7.x86_64
+rhc-1:0.2.7-4.el9_7.x86_64
+rhc-1:0.2.7-5.el9_8.x86_64
+rhc-1:0.2.7-6.el9_8.x86_64
+rhc-1:0.2.7-7.el9_8.x86_64
+rhc-1:0.2.7-8.el9_8.x86_64
+rsyslog-8.2510.0-2.el9_8.2.x86_64
+rsyslog-8.2604.0-4.el9_9.1.x86_64
+rsyslog-logrotate-8.2510.0-2.el9_8.2.x86_64
+sg3_utils-1.47-10.el9_8.1.x86_64
+sg3_utils-libs-1.47-10.el9_8.1.x86_64
+sqlite-libs-3.34.1-11.el9_8.x86_64
+sqlite-libs-3.34.1-8.el9_6.x86_64
+sqlite-libs-3.34.1-9.el9_7.x86_64
+sssd-client-2.9.7-4.el9_7.1.x86_64
+sssd-client-2.9.8-4.el9_8.1.x86_64
+sssd-common-2.9.7-4.el9_7.1.x86_64
+sssd-common-2.9.8-4.el9_8.1.x86_64
+sssd-kcm-2.9.7-4.el9_7.1.x86_64
+sssd-kcm-2.9.8-4.el9_8.1.x86_64
+sudo-1.9.17p2-3.el9_8.1.x86_64
+sudo-1.9.17p2-3.el9_8.3.x86_64
+sudo-1.9.17p2-3.el9_8.x86_64
+sudo-1.9.5p2-10.el9_6.1.x86_64
+sudo-1.9.5p2-15.el9_7.x86_64
+util-linux-2.37.4-28.el9_9.1.x86_64
+util-linux-2.37.4-28.el9_9.x86_64
+util-linux-core-2.37.4-28.el9_9.1.x86_64
+util-linux-core-2.37.4-28.el9_9.x86_64
+vim-minimal-2:8.2.2637-23.el9_7.2.x86_64
+vim-minimal-2:8.2.2637-23.el9_7.3.x86_64
+vim-minimal-2:8.2.2637-26.el9_8.10.x86_64
+vim-minimal-2:8.2.2637-26.el9_8.13.x86_64
+vim-minimal-2:8.2.2637-26.el9_8.21.x86_64
+vim-minimal-2:8.2.2637-26.el9_8.23.x86_64
+vim-minimal-2:8.2.2637-26.el9_8.4.x86_64
+vim-minimal-2:8.2.2637-44.el9_9.x86_64
+xfsprogs-6.4.0-10.el9_9.x86_64 rc=1
+count equals dnf's list
+count at least 1
+
+</failure></testcase></testsuite></testsuites>

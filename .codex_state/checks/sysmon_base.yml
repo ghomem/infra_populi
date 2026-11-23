@@ -22,6 +22,11 @@ peer:
 outcomes:
   # Correction round 3 (2026-11-19, HQ batch-12 ruling 3; review 20261118T211242Z): the Puppet check's failed-run
   # CRITICAL branch (agent exit above 2) is exercised, and the Elasticsearch stand-in records the request it gets.
+  # Sweep correction round 1 (2026-11-23, review FAIL cc10c36; the sweep's own review cycle): the RedHat package count is
+  # checked against dnf's own list at a threshold it reaches (558 Important entries measured on the rhel9 node that day),
+  # the RHEL install check covers every file as the Ubuntu one does, and check_os_version.sh runs on rhel9 (no lsb_release).
+  # Its first run (20261123T181515Z) printed the state word of every line: the check's output carries its package list
+  # over many lines (WARNING, rc=1, the count equal to dnf's, all as expected); the effect now reads the first line only.
   # Correction round 2 (2026-11-18, review 20261118T210122Z): the Elasticsearch check is exercised on the node (it
   # queries localhost:9200, so a stand-in there drives it), and the RHEL package-count branch has its own row.
   # Correction round 1 (2026-11-18, review 20261118T204912Z): every alarm path is now exercised (the Puppet check's
@@ -68,7 +73,7 @@ outcomes:
     checks: [on-redhat-the-package-count-uses-updateinfo]
   - outcome: on RedHat the same checks are installed (the computed package name nagios-plugins-disk is not used by any resource)
     from: manifests/sysmon_base.pp:4-15
-    checks: [on-redhat-the-checks-are-installed]
+    checks: [on-redhat-the-checks-are-installed, on-redhat-the-os-version-check-reads-os-release]
 variants:
   - name: rhel
     why: the RedHat branch (the same checks installed; the package count from dnf updateinfo), on the rhel9 node
@@ -429,33 +434,71 @@ checks:
 
   - id: on-redhat-the-checks-are-installed
     variant: rhel
-    what: on RedHat the check scripts are installed root:root 0755 in bin, and check_cpu.py in /usr/lib64/nagios/plugins
+    what: >-
+      on RedHat the same checks are installed as on Ubuntu: every check root:root 0755, the module's files byte for
+      byte (nagios-puppet.sh by owner and mode only), and check_cpu.py runs under the local mypython
     control: negative
     derived_from:
-      - {path: manifests/sysmon_base.pp, lines: "23-31", text: "file { \"${localdir}/bin/nagios-puppet.sh\":"}
-      - {path: manifests/sysmon_base.pp, lines: "68-76", text: "file { \"${localdir}/bin/check_package_count.sh\":"}
-      - {path: manifests/sysmon_base.pp, lines: "95-100", text: "file { '/usr/lib64/nagios/plugins/check_cpu.py':"}
+      - {path: manifests/sysmon_base.pp, lines: "22-29", text: "source  => 'puppet:///modules/puppet_infrastructure/sysmon/nagios-puppet.sh',"}
+      - {path: manifests/sysmon_base.pp, lines: "95-101", text: "content => template('puppet_infrastructure/sysmon/check_cpu.py.erb'),"}
+      - {path: files/sysmon/check_reboot_required.sh, sha256: "9bacf362399850082a6bedaafd7989b5c6241909672bde173eddef2ef8b53835"}
+      - {path: files/sysmon/check_file_handles.sh, sha256: "7e4e37bfea8176710919ce81a4e8a9884005b2596bca0249c1060dd72b6878d4"}
+      - {path: files/sysmon/check_netstat_conns.sh, sha256: "7857765d96f23f987d877311fabd00c51624f25d890c28cef8d068673903f700"}
+      - {path: files/sysmon/check_netstat_cip.sh, sha256: "b23b5c205237f0e3c35c93657ffbb63336f60587a52f6b88f785e535092a242c"}
+      - {path: files/sysmon/check_package_count.sh, sha256: "a2a5bd075742a0073e201fc418fb5692177b4081d5f19d8082cbc83bd439f351"}
+      - {path: files/sysmon/check_bandwidth.sh, sha256: "93923b2ac8f27d18472598c51edd3a56c7a612607ae92aea1615161f87222e8d"}
+      - {path: files/sysmon/check_dd_latency.sh, sha256: "d2a32fb788053263612dbcf6765ef1cc0269e5f18c4d5522bf4ff691e5280b84"}
+      - {path: files/sysmon/check_os_version.sh, sha256: "0a586c32bcefc10c45bf150c81f520310a2f949ca5013acda6a3c9818342a43e"}
+      - {path: files/sysmon/check_http_ssl_cert.sh, sha256: "c1d17f8f136d3c5542ff09553cd3713578a99f8d0a1e900394aabcb161c97e77"}
+      - {path: files/sysmon/elastic_query_check.py, sha256: "901a03a3b60e6f3b7c433cf94ef056b4de2247b58d0b4b483a874d3c0927a168"}
+      - {path: files/sysmon/check_mem.pl, sha256: "aadc9c91a7faa555bcf3662860cddc69b5e884176f91f9170f0533baf887e560"}
     probe: |
-      cd /opt/puppet-infrastructure/bin && stat -c '%n %U:%G %a' nagios-puppet.sh check_reboot_required.sh check_package_count.sh check_dd_latency.sh
-      test -f /usr/lib64/nagios/plugins/check_cpu.py && echo "check_cpu.py installed"
-    expect: {rc: 0, stdout: "\\Anagios-puppet\\.sh root:root 755\\ncheck_reboot_required\\.sh root:root 755\\ncheck_package_count\\.sh root:root 755\\ncheck_dd_latency\\.sh root:root 755\\ncheck_cpu\\.py installed\\n\\Z"}
+      B=/opt/puppet-infrastructure/bin; P=/usr/lib64/nagios/plugins
+      stat -c '%U:%G %a' $B/nagios-puppet.sh
+      cd $B && sha256sum check_reboot_required.sh check_file_handles.sh check_netstat_conns.sh check_netstat_cip.sh check_package_count.sh check_bandwidth.sh check_dd_latency.sh check_os_version.sh check_http_ssl_cert.sh elastic_query_check.py | awk '{print $1}' | paste -sd' '
+      sha256sum $P/check_mem.pl | cut -d' ' -f1
+      stat -c '%U:%G %a' $B/check_*.sh $B/elastic_query_check.py $P/check_mem.pl $P/check_cpu.py | sort -u
+      head -1 $P/check_cpu.py
+    expect: {rc: 0, stdout: "\\Aroot:root 755\\n9bacf362399850082a6bedaafd7989b5c6241909672bde173eddef2ef8b53835 7e4e37bfea8176710919ce81a4e8a9884005b2596bca0249c1060dd72b6878d4 7857765d96f23f987d877311fabd00c51624f25d890c28cef8d068673903f700 b23b5c205237f0e3c35c93657ffbb63336f60587a52f6b88f785e535092a242c a2a5bd075742a0073e201fc418fb5692177b4081d5f19d8082cbc83bd439f351 93923b2ac8f27d18472598c51edd3a56c7a612607ae92aea1615161f87222e8d d2a32fb788053263612dbcf6765ef1cc0269e5f18c4d5522bf4ff691e5280b84 0a586c32bcefc10c45bf150c81f520310a2f949ca5013acda6a3c9818342a43e c1d17f8f136d3c5542ff09553cd3713578a99f8d0a1e900394aabcb161c97e77 901a03a3b60e6f3b7c433cf94ef056b4de2247b58d0b4b483a874d3c0927a168\\naadc9c91a7faa555bcf3662860cddc69b5e884176f91f9170f0533baf887e560\\nroot:root 755\\n#!/opt/puppet-infrastructure/bin/mypython\\n\\Z"}
+
+  - id: on-redhat-the-os-version-check-reads-os-release
+    variant: rhel
+    what: >-
+      on RedHat, which has no lsb_release, the OS-version check takes the name and version from /etc/os-release and
+      answers OK with them, exit 0
+    control: negative
+    derived_from:
+      - {path: files/sysmon/check_os_version.sh, sha256: "0a586c32bcefc10c45bf150c81f520310a2f949ca5013acda6a3c9818342a43e"}
+      - {path: manifests/sysmon_base.pp, lines: "113-118", text: "source  => 'puppet:///modules/puppet_infrastructure/sysmon/check_os_version.sh',"}
+    probe: |
+      command -v lsb_release >/dev/null || echo "no lsb_release"
+      . /etc/os-release
+      out=$(/opt/puppet-infrastructure/bin/check_os_version.sh); rc=$?
+      [ "$out" = "OK - OS: $NAME $VERSION_ID" ] && echo "OK from os-release: $NAME" || echo "got: $out"
+      echo "rc=$rc"
+    expect: {rc: 0, stdout: "\\Ano lsb_release\\nOK from os-release: Red Hat Enterprise Linux\\nrc=0\\n\\Z"}
 
   - id: on-redhat-the-package-count-uses-updateinfo
     variant: rhel
     what: >-
-      on RedHat the package-count check counts the security updates of the Important severity through dnf updateinfo
-      (no apt there) and answers OK below a threshold no count reaches, with exit 0
+      on RedHat the package-count check counts the security updates of the Important severity through dnf updateinfo:
+      with a threshold of 1 it answers WARNING with exit 1, and its pkg_count equals the number of entries dnf itself
+      lists for that severity right after (from the cache the check just used), at least 1 on the registered node
     control: negative
     timeout: 300
     derived_from:
       - {path: files/sysmon/check_package_count.sh, sha256: "a2a5bd075742a0073e201fc418fb5692177b4081d5f19d8082cbc83bd439f351"}
     mutates: >-
-      runs the package-count check once (dnf may refresh its metadata cache); the outcome goes to /run/p8test-pkgcount.txt
+      runs the package-count check once (dnf may refresh its metadata cache), its output and exit code kept in
+      /run/p8test-pkgcount; then lists dnf's Important security updates from that cache into the same directory
     probe: |
-      command -v apt >/dev/null && echo "apt present" > /run/p8test-pkgcount.txt || : > /run/p8test-pkgcount.txt
-      out=$(/opt/puppet-infrastructure/bin/check_package_count.sh 100000 Important 2>/dev/null); rc=$?
-      printf '%s\n' "$out" | head -1 | cut -d' ' -f1-2 >> /run/p8test-pkgcount.txt
-      echo "rc=$rc" >> /run/p8test-pkgcount.txt
+      install -d -m 0700 /run/p8test-pkgcount
+      /opt/puppet-infrastructure/bin/check_package_count.sh 1 Important > /run/p8test-pkgcount/out 2>/dev/null; echo "$?" > /run/p8test-pkgcount/rc
+      dnf -C -q updateinfo list --sec-severity=Important > /run/p8test-pkgcount/dnf 2>/dev/null
     effect: |
-      cat /run/p8test-pkgcount.txt
-    expect: {rc: 0, stdout: "\\AOK -\\nrc=0\\n\\Z"}
+      d=/run/p8test-pkgcount
+      echo "$(head -1 $d/out | cut -d' ' -f1) rc=$(cat $d/rc)"
+      n=$(sed -n 's/.*| pkg_count=\([0-9]*\);.*/\1/p' $d/out); m=$(awk 'NF == 3' $d/dnf | wc -l)
+      [ -n "$n" ] && [ "$n" = "$m" ] && echo "count equals dnf's list" || echo "count $n, dnf lists $m"
+      [ "${n:-0}" -ge 1 ] && echo "count at least 1"
+    expect: {rc: 0, stdout: "\\AWARNING rc=1\\ncount equals dnf's list\\ncount at least 1\\n\\Z"}
