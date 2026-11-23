@@ -3,7 +3,8 @@
 # node's hashman database"). user_lock locks a user that already exists in hashman's database; on a real master the
 # user was created through hashman beforehand. Here hashman itself creates p8testuser, as an administrator would:
 # `pp_auth.py useradd ... SILENT` (a new user starts locked, with an initial password hashman generates and prints),
-# then `pp_auth.py unlock`, so that the lock user_lock applies is its own. No hash is seeded. The initial password is
+# then `pp_auth.py unlock` and `unexpire`, so that the lock user_lock applies is its own (on the Unix and the Samba
+# hash); the Samba hash's state before the lock goes to /root/p8test-hashman-smb-before-lock. No hash is seeded. The initial password is
 # kept in /root/p8test-hashman-initial (0600) for the behaviour check that the locked user is refused although the
 # password matches; it is a throwaway password of a p8test account on a lab node, never a real user's.
 # Runs only if hashman's database has no entry for p8testuser yet, and before user_lock's exec.
@@ -26,6 +27,11 @@ file { '/usr/local/sbin/p8test-create-hashman-user':
     printf '%s' "$out" | sed -n 's/.*created with initial password //p' | head -1 | tr -d '\n' > /root/p8test-hashman-initial
     test -s /root/p8test-hashman-initial
     ./pp_auth.py unlock p8testuser "p8test fixture" > /dev/null
+    # hashman's useradd expires the new password, and an expired entry's Samba hash carries the lock prefix too: clear
+    # the expiry, so that before the lock the user is neither locked nor expired (user_lock checkset round 3)
+    ./pp_auth.py unexpire p8testuser > /dev/null
+    if grep -q "^\$p8testuser_pwd_hash_smb = '!" "$db/hashes_smb.pp"; then echo locked; else echo valid; fi \
+      > /root/p8test-hashman-smb-before-lock
     | CREATE
 }
 exec { 'p8test create p8testuser through hashman':
