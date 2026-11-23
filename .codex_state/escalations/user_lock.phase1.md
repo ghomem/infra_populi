@@ -1,4 +1,4 @@
-# user_lock — Phase 1 review FAIL on provenance after the stand-in lift (OPEN, for HQ: the run is stopped)
+# user_lock — Phase 1 review FAIL on provenance after the stand-in lift (CLOSED: HQ 2026-11-23 ruling 1, option A; Phase 1 PASS 20261123T014847Z)
 
 ## What happened
 HQ after batch 20, item 6 lifts user_lock's stand-in. Done (7175bca): the class runs on the master-role node
@@ -27,3 +27,12 @@ would still find 3731d97 as the newest migrate commit. A standing Phase 1 FAIL i
   reports a later class-file-free migrate commit as a records commit. Then one more review of user_lock.
 - **B:** provenance unchanged; user_lock stays FAIL on provenance with a note in the approval report (its behaviour is
   verified on the master-role node).
+
+## Resolution (2026-11-23)
+HQ ruling 1, option A kept narrow (a3df1b6): record_green refuses a migrate commit that changes no class file and
+points to --fix; provenance ignores such an empty migrate commit only after an earlier migrate commit that changed the
+class's files, and the verdict lists it (`ignored_migrate_commits`). Reviews:
+- 20261123T014324Z: provenance ok (3731d97 ignored, a795d98 read); FAIL on fixtures=error only: the class's node (the
+  master-role node) was powered off when the check read its NICs and accounts (`lab_power.sh up` starts the master
+  and the default node only). The node was reverted and started;
+- 20261123T014847Z: PASS.

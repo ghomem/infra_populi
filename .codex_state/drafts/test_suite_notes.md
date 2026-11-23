@@ -17,3 +17,6 @@ Collected 2026-11-22/23 while committing; each is measured, with its evidence.
   the full output of a failed run in a log file (proposal above).
 - record_green.sh accepted a re-record with no class change, making a `P8: migrate` commit that the reviewer's
   provenance check refuses (user_lock, review 20261123T011346Z; HQ 2026-11-23 ruling 1).
+- review_class.py's fixtures check reads the class's node over ssh before the harness starts it; with the node powered
+  off (lab_power.sh up starts only the master and the default node) it reports fixtures=error (user_lock review
+  20261123T014324Z). Proposal: start/revert the class's node first, or name the cause ("the class's node is not running").
