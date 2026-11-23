@@ -3,6 +3,9 @@
 # nginx, tag alpine, app_port 80, host_port 18080; no registry login, digest, volumes, env or command; network bridge.
 # The container is named after the title, and puppetlabs-docker 10.4.1 runs it as systemd unit docker-<title>. Probes
 # read the node's own docker and loopback.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): environment, a named volume, a command and another network
+# (production uses them) are checks in the variant runs `runopts` and `nonet`; digest is an accepted gap; the registry
+# login and the image-change recreation name what is missing.
 class: docker_container
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -24,10 +27,39 @@ outcomes:
     checks: [the-container-is-killed, the-service-starts-it-again]
   - outcome: the container is recreated when its image changes (subscribe to the image)
     from: manifests/docker_container.pp:92
-    uncovered: {why: "needs a second image version behind the same tag between two agent runs, which needs a registry the lab controls", lifted_by: ubuntu}
-  - outcome: registry login, a digest, named volumes, environment, command and network variants
+    uncovered:
+      why: >-
+        needs a second image version behind the same tag between two agent runs, which needs a registry the lab
+        controls (the lab pulls from Docker Hub)
+      lifted_by: "capability: a container registry in the lab"
+      evidence: >-
+        nodes.yml (2026-11-23): no node kind runs a registry, and no class of the repository installs one
+  - outcome: environment, a named volume, a command and another network reach the container
     from: manifests/docker_container.pp:7-14, 26-40, 59-80
-    uncovered: {why: "fixture variants (one set holds one fixture); a registry login also needs a private registry", lifted_by: ubuntu}
+    checks: [environment-volume-and-command-reach-the-container, another-network-is-used]
+  - outcome: a registry login (username and token)
+    from: manifests/docker_container.pp:7-14, 26-40, 59-80
+    uncovered:
+      why: a login needs a private registry with credentials; production sets them (5 node statements)
+      lifted_by: "capability: a private container registry in the lab"
+      evidence: >-
+        nodes.yml (2026-11-23): no node kind runs a registry; diagnosis/fleet_variant_usage.md: username and token set on
+        5 production node statements
+  - outcome: an image pinned by digest
+    from: manifests/docker_container.pp:7-14, 26-40, 59-80
+    uncovered:
+      why: a parameter variant no production node uses
+      accepted_gap: [digest]
+      evidence: >-
+        diagnosis/fleet_variant_usage.md (2026-11-23): no production node statement sets digest, and no class of the
+        repository sets it on docker_container
+variants:
+  - name: runopts
+    why: environment, a named volume and a command, which production sets (7, 5 and 1 node statements)
+    params: runopts
+  - name: nonet
+    why: another network (none here), which production sets (2 node statements), without published ports
+    params: nonet
 checks:
   - id: the-container-runs-the-image-under-systemd
     what: the image nginx:alpine is present, the unit docker-docker_container is active, and the running container docker_container uses that image
@@ -92,3 +124,30 @@ checks:
       [ "${now%% *}" = true ] && [ "${now#* }" != "$before" ] && echo started-again
       curl -s --max-time 5 http://127.0.0.1:18080/ | grep -c '<h1>Welcome to nginx'
     expect: {rc: 0, stdout: "\\Astarted-again\\n1\\n\\Z"}
+
+  - id: environment-volume-and-command-reach-the-container
+    variant: runopts
+    what: >-
+      the running container has the environment variable P8TEST_ENV=on, the named volume p8test-vol mounted at
+      /p8test-data, and the given command
+    control: negative
+    derived_from:
+      - {path: manifests/docker_container.pp, lines: "82-93", text: "env                               => $env,"}
+      - {path: manifests/docker_container.pp, lines: "59-79", text: "command => \"/usr/bin/docker volume create ${vol}\","}
+    probe: |
+      docker inspect -f '{{.State.Running}}' docker_container
+      docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' docker_container | grep -x 'P8TEST_ENV=on'
+      docker inspect -f '{{range .Mounts}}{{.Name}} {{.Destination}}{{println}}{{end}}' docker_container | grep -x 'p8test-vol /p8test-data'
+      docker inspect -f '{{json .Config.Cmd}}' docker_container | grep -c 'daemon off;'
+    expect: {rc: 0, stdout: "\\Atrue\\nP8TEST_ENV=on\\np8test-vol /p8test-data\\n1\\n\\Z"}
+
+  - id: another-network-is-used
+    variant: nonet
+    what: with network none the container runs in that network mode, with no published port
+    control: negative
+    derived_from:
+      - {path: manifests/docker_container.pp, lines: "82-93", text: "net                               => $network,"}
+    probe: |
+      docker inspect -f '{{.State.Running}} {{.HostConfig.NetworkMode}}' docker_container
+      docker port docker_container | wc -l
+    expect: {rc: 0, stdout: "\\Atrue none\\n0\\n\\Z"}
