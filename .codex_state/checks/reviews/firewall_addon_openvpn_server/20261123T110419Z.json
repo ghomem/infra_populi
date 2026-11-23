@@ -1,0 +1,35 @@
+{
+ "class": "firewall_addon_openvpn_server",
+ "at": "20261123T110419Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "forward-bridge-to-wan: baseline line 17 declares firewall '202' chain FORWARD iniface $lan_bridge_iface outiface $wan_iface proto all action accept; with the params fixture (p8test1/p8test0) the probe greps that comment in iptables -S FORWARD and expects -i p8test1 -o p8test0, no -p, no --state, -j ACCEPT: exactly what the line produces",
+  "a-lan-host-reaches-the-wan-masqueraded: lines 17 (rule 202 forward bridge->WAN) and 21 (rule 205 MASQUERADE on outiface $wan_iface) together mean a LAN host's connection out of p8test0 is forwarded and source-NATed to the node's WAN address; the effect connects from netns p8testlan to the WAN server, which echoes the peer address, and expects 10.252.0.1 (the node's p8test0 address), not 10.252.1.2",
+  "a-wan-host-cannot-open-a-connection-into-the-lan: line 18 accepts WAN->bridge only with state RELATED,ESTABLISHED, so a NEW connection from the WAN falls through to the base firewall's FORWARD drop (here the declared stand-in appended after the class's rules); the effect has the WAN netns (routed to 10.252.1.0/24 via the node) try 10.252.1.2:8081 and expects no connection, with wan-present guarding against a vacuous pass; the counter check confirms 203 counted replies and the stand-in drop counted this attempt",
+  "purpose covered: Purpose (header line 2: firewall configuration for an OpenVPN server bridging clients onto a LAN bridge) matches the manifest, which declares only rules 202-205 and sysctl net.ipv4.ip_forward. Every outcome is tested as behaviour on the node with namespaces: bridge->WAN forwarded and masqueraded (the WAN server sees 10.252.0.1), WAN->LAN new connections refused while replies pass (203 counted), the hairpin across two subnets on bridge p8test1 accepted by rule 204 ahead of a stand-in drop (204 counted), ip_forward on now and persisted in /etc/sysctl.d, plus direct rule reads for 202-205. The only uncovered row, client_isolation, is honest: grep shows the parameter only in its declaration (current line 13) and the class's own warning (baseline lines 4-5); no resource reads it (it is used in openvpn_server.pp, not here), so lifted_by 'capability: an implementation in the class' is correct. My reviewer run 20261123T105954Z: valid clean phase (10/10 negatives failed), ALL_PASS applied, no findings."
+ ],
+ "review_s": 265.3,
+ "check_file_sha256": "f9e60f0e11795e5ebd087f0dcabb9c6280fd67ea516b130ec3c4544794345d2c",
+ "content_sha256": "f9e60f0e11795e5ebd087f0dcabb9c6280fd67ea516b130ec3c4544794345d2c",
+ "reviewer_result": "20261123T105954Z-reviewer",
+ "author_result": "20261123T094707Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "43171de4-d6f9-4bbe-a88a-3314c8efcf7f",
+   "apt_mirror": "fallback http://mirrors.edge.kernel.org/ubuntu/",
+   "boot_id_at_end": "43171de4-d6f9-4bbe-a88a-3314c8efcf7f",
+   "fresh": true
+  }
+ }
+}
