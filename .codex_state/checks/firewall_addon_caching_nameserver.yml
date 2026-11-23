@@ -6,6 +6,7 @@
 # 10.250.0.1:53 and :5353, and a stand-in for the base firewall's default drop (the class is complementary, like
 # firewall_addon_web) appended after the class's rule: UDP to 53 and 5353 arriving on p8test0 is dropped. Everything
 # stays on the node.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1c): the port variant is an accepted gap (production does not set it).
 class: firewall_addon_caching_nameserver
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -21,7 +22,12 @@ outcomes:
     checks: [a-lan-client-a-responder-and-a-default-drop, the-lan-client-reaches-port-53-only, rule-1301-accepted-the-lan-client]
   - outcome: another nameserver port (port parameter)
     from: manifests/firewall_addon_caching_nameserver.pp:7
-    uncovered: {why: "a fixture variant (one set holds one fixture, the default 53); untested", lifted_by: ubuntu}
+    uncovered:
+      why: another port is a parameter variant (the fixture keeps the default 53)
+      accepted_gap: [port]
+      evidence: >-
+        diagnosis/fleet_variant_usage.md (2026-11-23): no production node statement sets port on this class, and no
+        class of the repository sets it (network_vpn passes lan_iface only)
 checks:
   - id: the-nameserver-rule
     what: INPUT holds rule 1301, accepting UDP to port 53 on interface p8test0
