@@ -14,6 +14,7 @@
 # master-role server, as p8test-hashman-client, applies the user, and PAM on the peer then accepts the new password
 # and refuses the initial one. The initial password goes from the node to the peer as a handed-over file. Node probes
 # name no lab host; peer probes name only the class node's host-only address.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1d): the three one-off rows name what is missing, with their evidence.
 class: hashman_web
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -62,13 +63,34 @@ outcomes:
     checks: [the-password-strength-api-answers-through-nginx]
   - outcome: help requests and password e-mails reach the team and the user
     from: templates/hashman/httpserver/httpserver.py.erb:213-227 (reqhelp); templates/hashman/libhashman/mailutils.py.erb
-    uncovered: {why: "the lab's relay host is fake, so mail leaves the master's MTA for nowhere; delivery needs ubuntu2 running a mail server that the master's postfix relays to (not in its baseline)", lifted_by: ubuntu2}
+    uncovered:
+      why: >-
+        the lab's relay host is fake, so mail leaves the master's MTA for nowhere; delivery needs a mail server the
+        master's postfix relays to, which no baseline class installs
+      lifted_by: "capability: a lab mail server (on the peer) that the master's postfix relays to"
+      evidence: >-
+        the lab Hiera's postfix_smtp_node::relayhost is a placeholder (master_fixtures.sh); no class of the repository
+        installs a receiving mail server
   - outcome: users sign data and verify signatures with the portal's key
     from: templates/hashman/httpserver/httpserver.py.erb:242-282 (/sign, /verify; PRIV_KEY and PUB_KEY at lines 73-74)
-    uncovered: {why: "no baseline class deploys ${hashmandir}/ssl/hashman-key.pem or hashman-pubkey.pem (files/hashman/ssl ships only a public key that no manifest installs), so a site provides the key pair by hand", lifted_by: puppetserver}
+    uncovered:
+      why: >-
+        no baseline class deploys ${hashmandir}/ssl/hashman-key.pem or hashman-pubkey.pem (files/hashman/ssl ships only a
+        public key that no manifest installs), so a site provides the key pair by hand
+      lifted_by: "capability: a site-provided hashman key pair (a production read or a site step, not a class)"
+      evidence: >-
+        git ls-tree at the baseline: files/hashman/ssl holds hashman-pubkey.pem only, and no manifest names it or the
+        private key
   - outcome: with server-side session expiry on, an idle session is ended after the timeout
     from: templates/hashman/httpserver/httpserver.py.erb:196-209; manifests/hashman_web.pp (hashman::active_session_expiration, default False)
-    uncovered: {why: "off under the default, which this fixture keeps; a second fixture with hashman::active_session_expiration true would test it", lifted_by: puppetserver}
+    uncovered:
+      why: >-
+        off under the default, which the lab Hiera keeps; server-side session expiry is the Hiera key
+        hashman::active_session_expiration, which a variant run does not vary
+      lifted_by: "capability: a Hiera variant per run (phase3.py variants vary the node kind and the class's params fixture)"
+      evidence: >-
+        manifests/hashman_web.pp:36 reads it with lookup(); phase3.py variant_problems (2026-11-23): a variant takes node
+        and/or params only
 checks:
   # 2026-11-18 (HQ batch-10 ruling 6, policy B): the backend binds to 127.0.0.1 (local change #2); this check expected
   # the baseline's 0.0.0.0 before.
