@@ -1,0 +1,35 @@
+{
+ "class": "extra_packages_el",
+ "at": "20261123T102433Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "codeready-builder-enabled: baseline 13-16 runs 'subscription-manager repos --enable codeready-builder-for-rhel-${os_major_version}-${os_architecture}-rpms' guarded by the same --list-enabled grep; the probe reads that same list-enabled output plus dnf repolist and expects exactly codeready-builder-for-rhel-9-x86_64-rpms, the value the facts produce on the rhel9 node (RHEL 9.5, x86_64); it failed on the clean node (CRB off) and passed after apply",
+  "baseos-appstream-still-enabled: baseline 13-16 only enables one repository (--enable, no --disable, no other repo resource), so BaseOS/AppStream enabled at the registered baseline must stay enabled; invariant plausible (why_invariant matches nodes.yml rhel9 'registered; BaseOS + AppStream'), passed on clean and applied nodes",
+  "epel-release-installed: baseline 6-10 installs epel-release-latest-${os_major_version}.noarch.rpm with dnf, guarded by 'rpm -q epel-release'; the probe checks rpm -q epel-release with VERSION 9 (major 9 on this node) and that the epel repository it ships is enabled in dnf; failed clean, passed applied",
+  "purpose covered: Purpose matches the baseline manifest (two execs: EPEL release package for the node's major version, then CodeReady Builder for major/arch via subscription-manager; nothing else). Checks test the job, not just state: htop (EPEL-only) installs with dnf and repoquery reports from_repo epel; ninja-build installs and reports codeready-builder-for-rhel-9-x86_64-rpms; plus repo-enabled checks and a base-repo invariant. Mutating checks declare their installs and judge on a read-only repoquery effect, not the action's output. Uncovered: the RHEL 8 instantiation of the same fact-parameterised execs (lines 3-4; the row says 'branch', but the code is one path with the major version from facts); evidence true: nodes.py list shows ubuntu, rhel9, kubuntu, gnome, ubuntu2, dc, puppetserver, no RHEL 8 kind; lifted_by capability is correct. Nothing the lab can exercise is left out."
+ ],
+ "review_s": 204.3,
+ "check_file_sha256": "68741f8a789171c26759c07eaf0335d8b9c8dafe84234ee4387186eaaf3cf099",
+ "content_sha256": "68741f8a789171c26759c07eaf0335d8b9c8dafe84234ee4387186eaaf3cf099",
+ "reviewer_result": "20261123T102109Z-reviewer",
+ "author_result": "20261123T090256Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "rhel9",
+   "snapshot": "P8LAB_RHEL9_BASELINE_v2",
+   "boot_id": "80f825b0-8736-4c98-9005-7b5a5d6249b7",
+   "apt_mirror": null,
+   "boot_id_at_end": "80f825b0-8736-4c98-9005-7b5a5d6249b7",
+   "fresh": true
+  }
+ }
+}

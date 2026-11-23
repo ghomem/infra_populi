@@ -1,0 +1,172 @@
+{
+ "class": "extra_packages_el",
+ "role": "reviewer",
+ "at": "20261123T102109Z",
+ "runner": "3c5bde6",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "68741f8a789171c26759c07eaf0335d8b9c8dafe84234ee4387186eaaf3cf099",
+ "content_sha256": "68741f8a789171c26759c07eaf0335d8b9c8dafe84234ee4387186eaaf3cf099",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "epel-release-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "package epel-release is not installed\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "codeready-builder-enabled",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "baseos-appstream-still-enabled",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rhel-9-for-x86_64-appstream-rpms\nrhel-9-for-x86_64-baseos-rpms\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "an-epel-package-installs-from-epel",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-codeready-builder-package-installs-from-it",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "er\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795429377'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Extra_packages_el/Exec[install-epel-release]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Extra_packages_el/Exec[enable-codeready-builder-repo]/returns: executed successfully\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 38.32 seconds\u001b[0m\nRUN1_EVENTS: 2 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795429418'\u001b[0m\n\u001b[mNotice: Applied catalog in 6.77 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::extra_packages_el: 2 concrete resources (+0 defined-type instances)\n  Exec[install-epel-release]\n  Exec[enable-codeready-builder-repo]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP extra_packages_el b960a947c89c\n"
+ },
+ "applied": [
+  {
+   "id": "epel-release-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "epel-release 9\nepel\n",
+   "stderr": ""
+  },
+  {
+   "id": "codeready-builder-enabled",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "codeready-builder-for-rhel-9-x86_64-rpms\ncodeready-builder-for-rhel-9-x86_64-rpms\n",
+   "stderr": ""
+  },
+  {
+   "id": "baseos-appstream-still-enabled",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rhel-9-for-x86_64-appstream-rpms\nrhel-9-for-x86_64-baseos-rpms\n",
+   "stderr": ""
+  },
+  {
+   "id": "an-epel-package-installs-from-epel",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "htop from epel\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs the package htop on the node with dnf",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-codeready-builder-package-installs-from-it",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ninja-build from codeready-builder-for-rhel-9-x86_64-rpms\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs the package ninja-build on the node with dnf",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "rhel9",
+ "nodes": {
+  "node": {
+   "kind": "rhel9",
+   "snapshot": "P8LAB_RHEL9_BASELINE_v2",
+   "boot_id": "80f825b0-8736-4c98-9005-7b5a5d6249b7",
+   "apt_mirror": null,
+   "boot_id_at_end": "80f825b0-8736-4c98-9005-7b5a5d6249b7",
+   "fresh": true
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "EPEL is installed and enabled for the node's major version, and a package from it installs",
+   "checks": [
+    "epel-release-installed",
+    "an-epel-package-installs-from-epel"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "CodeReady Builder is enabled for the node's major version and architecture, and a package from it installs",
+   "checks": [
+    "codeready-builder-enabled",
+    "a-codeready-builder-package-installs-from-it"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the base repositories (BaseOS, AppStream) stay enabled",
+   "checks": [
+    "baseos-appstream-still-enabled"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the same on RHEL 8",
+   "uncovered": {
+    "why": "the lab has a RHEL 9 node only, so the RHEL 8 branch of the package list is not applied anywhere",
+    "lifted_by": "capability: a RHEL 8 node kind in nodes.yml",
+    "evidence": "nodes.py list (2026-11-23): ubuntu, rhel9, kubuntu, gnome, ubuntu2, dc and puppetserver; no RHEL 8 kind, active or planned"
+   }
+  }
+ ],
+ "duration_s": 187.5
+}
