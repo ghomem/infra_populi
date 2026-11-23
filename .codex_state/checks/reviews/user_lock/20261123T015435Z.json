@@ -1,0 +1,35 @@
+{
+ "class": "user_lock",
+ "at": "20261123T015435Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-samba-hash-is-locked-too: dbutils.py.erb:804-807 (lockpw: smbhashentry = mk_smb_lockness(username, pwentry); setpw(..., smbhashentry)) and miscutils.py.erb:139-142 give a locked user a Samba hash with LOCKPREFIX '!', written in place by setent; probe greps p8testuser's hashes_smb.pp line and expects '!' + a 24-char base64 NT hash (generatesmbhash), which is the value the code produces. The expectation is correct, but under this fixture the prefix was already there before the lock (see purpose evidence)",
+  "the-locked-user-is-refused-by-hashman: user_lock.pp:11-14 runs pp_auth.py lock; dbutils.py.erb:168-206 auth splits '!$!6$salt$hash' into parts[0]='!', strips the expiry prefix from the salt type, rebuilds pwentry as '!$6$...' and compares it with crypt(password, '$6$salt$'), so the locked entry returns E_ERR (rc=1) while the same password matches the entry without the '!' (the probe's crypt line, which replaces $!6$ with $6$ as auth does). This tests the lock's refusal, and the auth log on the node shows 'action failure for user p8testuser'. mutates declares the auth attempt, the db lock, syslog and /run/p8test-lock; the effect file holds hashman's auth rc and an independent crypt comparison",
+  "exactly-one-entry: user_lock.pp:11-14 -> lockpw -> setpw(raw) -> setent(username, index, ...) rewrites the existing line at its index (dbutils.py.erb:592-600), so hashes.pp keeps one p8testuser_pwd_hash line; probe grep -c expects 1. This is supported, and it fails on the clean node, where there is no entry",
+  "purpose gap: Tested: the lock prefix on the Unix entry ('!$!6$...', which unlock had removed before user_lock ran: node syslog useradd -> unlock -> lock), a single entry, and hashman's auth refusing the user although the password matches the entry without the lock. Gap, in outcome 1's Samba part ('invalidates the user's Samba hash the same way'): the check the-samba-hash-is-locked-too cannot tell user_lock's lock apart from the fixture's state. Baseline interface.py.erb useradd calls expirepw, whose mk_smb_lockness(newentry) prefixes the Samba hash with '!' because the entry is expired (miscutils.py.erb:137-142, is_pwexpired). The fixture's 'pp_auth.py unlock' strips only the Unix lock prefix: the entry stays '$!6$' (expired), so mk_smb_lockness keeps the Samba hash '!'-prefixed. When user_lock's lockpw runs, the hash is already locked and is returned unchanged (miscutils.py.erb:139-140). The check would pass if the lock never touched or skipped the Samba hash. Its negative control fails on the clean node only because the user does not exist there. The lab can exercise this part: for example, the fixture runs 'pp_auth.py unexpire p8testuser' (or sets a password) after the unlock, so the user is neither expired nor locked and the Samba hash is valid before the lock; then the '!' after apply is the lock's own. The hashman library deployed on the node is identical to the baseline (dbutils, interface, miscutils). The plugin sync on lock (ondbchange type-3 plugins) is not in the table, but hashman_base ships only empty plugins/1-3 dirs (checked on the node), so it is site-supplied and not observable here."
+ ],
+ "review_s": 233.9,
+ "check_file_sha256": "1c9461c3a0bf912e20f33a9006277938ff6cfb77016058fdb832ae23a356818d",
+ "content_sha256": "1c9461c3a0bf912e20f33a9006277938ff6cfb77016058fdb832ae23a356818d",
+ "reviewer_result": "20261123T015042Z-reviewer",
+ "author_result": "20261123T010755Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v1",
+   "boot_id": "d4a5a18e-864f-4848-ba0d-f511578c510f",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "d4a5a18e-864f-4848-ba0d-f511578c510f",
+   "fresh": true
+  }
+ }
+}
