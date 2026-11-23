@@ -1,0 +1,35 @@
+{
+ "class": "sysmon_mysqldump_health",
+ "at": "20261122T235949Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "check-script-rendered: manifests/sysmon_mysqldump_health.pp:8-15 declare ${bindir}/check-mysqldump-health.sh root:root 0755 from the template; the probe stats owner/group/mode, runs bash -n and greps MYSQLUSER/MYSQLPWD/DIRS, which template lines 5-6 and 74 render from the params fixture (p8test_check, the fixture password, the two dirs). It tests what the lines declare.",
+  "restores-are-checked: template 50-52 load $f into $DBNAME and call handle_error 'Load database dump $f' on failure. The broken file keeps the first 5 mysqldump header lines (the '-- Host: ... Database: p8testbroken' line that line 44 parses), then invalid SQL. Create succeeds, the load fails, handle_error clears and prints 'CRITICAL: Load database dump ./2026-11-21/broken.sql' with exit 2 (the path is relative after cd and find in validate_dir). The good-only run prints the plain OK line with exit 0. The expected output is what the code produces; mutates declares the scratch databases and the file.",
+  "a-mysql-server-with-a-dump: template 42-46 parse DBNAME from the dump's '-- Host: ... Database:' header and CREATE DATABASE it as $MYSQLUSER. The setup action installs a server, creates the fixture user with the fixture password, and writes a mysqldump of p8testsrc, then drops the source so that CREATE can succeed. Its read-only effect shows the result: the dump header, 'Database: p8testsrc', and 0 p8testsrc databases. It is not the action's own output, and mutates declares every change.",
+  "purpose gap: The checks test the class doing its job against a real MySQL 8.0: a good dump restored and dropped (OK, exit 0, nothing left); a load failure in a dated subdirectory of the second dir (CRITICAL, exit 2); an empty file and a header-less dump (CRITICAL); a drop failure (CRITICAL); and local change #20's paths: a live database of the dump's name left intact with the skipped-restore OK line, an incomplete dump of an existing database CRITICAL with its rows kept, and a --databases dump of an absent database restored with nothing left. Gap: the stated purpose says 'any failure (create, load, drop)' is CRITICAL, but the 'Create database' failure path (current template lines 71-73: CREATE fails for a database the pre-check did not see) is no longer in the outcomes table, has no check and no uncovered row. This set version replaced the earlier 'Create database' outcome with the skip outcome. The lab can exercise this path, for example with REVOKE CREATE from p8test_check, or with a live database the monitoring user cannot see in SHOW DATABASES. It is also where #20's rule 'a restore drops only the databases it created' must hold when CREATE fails: CREATED is empty, so nothing may be dropped, and the expected result is CRITICAL 'Create database p8testsrc' with exit 2 and any existing database kept."
+ ],
+ "review_s": 258.5,
+ "check_file_sha256": "0847112ecee566d52494b1bdff84cf524e6c68fc0fcf2ad92a2430a17704f469",
+ "content_sha256": "0847112ecee566d52494b1bdff84cf524e6c68fc0fcf2ad92a2430a17704f469",
+ "reviewer_result": "20261122T235531Z-reviewer",
+ "author_result": "20261122T234851Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "510a366b-6f86-4a86-ad9d-01f77e78f563",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "510a366b-6f86-4a86-ad9d-01f77e78f563",
+   "fresh": true
+  }
+ }
+}
