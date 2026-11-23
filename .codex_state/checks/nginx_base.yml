@@ -5,6 +5,9 @@
 # refuses to start (escalations/nginx_base.md). The mutating check installs one dynamic module (libnginx-mod-stream,
 # Ubuntu 24.04) and judges the effect: exactly one include of the directory, `nginx -t` passes, the service runs.
 # Probes read the node's own files and nginx only.
+# 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): my_configs and ad-hoc lines (production uses both) are a check in
+# the variant run `custom`; another DH size and extra log formats are an accepted gap; the stream row names what is
+# missing.
 class: nginx_base
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -37,10 +40,27 @@ outcomes:
     checks: [no-ad-hoc-file-by-default]
   - outcome: the stream block logs nothing (stream_access_log off, HQ 2026-11-18 ruling A1, a module-compatibility change in class_rulings.txt)
     from: class_rulings.txt (nginx_base, ruling A1)
-    uncovered: {why: "the stream block exists only when a stream server is declared; this fixture declares none. Exercised elsewhere: nginx_frontend_mail's set checks access_log off in the stream block (review PASS)", lifted_by: ubuntu}
-  - outcome: ad-hoc configuration, my_configs overrides, additional log formats and another DH size
-    from: manifests/nginx_base.pp:36-40, 112-127
-    uncovered: {why: "fixture variants (one set holds one fixture, the defaults); untested", lifted_by: ubuntu}
+    uncovered:
+      why: the stream block exists only when a stream server is declared, which is another class's resource, not a parameter of this one
+      lifted_by: "capability: a stream server declared alongside nginx_base in a run (a variant varies the class's own params only)"
+      evidence: >-
+        nginx_frontend_mail declares stream servers; its set's check streams-listen-and-stream-access-log-off shows
+        access_log off in the stream block (review PASS)
+  - outcome: ad-hoc configuration and my_configs overrides
+    from: manifests/nginx_base.pp:91-94, 112-127
+    checks: [my-configs-and-ad-hoc-lines-reach-nginx]
+  - outcome: additional log formats and another DH size
+    from: manifests/nginx_base.pp:36-40, 72-75
+    uncovered:
+      why: parameter variants no production node uses (the fixture keeps the default 2048 bits and the two formats)
+      accepted_gap: [log_formats_additional, dh_params_bits]
+      evidence: >-
+        diagnosis/fleet_variant_usage.md (2026-11-23): no production node statement sets either, and no class of the
+        repository sets them on nginx_base
+variants:
+  - name: custom
+    why: my_configs and ad_hoc_configs, which production sets (7 and 1 node statements)
+    params: custom
 checks:
   - id: nginx-config-valid
     what: the nginx configuration the class produces passes `nginx -t`
@@ -138,3 +158,17 @@ checks:
       v=$(dpkg-query -W -f '${Version}' nginx 2>/dev/null)
       apt-cache madison nginx | awk -F'|' -v v="$v" '{gsub(/ /, "", $2)} $2 == v && $3 ~ /ubuntu\.com\/ubuntu/ {f = 1} END {print (f ? "from the Ubuntu archive" : "not from the Ubuntu archive")}'
     expect: {rc: 0, stdout: "\\A0\\nfrom the Ubuntu archive\\n\\Z"}
+
+  - id: my-configs-and-ad-hoc-lines-reach-nginx
+    variant: custom
+    what: >-
+      a my_configs entry (worker_connections 2048) reaches the nginx class's configuration, and the ad-hoc line
+      (client_max_body_size 21m) is written to conf.d/puppet_infrastructure.conf; the running configuration holds both
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "91-94", text: "$my_configs,"}
+      - {path: manifests/nginx_base.pp, lines: "112-127", text: "$ad_hoc_content = join($ad_hoc_configs,"}
+    probe: |
+      cat /etc/nginx/conf.d/puppet_infrastructure.conf
+      nginx -T 2>/dev/null | grep -E '^\s*(worker_connections|client_max_body_size) ' | sed 's/^\s*//' | sort -u
+    expect: {rc: 0, stdout: "\\Aclient_max_body_size 21m;\\nclient_max_body_size 21m;\\nworker_connections 2048;\\n\\Z"}
