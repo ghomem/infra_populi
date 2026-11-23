@@ -337,3 +337,50 @@ def test_an_ordinary_node_gets_no_module_copy(lab):
     proc = lab.run([SCRIPT, "--fixture", "guarded_exec"])
     assert proc.returncode == 0, proc.stderr
     assert [c for c in lab.calls() if c[0] == "rsync" and not c[-1].startswith("puppet8master")] == []
+
+
+# Between-runs gate (HQ after batch 20, item 6: a harness mode that tolerates a running agent daemon).
+DAEMON_LOG = r"puppet8node sudo -n journalctl --no-pager -q -o cat -u puppet\.service -t puppet-agent --since @1795000000 --until @1795000000"
+
+
+def daemon_log(lab, text, rc=0):
+    lab.world["ssh"].insert(0, {"match": DAEMON_LOG, "stdout": text, "rc": rc})
+
+
+def test_agent_runs_wait_for_the_agent_lock(lab):
+    agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 0, "stdout": APPLIED})
+    assert harness(lab).returncode == 0
+    agent_calls = [" ".join(c) for c in lab.calls("ssh") if "agent -t" in " ".join(c)]
+    assert len(agent_calls) == 2 and all("--waitforlock 10 --maxwaitforlock 600" in c for c in agent_calls)
+
+
+def test_a_daemon_run_that_changed_something_between_the_runs_is_red(lab):
+    agent_runs(lab, {"rc": 2, "stdout": EXEC_EVENT + APPLIED}, {"rc": 0, "stdout": APPLIED})
+    daemon_log(lab, "Requesting catalog from puppet8master:8140\n"
+                    "(/Stage[main]/Main/File[/etc/p8test]/content) content changed '{sha256}a' to '{sha256}b'\n"
+                    "Applied catalog in 0.50 seconds\n")
+    proc = harness(lab)
+    assert proc.returncode == 1
+    assert "File[/etc/p8test]/content) content changed" in proc.stderr and "the agent daemon" in proc.stderr
+    assert "GREEN" not in proc.stdout
+
+
+def test_a_failed_daemon_run_between_the_runs_is_red(lab):
+    agent_runs(lab, {"rc": 2, "stdout": EXEC_EVENT + APPLIED}, {"rc": 0, "stdout": APPLIED})
+    daemon_log(lab, "Could not retrieve catalog from remote server: boom\n")
+    assert harness(lab).returncode == 1
+
+
+def test_an_unchanged_daemon_run_between_the_runs_is_green_and_reported(lab):
+    agent_runs(lab, {"rc": 2, "stdout": EXEC_EVENT + APPLIED}, {"rc": 0, "stdout": APPLIED})
+    daemon_log(lab, "Requesting catalog from puppet8master:8140\nApplied catalog in 0.42 seconds\n")
+    proc = harness(lab)
+    assert proc.returncode == 0, proc.stderr
+    assert "BETWEEN_RUNS: 1 agent daemon run(s) between run 1 and the end of run 2, with no resource event" in proc.stdout
+
+
+def test_an_unreadable_daemon_log_fails_closed(lab):
+    agent_runs(lab, {"rc": 2, "stdout": EXEC_EVENT + APPLIED}, {"rc": 0, "stdout": APPLIED})
+    daemon_log(lab, "", rc=1)
+    proc = harness(lab)
+    assert proc.returncode == 1 and "between-runs gate fails closed" in proc.stderr

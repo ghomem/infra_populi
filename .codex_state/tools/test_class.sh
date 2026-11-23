@@ -492,8 +492,24 @@ REMOTE
 run_agent() {
   # Puppet detailed exit codes (-t implies them): 0 = no changes, 2 = changes applied,
   # 4/6 = failures. 124/137 = killed by the outer timeout.
+  # HQ after batch 20, item 6 (a harness mode that tolerates a running agent): when the class starts the agent daemon,
+  # a daemon run may hold the agent lock; the harness's run waits for it (polling every 10 s, at most
+  # AGENT_LOCK_WAIT_SECONDS) instead of failing "already in progress".
   timeout --kill-after=15 "$AGENT_TIMEOUT_SECONDS" \
-    ssh "$NODE_HOST" "sudo /opt/puppetlabs/bin/puppet agent -t" 2>&1
+    ssh "$NODE_HOST" "sudo /opt/puppetlabs/bin/puppet agent -t --waitforlock 10 --maxwaitforlock ${AGENT_LOCK_WAIT_SECONDS:-600}" 2>&1
+}
+
+# The node's clock now (epoch seconds; the node's clock is checked against the laptop's before run 1).
+node_now() {
+  timeout 30 ssh "$NODE_HOST" "date +%s" 2>/dev/null
+}
+
+# What the agent DAEMON logged between two node times. Every agent run logs to the journal (identifier puppet-agent),
+# the harness's own `puppet agent -t` runs included (from the ssh session's scope); the daemon's come from the unit
+# puppet.service, which separates them. One line per message; empty when the daemon made no run. The master's stored
+# reports are not used: they are named by the minute, so two runs in one minute overwrite each other.
+daemon_log_between() {
+  timeout 60 ssh "$NODE_HOST" "sudo -n journalctl --no-pager -q -o cat -u puppet.service -t puppet-agent --since @$1 --until @$2"
 }
 
 die_agent_rc() {
@@ -883,6 +899,10 @@ main() {
     echo "WARNING: run 1 on a freshly reverted node applied nothing; the class may be a no-op here." >&2
   fi
 
+  local run1_end
+  run1_end="$(node_now)"
+  [[ "$run1_end" =~ ^[0-9]+$ ]] || die "Could not read the node's clock after run 1 (the between-runs gate fails closed)."
+
   out2="$(run_agent)" && rc2=0 || rc2=$?
   echo "$out2"
   agent_run_summary
@@ -917,6 +937,24 @@ main() {
   fi
   if [[ $rc2 -ne 0 && $rc2 -ne 2 ]]; then
     die "Run 2 exited ${rc2}; only exit 2 caused solely by expected run-2 events is accepted."
+  fi
+
+  # Between-runs gate (HQ after batch 20, item 6): an agent run the harness did not make (the agent daemon a class
+  # starts) between run 1 and the end of run 2 must have changed nothing, or it would hide what run 2 should show.
+  # A daemon run's resource events are logged as "(/Stage[main]/...) <event>"; a failed run logs an error.
+  local run2_end daemon_log daemon_runs daemon_bad
+  run2_end="$(node_now)"
+  [[ "$run2_end" =~ ^[0-9]+$ ]] || die "Could not read the node's clock after run 2 (the between-runs gate fails closed)."
+  daemon_log="$(daemon_log_between "$run1_end" "$run2_end")" ||
+    die "Could not read the agent daemon's log on the node (the between-runs gate fails closed)."
+  daemon_runs="$(grep -c 'Applied catalog in' <<<"$daemon_log" || true)"
+  daemon_bad="$(grep -E '^\(/Stage\[main\]/|^Could not|[Ee]rror' <<<"$daemon_log" || true)"
+  if [[ -n "$daemon_bad" ]]; then
+    printf 'The agent daemon between run 1 and run 2:\n%s\n' "$daemon_bad" >&2
+    die "An agent run between run 1 and run 2 (the agent daemon) changed something or failed: not idempotent."
+  fi
+  if [[ "$daemon_runs" -gt 0 ]]; then
+    echo "BETWEEN_RUNS: ${daemon_runs} agent daemon run(s) between run 1 and the end of run 2, with no resource event"
   fi
 
   if [[ -n "${FIXTURE_NAME:-}" ]]; then

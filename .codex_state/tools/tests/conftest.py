@@ -167,6 +167,8 @@ class FakeLab:
                  "stdout": "192.168.56.10   puppet8master.example.com puppet8master\n"},
                 # clock_check.py (HQ 2026-11-17 batch-8 ruling 4): every host's clock agrees with the laptop's
                 {"match": r"date -u \+%s\.%N", "clock": 0},
+                # test_class.sh's between-runs gate: the node's clock after run 1 and after run 2
+                {"match": r"date \+%s$", "stdout": "1795000000\n"},
             ],
         }
 
