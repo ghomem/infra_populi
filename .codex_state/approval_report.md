@@ -19,18 +19,16 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 
 ### Stand-ins
 
-- **letsencrypt_certificate** — fixture `letsencrypt_cert_standin`; lifted by: an ACME test endpoint in the lab, so certbot obtains a real certificate (HQ batch-7 ruling 2). *lift escalated: a lab ACME endpoint needs a design choice (escalations/letsencrypt_certificate.standin.md; HQ after batch 20, item 6)*
-- **network_vpn** — fixture `p8test_dhcp_primary`; lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). *lift escalated: an extra network card on a gateway node needs a design choice (escalations/openvpn_server.standin.md; HQ after batch 20, item 6)*
+- **letsencrypt_certificate** — fixture `letsencrypt_cert_standin`; lifted by: an ACME test endpoint in the lab, so certbot obtains a real certificate (HQ batch-7 ruling 2). *stays; for Salatiel's explicit acceptance: a real lift needs a sandbox DNS zone and an API token against Let's Encrypt staging (documentation list, cutover row 8) (HQ 2026-11-23)*
+- **network_vpn** — fixture `p8test_dhcp_primary`; lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). *stays; for Salatiel's explicit acceptance: the first VPN gateway is migrated as a recreated test gateway before any live one (documentation list, cutover row 9) (HQ 2026-11-23)*
 - **openvpn_domain** — fixture `p8test_domain_dns`; lifted by: a node on a network whose DNS (DHCP) serves the AD domain, as production's. *not in HQ's lift list (item 6): stays as it is, for Salatiel's attention*
 - **openvpn_nm_connection** — fixture `p8test_vpn_ca`; lifted by: a class or node definition that ships the VPN CA to desktops (none in the code tree). *not in HQ's lift list (item 6): stays as it is, for Salatiel's attention*
-- **openvpn_server** — fixture `p8test_dhcp_primary`; lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). *lift escalated: an extra network card on a gateway node needs a design choice (escalations/openvpn_server.standin.md; HQ after batch 20, item 6)*
+- **openvpn_server** — fixture `p8test_dhcp_primary`; lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). *stays; for Salatiel's explicit acceptance: the first VPN gateway is migrated as a recreated test gateway before any live one (documentation list, cutover row 9) (HQ 2026-11-23)*
 - **user_samba** — fixture `samba_dc_standin`; lifted by: a Zentyal/Samba AD domain controller node with Zentyal's user scripts (none yet; the planned dc kind, p8lab-dc, is a plain Samba AD DC). *stays; for Salatiel's explicit acceptance (HQ after batch 20, item 6)*
 - **user_sysmon** — fixture `sysmon_server`; lifted by: a monitoring-server node running Naemon + Thruk from the monitoring repository (no nodes.yml kind). *stays; for Salatiel's explicit acceptance (HQ after batch 20, item 6)*
 
 ### Open escalations
 
-- escalations/letsencrypt_certificate.standin.md: letsencrypt_certificate — stand-in lift "a lab ACME endpoint" (OPEN, for HQ: more than one reasonable design)
-- escalations/openvpn_server.standin.md: openvpn_server (and network_vpn) — stand-in lift "an extra network card on a gateway node" (OPEN, for Salatiel/HQ)
 - escalations/sweep.md: The sweep of open uncovered rows — approach (OPEN, for HQ: the run is stopped before it)
 - escalations/user_lock.checkset.md: user_lock — the check set after the stand-in lift: purpose FAIL past the correction cap (OPEN, for HQ)
 
@@ -558,7 +556,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 - **Behaviour:** deferred — second-node, lifted by ubuntu2; node ubuntu; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Deferred:** needs second-node, lifted by ubuntu2
-- **Stand-in:** `letsencrypt_cert_standin` — lifted by: an ACME test endpoint in the lab, so certbot obtains a real certificate (HQ batch-7 ruling 2). Plan: lift escalated: a lab ACME endpoint needs a design choice (escalations/letsencrypt_certificate.standin.md; HQ after batch 20, item 6)
+- **Stand-in:** `letsencrypt_cert_standin` — lifted by: an ACME test endpoint in the lab, so certbot obtains a real certificate (HQ batch-7 ruling 2). Plan: stays; for Salatiel's explicit acceptance: a real lift needs a sandbox DNS zone and an API token against Let's Encrypt staging (documentation list, cutover row 8) (HQ 2026-11-23)
 
 ### linux_policies_common
 
@@ -682,7 +680,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 - **Open rows:**
   - client isolation, the bridge and the server at boot, the hairpin rule, the data channel's compression, and each composed class's own behaviours — why: covered as behaviour by the composed classes' own sets (openvpn_server, firewall_addon_openvpn_server, caching_nameserver, firewall_addon_caching_nameserver) under their own fixtures, where openvpn_server's compression is a finding (escalations/openvpn_server.behaviour.md); this set covers what the composition adds (the VPN network wired through all four) and the cipher this class passes — lifted by: ubuntu
   - parameter variants (another VPN network, another cipher, renegotiation, client DNS, client_isolation false) — why: parameter variants (one set holds one params fixture); untested — lifted by: ubuntu
-- **Stand-in:** `p8test_dhcp_primary` — lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). Plan: lift escalated: an extra network card on a gateway node needs a design choice (escalations/openvpn_server.standin.md; HQ after batch 20, item 6)
+- **Stand-in:** `p8test_dhcp_primary` — lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). Plan: stays; for Salatiel's explicit acceptance: the first VPN gateway is migrated as a recreated test gateway before any live one (documentation list, cutover row 9) (HQ 2026-11-23)
 
 ### nginx_base
 
@@ -876,7 +874,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - clients cannot reach each other (client isolation, the default) (`client-isolation-on-the-bridge`, `a-second-vpn-account`, `a-second-client-reaches-the-server-side-but-not-the-first`)
 - **Open rows:**
   - the variants force_ifupdown, client_isolation false, compression none, another cipher or DNS server — why: parameter variants (one set holds one params fixture, which keeps their defaults); untested — lifted by: ubuntu
-- **Stand-in:** `p8test_dhcp_primary` — lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). Plan: lift escalated: an extra network card on a gateway node needs a design choice (escalations/openvpn_server.standin.md; HQ after batch 20, item 6)
+- **Stand-in:** `p8test_dhcp_primary` — lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). Plan: stays; for Salatiel's explicit acceptance: the first VPN gateway is migrated as a recreated test gateway before any live one (documentation list, cutover row 9) (HQ 2026-11-23)
 - **Finding:** the-data-channel-is-compressed-both-ways (escalations/openvpn_server.behaviour.md)
 - **Local changes:** #7: `$data_ciphers = join(unique(['AES-256-GCM', 'AES-128-GCM', 'CHACHA20-POLY1305', $cipher]), ':')` (openvpn_server.pp:157-159, with a two-line comment) and `'data-ciphers' => $data_ciphers` added to the server's custom_options (:185;
 

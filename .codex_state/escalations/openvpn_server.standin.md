@@ -1,4 +1,4 @@
-# openvpn_server (and network_vpn) — stand-in lift "an extra network card on a gateway node" (OPEN, for Salatiel/HQ)
+# openvpn_server (and network_vpn) — stand-in lift "an extra network card on a gateway node" (RULED: stays a stand-in for Salatiel's acceptance, HQ 2026-11-23)
 
 HQ after batch 20, item 6 asks for this lift. It needs a new lab VM and a choice of network, so it is escalated
 (CLAUDE.md: new VMs or nodes are Salatiel's) and the run continues.

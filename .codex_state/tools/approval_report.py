@@ -32,24 +32,24 @@ ESCALATIONS = REPO / ".codex_state" / "escalations"
 LIFT_STANDINS = {
     "user_lock": "the master-role node's hashman database",
     "mount_shares_desktop": "the desktop login",
-    "letsencrypt_certificate": "a lab ACME endpoint",
-    "network_vpn": "an extra network card on a gateway node",
-    "openvpn_server": "an extra network card on a gateway node",
     "node_base_desktop": "a harness mode that tolerates a running agent",
     "node_base_domain_desktop": "a harness mode that tolerates a running agent",
 }
-ACCEPTANCE_STANDINS = {"user_samba", "user_sysmon"}
-
-
-# A lift that needs a design choice or a new VM is escalated in escalations/<file> (2026-11-23).
-LIFT_ESCALATIONS = {"letsencrypt_certificate": "letsencrypt_certificate.standin.md",
-                    "openvpn_server": "openvpn_server.standin.md", "network_vpn": "openvpn_server.standin.md"}
+ACCEPTANCE_STANDINS = {"user_samba", "user_sysmon", "letsencrypt_certificate", "openvpn_server", "network_vpn"}
+# What a real lift would need, said with the acceptance (HQ 2026-11-23 rulings 3 and 4; documentation list rows 8, 9).
+ACCEPTANCE_NOTES = {
+    "letsencrypt_certificate": "a real lift needs a sandbox DNS zone and an API token against Let's Encrypt staging "
+                               "(documentation list, cutover row 8)",
+    "openvpn_server": "the first VPN gateway is migrated as a recreated test gateway before any live one "
+                      "(documentation list, cutover row 9)",
+    "network_vpn": "the first VPN gateway is migrated as a recreated test gateway before any live one "
+                   "(documentation list, cutover row 9)",
+}
 
 
 def standin_plan(cls: str) -> str:
-    if cls in LIFT_STANDINS and (ESCALATIONS / LIFT_ESCALATIONS.get(cls, "-")).is_file():
-        return (f"lift escalated: {LIFT_STANDINS[cls]} needs a design choice (escalations/{LIFT_ESCALATIONS[cls]}; "
-                "HQ after batch 20, item 6)")
+    if cls in ACCEPTANCE_NOTES:
+        return f"stays; for Salatiel's explicit acceptance: {ACCEPTANCE_NOTES[cls]} (HQ 2026-11-23)"
     if cls in LIFT_STANDINS:
         return f"to be lifted: {LIFT_STANDINS[cls]} (HQ after batch 20, item 6)"
     if cls in ACCEPTANCE_STANDINS:

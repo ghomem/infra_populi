@@ -2493,3 +2493,21 @@ the engine's tools, which take the lock themselves, are unaffected. 21 tests; th
    - Marker-only re-records now go through `record_green.sh --fix`.
 5. **The run stops before the sweep** (~04:45 UTC): its approach is a design choice affecting 34 sets
    (escalations/sweep.md: record the real gaps, or build two runner capabilities first). The lab is down.
+
+## 2026-11-23 — HQ rulings on the sweep and the escalated lifts
+1. **Sweep: option B, done once** (the 34 sets re-run and re-reviewed a single time).
+   a. Build both runner capabilities first, with tests: more than one params fixture per set, and running a set's
+      checks on a second node kind.
+   b. RedHat rows become checks on rhel9.
+   c. Parameter variants: read the fleet data for which variants production uses, recording only the variant and a
+      count, never a value. Variants production uses become checks. The others become rows marked as an accepted gap,
+      which the validator allows only for a variant no production node uses, and which the approval report lists for
+      Salatiel's acceptance.
+   d. One-off rows: a check where the lab can test it; otherwise a row naming what is missing, with evidence.
+2. **user_lock's check set:** a third round is approved for the fixture fix (unexpire after unlock).
+3. **letsencrypt_certificate:** no mock DNS API; it stays a stand-in for Salatiel's acceptance. A real lift needs a
+   sandbox DNS zone and API token against Let's Encrypt staging. Documentation list, cutover row 8: prove issuance on
+   staging before the new master takes over renewals.
+4. **openvpn_server and network_vpn:** no new gateway VM now; they stay stand-ins for Salatiel's acceptance.
+   Documentation list, cutover row 9: the first VPN gateway is migrated as a recreated test gateway before any live one.
+5. **Then** the final approval report (stop for Salatiel), the test-suite design note, and the rename.

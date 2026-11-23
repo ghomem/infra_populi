@@ -2,7 +2,14 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-136 entries; 6 marked superseded (in whole or part); newest first.
+137 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-23 — HQ rulings on the sweep and the escalated lifts
+- 1. **Sweep: option B, done once** (the 34 sets re-run and re-reviewed a single time).
+- 2. **user_lock's check set:** a third round is approved for the fixture fix (unexpire after unlock).
+- 3. **letsencrypt_certificate:** no mock DNS API; it stays a stand-in for Salatiel's acceptance. A real lift needs a
+- 4. **openvpn_server and network_vpn:** no new gateway VM now; they stay stand-ins for Salatiel's acceptance.
+- 5. **Then** the final approval report (stop for Salatiel), the test-suite design note, and the rename.
 
 ## 2026-11-23 — HQ rulings on the user_lock stop carried out; item 6 stand-in lifts; the run stops before the sweep
 - 1. **Ruling 1** (a3df1b6): record_green refuses a migrate commit that changes no class file and points to --fix;

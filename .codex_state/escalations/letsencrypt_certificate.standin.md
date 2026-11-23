@@ -1,4 +1,4 @@
-# letsencrypt_certificate — stand-in lift "a lab ACME endpoint" (OPEN, for HQ: more than one reasonable design)
+# letsencrypt_certificate — stand-in lift "a lab ACME endpoint" (RULED: stays a stand-in for Salatiel's acceptance, HQ 2026-11-23)
 
 HQ after batch 20, item 6 asks for the stand-in lifts the lab can reach with small additions. This one is not small,
 and its design has a choice in it, so it is escalated and the run continues.
