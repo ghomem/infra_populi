@@ -231,6 +231,8 @@ def test_the_node_kind_selects_vm_snapshot_and_alias_and_redhat_checks_registrat
     ssh = [" ".join(c[1:]) for c in lab.calls("ssh")]
     assert any("p8lab-rhel9 sudo -n subscription-manager identity" in l for l in ssh)
     assert any("dnf -q makecache" in l for l in ssh) and not any("apt-get" in l for l in ssh)
+    # 2026-11-24: 600 s, room for BaseOS's 173 MB of metadata on a slow uplink (measured 4 min 02 s at 849 kB/s)
+    assert any("sudo -n timeout 600 dnf -q makecache" in l for l in ssh)
     assert '"node":"rhel9"' in proc.stdout.strip().splitlines()[-1]
     assert json.loads(proc.stdout.strip().splitlines()[-1].split(" ", 1)[1])["apt_mirror"] is None
     assert master_actions(lab) == []

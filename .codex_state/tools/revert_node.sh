@@ -60,7 +60,9 @@ readonly MASTER_HOSTONLY_IP="192.168.56.10"
 readonly NAT_GATEWAY="10.0.2.2"
 readonly NAT_ADDRESS="10.0.2.15/24"
 readonly HOME_LAN_PREFIX="192.168.77."
-readonly DNF_TIMEOUT_SECONDS=300
+# 600 s (was 300 s; 2026-11-24): a restore discards dnf's cache, and on a slow uplink BaseOS's metadata alone (173 MB)
+# took 4 min 02 s by hand at 849 kB/s, and over 300 s in three reverts the same day.
+readonly DNF_TIMEOUT_SECONDS=600
 readonly FALLBACK_MIRROR="${P8_FALLBACK_MIRROR:-http://mirrors.edge.kernel.org/ubuntu/}"
 # HQ 2026-11-10 ruling 2: ssh through the ControlMaster shim (see sshmux/ssh).
 TOOLS_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
