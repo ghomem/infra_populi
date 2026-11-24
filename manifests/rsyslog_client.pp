@@ -1,4 +1,4 @@
-# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Puppet 8 migration: release-0.9.10 manifest; local change #22: the auth.log input no longer sets deleteStateOnFileMove, which rsyslog on Ubuntu 24.04 does not know (forward_simple.conf.epp).
 # Module dependencies: none.
 # Configure a node to forward its local logs to a remote rsyslog server over TLS.
 
