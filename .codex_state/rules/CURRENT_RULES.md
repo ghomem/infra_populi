@@ -2,7 +2,16 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-137 entries; 6 marked superseded (in whole or part); newest first.
+138 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-24 — HQ rulings for the resume
+- 0. Before anything else: run lab up and measure the node's and the master's clock rate against the laptop again. If
+- 1. rsyslog_client: remove the rejected setting, as you recommend. Checks: rsyslog starts with no config error on
+- 2. rsyslog TLS files (cutover row 10): fix the default now; do not leave it to the cutover. Without an override, the
+- 3. Backlog #14: accepted as recorded.
+- 4. Correction rounds: confirmed. The sweep counts its rounds from 1, with the same caps as before (three for classes
+- 5. Then as you listed: sysmon_base's re-review, the 18 remaining reviews, the DESIGN_DECISIONS entry, the filesystem_apt
+- Ruling 0 carried out the same day: the drift remains (node 1.0245, master 1.0249 over 300 s), and the laptop had not
 
 ## 2026-11-23 — HQ rulings on the sweep and the escalated lifts
 - 1. **Sweep: option B, done once** (the 34 sets re-run and re-reviewed a single time).

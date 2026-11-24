@@ -37,3 +37,35 @@ The VM settings of the node and master (raw VBoxManage is denied), and a new bas
   or a cold boot of the node instead of a restore. Then node_base's set is re-run and reviewed.
 - **B:** node_base's sweep closes with the ntp check recorded as untestable on this lab while the clock runs fast, and
   the approval report lists it.
+
+## 2026-11-24: measured again on resume (HQ ruling 0 of the resume): the drift remains; stopped
+- **HQ's premise:** the rulings say the laptop had been through a cold boot. It had not: `uptime -s` gives
+  2026-11-22 21:17:07, the same host boot as the 2026-11-23 measurements (`uptime` at 12:04: up 1 day, 14:46).
+  Host unchanged: Linux 7.0.0-22-generic, VirtualBox 7.2.6_Ubuntur172322.
+- **Rates over 300 s** (`lab_power.sh up`, then each VM's /proc/uptime read twice 300 s apart over lab_exec against
+  the laptop's; each read took 0.8-1.9 s):
+  - node (puppet8node, freshly reverted): laptop 301.67 s, node 309.06 s, ratio 1.0245;
+  - master (puppet8master, clocksource tsc): laptop 301.16 s, master 308.65 s, ratio 1.0249; its timesyncd offset
+    then -724.271 ms, jitter 18.952 ms.
+- **Stopped** under the ruling: no time-based check runs on a drifting clock. The lab is down.
+
+### Sweep runs on this boot whose expectations depend on a duration (all of the sweep's runs were made on it)
+To re-run, author and reviewer, once the clocks keep time:
+- **ssh_secure:** an-idle-session-is-ended-after-the-interval (29-45 s), on-redhat-an-idle-session-is-not-ended
+  (60 s, rhel9).
+- **gnome_lock_screen** (its review PASS too): a-gnome-session-locks-after-the-idle-time (60 s idle plus 10 s
+  grace, under 300 s, gnome node).
+- **node_base:** ntp-keeps-the-time (review held).
+- **firewall_secure:** a-burst-of-new-ssh-connections-is-cut-at-the-limit, held-connections-stop-at-eight and
+  new-connections-stop-at-fifteen-a-minute (iptables limit and recent windows on the node's clock, the peer's
+  pacing on its own).
+- **firewall_secure_extra:** a-whitelisted-source-is-held-to-the-new-connection-rate, icmp-echo-is-rate-limited,
+  an-ssh-burst-is-cut-at-the-overall-limit, held-ssh-connections-stop-at-eight,
+  new-ssh-connections-stop-at-fifteen-a-minute, the-rst-limit-dropped-the-third.
+- **docker_container:** the-service-starts-it-again (within 60 s).
+- **sync:** the-script-mirrors-the-remote-dir (transfer timed against the bandwidth limit).
+- **sysmon_base:** the-cpu-plugin-is-critical-under-load (20 s), the-latency-check-times-a-write (5 s),
+  the-bandwidth-check-reports-throughput and the-bandwidth-check-is-critical-above-its-threshold (1 s samples).
+  a-stale-package-list-raises-the-alarm compares a file's age with the node's own clock, so the rate does not enter
+  it.
+The rhel9, ubuntu2 and gnome nodes' rates were not measured; the checks above that run there are listed by kind.

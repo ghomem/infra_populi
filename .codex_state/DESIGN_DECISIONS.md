@@ -2511,3 +2511,27 @@ the engine's tools, which take the lock themselves, are unaffected. 21 tests; th
 4. **openvpn_server and network_vpn:** no new gateway VM now; they stay stand-ins for Salatiel's acceptance.
    Documentation list, cutover row 9: the first VPN gateway is migrated as a recreated test gateway before any live one.
 5. **Then** the final approval report (stop for Salatiel), the test-suite design note, and the rename.
+
+## 2026-11-24 — HQ rulings for the resume
+Verbatim (received as a paste on 2026-11-24):
+0. Before anything else: run lab up and measure the node's and the master's clock rate against the laptop again. If
+   the drift is gone, release node_base's review. If it is still there, stop and report the measurements; do not run
+   time-based checks on a drifting clock. Either way, list the sweep runs made on the drifting boot whose expectations
+   depend on a duration, and re-run those.
+1. rsyslog_client: remove the rejected setting, as you recommend. Checks: rsyslog starts with no config error on
+   Ubuntu 24.04 and RHEL 9.5, and auth.log lines are still forwarded. Local change; add "restore the setting when the
+   oldest supported rsyslog accepts it" to the Phase 5 backlog and the 26.04 pass.
+2. rsyslog TLS files (cutover row 10): fix the default now; do not leave it to the cutover. Without an override, the
+   class uses the agent's real SSL directory on current agents; the override parameter stays. Check on a node with no
+   override that the TLS files are copied and a log line reaches the peer over TLS. Keep the cutover row as a reminder
+   for Salatiel to read whether production sets the override.
+3. Backlog #14: accepted as recorded.
+4. Correction rounds: confirmed. The sweep counts its rounds from 1, with the same caps as before (three for classes
+   production uses, two for the rest).
+5. Then as you listed: sysmon_base's re-review, the 18 remaining reviews, the DESIGN_DECISIONS entry, the filesystem_apt
+   local change, and the final approval report, where you stop for Salatiel.
+
+Ruling 0 carried out the same day: the drift remains (node 1.0245, master 1.0249 over 300 s), and the laptop had not
+been cold-booted (up since 2026-11-22 21:17:07, the boot of the 2026-11-23 measurements). The run stopped there, the lab
+down; measurements and the list of duration-dependent sweep runs in escalations/lab-clock.md. Rulings 1-5 wait.
+
