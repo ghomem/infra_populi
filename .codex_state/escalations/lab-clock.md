@@ -1,4 +1,4 @@
-# Lab: the node's clock runs about 2.5% fast on this host boot (CLOSED 2026-11-24: gone after a cold boot of the laptop)
+# Lab: VM clocks drift (2.45% fast on the 2026-11-22 host boot; after a cold boot, 0.465% slow on four of five VMs, measured 2026-11-24): REOPENED, for HQ (the VirtualBox side)
 
 Found 2026-11-23 by the sweep: node_base's `ntp-keeps-the-time` failed twice (results/node_base/20261123T132939Z-author:
 a source selected, the clock not synchronised; 20261123T142843Z-author: no source). The check passed on 2026-11-18
@@ -80,3 +80,35 @@ The rhel9, ubuntu2 and gnome nodes' rates were not measured; the checks above th
   4676.815 ppm slow (skew 13.758 ppm), which chrony corrects. The uptime method cannot resolve rates within ntpd's
   500 ppm; node_base's ntp check is the finer test.
 - The duration-dependent runs listed above are re-run, by author and reviewer (HQ, after the cold boot).
+
+## 2026-11-24 (later): measured precisely, four VM clocks still drift, at -0.465%: reopened
+- **What showed it:** the node_base re-run after the cold boot (results/node_base/20261124T124342Z-author) failed
+  `ntp-keeps-the-time` again: ntpsec active, its server configured, a source selected (`*`) within 60 s, but
+  `timedatectl` NTPSynchronized `no`. The uptime method above resolves about ±0.6% (6000 ppm), so it could not see a
+  drift beyond ntpd's 500 ppm; the "keep time" above holds only at that resolution.
+- **Method:** a script on each VM took 8 SNTP samples (ntp.ubuntu.com) at the start and 8 at the end of a 900 s window,
+  kept the lowest-delay sample of each, and compared CLOCK_MONOTONIC_RAW (not slewed by any time daemon) with the
+  server's time. Bound: half the round-trip delays over the window.
+- **Rates (raw seconds per server second), 2026-11-24 14:34-14:50 UTC, all five VMs running:**
+  - node (puppet8node): 0.995346 (-4654 ppm, ±232);
+  - master (puppet8master): 0.995341 (-4659 ppm, ±208);
+  - rhel9: 0.995344 (-4656 ppm, ±222); chrony's own estimate then: 4674.733 ppm slow;
+  - ubuntu2: 0.995355 (-4645 ppm, ±219);
+  - gnome: 1.000000 (-0 ppm, ±221).
+- **Time sync then:** timesyncd on the node, master and ubuntu2 at its +500.000 ppm limit with offsets +137.654,
+  +174.666 and +160.752 ms; gnome -24.366 ppm, +47.505 ms; chrony on rhel9 (which corrects up to 100000 ppm) 0.003 s
+  fast. ntpsec and timesyncd correct at most 500 ppm, so on the four drifting VMs they cannot hold the clock.
+- **VM settings (VBoxManage showvminfo, read-only):** the four drifting VMs have paravirtprovider `default`
+  (effective `kvm`) and BIOS firmware; gnome, the one that keeps time, has `hyperv` and EFI. CPUs (2), cpu-profile
+  host, hwvirtex, nestedpaging, largepages, vtxvpid, vtxux, hpet off, x2apic on and chipset piix3 are the same on all
+  five; the guest clocksource is tsc on all five. A lead for the VirtualBox side, not a finding.
+- **Before the cold boot** the same four kinds ran +2.45% fast (above); the sign and size changed with the host boot.
+
+### Status under HQ's cold-boot instruction ("If the drift is still there ... hold everything on your list")
+- Held: node_base's review and the reviewer re-runs of every set listed above; no new duration-dependent run.
+- Already made after the cold boot, before this measurement (author runs, committed): gnome_lock_screen ALL_PASS (on
+  gnome, which keeps time), firewall_secure ALL_PASS, firewall_secure_extra FINDINGS (only the ruled RST finding),
+  docker_container ALL_PASS, sync ALL_PASS. They ran on a clock 0.465% slow; HQ decides whether they stand.
+- node_base, ssh_secure and sysmon_base: their rhel variants were ENVIRONMENT_FAILED (the revert's 300 s dnf metadata
+  refresh: 173 MB of BaseOS metadata, measured at 849 kB/s and 4 min 02 s by hand on the current uplink); not re-run.
+- Going on: HQ rulings 1 and 2 and the reviews that involve no durations.
