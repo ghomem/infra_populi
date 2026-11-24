@@ -228,6 +228,19 @@ def isolated_logs(tmp_path, monkeypatch):
     monkeypatch.setenv("P8_LAB_LOCK", str(tmp_path / "iso_lock" / "lab.lock"))
     monkeypatch.delenv("P8_LAB_LOCKED", raising=False)
     monkeypatch.setenv("P8_NO_SLEEP_INHIBIT", "1")  # no real logind inhibitor from a test; FakeLab.run re-enables it
+    # 2026-11-24 (HQ, resume on mains power, ruling 1): no test reads the laptop's real battery or writes the real
+    # guard and idle state. On battery below 25% a guard inside a test read /sys/class/power_supply, ran its (stub)
+    # lab down and held the test's lock, so the commit hook failed; it also appended to the real battery_down.log.
+    supply = tmp_path / "iso_power_supply"
+    for name, files in (("AC", {"type": "Mains", "online": "1"}),
+                        ("BAT0", {"type": "Battery", "status": "Full", "capacity": "100"})):
+        (supply / name).mkdir(parents=True)
+        for key, value in files.items():
+            (supply / name / key).write_text(value + "\n")
+    monkeypatch.setenv("P8_POWER_SUPPLY", str(supply))
+    monkeypatch.setenv("P8_BATTERY_LOG", str(tmp_path / "iso_guard" / "battery_down.log"))
+    monkeypatch.setenv("P8_SLEEP_GUARD_PID", str(tmp_path / "iso_guard" / "sleep_guard.pid"))
+    monkeypatch.setenv("P8_IDLE_DIR", str(tmp_path / "iso_idle"))
 
 
 

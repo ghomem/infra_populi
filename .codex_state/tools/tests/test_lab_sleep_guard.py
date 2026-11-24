@@ -2,6 +2,8 @@
 stops (a laptop suspend between runs left both VMs in Guru Meditation on resume)."""
 
 import json
+import os
+from pathlib import Path
 import time
 
 import pytest
@@ -117,3 +119,14 @@ def test_the_guard_leaves_the_lab_up_on_mains_or_above_the_minimum(lab, stopped_
     time.sleep(1.0)  # five guard polls at 0.2 s
     assert vm_states(lab) == {MASTER: "running", NODE: "running"}
     assert not (lab.root / "battery.log").exists()
+
+
+def test_tests_never_read_the_real_battery_or_write_the_real_guard_state(tmp_path):
+    # HQ 2026-11-24 (resume on mains power, ruling 1): the autouse isolation points every guard and idle input and
+    # output into the test's own directory, and the stub supply is on mains, so no guard in a test can fire.
+    for key in ("P8_POWER_SUPPLY", "P8_BATTERY_LOG", "P8_SLEEP_GUARD_PID", "P8_IDLE_DIR", "P8_LAB_LOCK"):
+        assert os.environ[key].startswith(str(tmp_path)), key
+    supply = Path(os.environ["P8_POWER_SUPPLY"])
+    assert (supply / "AC" / "online").read_text().strip() == "1"
+    assert not any((d / "status").is_file() and (d / "status").read_text().strip() == "Discharging"
+                   for d in supply.iterdir())
