@@ -1,4 +1,4 @@
-# rsyslog_client — behaviour finding: rsyslog 8.2312 rejects a parameter of the forward_auth_log input (OPEN, for HQ: more than one reasonable fix)
+# rsyslog_client — behaviour finding: rsyslog 8.2312 rejects a parameter of the forward_auth_log input (CLOSED 2026-11-24: HQ resume ruling 1, option A, local change #22)
 
 Found by the sweep's variant run `options` (results/rsyslog_client/20261123T130958Z-author.json, check
 `options-render-the-forwarding-rules`): with check_names, a failover target and forward_auth_log, every rendered rule is
@@ -44,3 +44,18 @@ counts only, its value is not read).
 The check stays as it is; it fails until A or B is made (before evidence: the run above).
 Hazard 11: the template's only consumer is rsyslog_client (to be confirmed by `git grep` at the baseline when a change
 is made).
+
+## 2026-11-24: closed (HQ resume ruling 1: option A)
+- **Change:** local change #22 removes `deleteStateOnFileMove="on"` (rules/local_changes.md row 22); restoring it is
+  Phase 5 backlog #15, to be checked in the 26.04 pass.
+- **Hazard 11:** the template's only consumer at the baseline is rsyslog_client (`git grep forward_simple cf477c6`:
+  manifests/rsyslog_client.pp:43 only).
+- **Before:** results/rsyslog_client/20261124T163235Z-author: with forward_auth_log, on Ubuntu 24.04 `rsyslogd -N1`
+  did not complete and rsyslog's journal held 2 configuration errors.
+- **After:** results/rsyslog_client/20261124T165930Z-author ALL_PASS: no configuration error on Ubuntu 24.04 or on
+  rhel9; a line written straight into /var/log/auth.log reached the TLS peer through the imfile input.
+- **Correction to "Where rsyslog knows the parameter" above:** the RHEL line measured the rhel9 baseline's
+  8.2310.0-4.el9 by hand. Applying the class installs rsyslog-gnutls, which upgrades rsyslog to the repository's
+  8.2604.0-4.el9_9.1 (dnf.rpm.log, 2026-11-24), and that version accepts the parameter (rsyslogd -N1 on a one-input
+  file: only the "no active actions" error, no "not known"). So with the class applied, only Ubuntu 24.04 rejects it;
+  option A was ruled on "both lab target releases reject it". Reported to HQ.
