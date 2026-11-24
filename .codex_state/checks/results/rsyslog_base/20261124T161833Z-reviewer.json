@@ -1,0 +1,468 @@
+{
+ "class": "rsyslog_base",
+ "role": "reviewer",
+ "at": "20261124T161833Z",
+ "runner": "ae0a6f8",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "da3892dc9a5e95db5dd2e6761c718ba1d6c79f6d67a491418b8aa8eaaafe6d00",
+ "content_sha256": "da3892dc9a5e95db5dd2e6761c718ba1d6c79f6d67a491418b8aa8eaaafe6d00",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "rsyslog-and-its-tls-driver-are-installed-and-running",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rsyslog install ok installed\nrsyslog-gnutls unknown ok not-installed\n0\nactive\nenabled\n",
+   "stderr": "ls: cannot access '/usr/lib/*/rsyslog/lmnsd_gtls.so': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-tls-files-are-the-nodes-puppet-identity",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/rsyslog.d/tls': No such file or directory\nstat: cannot statx '/etc/rsyslog.d/tls/ca.pem': No such file or directory\nstat: cannot statx '/etc/rsyslog.d/tls/puppet8node.pem': No such file or directory\nstat: cannot statx '/etc/rsyslog.d/tls/puppet8node.key': No such file or directory\nError loading file /etc/rsyslog.d/tls/ca.pem\n40C7271908720000:error:80000002:system library:BIO_new_file:No such file or directory:../crypto/bio/bss_file.c:67:calling fopen(/etc/rsyslog.d/tls/ca.pem, r)\n40C7271908720000:error:10000080:BIO routines:BIO_new_file:no such file:../crypto/bio/bss_file.c:75:\n40C7271908720000:error:05880002:x509 certificate routines:X509_load_cert_crl_file_ex:system lib:../crypto/x509/by_file.c:228:\n",
+   "ok": true
+  },
+  {
+   "id": "the-catalog-copies-from-the-agents-ssldir",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "rsyslog-can-read-the-key-as-the-user-it-runs-as",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "$PrivDropToUser syslog\nsyslog\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "rsyslog-is-stopped",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "active\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-starts-rsyslog-again",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "active\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-tls-directory-drifts",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/rsyslog.d/tls': No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-directory-and-restarts-rsyslog",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "restarted\nactive\n",
+   "stderr": "stat: cannot statx '/etc/rsyslog.d/tls': No such file or directory\ncat: /run/p8test-rsyslog/pid: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-tls-file-changes",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/rsyslog.d/tls/ca.pem: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-file-and-restarts-rsyslog-once",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "restarted\n0\n",
+   "stderr": "bash: line 97: /run/p8test-rsyslog/before: No such file or directory\nFailed to seek to cursor: Invalid argument\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "ed588557ad124b7fcccc0abe4616c90306eb68dd5eb64bcedf3460c0ab71'\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.key]: Scheduling refresh of Service[rsyslog]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 4 events\u001b[0m\n\u001b[mNotice: Applied catalog in 29.02 seconds\u001b[0m\nRUN1_EVENTS: 5 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795537227'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.40 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::rsyslog_base: 7 concrete resources (+0 defined-type instances)\n  Package[rsyslog]\n  Package[rsyslog-gnutls]\n  File[/etc/rsyslog.d/tls]\n  File[/etc/rsyslog.d/tls/ca.pem]\n  File[/etc/rsyslog.d/tls/puppet8node.pem]\n  File[/etc/rsyslog.d/tls/puppet8node.key]\n  Service[rsyslog]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP rsyslog_base 1009d30751c0\n"
+ },
+ "applied": [
+  {
+   "id": "rsyslog-and-its-tls-driver-are-installed-and-running",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rsyslog install ok installed\nrsyslog-gnutls install ok installed\n1\nactive\nenabled\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-tls-files-are-the-nodes-puppet-identity",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "same-as-puppet\nsyslog:syslog 755\nsyslog:syslog 644\nsyslog:syslog 644\nsyslog:syslog 600\nOK\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the CA (the system bundle instead of the copied Puppet CA), which did not sign the node's certificate",
+    "rc": 0,
+    "passed": false,
+    "stdout": "same-as-puppet\nsyslog:syslog 755\nsyslog:syslog 644\nsyslog:syslog 644\nsyslog:syslog 600\nverification failed\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-catalog-copies-from-the-agents-ssldir",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/etc/rsyslog.d/tls/NODE.key /etc/puppetlabs/puppet/ssl/private_keys/NODE.pem\n/etc/rsyslog.d/tls/NODE.pem /etc/puppetlabs/puppet/ssl/certs/NODE.pem\n/etc/rsyslog.d/tls/ca.pem /etc/puppetlabs/puppet/ssl/certs/ca.pem\n",
+   "stderr": ""
+  },
+  {
+   "id": "rsyslog-can-read-the-key-as-the-user-it-runs-as",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "$PrivDropToUser syslog\nsyslog\nkey-readable-by-syslog\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the user (nobody instead of syslog), whom the key's 0600 syslog ownership must keep out",
+    "rc": 1,
+    "passed": false,
+    "stdout": "$PrivDropToUser syslog\nsyslog\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "rsyslog-is-stopped",
+   "control": "negative",
+   "rc": 3,
+   "passed": true,
+   "stdout": "inactive\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "stops syslog.socket and the rsyslog service on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-agent-run-starts-rsyslog-again",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\ntls-in-place\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the service state (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-tls-directory-drifts",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "700\npid-noted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "notes rsyslog's main PID in /run/p8test-rsyslog/pid, then chmod 0700 /etc/rsyslog.d/tls on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-the-directory-and-restarts-rsyslog",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "755\nrestarted\nactive\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the directory and rsyslog's state (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-tls-file-changes",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nnoted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "notes rsyslog's main PID and its journal cursor in /run/p8test-rsyslog/before, then appends a comment line to /etc/rsyslog.d/tls/ca.pem on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-the-file-and-restarts-rsyslog-once",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ca-restored\nrestarted\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the file, rsyslog's state and its journal (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "82cb6b64-e214-46b2-8835-f1f92067fb9e",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "82cb6b64-e214-46b2-8835-f1f92067fb9e",
+   "fresh": true
+  }
+ },
+ "node_agent": {
+  "rsyslog-is-stopped": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]/ensure: ensure changed 'stopped' to 'running' (corrective)\u001b[0m"
+   ],
+   "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795537242'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]/ensure: ensure changed 'stopped' to 'running' (corrective)\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Unscheduling refresh on Service[rsyslog]\u001b[0m\n\u001b[mNotice: Applied catalog in 0.93 seconds\u001b[0m\nAGENT_RC=2\n"
+  },
+  "the-tls-directory-drifts": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls]/mode: mode changed '0700' to '0755' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 1 event\u001b[0m"
+   ],
+   "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795537255'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls]/mode: mode changed '0700' to '0755' (corrective)\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls]: Scheduling refresh of Service[rsyslog]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.63 seconds\u001b[0m\nAGENT_RC=2\n"
+  },
+  "a-tls-file-changes": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/content:",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/content:",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/content: content changed '{sha256}056d991e079d50540ef1245d31dec798f43fd9e36b896d0b549a5d754f9acd5c' to '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54' (corrective)\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 1 event\u001b[0m"
+   ],
+   "tail": "ronment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795537267'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/content: \n--- /etc/rsyslog.d/tls/ca.pem\t2026-11-24 16:20:56.420330130 +0000\n+++ /tmp/puppet-file20261124-2533-g93p16\t2026-11-24 16:21:08.125900902 +0000\n@@ -29,4 +29,3 @@\n TQML0/LQ4SSx/5KzyVRpruzulJU2hgdIV0az/cn6PzjHflvXr1jjPSXny4KEfqF9\n 4NEyPfcV4pyyOAqPOy1n29IV7fXSIilZWceeIB0=\n -----END CERTIFICATE-----\n-# p8test drift\n\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/content: \n\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/content: content changed '{sha256}056d991e079d50540ef1245d31dec798f43fd9e36b896d0b549a5d754f9acd5c' to '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54' (corrective)\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]: Scheduling refresh of Service[rsyslog]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.67 seconds\u001b[0m\nAGENT_RC=2\n"
+  }
+ },
+ "variants": {
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "snapshot": "P8LAB_RHEL9_BASELINE_v2",
+     "boot_id": "5ef3fb47-49d8-40fb-b5ff-84a0fe71214e",
+     "apt_mirror": null,
+     "boot_id_at_end": "5ef3fb47-49d8-40fb-b5ff-84a0fe71214e",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "on-redhat-a-syslog-account-with-ids-0-exists",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "active\nroot\n",
+     "stderr": "stat: cannot statx '/etc/rsyslog.d/tls': No such file or directory\nstat: cannot statx '/etc/rsyslog.d/tls/ca.pem': No such file or directory\nstat: cannot statx '/etc/rsyslog.d/tls/p8lab-rhel9.pem': No such file or directory\nstat: cannot statx '/etc/rsyslog.d/tls/p8lab-rhel9.key': No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": ":Rsyslog_base/File[/etc/rsyslog.d/tls/p8lab-rhel9.key]: Scheduling refresh of Service[rsyslog]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 4 events\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 10.39 seconds\u001b[0m\nRUN1_EVENTS: 7 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795537665'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.20 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::rsyslog_base: 9 concrete resources (+0 defined-type instances)\n  Package[rsyslog]\n  Package[rsyslog-gnutls]\n  Group[syslog]\n  User[syslog]\n  File[/etc/rsyslog.d/tls]\n  File[/etc/rsyslog.d/tls/ca.pem]\n  File[/etc/rsyslog.d/tls/p8lab-rhel9.pem]\n  File[/etc/rsyslog.d/tls/p8lab-rhel9.key]\n  Service[rsyslog]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP rsyslog_base 1009d30751c0\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-a-syslog-account-with-ids-0-exists",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "syslog:0\nsyslog:0\nsame-as-puppet\n0:0 755\n0:0 644\n0:0 644\n0:0 600\nactive\nroot\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  },
+  "override": {
+   "name": "override",
+   "node": "ubuntu",
+   "params": "override",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "snapshot": "P8NODE_BASELINE_GREEN_v4",
+     "boot_id": "21b81b6b-71aa-4dfb-8f69-a5be07e72e31",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "21b81b6b-71aa-4dfb-8f69-a5be07e72e31",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "the-catalog-copies-from-the-override",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "b71'\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.key]: Scheduling refresh of Service[rsyslog]\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 4 events\u001b[0m\n\u001b[mNotice: Applied catalog in 17.51 seconds\u001b[0m\nRUN1_EVENTS: 5 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795537770'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.51 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::rsyslog_base: 7 concrete resources (+0 defined-type instances)\n  Package[rsyslog]\n  Package[rsyslog-gnutls]\n  File[/etc/rsyslog.d/tls]\n  File[/etc/rsyslog.d/tls/ca.pem]\n  File[/etc/rsyslog.d/tls/puppet8node.pem]\n  File[/etc/rsyslog.d/tls/puppet8node.key]\n  Service[rsyslog]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant override; never a Phase 1 record)\n"
+   },
+   "applied": [
+    {
+     "id": "the-catalog-copies-from-the-override",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "/etc/rsyslog.d/tls/NODE.key /etc/puppetlabs/puppet/./ssl/private_keys/NODE.pem\n/etc/rsyslog.d/tls/NODE.pem /etc/puppetlabs/puppet/./ssl/certs/NODE.pem\n/etc/rsyslog.d/tls/ca.pem /etc/puppetlabs/puppet/./ssl/certs/ca.pem\nsame-as-puppet\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "rsyslog and its GnuTLS driver are installed, and rsyslog runs and starts at boot",
+   "checks": [
+    "rsyslog-and-its-tls-driver-are-installed-and-running"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "with no ssldir_override, the node's Puppet CA, certificate and key are copied for rsyslog from the agent's own ssldir (an AIO agent's /etc/puppetlabs/puppet/ssl, local change #23), byte for byte, and form a valid identity",
+   "checks": [
+    "the-tls-files-are-the-nodes-puppet-identity",
+    "the-catalog-copies-from-the-agents-ssldir",
+    "on-redhat-a-syslog-account-with-ids-0-exists"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "with ssldir_override, the copies come from the directory given",
+   "checks": [
+    "the-catalog-copies-from-the-override"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "on an agent without the aio_agent_version fact (the pre-AIO packages), the copies come from /var/lib/puppet/ssl",
+   "uncovered": {
+    "why": "every lab agent is an AIO agent, and so is the production agent read on the laptop (puppet-agent 5.5.22); no lab node kind runs the pre-AIO packages",
+    "lifted_by": "capability: an agent without the aio_agent_version fact (the pre-AIO puppet packages)",
+    "evidence": "facter aio_agent_version gives 8.24.2 on puppet8node and on p8lab-rhel9 (2026-11-24), each with puppet config print ssldir /etc/puppetlabs/puppet/ssl; .codex_state/lab/nodes.yml lists no pre-AIO agent; CLAUDE.md records the laptop's agent as puppet-agent 5.5.22"
+   }
+  },
+  {
+   "outcome": "the user rsyslog drops to (syslog) can read the key, and other users cannot",
+   "checks": [
+    "rsyslog-can-read-the-key-as-the-user-it-runs-as"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a stopped rsyslog runs again after the next agent run",
+   "checks": [
+    "rsyslog-is-stopped",
+    "the-next-agent-run-starts-rsyslog-again"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a change to the TLS directory restarts rsyslog at the next agent run",
+   "checks": [
+    "the-tls-directory-drifts",
+    "the-agent-run-restores-the-directory-and-restarts-rsyslog"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a change to a TLS file (a renewed certificate) restarts rsyslog once at the next agent run",
+   "checks": [
+    "a-tls-file-changes",
+    "the-agent-run-restores-the-file-and-restarts-rsyslog-once"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "on RedHat, a syslog user and group (uid/gid 0) exist for the copied files' ownership",
+   "checks": [
+    "on-redhat-a-syslog-account-with-ids-0-exists"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 659.2
+}

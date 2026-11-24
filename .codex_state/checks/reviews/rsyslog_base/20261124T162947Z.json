@@ -1,0 +1,35 @@
+{
+ "class": "rsyslog_base",
+ "at": "20261124T162947Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "a-tls-file-changes: baseline :49-55 declares /etc/rsyslog.d/tls/ca.pem copied from ${ssldir}/certs/ca.pem (syslog, 0644); the action appends a line to that managed copy (declared in mutates) and the read-only effect counts the drift line, the setup for the restore-and-restart check, so the reference supports it",
+  "the-catalog-copies-from-the-agents-ssldir: baseline :49-71 sources the three copies from ${ssldir}/certs/ca.pem, ${ssldir}/certs/<certname>.pem and ${ssldir}/private_keys/<certname>.pem; with the empty params fixture the undef arm of $ssldir applies, which on an AIO agent is /etc/puppetlabs/puppet/ssl under local change #23 (current manifest), so the expected catalog sources (key from private_keys, cert and CA from certs) are what the code produces; it failed on the clean node and passed after apply",
+  "on-redhat-a-syslog-account-with-ids-0-exists: baseline :49-71 makes the copies owned by syslog:syslog with the key 0600 and the others 0644; on RHEL :16-28 gives syslog uid/gid 0, so stat shows 0:0 with modes 755/644/644/600 and byte-equal copies of the agent's identity, exactly what the lines declare; it failed on the clean rhel9 node and passed after apply",
+  "purpose covered: The purpose (rsyslog plus GnuTLS installed and running, the node's Puppet CA/cert/key copied where rsyslog's user can read them, rsyslog kept running and restarted on TLS changes) matches the header comments and the whole manifest (no templates or files). The checks test the packages, gtls driver, running and enabled service; the copies byte for byte with ownership and modes and that the cert verifies against the copied CA (mismatch: system bundle); the catalog's default source dir (local change #23) and the override arm (variant override, /etc/puppetlabs/puppet/./ssl taken as given, copies byte-equal); that rsyslog drops to syslog and syslog can read the key while nobody cannot (mismatch); recovery of a stopped rsyslog by the next agent run; restart on TLS-directory drift and exactly one restart on a TLS file change (local change #1); and on rhel9 the syslog account with ids 0, root-owned copies and rsyslog running as root. Left out: only the pre-AIO /var/lib/puppet/ssl arm, honestly uncovered: its evidence (aio_agent_version 8.24.2 on both lab nodes, nodes.yml lists no pre-AIO agent) shows the lab lacks such an agent, lifted by a capability. My reviewer run 20261124T161833Z: base, rhel and override all ALL_PASS, no findings."
+ ],
+ "review_s": 674.5,
+ "check_file_sha256": "da3892dc9a5e95db5dd2e6761c718ba1d6c79f6d67a491418b8aa8eaaafe6d00",
+ "content_sha256": "da3892dc9a5e95db5dd2e6761c718ba1d6c79f6d67a491418b8aa8eaaafe6d00",
+ "reviewer_result": "20261124T161833Z-reviewer",
+ "author_result": "20261124T155232Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "82cb6b64-e214-46b2-8835-f1f92067fb9e",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "82cb6b64-e214-46b2-8835-f1f92067fb9e",
+   "fresh": true
+  }
+ }
+}
