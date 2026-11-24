@@ -1,0 +1,35 @@
+{
+ "class": "ssl_base",
+ "at": "20261124T174824Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "letsencrypt-key-and-bundle: ssl_base.pp:70-76 set key_file ${ssl_private_dir}/${myprefix}-key.pem and bundle_file ${ssl_certs_dir}/${myprefix}.${myservice}.bundle.pem from <prefix>.pem then <prefix>-chain.pem; with the letsencrypt fixture (p8test, nginx, true) the probe reads /etc/ssl/private/p8test-key.pem (0600 root:root from 85-92 defaults), >=2 certificates in /etc/ssl/certs/p8test.nginx.bundle.pem, and the key matching the first certificate (the leaf, order 01); the mismatch compares the second (chain) certificate's public key, which must change the verdict",
+  "the-bundle-is-the-leaf-then-its-issuer: ssl_base.pp:109-119 concat fragments order 01 = <prefix>.crt, 02 = <prefix>.intermediate.crt into the bundle (0644 from 100-107); master_fixtures.sh lays server.crt (CN p8test.invalid) as ssl/p8test.crt and ca.crt (CN p8test throwaway CA) as ssl/p8test.intermediate.crt, so 2 certificates, leaf CN then CA CN, and verify OK is exactly what the code produces; the mismatch swaps only the trust anchor for the system CA bundle, which did not sign the leaf, so the verdict must change",
+  "other-owners-and-groups: ssl_base.pp:85-92 owner => $owner, group => $group, mode 0600 on the key (and 100-107 the same owner/group with 0644 on the bundle); the owners fixture sets www-data/www-data, so www-data:www-data 600 and 644 is what the code declares",
+  "purpose covered: Purpose matches the header (lines 1-10) and code: deploy key (0600) and leaf-then-intermediate bundle, restart the service on change. Checks test the key's permissions and that it is the deployed certificate's key, the bundle order with a real openssl verify of leaf against its issuer, and the restart behaviour end to end (hand drift of key and bundle, the node's agent run restores both and nginx gets a new main PID with exactly one start in its journal). Variants cover Let's Encrypt paths (lines 70-76), other owners/groups (85-92) and the RedHat private dir on rhel9 (57-62); all ALL_PASS in my run, no findings. The only uncovered outcome, the warning notify for services other than nginx/postfix (94-97), is honest: a notify reports an event every run, which test_class.sh RUN2_FORBIDDEN_RE (\"defined '...' as\") refuses on run 2, and the plan's expected_run2_events for ssl_base is empty and per class; lifted_by names that capability. Nothing else in the manifest (no templates or files of its own) is left untested."
+ ],
+ "review_s": 848.7,
+ "check_file_sha256": "00d912feab05e33847b6a2720087fba7225edd741b7d1614cb7e9b1398d2874e",
+ "content_sha256": "00d912feab05e33847b6a2720087fba7225edd741b7d1614cb7e9b1398d2874e",
+ "reviewer_result": "20261124T173416Z-reviewer",
+ "author_result": "20261123T124845Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "2d107632-25e5-456e-a01d-9f000d9ae5ec",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "2d107632-25e5-456e-a01d-9f000d9ae5ec",
+   "fresh": true
+  }
+ }
+}
