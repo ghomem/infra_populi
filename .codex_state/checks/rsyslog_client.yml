@@ -1,12 +1,18 @@
 # Phase 3 checks for puppet_infrastructure::rsyslog_client (class; node ubuntu; it declares rsyslog_base itself).
-# Fixture (params, never committed; changed 2026-11-18 for these checks): target = the peer's host name, target_ip =
-# the peer's host-only address (so the class pins it in /etc/hosts), ssldir_override /etc/puppetlabs/puppet/ssl (the
-# OpenVox agent's ssldir); port 6514, check_names false, no failover, forward_auth_log false at their defaults.
+# Fixture (params, never committed; changed 2026-11-18 for these checks, and 2026-11-24): target = the peer's host
+# name, target_ip = the peer's host-only address (so the class pins it in /etc/hosts), forward_auth_log true; no
+# ssldir_override (rsyslog_base's default, the AIO agent's own ssldir, local change #23); port 6514, check_names
+# false, no failover at their defaults.
 # The peer (ubuntu2) plays the remote log server: an rsyslog TLS listener on 6514 with the peer's own Puppet
 # certificate from the same lab CA (x509/certvalid on both sides). Node probes name no other host; peer probes name
 # only the class node's host-only address.
 # 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): forward_auth_log, check_names and a failover target are a check in
 # the variant run `options`; the failover switch itself names what is missing.
+# 2026-11-24 (HQ resume rulings 1 and 2): local change #22 removes deleteStateOnFileMove, which rsyslog 8.2312 (Ubuntu
+# 24.04) and 8.2310 (RHEL 9.5) reject (escalations/rsyslog_client.behaviour.md). The base run now sets
+# forward_auth_log and no ssldir_override: rsyslog must start with no configuration error, a line appended to
+# /var/log/auth.log (which only the imfile input reads) must reach the peer, and the TLS files come from the default
+# ssldir (#23). The variant `rhel` checks the configuration on RHEL 9.5.
 class: rsyslog_client
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -34,6 +40,12 @@ outcomes:
   - outcome: a changed forwarding rule is restored by the next agent run, which restarts rsyslog once
     from: manifests/rsyslog_client.pp:40-55
     checks: [the-forwarding-rule-drifts, the-agent-run-restores-the-rule-and-restarts-rsyslog-once]
+  - outcome: with forward_auth_log, rsyslog accepts the configuration and starts with no configuration error, on Ubuntu 24.04 and on RHEL 9.5 with the rsyslog the class installs there (local change #22)
+    from: templates/rsyslog/forward_simple.conf.epp:65-77 (the imfile input; local change #22); HQ 2026-11-24 ruling 1
+    checks: [rsyslog-starts-without-a-config-error, on-redhat-rsyslog-starts-without-a-config-error]
+  - outcome: with forward_auth_log, a line written to /var/log/auth.log reaches the remote TLS log server through the auth.log input
+    from: manifests/rsyslog_client.pp:11; templates/rsyslog/forward_simple.conf.epp:26-77
+    checks: [a-line-is-written-to-auth-log, the-server-received-the-auth-log-line]
   - outcome: forward_auth_log, check_names and a failover target render their rules (auth.log read and forwarded on its own ruleset, the peer name enforced, a failover action only while the first is suspended)
     from: manifests/rsyslog_client.pp:7-11, 31-38; templates/rsyslog/forward_simple.conf.epp:15-25, 26-77
     checks: [options-render-the-forwarding-rules]
@@ -53,6 +65,12 @@ variants:
       forward_auth_log (a production node sets it), check_names (node_base_desktop passes it) and a failover target
       (production use undeterminable from node files: no statement sets it, no composite either; tested with the others)
     params: options
+  - name: rhel
+    why: >-
+      forward_auth_log's configuration on RHEL 9.5 (rsyslog 8.2310), on the rhel9 node; no peer in a variant run, so the
+      target is a name that is never reached
+    node: rhel9
+    params: rhelauth
 checks:
   - id: forwarding-rule-sends-everything-over-tls
     what: >-
@@ -172,6 +190,54 @@ checks:
       grep -m1 'p8test-rsyslog-forward-token' /var/log/p8test-remote.log
     expect: {rc: 0, stdout: "\\Apuppet8node p8test-rsyslog: ?p8test-rsyslog-forward-token\\n\\Z"}
 
+  # 2026-11-24 authoring correction (before run 20261124T163235Z): the journal count ends the probe, and grep -c exits 1
+  # when it counts 0, so on rhel9 the check failed with the expected output (1, 1, active, 0); the count now ends in
+  # `|| true` (here and in the rhel check). In that run rhel9's rsyslog was 8.2604.0-4.el9_9.1, not the baseline's
+  # 8.2310.0-4.el9: installing rsyslog-gnutls upgrades rsyslog from the repository (dnf.rpm.log), and 8.2604 accepts
+  # deleteStateOnFileMove (rsyslogd -N1 on a one-input file, measured by hand). The Ubuntu base run failed as before.
+  - id: rsyslog-starts-without-a-config-error
+    what: >-
+      with forward_auth_log rendered, rsyslog's validation run completes and rsyslog has logged no configuration error
+      since the node booted
+    control: negative
+    derived_from:
+      - {path: templates/rsyslog/forward_simple.conf.epp, lines: "65-77", text: "module(load=\"imfile\")"}
+      - {path: manifests/rsyslog_client.pp, lines: "11", text: "Boolean           $forward_auth_log = false,"}
+    probe: |
+      grep -c 'ruleset="forward_authlog_only"' /etc/rsyslog.d/40-forward.conf
+      rsyslogd -N1 2>&1 | grep -c 'End of config validation run'
+      systemctl is-active rsyslog
+      journalctl -b -u rsyslog --no-pager -q | grep -ciE 'error during parsing|not known|could not interpret' || true
+    expect: {rc: 0, stdout: "\\A1\\n1\\nactive\\n0\\n\\Z"}
+
+  - id: a-line-is-written-to-auth-log
+    what: setup for the next check, a token line appended directly to /var/log/auth.log on the node (bypassing syslog)
+    control: negative
+    derived_from:
+      - {path: templates/rsyslog/forward_simple.conf.epp, lines: "65-77", text: "File=\"/var/log/auth.log\""}
+    mutates: appends one line carrying `p8test-authlog-token` to /var/log/auth.log on the node, then waits 5 s
+    probe: |
+      printf '%s %s p8test-authlog: p8test-authlog-token\n' "$(date '+%b %e %T')" "$(hostname)" >> /var/log/auth.log
+      sleep 5
+    effect: |
+      p8_count 'p8test-authlog-token' /var/log/auth.log
+      grep -c 'ruleset="forward_authlog_only"' /etc/rsyslog.d/40-forward.conf
+    expect: {rc: 0, stdout: "\\A1\\n1\\n\\Z"}
+
+  - id: the-server-received-the-auth-log-line
+    what: the peer's log server wrote the line read from the node's auth.log, under the node's host name and the tag auth
+    control: negative
+    host: peer
+    derived_from:
+      - {path: templates/rsyslog/forward_simple.conf.epp, lines: "65-77", text: "Tag=\"auth\""}
+      - {path: templates/rsyslog/forward_simple.conf.epp, lines: "26-40", text: "ruleset(name=\"forward_authlog_only\") {"}
+    mutates: none beyond reading the peer's received log (declared mutating so it runs after the node's line was written)
+    probe: |
+      true
+    effect: |
+      grep -m1 'p8test-authlog-token' /var/log/p8test-remote.log | sed -E 's/^(\S+) (auth)\S* .*(p8test-authlog-token)$/\1 \2 \3/'
+    expect: {rc: 0, stdout: "\\Apuppet8node auth p8test-authlog-token\\n\\Z"}
+
   - id: the-forwarding-rule-drifts
     what: setup for the next check, the forwarding rule changed by hand, with rsyslog's process id and journal cursor noted
     control: negative
@@ -223,3 +289,19 @@ checks:
       grep -E '^203\.0\.113\.77[[:space:]]' /etc/hosts | awk '{print $2}'
       rsyslogd -N1 2>&1 | grep -c 'End of config validation run'
     expect: {rc: 0, stdout: "\\A1\\n1\\n1\\n1\\np8test-failover\\.invalid\\n1\\n\\Z"}
+
+  - id: on-redhat-rsyslog-starts-without-a-config-error
+    variant: rhel
+    what: >-
+      on RHEL 9.5 with forward_auth_log rendered, rsyslog's validation run completes and rsyslog has logged no
+      configuration error since the node booted
+    control: negative
+    derived_from:
+      - {path: templates/rsyslog/forward_simple.conf.epp, lines: "65-77", text: "module(load=\"imfile\")"}
+      - {path: manifests/rsyslog_client.pp, lines: "11", text: "Boolean           $forward_auth_log = false,"}
+    probe: |
+      grep -c 'ruleset="forward_authlog_only"' /etc/rsyslog.d/40-forward.conf
+      rsyslogd -N1 2>&1 | grep -c 'End of config validation run'
+      systemctl is-active rsyslog
+      journalctl -b -u rsyslog --no-pager -q | grep -ciE 'error during parsing|not known|could not interpret' || true
+    expect: {rc: 0, stdout: "\\A1\\n1\\nactive\\n0\\n\\Z"}

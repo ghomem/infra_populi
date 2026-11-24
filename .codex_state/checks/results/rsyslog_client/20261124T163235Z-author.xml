@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.rsyslog_client"><testsuite name="phase3.rsyslog_client.clean" tests="11" failures="0"><testcase classname="phase3.rsyslog_client.clean" name="forwarding-rule-sends-everything-over-tls" /><testcase classname="phase3.rsyslog_client.clean" name="tls-material-is-the-nodes-puppet-identity" /><testcase classname="phase3.rsyslog_client.clean" name="the-target-is-pinned-in-hosts" /><testcase classname="phase3.rsyslog_client.clean" name="the-peer-runs-a-tls-log-server" /><testcase classname="phase3.rsyslog_client.clean" name="a-local-log-line-leaves-over-tls" /><testcase classname="phase3.rsyslog_client.clean" name="the-server-received-the-line-from-the-node" /><testcase classname="phase3.rsyslog_client.clean" name="rsyslog-starts-without-a-config-error" /><testcase classname="phase3.rsyslog_client.clean" name="a-line-is-written-to-auth-log" /><testcase classname="phase3.rsyslog_client.clean" name="the-server-received-the-auth-log-line" /><testcase classname="phase3.rsyslog_client.clean" name="the-forwarding-rule-drifts" /><testcase classname="phase3.rsyslog_client.clean" name="the-agent-run-restores-the-rule-and-restarts-rsyslog-once" /></testsuite><testsuite name="phase3.rsyslog_client.applied" tests="12" failures="2"><testcase classname="phase3.rsyslog_client.applied" name="forwarding-rule-sends-everything-over-tls"><failure message="check failed after the class was applied (finding)">rc 1
+$DefaultNetstreamDriver gtls
+$ActionSendStreamDriverMode 1
+$ActionSendStreamDriverAuthMode x509/certvalid
+*.* @@TARGET:6514
+
+</failure></testcase><testcase classname="phase3.rsyslog_client.applied" name="tls-material-is-the-nodes-puppet-identity" /><testcase classname="phase3.rsyslog_client.applied" name="tls-material-is-the-nodes-puppet-identity.mismatch" /><testcase classname="phase3.rsyslog_client.applied" name="the-target-is-pinned-in-hosts" /><testcase classname="phase3.rsyslog_client.applied" name="rsyslog-starts-without-a-config-error"><failure message="check failed after the class was applied (finding)">rc 0
+1
+0
+active
+2
+
+</failure></testcase><testcase classname="phase3.rsyslog_client.applied" name="the-peer-runs-a-tls-log-server"><skipped message="not run: read-only checks failed (forwarding-rule-sends-everything-over-tls, rsyslog-starts-without-a-config-error)" /></testcase><testcase classname="phase3.rsyslog_client.applied" name="a-local-log-line-leaves-over-tls"><skipped message="not run: read-only checks failed (forwarding-rule-sends-everything-over-tls, rsyslog-starts-without-a-config-error)" /></testcase><testcase classname="phase3.rsyslog_client.applied" name="the-server-received-the-line-from-the-node"><skipped message="not run: read-only checks failed (forwarding-rule-sends-everything-over-tls, rsyslog-starts-without-a-config-error)" /></testcase><testcase classname="phase3.rsyslog_client.applied" name="a-line-is-written-to-auth-log"><skipped message="not run: read-only checks failed (forwarding-rule-sends-everything-over-tls, rsyslog-starts-without-a-config-error)" /></testcase><testcase classname="phase3.rsyslog_client.applied" name="the-server-received-the-auth-log-line"><skipped message="not run: read-only checks failed (forwarding-rule-sends-everything-over-tls, rsyslog-starts-without-a-config-error)" /></testcase><testcase classname="phase3.rsyslog_client.applied" name="the-forwarding-rule-drifts"><skipped message="not run: read-only checks failed (forwarding-rule-sends-everything-over-tls, rsyslog-starts-without-a-config-error)" /></testcase><testcase classname="phase3.rsyslog_client.applied" name="the-agent-run-restores-the-rule-and-restarts-rsyslog-once"><skipped message="not run: read-only checks failed (forwarding-rule-sends-everything-over-tls, rsyslog-starts-without-a-config-error)" /></testcase></testsuite><testsuite name="phase3.rsyslog_client.options.clean" tests="1" failures="0"><testcase classname="phase3.rsyslog_client.options.clean" name="options-render-the-forwarding-rules" /></testsuite><testsuite name="phase3.rsyslog_client.options.applied" tests="1" failures="1"><testcase classname="phase3.rsyslog_client.options.applied" name="options-render-the-forwarding-rules"><failure message="check failed after the class was applied (finding)">rc 1
+1
+1
+1
+1
+p8test-failover.invalid
+0
+
+</failure></testcase></testsuite><testsuite name="phase3.rsyslog_client.rhel.clean" tests="1" failures="0"><testcase classname="phase3.rsyslog_client.rhel.clean" name="on-redhat-rsyslog-starts-without-a-config-error" /></testsuite><testsuite name="phase3.rsyslog_client.rhel.applied" tests="1" failures="1"><testcase classname="phase3.rsyslog_client.rhel.applied" name="on-redhat-rsyslog-starts-without-a-config-error"><failure message="check failed after the class was applied (finding)">rc 1
+1
+1
+active
+0
+
+</failure></testcase></testsuite></testsuites>
