@@ -139,9 +139,8 @@ p8lab-rhel9::postfix_smtp_node::relaypass: 'p8test-not-a-secret'
 # The master-role node p8lab-puppetserver has a local MTA for hashman's mail (HQ 2026-11-18 ruling C2).
 p8lab-puppetserver::postfix_smtp_node::relayuser: 'p8test-relay'
 p8lab-puppetserver::postfix_smtp_node::relaypass: 'p8test-not-a-secret'
-# rsyslog_server does `include puppet_infrastructure::rsyslog_base`, whose default ssldir is the pre-AIO
-# /var/lib/puppet/ssl; the lab's agents keep theirs at the OpenVox default (rsyslog_client passes the same value).
-puppet_infrastructure::rsyslog_base::ssldir_override: '/etc/puppetlabs/puppet/ssl'
+# (2026-11-24, HQ ruling 2 of the resume: rsyslog_base's ssldir_override binding removed; local change #23 makes the
+# default the AIO agent's own ssldir, so every lab run now takes the default.)
 # network_vpn declares openvpn_server without local/local_interface, so they come from here in the lab: the stand-in
 # DHCP primary interface of node fixture p8test_dhcp_primary (production: the primary interface and its address).
 # (The batch-7 db:: keys were removed 2026-11-17: common.yaml, first in the hierarchy, defines them; never effective.)

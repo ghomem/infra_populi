@@ -49,7 +49,7 @@ def test_fixture_values_are_obviously_fake():
     hiera = remotes()[3]
     values = [l.split(": ", 1)[1] for l in hiera.split("<<'YAML'", 1)[1].split("YAML\n", 1)[0].splitlines()
               if "::" in l and not l.startswith("#")]
-    assert len(values) == 14
+    assert len(values) == 13
     assert "puppet8node::ssh::othergroups: 'p8testgroup'" in hiera
     stock = {"'/etc/puppetlabs/puppet/ssl'"}  # the OpenVox default ssldir: a stock path, neither fake nor a secret
     doc_net = re.compile(r"'(192\.0\.2|198\.51\.100|203\.0\.113)\.\d+'")  # RFC 5737 documentation addresses
@@ -91,10 +91,11 @@ def test_every_remote_script_parses():
         assert proc.returncode == 0, proc.stderr
 
 
-def test_hiera_fixture_carries_the_rsyslog_base_ssldir_for_an_included_rsyslog_base():
-    # rsyslog_server includes rsyslog_base without parameters (2026-11-16, batch 5): the lab binds the ssldir by Hiera
+def test_hiera_fixture_no_longer_binds_the_rsyslog_base_ssldir():
+    # 2026-11-24 (HQ ruling 2 of the resume, local change #23): rsyslog_base's default is the AIO agent's own ssldir, so
+    # the lab binds no ssldir_override; every lab run takes the class's default
     hiera = next(r for r in remotes() if "p8test_fixtures.yaml" in r)
-    assert "\npuppet_infrastructure::rsyslog_base::ssldir_override: '/etc/puppetlabs/puppet/ssl'\n" in hiera
+    assert "rsyslog_base::ssldir_override" not in hiera
 
 
 def test_the_clock_section_caps_the_poll_interval_and_restarts_only_on_change():
