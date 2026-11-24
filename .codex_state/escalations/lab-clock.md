@@ -1,4 +1,4 @@
-# Lab: the node's clock runs about 2.5% fast on this host boot (OPEN, for HQ/Salatiel: lab environment)
+# Lab: the node's clock runs about 2.5% fast on this host boot (CLOSED 2026-11-24: gone after a cold boot of the laptop)
 
 Found 2026-11-23 by the sweep: node_base's `ntp-keeps-the-time` failed twice (results/node_base/20261123T132939Z-author:
 a source selected, the clock not synchronised; 20261123T142843Z-author: no source). The check passed on 2026-11-18
@@ -69,3 +69,14 @@ To re-run, author and reviewer, once the clocks keep time:
   a-stale-package-list-raises-the-alarm compares a file's age with the node's own clock, so the rate does not enter
   it.
 The rhel9, ubuntu2 and gnome nodes' rates were not measured; the checks above that run there are listed by kind.
+
+## 2026-11-24: after a cold boot of the laptop (HQ): the drift is gone
+- **Host:** booted 2026-11-24 12:24:51 (`uptime -s`); kernel and VirtualBox unchanged (7.0.0-22-generic, 7.2.6).
+- **Rates** (`lab_power.sh up`; rhel9, ubuntu2 and gnome started with lab_vm.sh; each VM's /proc/uptime read at the
+  start and end of one 300 s window against the laptop's; reads took 0.8-2.3 s, so about ±0.6%):
+  node 1.0020 (again over 300 s: 1.0015), master 1.0006, rhel9 1.0001, ubuntu2 1.0003, gnome 0.9999.
+- **Time sync on the VMs then:** timesyncd on the node, master and ubuntu2 at its +500 ppm frequency limit with offsets
+  +142.571, +155.426 and +144.044 ms; gnome +43.339 ms; chrony on rhel9 0.0037 s slow, estimating the raw clock
+  4676.815 ppm slow (skew 13.758 ppm), which chrony corrects. The uptime method cannot resolve rates within ntpd's
+  500 ppm; node_base's ntp check is the finer test.
+- The duration-dependent runs listed above are re-run, by author and reviewer (HQ, after the cold boot).
