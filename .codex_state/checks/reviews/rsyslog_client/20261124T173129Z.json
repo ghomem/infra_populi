@@ -1,0 +1,43 @@
+{
+ "class": "rsyslog_client",
+ "at": "20261124T173129Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "options-render-the-forwarding-rules @ templates/rsyslog/forward_simple.conf.epp:21-25: with failover=p8test-failover.invalid (options fixture) the baseline renders '*.*  @@<failover>:<port>' only inside the $ActionExecOnlyWhenPreviousIsSuspended on/off block; the probe counts exactly that line '^*.*  @@p8test-failover.invalid:6514' (=1) and rsyslogd -N1 completes; it does not grep the on/off directives themselves, but the line cannot render without them",
+  "rsyslog-starts-without-a-config-error @ manifests/rsyslog_client.pp:11: forward_auth_log (false by default, true in the base fixture) renders the forward_authlog_only ruleset and imfile input; the probe counts that ruleset (1), requires rsyslogd -N1 to finish, rsyslog active and 0 'not known/error during parsing' journal lines since boot, which is what local change #22 (deleteStateOnFileMove removed, the only DIFF in the template vs cf477c6) must achieve; passed in my run on Ubuntu 24.04 and (sibling check) on rhel9",
+  "options-render-the-forwarding-rules @ templates/rsyslog/forward_simple.conf.epp:15-18: check_names=true in the options fixture yields '$ActionSendStreamDriverAuthMode  x509/name' and '$ActionSendStreamDriverPermittedPeer <target>'; the probe's 'AuthMode  *x509/name' needs whitespace after AuthMode so it matches only the legacy line, not the ruleset's StreamDriverAuthMode=\"x509/name\", and expects 1 each, as the template produces",
+  "purpose covered: Purpose (forward all local logs to a remote rsyslog server over TLS with the node's Puppet identity, target optionally pinned in /etc/hosts) matches the header comment and baseline manifest/template. Tested end to end with a real TLS peer (ubuntu2, same lab CA): the *.* @@target:6514 gtls/x509-certvalid rule and rsyslogd -N1, TLS files byte-identical to the agent's ssldir with key syslog 0600 and verifying against the CA (mismatch with the system CA bundle fails as required), the /etc/hosts pin resolving to target_ip, a logger line and a line written straight to /var/log/auth.log (imfile input, forward_auth_log) both received by the peer under the node's name, the drift of 40-forward.conf restored by the next agent run with exactly one rsyslog restart, no configuration error on Ubuntu 24.04 and on RHEL 9 (variant rhel), and check_names/failover/forward_auth_log rendering plus the failover /etc/hosts pin (variant options). Left out: the actual switch to the failover target while the first is suspended, honestly uncovered: it needs a dead first target plus a live peer as failover, and variant runs have no peer (phase3.py:719 refuses host: peer in a variant check), lifted by capability. Package/service/TLS-copy internals belong to rsyslog_base's own set. All 13 checks valid on clean and passing after apply in my run 20261124T171904Z-reviewer (base, options, rhel ALL_PASS)."
+ ],
+ "review_s": 745.2,
+ "check_file_sha256": "25b8a67d6ee632a29e01ae4ff9ccecbdc821cb462ac4797ccff010064ccf7ccd",
+ "content_sha256": "25b8a67d6ee632a29e01ae4ff9ccecbdc821cb462ac4797ccff010064ccf7ccd",
+ "reviewer_result": "20261124T171904Z-reviewer",
+ "author_result": "20261124T165930Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v4",
+   "boot_id": "c08ae5d9-8abb-4204-8f91-bad40a5d5875",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "c08ae5d9-8abb-4204-8f91-bad40a5d5875",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v2",
+   "boot_id": "de31ef50-a459-434c-b7b7-d4f1e2580aed",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "de31ef50-a459-434c-b7b7-d4f1e2580aed",
+   "fresh": true
+  }
+ }
+}
