@@ -1,4 +1,4 @@
-# Lab: VM clocks drift (2.45% fast on the 2026-11-22 host boot; after a cold boot, 0.465% slow on four of five VMs, measured 2026-11-24): REOPENED, for HQ (the VirtualBox side)
+# Lab: VM clocks drift under the kvm paravirt provider (0.465% slow after the cold boot; 2.45% fast before); hyperv fixes it (2026-11-24): ubuntu2 and rhel9 done; master and node WAIT FOR SALATIEL (steps below)
 
 Found 2026-11-23 by the sweep: node_base's `ntp-keeps-the-time` failed twice (results/node_base/20261123T132939Z-author:
 a source selected, the clock not synchronised; 20261123T142843Z-author: no source). The check passed on 2026-11-18
@@ -112,3 +112,71 @@ The rhel9, ubuntu2 and gnome nodes' rates were not measured; the checks above th
 - node_base, ssh_secure and sysmon_base: their rhel variants were ENVIRONMENT_FAILED (the revert's 300 s dnf metadata
   refresh: 173 MB of BaseOS metadata, measured at 849 kB/s and 4 min 02 s by hand on the current uplink); not re-run.
 - Going on: HQ rulings 1 and 2 and the reviews that involve no durations.
+
+## 2026-11-24 (HQ, resume on mains power, ruling 2): the experiment, hyperv fixes the drift
+- **ubuntu2 with paravirt provider hyperv** (lab_vm.sh modify, powered off), measured with SNTP over 900 s
+  (19:02-19:17Z). gnome and the unchanged node ran in the same window:
+
+  | VM | provider | rate | timesyncd |
+  |---|---|---|---|
+  | ubuntu2 | hyperv | 0.999989 (-11 ppm, ±211) | frequency +10.252 ppm, offset +24.878 ms |
+  | gnome | hyperv | 0.999997 (-3 ppm, ±218) | +7.930 ppm |
+  | node | kvm | 0.995346 (-4654 ppm, ±203) | +500.000 ppm (at its limit), offset +116.719 ms |
+
+  Provider `none` was not needed.
+- **rhel9 with hyperv** (19:19-19:34Z): 1.000007 (+7 ppm, ±215); chrony then estimated 6.585 ppm fast (4674.733 ppm
+  slow under kvm).
+- **Facts** (`facter virtual is_virtual hypervisors dmi.product.name`): the same on gnome (hyperv), on the node (kvm),
+  on ubuntu2 before and after, and on rhel9 under hyperv: `virtual` virtualbox, `is_virtual` true, `hypervisors`
+  virtualbox 7.2.6 (r172322), DMI product VirtualBox. Under hyperv the guest no longer offers the kvm-clock
+  clocksource; tsc stays the current one on every VM.
+- **Applied (2ec8724):** P8LAB_UBUNTU2_BASELINE_v3 (v2 + hyperv, offline) and P8LAB_RHEL9_BASELINE_v3 (v2 + hyperv +
+  a fresh dnf cache, one boot, no agent run). Verified by a real revert of each: hyperv after the restore; rhel9's
+  revert downloaded 139,911 bytes.
+- **Not changed, not measured, still kvm:** p8lab-kubuntu, p8lab-dc and p8lab-puppetserver (their clocks likely drift
+  the same way; lab_vm.sh can change them with new baselines if HQ wants). ubuntu-desktop is hyperv already.
+
+## Steps for Salatiel: the master and the node (raw VBoxManage on them is his)
+**Step 1 (advisor):** `.codex_state/tools/lab_power.sh down`: the nodes are powered off and the master is shut down
+through ACPI.
+
+**Step 2 [HUMAN]: the node, new baseline P8NODE_BASELINE_GREEN_v5.** The restore brings back v4's exact disk state,
+undoing the boot the last revert made, so the new baseline is v4 plus the provider and nothing else.
+```bash
+VBoxManage showvminfo ubuntu24-puppet8-Node --machinereadable | grep -E '^(VMState|paravirtprovider)='   # poweroff, default
+VBoxManage snapshot ubuntu24-puppet8-Node restore P8NODE_BASELINE_GREEN_v4
+VBoxManage modifyvm ubuntu24-puppet8-Node --paravirtprovider hyperv
+VBoxManage snapshot ubuntu24-puppet8-Node take P8NODE_BASELINE_GREEN_v5 --description "P8NODE_BASELINE_GREEN_v4 with paravirt provider hyperv (was default/kvm: the guest clock ran 4654 ppm slow; ubuntu2 under hyperv -11 ppm, SNTP over 900 s, 2026-11-24); taken offline, no boot after the v4 restore"
+VBoxManage showvminfo ubuntu24-puppet8-Node --machinereadable | grep -E '^paravirtprovider='              # hyperv
+```
+Rollback: none needed. v4 is untouched, and nothing uses v5 until step 4's commit.
+
+**Step 3 [HUMAN]: the master** (powered off by step 1; no snapshot here, step 6 takes it):
+```bash
+VBoxManage showvminfo Ubuntu24-puppet8-Master --machinereadable | grep -E '^(VMState|paravirtprovider)='  # poweroff, default
+VBoxManage modifyvm Ubuntu24-puppet8-Master --paravirtprovider hyperv
+VBoxManage showvminfo Ubuntu24-puppet8-Master --machinereadable | grep -E '^paravirtprovider='             # hyperv
+```
+Rollback [HUMAN]: `VBoxManage modifyvm Ubuntu24-puppet8-Master --paravirtprovider default` while it is powered off.
+
+**Step 4 (advisor; tool change + tests + shellcheck, own commit):** `.codex_state/lab/nodes.yml` ubuntu
+`baseline_snapshot: P8NODE_BASELINE_GREEN_v5`, plus the tests and comments that name v4 as the live baseline.
+Rollback: `git revert` that commit.
+
+**Step 5 (advisor):** `lab_power.sh up` starts the master and reverts the node to v5. Then check:
+- the provider on both is hyperv;
+- puppetserver is healthy;
+- the master's and the node's facts are unchanged (hostname, fqdn, domain, `virtual`, `is_virtual`);
+- SNTP over 900 s on both;
+- node_base's `ntp-keeps-the-time`, the finer test.
+
+A clock that still drifts stops the plan, which is then reported.
+
+**Step 6 (advisor):** `snapshot_master.sh P8MASTER_BASELINE_GREEN_v10`. One snapshot covers both changes since v9: the
+lab Hiera without the rsyslog_base binding (48b06e9) and the provider (HQ ruling 6).
+
+**Then:**
+- the duration-dependent list above is re-run by author and reviewer (HQ ruling 3: runs made on a drifting clock do
+  not count, except gnome_lock_screen's, which ran on gnome);
+- the rhel9 runs go in one block within 24 h of a baseline refresh (HQ ruling 5); v3's cache dates from about 19:27Z
+  on 2026-11-24, so a later block refreshes first.
