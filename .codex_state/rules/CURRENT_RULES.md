@@ -2,7 +2,16 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-139 entries; 6 marked superseded (in whole or part); newest first.
+140 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-24 — HQ rulings (resume on mains power), and the hyperv result
+- 1. First, fix the test isolation (tests never read the laptop's real battery or act on the real lab) and commit the
+- 2. Clock drift: follow your lead with an experiment on ubuntu2, which lab_vm.sh may modify. With it powered off, set its
+- 3. Runs made on a drifting clock do not count as evidence, whatever their result, except gnome_lock_screen's, which ran
+- 4. The reviews with no durations may continue (ssl_nginx_domain onward) whenever the experiment is not using the lab.
+- 5. rhel9 on this uplink: before a block of rhel9 runs, refresh its baseline once so the reverts inside that block
+- 6. Master snapshot: take it with snapshot_master.sh after the clock change is settled, so one snapshot covers both
+- 7. Noted: only Ubuntu 24.04 rejects the rsyslog setting. The removal stands.
 
 ## 2026-11-24 — After the cold boot: the clocks still drift (0.465% slow); HQ rulings 1 and 2 carried out
 - (no numbered/Rule/Decision lines; read the entry)

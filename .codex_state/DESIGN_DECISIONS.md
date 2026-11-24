@@ -2568,3 +2568,38 @@ look at the VirtualBox side."
   was on battery at 24%, and the guard ran `lab_power.sh down` and aborted the run, leaving no verdict. The run
   resumes on mains power with ssl_nginx_domain, then nginx_base, backup_rsnapshot, user_base, user, openvpn_server,
   network_vpn, postfix_smtp_node, hashman_web, nginx_frontend and nginx_frontend_domain.
+
+## 2026-11-24 — HQ rulings (resume on mains power), and the hyperv result
+Verbatim:
+1. First, fix the test isolation (tests never read the laptop's real battery or act on the real lab) and commit the
+   DESIGN_DECISIONS entry.
+2. Clock drift: follow your lead with an experiment on ubuntu2, which lab_vm.sh may modify. With it powered off, set its
+   paravirtualization provider to hyperv, as gnome has; boot and measure its rate against NTP over 900 s. If the drift
+   remains, try provider none and measure again. Also compare the `virtual` and `is_virtual` facts between gnome and
+   the node, since no class may see a different platform after the change. Report the numbers.
+   - If a provider fixes it: apply it to rhel9 and ubuntu2 yourself and take new baselines. Write out the exact
+     commands for the master and the node for Salatiel, plus the new node baseline and master snapshot that follow,
+     and stop for him.
+   - If neither fixes it: stop and report.
+3. Runs made on a drifting clock do not count as evidence, whatever their result, except gnome_lock_screen's, which ran
+   on the one VM that keeps time. Re-run the rest of your duration list after the fix.
+4. The reviews with no durations may continue (ssl_nginx_domain onward) whenever the experiment is not using the lab.
+5. rhel9 on this uplink: before a block of rhel9 runs, refresh its baseline once so the reverts inside that block
+   download almost nothing, and do the block within the metadata's 24 hours.
+6. Master snapshot: take it with snapshot_master.sh after the clock change is settled, so one snapshot covers both
+   changes.
+7. Noted: only Ubuntu 24.04 rejects the rsyslog setting. The removal stands.
+
+Carried out the same day:
+- **Ruling 1:** feb9cd0 (the autouse isolation stubs the power supply and moves the battery log, guard pid and idle
+  state into each test's tmp; full suite 750 passed) and c1a777c.
+- **Ruling 2:** hyperv fixes the drift. ubuntu2 -11 ppm and rhel9 +7 ppm, against 4645 and 4656 ppm slow under kvm;
+  gnome -3 ppm and the kvm node -4654 ppm in the same window. Facts unchanged (`virtual` virtualbox, `is_virtual`
+  true). New baselines P8LAB_UBUNTU2_BASELINE_v3 and P8LAB_RHEL9_BASELINE_v3 (2ec8724), verified by real reverts.
+  Salatiel's steps for the master and the node, with node baseline v5 and master snapshot v10 to follow, are in
+  escalations/lab-clock.md (3c4f3e3). The run stops for him there; the lab is down (his step 1).
+- **Ruling 3:** the runs made on the drifting clock no longer count as evidence: the 2026-11-24 author re-runs of
+  firewall_secure, firewall_secure_extra, docker_container and sync, and every earlier sweep run of the duration list.
+  gnome_lock_screen's 2026-11-24 run (on gnome) counts.
+- **Ruling 4:** not used in this stretch, since the experiment held the lab the whole time. ssl_nginx_domain is next.
+- **Not ruled, noted:** p8lab-kubuntu, p8lab-dc and p8lab-puppetserver still use kvm and were not measured.
