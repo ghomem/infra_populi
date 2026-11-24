@@ -1,12 +1,16 @@
-# Phase 3 checks for puppet_infrastructure::rsyslog_base (class; node ubuntu). Fixture (params, never committed):
-# ssldir_override /etc/puppetlabs/puppet/ssl (the OpenVox agent's ssldir; the default /var/lib/puppet/ssl of the pre-AIO
-# packages does not exist on the node). The node's
+# Phase 3 checks for puppet_infrastructure::rsyslog_base (class; node ubuntu). Fixture (params, never committed): none
+# in the base and rhel runs since 2026-11-24 (no ssldir_override; the lab Hiera binds none either); the variant
+# `override` gives ssldir_override /etc/puppetlabs/puppet/./ssl. The node's
 # certname is its host name. Probes read the node's own files and rsyslog; the use of this material by a forwarding
 # client and a TLS server is tested end to end in rsyslog_client's and rsyslog_server's sets.
 # 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1b): the RedHat syslog account is a check in the variant run `rhel` (rhel9).
 # 2026-11-23 correction round 1 (review FAIL 02690f2, purpose): the default ssldir arm, which production nodes use unless
 # their Hiera sets the key, is now a row naming what the lab lacks, with evidence (and documentation list cutover row
 # 10); the rhel run now also checks the TLS files there (byte for byte, ids 0, key 0600) and that rsyslog runs as root.
+# 2026-11-24 (HQ resume ruling 2, policy B, local change #23): with no ssldir_override an AIO agent's TLS files come
+# from its own ssldir, /etc/puppetlabs/puppet/ssl (the aio_agent_version fact), so the base and rhel runs now take the
+# default arm and the uncovered row for it is gone; the override arm is the variant `override`, whose path differs in
+# text from the default so that the catalog shows which arm was taken. The pre-AIO arm (/var/lib/puppet/ssl) is a row.
 class: rsyslog_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -18,23 +22,25 @@ outcomes:
   - outcome: rsyslog and its GnuTLS driver are installed, and rsyslog runs and starts at boot
     from: manifests/rsyslog_base.pp:10-12, 75-80
     checks: [rsyslog-and-its-tls-driver-are-installed-and-running]
-  - outcome: the node's Puppet CA, certificate and key are copied for rsyslog, byte for byte, and form a valid identity (from the ssldir_override given)
-    from: manifests/rsyslog_base.pp:32-35 (the override arm), 49-71
-    checks: [the-tls-files-are-the-nodes-puppet-identity, on-redhat-a-syslog-account-with-ids-0-exists]
-  - outcome: with no ssldir_override, the copies come from the default ssldir /var/lib/puppet/ssl
-    from: manifests/rsyslog_base.pp:32-35 (the undef arm)
+  - outcome: >-
+      with no ssldir_override, the node's Puppet CA, certificate and key are copied for rsyslog from the agent's own
+      ssldir (an AIO agent's /etc/puppetlabs/puppet/ssl, local change #23), byte for byte, and form a valid identity
+    from: manifests/rsyslog_base.pp:32-35 (the undef arm; local change #23), 49-71
+    checks: [the-tls-files-are-the-nodes-puppet-identity, the-catalog-copies-from-the-agents-ssldir, on-redhat-a-syslog-account-with-ids-0-exists]
+  - outcome: with ssldir_override, the copies come from the directory given
+    from: manifests/rsyslog_base.pp:32-35 (the override arm)
+    checks: [the-catalog-copies-from-the-override]
+  - outcome: on an agent without the aio_agent_version fact (the pre-AIO packages), the copies come from /var/lib/puppet/ssl
+    from: manifests/rsyslog_base.pp:32-35 (the undef arm, as at the baseline; local change #23 keeps it for such agents)
     uncovered:
       why: >-
-        no lab run can leave ssldir_override unset, and no lab agent keeps its ssldir at /var/lib/puppet/ssl (the pre-AIO
-        packages' path); production uses the arm unless its Hiera sets the key: of the 36 production node statements
-        that set rsyslog_client's target, 1 sets ssldir_override, and 1 node statement sets it on rsyslog_base (names
-        only; Hiera not read). On an OpenVox agent the copies would have no source: documentation list, cutover row 10
-      lifted_by: "capability: a Hiera variant per run, and an agent whose ssldir is /var/lib/puppet/ssl"
+        every lab agent is an AIO agent, and so is the production agent read on the laptop (puppet-agent 5.5.22); no
+        lab node kind runs the pre-AIO packages
+      lifted_by: "capability: an agent without the aio_agent_version fact (the pre-AIO puppet packages)"
       evidence: >-
-        master_fixtures.sh binds puppet_infrastructure::rsyslog_base::ssldir_override to /etc/puppetlabs/puppet/ssl in
-        the lab Hiera for every run, and phase3.py variant_problems (2026-11-23) lets a variant vary only its node and
-        params; on the node, ls /var/lib/puppet/ssl gives "No such file or directory" (the reviewer, 20261123T174701Z);
-        diagnosis/fleet_variant_usage.md (2026-11-23) for the counts
+        facter aio_agent_version gives 8.24.2 on puppet8node and on p8lab-rhel9 (2026-11-24), each with puppet config
+        print ssldir /etc/puppetlabs/puppet/ssl; .codex_state/lab/nodes.yml lists no pre-AIO agent; CLAUDE.md records
+        the laptop's agent as puppet-agent 5.5.22
   - outcome: the user rsyslog drops to (syslog) can read the key, and other users cannot
     from: manifests/rsyslog_base.pp:41-47, 65-71
     checks: [rsyslog-can-read-the-key-as-the-user-it-runs-as]
@@ -54,6 +60,9 @@ variants:
   - name: rhel
     why: the RedHat branch (the syslog user and group with uid/gid 0), on the rhel9 node with the set's own params fixture
     node: rhel9
+  - name: override
+    why: the override arm, with an ssldir_override whose text differs from the default so the catalog shows the arm taken
+    params: override
 node_agent:
   after: [rsyslog-is-stopped, the-tls-directory-drifts, a-tls-file-changes]
   why: >-
@@ -93,6 +102,34 @@ checks:
         stat -c '%U:%G %a' $t $t/ca.pem $t/$c.pem $t/$c.key
         openssl verify -CAfile /etc/ssl/certs/ca-certificates.crt $t/$c.pem 2>&1 | tail -1 | sed 's/^.*: //'
     expect: {rc: 0, stdout: "\\Asame-as-puppet\\nsyslog:syslog 755\\nsyslog:syslog 644\\nsyslog:syslog 644\\nsyslog:syslog 600\\nOK\\n\\Z"}
+
+  - id: the-catalog-copies-from-the-agents-ssldir
+    what: >-
+      with no ssldir_override, the agent's catalog takes the three TLS files from /etc/puppetlabs/puppet/ssl, the AIO
+      agent's ssldir
+    control: negative
+    derived_from:
+      - {path: manifests/rsyslog_base.pp, lines: "32-35", text: "undef   => '/var/lib/puppet/ssl',"}
+      - {path: manifests/rsyslog_base.pp, lines: "49-71", text: "source  => \"${ssldir}/certs/${certname}.pem\","}
+    probe: |
+      c=$(hostname)
+      python3 -c 'import json, sys; d = json.load(open(sys.argv[1])); [print(r["title"], r["parameters"].get("source")) for r in d["resources"] if r["type"] == "File" and r["title"].startswith("/etc/rsyslog.d/tls/")]' /opt/puppetlabs/puppet/cache/client_data/catalog/$c.json | sed "s/$c/NODE/g" | sort
+    expect: {rc: 0, stdout: "\\A/etc/rsyslog\\.d/tls/NODE\\.key /etc/puppetlabs/puppet/ssl/private_keys/NODE\\.pem\\n/etc/rsyslog\\.d/tls/NODE\\.pem /etc/puppetlabs/puppet/ssl/certs/NODE\\.pem\\n/etc/rsyslog\\.d/tls/ca\\.pem /etc/puppetlabs/puppet/ssl/certs/ca\\.pem\\n\\Z"}
+
+  - id: the-catalog-copies-from-the-override
+    what: >-
+      with ssldir_override /etc/puppetlabs/puppet/./ssl, the catalog takes the three TLS files from that path as given,
+      and the copies are the node's Puppet identity byte for byte
+    control: negative
+    variant: override
+    derived_from:
+      - {path: manifests/rsyslog_base.pp, lines: "32-35", text: "default => $ssldir_override,"}
+      - {path: manifests/rsyslog_base.pp, lines: "49-71", text: "source  => \"${ssldir}/private_keys/${certname}.pem\","}
+    probe: |
+      c=$(hostname); s=/etc/puppetlabs/puppet/ssl; t=/etc/rsyslog.d/tls
+      python3 -c 'import json, sys; d = json.load(open(sys.argv[1])); [print(r["title"], r["parameters"].get("source")) for r in d["resources"] if r["type"] == "File" and r["title"].startswith("/etc/rsyslog.d/tls/")]' /opt/puppetlabs/puppet/cache/client_data/catalog/$c.json | sed "s/$c/NODE/g" | sort
+      cmp -s $s/certs/ca.pem $t/ca.pem && cmp -s $s/certs/$c.pem $t/$c.pem && cmp -s $s/private_keys/$c.pem $t/$c.key && echo same-as-puppet
+    expect: {rc: 0, stdout: "\\A/etc/rsyslog\\.d/tls/NODE\\.key /etc/puppetlabs/puppet/\\./ssl/private_keys/NODE\\.pem\\n/etc/rsyslog\\.d/tls/NODE\\.pem /etc/puppetlabs/puppet/\\./ssl/certs/NODE\\.pem\\n/etc/rsyslog\\.d/tls/ca\\.pem /etc/puppetlabs/puppet/\\./ssl/certs/ca\\.pem\\nsame-as-puppet\\n\\Z"}
 
   - id: rsyslog-can-read-the-key-as-the-user-it-runs-as
     what: >-
