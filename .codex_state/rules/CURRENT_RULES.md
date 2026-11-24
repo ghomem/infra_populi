@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-138 entries; 6 marked superseded (in whole or part); newest first.
+139 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-24 — After the cold boot: the clocks still drift (0.465% slow); HQ rulings 1 and 2 carried out
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-24 — HQ rulings for the resume
 - 0. Before anything else: run lab up and measure the node's and the master's clock rate against the laptop again. If

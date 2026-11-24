@@ -2535,3 +2535,36 @@ Ruling 0 carried out the same day: the drift remains (node 1.0245, master 1.0249
 been cold-booted (up since 2026-11-22 21:17:07, the boot of the 2026-11-23 measurements). The run stopped there, the lab
 down; measurements and the list of duration-dependent sweep runs in escalations/lab-clock.md. Rulings 1-5 wait.
 
+
+## 2026-11-24 — After the cold boot: the clocks still drift (0.465% slow); HQ rulings 1 and 2 carried out
+HQ after the laptop's cold boot (verbatim): "If all keep time: proceed with rulings 1–5, and re-run the
+duration-dependent checks on your list, by author and reviewer. If the drift is still there: proceed only with rulings
+1 and 2 and the reviews that involve no durations, hold everything on your list, and report the measurements so HQ can
+look at the VirtualBox side."
+- **Clock, corrected:** the uptime method (±0.6%) first showed every VM keeping time (d9480ba). node_base's
+  ntp-keeps-the-time then failed again. An SNTP measurement of CLOCK_MONOTONIC_RAW over 900 s found that the node,
+  master, rhel9 and ubuntu2 run 4645-4659 ppm slow (bounds about ±220 ppm), beyond the 500 ppm that ntpd and timesyncd
+  correct; gnome runs at 0 ppm. Of the VM settings compared, only gnome's differ: paravirt provider hyperv and EFI.
+  The second branch therefore applies: the duration-dependent reviews are held, and escalations/lab-clock.md is
+  reopened for HQ. Rule kept from this: a clock "keeps time" only at the resolution of its measurement, and a check
+  that needs ntpd's 500 ppm needs a method that resolves it.
+- **Re-runs made before the correction** (author, committed): gnome_lock_screen, firewall_secure, docker_container and
+  sync ALL_PASS; firewall_secure_extra only its ruled RST finding. They ran on the drifting clock; HQ decides whether
+  they stand. The rhel variants of node_base, ssh_secure and sysmon_base were ENVIRONMENT_FAILED.
+- **Tool:** revert_node's dnf metadata timeout is 600 s (09afd07; was 300). A restore discards dnf's cache, and the
+  current uplink needed 4 min 02 s, and 342 s in a revert, for BaseOS's 173 MB.
+- **Ruling 2 (local change #23):** rsyslog_base's default ssldir is the AIO agent's /etc/puppetlabs/puppet/ssl when
+  the aio_agent_version fact is present, and /var/lib/puppet/ssl otherwise. The override still wins. The lab Hiera
+  binding is removed (48b06e9; master_fixtures reported CHANGED hiera, so per the script a new master snapshot is
+  HQ's). Checks: base run with no override, rhel and override variants ALL_PASS. Reviews PASS (Phase 1 after a records
+  round: review_class reads a row's check ids before the first colon, split at "and" and commas, so a parenthesis
+  with a comma breaks it). Cutover row 10 stays.
+- **Ruling 1 (local change #22):** deleteStateOnFileMove removed. Ubuntu 24.04 starts rsyslog with no configuration
+  error, and an auth.log line reaches the TLS peer through imfile (the same run is ruling 2's end-to-end check with no
+  override). Phase 5 backlog #15. Correction to the escalation's premise: on rhel9 the class installs
+  rsyslog-gnutls, which upgrades rsyslog to 8.2604.0-4.el9_9.1, and that version accepts the parameter; only Ubuntu
+  24.04's 8.2312 rejects it. Reviews PASS.
+- **Reviews with no durations:** ssl_base PASS. ssl_nginx_domain's review was stopped by the sleep guard: the laptop
+  was on battery at 24%, and the guard ran `lab_power.sh down` and aborted the run, leaving no verdict. The run
+  resumes on mains power with ssl_nginx_domain, then nginx_base, backup_rsnapshot, user_base, user, openvpn_server,
+  network_vpn, postfix_smtp_node, hashman_web, nginx_frontend and nginx_frontend_domain.
