@@ -79,7 +79,7 @@ def test_revert_first_restores_before_deploy_and_counts_run1_events(lab):
     proc = lab.run([SCRIPT, "--revert-first", "--fixture", "guarded_exec"])
     assert proc.returncode == 0, proc.stderr
     calls = lab.calls()
-    restore = calls.index(["VBoxManage", "snapshot", "ubuntu24-puppet8-Node", "restore", "P8NODE_BASELINE_GREEN_v4"])
+    restore = calls.index(["VBoxManage", "snapshot", "ubuntu24-puppet8-Node", "restore", "P8NODE_BASELINE_GREEN_v5"])
     first_rsync = next(i for i, c in enumerate(calls) if c[0] == "rsync")
     assert restore < first_rsync
     assert "RUN1_EVENTS: 2 catalog, 0 pluginsync (rc 2; node reverted first)" in proc.stdout
@@ -177,7 +177,7 @@ def test_harness_writes_revert_and_harness_metrics_events_on_green_and_red(lab):
     assert lab.run([SCRIPT, "--revert-first", "puppet_infrastructure::puppet_backup"]).returncode == 0
     events = [json.loads(l) for l in (lab.root / "metrics" / "events.jsonl").read_text().splitlines()]
     assert [e["kind"] for e in events] == ["revert", "harness"]
-    assert events[0]["data"]["snapshot"] == "P8NODE_BASELINE_GREEN_v4"
+    assert events[0]["data"]["snapshot"] == "P8NODE_BASELINE_GREEN_v5"
     h = events[1]["data"]
     assert h["rc"] == 0 and h["revert_first"] is True and h["run1_events"] == 0 and h["reason"] is None
     assert [r["transaction_uuid"] for r in h["agent_runs"]] == ["u-1", "u-1"] and h["agent_runs"][0]["res_changed"] == 9
