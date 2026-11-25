@@ -20,6 +20,9 @@
 # printed field 2 of every line of authorized_keys, the three `# HEADER:` comment lines Puppet's ssh_authorized_key
 # provider writes included; they now skip comment and empty lines, as the set's other key probes do. The keys were as
 # the baseline makes them (userlocked..., emptykey...).
+# Correction round 1 of the swept set, 2026-11-25 (review 20261125T063430Z FAIL, purpose): the ignorekey branch
+# (user_base.pp:93-102, for encrypted homes) was in no row. The purpose names it, and the variant run `ignorekey` (the
+# base fixture with ignorekey true) checks that no key is then written.
 class: user_base
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -29,7 +32,8 @@ node_agent:
 purpose: >-
   A base wrapper for a system user: the account with its own same-named primary group, comment, home and shell, the
   given password hash (refusing an empty one), and SSH access through exactly one pushed key (any other authorized key
-  is purged; a locked or keyless user gets an unusable key), with optional home mode and ecryptfs wrapped passphrase.
+  is purged; a locked or keyless user gets an unusable key; with ignorekey, for encrypted homes, no key is pushed), with
+  optional home mode and ecryptfs wrapped passphrase.
 outcomes:
   - outcome: the account exists with its own primary group, comment, home (created, owned by the user) and shell, and no other group with an empty list
     from: manifests/user_base.pp:6-15, 24-37, 63-74
@@ -65,6 +69,9 @@ outcomes:
   - outcome: a locked hash or an empty key pushes an unusable key; a group list sets the primary group; another home, home mode or shell
     from: manifests/user_base.pp:4, 8-15, 24-31, 41-61, 81-91
     checks: [a-locked-hash-with-other-home-shell-and-groups, an-empty-key-pushes-an-unusable-key]
+  - outcome: with ignorekey true (for encrypted homes) no key is pushed, so the account has no authorized key
+    from: manifests/user_base.pp:72, 93-102
+    checks: [with-ignorekey-no-key-is-pushed]
   - outcome: the ecryptfs branch (wrapped passphrase written from the .b64 file, with the HQ-ruled exec guard)
     from: manifests/user_base.pp:104-135
     uncovered:
@@ -82,6 +89,11 @@ variants:
   - name: emptykey
     why: an empty key (undeterminable production use, as above)
     params: emptykey
+  - name: ignorekey
+    why: >-
+      ignorekey true, which user_sudoer, user_desktop and user_desktop_sudoer forward (undeterminable production use, as
+      above); the base fixture with only ignorekey changed
+    params: ignorekey
 checks:
   - id: user-and-own-primary-group
     what: the user exists with its own same-named primary group, the comment, /home/<title> and /bin/bash
@@ -214,3 +226,18 @@ checks:
     probe: |
       awk '!/^(#|$)/ {print substr($2, 1, 8)}' /home/p8testuser/.ssh/authorized_keys
     expect: {rc: 0, stdout: "\\Aemptykey\\n\\Z"}
+
+  - id: with-ignorekey-no-key-is-pushed
+    variant: ignorekey
+    what: >-
+      with ignorekey true the account exists but no key is pushed: authorized_keys holds no key (it does not exist on
+      the fresh node, and purge_ssh_keys leaves none)
+    control: negative
+    derived_from:
+      - {path: manifests/user_base.pp, lines: "93-94", text: "if ( $ignorekey == false ) {"}
+      - {path: manifests/user_base.pp, lines: "63-73", text: "purge_ssh_keys => true,"}
+    probe: |
+      id -un p8testuser
+      f=/home/p8testuser/.ssh/authorized_keys
+      if [ -e "$f" ]; then grep -cvE '^(#|$)' "$f" || true; else echo 0; fi
+    expect: {rc: 0, stdout: "\\Ap8testuser\\n0\\n\\Z"}
