@@ -1,0 +1,35 @@
+{
+ "class": "nginx_frontend_domain",
+ "at": "20261125T095356Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "only-tls-1-3-is-accepted: nginx_frontend_domain.pp:695 passes $base_ssl_protocols to the main HTTPS server; under the base fixture it is join(concat(['TLSv1.3'] (:92), [])) (:311-313), so a TLS 1.3 handshake on www succeeding and a TLS 1.2 one refused is exactly what the lines produce - supported",
+  "a-backend-answers: nginx_frontend_domain.pp:409-412 declares the upstream backend_<domain> from backend_hosts_and_ports (fixture 127.0.0.1:8080, converted at :240-251); the check is the lab-side backend setup the proxy checks rely on, mutates declares the transient unit and the effect curls 127.0.0.1:8080 for the page - supported as setup",
+  "http-redirects-to-https: nginx_frontend_domain.pp:420 sets $naked_str to '301 https://${domain}$request_uri' when decorate_naked is false (base fixture default) and :424-433 returns it on port 80 for the naked domain; :453 returns 301 https://www.${domain}$request_uri for www (present by default, :440-441); the probe expects exactly those two 301s with path and query kept - supported",
+  "purpose gap: Purpose (TLS frontend for one domain: HTTP->HTTPS redirects, HTTPS proxy to the domain's upstream with its certificate and modern TLS) matches the header comments and manifest. Tested well: base run checks the two HTTP 301s keeping path/query, the HTTPS proxy to a live backend on www and the naked domain with certificate verification (and failure under other.example.com), TLS 1.3-only; dyn tests dynamic_dns_resolution end to end; rhel tests the RedHat key dir; my reviewer run ALL_PASS in base, prod, dyn and rhel. GAP 1: decorate_naked, which production sets (fleet_variant_usage.md: 3 node statements) and the prod fixture sets true, changes behaviour the lab can exercise - the naked HTTP server returns 301 https://www.<domain> (:416-417) and a separate https_<domain> server returns 301 https://www.<domain>$request_uri (:494-519) - and no check tests it; the prod render line 'www server' (server_name +www\\.p8test\\.example\\.com) is vacuous, it matches the http_www server (:445-454, present by default) whatever decorate_naked is. nginx_frontend's own set tests exactly this as real 301s over HTTP and HTTPS in its prod variant; this set does not. GAP 2: the outcomes table omits parameter variants that production does not set and that the accepted gap does not list: ip_whitelist (:214, :321-328, allow list + deny all), redirects_external_prevented / _location / _whitelisted / _prevented_adhoc_config (:141-166, :353-387), proxy_locations_ignore_headers (:178, :585), use_compact_log_format (:215, :660-666), resolver (:221, :710), redirect_http_www_to_https_www_create and server_https_www_create (:66, :75, :294-303, :440-444, :522-526); none has a row in fleet_variant_usage.md for nginx_frontend_domain, so they belong in the accepted_gap row (or a covered row), not out of the table. The remaining render lines each depend on their parameter (.pem bundle, 121s/31s/122s timeouts, X-P8test-Adhoc/Other add_header, X-P8test-Set header, TLSv1.2 TLSv1.3, /p8test-suffix, /p8test-other/, www_fix_redirect proxy_redirect, X-Frame-Options DENY). No findings."
+ ],
+ "review_s": 587.8,
+ "check_file_sha256": "ac92b854e019b169d67311e47c5970e9dcd66434a545d5d39399d1bc9826a9bb",
+ "content_sha256": "ac92b854e019b169d67311e47c5970e9dcd66434a545d5d39399d1bc9826a9bb",
+ "reviewer_result": "20261125T094409Z-reviewer",
+ "author_result": "20261123T144518Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "6a4f2639-5747-4bf9-b748-2d03b393b7c4",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "6a4f2639-5747-4bf9-b748-2d03b393b7c4",
+   "fresh": true
+  }
+ }
+}
