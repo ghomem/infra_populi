@@ -1,0 +1,35 @@
+{
+ "class": "gnome_lock_screen",
+ "at": "20261125T214327Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "compiled-db-serves-the-policy: baseline 94-98 is the refresh-only '/usr/bin/dconf update' (notified by the keyfile and locks, 63-92); reading the three keys through DCONF_PROFILE=user can only return uint32 300/true/uint32 0 (defaults 5*60 and 0) once that update compiled /etc/dconf/db/local, which is what the probe expects; the mismatch swaps only the profile for one that does not exist (no system-db:local), so the values must vanish, and it failed after apply as required",
+  "a-gnome-session-locks-after-the-idle-time: line 1 states the class's purpose (enforce the GNOME screen lock policy), with lines 9, 70-74 and 86-88 giving idle-delay minutes*60, lock-enabled true, lock-delay grace and their locks; under the gnome params (1 min, 10 s) the probe expects a real GDM session locked (LockedHint) before it is 300 s old, i.e. not stock GNOME's 300 s, and GSettings serving uint32 60/true/uint32 10 all non-writable; observed exactly that after apply, nothing on the clean node; mutates declares the account, the restored custom.conf autologin and the gdm3 restart, and the effect is read-only (loginctl, gsettings), not the action's output",
+  "another-timeout-and-grace-period-are-served: same refresh-only dconf update (94-98) with lines 1-9 computing idle-delay from minutes*60; the timing params (10 min, 30 s) must compile to uint32 600/true/uint32 30, which is what the probe expects; the absent-profile mismatch varies only the profile source and failed after apply as required",
+  "purpose covered: Purpose (enforce a GNOME screen lock through the system dconf db: idle after the timeout, lock with the grace, users cannot change it) matches the baseline header and code. The checks test the package, the profile stacking, the rendered keyfile and locks, the compiled db serving the policy (default and the timing variant 10 min/30 s, the only production parameter variants), that an account in its own D-Bus session cannot land writes to the three locked keys while an unlocked key (text-scaling-factor 1.25) does land and the served values stay 300/true/0, and on the active GNOME node a real GDM autologin session that locks within 300 s under the 1 min/10 s policy with the three keys non-writable in-session. The directory resources are implied by the files within them. No uncovered rows remain; nothing the lab can exercise is left untested. Reviewer run 20261125T213613Z ALL_PASS (base, timing, gnome), no findings."
+ ],
+ "review_s": 434.5,
+ "check_file_sha256": "e3144563df887a78cca09acc1b2465b68dd321bd595964cc62450dfc114bc102",
+ "content_sha256": "e3144563df887a78cca09acc1b2465b68dd321bd595964cc62450dfc114bc102",
+ "reviewer_result": "20261125T213613Z-reviewer",
+ "author_result": "20261124T130822Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "1f5b8459-8e16-4b0f-bbdd-cdc05ad73fba",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "1f5b8459-8e16-4b0f-bbdd-cdc05ad73fba",
+   "fresh": true
+  }
+ }
+}
