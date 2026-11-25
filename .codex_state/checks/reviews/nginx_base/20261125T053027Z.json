@@ -1,0 +1,35 @@
+{
+ "class": "nginx_base",
+ "at": "20261125T053027Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "a-dynamic-module-is-loaded-once-and-nginx-runs: nginx_base.pp:86 prepends an include of /etc/nginx/modules-enabled/* (now include_modules_enabled => true, class_rulings A); the action installs one Ubuntu dynamic module (libnginx-mod-stream) and restarts nginx, as mutates declares, and the read-only effect counts the enabled module, exactly one include line, nginx -t success and an active service: the result, not the action's output",
+  "my-configs-and-ad-hoc-lines-reach-nginx: nginx_base.pp:91-94 merges my_configs over the defaults into class nginx, and 112-127 writes join(ad_hoc_configs) to conf.d/puppet_infrastructure.conf; under params variant custom (worker_connections 2048, client_max_body_size 21m;) the probe reads the file and nginx -T and expects both values, which is what those lines produce",
+  "nginx-config-valid: nginx_base.pp:101-105 declares class nginx with the merged configs on Ubuntu; nginx -t rc 0 with 'test is successful' tests that the configuration it produces is valid under the defaults fixture",
+  "purpose gap: Tested on the ubuntu node: nginx from the Ubuntu archive with no nginx.org source, a valid config, worker_processes auto, server_tokens off in nginx.conf and in the live Server header (mismatch appends the version and fails), the main and compact log formats, the 2048-bit DH group mode 640, no ad-hoc file by default, one modules-enabled include with a dynamic module loaded and nginx running, and in variant custom my_configs plus ad-hoc lines reaching nginx. The stream access_log row (another class's resource) and the accepted_gap row (log_formats_additional, dh_params_bits: 0 node statements in fleet_variant_usage.md) are honest. GAP: the class's non-Ubuntu branch (nginx_base.pp:106-110, class nginx without the apt_update require; the header's CentOS package note at :79; include_modules_enabled set explicitly to keep the include on every OS per class_rulings) is in neither the outcomes table nor a variant, although the rhel9 node kind is active (nodes.yml) and the sibling sets nginx_frontend and nginx_frontend_domain already run a rhel9 variant. It needs a rhel9 variant for the base checks (nginx from the RHEL distribution repos, nginx -t, workers/server_tokens, log formats, DH group, Server header), or a row with evidence for why it cannot be tested there."
+ ],
+ "review_s": 266.8,
+ "check_file_sha256": "0a474fcaca69c4687eb0b4c07451d1c5c594133c50afdf5dfcd39772468781cf",
+ "content_sha256": "0a474fcaca69c4687eb0b4c07451d1c5c594133c50afdf5dfcd39772468781cf",
+ "reviewer_result": "20261125T052601Z-reviewer",
+ "author_result": "20261123T125827Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "68346853-2691-4af7-b744-1e2c24c44995",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "68346853-2691-4af7-b744-1e2c24c44995",
+   "fresh": true
+  }
+ }
+}
