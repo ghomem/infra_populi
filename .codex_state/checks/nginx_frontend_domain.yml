@@ -20,6 +20,9 @@
 # sets, was untested, and the render line for the www server matched whatever it is (the HTTP www server is always
 # there). The line is removed and the prod variant tests decorate_naked as the naked domain's 301 to www over HTTP and
 # HTTPS. The parameters no production node sets that the table left out join the accepted-gap row.
+# Correction round 2 of the swept set (2026-11-25, review 20261125T101915Z, purpose): the cipher list the class sets for
+# TLS below 1.3 had no row; it acts once TLSv1.2 is on, as production sets on 2 node statements and the prod variant
+# does, so a prod check now handshakes TLSv1.2 with a cipher in the list and one outside it.
 class: nginx_frontend_domain
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -42,6 +45,9 @@ outcomes:
   - outcome: the parameters production sets (Let's Encrypt, proxy timeouts, ad-hoc location config, backend headers, protocols, the naked domain decorated to www, a pass suffix, other locations, the www redirect fix, dynamic DNS, security headers)
     from: manifests/nginx_frontend_domain.pp:1-140 (parameters)
     checks: [production-parameters-render, the-naked-domain-redirects-to-www, dynamic-dns-proxies-through-the-variable]
+  - outcome: with TLSv1.2 enabled (base_ssl_protocols_prefix, as production sets it), only the class's cipher list is accepted for it
+    from: manifests/nginx_frontend_domain.pp:96-112, 315-318, 696
+    checks: [under-tls-1-2-only-the-class-ciphers-are-accepted]
   - outcome: the parameters no production node sets (servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, ip_whitelist, proxy_locations_ignore_headers, redirect_http_www_to_https_www_create, server_https_www_create, redirects_external_prevented, redirects_external_location, redirects_external_whitelisted, redirects_external_prevented_adhoc_config, use_compact_log_format, resolver)
     from: manifests/nginx_frontend_domain.pp:1-140 (parameters)
     uncovered:
@@ -180,6 +186,28 @@ checks:
         curl -s -o /dev/null --max-time 5 --resolve p8test.example.com:80:127.0.0.1 -w 'naked http %{http_code} %{redirect_url}\n' 'http://p8test.example.com/p8test/path?q=1'
         curl -s -k -o /dev/null --max-time 5 --resolve www.p8test.example.com:443:127.0.0.1 -w 'naked https %{http_code} %{redirect_url}\n' 'https://www.p8test.example.com/p8test/path?q=1'
     expect: {rc: 0, stdout: "\\Anaked http 301 https://www\\.p8test\\.example\\.com/p8test/path\\?q=1\\nnaked https 301 https://www\\.p8test\\.example\\.com/p8test/path\\?q=1\\n\\Z"}
+
+  - id: under-tls-1-2-only-the-class-ciphers-are-accepted
+    variant: prod
+    what: >-
+      with TLSv1.2 enabled, a TLSv1.2 handshake on www offering only ECDHE-RSA-AES128-GCM-SHA256 (in the class's list)
+      succeeds, and one offering only AES128-SHA (not in it) is refused; the client allows every cipher (SECLEVEL 0), so
+      the refusal is the server's
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_frontend_domain.pp, lines: "110", text: "ECDHE-RSA-AES128-GCM-SHA256"}
+      - {path: manifests/nginx_frontend_domain.pp, lines: "318", text: "$base_ssl_ciphers = \"${base_ssl_ciphers_prefix}:${additional_ssl_ciphers_string}:${base_ssl_ciphers_suffix}\""}
+    probe: |
+      for c in ECDHE-RSA-AES128-GCM-SHA256 AES128-SHA; do
+        if echo | openssl s_client -connect 127.0.0.1:443 -servername www.p8test.example.com -tls1_2 -cipher "$c:@SECLEVEL=0" 2>/dev/null | grep -q "Cipher is $c\$"; then echo "$c accepted"; else echo "$c refused"; fi
+      done
+    mismatch:
+      varies: the cipher offered second (ECDHE-RSA-AES256-GCM-SHA384, in the class's list, in place of AES128-SHA)
+      probe: |
+        for c in ECDHE-RSA-AES128-GCM-SHA256 ECDHE-RSA-AES256-GCM-SHA384; do
+          if echo | openssl s_client -connect 127.0.0.1:443 -servername www.p8test.example.com -tls1_2 -cipher "$c:@SECLEVEL=0" 2>/dev/null | grep -q "Cipher is $c\$"; then echo "$c accepted"; else echo "$c refused"; fi
+        done
+    expect: {rc: 0, stdout: "\\AECDHE-RSA-AES128-GCM-SHA256 accepted\\nAES128-SHA refused\\n\\Z"}
 
   - id: dynamic-dns-proxies-through-the-variable
     variant: dyn
