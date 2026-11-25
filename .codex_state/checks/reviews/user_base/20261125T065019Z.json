@@ -1,0 +1,35 @@
+{
+ "class": "user_base",
+ "at": "20261125T065019Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "with-ignorekey-no-key-is-pushed: user_base.pp:63-73 declare the user with purge_ssh_keys => true (no key added by the user resource); with the ignorekey variant fixture (ignorekey true, same key) the ssh_authorized_key at :93-102 is skipped, so the account exists and authorized_keys holds 0 keys; the probe would show 1 if the key were pushed",
+  "user-and-own-primary-group: user_base.pp:63-74 set comment => $myname ('P8 Test User'), home => $myhomedir (/home/p8testuser, :8-11 with myhome ''), shell => $user_shell (/bin/bash default), gid => $myprimary (title, :25-26 with an empty group list); the probe reads exactly those passwd fields and the gid's group name",
+  "a-locked-hash-with-other-home-shell-and-groups: user_base.pp:24-31 make the first list entry the primary group unless it is []/sudo/wheel; the locked fixture's mygrouplist [users] gives primary users (id -gn), and with '!' in the hash (:45-47), myhome /srv/p8testhome, myhomemode 0700 (:81-91) and shell /bin/sh the probe's expected home:shell, 700, L and the userlocked key prefix are what the code produces",
+  "purpose covered: Purpose matches the header (wrapper for a system user) and the whole manifest. Tested on the lab (base + 3 variants, all ALL_PASS in my run 20261125T064500Z): account, own primary group, comment, home created/owned, shell, no extra groups; the SHA-512 hash set and the password logging in via su while a wrong one is refused; exactly one pushed key with sshd-acceptable modes and an out-of-band key purged by the next agent run; locked hash -> userlocked key and locked password, group list -> primary group, other home/mode/shell; empty key -> emptykey key; ignorekey -> no key pushed (the gap of review 20261125T063430Z is closed). The sudo/wheel-first branch of :25 (keep own primary) is not a row-specific check here but is exercised by user_sudoer's set (user-with-own-primary-group). Uncovered rows are honest: the empty-hash fail() is compile-time (a variant run cannot expect a refusal), a key login needs a private key the repository does not keep, and the ecryptfs branch (:104-135) needs an ecryptfs home that no node inventory has. Minor, not a gap: the locked variant does not separately assert that group p8testuser (:35-37) still exists when the primary is users."
+ ],
+ "review_s": 319.8,
+ "check_file_sha256": "bf831de6b4cc48f04236bc897332ccc2c24fe7c64aa682bc87d1ab63aae92d71",
+ "content_sha256": "bf831de6b4cc48f04236bc897332ccc2c24fe7c64aa682bc87d1ab63aae92d71",
+ "reviewer_result": "20261125T064500Z-reviewer",
+ "author_result": "20261125T063727Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "8494e0de-6d9a-421c-8cdc-51d3cd78f341",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "8494e0de-6d9a-421c-8cdc-51d3cd78f341",
+   "fresh": true
+  }
+ }
+}
