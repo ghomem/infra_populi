@@ -1,0 +1,35 @@
+{
+ "class": "ssh_secure",
+ "at": "20261125T125545Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "login-test-accounts-and-key: manifests/ssh_secure.pp:35-38 declares group ssh_in for non-sudoers that need ssh in; the action creates fixture accounts and joins them to that group (plus p8testgroup for the Hiera othergroups and root for the PermitRootLogin probe), mutates declares all of it, and the read-only effect reads the group memberships and the key in root's authorized_keys, not the action's output; on the clean node the effect fails (no accounts), as a negative control must",
+  "on-redhat-an-idle-session-is-not-ended: manifests/ssh_secure.pp:75-76 set ClientAliveCountMax 0 and ClientAliveInterval (30 in the params fixture); since OpenSSH 8.2 a count of 0 disables connection termination, and local change #8 adds ChannelTimeout/UnusedConnectionTimeout only when ssh_server_version_release >= 9.2, so on RHEL 9's OpenSSH 8.7 the code produces no idle disconnect; expecting still-connected after 60 s silent is what the code would produce (my run: still-connected on rhel9, effect failed on the clean node with no idle.txt)",
+  "password-auth-off: manifests/ssh_secure.pp:66 sets PasswordAuthentication to $my_password_authentication, which lines 43-47 make 'no' for the default false (the params fixture leaves it at the default); sshd -T reads the effective value. Clean node passwordauthentication yes, applied node no",
+  "purpose gap: Tested on Ubuntu 24.04 (both phases valid, all pass): the effective and negotiated kex/ciphers/MACs, with mismatch controls; AllowGroups login behaviour (ssh_in, the Hiera group, and refusal outside the groups); password and root logins refused; the idle session ended within the 30 s fixture interval (local change #8); host-key order and the moduli file; the remaining hardening defaults as an invariant. On rhel9: the RedHat branch (sshd, wheel) and the idle disconnect not being enforced on OpenSSH 8.7. The Protocol 2/UsePrivilegeSeparation row is uncovered with sshd -V evidence and a capability lift, which is honest. GAP: ruling 1c (2026-11-23 sweep) makes every parameter variant either a check or an accepted_gap row. ssh_secure has 8 parameters, fleet_variant_usage.md shows production sets none of them (directly or through node_base, which forwards password_authentication, root_login/ssh_allow_root_login, port/ssh_port, host_keys, kex_algorithm, ciphers, macs). Only client_alive_interval is exercised at a non-default value. The variants password_authentication=true, root_login=true, port, host_keys, kex_algorithm, ciphers and macs are in neither the outcomes table nor an accepted_gap row, and the lab can test them. node_base's accepted gap row says each component's own set covers these forwarded parameters, so they are tested by neither set. Minor: the set's header still says the lab master has no othergroups Hiera key (AllowGroups 'sudo naemon  ssh_in'), which contradicts the p8testgroup fixture that allow-groups expects. The moduli outcome says the file is used, but the check reads only its content and mode; the dh-gex mismatch negotiation shows the key exchange works, not that this file supplies the group."
+ ],
+ "review_s": 471.1,
+ "check_file_sha256": "7073fe91a121f01fee627be47145d7b3efa12f49387744974059d33d782a67e9",
+ "content_sha256": "7073fe91a121f01fee627be47145d7b3efa12f49387744974059d33d782a67e9",
+ "reviewer_result": "20261125T124754Z-reviewer",
+ "author_result": "20261125T123746Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "6c56e102-b8cc-49e4-bebc-d1eb830e2a7d",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "6c56e102-b8cc-49e4-bebc-d1eb830e2a7d",
+   "fresh": true
+  }
+ }
+}
