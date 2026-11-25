@@ -1,0 +1,375 @@
+{
+ "class": "node_base",
+ "role": "author",
+ "at": "20261125T041119Z",
+ "runner": "8d5ca2f",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "576e54cce6f0a931787401ca345cd3a168c5968e118ed7fa0885ed6427db3295",
+ "content_sha256": "576e54cce6f0a931787401ca345cd3a168c5968e118ed7fa0885ed6427db3295",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-base-components-are-all-applied",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "aptitude unknown ok not-installed\n0\n",
+   "stderr": "dpkg-query: no packages found matching monitoring-plugins-standard\n",
+   "ok": true
+  },
+  {
+   "id": "ssh-negotiates-only-the-node-base-algorithms-and-keys",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "Permission denied (publickey,password)\npermitrootlogin without-password\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-firewall-is-firewall-secure-with-the-acl",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n0\n0\nno-side-chain\n",
+   "stderr": "iptables: No chain/target/match by that name.\n",
+   "ok": true
+  },
+  {
+   "id": "unattended-upgrades-are-not-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "installed\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-apt-scripts-are-in-server-mode",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "nginx-core not listed\npostfix not listed\nrsyslog-gnutls not listed\nfirefox not listed\nno-desktop-link\n",
+   "stderr": "grep: /opt/puppet-infrastructure/bin/apt-update-surface.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-tools-are-restricted-to-the-hiera-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "/usr/bin/wget root:root 755\n/usr/bin/curl root:root 755\n/usr/bin/ssh root:root 755\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "ntp-keeps-the-time",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "inactive\n0\nyes\n",
+   "stderr": "grep: /etc/ntpsec/ntp.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "dns-is-left-alone",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nameserver 1.1.1.1\nnameserver 8.8.8.8\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "no-boot-run-by-default",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "no-unit\nno-script\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "pet-infrastructure]\n  File[/opt/puppet-infrastructure/bin]\n  File[/opt/puppet-infrastructure/etc]\n  File[/opt/puppet-infrastructure/backup]\n  File[/opt/puppet-infrastructure/pkgsdir]\n  File[/etc/default/locale]\n  File[/opt/puppet-infrastructure/bin/mypython]\n  File[/usr/lib64/]\n  File[/usr/lib64/nagios/]\n  File[/opt/puppet-infrastructure/bin/apt-update-pkg.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-surface.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-kernel.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-dist.sh]\n  Package[openscap-scanner]\n  File[/opt/puppet-infrastructure/bin/get-relevant-updates-list]\n  File[/opt/puppet-infrastructure/bin/apt-check-updates.sh]\n  Cron[apt_check_updates]\n  File[/var/lib/apt-check-updates]\n  File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]\n  Puppet_infrastructure::Filesystem_sec[filesystem_sec]\n  Package[ntpsec]\n  File[/etc/ntpsec/ntp.conf]\n  Service[ntp]\n  File[/etc/apt/apt.conf.d/15update-stamp]\n  Concat_file[/etc/ssh/sshd_config]\n  Concat_fragment[global config]\n  File[/bin/nc]\n  File[/bin/netstat]\n  File[/usr/bin/wget]\n  File[/usr/bin/curl]\n  File[/usr/bin/lynx]\n  File[/usr/bin/traceroute]\n  File[/usr/bin/telnet]\n  File[/usr/bin/ftp]\n  File[/usr/bin/sftp]\n  File[/usr/bin/scp]\n  File[/usr/bin/make]\n  File[/usr/bin/pip]\n  File[/usr/bin/ssh]\n  File[/usr/bin/gcc]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\nGREEN_STAMP node_base 512111fdad0c\n"
+ },
+ "applied": [
+  {
+   "id": "the-base-components-are-all-applied",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "aptitude install ok installed\nmonitoring-plugins-standard install ok installed\nsysmon-scripts\n1\n/usr/lib/nagios\napt-scripts\n",
+   "stderr": ""
+  },
+  {
+   "id": "ssh-negotiates-only-the-node-base-algorithms-and-keys",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Permission denied (publickey)\nno matching key exchange method found\npermitrootlogin no\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the cipher (aes128-cbc, which node_base's list does not hold) in the first connection",
+    "rc": 0,
+    "passed": false,
+    "stdout": "no matching key exchange method found\npermitrootlogin no\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-firewall-is-firewall-secure-with-the-acl",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P INPUT DROP\n2\n1\nno-side-chain\n",
+   "stderr": ""
+  },
+  {
+   "id": "unattended-upgrades-are-not-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "not-installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-apt-scripts-are-in-server-mode",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nginx-core listed\npostfix listed\nrsyslog-gnutls listed\nfirefox not listed\nno-desktop-link\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-tools-are-restricted-to-the-hiera-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/usr/bin/wget root:sudo 750\n/usr/bin/curl root:sudo 750\n/usr/bin/ssh root:sudo 750\n",
+   "stderr": ""
+  },
+  {
+   "id": "ntp-keeps-the-time",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\nserver pt.pool.ntp.org iburst\n1\nyes\n",
+   "stderr": ""
+  },
+  {
+   "id": "dns-is-left-alone",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nameserver 1.1.1.1\nnameserver 8.8.8.8\n",
+   "stderr": ""
+  },
+  {
+   "id": "no-boot-run-by-default",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "no-unit\nno-script\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "e0f27687-9e42-4615-b164-a777f45e73b4",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "e0f27687-9e42-4615-b164-a777f45e73b4",
+   "fresh": true
+  }
+ },
+ "variants": {
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "snapshot": "P8LAB_RHEL9_BASELINE_v3",
+     "boot_id": "4bc1698c-4117-4c0a-a63f-5789441e0136",
+     "apt_mirror": null,
+     "boot_id_at_end": "4bc1698c-4117-4c0a-a63f-5789441e0136",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "on-redhat-firewalld-masked-chrony-and-the-yum-scripts",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "enabled\nactive\nactive\n0\n0\n",
+     "stderr": "ls: cannot access '/opt/puppet-infrastructure/bin': No such file or directory\nls: cannot access '/opt/puppet-infrastructure/bin': No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 1,
+    "green": false,
+    "node_fresh": true,
+    "tail": "ache/lib/puppet_x/stdlib/toml_dumper.rb]/ensure: defined content as '{sha256}57a02bbb4f19016a8320b0baa3531f877d84bcfdbd57488f8bd173b5ea9f8272'\u001b[0m\n\u001b[mNotice: /File[/opt/puppetlabs/puppet/cache/lib/puppet_x/voxpupuli]/ensure: created\u001b[0m\n\u001b[mNotice: /File[/opt/puppetlabs/puppet/cache/lib/puppet_x/voxpupuli/utils.rb]/ensure: defined content as '{sha256}6e3830391407b20e709e112fd5f9698ba82b6d79a61f37ea4c11271504331c09'\u001b[0m\n\u001b[mNotice: /File[/opt/puppetlabs/puppet/cache/lib/puppetx]/ensure: created\u001b[0m\n\u001b[mNotice: /File[/opt/puppetlabs/puppet/cache/lib/puppetx/filemapper.rb]/ensure: defined content as '{sha256}5f7ce1fe623c1cc1c40488b516e1d7cda925a468f561d8650f57ed62d8e0b4a0'\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795580438'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Exec[dnf-makecache]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Extra_packages_el/Exec[install-epel-release]/returns: executed successfully\u001b[0m\n\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Extra_packages_el/Exec[enable-codeready-builder-repo]/unless: Check \"subscription-manager repos --list-enabled | grep -q 'codeready-builder-for-rhel-9-x86_64-rpms'\" exceeded timeout\u001b[0m\nERROR: Agent run 1 timed out after 600s (node severed or hung?).\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED"
+  },
+  "prod": {
+   "name": "prod",
+   "node": "ubuntu",
+   "params": "prod",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "snapshot": "P8NODE_BASELINE_GREEN_v5",
+     "boot_id": "ef210138-edde-4744-89a0-0702c166dd3f",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "ef210138-edde-4744-89a0-0702c166dd3f",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "production-parameters-strict-keep-and-boot-run",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "-P INPUT ACCEPT\nrate-limit rules: 0\nnot-found\n",
+     "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/puppet_boot_run.sh': No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "e[/opt/puppet-infrastructure/bin/mypython]\n  File[/usr/lib64/]\n  File[/usr/lib64/nagios/]\n  File[/opt/puppet-infrastructure/bin/apt-update-pkg.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-surface.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-kernel.sh]\n  File[/opt/puppet-infrastructure/bin/apt-update-dist.sh]\n  Package[openscap-scanner]\n  File[/opt/puppet-infrastructure/bin/get-relevant-updates-list]\n  File[/opt/puppet-infrastructure/bin/apt-check-updates.sh]\n  Cron[apt_check_updates]\n  File[/var/lib/apt-check-updates]\n  File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]\n  Puppet_infrastructure::Filesystem_sec[filesystem_sec]\n  Package[ntpsec]\n  File[/etc/ntpsec/ntp.conf]\n  Service[ntp]\n  File[/opt/puppet-infrastructure/bin/puppet_boot_run.sh]\n  File[/etc/systemd/system/puppet_boot_run.service]\n  Exec[Reload systemd]\n  Service[puppet_boot_run]\n  File[/etc/apt/apt.conf.d/15update-stamp]\n  Concat_file[/etc/ssh/sshd_config]\n  Concat_fragment[global config]\n  File[/bin/nc]\n  File[/bin/netstat]\n  File[/usr/bin/wget]\n  File[/usr/bin/curl]\n  File[/usr/bin/lynx]\n  File[/usr/bin/traceroute]\n  File[/usr/bin/telnet]\n  File[/usr/bin/ftp]\n  File[/usr/bin/sftp]\n  File[/usr/bin/scp]\n  File[/usr/bin/make]\n  File[/usr/bin/pip]\n  File[/usr/bin/ssh]\n  File[/usr/bin/gcc]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant prod; never a Phase 1 record)\n"
+   },
+   "applied": [
+    {
+     "id": "production-parameters-strict-keep-and-boot-run",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "-P INPUT DROP\nrate-limit rules: 0\nenabled\nroot:root 750\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "every base component is applied together on an Ubuntu node (packages, monitoring scripts, SSH, firewall, IPv6 drop, local tree, lib64 link, apt scripts, restricted tools)",
+   "checks": [
+    "the-base-components-are-all-applied"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "SSH negotiates only node_base's ciphers, MACs and key exchange, admits keys only, and refuses root",
+   "checks": [
+    "ssh-negotiates-only-the-node-base-algorithms-and-keys"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the firewall is firewall_secure (not the extra variant) with the node's ACL whitelisted for SSH, and IPv6 is dropped",
+   "checks": [
+    "the-firewall-is-firewall-secure-with-the-acl"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "unattended upgrades are not installed (node_base passes unattended_upgrades false)",
+   "checks": [
+    "unattended-upgrades-are-not-installed"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the apt update scripts use the server surface list (server_mode true), with no desktop link",
+   "checks": [
+    "the-apt-scripts-are-in-server-mode"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the network tools are restricted to the group Hiera names for Ubuntu",
+   "checks": [
+    "the-tools-are-restricted-to-the-hiera-group"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "time is kept by the ntp module's service (ntpsec on Ubuntu 24.04) from the Hiera servers, and it synchronises",
+   "checks": [
+    "ntp-keeps-the-time"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "with no nameservers given, the node's DNS setup is left as it is",
+   "checks": [
+    "dns-is-left-alone"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "no boot-time agent run unless asked (run_puppet_on_boot false)",
+   "checks": [
+    "no-boot-run-by-default"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "on RedHat, firewalld is stopped, disabled and masked, chrony keeps the time, and filesystem_yum replaces the apt scripts",
+   "checks": [
+    "on-redhat-firewalld-masked-chrony-and-the-yum-scripts"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "strict SSH, firewall purge off with ignore patterns, and the boot run, when their parameters are set",
+   "checks": [
+    "production-parameters-strict-keep-and-boot-run"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "custom NTP servers, nameservers and the extra firewall when their parameters are set",
+   "uncovered": {
+    "why": "parameter variants no production node uses on node_base (each component's own set covers it with its parameters set)",
+    "accepted_gap": [
+     "custom_ntp",
+     "ntp_servers",
+     "nameservers",
+     "firewall_secure_extra"
+    ],
+    "evidence": "diagnosis/fleet_variant_usage.md (2026-11-23): production sets firewall_ignore_patterns, firewall_strict_purge, run_puppet_on_boot, ssh_acl and ssh_strict on node_base, none of these; no class of the repository declares node_base"
+   }
+  }
+ ],
+ "duration_s": 1591.3
+}
