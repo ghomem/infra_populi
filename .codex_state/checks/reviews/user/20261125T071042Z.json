@@ -1,0 +1,35 @@
+{
+ "class": "user",
+ "at": "20261125T071042Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "no-supplementary-groups: user_base.pp:65 'groups => $mygrouplist' with user.pp:6's default [] (the base fixture passes no list) means no supplementary groups, so 'id -nG' printing only p8testuser is what the code produces",
+  "the-given-key-is-pushed: user_base.pp:94 'if ( $ignorekey == false )' is the only guard on ssh_authorized_key (96-100, type ssh-rsa, title <user>@puppet); the wrapper (user.pp:8) cannot pass ignorekey so the default false applies, and with an unlocked hash and non-empty mykey $sshkey = $mykey (58); the expected single 'ssh-rsa <RSA body> p8testuser@puppet' line matches",
+  "home-created-and-owned: user_base.pp:69 'managehome => true' creates /home/<title> (myhome '' -> /home/${myusername}, lines 8-10) owned by the user and its primary group (= title with an empty group list, 25-26); stat '%U %G %F' = 'p8testuser p8testuser directory' is what that yields",
+  "purpose covered: Purpose (user.pp header 'a normal user not belonging to any special groups'; line 8 passes every parameter to user_base, never ignorekey/myppsigs/myppwrapped) is stated right. Checks test the account, own primary group, comment, home, shell and no extra groups; the hash and a real su login with the test password plus refusal of a wrong one; the key pushed as the only key in a private user-owned file; no ecryptfs files; the purge of a planted out-of-band key by an agent run (its mutates now names the /run key pair it writes); variants locked (locked hash -> passwd -S L and the userlocked placeholder, group list [users] as primary, /srv/p8testhome mode 700, /bin/sh) and emptykey (mykey '' -> the emptykey placeholder), both ALL_PASS in my run. Uncovered, honestly: the empty-hash fail() (a compile refusal; phase3.py run_locked returns APPLY_FAILED on a red harness, verified at phase3.py:1226-1227) and a login with the pushed key (no private half; fetch_node_files only reads node files, phase3.py:944-949), each lifted by a named capability. The wrapper's own default mykey 'dummykey' takes the same pushed-key branch (user_base.pp:56-58) as the tested fixture key, so it adds no untested behaviour."
+ ],
+ "review_s": 339.6,
+ "check_file_sha256": "5665ab717580e2fe3d51b1ff75228a9ca7e12d4ec471a7b1825615f3fb158be8",
+ "content_sha256": "5665ab717580e2fe3d51b1ff75228a9ca7e12d4ec471a7b1825615f3fb158be8",
+ "reviewer_result": "20261125T070503Z-reviewer",
+ "author_result": "20261125T065856Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "19d30a51-0338-4458-aa59-7825688860b1",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "19d30a51-0338-4458-aa59-7825688860b1",
+   "fresh": true
+  }
+ }
+}
