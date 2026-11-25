@@ -1,0 +1,43 @@
+{
+ "class": "firewall_secure",
+ "at": "20261125T150903Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "a-whitelisted-host-is-not-limited: lines 82-83 declare rule 100 accepting tcp/ssh_port from every $mylist address before the 110 jump to the limits; the fixture acl holds 192.168.56.124 (the peer's host-only address + 100), so 20 parallel connects from that source all getting in (in 20) is what the code produces",
+  "whitelist-is-the-hiera-list-plus-the-acl: lines 82-83 with line 34 ($mylist = unique(flatten([lookup firewall::whitelist, $acl]))) give one ACCEPT rule per address; lab Hiera ['127.0.0.1'] plus acl [192.168.56.1, 192.168.56.124] yields exactly the three -s .../32 rules in title order the probe expects",
+  "a-burst-of-new-ssh-connections-is-cut-at-the-limit: lines 77-79 set overlim_minute 20, used by rule 116 (limit 20/min, iptables default burst 5) then 117 drop; 20 simultaneous SYNs from an unlisted host (below connlimit 8 for accepted ones, recent window cleared by sleep 61) get 5 in and 15 dropped, the expected 'dropped 15 / in 5'",
+  "purpose gap: Covered as behaviour in the base run (reviewer run 20261125T145654Z ALL_PASS, all three runs agree): default DROP of a listening port from the peer, ICMP and SSH in from an unlisted host, loopback accepted, whitelisted source unlimited, overall burst limit (5), per-host connlimit (8 held, rule counters attribute drops to 112 only), per-host recent limit (14 in then dropped), purge of an unmanaged rule at the next agent run, flush script contents/effect and rebuild by the next agent run, saved rules = running rules with netfilter-persistent enabled; keep variant tests ignore_patterns behaviourally (matching rule kept, other purged). Rule 002 uncovered with measured evidence and a capability lift: honest. GAP: the strict variant (strict true, 37 production node statements) is tested only as rule text (policy DROP, a nonzero count of 'SSH whitelist' rules, no '110 SSH' rule, no LIMIT_INDIVIDUAL chain); no check shows that in strict mode an unlisted host's SSH connection is actually dropped, nor that a listed source still gets in, which is the outcome row's claim 'only listed hosts reach SSH' (manifest lines 86-90, 29 'hosts that can login (strict mode)'). The lab can exercise it on the node itself (e.g. a mutating check connecting from a network namespace/veth with an unlisted source), and if the set relies on the peer instead, the row must list it uncovered with 'capability: a peer in variant runs' and evidence; it does neither. This is the same rule-text-only deficiency the 2026-11-18 correction fixed for the default-mode whitelist. Minor, not gap-deciding: rule 003 (RELATED,ESTABLISHED accept) has no row of its own; it is exercised implicitly by the held connections and the post-apply agent runs to the master."
+ ],
+ "review_s": 729.5,
+ "check_file_sha256": "f63482ecb6e8a68436dc2f5501401b5c793771058449edbc3f558a24a554035e",
+ "content_sha256": "f63482ecb6e8a68436dc2f5501401b5c793771058449edbc3f558a24a554035e",
+ "reviewer_result": "20261125T145654Z-reviewer",
+ "author_result": "20261125T144127Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "2287b9d5-b988-42dc-b9c4-3ac1d9e4341d",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "2287b9d5-b988-42dc-b9c4-3ac1d9e4341d",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "boot_id": "6fa83802-3bb4-47d1-9e95-4a833983ad66",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "6fa83802-3bb4-47d1-9e95-4a833983ad66",
+   "fresh": true
+  }
+ }
+}
