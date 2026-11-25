@@ -4,8 +4,8 @@
 # "sudo naemon p8testgroup ssh_in". Correction round 1 (2026-11-19, review 20261119T020808Z): root joins ssh_in for the
 # probe so PermitRootLogin, not AllowGroups, is what refuses it (sshd logs ROOT LOGIN REFUSED); the Hiera group's
 # login is a check.
-# The node is Ubuntu 24.04 (osfamily Debian): $ssh_service = ssh, $admin_group = sudo. No Hiera key
-# `puppet8node::ssh::othergroups` on the lab master, so AllowGroups = "sudo naemon  ssh_in".
+# The node is Ubuntu 24.04 (osfamily Debian): $ssh_service = ssh, $admin_group = sudo. (Until 2026-11-19 the lab master
+# had no othergroups key and AllowGroups was "sudo naemon  ssh_in"; the fixture above replaced that.)
 # Effective configuration is read with `sshd -T` (what sshd will enforce, after Includes and defaults); negotiation
 # checks connect from the node to itself (127.0.0.1) and stop at algorithm negotiation or authentication — no login.
 # 2026-11-19, local change #8 (HQ batch-14 ruling 3): sshd's own idle timeouts (ChannelTimeout session=, Unused-
@@ -31,6 +31,14 @@
 # -1.145530 s, jitter 427.644 ms, delay 196.258 ms to ntp.ubuntu.com); a backward step shortens a wall-clock interval.
 # Both idle probes (Ubuntu and the rhel variant) now time the session by the monotonic clock (/proc/uptime, one decimal)
 # and record the wall-clock seconds beside it; the 29 s floor stays for sshd's whole-second deadline.
+# Correction round 1 of the swept set (2026-11-25, review 20261125T125545Z, purpose): the parameter variants other
+# than client_alive_interval were in no row. node_base_domain_desktop sets password_authentication true on ssh_secure,
+# so that is a check in the variant run `password` (a password login, right and wrong); production sets none of the
+# others (not on ssh_secure, and node_base, which forwards them, gets none either), so they are an accepted-gap row. The moduli row says what is checked: the class's
+# file installed with its content and mode.
+# 2026-11-25 authoring correction (run 20261125T125931Z-author): the askpass helpers sat in /run, which Ubuntu mounts
+# noexec, so ssh could not run them ("exec ... Permission denied") and neither login sent a password; they now live in
+# /root/p8test-ssh. sshd's PasswordAuthentication was yes, as the baseline makes it.
 class: ssh_secure
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -55,12 +63,25 @@ outcomes:
   - outcome: on an sshd older than 9.2 (RHEL 9) the idle disconnect is not enforced (HQ batch-14 ruling 3; approval_conditions.md)
     from: manifests/ssh_secure.pp:5, 75-76
     checks: [rhel-login-account-and-key, on-redhat-an-idle-session-is-not-ended]
-  - outcome: the host keys are offered in the given order, and the class's own moduli file is used
+  - outcome: the host keys are offered in the given order, and the class's own moduli file is installed (its content and mode)
     from: manifests/ssh_secure.pp:9, 26-33, 58
     checks: [host-keys-in-order, moduli-file]
   - outcome: the other hardening settings hold (no host-based auth, rhosts ignored, 120 s login grace, empty passwords refused, strict modes, port)
     from: manifests/ssh_secure.pp:62-78
     checks: [unchanged-hardening-defaults]
+  - outcome: with password_authentication true (node_base_domain_desktop sets it) a password logs in, and a wrong one is refused
+    from: manifests/ssh_secure.pp:6, 43-47, 66; manifests/node_base_domain_desktop.pp:10
+    checks: [with-password-authentication-a-password-logs-in]
+  - outcome: >-
+      the other parameter variants (root_login true, another port, other host keys, kex algorithms, ciphers or MACs)
+    from: manifests/ssh_secure.pp:3-12, 48-53
+    uncovered:
+      why: parameter variants no production node uses
+      accepted_gap: [root_login, port, host_keys, kex_algorithm, ciphers, macs]
+      evidence: >-
+        diagnosis/fleet_variant_usage.md (2026-11-23): no production node statement sets any parameter of ssh_secure,
+        and none sets node_base's ssh_allow_root_login, ssh_port, host_keys, kex_algorithm, ciphers or macs, which
+        node_base forwards to it; no class of the repository sets them
   - outcome: Protocol 2 and UsePrivilegeSeparation yes
     from: manifests/ssh_secure.pp:57, 77
     uncovered:
@@ -73,6 +94,9 @@ outcomes:
     from: manifests/ssh_secure.pp:15-19
     checks: [on-redhat-the-service-and-the-admin-group]
 variants:
+  - name: password
+    why: password_authentication true, which node_base_domain_desktop sets on ssh_secure; the set's fixture otherwise
+    params: password
   - name: rhel
     why: >-
       the RedHat branch (service sshd, admin group wheel) and an sshd older than 9.2 (OpenSSH 8.7), on the rhel9 node
@@ -403,3 +427,35 @@ checks:
     effect: |
       cut -d' ' -f1 /run/p8test-ssh/idle.txt
     expect: {rc: 0, stdout: "\\Astill-connected\\n\\Z"}
+
+  - id: with-password-authentication-a-password-logs-in
+    variant: password
+    what: >-
+      with password_authentication true sshd's effective PasswordAuthentication is yes, an account in ssh_in logs in
+      from the node to itself with its password alone, and a wrong password is refused
+    control: negative
+    derived_from:
+      - {path: manifests/ssh_secure.pp, lines: "43-47", text: "if ( $password_authentication == false) {"}
+      - {path: manifests/ssh_secure.pp, lines: "66", text: "'PasswordAuthentication'  => $my_password_authentication ,"}
+    mutates: >-
+      on the node: creates the account p8testpw in group ssh_in with the password p8test-ssh-not-a-secret (a lab
+      fixture), two askpass scripts /root/p8test-ssh/askpass-good and askpass-bad, and makes two SSH logins to
+      127.0.0.1 as p8testpw with password authentication only (one with each); their output goes to
+      /run/p8test-ssh/pw-good.txt and pw-bad.txt
+    probe: |
+      install -d -m 0700 /run/p8test-ssh /root/p8test-ssh
+      id p8testpw >/dev/null 2>&1 || useradd -m -s /bin/bash -G ssh_in p8testpw
+      echo 'p8testpw:p8test-ssh-not-a-secret' | chpasswd
+      printf '#!/bin/sh\necho p8test-ssh-not-a-secret\n' > /root/p8test-ssh/askpass-good
+      printf '#!/bin/sh\necho p8test-wrong-password\n' > /root/p8test-ssh/askpass-bad
+      chmod 0700 /root/p8test-ssh/askpass-good /root/p8test-ssh/askpass-bad
+      for k in good bad; do
+        SSH_ASKPASS=/root/p8test-ssh/askpass-$k SSH_ASKPASS_REQUIRE=force DISPLAY=:0 setsid -w ssh -o StrictHostKeyChecking=no \
+          -o UserKnownHostsFile=/dev/null -o PreferredAuthentications=password -o PubkeyAuthentication=no \
+          -o NumberOfPasswordPrompts=1 -o ConnectTimeout=10 p8testpw@127.0.0.1 id -un < /dev/null > /run/p8test-ssh/pw-$k.txt 2>&1
+      done
+    effect: |
+      sshd -T | grep -i '^passwordauthentication '
+      grep -x p8testpw /run/p8test-ssh/pw-good.txt
+      grep -c 'Permission denied' /run/p8test-ssh/pw-bad.txt
+    expect: {rc: 0, stdout: "\\Apasswordauthentication yes\\np8testpw\\n1\\n\\Z"}
