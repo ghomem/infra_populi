@@ -56,16 +56,23 @@ outcomes:
     checks: [on-redhat-firewalld-masked-chrony-and-the-yum-scripts]
   - outcome: strict SSH, firewall purge off with ignore patterns, and the boot run, when their parameters are set
     from: manifests/node_base.pp:4, 27, 101, 164
-    checks: [production-parameters-strict-keep-and-boot-run]
-  - outcome: custom NTP servers, nameservers and the extra firewall when their parameters are set
-    from: manifests/node_base.pp:8-25, 33-34, 46, 137-157
+    checks: [production-parameters-strict-keep-and-boot-run, prod-two-unmanaged-rules-are-planted, prod-the-agent-run-keeps-the-matching-rule]
+  - outcome: the parameters node_base forwards that no production node sets (custom NTP, nameservers, the extra firewall and its options, SSH options, syslog mode, apt and update options, filesystem security)
+    from: manifests/node_base.pp:1-50 (parameters), 52-170
     uncovered:
       why: parameter variants no production node uses on node_base (each component's own set covers it with its parameters set)
-      accepted_gap: [custom_ntp, ntp_servers, nameservers, firewall_secure_extra]
+      accepted_gap: [anti_ddos, apt_surface_list, bad_mark, ciphers, country_whitelist, customize_syslog_mode, custom_ntp, ddos_limit, ddos_limit_per_time_unit, ddos_limit_time_unit, filesystem_security, firewall_secure_extra, forward_iniface, good_mark, host_keys, internal_forward, internal_forward_list, ip_blacklist, ip_filter, ip_whitelist, kex_algorithm, macs, nameservers, ntp_servers, password_authentication, relevant_updates_method, relevant_updates_no_kernel, server_ppa, service_list, ssh_allow_root_login, ssh_port, syslog_mode]
       evidence: >-
         diagnosis/fleet_variant_usage.md (2026-11-23): production sets firewall_ignore_patterns, firewall_strict_purge,
         run_puppet_on_boot, ssh_acl and ssh_strict on node_base, none of these; no class of the repository declares
         node_base
+# Correction round 1 of the swept set (2026-11-25, review 20261125T113935Z, purpose): the prod check read the same
+# whether node_base forwards firewall_strict_purge false and the ignore patterns or not; the prod variant now plants two
+# unmanaged rules, one matching p8test-keep, and the next agent run keeps that one and purges the other (as
+# firewall_secure's keep variant). Every forwarded parameter production does not set is in the accepted-gap row.
+node_agent:
+  after: [prod-two-unmanaged-rules-are-planted]
+  why: firewall_secure purges unmanaged rules, except those matching an ignore pattern, only on its next agent run
 variants:
   - name: rhel
     why: the RedHat branch (firewalld masked, chrony, filesystem_yum), on the rhel9 node with the set's own params fixture
@@ -228,3 +235,36 @@ checks:
       systemctl is-enabled puppet_boot_run.service
       stat -c '%U:%G %a' /opt/puppet-infrastructure/bin/puppet_boot_run.sh
     expect: {rc: 0, stdout: "\\A-P INPUT DROP\\nrate-limit rules: 0\\nenabled\\nroot:root 750\\n\\Z"}
+
+  - id: prod-two-unmanaged-rules-are-planted
+    variant: prod
+    what: setup for the next check, two rules Puppet does not manage added to INPUT by hand, one matching the ignore pattern p8test-keep
+    control: negative
+    derived_from:
+      - {path: manifests/node_base.pp, lines: "101", text: "strict_purge => $firewall_strict_purge, ignore_patterns => $firewall_ignore_patterns"}
+    mutates: >-
+      appends two ACCEPT rules to INPUT on the node, commented p8test-keep-me (source 10.255.255.2) and p8test-other
+      (source 10.255.255.3)
+    probe: |
+      iptables -A INPUT -s 10.255.255.2/32 -m comment --comment p8test-keep-me -j ACCEPT
+      iptables -A INPUT -s 10.255.255.3/32 -m comment --comment p8test-other -j ACCEPT
+    effect: |
+      iptables -S INPUT | grep -cE 'p8test-(keep-me|other)'
+    expect: {rc: 0, stdout: "\\A2\\n\\Z"}
+
+  - id: prod-the-agent-run-keeps-the-matching-rule
+    variant: prod
+    what: >-
+      after the node's agent run, the rule matching node_base's firewall_ignore_patterns stays and the other unmanaged
+      rule is purged (firewall_strict_purge false, forwarded to firewall_secure)
+    control: negative
+    derived_from:
+      - {path: manifests/node_base.pp, lines: "101", text: "class { 'puppet_infrastructure::firewall_secure': strict => $ssh_strict"}
+      - {path: manifests/firewall_secure.pp, lines: "39-44", text: "if ( ! $strict_purge and ! $ignore_patterns.empty )"}
+    mutates: none beyond reading the rules (declared mutating so it runs after the node's agent run)
+    probe: |
+      true
+    effect: |
+      iptables -S INPUT | grep -c p8test-keep-me | sed 's/^/kept: /'
+      iptables -S INPUT | grep -c p8test-other | sed 's/^/other: /'
+    expect: {rc: 0, stdout: "\\Akept: 1\\nother: 0\\n\\Z"}
