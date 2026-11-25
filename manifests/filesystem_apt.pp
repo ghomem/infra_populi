@@ -1,4 +1,4 @@
-# Puppet 8 migration: release-0.9.10 manifest validated unchanged.
+# Puppet 8 migration: release-0.9.10 manifest, plus a local change (policy B; rules/local_changes.md): #24: a custom apt_surface_list is joined with spaces, as the default lists are, so the surface script gets package names.
 # Module dependency: puppetlabs-cron_core 1.3.0 (vendored with Puppet 8.24.2).
 ### Purpose ########
 # This class provides helper scripts for apt based system updates
@@ -59,7 +59,8 @@ class puppet_infrastructure::filesystem_apt (
       $_apt_surface_list = join($apt_surface_desktop, " ")
     }
   } else {
-    $_apt_surface_list = $apt_surface_list
+    # local change #24 (policy B): join a custom list as the default lists are, so the script gets package names
+    $_apt_surface_list = join($apt_surface_list, " ")
   }
 
   # security surface updates
