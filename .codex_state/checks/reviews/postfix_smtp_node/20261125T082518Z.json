@@ -1,0 +1,43 @@
+{
+ "class": "postfix_smtp_node",
+ "at": "20261125T082518Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "on-redhat-the-per-node-values-reach-postfix @ manifests/postfix_smtp_node.pp:14: root_email_alias is looked up as ${clientcert}::postfix_smtp_node::root_email_alias (default ''), and aliases:2-4 renders 'root: <alias>'. The lab Hiera (master_fixtures.sh:141-144) gives certname p8lab-rhel9 root_email_alias p8test-admin@p8test.invalid, mynetworks '127.0.0.0/8 192.0.2.0/24', mydestination 'p8test-dest.invalid, localhost' and message_size_limit 20480000. The expectation is these values; mydestination has the template's own suffix ', localhost.localdomain, , localhost' appended (main.cf:34). Failed on the clean rhel9 node and passed after apply in my run 20261125T081815Z.",
+  "a-message-over-the-size-limit-is-refused @ manifests/postfix_smtp_node.pp:12-13: message_size_limit defaults to 10240000 (the Ubuntu node has no per-node or common key), and main.cf:37 renders it. The action submits a message of about 10.5 MB, which is over the limit. The effect reads the recorded sendmail exit status and the 'too big' error, i.e. postfix's refusal, not the action's own output. mutates declares the submission and the /run/p8test-mail files.",
+  "a-message-from-the-node-goes-to-the-relayhost @ manifests/postfix_smtp_node.pp:1-2: the class exists to send the node's mail through a relayhost; main.cf:53 sets relayhost mailserver.mycompany.com:587. The action pins that name to the peer, fences mail ports to every other address (so nothing leaves the lab), points the resolver at the stub and sends one message. All of this is declared in mutates. The effect reads postfix's own log (relay=mailserver.mycompany.com[...]:587 status=sent) and the empty queue, not the action's output. Passed after apply, failed on the clean node.",
+  "purpose covered: The stated purpose matches the header comment (manifest:1-2) and the code: send the node's mail through the relayhost with SASL auth over opportunistic TLS, enforce the size limit, and refuse to relay for other hosts. All checks passed in my run 20261125T081815Z (base Ubuntu with the ubuntu2 peer, and variant rhel on rhel9). The checks test: the effective postconf values against the template; postfix check; the SASL map compiled for the relayhost (the mismatch with relay.p8test.invalid fails as required); postfix active and enabled; libsasl2-modules (an invariant: present on the clean base, plausible); root alias rendered and compiled. Behaviour: a real message relayed to the peer on 587 arrives with ESMTPSA, logged as sasl_username=p8test-relay; an over-size message is refused; a relay attempt from outside mynetworks gets 454 Relay access denied. The RedHat branch is tested on rhel9 (cyrus-sasl-plain, ca-bundle.crt, postfix active). The previous review's gap (per-node Hiera keys) is closed: master_fixtures.sh gives p8lab-rhel9 non-default root alias, mynetworks, mydestination and size limit, and the rhel check confirms they reach postfix and /etc/aliases. Left out: the per-node myorigin key (manifest:8) has no non-default per-node value. It uses the same [${clientcert} key, common key] array lookup as mydestination, which is exercised, so this is not an untested mechanism. No uncovered rows remain."
+ ],
+ "review_s": 423.3,
+ "check_file_sha256": "a3f3e9555a9662a7f62079640b701bd625e1cee6aed8e97cb231d7a83d321ca3",
+ "content_sha256": "a3f3e9555a9662a7f62079640b701bd625e1cee6aed8e97cb231d7a83d321ca3",
+ "reviewer_result": "20261125T081815Z-reviewer",
+ "author_result": "20261125T080901Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "10185847-603c-4364-8b41-2959b049f626",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "10185847-603c-4364-8b41-2959b049f626",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "boot_id": "9255c6ac-974c-4495-aa4f-36165359c21f",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "9255c6ac-974c-4495-aa4f-36165359c21f",
+   "fresh": true
+  }
+ }
+}
