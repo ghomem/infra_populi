@@ -1,0 +1,35 @@
+{
+ "class": "node_base",
+ "at": "20261125T113935Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-base-components-are-all-applied @ manifests/node_base.pp:52-54: node_base declares packages_base, whose baseline package_list (packages_base.pp:26-27) holds aptitude and monitoring-plugins-standard on Ubuntu; the probe's dpkg-query 'install ok installed' lines test exactly that",
+  "the-base-components-are-all-applied @ manifests/node_base.pp:55-57: node_base declares sysmon_base, which installs ${localdir}/bin/nagios-puppet.sh mode 0755 (sysmon_base.pp:23-28, localdir /opt/puppet-infrastructure in the lab Hiera); 'test -x ... && echo sysmon-scripts' tests it",
+  "dns-is-left-alone @ manifests/dns_client.pp:8-12: resolv_conf is declared only when nameservers != []; node_base passes its default [] (node_base.pp:46, 167-169), so the node's own resolv.conf (1.1.1.1, 8.8.8.8) must be unchanged; an invariant that passed clean and applied in my run",
+  "purpose gap: Tested (my run 20261125T111718Z-reviewer ALL_PASS, base + rhel + prod): every Ubuntu component applied (packages, sysmon scripts, IPv6 drop, lib64 link, apt scripts), SSH offering publickey only with node_base's cipher/MAC/kex and refusing curve25519 kex and root (mismatch aes128-cbc refused), firewall_secure with DROP policy and the ACL whitelisted, unattended-upgrades absent, apt scripts in server mode, network tools root:sudo 750, ntpsec synchronised to the Hiera server, DNS and boot run left alone by default; on rhel9 firewalld masked/inactive, chronyd active, yum scripts and no apt scripts; prod ssh_strict (no 110 rate-limit rule) and the boot-run unit enabled with its 0750 script. GAP: the outcome row 'strict SSH, firewall purge off with ignore patterns, and the boot run' maps the purge-off part to production-parameters-strict-keep-and-boot-run, but that probe reads only the INPUT policy, the '110 SSH' rule count and the boot unit/script; with no unmanaged rule present it reads the same whether node_base forwards firewall_strict_purge false / firewall_ignore_patterns (node_base.pp:101 -> firewall_secure.pp:37-46) or not. Production sets these on 11 node statements, and the lab CAN exercise it: firewall_secure.yml's keep variant does with mutating checks (unmanaged rules added, agent run, the rule matching the ignore pattern kept, the other purged). The prod variant needs such a check (rule matching p8test-keep kept, a non-matching one purged), or the row must not claim it. Secondary: other parameter variants node_base forwards (password_authentication, ssh_port, ssh_allow_root_login, host_keys, kex_algorithm/ciphers/macs, customize_syslog_mode/syslog_mode, apt_surface_list, relevant_updates_method/_no_kernel, filesystem_security false) are neither checked nor listed in the accepted_gap row, which names only custom_ntp, ntp_servers, nameservers, firewall_secure_extra; production sets none of them (fleet_variant_usage.md), so they belong in that accepted_gap row. Purpose statement matches the header ('basic desirable properties of a generic Ubuntu node') and the baseline code."
+ ],
+ "review_s": 1337.3,
+ "check_file_sha256": "576e54cce6f0a931787401ca345cd3a168c5968e118ed7fa0885ed6427db3295",
+ "content_sha256": "576e54cce6f0a931787401ca345cd3a168c5968e118ed7fa0885ed6427db3295",
+ "reviewer_result": "20261125T111718Z-reviewer",
+ "author_result": "20261125T105117Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "1a6da91e-55d7-479c-adbe-1b7a45aff732",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "1a6da91e-55d7-479c-adbe-1b7a45aff732",
+   "fresh": true
+  }
+ }
+}
