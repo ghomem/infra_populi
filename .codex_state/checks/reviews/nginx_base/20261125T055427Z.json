@@ -1,0 +1,35 @@
+{
+ "class": "nginx_base",
+ "at": "20261125T055427Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "log-formats-main-and-compact: nginx_base.pp:72-75 merges $log_formats_main with $log_formats_additional (default {}), so under the defaults fixture nginx.conf holds exactly the main and compact log_format lines; the probe counts one of each (names only, which is what the merge yields)",
+  "on-redhat-nginx-runs-valid-with-modules-enabled-once: nginx_base.pp:106-110 declares class nginx with the same $configs on non-Ubuntu; with the ruled include_modules_enabled => true (class_rulings.txt, kept on every OS) nginx.conf includes /etc/nginx/modules-enabled once; probe checks nginx -t, the service active and one include on rhel9 - matches",
+  "on-redhat-workers-tokens-and-log-formats: nginx_base.pp:63-67 defines main and compact, and 82-84 sets worker_processes auto and server_tokens off in $default_configs passed to class nginx on every OS; probe counts each line once in nginx.conf on rhel9 - matches",
+  "purpose gap: Tested on both runs that exercise the default fixture (ubuntu and rhel9): nginx from the distribution (no nginx.org source, Ubuntu archive / Red Hat vendor), nginx -t valid and running with modules-enabled included once (a dynamic module installed on Ubuntu), workers auto, server_tokens off as a Server header without version (mismatch control), main and compact log formats, 2048-bit DH group mode 640, ad-hoc file absent by default; the custom variant tests my_configs and ad-hoc lines reaching nginx -T. Accepted gap (log_formats_additional, dh_params_bits) checked: 0 uses in fleet_variant_usage.md and no baseline class sets them. GAP: the outcome row 'the stream block logs nothing (stream_access_log off)' is uncovered with a false reason. It says the stream block exists only when another class declares a stream server and a variant cannot reach it; but puppet-nginx 8.4.0 renders the stream block (templates/conf.d/nginx.conf.erb:405-421, including access_log <stream_access_log>) whenever class nginx's stream param is true (init.pp:325, Boolean $stream = false), and nginx_base passes my_configs straight to class nginx. Production enables it exactly that way: the nginx_frontend_mail fixture for nginx_base sets my_configs {stream: true}. So a variant of this set with my_configs {stream: true} (plus libnginx-mod-stream, which this set already installs in a mutating check) on the active ubuntu node can show the stream block with access_log off and nginx -t passing. The cited nginx_frontend_mail PASS shows the lab can exercise it, not that it lacks anything, so the row's lifted_by capability is not missing."
+ ],
+ "review_s": 529.9,
+ "check_file_sha256": "7c153c7232fcd6f556fa4a75e8f8eea746988ba3bf451af8e5bb31b513ce17b6",
+ "content_sha256": "7c153c7232fcd6f556fa4a75e8f8eea746988ba3bf451af8e5bb31b513ce17b6",
+ "reviewer_result": "20261125T054538Z-reviewer",
+ "author_result": "20261125T053349Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "d2fac20b-5eeb-4919-941f-4e446d8b6bd6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "d2fac20b-5eeb-4919-941f-4e446d8b6bd6",
+   "fresh": true
+  }
+ }
+}
