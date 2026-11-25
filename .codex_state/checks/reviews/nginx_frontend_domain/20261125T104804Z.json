@@ -1,0 +1,35 @@
+{
+ "class": "nginx_frontend_domain",
+ "at": "20261125T104804Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "dynamic-dns-proxies-through-the-variable: baseline :397 renders set $proxy_backend http://<first reconstructed upstream> when dynamic_dns_resolution is true; the dyn fixture (127.0.0.1:8080, http, no pass suffix) makes that 'set $proxy_backend http://127.0.0.1:8080;', :560-561 gives proxy_pass $proxy_backend, :710 renders the default resolver 127.0.0.53, and the HTTPS fetch of the backend page proves the variable proxy works; matches the probe and expect",
+  "https-proxies-to-the-backend: baseline :564 proxy_value http://backend_<domain> (upstream :409-412 to the fixture's 127.0.0.1:8080), with decorate_naked false :523 server_name [domain, www]; the probe fetches the backend page under both names verifying against the bundle's issuer, and under other.example.com verification fails (empty); matches the lines under the base fixture",
+  "under-tls-1-2-only-the-class-ciphers-are-accepted: baseline :318 builds ssl_ciphers from base_ssl_ciphers_prefix (:110, includes ECDHE-RSA-AES128-GCM-SHA256, not AES128-SHA) and suffix '!DSS:!EXPORT'; the prod fixture enables TLSv1.2 via base_ssl_protocols_prefix and leaves the ciphers at their default, so ECDHE-RSA-AES128-GCM-SHA256 accepted / AES128-SHA refused is what the code produces; the client uses SECLEVEL=0 so the refusal is the server's; the mismatch swaps in ECDHE-RSA-AES256-GCM-SHA384 (in the list), which must change the verdict, and it failed as required",
+  "purpose covered: Purpose (TLS frontend for one domain: HTTP->HTTPS redirects on domain and www, HTTPS proxy to the domain's upstream with its certificate and modern TLS) matches the header comments and baseline code. Tested in the base run: backend reachable, 301 with path/query on both names over HTTP, HTTPS proxy under both names with a certificate verifying against its issuer (and failing for a foreign name), TLS1.3-only default. prod: decorate_naked as 301 naked->www over HTTP and HTTPS (mismatch ok), the TLSv1.2 cipher restriction (mismatch ok), and the rendered nginx config for the other production parameters (letsencrypt .pem paths, three timeouts, ad-hoc and other-location config, backend header, protocols, pass suffix, www_fix_redirect proxy_redirect, security headers with x_frame_options_value DENY). dyn: the proxy through $proxy_backend with the resolver, end to end. rhel (rhel9): key from /etc/pki/tls/private. The accepted-gap row lists only parameters with no production node statement in .codex_state/diagnosis/fleet_variant_usage.md (servers_create, enable_ssl, ip_whitelist, resolver, etc.); none hides a lab-testable production behaviour. Left at config-render level (not response level): the security headers other than X-Frame-Options and the www_fix_redirect rewrite; acceptable as their render line is non-vacuous (defaults differ). manage_ssl false (the default) only omits the ssl_nginx_domain declaration, with no outcome of its own. My reviewer run 20261125T103329Z: ALL_PASS in base, prod, dyn and rhel."
+ ],
+ "review_s": 875.4,
+ "check_file_sha256": "e7de90df81eb46e910316576bc2f0ff803ca80e472e156a4acd109b0543cb853",
+ "content_sha256": "e7de90df81eb46e910316576bc2f0ff803ca80e472e156a4acd109b0543cb853",
+ "reviewer_result": "20261125T103329Z-reviewer",
+ "author_result": "20261125T102155Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "41ce16ad-1161-4986-bd62-86f6b7b0e383",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "41ce16ad-1161-4986-bd62-86f6b7b0e383",
+   "fresh": true
+  }
+ }
+}
