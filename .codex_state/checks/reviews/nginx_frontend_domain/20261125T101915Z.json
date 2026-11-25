@@ -1,0 +1,35 @@
+{
+ "class": "nginx_frontend_domain",
+ "at": "20261125T101915Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "https-proxies-to-the-backend @ :564: with domain_backend_pass_suffix '' and dynamic_dns_resolution false (fixture defaults) the root location proxies to http://backend_p8test.example.com, the upstream declared at :409-412 from 127.0.0.1:8080; the effect fetches the live backend's page over HTTPS - supported",
+  "https-proxies-to-the-backend @ :521-524: with decorate_naked false and server_https_www_create true (defaults) domain_list is [domain, www.domain], so the main HTTPS server (:684-687) serves both names; the probe expects the backend page under both, verifying the certificate against the bundle's issuer, and nothing under other.example.com - supported",
+  "on-redhat-the-key-is-read-from-pki-tls-private @ :272-283: on os.family RedHat ssl_private_dir is /etc/pki/tls/private, and with letsencrypt_certificate false the key path is <dir>/p8test.key (:343) passed as ssl_key (:692); the probe greps ssl_certificate_key for /etc/pki/tls/private/p8test in nginx -T on rhel9 and checks nginx -t - supported",
+  "purpose gap: Correction 1 closes both earlier gaps. decorate_naked is now tested in prod as real 301s to https://www.<domain> with the path kept, over HTTP (:416-417, :424-433) and from the separate https_<domain> server (:494-519). Its mismatch requests www over HTTPS, which the main server holds, so the verdict must change. The vacuous www render line is gone. The accepted_gap row now lists all 17 parameters that fleet_variant_usage.md shows no production node sets; every other parameter is tested in base, prod or dyn (x_frame_options_value through the X-Frame-Options DENY line). My run: ALL_PASS in base, prod, dyn and rhel; no findings. Also tested: the HTTP->HTTPS 301s, the HTTPS proxy with certificate verification, TLS 1.3 only, dynamic DNS end to end, and the RedHat key directory. REMAINING GAP: the purpose promises 'modern TLS settings', and the class spends its long TLS comment block (:76-124) on the cipher list (:110-112, joined at :318, passed as ssl_ciphers at :696/:508) plus ecdh_curve, dhparam and prefer_server_ciphers for TLS below 1.3. These are inert under the default TLSv1.3-only list, but production sets base_ssl_protocols_prefix on 2 node statements, and the prod variant enables TLSv1.2 with them. There the default cipher restriction can be observed in the lab and is not tested: no outcome row, no check, not even a render line. For example, a TLSv1.2 handshake with a cipher outside the list (e.g. openssl s_client -tls1_2 -cipher AES128-SHA) must be refused, and one inside it (ECDHE-RSA-AES128-GCM-SHA256) accepted. The table needs that outcome mapped to a prod check."
+ ],
+ "review_s": 626.5,
+ "check_file_sha256": "e522c2e8971adfc6c90eadf0f12f2e376391f8acb6ce982dee1d1d91759f29eb",
+ "content_sha256": "e522c2e8971adfc6c90eadf0f12f2e376391f8acb6ce982dee1d1d91759f29eb",
+ "reviewer_result": "20261125T100849Z-reviewer",
+ "author_result": "20261125T095701Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "a92139b3-bfca-4728-b759-7613741ed01c",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "a92139b3-bfca-4728-b759-7613741ed01c",
+   "fresh": true
+  }
+ }
+}
