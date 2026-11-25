@@ -66,7 +66,10 @@ outcomes:
     checks: [the-running-rules-are-saved-for-the-next-boot]
   - outcome: strict mode (only listed hosts reach SSH), and strict_purge false with ignore_patterns (unmanaged rules matching a pattern kept)
     from: manifests/firewall_secure.pp:10-12, 39-46, 86-90
-    checks: [strict-mode-has-no-rate-limit-only-the-whitelist, keep-two-unmanaged-rules-are-planted, keep-the-agent-run-keeps-the-matching-rule]
+    checks: [strict-mode-has-no-rate-limit-only-the-whitelist, strict-mode-admits-a-listed-source-and-drops-an-unlisted-one, keep-two-unmanaged-rules-are-planted, keep-the-agent-run-keeps-the-matching-rule]
+# Correction round 1 of the swept set (2026-11-25, review 20261125T150903Z, purpose): strict mode was checked as rule
+# text only. The strict variant's acl now also lists 192.0.2.3, and a check connects to the node's SSH from a network
+# namespace behind a veth pair, from that listed address and from an unlisted one (192.0.2.2; RFC 5737 addresses).
 variants:
   - name: strict
     why: strict true, which production sets (37 node statements, directly and through node_base's ssh_strict)
@@ -361,6 +364,40 @@ checks:
       iptables -S INPUT | grep -c '110 SSH' | sed 's/^/rate-limit rules: /'
       iptables -S LIMIT_INDIVIDUAL >/dev/null 2>&1 && echo "LIMIT_INDIVIDUAL present" || echo "no LIMIT_INDIVIDUAL chain"
     expect: {rc: 0, stdout: "\\A-P INPUT DROP\\nwhitelist rules present\\nrate-limit rules: 0\\nno LIMIT_INDIVIDUAL chain\\n\\Z"}
+
+  - id: strict-mode-admits-a-listed-source-and-drops-an-unlisted-one
+    variant: strict
+    what: >-
+      in strict mode a TCP connection to SSH from a listed source (192.0.2.3, in the variant's acl) gets in, and one
+      from an unlisted source (192.0.2.2) is dropped; both come from a network namespace on the node, behind a veth
+      pair whose node side is 192.0.2.1
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure.pp, lines: "29-34", text: "$mylist = unique ( flatten( [ $whitelist, $acl ] ) )"}
+      - {path: manifests/firewall_secure.pp, lines: "82-84", text: "firewall { \"100 SSH whitelist ${ip}\":  chain => 'INPUT', proto  => 'tcp', dport  => $ssh_port, source => $ip,  action => 'accept', }"}
+      - {path: manifests/firewall_secure.pp, lines: "86-90", text: "if ( $strict == true ) {"}
+    mutates: >-
+      on the node: creates the network namespace p8fw and the veth pair p8fw0 (node side, 192.0.2.1/24) and p8fw1 (in
+      the namespace, 192.0.2.2/24 and 192.0.2.3/24); makes one TCP connection attempt to 192.0.2.1:22 from each source
+      address (nc -z, 5 s timeout); writes the outcomes to /run/p8test-fw/strict.txt
+    probe: |
+      ip netns add p8fw
+      ip link add p8fw0 type veth peer name p8fw1
+      ip link set p8fw1 netns p8fw
+      ip addr add 192.0.2.1/24 dev p8fw0
+      ip link set p8fw0 up
+      ip netns exec p8fw ip addr add 192.0.2.2/24 dev p8fw1
+      ip netns exec p8fw ip addr add 192.0.2.3/24 dev p8fw1
+      ip netns exec p8fw ip link set lo up
+      ip netns exec p8fw ip link set p8fw1 up
+      sleep 2
+      install -d -m 0700 /run/p8test-fw
+      for src in 192.0.2.3 192.0.2.2; do
+        if ip netns exec p8fw nc -z -w 5 -s "$src" 192.0.2.1 22 2>/dev/null; then echo "$src in"; else echo "$src dropped"; fi
+      done > /run/p8test-fw/strict.txt
+    effect: |
+      cat /run/p8test-fw/strict.txt
+    expect: {rc: 0, stdout: "\\A192\\.0\\.2\\.3 in\\n192\\.0\\.2\\.2 dropped\\n\\Z"}
 
   - id: keep-two-unmanaged-rules-are-planted
     variant: keep
