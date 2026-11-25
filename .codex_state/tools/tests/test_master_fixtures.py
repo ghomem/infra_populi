@@ -49,12 +49,14 @@ def test_fixture_values_are_obviously_fake():
     hiera = remotes()[3]
     values = [l.split(": ", 1)[1] for l in hiera.split("<<'YAML'", 1)[1].split("YAML\n", 1)[0].splitlines()
               if "::" in l and not l.startswith("#")]
-    assert len(values) == 13
+    assert len(values) == 17
     assert "puppet8node::ssh::othergroups: 'p8testgroup'" in hiera
     stock = {"'/etc/puppetlabs/puppet/ssl'"}  # the OpenVox default ssldir: a stock path, neither fake nor a secret
     doc_net = re.compile(r"'(192\.0\.2|198\.51\.100|203\.0\.113)\.\d+'")  # RFC 5737 documentation addresses
+    # a network list of loopback plus an RFC 5737 documentation network (postfix_smtp_node's mynetworks, 2026-11-25)
+    doc_nets = re.compile(r"'127\.0\.0\.0/8 (192\.0\.2|198\.51\.100|203\.0\.113)\.0/24'")
     assert all("p8test" in v or "lookup(" in v or v.strip().strip("'").isdigit() or v in stock or doc_net.fullmatch(v)
-               for v in values), values
+               or doc_nets.fullmatch(v) for v in values), values
     pki = remotes()[2]
     assert "THROWAWAY" in pki and "CN=p8test throwaway CA" in pki and "CN=p8test.invalid" in pki
     assert "ca.key" not in pki.split("put()")[1]  # the CA key is never installed
@@ -102,3 +104,12 @@ def test_the_clock_section_caps_the_poll_interval_and_restarts_only_on_change():
     clock = remotes()[4]
     assert "PollIntervalMaxSec=64" in clock and "/etc/systemd/timesyncd.conf.d/" in clock
     assert clock.index('!= "$want"') < clock.index("systemctl restart systemd-timesyncd") < clock.index("else")
+
+
+def test_hiera_fixture_gives_rhel9_non_default_postfix_values():
+    # 2026-11-25 (review 20261125T074313Z): postfix_smtp_node's per-node keys are tested through the rhel9 variant, so
+    # p8lab-rhel9 has a value for each that differs from the class's default
+    hiera = next(r for r in remotes() if "p8test_fixtures.yaml" in r)
+    for key in ("root_email_alias", "mynetworks", "mydestination", "message_size_limit"):
+        assert f"p8lab-rhel9::postfix_smtp_node::{key}: " in hiera
+    assert "p8lab-rhel9::postfix_smtp_node::message_size_limit: '10240000'" not in hiera

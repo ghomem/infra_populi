@@ -136,6 +136,12 @@ puppet8node::postfix_smtp_node::relaypass: 'p8test-not-a-secret'
 # postfix_smtp_node looks its relay account up under the node's host name; the rhel9 pass runs it on p8lab-rhel9.
 p8lab-rhel9::postfix_smtp_node::relayuser: 'p8test-relay'
 p8lab-rhel9::postfix_smtp_node::relaypass: 'p8test-not-a-secret'
+# Non-default per-node values for p8lab-rhel9, so postfix_smtp_node's rhel variant tests the per-node keys (review
+# 20261125T074313Z); no other class reads them.
+p8lab-rhel9::postfix_smtp_node::root_email_alias: 'p8test-admin@p8test.invalid'
+p8lab-rhel9::postfix_smtp_node::mynetworks: '127.0.0.0/8 192.0.2.0/24'
+p8lab-rhel9::postfix_smtp_node::mydestination: 'p8test-dest.invalid, localhost'
+p8lab-rhel9::postfix_smtp_node::message_size_limit: '20480000'
 # The master-role node p8lab-puppetserver has a local MTA for hashman's mail (HQ 2026-11-18 ruling C2).
 p8lab-puppetserver::postfix_smtp_node::relayuser: 'p8test-relay'
 p8lab-puppetserver::postfix_smtp_node::relaypass: 'p8test-not-a-secret'
