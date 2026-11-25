@@ -1,0 +1,46 @@
+{
+ "class": "openvpn_server",
+ "at": "20261125T072030Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "another-dns-cipher-and-isolation-off: :172 renders the push 'dhcp-option DNS ${push_dns_server}'; the variant params set push_dns_server 9.9.9.9 (also cipher AES-128-CBC for :177 and client_isolation false, so :45 gives proxy_arp 1 for the :211 br0 sysctl), so the push line, cipher line and proxy_arp_pvlan 1 are what the code produces",
+  "a-second-vpn-account: :168 username_as_common_name true makes the account name the client's common name, so a second concurrent client needs its own PAM account; the check is setup for the isolation check, its mutates names the account and password it creates, and the effect (getent) reads the result, not the action's output",
+  "server-unit-enabled-at-boot: :117-121 declare openvpn-server@puppet_infrastructure ensure running, enable true; the probe reads systemctl is-enabled (enabled) and the unit's active state (active), exactly that declaration",
+  "finding the-data-channel-is-compressed-both-ways: on the applied node 20 zero-filled 1228-byte pings had 0% loss; the server received LZO-compressed packets (139 bytes per packet) but sent uncompressed ones (1237 bytes per packet), against the expectation of compression both ways from :30/:166 comp-lzo (the known OpenVPN 2.6 allow-compression behaviour)",
+  "purpose covered: The purpose (bridged OpenVPN server, PAM login without client certs, pool address, pushed options, reach the LAN side, client isolation, back at boot, class cipher and comp-lzo) matches the baseline manifest and its header. The checks test it as behaviour with ubuntu2 as the client: listening on UDP 1194 at local, the unit enabled+active, the rendered server config, br0 holding lan_static_ip with tap0 as a port (up script), ifupdown and networking enabled with the br0 stanza, a PAM client connecting, receiving redirect-gateway and the DNS push, a pool address and pinging 192.0.2.1, a wrong password refused, a second client reaching the server side but not the first, a CBC-only client connecting on AES-256-CBC, and LZO measured in both directions (a finding). Variant other covers push_dns_server, cipher and isolation off (rendered config and proxy_arp_pvlan 1); fleet_variant_usage.md shows production sets only push_dns_server (directly or via network_vpn openvpn_client_dns), so the config-level depth for cipher and isolation off is proportionate. The accepted gap (force_ifupdown, compression none) really is those parameter variants (:26-30, :50-79, :166), neither set by any production statement, and nothing else the lab can test hides behind it. Minor rendering details not probed (the bridge stanza's dns-nameservers/bridge_stp options, the cert file modes) are exercised indirectly (TLS handshake with the CA) or carry no observable behaviour on the lab."
+ ],
+ "review_s": 442.6,
+ "check_file_sha256": "7205faf19e29952775d5a6ee6c74889855a667c2b2e21cc9c30cc1843b3ac75b",
+ "content_sha256": "7205faf19e29952775d5a6ee6c74889855a667c2b2e21cc9c30cc1843b3ac75b",
+ "reviewer_result": "20261125T071308Z-reviewer",
+ "author_result": "20261123T131241Z-author",
+ "findings": [
+  "the-data-channel-is-compressed-both-ways"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "5aca0492-7dd3-486f-9050-908548dea488",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "5aca0492-7dd3-486f-9050-908548dea488",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "boot_id": "fe705252-e0a3-4520-af68-c96d0d187103",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "fe705252-e0a3-4520-af68-c96d0d187103",
+   "fresh": true
+  }
+ }
+}

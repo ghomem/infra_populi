@@ -91,3 +91,9 @@ continues with the next class.
 
 Either fix would be driven by these two checks, which fail before and would pass after (policy B), and recorded as a
 local_changes.md row.
+
+## 2026-11-25: reproduced on the review with no durations (ruled, no action)
+The reviewer's run results/openvpn_server/20261125T071308Z-reviewer (review 20261125T072030Z: PASS, finding
+`the-data-channel-is-compressed-both-ways` reproduced) measured the same as before: 20 zero-filled 1228-byte pings, 0%
+loss; the server received LZO-compressed packets (139 bytes each) and sent uncompressed ones (1237 bytes each). HQ's
+batch-14 ruling (option F: no change, recorded) covers it; nothing new to decide.
