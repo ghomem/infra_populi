@@ -16,6 +16,10 @@ node_agent:
   after: [the-bundle-alone-drifts, the-key-alone-drifts]
   why: the key and the bundle each notify nginx, which only the next agent run after a change to each can show
 outcomes:
+  # Correction round 1 of the swept set (2026-11-25, review 20261125T045948Z): the letsencrypt variant checked only the
+  # key, under an id that claimed nginx served the pair. Its key check is renamed for what it tests, and two checks are
+  # added on the Let's Encrypt paths: the bundle .pem is the certificate then its chain (p8test-chain.pem), and nginx
+  # serves that pair over TLS.
   # Correction round 2 (2026-11-18, review 20261118T214106Z): the bundle and the key now drift one at a time, each
   # followed by an agent run, so each file's notify is shown on its own.
   # Correction round 1 (2026-11-18, review 20261118T213542Z): the TLS check's handshake moved from its action into its
@@ -35,9 +39,11 @@ outcomes:
   - outcome: on RedHat (ssl_base's CentOS/RHEL branch) the key goes to /etc/pki/tls/private
     from: manifests/ssl_base.pp:57-62
     checks: [on-redhat-the-key-is-in-pki-tls-private]
-  - outcome: a Let's Encrypt certificate (letsencrypt_certificate true, passed to ssl_base)
-    from: manifests/ssl_nginx_domain.pp:5, 13
-    checks: [letsencrypt-pair-served-by-nginx]
+  - outcome: >-
+      with a Let's Encrypt certificate (letsencrypt_certificate true, passed to ssl_base) the key is <prefix>-key.pem,
+      0600, the bundle <prefix>.nginx.bundle.pem is the certificate then its chain, and nginx serves that pair
+    from: manifests/ssl_nginx_domain.pp:5, 13; manifests/ssl_base.pp:70-75, 99-119
+    checks: [letsencrypt-key-is-private-and-matches-the-certificate, letsencrypt-bundle-is-the-leaf-then-its-chain, letsencrypt-pair-served-by-nginx]
 variants:
   - name: letsencrypt
     why: letsencrypt_certificate true, which production sets (19 node statements, through the nginx frontends)
@@ -174,7 +180,7 @@ checks:
       journalctl -u nginx --after-cursor "$cursor" --no-pager -q | grep -c 'Started nginx.service'
     expect: {rc: 0, stdout: "\\A0\\nrestarted\\n1\\n\\Z"}
 
-  - id: letsencrypt-pair-served-by-nginx
+  - id: letsencrypt-key-is-private-and-matches-the-certificate
     variant: letsencrypt
     what: >-
       with letsencrypt_certificate true ssl_base installs p8test-key.pem (root:root 0600) and the bundle
@@ -195,6 +201,56 @@ checks:
         second=$(awk '/BEGIN CERT/{i++} i==2' "$b")
         [ "$(openssl pkey -in "$k" -pubout 2>/dev/null)" = "$(echo "$second" | openssl x509 -noout -pubkey 2>/dev/null)" ] && echo key-matches-certificate || echo key-does-not-match
     expect: {rc: 0, stdout: "\\Aroot:root 600\\nkey-matches-certificate\\n\\Z"}
+
+  - id: letsencrypt-bundle-is-the-leaf-then-its-chain
+    variant: letsencrypt
+    what: >-
+      with letsencrypt_certificate true the bundle p8test.nginx.bundle.pem is root:root 0644 and holds two
+      certificates, the server's (p8test.pem, CN p8test.invalid) then the chain's (p8test-chain.pem, the throwaway CA),
+      and the first verifies against the second
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_base.pp, lines: "70-75", text: "$intermediate_cert_source = \"puppet:///extra_files/ssl/${myprefix}-chain.pem\""}
+      - {path: manifests/ssl_base.pp, lines: "115-119", text: "order  => '02',"}
+    probe: |
+      b=/etc/ssl/certs/p8test.nginx.bundle.pem
+      cert() { awk -v n="$1" '/BEGIN CERT/{i++} i==n' "$b"; }
+      stat -c '%U:%G %a' "$b"
+      grep -c 'BEGIN CERTIFICATE' "$b"
+      for n in 1 2; do cert $n | openssl x509 -noout -subject -nameopt multiline | sed -n 's/^ *commonName *= //p'; done
+      openssl verify -CAfile <(cert 2) <(cert 1) 2>&1 | sed 's/^.*: //'
+    mismatch:
+      varies: the trust anchor (the system CA bundle instead of the bundle's second certificate), which did not sign the server's certificate
+      probe: |
+        b=/etc/ssl/certs/p8test.nginx.bundle.pem
+        cert() { awk -v n="$1" '/BEGIN CERT/{i++} i==n' "$b"; }
+        stat -c '%U:%G %a' "$b"
+        grep -c 'BEGIN CERTIFICATE' "$b"
+        for n in 1 2; do cert $n | openssl x509 -noout -subject -nameopt multiline | sed -n 's/^ *commonName *= //p'; done
+        openssl verify -CAfile /etc/ssl/certs/ca-certificates.crt <(cert 1) 2>&1 | tail -1 | sed 's/^.*: //'
+    expect: {rc: 0, stdout: "\\Aroot:root 644\\n2\\np8test\\.invalid\\np8test throwaway CA\\nOK\\n\\Z"}
+
+  - id: letsencrypt-pair-served-by-nginx
+    variant: letsencrypt
+    what: >-
+      with letsencrypt_certificate true and a server block on 127.0.0.1:8443 that names the .pem bundle and key, nginx
+      serves a chain of two certificates (the server's, then the chain's) that verifies against the second, with the
+      server's name
+    control: negative
+    derived_from:
+      - {path: manifests/ssl_nginx_domain.pp, lines: "9-14", text: "myservicename           => 'nginx',"}
+      - {path: manifests/ssl_base.pp, lines: "70-75", text: "$bundle_file              = \"${ssl_certs_dir}/${myprefix}.${myservice}.bundle.pem\""}
+    mutates: adds /etc/nginx/conf.d/p8test-tls.conf (a TLS server on 127.0.0.1:8443 with the .pem bundle and key) and reloads nginx
+    probe: |
+      printf 'server {\n  listen 127.0.0.1:8443 ssl;\n  server_name p8test.invalid;\n  ssl_certificate /etc/ssl/certs/p8test.nginx.bundle.pem;\n  ssl_certificate_key /etc/ssl/private/p8test-key.pem;\n  return 204;\n}\n' > /etc/nginx/conf.d/p8test-tls.conf
+      nginx -t -q && systemctl reload nginx && sleep 1
+    effect: |
+      chain=$(openssl s_client -connect 127.0.0.1:8443 -servername p8test.invalid -showcerts </dev/null 2>/dev/null)
+      cert() { echo "$chain" | awk -v n="$1" '/BEGIN CERT/{i++} i==n && /BEGIN CERT/,/END CERT/'; }
+      echo "certificates served: $(echo "$chain" | grep -c 'BEGIN CERTIFICATE')"
+      cert 1 | openssl x509 -noout -subject -nameopt multiline | sed -n 's/^ *commonName *= /served: /p'
+      openssl verify -CAfile <(cert 2) <(cert 1) 2>&1 | sed 's/^.*: /chain: /'
+    expect: {rc: 0, stdout: "\\Acertificates served: 2\\nserved: p8test\\.invalid\\nchain: OK\\n\\Z"}
 
   - id: on-redhat-the-key-is-in-pki-tls-private
     variant: rhel
