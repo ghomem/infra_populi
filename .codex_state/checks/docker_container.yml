@@ -22,6 +22,10 @@
 # module's start script removes it before creating it), so the check now compares the container ID; and the restart
 # after a kill comes from the unit puppetlabs-docker writes for the class's docker::run (Restart=on-failure by
 # default), not from restart_service_on_docker_refresh, which acts only with docker_service set.
+# Correction round 3 of the swept set (2026-11-25, review 20261125T194651Z, purpose): lines 59-80 split volumes into
+# named volumes (created by an exec) and host paths (passed to docker::run as bind mounts); only the named kind was
+# tested. The runopts fixture now also has the host path /srv/p8test-bind:/p8test-bind, and its check reads the bind
+# mount and that no docker volume but p8test-vol was created.
 class: docker_container
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -62,7 +66,7 @@ outcomes:
         puppetlabs-docker on the lab master, manifests/image.pp:140-183 (read 2026-11-25): absent removes the image
         onlyif it is found; latest notifies 'Check if image ... is in-sync' (noop => false) and runs the update exec
         each run; diagnosis/fleet_variant_usage.md: ensure on 1 node statement
-  - outcome: environment, a named volume, a command and another network reach the container
+  - outcome: environment, a named volume, a host-path (bind) volume, a command and another network reach the container
     from: manifests/docker_container.pp:7-14, 26-40, 59-80
     checks: [environment-volume-and-command-reach-the-container, another-network-is-used]
   - outcome: a registry login (username and token)
@@ -232,18 +236,22 @@ checks:
     variant: runopts
     what: >-
       the running container has the environment variable P8TEST_ENV=on, the named volume p8test-vol mounted at
-      /p8test-data, and the given command
+      /p8test-data, the host path /srv/p8test-bind bind-mounted at /p8test-bind with no docker volume created for it,
+      and the given command
     control: negative
     derived_from:
       - {path: manifests/docker_container.pp, lines: "82-93", text: "env                               => $env,"}
       - {path: manifests/docker_container.pp, lines: "59-79", text: "command => \"/usr/bin/docker volume create ${vol}\","}
+      - {path: manifests/docker_container.pp, lines: "62-66", text: ") |$n| { $n !~ /^\\/|^\\./ }"}
     probe: |
       docker inspect -f '{{.State.Running}}' docker_container
       docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' docker_container | grep -x 'P8TEST_ENV=on'
       docker inspect -f '{{range .Mounts}}{{.Name}} {{.Destination}}{{println}}{{end}}' docker_container | grep -x 'p8test-vol /p8test-data'
+      docker inspect -f '{{range .Mounts}}{{.Type}} {{.Source}} {{.Destination}}{{println}}{{end}}' docker_container | grep -x 'bind /srv/p8test-bind /p8test-bind'
+      docker volume ls -q | grep -cv '^p8test-vol$' | sed 's/^/other volumes: /'
       docker inspect -f '{{json .Config.Cmd}}' docker_container | grep -c 'worker_rlimit_nofile 4096;'
       docker exec docker_container cat /proc/1/cmdline | tr '\0' ' ' | grep -c 'worker_rlimit_nofile 4096;'
-    expect: {rc: 0, stdout: "\\Atrue\\nP8TEST_ENV=on\\np8test-vol /p8test-data\\n1\\n1\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Atrue\\nP8TEST_ENV=on\\np8test-vol /p8test-data\\nbind /srv/p8test-bind /p8test-bind\\nother volumes: 0\\n1\\n1\\n\\Z"}
 
   - id: another-network-is-used
     variant: nonet
