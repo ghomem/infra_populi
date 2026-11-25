@@ -1,0 +1,46 @@
+{
+ "class": "firewall_secure_extra",
+ "at": "20261125T164112Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-flush-script-clears-every-rule @ manifests/firewall_secure_extra.pp:63-70: the file resource installs files/iptables/iptables-flush.sh as root:root 0755 under ${localdir}/bin (/opt/puppet-infrastructure from filesystem::localdir); the baseline script (sha256 af2e05ea..., verified fresh) sets INPUT/OUTPUT/FORWARD ACCEPT, flushes nat, mangle and filter and deletes chains, so owner/mode/hash, 0 rules in filter/mangle/nat and INPUT/FORWARD ACCEPT is exactly what running it produces; the action is the script itself and the effect reads the resulting rule state (my run: pass)",
+  "the-next-agent-run-rebuilds-the-firewall @ manifests/firewall_secure_extra.pp:252: with the fixture's anti_ddos true and ip_filter true, line 252 declares '524 drop all traffic in the side chain' in WHITELIST_SIDE_CHAIN, lines 83-84 the DROP policies and 159-185 the 18 mangle drops; after the flush, the next agent run must restore policies DROP, 18 mangle 5xx drops and rule 524, which the read-only effect checks (my run: '-P INPUT DROP, -P FORWARD DROP, 18, 1')",
+  "the-service-is-reached-only-from-the-whitelist @ manifests/firewall_secure_extra.pp:223: rule 521 sends packets marked good_mark (set by 131313 for ip_whitelist entries, line 210; fixture 192.168.56.124 = the peer's +100) to WHITELIST_SIDE_CHAIN, where 522 accepts NEW to 8888; nothing else accepts 8888, so the unlisted primary address falls to the INPUT drop policy, while SSH from it passes the non-strict 110-116 path; expected 'whitelisted in / unlisted dropped / ssh unlisted in' is what the code produces (my run: pass)",
+  "finding the-rst-limit-dropped-the-third: expected rule 519 to accept 2 and rule 520 to drop 1 of the 3 RSTs sent at once; the node counted 'accepted by the limit: 0, dropped beyond it: 0' (in-connection RSTs are accepted by rule 003 RELATED,ESTABLISHED before 519/520), the known finding ruled no fix in HQ batch-11 ruling 2; every other base check and both variants (ddosonly, plain) passed, every negative control failed on the clean node",
+  "purpose gap: Purpose (header lines 1-6 and the code) is stated correctly. Base run (reviewer 20261125T162714Z) tests as behaviour: INPUT/FORWARD drop with the whitelist SSH rules, loopback, service reached only from the whitelisted source through the side chain, per-source connection limit (3 held of 5) and new-connection rate (in 8 of 20 in 2015 ms), blacklist dropping ICMP and SSH while an unlisted source is unaffected (local change #5), ICMP echo rate limit (9 of 20), 501/502/503 counters, the SSH burst/connlimit/recent limits with counters, purge of an unmanaged rule, flush script and rebuild. Rule 002, 518, geoip and internal_forward are uncovered with measured evidence and capability lifts: honest. Correction 1 closes the plain variant: from a namespace a listed source (192.0.2.3, in the variant acl) reaches SSH, an unlisted one is dropped (strict, lines 139-143: nothing jumps to LIMIT_OVERALL) and still reaches the opened port (555, lines 306-312). GAP remaining: the ddosonly outcome row claims every source is held to the per-source connection AND rate limits (lines 282-301: 522 accepts NEW at ${ddos_limit_per_time_unit}/${ddos_limit_time_unit}, fixture 2/sec, 523 drops the rest, in INPUT); only the connection limit is behaviour-tested (3 of 5 from 192.0.2.2, one per second, which never reaches the rate). The rate is checked as rule text only (title and --dport 8888, not even the limit value); the connection-limit check would pass with no limit on 522. The lab can exercise it from the same namespace with the base run's paced-attempt probe; the previous review named both the connection limit and the rate for this variant. Minor, not gap-deciding: rule '000 accept all icmp' (lines 100-105, plain) and rule 003 have no outcome row."
+ ],
+ "review_s": 838.5,
+ "check_file_sha256": "8858c33ddbada2b1fdc45266613ddba4fcf943041ab7a603ade103c2fa216630",
+ "content_sha256": "8858c33ddbada2b1fdc45266613ddba4fcf943041ab7a603ade103c2fa216630",
+ "reviewer_result": "20261125T162714Z-reviewer",
+ "author_result": "20261125T161204Z-author",
+ "findings": [
+  "the-rst-limit-dropped-the-third"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "283c5a56-7605-4d09-91d7-e33023f5e6ff",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "283c5a56-7605-4d09-91d7-e33023f5e6ff",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "boot_id": "2b978af5-c20a-4538-a475-5a3ecf4c2f40",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "2b978af5-c20a-4538-a475-5a3ecf4c2f40",
+   "fresh": true
+  }
+ }
+}
