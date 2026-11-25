@@ -1,0 +1,43 @@
+{
+ "class": "postfix_smtp_node",
+ "at": "20261125T074313Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "effective-relay-config @ manifests/postfix_smtp_node.pp:29-32: the default (non-RedHat) branch sets smtp_tls_CAfile to /etc/ssl/certs/ca-certificates.crt. On the Ubuntu node the expected postconf value is exactly that, and the other values in the expectation match the template (main.cf:11-12, 34-40, 53) under the lab Hiera and the lookup defaults (127.0.0.0/8, the hostname, 10240000). Passed on the applied node and failed on the clean one.",
+  "the-peer-plays-the-relayhost @ manifests/postfix_smtp_node.pp:6-7: relayhost/relayport come from Hiera (mailserver.mycompany.com, 587). The peer setup puts a submission listener on 587 and creates the relay account p8test-relay, so it stands in for that relayhost:port. The effect (p8_listening 587, dovecot active) shows the setup's result, not the action's own output. mutates names the packages, accounts, submission/SASL settings and restarts. It covers the dovecot auth drop-in only as 'SASL from dovecot's auth socket' and does not spell out disable_plaintext_auth=no; that is acceptable on the reverted peer.",
+  "a-message-over-the-size-limit-is-refused @ manifests/postfix_smtp_node.pp:12-13: message_size_limit defaults to 10240000 (main.cf:37 renders it). The action submits a message of about 10.5 MB, which is over the limit, with sendmail. The effect reads the recorded exit status and stderr ('too big'), i.e. postfix's refusal, not the action's echo. mutates declares the submission and the files it writes.",
+  "purpose gap: Tested on the default Ubuntu run, all passing in my run 20261125T073540Z with the peer: postfix installed, running and enabled; the effective config matches the template; the SASL map is compiled for the relayhost (mismatch fails as required); a message sent on the node leaves the queue with status=sent to relayhost:587 and arrives on the peer with ESMTPSA, logged as sasl_username=p8test-relay; an over-size message is refused; a relay attempt from outside mynetworks gets 454 Relay access denied; the root alias renders and is compiled. The rhel variant covers the RedHat branch (cyrus-sasl-plain, ca-bundle.crt). GAP: the changed uncovered row 'a non-default root alias, mynetworks, mydestination or size limit (per-node Hiera keys)' claims the capability is missing because a variant run does not vary the lab Hiera. That evidence does not show the lab lacking anything. These keys are looked up as ${clientcert}::postfix_smtp_node::{root_email_alias,mynetworks,mydestination,message_size_limit} (manifest lines 8-14), so a node variant does change which per-node keys apply. The lab already uses this for the same class: master_fixtures.sh section_hiera sets p8lab-rhel9::postfix_smtp_node::relayuser/relaypass, and nodes.yml has rhel9 active with certname p8lab-rhel9. Non-default per-node values for p8lab-rhel9 (or p8lab-puppetserver) in the lab Hiera fixture would let the existing rhel variant test a non-default root alias, mynetworks, mydestination and size limit. So this is a part the lab can exercise, left untested, and the lifted_by capability is not actually missing."
+ ],
+ "review_s": 453.0,
+ "check_file_sha256": "b92146b040200ea4732de5a31a7208374816c1a3020db57eb7b2c7c86110f1b9",
+ "content_sha256": "b92146b040200ea4732de5a31a7208374816c1a3020db57eb7b2c7c86110f1b9",
+ "reviewer_result": "20261125T073540Z-reviewer",
+ "author_result": "20261123T132151Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "47b27a96-4e0b-424e-a732-93e749d20892",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "47b27a96-4e0b-424e-a732-93e749d20892",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "boot_id": "1fab84ae-bf08-4faa-b6f7-7b2384399e63",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "1fab84ae-bf08-4faa-b6f7-7b2384399e63",
+   "fresh": true
+  }
+ }
+}
