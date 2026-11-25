@@ -16,6 +16,12 @@
 # 2026-11-25 authoring correction (run 20261125T175156Z-author): the agent run pulled the image again and the container
 # restarted (new start time), but the app check ran at the instant of the restart and read 0; it now waits up to 15 s
 # for nginx to answer, as a restarted container needs a moment before its port serves.
+# Correction round 2 of the swept set (2026-11-25, review 20261125T190511Z, purpose): remove_container_on_stop false
+# (line 89, against the module's default true) had no row; a check stops the service and finds the container kept,
+# exited. Two statements of round 1 were wrong and are corrected: the image-change refresh recreates the container (the
+# module's start script removes it before creating it), so the check now compares the container ID; and the restart
+# after a kill comes from the unit puppetlabs-docker writes for the class's docker::run (Restart=on-failure by
+# default), not from restart_service_on_docker_refresh, which acts only with docker_service set.
 class: docker_container
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -35,7 +41,10 @@ outcomes:
   - outcome: a container that dies is started again by its service
     from: manifests/docker_container.pp:82-93
     checks: [the-container-is-killed, the-service-starts-it-again]
-  - outcome: when its image resource changes (an image missing locally is pulled again) the container's service is restarted (subscribe to the image)
+  - outcome: when its service stops, the container stays, exited (remove_container_on_stop false)
+    from: manifests/docker_container.pp:82-93
+    checks: [stopping-the-service-keeps-the-container]
+  - outcome: when its image resource changes (an image missing locally is pulled again) the container is recreated (subscribe to the image)
     from: manifests/docker_container.pp:41-47, 92
     checks: [the-image-tag-is-removed, the-agent-run-pulls-the-image-and-restarts-the-container]
   - outcome: with app_port and no host_port the app port is published on 127.0.0.1 at the same port
@@ -136,7 +145,7 @@ checks:
     control: negative
     timeout: 120
     derived_from:
-      - {path: manifests/docker_container.pp, lines: "82-93", text: "restart_service_on_docker_refresh => true,"}
+      - {path: manifests/docker_container.pp, lines: "82-93", text: "docker::run { $container_name:"}
     mutates: none beyond waiting up to 60 s and reading the container's state (declared mutating so it runs after the kill)
     probe: |
       true
@@ -155,10 +164,11 @@ checks:
     control: negative
     derived_from:
       - {path: manifests/docker_container.pp, lines: "41-47", text: "image_tag => $tag,"}
-    mutates: notes the container's start time in /run/p8test-docker/before-image, then removes the tag nginx:alpine (docker rmi -f) on the node
+    mutates: notes the container's start time and ID in /run/p8test-docker/before-image and before-image-id, then removes the tag nginx:alpine (docker rmi -f) on the node
     probe: |
       install -d -m 0700 /run/p8test-docker
       docker inspect -f '{{.State.StartedAt}}' docker_container > /run/p8test-docker/before-image
+      docker inspect -f '{{.Id}}' docker_container > /run/p8test-docker/before-image-id
       docker rmi -f nginx:alpine >/dev/null
     effect: |
       docker image inspect nginx:alpine >/dev/null 2>&1 && echo "tag present" || echo "tag removed"
@@ -166,7 +176,7 @@ checks:
     expect: {rc: 0, stdout: "\\Atag removed\\nnoted\\n\\Z"}
 
   - id: the-agent-run-pulls-the-image-and-restarts-the-container
-    what: after the node's agent run the image nginx:alpine is present again and the container was restarted (a new start time), and the app answers
+    what: after the node's agent run the image nginx:alpine is present again, the container was recreated (a new container ID) and runs, and the app answers
     control: negative
     timeout: 120
     derived_from:
@@ -182,9 +192,24 @@ checks:
         [ "${now%% *}" = true ] && [ "${now#* }" != "$before" ] && break; sleep 2
       done
       [ "${now%% *}" = true ] && [ "${now#* }" != "$before" ] && echo restarted
+      [ "$(docker inspect -f '{{.Id}}' docker_container 2>/dev/null)" != "$(cat /run/p8test-docker/before-image-id)" ] && echo recreated
       for i in $(seq 15); do curl -s --max-time 2 http://127.0.0.1:18080/ | grep -q '<h1>Welcome to nginx' && break; sleep 1; done
       curl -s --max-time 5 http://127.0.0.1:18080/ | grep -c '<h1>Welcome to nginx'
-    expect: {rc: 0, stdout: "\\Aimage pulled\\nrestarted\\n1\\n\\Z"}
+    expect: {rc: 0, stdout: "\\Aimage pulled\\nrestarted\\nrecreated\\n1\\n\\Z"}
+
+  - id: stopping-the-service-keeps-the-container
+    what: when the service docker-docker_container is stopped, the unit is inactive and the container docker_container still exists, exited
+    control: negative
+    derived_from:
+      - {path: manifests/docker_container.pp, lines: "82-93", text: "remove_container_on_stop          => false,"}
+    mutates: stops the unit docker-docker_container on the node (last of the base run's checks)
+    probe: |
+      systemctl stop docker-docker_container
+      sleep 2
+    effect: |
+      systemctl is-active docker-docker_container || true
+      docker inspect -f '{{.State.Status}}' docker_container
+    expect: {rc: 0, stdout: "\\Ainactive\\nexited\\n\\Z"}
 
   - id: without-host-port-the-app-port-is-published-on-loopback
     variant: appport
