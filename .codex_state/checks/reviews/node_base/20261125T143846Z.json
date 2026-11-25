@@ -1,0 +1,35 @@
+{
+ "class": "node_base",
+ "at": "20261125T143846Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "production-parameters-strict-keep-and-boot-run: node_base.pp:162-165 includes puppet_boot_run when run_puppet_on_boot is true (the prod params fixture sets it); puppet_boot_run's baseline (manifests/puppet_boot_run.pp:11-17, 32-40) installs ${bindir}/puppet_boot_run.sh owner root group root mode 0750 and declares service puppet_boot_run enable true, so 'enabled' and 'root:root 750' are what the code produces; the '-P INPUT DROP' and 0 '110 SSH' rules follow line 101 forwarding ssh_strict true to firewall_secure",
+  "dns-is-left-alone: node_base.pp:167-169 passes $nameservers (default [] in the fixture) to dns_client, whose baseline (dns_client.pp:8-12) declares resolv_conf only when nameservers != []; so resolv.conf keeps the node's own nameservers (1.1.1.1, 8.8.8.8), unchanged before and after the apply, which justifies the invariant",
+  "on-redhat-firewalld-masked-chrony-and-the-yum-scripts: node_base.pp:63-76 (RedHat branch) declares service firewalld ensure stopped enable false and exec 'systemctl mask firewalld' unless is-enabled shows masked, matching 'masked' and 'inactive'; with 140-147 (include ::chrony, custom_ntp false) giving chronyd active and 110-111 (filesystem_yum, which installs yum-update-surface.sh and yum-update-dist.sh in place of filesystem_apt's apt-update scripts) giving 'yum scripts present' and 0 apt-update files, on the rhel9 node",
+  "purpose covered: The purpose (hardened SSH, default-drop firewall admitting SSH from the ACL, IPv6 drop, base packages without unattended upgrades, server-mode apt scripts, restricted network tools, NTP) matches the header ('basic desirable properties of a generic Ubuntu node') and baseline node_base.pp. Base run: SSH behaviour over loopback (publickey only, kex refusal, a real cipher mismatch control, root login no), firewall policy/ACL whitelist/limit chain and no extra side chain, NTP selecting a source and the clock synchronised, tool group/mode from Hiera, server-mode surface list, component sentinels, DNS left alone, no boot run. rhel variant: the RedHat branch on rhel9 (firewalld masked, chrony, filesystem_yum). prod variant: ssh_strict, run_puppet_on_boot and firewall_strict_purge false with ignore pattern, the last shown behaviourally (the next agent run keeps the planted p8test-keep-me rule and purges p8test-other). The reworded accepted-gap row lists exactly the 32 parameters besides the five production sets (fleet_variant_usage.md lines 102-106) and no longer claims the components' sets cover them, which is honest; server_ppa in it is declared but never used in the body. Nothing the lab can exercise outside that accepted gap is left untested. My run 20261125T141220Z-reviewer was ALL_PASS in base, rhel and prod."
+ ],
+ "review_s": 1586.6,
+ "check_file_sha256": "3a5e95e9746de0e137fc7ef754a85bfc19b8343a1276923b8911eca6ad90184d",
+ "content_sha256": "3a5e95e9746de0e137fc7ef754a85bfc19b8343a1276923b8911eca6ad90184d",
+ "reviewer_result": "20261125T141220Z-reviewer",
+ "author_result": "20261125T134340Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "b422984c-c55c-4de6-b9a5-4c97d8139126",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "b422984c-c55c-4de6-b9a5-4c97d8139126",
+   "fresh": true
+  }
+ }
+}
