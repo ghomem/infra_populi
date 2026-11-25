@@ -2,7 +2,13 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-140 entries; 6 marked superseded (in whole or part); newest first.
+141 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-25 — The lab's paravirt provider is hyperv, enforced (HQ 2026-11-24 "experiment accepted")
+- 1. Salatiel has run steps 2 and 3 (node restored to v4, set to hyperv, P8NODE_BASELINE_GREEN_v5 taken without booting;
+- 2. Switch p8lab-kubuntu, p8lab-dc and p8lab-puppetserver the same way, with new baselines, and measure each once.
+- 3. Make it stick: lab_vm.sh sets the provider on every new clone, the inventory records it, and a revert fails if a VM
+- 4. Then, in this order: the reviews with no durations; the duration list re-run by author and reviewer; the rhel9 block
 
 ## 2026-11-24 — HQ rulings (resume on mains power), and the hyperv result
 - 1. First, fix the test isolation (tests never read the laptop's real battery or act on the real lab) and commit the

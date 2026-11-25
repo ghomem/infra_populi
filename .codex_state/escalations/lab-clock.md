@@ -1,4 +1,4 @@
-# Lab: VM clocks drift under the kvm paravirt provider (0.465% slow after the cold boot; 2.45% fast before); hyperv fixes it (2026-11-24): ubuntu2 and rhel9 done; master and node WAIT FOR SALATIEL (steps below)
+# Lab: VM clocks drift under the kvm paravirt provider (0.465% slow after the cold boot; 2.45% fast before); hyperv fixes it on every lab VM (2026-11-25: all seven on hyperv, measured -11 to +7 ppm; enforced by 8d5ca2f)
 
 Found 2026-11-23 by the sweep: node_base's `ntp-keeps-the-time` failed twice (results/node_base/20261123T132939Z-author:
 a source selected, the clock not synchronised; 20261123T142843Z-author: no source). The check passed on 2026-11-18
@@ -180,3 +180,27 @@ lab Hiera without the rsyslog_base binding (48b06e9) and the provider (HQ ruling
   not count, except gnome_lock_screen's, which ran on gnome);
 - the rhel9 runs go in one block within 24 h of a baseline refresh (HQ ruling 5); v3's cache dates from about 19:27Z
   on 2026-11-24, so a later block refreshes first.
+
+## 2026-11-25: the provider everywhere (HQ "experiment accepted"), measured
+- **Salatiel's steps 2 and 3** done (node baseline P8NODE_BASELINE_GREEN_v5, master on hyperv). Step 4: 4735218.
+- **The other three VMs** (HQ item 2): P8LAB_KUBUNTU_BASELINE_v2, P8LAB_DC_BASELINE_v2 and
+  P8LAB_PUPPETSERVER_BASELINE_v2, taken offline with hyperv; their reverts restore hyperv (revert_node.sh checks it).
+- **Enforcement** (HQ item 3): 8d5ca2f (nodes.yml `paravirt_provider`, lab_vm.sh, revert_node.sh, lab_power.sh, tests).
+- **Step 5, SNTP over 900 s** (2026-11-25 03:53-04:09Z, on AC, all five at once):
+
+  | VM | rate | bound |
+  |---|---|---|
+  | puppet8master | -4 ppm | +-215 ppm |
+  | puppet8node | -5 ppm | +-206 ppm |
+  | p8lab-kubuntu | -8 ppm | +-202 ppm |
+  | p8lab-dc | -5 ppm | +-220 ppm |
+  | p8lab-puppetserver | -1 ppm | +-217 ppm |
+
+  All keep time. Two earlier attempts lost their results: they were written to /dev/shm, which systemd-logind's default
+  RemoveIPC=yes empties when the user's last process (the measurement itself) exits. Results now go to /var/tmp.
+- **Step 5, node_base `ntp-keeps-the-time`:** pass (results/node_base/20261125T041119Z-author: the base
+  run ALL_PASS, `ntp-keeps-the-time` included; variant prod ALL_PASS). Its variant rhel did not apply: the guard of
+  Exec[enable-codeready-builder-repo], `subscription-manager repos --list-enabled`, exceeded Puppet's exec timeout and
+  the agent run timed out at 600 s. By hand on a fresh rhel9 the same command took 10.6 s (04:41Z), so the variant is
+  re-run in the rhel9 block. The plan is not stopped: no clock drifts.
+- **Step 6** follows: `snapshot_master.sh P8MASTER_BASELINE_GREEN_v10`.

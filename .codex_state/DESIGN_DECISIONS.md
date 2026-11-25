@@ -2603,3 +2603,46 @@ Carried out the same day:
   gnome_lock_screen's 2026-11-24 run (on gnome) counts.
 - **Ruling 4:** not used in this stretch, since the experiment held the lab the whole time. ssl_nginx_domain is next.
 - **Not ruled, noted:** p8lab-kubuntu, p8lab-dc and p8lab-puppetserver still use kvm and were not measured.
+
+## 2026-11-25 — The lab's paravirt provider is hyperv, enforced (HQ 2026-11-24 "experiment accepted")
+Verbatim:
+"HQ: experiment accepted; hyperv is the lab's paravirtualization provider from now on.
+1. Salatiel has run steps 2 and 3 (node restored to v4, set to hyperv, P8NODE_BASELINE_GREEN_v5 taken without booting;
+   master set to hyperv while powered off). Proceed with your steps 4 and 5.
+2. Switch p8lab-kubuntu, p8lab-dc and p8lab-puppetserver the same way, with new baselines, and measure each once.
+3. Make it stick: lab_vm.sh sets the provider on every new clone, the inventory records it, and a revert fails if a VM
+   is not on it. Tests. Record the cause and the fix in DESIGN_DECISIONS.
+4. Then, in this order: the reviews with no durations; the duration list re-run by author and reviewer; the rhel9 block
+   within its baseline's 24 hours; the filesystem_apt local change; the final approval report, where you stop for
+   Salatiel."
+
+- **Cause:** under VirtualBox's `default` paravirt provider (effective kvm on this Linux host) every lab guest's clock
+  ran at a rate ntpd and timesyncd could not follow: 2.45% fast before the laptop's cold boot, 4645-4659 ppm slow after
+  it (SNTP over 900 s: master, node, rhel9, ubuntu2; escalations/lab-clock.md). The provider was the one
+  difference: gnome, created with hyperv, kept time in every window (-3 and -0 ppm). node_base's
+  `ntp-keeps-the-time` failed on it, and every timed run on those clocks (sweep durations, timeouts) measured a wrong
+  rate.
+- **Fix:** every lab VM runs on paravirt provider hyperv. Measured over 900 s: ubuntu2 -11 ppm, rhel9 +7 ppm (2ec8724);
+  on 2026-11-25 (on AC, 03:53-04:09Z) the master -4, the node -5, kubuntu -8, dc -5 and puppetserver -1 ppm, each
+  within its bound of about +-200 to 220 ppm. The facts classes read are unchanged (`virtual` virtualbox,
+  `is_virtual` true).
+- **Baselines:** the provider is a VM setting a snapshot carries, so a restore of an older snapshot brings kvm back.
+  New baselines carry it: P8NODE_BASELINE_GREEN_v5 (Salatiel, 4735218), P8LAB_UBUNTU2_BASELINE_v3,
+  P8LAB_RHEL9_BASELINE_v3, P8LAB_KUBUNTU_BASELINE_v2, P8LAB_DC_BASELINE_v2, P8LAB_PUPPETSERVER_BASELINE_v2; the master
+  was set while powered off (Salatiel) and P8MASTER_BASELINE_GREEN_v10 follows (ruling 6 of the resume).
+- **Enforcement (8d5ca2f):** nodes.yml `paravirt_provider: hyperv` is the single source (nodes.py validates it is a
+  real provider other than `default`, prints it with `provider`, exports NODE_PARAVIRT). lab_vm.sh sets it on every
+  clone and refuses another on modify. revert_node.sh reads the restored VM's effective provider and fails before boot
+  if it differs. lab_power.sh up refuses a master that is not on it (its settings are Salatiel's). Tests for each.
+- **Step 5's finer test:** node_base's `ntp-keeps-the-time` passes (results/node_base/20261125T041119Z-author). That
+  run's rhel variant did not apply (a subscription-manager guard exceeded Puppet's exec timeout; 10.6 s by hand) and is
+  re-run in the rhel9 block.
+- **rhel9 metadata, measured:** after a restore dnf treats every repository as expired and checks each one upstream.
+  The 2026-11-25 reverts downloaded 138 MB in 155 s, 9 h after the v3 refresh: AppStream had new metadata (published
+  2026-11-24 21:08 WET), while BaseOS and openvox8 were reused. A refresh therefore saves the download only until Red
+  Hat publishes AppStream again; the rhel9 block refreshes its baseline just before it starts (HQ ruling 5).
+- **Measurement note:** two five-VM runs lost their results because they were written to /dev/shm. The VMs run
+  systemd-logind's default RemoveIPC=yes, which deletes a user's /dev/shm files when the user's last process exits:
+  here the measurement itself, at the moment it wrote them (/dev/shm's mtime changed at 03:39:07-23Z on all five, the
+  runs' end; no VM rebooted). The 2026-11-24 20:33Z run was also cut by the sleep guard (lab down at 01:42Z, battery
+  24%). Results now go to /var/tmp.
