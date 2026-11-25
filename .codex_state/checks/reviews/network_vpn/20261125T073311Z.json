@@ -1,0 +1,43 @@
+{
+ "class": "network_vpn",
+ "at": "20261125T073311Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "vpn-account-on-the-server: network_vpn.pp:47 declares openvpn_server, which authenticates through PAM (openvpn_server.pp:169 pam => true); the check is the declared setup of a local account (mutates names the account and fake password, effect getent shows it) that the client checks log in with, nothing the class itself claims beyond that",
+  "a-client-on-the-class-cipher-connects: network_vpn.pp:25 defaults openvpn_cipher to AES-256-CBC and :57 passes it as openvpn_server's cipher; a peer client offering only data-ciphers AES-256-CBC connects (Initialization Sequence Completed once) and its log shows Data Channel cipher AES-256-CBC, which only happens if the server accepts the class's cipher; mutates declares the stopped first client and the /run/p8vpncbc config and daemon",
+  "the-composed-rules-counted-the-flows: network_vpn.pp:35-44 composes firewall_addon_caching_nameserver on br0 (baseline :11 rule 1301 udp 53) and firewall_addon_openvpn_server with wan p8test0 and bridge br0 (baseline :17,18,21 rules 202, 203, 205 MASQUERADE); non-zero counters on exactly those rules, after the client's DNS and WAN traffic and before the appended p8test default drops, show the composed rules passed the flows; the action is a no-op and mutates says so",
+  "purpose covered: Purpose (header lines 1-4, manifest 29-60: OpenVPN server with user auth plus an internal caching nameserver on the VPN bridge, forwarded/NATed to the WAN) is read correctly. Base run: bind listens on 198.51.100.1 with allow-query for the VPN /24, rule 1301 on br0, rules 202-205 + ip_forward, server-bridge pool and pushed DNS 198.51.100.1; a real peer client authenticates by PAM, gets a pool address and the VPN DNS, resolves recursively (www.debian.org NOERROR) through the tunnel over a default-drop stand-in, reaches a WAN-side server that sees 203.0.113.50 (masquerade), counters attribute it to 1301/202/203/205, and a CBC-only client connects on the class cipher. Variant clientdns (the one production-set variant besides wan_iface, fleet_variant_usage.md: network_vpn openvpn_client_dns 1, wan_iface 1) pushes DNS 9.9.9.9. Uncovered rows are honest: isolation, boot, hairpin 204 behaviour and compression are the composed classes' own outcomes, probed in their sets (openvpn_server and firewall_addon_openvpn_server outcomes tables; phase3 state: firewall_addon_openvpn_server, caching_nameserver, firewall_addon_caching_nameserver pass, openvpn_server finding on compression); accepted_gap netmask/cipher/reneg_sec/client_isolation are network_vpn parameters no production node sets (absent from fleet_variant_usage.md). Lab-only fixtures (IPv6 route removal and named -4, default-drop stand-ins, WAN namespace server) are declared in mutates and do not stand in for class behaviour. My reviewer run 20261125T072255Z: all negative controls failed clean, all checks passed applied, base and variant."
+ ],
+ "review_s": 616.5,
+ "check_file_sha256": "e4dce3233b44aec4334dd410d683c8493f8d8e3783ecd84ef958a476a7b526f5",
+ "content_sha256": "e4dce3233b44aec4334dd410d683c8493f8d8e3783ecd84ef958a476a7b526f5",
+ "reviewer_result": "20261125T072255Z-reviewer",
+ "author_result": "20261123T131703Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "3992f7f0-02c9-417b-b6c2-ec763a050811",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "3992f7f0-02c9-417b-b6c2-ec763a050811",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "boot_id": "cb80a5f6-211e-4676-a096-7b08320d4524",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "cb80a5f6-211e-4676-a096-7b08320d4524",
+   "fresh": true
+  }
+ }
+}

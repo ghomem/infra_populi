@@ -1,0 +1,418 @@
+{
+ "class": "network_vpn",
+ "role": "reviewer",
+ "at": "20261125T072255Z",
+ "runner": "deffb92",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "e4dce3233b44aec4334dd410d683c8493f8d8e3783ecd84ef958a476a7b526f5",
+ "content_sha256": "e4dce3233b44aec4334dd410d683c8493f8d8e3783ecd84ef958a476a7b526f5",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "nameserver-serves-the-vpn-network",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /etc/bind/named.conf.options: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "firewall-accepts-dns-on-the-bridge",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "forwarding-and-nat-to-the-wan",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "vpn-server-on-the-vpn-network",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/openvpn/server/puppet_infrastructure.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "vpn-account-on-the-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-lab-nat-ipv6-route-is-removed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "1\n0\ninactive\n",
+   "stderr": "bash: line 98: /proc/0/cmdline: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-wan-host-and-default-drops",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "inactive\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "client-connects-and-resolves-through-the-vpn-nameserver",
+   "control": "negative",
+   "rc": 9,
+   "passed": false,
+   "stdout": ";; communications error to 198.51.100.1#53: timed out\n;; communications error to 198.51.100.1#53: timed out\n;; no servers could be reached\n",
+   "stderr": "Device \"\" does not exist.\ngrep: /run/p8vpn/client.log: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-client-resolves-and-reaches-the-wan-through-the-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "no connection\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-composed-rules-counted-the-flows",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "1301: zero\n202: zero\n203: zero\n205: zero\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-client-on-the-class-cipher-connects",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /run/p8vpncbc/client.log: No such file or directory\ngrep: /run/p8vpncbc/client.log: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "File[/etc/openvpn]\n  File[/etc/openvpn/keys]\n  File[/var/log/openvpn]\n  Concat[/etc/default/openvpn]\n  Concat::Fragment[openvpn.default.header]\n  Openvpn::Server[puppet_infrastructure]\n  File[/usr/lib/openvpn]\n  File[/usr/lib/openvpn/openvpn-plugin-auth-pam.so]\n  File[/etc/openvpn/openvpn-up.sh]\n  Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]\n  File[/etc/sysctl.d]\n  File[/etc/sysctl.d/99-sysctl.conf]\n  File[/etc/sysctl.d/net.ipv4.ip_forward.conf]\n  Exec[sysctl-net.ipv4.ip_forward]\n  Exec[update-sysctl.conf-net.ipv4.ip_forward]\n  Exec[enforce-sysctl-value-net.ipv4.ip_forward]\n  Concat_file[/etc/default/openvpn]\n  Concat_fragment[/etc/default/openvpn_header]\n  Concat_fragment[openvpn.default.header]\n  File[/etc/openvpn/server/puppet_infrastructure]\n  File[/etc/openvpn/server/puppet_infrastructure/scripts]\n  File[/etc/openvpn/server/puppet_infrastructure/auth]\n  File[/etc/openvpn/server/puppet_infrastructure/client-configs]\n  File[/etc/openvpn/server/puppet_infrastructure/download-configs]\n  File[/etc/openvpn/server/puppet_infrastructure.conf]\n  File[/etc/openvpn/server/puppet_infrastructure/keys/pre-shared.secret]\n  Service[openvpn-server@puppet_infrastructure]\n  File[/etc/sysctl.d/net.ipv4.conf.br0.proxy_arp_pvlan.conf]\n  Exec[sysctl-net.ipv4.conf.br0.proxy_arp_pvlan]\n  Exec[update-sysctl.conf-net.ipv4.conf.br0.proxy_arp_pvlan]\n  Exec[enforce-sysctl-value-net.ipv4.conf.br0.proxy_arp_pvlan]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP network_vpn 458c8e0e669a\n"
+ },
+ "applied": [
+  {
+   "id": "nameserver-serves-the-vpn-network",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "2\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "firewall-accepts-dns-on-the-bridge",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": ""
+  },
+  {
+   "id": "forwarding-and-nat-to-the-wan",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A FORWARD -i br0 -o p8test0 -j ACCEPT\n-A FORWARD -i p8test0 -o br0 -m state --state RELATED,ESTABLISHED -j ACCEPT\n-A FORWARD -i br0 -o br0 -j ACCEPT\n-A POSTROUTING -o p8test0 -j MASQUERADE\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "vpn-server-on-the-vpn-network",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "server-bridge 198.51.100.1 255.255.255.0 198.51.100.101 198.51.100.200\npush \"dhcp-option DNS 198.51.100.1\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "vpn-account-on-the-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8vpnuser\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the local account p8vpnuser on the server node with the fake password p8test-vpn-not-a-secret",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-lab-nat-ipv6-route-is-removed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\n1\nactive\nstatus: NOERROR\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "sets net.ipv6.conf.enp0s3.accept_ra to 0, deletes the IPv6 default route on enp0s3 (the VirtualBox NAT interface), sets OPTIONS=\"-u bind -4\" in /etc/default/named (the Ubuntu default is \"-u bind\"), restarts named and waits up to 90 s until it resolves example.com (a name the checks do not ask; measured for caching_nameserver's set 2026-11-19)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-wan-host-and-default-drops",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\n3\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "starts transient unit p8test-wansrv (python TCP server in namespace p8testdhcp on 203.0.113.1:8090); appends `-A INPUT -i br0 -p udp --dport 53 -m comment --comment p8test-default-drop -j DROP`, `-A FORWARD -i br0 -m comment --comment p8test-default-drop -j DROP` and the same for -i p8test0",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "client-connects-and-resolves-through-the-vpn-nameserver",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "198.51.100.101/24\ndhcp-option DNS 198.51.100.1\n127.0.0.1\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: installs openvpn and the dig client, adds the host route 203.0.113.50 via the node's host-only address, writes a client config and credentials under /run/p8vpn and starts an openvpn client daemon",
+    "rc": 0,
+    "stdout": "2026-11-25 07:27:07 WARNING: Compression for receiving enabled. Compression has been used in the past to break encryption. Sent packets are not compressed unless \"allow-compression yes\" is also set.\n2026-11-25 07:27:07 WARNING: Compression for sending and receiving enabled. Compression has been used in the past to break encryption. Allowing compression allows attacks that break encryption. Using \"--allow-compression yes\" is strongly discouraged for common usage. See --compress in the manual page for more information \n",
+    "stderr": ",\n\tLC_MEASUREMENT = \"pt_PT.UTF-8\",\n\tLC_IDENTIFICATION = \"pt_PT.UTF-8\",\n\tLC_NUMERIC = \"pt_PT.UTF-8\",\n\tLC_PAPER = \"pt_PT.UTF-8\",\n\tLANG = \"en_US.UTF-8\"\n    are supported and installed on your system.\nperl: warning: Falling back to a fallback locale (\"en_US.UTF-8\").\n\nRunning kernel seems to be up-to-date.\n\nNo services need to be restarted.\n\nNo containers need to be restarted.\n\nNo user sessions are running outdated binaries.\n\nNo VM guests are running outdated hypervisor (qemu) binaries on this host.\n"
+   }
+  },
+  {
+   "id": "the-client-resolves-and-reaches-the-wan-through-the-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "status: NOERROR\nWAN server saw 203.0.113.50\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer, adds the route 203.0.113.1/32 via 198.51.100.1 on the client's tap interface (the pushed redirect-gateway is filtered)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-composed-rules-counted-the-flows",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1301: counted\n202: counted\n203: counted\n205: counted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rule counters (declared mutating so it runs after the client's traffic)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-client-on-the-class-cipher-connects",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nData Channel: cipher 'AES-256-CBC'\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: stops the first client (its pid in /run/p8vpn/pid), writes a client config that offers only AES-256-CBC (data-ciphers AES-256-CBC) with the same credentials under /run/p8vpncbc and starts it",
+    "rc": 0,
+    "stdout": "2026-11-25 07:27:12 WARNING: Compression for receiving enabled. Compression has been used in the past to break encryption. Sent packets are not compressed unless \"allow-compression yes\" is also set.\n2026-11-25 07:27:12 WARNING: Compression for sending and receiving enabled. Compression has been used in the past to break encryption. Allowing compression allows attacks that break encryption. Using \"--allow-compression yes\" is strongly discouraged for common usage. See --compress in the manual page for more information \n",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "3992f7f0-02c9-417b-b6c2-ec763a050811",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "3992f7f0-02c9-417b-b6c2-ec763a050811",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "boot_id": "cb80a5f6-211e-4676-a096-7b08320d4524",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "cb80a5f6-211e-4676-a096-7b08320d4524",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "variants": {
+  "clientdns": {
+   "name": "clientdns",
+   "node": "ubuntu",
+   "params": "clientdns",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "snapshot": "P8NODE_BASELINE_GREEN_v5",
+     "boot_id": "c414bd10-ce4e-4191-bf7d-ee930fb48f7d",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "c414bd10-ce4e-4191-bf7d-ee930fb48f7d",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "another-client-dns-is-pushed",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "",
+     "stderr": "grep: /etc/openvpn/server/puppet_infrastructure.conf: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "g/openvpn]\n  Concat[/etc/default/openvpn]\n  Concat::Fragment[openvpn.default.header]\n  Openvpn::Server[puppet_infrastructure]\n  File[/usr/lib/openvpn]\n  File[/usr/lib/openvpn/openvpn-plugin-auth-pam.so]\n  File[/etc/openvpn/openvpn-up.sh]\n  Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]\n  File[/etc/sysctl.d]\n  File[/etc/sysctl.d/99-sysctl.conf]\n  File[/etc/sysctl.d/net.ipv4.ip_forward.conf]\n  Exec[sysctl-net.ipv4.ip_forward]\n  Exec[update-sysctl.conf-net.ipv4.ip_forward]\n  Exec[enforce-sysctl-value-net.ipv4.ip_forward]\n  Concat_file[/etc/default/openvpn]\n  Concat_fragment[/etc/default/openvpn_header]\n  Concat_fragment[openvpn.default.header]\n  File[/etc/openvpn/server/puppet_infrastructure]\n  File[/etc/openvpn/server/puppet_infrastructure/scripts]\n  File[/etc/openvpn/server/puppet_infrastructure/auth]\n  File[/etc/openvpn/server/puppet_infrastructure/client-configs]\n  File[/etc/openvpn/server/puppet_infrastructure/download-configs]\n  File[/etc/openvpn/server/puppet_infrastructure.conf]\n  File[/etc/openvpn/server/puppet_infrastructure/keys/pre-shared.secret]\n  Service[openvpn-server@puppet_infrastructure]\n  File[/etc/sysctl.d/net.ipv4.conf.br0.proxy_arp_pvlan.conf]\n  Exec[sysctl-net.ipv4.conf.br0.proxy_arp_pvlan]\n  Exec[update-sysctl.conf-net.ipv4.conf.br0.proxy_arp_pvlan]\n  Exec[enforce-sysctl-value-net.ipv4.conf.br0.proxy_arp_pvlan]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant clientdns; never a Phase 1 record)\n"
+   },
+   "applied": [
+    {
+     "id": "another-client-dns-is-pushed",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "push \"dhcp-option DNS 9.9.9.9\"\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "a client connects, gets an address on the VPN network and the VPN's nameserver as DNS",
+   "checks": [
+    "vpn-server-on-the-vpn-network",
+    "vpn-account-on-the-server",
+    "client-connects-and-resolves-through-the-vpn-nameserver"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the VPN's nameserver answers VPN clients recursively through the bridge, over a default drop",
+   "checks": [
+    "nameserver-serves-the-vpn-network",
+    "firewall-accepts-dns-on-the-bridge",
+    "the-lab-nat-ipv6-route-is-removed",
+    "a-wan-host-and-default-drops",
+    "the-client-resolves-and-reaches-the-wan-through-the-server",
+    "the-composed-rules-counted-the-flows"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a VPN client reaches the WAN through the server, masqueraded behind the server's WAN address",
+   "checks": [
+    "forwarding-and-nat-to-the-wan",
+    "a-wan-host-and-default-drops",
+    "the-client-resolves-and-reaches-the-wan-through-the-server",
+    "the-composed-rules-counted-the-flows"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a client that uses the class's cipher (openvpn_cipher AES-256-CBC, the default) connects with it",
+   "checks": [
+    "a-client-on-the-class-cipher-connects"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "client isolation, the bridge and the server at boot, the hairpin rule, the data channel's compression, and each composed class's own behaviours",
+   "uncovered": {
+    "why": "these are the composed classes' own behaviours, checked by their own sets under their own fixtures (openvpn_server, firewall_addon_openvpn_server, caching_nameserver, firewall_addon_caching_nameserver; openvpn_server's compression is a finding, escalations/openvpn_server.behaviour.md); this set covers what the composition adds",
+    "lifted_by": "capability: running each composed class's checks inside network_vpn's own run (a set holds its own class's checks)",
+    "evidence": "phase3.py runs the checks of one set per run; the composed classes' sets each pass their own reviews (phase3.py state, 2026-11-23)"
+   }
+  },
+  {
+   "outcome": "another client DNS server pushed to VPN clients (openvpn_client_dns)",
+   "checks": [
+    "another-client-dns-is-pushed"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "another VPN network size, cipher, renegotiation interval or client isolation off",
+   "uncovered": {
+    "why": "parameter variants no production node uses (the fixture sets the network itself, wan_iface as production does)",
+    "accepted_gap": [
+     "openvpn_netmask",
+     "openvpn_cipher",
+     "openvpn_reneg_sec",
+     "client_isolation"
+    ],
+    "evidence": "diagnosis/fleet_variant_usage.md (2026-11-23): production sets openvpn_client_dns and wan_iface on network_vpn and none of these; no class of the repository sets them on network_vpn"
+   }
+  }
+ ],
+ "duration_s": 453.7
+}
