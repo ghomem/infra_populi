@@ -1,0 +1,35 @@
+{
+ "class": "docker_container",
+ "at": "20261125T202935Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "without-host-port-the-app-port-is-published-on-loopback (variant appport) -> manifests/docker_container.pp:52-54: with app_port '80' and host_port '' (appport fixture) lines 20-24 set myhost_port = app_port, so line 54 yields ports ['127.0.0.1:80:80']; the probe expects docker port 80/tcp to list exactly 127.0.0.1:80 and nginx to answer on 127.0.0.1:80; the mismatch changes only the address asked (the node's enp0s8 host-only address), where a loopback-only publish must not answer, and it failed after apply in run 20261125T201108Z-reviewer",
+  "another-network-is-used (variant nonet) -> manifests/docker_container.pp:82-93: net => $network passes the nonet fixture's network 'none' to docker::run, and with no app_port lines 55-56 give ports [], so the probe's NetworkMode none on a running container and zero published ports are what these lines produce",
+  "the-container-runs-the-image-under-systemd -> manifests/docker_container.pp:82-84: docker::run titled $name (fixture title docker_container) with image $image_id, which with no digest is nginx:alpine (lines 41-47, tag alpine); puppetlabs-docker 10.4.1 runs it as unit docker-docker_container, so image nginx:alpine present, the unit active and container docker_container on nginx:alpine are what these lines declare",
+  "purpose covered: Tested (reviewer run 20261125T201108Z, ALL_PASS in base and the appport, runopts and nonet variants; every negative control failed on the clean node): the image pulled at the tag; the container running it as systemd unit docker-docker_container; port 18080 published on 127.0.0.1 only with nginx answering (mismatch on the host-only address fails); a killed container started again by the unit (Restart=on-failure module default); the image tag removed, then the node's agent run (rc 2, 8 changed) pulls it again and recreates the container (new ID) with nginx answering (subscribe, line 92); stopping the service keeps the container, exited (remove_container_on_stop false, line 89); app_port without host_port publishes 127.0.0.1:80 (lines 20-24, 52-54); env P8TEST_ENV=on, the named volume p8test-vol at /p8test-data, the host path /srv/p8test-bind bind-mounted at /p8test-bind with no docker volume created for it (lines 59-80 split the two kinds: round 3's gap is now closed), and a command differing from the image CMD (worker_rlimit_nofile 4096 in Config.Cmd and PID 1); network none. Uncovered rows are honest: ensure (1 production statement; latest makes notify/pull events every run, absent removes an image the container uses; lifted by a gate capability for by-design run-2 events), registry login (needs a private registry with credentials; no node kind in nodes.yml has one; 5 production statements), digest (accepted gap: 0 production statements in diagnosis/fleet_variant_usage.md, and it is the digest parameter's own variant of lines 35-40). restart_service_on_docker_refresh (line 90) needs no row: it acts only with docker_service set (module default false); myorigin is declared and never read. Nothing the lab can exercise is left untested."
+ ],
+ "review_s": 1107.7,
+ "check_file_sha256": "458e8c00c14eabcd287397ffa1a1d9b53d031bc743be9c0969b02ce55ab36742",
+ "content_sha256": "458e8c00c14eabcd287397ffa1a1d9b53d031bc743be9c0969b02ce55ab36742",
+ "reviewer_result": "20261125T201108Z-reviewer",
+ "author_result": "20261125T194923Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "e76ea76a-52ee-47dd-9fb1-3ab0ccf47165",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "e76ea76a-52ee-47dd-9fb1-3ab0ccf47165",
+   "fresh": true
+  }
+ }
+}
