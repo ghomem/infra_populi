@@ -1,0 +1,35 @@
+{
+ "class": "ssl_nginx_domain",
+ "at": "20261125T045948Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-agent-run-restores-the-key-and-restarts-nginx-once: ssl_base.pp:84-92 declares File[$key_file] (source puppet:///extra_files/ssl/p8test.key) with notify => Service[nginx]; after the-key-alone-drifts appends a line, the effect expects the drift line gone (0), a new nginx MainPID and exactly one 'Started nginx.service' after the noted cursor, which is what that file resource plus its notify produce on the next agent run",
+  "nginx-serves-tls-with-the-pair: ssl_base.pp:79-81 makes the bundle /etc/ssl/certs/p8test.nginx.bundle.crt from p8test.crt then p8test.intermediate.crt (fixture: server cert CN p8test.invalid, intermediate = throwaway CA); the action adds a loopback TLS server naming that bundle and key, the read-only effect does the handshake and expects 2 certificates served, leaf CN p8test.invalid, chain verifies against the second; matches the lines under the params fixture",
+  "the-agent-run-restores-the-bundle-and-restarts-nginx-once: ssl_base.pp:10 states the service is restarted when the certificate changes, and ssl_base.pp:100-107 gives Concat[bundle] notify => Service[nginx]; after the-bundle-alone-drifts the effect expects the drift line removed, a new MainPID and one start in the journal, which the concat re-render plus notify produce",
+  "purpose gap: Base run tests the non-Let's-Encrypt path end to end: key 0600 root and matching the certificate (with a mismatch on the issuer's key), bundle 0644 = leaf then issuer that verifies, nginx actually serving that chain over TLS on loopback, and one nginx restart for a key-only and for a bundle-only change; the rhel variant tests ssl_base's only RedHat difference (key under /etc/pki/tls/private). Gap: the Let's Encrypt variant, which production uses (19 node statements), checks only the key file (path, 0600) and that it matches the bundle's first certificate. It does not test that the bundle /etc/ssl/certs/p8test.nginx.bundle.pem holds the chain from p8test-chain.pem as its second certificate (ssl_base.pp:73-75, 115-119), and it does not test nginx serving the LE pair, although the check's id says letsencrypt-pair-served-by-nginx. The purpose says nginx serves the certificate and its intermediate. The lab can test this: the master fixture puts the throwaway CA at ssl/p8test-chain.pem, and the base set's bundle and TLS probes work unchanged with the .pem paths. Its mismatch (comparing against the second certificate) also fails when the bundle has no second certificate, so it does not show that the chain is present."
+ ],
+ "review_s": 599.3,
+ "check_file_sha256": "a50a4d78fde29d7475c21e4cc77d95c65a2b69d82ce91ad6cf6a024042dc4807",
+ "content_sha256": "a50a4d78fde29d7475c21e4cc77d95c65a2b69d82ce91ad6cf6a024042dc4807",
+ "reviewer_result": "20261125T044949Z-reviewer",
+ "author_result": "20261123T125342Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "7d5ec4c5-ab4e-4659-87fb-20cab3e657e8",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "7d5ec4c5-ab4e-4659-87fb-20cab3e657e8",
+   "fresh": true
+  }
+ }
+}
