@@ -1,0 +1,43 @@
+{
+ "class": "hashman_web",
+ "at": "20261125T090336Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "other-machines-reach-hashman-only-through-nginx: manifests/hashman_web.pp:186-188 has nginx_frontend proxy to backend 127.0.0.1:8080 (the backend bind is localhost under local change #2), so from the peer 8080 is refused and the index title '<customname> @ <company>' (httpserver.py.erb:28, lab Hiera Hashman / My Company) loads over HTTPS through nginx. The mismatch swaps in /static/styles/custom.css, a stylesheet with no title, so the expected title can only come from the index route; it failed after apply as it must",
+  "signing-and-verifying-through-nginx-with-a-lab-key-pair: hashman_utils.py:60-67 sign_OpenSSL signs with the PEM private key using the default sha512 digest and returns base64. The probe places a lab RSA pair at PRIV_KEY/PUB_KEY (httpserver.py.erb:73-74). I confirmed no baseline manifest installs files/hashman/ssl, which holds only a pubkey, so the pair is a site-provided asset. /sign gives 200, /verify gives OK for the content and NOK for altered content (verify_OpenSSL:72-85), and openssl dgst -sha512 -verify against the public key confirms the signature is exactly what lines 60-67 produce",
+  "the-relay-received-the-help-request-and-the-password-mail: mailutils.py.erb:70-80 sets To: to each user address and sends to [email] + SUPPORT_TEAM. The effect greps the To: header for p8hashmail@example.invalid. The help request's Subject is STR_SUBJECT_BASE + name (httpserver.py.erb:66,219, sent by reqhelp_email to SUPPORT_TEAM). The SASL login p8test-relay on the peer's submission service shows the node's postfix relayed authenticated. That is what the lines declare, with the peer standing in for the relay host",
+  "purpose covered: The purpose (Hashman portal on the master: users log in through nginx over HTTPS and change their password, which reaches every node's catalog; backend on localhost only) matches the class header and code. These checks test it end to end: the service listens on 127.0.0.1:8080 only and the old 0.0.0.0 unit is corrected by the next agent run; from the peer the backend port is refused and nginx proxies over TLS; the configured logos are copied; the CLI useradd and role line work; a headless browser on the peer changes the password through nginx; the database record verifies only the new password; the peer's agent run against the master applies the user and PAM accepts the new password and refuses the initial one; /checkpwd answers OK, with a weak-password mismatch giving NOK. The earlier review's two gaps are now closed: help-request and useradd mails leave through the node's postfix to the peer relay, authenticated, and reach the mailbox; /sign and /verify work through nginx with a lab key pair, because no baseline manifest deploys the private key. The only uncovered row, server- and client-side session expiry (hashman::active_session_expiration, default False; next.html also gates its client timer on it), is truthful: manifests/hashman_web.pp:36 reads it with lookup(), and phase3.py variant_problems shows a variant varies only node and params, so the lab cannot set that Hiera key per run. The default-logo branch (lines 107-116/128-137) is off for the same reason (the lab Hiera sets non-default paths) and falls under the logo outcome. My reviewer run 20261125T085706Z: clean phase valid (16 negatives failed), applied phase ALL_PASS, no findings"
+ ],
+ "review_s": 391.0,
+ "check_file_sha256": "499cb9de6f51f1f273e1feb18ce31b1d3f7c72eb565330eee66d33b2490f29f1",
+ "content_sha256": "499cb9de6f51f1f273e1feb18ce31b1d3f7c72eb565330eee66d33b2490f29f1",
+ "reviewer_result": "20261125T085706Z-reviewer",
+ "author_result": "20261125T084906Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v2",
+   "boot_id": "42d7eae7-4750-4d13-8e3b-9f5539ef9ad5",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "42d7eae7-4750-4d13-8e3b-9f5539ef9ad5",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "boot_id": "651703c3-3001-4b8c-942e-d1ea19863228",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "651703c3-3001-4b8c-942e-d1ea19863228",
+   "fresh": true
+  }
+ }
+}
