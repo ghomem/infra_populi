@@ -1,0 +1,43 @@
+{
+ "class": "hashman_web",
+ "at": "20261125T083339Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-password-strength-api-answers-through-nginx: httpserver.py.erb:230-239 returns TECH_OK ('OK', line 38) when checkstr_pwd and checkpw accept the password, else TECH_ERR ('NOK'); the probe POSTs a strong password to /checkpwd through nginx expecting exactly OK, and the mismatch (abcdef) must and did fail",
+  "the-next-agent-run-rebinds-the-backend-to-localhost: hashman_web.pp:167-172 manages the unit file from hashman.service.erb; with local change #2 (row 2 of local_changes.md: template binds 127.0.0.1:8080 and the current manifest adds notify => Service['hashman']) the agent run after the drift restores --bind 127.0.0.1:8080 and restarts the backend, which the effect reads from the unit and ss; my run: node agent rc 2, 4 changed, pass",
+  "an-old-unit-binds-every-address: hashman.service.erb:7 at the baseline renders --bind 0.0.0.0:8080; the action rewrites the unit to exactly that bind, reloads and restarts (all declared in mutates) and the read-only effect (ss listeners) shows 0.0.0.0:8080, the action's result not its output",
+  "purpose gap: Tested (my run ALL_PASS, clean phase all negative controls failed as required): backend on 127.0.0.1:8080 only, refused from the peer, portal and /checkpwd through nginx over TLS, logos from Hiera sources, CLI useradd/unlock and the printed role line, a browser password change on the peer through nginx, the database record verifying only the new password, the peer accepting it via PAM after its agent run, and the old unit rebound by the next agent run. GAP: the outcome 'help requests and password e-mails reach the team and the user' (httpserver.py.erb:213-227 reqhelp; mailutils.py.erb sends via smtplib to 127.0.0.1, the required_base postfix_smtp_node) is uncovered for a reason the lab disproves: its evidence says no class installs a receiving mail server and lifted_by asks for 'a lab mail server (on the peer) that the master's postfix relays to', but that capability exists and is reviewed PASS in checks/postfix_smtp_node.yml (the-peer-plays-the-relayhost: the ubuntu2 peer runs postfix submission 587 + dovecot SASL with p8test-relay; a-message-from-the-node-goes-to-the-relayhost pins mailserver.mycompany.com to the peer with a mail-port fence), and the lab Hiera gives p8lab-puppetserver its relay keys (master_fixtures.sh:146-147). So a POST /reqhelp through nginx (and a non-SILENT useradd mail) can be observed leaving the master's MTA to the peer relay (status=sent) and arriving there; even without the peer, hashman handing the mail to the local MTA is observable in the master's postfix log. Also reconsider the /sign and /verify row: the key pair is not class-deployed (confirmed: baseline files/hashman/ssl holds only hashman-pubkey.pem and no manifest names either key), but a lab-generated test key pair at ${hashmandir}/ssl, like the logo placeholders accepted as a test asset (HQ 2026-11-18 ruling 9), would let the lab exercise them; state why that is not done or test it. Session-expiry row holds: hashman::active_session_expiration is a lookup() (hashman_web.pp:36), and variant_problems accepts only node and/or params."
+ ],
+ "review_s": 360.8,
+ "check_file_sha256": "5a13585cb694e26eb7dede6bec392c533afcea5822a0dad4b8c039de9c05a07c",
+ "content_sha256": "5a13585cb694e26eb7dede6bec392c533afcea5822a0dad4b8c039de9c05a07c",
+ "reviewer_result": "20261125T082739Z-reviewer",
+ "author_result": "20261123T132546Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v2",
+   "boot_id": "6749cedd-4350-4ce7-866b-6888513efe0d",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "6749cedd-4350-4ce7-866b-6888513efe0d",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "boot_id": "0455139e-233f-4d80-98a3-87743e0d390a",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "0455139e-233f-4d80-98a3-87743e0d390a",
+   "fresh": true
+  }
+ }
+}
