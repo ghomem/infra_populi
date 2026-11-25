@@ -18,6 +18,10 @@ purpose: >-
 # Purpose and outcomes table added 2026-11-19 (backfill batch 3, HQ batch-10 rulings 2 and C1), with the Server
 # header (server_tokens off) checked as behaviour and the default absence of the ad-hoc file.
 outcomes:
+  # Correction round 2 of the swept set (2026-11-25, review 20261125T055427Z): the stream row was uncovered for a false
+  # reason. class nginx renders the stream block whenever its `stream` parameter is true, and my_configs reaches it, so
+  # the variant run `stream` (my_configs {stream, package_name nginx-core, nginx_version}, nginx_frontend_mail's
+  # per-target nginx_base fixture without mail) tests the block.
   # Correction round 1 of the swept set (2026-11-25, review 20261125T053027Z): the class's non-Ubuntu branch was in no
   # row although the rhel9 node kind is active; the variant run `rhel` now tests the base outcomes there.
   # Correction round 1 (2026-11-19, review 20261119T032919Z): nginx from the distribution (manage_repo false) got a row
@@ -41,13 +45,8 @@ outcomes:
     from: manifests/nginx_base.pp:112-127
     checks: [no-ad-hoc-file-by-default]
   - outcome: the stream block logs nothing (stream_access_log off, HQ 2026-11-18 ruling A1, a module-compatibility change in class_rulings.txt)
-    from: class_rulings.txt (nginx_base, ruling A1)
-    uncovered:
-      why: the stream block exists only when a stream server is declared, which is another class's resource, not a parameter of this one
-      lifted_by: "capability: a stream server declared alongside nginx_base in a run (a variant varies the class's own params only)"
-      evidence: >-
-        nginx_frontend_mail declares stream servers; its set's check streams-listen-and-stream-access-log-off shows
-        access_log off in the stream block (review PASS)
+    from: class_rulings.txt (nginx_base, ruling A1); manifests/nginx_base.pp:91-105
+    checks: [with-stream-enabled-the-stream-block-logs-nothing]
   - outcome: ad-hoc configuration and my_configs overrides
     from: manifests/nginx_base.pp:91-94, 112-127
     checks: [my-configs-and-ad-hoc-lines-reach-nginx]
@@ -67,6 +66,11 @@ outcomes:
     from: manifests/nginx_base.pp:63-86, 96-110, 130-145
     checks: [on-redhat-nginx-comes-from-the-distribution, on-redhat-nginx-runs-valid-with-modules-enabled-once, on-redhat-workers-tokens-and-log-formats, on-redhat-dh-group-2048-bits-not-world-readable, on-redhat-the-server-header-names-no-version]
 variants:
+  - name: stream
+    why: >-
+      my_configs {stream: true} (with nginx-core, which brings the stream module), as production enables it for the mail
+      frontend; the stream block exists only then
+    params: stream
   - name: rhel
     why: the class's non-Ubuntu branch (nginx_base.pp:106-110), on the rhel9 node with the set's own defaults fixture
     node: rhel9
@@ -253,3 +257,18 @@ checks:
     effect: |
       curl -s -o /dev/null -D - --max-time 5 http://127.0.0.1:81/ | tr -d '\r' | grep -i '^server:'
     expect: {rc: 0, stdout: "\\AServer: nginx\\n\\Z"}
+
+  - id: with-stream-enabled-the-stream-block-logs-nothing
+    variant: stream
+    what: >-
+      with my_configs {stream: true} nginx.conf has a stream block whose access_log is off, and nginx's configuration
+      passes `nginx -t` with the service running (the stream module from nginx-core is loaded once)
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "91-94", text: "$my_configs,"}
+      - {path: manifests/nginx_base.pp, lines: "101-105", text: "* => $configs,"}
+    probe: |
+      awk '/^[[:space:]]*stream[[:space:]]*\{/{f=1} f && /^[[:space:]]*access_log[[:space:]]/{sub(/^[[:space:]]*/, ""); print} f && /^\}/{f=0}' /etc/nginx/nginx.conf
+      nginx -t 2>&1 | grep -c 'test is successful'
+      systemctl is-active nginx
+    expect: {rc: 0, stdout: "\\Aaccess_log off;\\n1\\nactive\\n\\Z"}
