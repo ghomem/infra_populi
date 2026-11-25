@@ -1,0 +1,43 @@
+{
+ "class": "sync",
+ "at": "20261125T204119Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "daily-cron-for-the-local-user: manifests/sync.pp:40-43 declares cron command ${bindir}/sync-${mytag}.sh, user $localuser, hour $hour, minute $minute; with fixture localuser root, hour 3, minute 17, Hiera bindir /opt/puppet-infrastructure/bin and title sync, root's crontab entry '# Puppet Name: cron_sync_sync' / '17 3 * * * /opt/puppet-infrastructure/bin/sync-sync.sh' is exactly what those lines produce",
+  "the-script-mirrors-the-remote-dir: templates/backup/sync.sh.erb:24-31 loops over $HOSTS, splits host:port, makes $LOCALDIR/$HOST$SUFFIX and rsyncs $REMOTEUSER@$HOST:$REMOTEDIR/ into it with -av --partial --delete${BWLIMIT_OPT}; the action runs the installed script and the read-only effect checks one mirror per fixture host (p8test/p8test2.example.invalid-p8test) with the peer's files and content, plus a >= 9 s duration that the 1.19m limit implies for 2 x 6 MiB (12.6 MB / 1.25 MB/s ~ 10 s); the effect shows the run's result, not its output",
+  "script-carries-the-parameters: manifests/sync.pp:36 renders templates/backup/sync.sh.erb, whose lines 9 and 13-16 set HOSTS, REMOTEUSER, LOCALDIR, REMOTEDIR, SUFFIX from the parameters; the expected values are the params fixture's hostlist, remoteuser, localdir, remotedir and suffix verbatim",
+  "purpose gap: Tested: the script installed root:root 0755 with the parameters and parsing as bash; the 10 Mbit/s -> --bwlimit=1.19m conversion; root's daily cron at 03:17; a real run against the peer (ubuntu2) mirroring both listed hosts into their own <localdir>/<host><suffix> over ssh as p8testuser (whose only key is root's), slowed by the limit (>= 9 s for 12 MiB); --delete removing a file gone on the remote; variant other: no --bwlimit at 0, nobody's crontab. Honestly uncovered: cron actually firing at 03:17 (no wall-clock trigger in phase3.py, clocks must agree with the laptop). GAP: the per-host PORT (sync.sh.erb:7 'ports are mandatory', 27, 30 'ssh -p $PORT') is never shown to be honoured. The base run uses :22, which is ssh's default, so a script that dropped or mis-parsed the port would pass every check; the outcome row 'other ports, no limit, another local user' maps the port to no-limit-another-port-and-local-user, which only greps HOSTS=\"p8test.example.invalid:2222\" in the rendered text and never connects. The lab can exercise it: the base run has the peer, whose sshd can also listen on a second port (a declared peer mutation), with one fixture host listed on that port, so the run must reach it there (or fail when the peer does not listen on it)."
+ ],
+ "review_s": 229.2,
+ "check_file_sha256": "64e2f3f901002dcbbd8dd398645f6b83b1f1187cbec3a9d60d19f40ddf0bb57c",
+ "content_sha256": "64e2f3f901002dcbbd8dd398645f6b83b1f1187cbec3a9d60d19f40ddf0bb57c",
+ "reviewer_result": "20261125T203730Z-reviewer",
+ "author_result": "20261125T203147Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "79b93391-4ec6-47ee-8539-57c1098df305",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "79b93391-4ec6-47ee-8539-57c1098df305",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "boot_id": "c52accb9-b225-4813-8389-2ec2e4dee485",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "c52accb9-b225-4813-8389-2ec2e4dee485",
+   "fresh": true
+  }
+ }
+}
