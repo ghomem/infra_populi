@@ -1,0 +1,35 @@
+{
+ "class": "ssl_nginx_domain",
+ "at": "20261125T052336Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "letsencrypt-pair-served-by-nginx: ssl_base.pp:70-75 set, under letsencrypt_certificate true (variant params), the key <prefix>-key.pem and the bundle <prefix>.nginx.bundle.pem from <prefix>.pem + <prefix>-chain.pem; the action points a loopback nginx server at exactly those two paths, and the read-only effect (s_client -showcerts) expects 2 served certificates, CN p8test.invalid first, verifying against the second, which is what nginx serving that bundle/key pair produces",
+  "nginx-serves-tls-with-the-pair: ssl_base.pp:79-81 set the default-branch bundle <prefix>.nginx.bundle.crt from <prefix>.crt then <prefix>.intermediate.crt; the action names that bundle and /etc/ssl/private/p8test.key (line 77), the effect is the TLS handshake result (2 certs, leaf p8test.invalid, chain OK), not the action's output",
+  "the-agent-run-restores-the-key-and-restarts-nginx-once: ssl_base.pp:84-92 manage the key from its source with notify => Service[nginx]; after the-key-alone-drifts appends a line, the effect expects the drift line gone (0), a new nginx MainPID and exactly one 'Started nginx.service' since the noted cursor, which is what the source restore plus notify yield; action is 'true', mutates declares nothing else",
+  "purpose covered: Purpose (deploy a domain's key and cert bundle for nginx via ssl_base, nginx serves it with the intermediate, restarted on change) matches the define's header and ssl_base's Outputs comment (lines 5-10) and code. Base run: key root:root 0600 matching the bundle's leaf, bundle 0644 leaf-then-issuer verifying, nginx serving the 2-cert chain over TLS, and the key and bundle each drifted alone and restored by an agent run with exactly one nginx restart (both notify edges). Variant letsencrypt (production's setting): -key.pem 0600 matching, .bundle.pem leaf then -chain.pem, nginx serves that pair. Variant rhel: ssl_base's only RedHat difference (ssl_private_dir /etc/pki/tls/private; certs dir unchanged) checked as the key path and 0600. Not tested: the unknown-service warning notify (ssl_base.pp:94-97) is unreachable from this define, which always passes myservice nginx; owner/group params are not exposed by the define. All runs (base, letsencrypt, rhel) valid with negatives failing clean and every check passing applied; no findings."
+ ],
+ "review_s": 560.2,
+ "check_file_sha256": "c8c959ea75ac8f9e0703e2943d673eeb5a038296661c09ab7c7cb9205223f92a",
+ "content_sha256": "c8c959ea75ac8f9e0703e2943d673eeb5a038296661c09ab7c7cb9205223f92a",
+ "reviewer_result": "20261125T051416Z-reviewer",
+ "author_result": "20261125T050241Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "ddf16e45-a66c-413c-8862-544dd274afe7",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "ddf16e45-a66c-413c-8862-544dd274afe7",
+   "fresh": true
+  }
+ }
+}
