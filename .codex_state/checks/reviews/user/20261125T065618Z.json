@@ -1,0 +1,36 @@
+{
+ "class": "user",
+ "at": "20261125T065618Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "fail",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-given-key-is-pushed @ user_base.pp:94: with the wrapper unable to pass ignorekey, the default false applies, so the ssh_authorized_key is declared; the probe shows exactly one non-comment key line, which supports it",
+  "home-created-and-owned @ user_base.pp:69: managehome => true creates /home/<title>; stat checks that it is a directory owned by p8testuser:p8testuser (gid is the title, user_base.pp:25-26 with the empty group list), which supports it",
+  "the-given-key-is-pushed @ user_base.pp:98: type => 'ssh-rsa' plus the title-derived name <title>@puppet (96) matches the expected 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQAB... p8testuser@puppet' line for the fixture's RSA key, which supports it",
+  "an-out-of-band-key-is-planted: the mutates field declares only the line appended to authorized_keys, but the action's ssh-keygen also writes a key pair to /run/p8test-oob-key and /run/p8test-oob-key.pub, and that is not declared (user_base.yml:177 declares the same step in full). mutates does not declare everything its action changes = derivation failure",
+  "purpose gap: Tested: the account with its own primary group, comment, home (created and owned) and shell, in no other group; the SHA-512 hash, with su in a pty logging in with the test password and refused with a wrong one; the fixture key pushed as the only key, in a private user-owned file; no ecryptfs files; the out-of-band key purged by an agent run; and, in variant 'locked', the passed-on locked hash, group list (first group becomes primary), home, home mode 0700, shell and the userlocked placeholder key. The uncovered rows are honest: the empty-hash refusal is a compile-time fail(), and a key login needs the discarded private half. GAP: the outcome row 'the parameter variants the wrapper passes on ... and the locked or keyless placeholders' maps only to the-wrapper-passes-a-locked-hash-home-shell-and-groups. That check probes the userlocked key only, never the keyless placeholder (mykey '' -> emptykey..., user_base.pp:52-54). The lab can exercise that through this wrapper (user_base's set runs it as variant emptykey), so the row claims coverage that no check of this set gives. Fix: add a check for that part or restate the row truthfully"
+ ],
+ "review_s": 227.2,
+ "check_file_sha256": "e2a738a448a21dbb070575b18d6a90ebda61b0a9ac63cf8435789fad73608044",
+ "content_sha256": "e2a738a448a21dbb070575b18d6a90ebda61b0a9ac63cf8435789fad73608044",
+ "reviewer_result": "20261125T065231Z-reviewer",
+ "author_result": "20261123T141956Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "8846f145-ea8d-456b-a720-a2a35cbac29a",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "8846f145-ea8d-456b-a720-a2a35cbac29a",
+   "fresh": true
+  }
+ }
+}
