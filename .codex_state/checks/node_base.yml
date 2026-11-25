@@ -60,7 +60,7 @@ outcomes:
   - outcome: the parameters node_base forwards that no production node sets (custom NTP, nameservers, the extra firewall and its options, SSH options, syslog mode, apt and update options, filesystem security)
     from: manifests/node_base.pp:1-50 (parameters), 52-170
     uncovered:
-      why: parameter variants no production node uses on node_base (each component's own set covers it with its parameters set)
+      why: parameter variants no production node uses on node_base
       accepted_gap: [anti_ddos, apt_surface_list, bad_mark, ciphers, country_whitelist, customize_syslog_mode, custom_ntp, ddos_limit, ddos_limit_per_time_unit, ddos_limit_time_unit, filesystem_security, firewall_secure_extra, forward_iniface, good_mark, host_keys, internal_forward, internal_forward_list, ip_blacklist, ip_filter, ip_whitelist, kex_algorithm, macs, nameservers, ntp_servers, password_authentication, relevant_updates_method, relevant_updates_no_kernel, server_ppa, service_list, ssh_allow_root_login, ssh_port, syslog_mode]
       evidence: >-
         diagnosis/fleet_variant_usage.md (2026-11-23): production sets firewall_ignore_patterns, firewall_strict_purge,
@@ -70,6 +70,8 @@ outcomes:
 # whether node_base forwards firewall_strict_purge false and the ignore patterns or not; the prod variant now plants two
 # unmanaged rules, one matching p8test-keep, and the next agent run keeps that one and purges the other (as
 # firewall_secure's keep variant). Every forwarded parameter production does not set is in the accepted-gap row.
+# 2026-11-25 (review 20261125T125545Z of ssh_secure): the accepted-gap row no longer says each component's own set
+# covers these parameters; ssh_secure's set, for one, leaves the SSH ones in its own accepted gap.
 node_agent:
   after: [prod-two-unmanaged-rules-are-planted]
   why: firewall_secure purges unmanaged rules, except those matching an ignore pattern, only on its next agent run
