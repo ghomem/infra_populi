@@ -81,6 +81,12 @@ case "$MODE" in
     ;;
   up)
     take_lock
+    # HQ 2026-11-24: the master runs on the lab's paravirt provider too (nodes.yml); under the default one its clock
+    # drifted beyond what timesyncd corrects. Its setting is Salatiel's (raw VBoxManage), so a mismatch only refuses.
+    provider="$(python3 "${TOOLS}/nodes.py" provider)" || refuse "the inventory names no paravirt provider"
+    master_provider="$(VBoxManage showvminfo "$MASTER_VM" --machinereadable 2>/dev/null | sed -n 's/^effparavirtprovider="\(.*\)"$/\1/p')"
+    [[ "$master_provider" == "$provider" ]] ||
+      refuse "the master runs on paravirt provider '${master_provider:-unknown}', not the lab's '${provider}' (nodes.yml); Salatiel sets it while it is powered off (escalations/lab-clock.md)"
     if [[ "$(vm_state "$MASTER_VM")" != running ]]; then
       echo "Starting the master headless..."
       VBoxManage startvm "$MASTER_VM" --type headless >/dev/null || refuse "could not start the master"

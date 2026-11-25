@@ -7,9 +7,10 @@
 #   lab_vm.sh clone <source> <p8lab-name> [--snapshot <source snapshot>]
 #       full clone of an existing VM into a new p8lab-* VM. The source is never modified: it must be powered off,
 #       or be cloned from one of its named snapshots; its configuration and snapshot list are compared before and
-#       after. Never the master as a source.
+#       after. Never the master as a source. The clone gets the lab's paravirt provider (nodes.yml, HQ 2026-11-24).
 #   lab_vm.sh modify <p8lab-name> <modifyvm options...>   powered-off VM only; a --name must stay p8lab-*; no NAT
-#                                    port forward may be added (--natpfN delete only; first contact: first_contact.py)
+#                                    port forward may be added (--natpfN delete only; first contact: first_contact.py);
+#                                    a paravirt provider other than the lab's is refused
 #   lab_vm.sh start <p8lab-name>     headless; refused if it would leave under 4 GB free on the laptop
 #                                    (MemAvailable minus the VM's memory), or unless the VM has the lab network:
 #                                    NIC1 NAT with the host resolver, NIC2 host-only vboxnet0 (HQ NAT review G)
@@ -28,9 +29,12 @@ readonly MASTER_VM="Ubuntu24-puppet8-Master"
 readonly MIN_FREE_MB=4096
 readonly ACPI_TIMEOUT_SECONDS="${ACPI_TIMEOUT_SECONDS:-180}"
 MEMINFO="${P8_MEMINFO:-/proc/meminfo}"
+TOOLS_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+# HQ 2026-11-24: the lab's paravirtualization provider (nodes.yml `paravirt_provider`), set on every clone.
+lab_provider() { python3 "${TOOLS_DIR}/nodes.py" provider; }
 
 refuse() { echo "LAB_VM REFUSED: $*" >&2; exit 1; }
-usage() { sed -n '5,23p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
+usage() { sed -n '5,24p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
 
 lab_name() { [[ "$1" =~ ^p8lab-[a-z0-9][a-z0-9-]{0,40}$ ]]; }
 vm_exists() { VBoxManage showvminfo "$1" --machinereadable >/dev/null 2>&1; }
@@ -86,7 +90,10 @@ case "$verb" in
       refuse "VBoxManage clonevm failed"
     after="$(fingerprint "$src")"
     [[ "$before" == "$after" ]] || { echo "LAB_VM ERROR: the source '$src' changed during the clone (configuration or snapshots); stop and report" >&2; exit 3; }
-    echo "LAB_VM cloned ${src}${snap:+ (snapshot ${snap})} -> ${name}; source unchanged"
+    provider="$(lab_provider)" || refuse "cloned ${name}, but the inventory names no paravirt provider; set it before any start"
+    VBoxManage modifyvm "$name" --paravirtprovider "$provider" ||
+      refuse "cloned ${name}, but could not set paravirt provider ${provider}; set it before any start"
+    echo "LAB_VM cloned ${src}${snap:+ (snapshot ${snap})} -> ${name}; source unchanged; paravirt provider ${provider}"
     ;;
   modify)
     [[ $# -ge 2 ]] || usage
@@ -102,6 +109,11 @@ case "$verb" in
       # First contact goes over the VM's host-only lease (first_contact.py); removing a forward stays allowed.
       if [[ "${args[$i]}" =~ ^--natpf[0-9]+$ && "${args[$((i + 1))]:-}" != "delete" ]]; then
         refuse "no NAT port forwards on lab VMs (${args[$i]} ${args[$((i + 1))]:-}); reach a new VM with first_contact.py"
+      fi
+      # HQ 2026-11-24: every lab VM stays on the lab's paravirt provider (the clock drifted under the default one).
+      if [[ "${args[$i]}" == "--paravirtprovider" || "${args[$i]}" == "--paravirt-provider" ]] &&
+        [[ "${args[$((i + 1))]:-}" != "$(lab_provider)" ]]; then
+        refuse "paravirt provider '${args[$((i + 1))]:-}' is not the lab's '$(lab_provider)' (nodes.yml)"
       fi
     done
     VBoxManage modifyvm "$name" "$@" || refuse "VBoxManage modifyvm failed"

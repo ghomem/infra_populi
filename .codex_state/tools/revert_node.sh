@@ -103,7 +103,7 @@ NODE_SSH_ALIAS="$NODE_ALIAS"
 [[ "$NODE_VM" != "$MASTER_VM" ]] || fail "The inventory names the master VM as a node; refusing."
 [[ "$NODE_VM" == "ubuntu24-puppet8-Node" || "$NODE_VM" =~ ^p8lab-[a-z0-9-]+$ ]] ||
   fail "Node VM '$NODE_VM' is neither ubuntu24-puppet8-Node nor a p8lab-* VM; refusing."
-readonly NODE_KIND NODE_VM NODE_SNAPSHOT NODE_SSH_ALIAS NODE_HOSTONLY_IP NODE_HOSTNAME NODE_OS_FAMILY
+readonly NODE_KIND NODE_VM NODE_SNAPSHOT NODE_SSH_ALIAS NODE_HOSTONLY_IP NODE_HOSTNAME NODE_OS_FAMILY NODE_PARAVIRT
 
 if [[ $state_only -eq 1 ]]; then
   node_state_token
@@ -255,6 +255,15 @@ current_snapshot="$(
 )"
 [[ "$current_snapshot" == "$NODE_SNAPSHOT" ]] ||
   fail "After restore the current snapshot is '$current_snapshot', expected '$NODE_SNAPSHOT'."
+# HQ 2026-11-24: every lab VM runs on the inventory's paravirtualization provider; under the default (kvm) one the
+# guest clocks drifted beyond what ntpd corrects. A restored snapshot carries its own setting, so this is checked after
+# the restore and before the boot.
+provider="$(
+  VBoxManage showvminfo "$NODE_VM" --machinereadable 2>/dev/null |
+    awk -F= '$1 == "effparavirtprovider" { gsub(/"/, "", $2); print $2; exit }'
+)"
+[[ "$provider" == "$NODE_PARAVIRT" ]] ||
+  fail "Node VM '$NODE_VM' at '$NODE_SNAPSHOT' runs on paravirt provider '${provider:-unknown}', not the lab's '$NODE_PARAVIRT' (nodes.yml); its clock would drift. Take a baseline with the provider set (escalations/lab-clock.md)."
 t_restore="$(now_ms)"
 
 printf 'Starting node VM %q headless...\n' "$NODE_VM"

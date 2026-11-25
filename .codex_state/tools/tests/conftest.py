@@ -45,6 +45,8 @@ if name == "VBoxManage":
         print(f'memory={vm.get("memory", 2048)}')
         for key, value in sorted(vm.get("config", {}).items()):
             print(f'{key}="{value}"')
+        if "effparavirtprovider" not in vm.get("config", {}):  # HQ 2026-11-24: the lab's provider unless a test sets one
+            print(f'effparavirtprovider="{vm.get("config", {}).get("paravirtprovider", "hyperv")}"')
     elif args[:1] == ["controlvm"] and args[2] == "poweroff":
         vms[args[1]]["state"] = "poweroff"; save()
     elif args[:1] == ["snapshot"] and args[2] == "restore":

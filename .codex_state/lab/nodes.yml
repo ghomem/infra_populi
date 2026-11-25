@@ -16,6 +16,11 @@
 #   os                 human label
 #   capabilities       what the node can exercise (server, desktop, kde, gnome, rhel-subscription, second-node,
 #                      ad-dc, puppet-server)
+# paravirt_provider: the VirtualBox paravirtualization provider every lab VM runs on, the master included (HQ
+# 2026-11-24). Under the `default` provider (effective kvm) the guest clocks drifted beyond what ntpd corrects; under
+# hyperv they keep time (escalations/lab-clock.md). lab_vm.sh sets it on every clone; revert_node.sh fails a restored
+# VM that is not on it, and lab_power.sh up refuses a master that is not.
+paravirt_provider: hyperv
 default: ubuntu
 nodes:
   ubuntu:
@@ -47,7 +52,7 @@ nodes:
     certname: p8lab-kubuntu
     hostname: p8lab-kubuntu
     hostonly_ip: 192.168.56.22
-    baseline_snapshot: P8LAB_KUBUNTU_BASELINE_v1
+    baseline_snapshot: P8LAB_KUBUNTU_BASELINE_v2
     os_family: Debian
     os: Ubuntu 24.04.4 desktop (Kubuntu, KDE)
     capabilities: [desktop, kde]
@@ -81,7 +86,7 @@ nodes:
     certname: p8lab-dc
     hostname: p8lab-dc
     hostonly_ip: 192.168.56.25
-    baseline_snapshot: P8LAB_DC_BASELINE_v1
+    baseline_snapshot: P8LAB_DC_BASELINE_v2
     os_family: Debian
     os: Ubuntu 24.04 server + Samba 4.19 AD DC (realm P8TEST.EXAMPLE, domain P8TEST)
     capabilities: [server, second-node, ad-dc]
@@ -95,7 +100,7 @@ nodes:
     certname: p8lab-puppetserver
     hostname: p8lab-puppetserver
     hostonly_ip: 192.168.56.26
-    baseline_snapshot: P8LAB_PUPPETSERVER_BASELINE_v1
+    baseline_snapshot: P8LAB_PUPPETSERVER_BASELINE_v2
     os_family: Debian
     os: Ubuntu 24.04 server + openvox-server 8.11.0 (a second Puppet server)
     capabilities: [server, puppet-server]

@@ -56,6 +56,15 @@ def test_unknown_node_state_refuses_to_act(lab):
     assert not any(c[1] in ("controlvm", "snapshot") for c in lab.calls("VBoxManage"))
 
 
+def test_a_vm_off_the_lab_paravirt_provider_fails_before_boot(lab):
+    # HQ 2026-11-24: a restored snapshot carries its own provider; one that is not the lab's (nodes.yml) is refused
+    lab.world["vms"][NODE]["config"] = {"effparavirtprovider": "kvm"}
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 1
+    assert "runs on paravirt provider 'kvm', not the lab's 'hyperv'" in proc.stderr
+    assert ["VBoxManage", "startvm", NODE, "--type", "headless"] not in lab.calls("VBoxManage")
+
+
 def test_restore_to_wrong_snapshot_fails_before_boot(lab):
     lab.world["vms"][NODE]["snapshot"] = "P8NODE_BASELINE_GREEN"
     lab.world["restore_ignores_name"] = True

@@ -69,7 +69,11 @@ def test_clone_from_a_powered_off_source_leaves_the_source_unchanged(vms, lab):
     proc = vms.run("clone", "RHEL9", "p8lab-rhel9b")
     assert proc.returncode == 0 and "source unchanged" in proc.stdout, proc.stderr
     assert "p8lab-rhel9b" in lab.state()["vms"] and lab.state()["vms"]["RHEL9"]["state"] == "poweroff"
-    assert [c[1] for c in vms.mutating()] == ["clonevm"]
+    assert [c[1] for c in vms.mutating()] == ["clonevm", "modifyvm"]
+    # HQ 2026-11-24: every clone gets the lab's paravirt provider (nodes.yml), whatever its source had
+    assert vms.mutating()[1] == ["VBoxManage", "modifyvm", "p8lab-rhel9b", "--paravirtprovider", "hyperv"]
+    assert lab.state()["vms"]["p8lab-rhel9b"]["config"]["paravirtprovider"] == "hyperv"
+    assert "paravirt provider hyperv" in proc.stdout
 
 
 def test_clone_from_a_named_snapshot_of_a_running_source(vms, lab):
@@ -101,6 +105,15 @@ def test_clone_refusals_change_nothing(vms, args, text):
 def test_non_lab_vms_are_refused_for_every_verb(vms, args):
     assert refused(vms.run(*args), "acts on p8lab-* VMs only")
     assert vms.mutating() == []
+
+
+@pytest.mark.parametrize("flag", ["--paravirtprovider", "--paravirt-provider"])
+def test_modify_keeps_the_lab_paravirt_provider(vms, flag):
+    # HQ 2026-11-24: a lab VM stays on the lab's provider; under the default (kvm) one its clock drifted
+    for other in ("kvm", "default", "none"):
+        assert refused(vms.run("modify", "p8lab-rhel9", flag, other), "is not the lab's 'hyperv'")
+    assert vms.mutating() == []
+    assert vms.run("modify", "p8lab-rhel9", flag, "hyperv").returncode == 0
 
 
 def test_modify_only_powered_off_and_names_stay_p8lab(vms):

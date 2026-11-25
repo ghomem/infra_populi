@@ -4,10 +4,13 @@
   nodes.py validate                                  exit 0 valid, 2 invalid (problems on stderr)
   nodes.py list                                      one line per kind: kind status vm alias hostonly_ip os_family
   nodes.py kinds                                     the kind names, one per line
+  nodes.py provider                                  the lab's paravirtualization provider (every lab VM, the master
+                                                     included, runs on it; HQ 2026-11-24)
   nodes.py get   [--node KIND | --class CLS] FIELD   one field of the selected node
   nodes.py env   [--node KIND | --class CLS] [--allow-planned]
                                                      shell assignments (NODE_KIND, NODE_VM, NODE_ALIAS, NODE_CERTNAME,
-                                                     NODE_HOSTNAME, NODE_HOSTONLY_IP, NODE_SNAPSHOT, NODE_OS_FAMILY)
+                                                     NODE_HOSTNAME, NODE_HOSTONLY_IP, NODE_SNAPSHOT, NODE_OS_FAMILY,
+                                                     NODE_PARAVIRT: the lab's provider)
                                                      for `eval` in the shell tools
 
 Selection: --node KIND, else (with --class) the plan row's `node` column, else P8_NODE, else `default`. A planned
@@ -34,6 +37,11 @@ CAPABILITIES = {"server", "desktop", "kde", "gnome", "rhel-subscription", "secon
 LEGACY_VMS = {"ubuntu": "ubuntu24-puppet8-Node"}  # keeps its revert_node.sh rules (HQ 2026-11-16 item 3)
 MASTER_VM = "Ubuntu24-puppet8-Master"
 RESERVED_IPS = {"192.168.56.1", "192.168.56.10"}  # laptop, master
+# HQ 2026-11-24: VirtualBox's paravirtualization providers. Under `default` (effective kvm) the lab's guest clocks ran
+# about 4650 ppm slow after one host boot and 2.45% fast after another (escalations/lab-clock.md), beyond the 500 ppm
+# that ntpd and timesyncd correct; under hyperv they kept time within 11 ppm. The inventory's `paravirt_provider`
+# names the one every lab VM runs on.
+PARAVIRT_PROVIDERS = {"none", "default", "legacy", "minimal", "hyperv", "kvm"}
 NAME = re.compile(r"[a-z][a-z0-9-]{1,30}")
 ENV_KEYS = {"kind": "NODE_KIND", "vm": "NODE_VM", "alias": "NODE_ALIAS", "certname": "NODE_CERTNAME",
             "hostname": "NODE_HOSTNAME", "hostonly_ip": "NODE_HOSTONLY_IP", "baseline_snapshot": "NODE_SNAPSHOT",
@@ -54,6 +62,9 @@ def load() -> dict:
 def problems(data: dict) -> list[str]:
     out: list[str] = []
     nodes = data["nodes"]
+    if data.get("paravirt_provider") not in PARAVIRT_PROVIDERS - {"default"}:
+        out.append(f"paravirt_provider {data.get('paravirt_provider')!r} must name the lab's provider, one of "
+                   f"{sorted(PARAVIRT_PROVIDERS - {'default'})} (VirtualBox's effective value; HQ 2026-11-24: hyperv)")
     if data.get("default") not in nodes:
         out.append(f"default {data.get('default')!r} is not a node kind")
     elif nodes[data["default"]].get("status") != "active":
@@ -134,6 +145,9 @@ def main(argv: list[str]) -> int:
     if argv == ["kinds"]:
         print("\n".join(data["nodes"]))
         return 0
+    if argv == ["provider"]:
+        print(data["paravirt_provider"])
+        return 0
     if argv[:1] in (["get"], ["env"]):
         cmd, rest = argv[0], argv[1:]
         kind = cls = None
@@ -154,6 +168,7 @@ def main(argv: list[str]) -> int:
             raise SystemExit("ERROR: env takes no field")
         for field, var in ENV_KEYS.items():
             print(f"{var}={shlex.quote('' if node[field] is None else str(node[field]))}")
+        print(f"NODE_PARAVIRT={shlex.quote(str(data['paravirt_provider']))}")
         return 0
     print(__doc__.strip(), file=sys.stderr)
     return 2

@@ -69,7 +69,8 @@ def wrapper_clone(tmp_path, lab):
     git(work, "config", "user.email", "t@example.invalid")
     git(work, "config", "user.name", "t")
     for src in [*TOOLS.glob("*.py"), *TOOLS.glob("*.sh"), TOOLS / "codex_migrate_class", TOOLS / "pre-commit",
-                REPO / ".codex_state/rules/advisor_only.txt", REPO / ".codex_state/rules/CODEX_RUNBOOK.md"]:
+                REPO / ".codex_state/rules/advisor_only.txt", REPO / ".codex_state/rules/CODEX_RUNBOOK.md",
+                REPO / ".codex_state/lab/nodes.yml"]:  # the inventory the tools validate travels with them
         dst = work / src.relative_to(REPO)
         dst.write_bytes(src.read_bytes())
         dst.chmod(src.stat().st_mode)

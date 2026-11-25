@@ -121,6 +121,14 @@ def test_up_starts_the_master_waits_for_health_and_reverts_the_node(lab):
     assert not (lab.root / "lab.lock").exists()
 
 
+def test_up_refuses_a_master_off_the_lab_paravirt_provider(lab):
+    # HQ 2026-11-24: the master's provider is Salatiel's to set; lab up only refuses, starting and reverting nothing
+    lab.world["vms"][MASTER].update(state="poweroff", config={"effparavirtprovider": "kvm"})
+    proc = power(lab, "up")
+    assert proc.returncode == 1 and "runs on paravirt provider 'kvm', not the lab's 'hyperv'" in proc.stderr
+    assert vbox(lab, MASTER) == [] and vbox(lab, NODE) == []
+
+
 def test_up_refuses_an_unhealthy_master_and_reverts_nothing(lab):
     lab.world["vms"][MASTER]["state"] = "poweroff"
     lab.world["ssh"][:0] = [{"match": r"systemctl is-active puppetserver; curl", "stdout": "activating\n"}]

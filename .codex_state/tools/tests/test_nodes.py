@@ -39,7 +39,7 @@ def test_the_master_role_kind_is_active_with_its_capability():
     # HQ 2026-11-18 ruling C2: the master-role node that lifts the hashman notes, brought up on 2026-11-18
     kind = REAL["nodes"]["puppetserver"]
     assert kind["status"] == "active" and kind["capabilities"] == ["server", "puppet-server"]
-    assert kind["baseline_snapshot"] == "P8LAB_PUPPETSERVER_BASELINE_v1" and kind["hostonly_ip"] == "192.168.56.26"
+    assert kind["baseline_snapshot"] == "P8LAB_PUPPETSERVER_BASELINE_v2" and kind["hostonly_ip"] == "192.168.56.26"
 
 @pytest.mark.parametrize("caps", [["ad-dc", "domain-controller"], []])
 def test_capabilities_outside_the_known_set_are_refused(tmp_path, caps):
@@ -62,6 +62,8 @@ def test_capabilities_outside_the_known_set_are_refused(tmp_path, caps):
     (lambda d: d["nodes"]["rhel9"].pop("certname"), "missing certname"),
     (lambda d: with_planned_kind(d).update(default=PLANNED_KIND), "the default node must be active"),
     (lambda d: d["nodes"]["gnome"].update(alias="p8lab-kubuntu"), "alias 'p8lab-kubuntu' is also node"),
+    (lambda d: d.pop("paravirt_provider"), "paravirt_provider None must name the lab's provider"),
+    (lambda d: d.update(paravirt_provider="default"), "paravirt_provider 'default' must name the lab's provider"),
 ])
 def test_invalid_inventories_are_refused(tmp_path, mutate, message):
     data = copy.deepcopy(REAL)
@@ -95,10 +97,17 @@ def test_env_is_shell_safe_and_complete(tmp_path):
     proc = run(tmp_path, REAL, "env")
     env = dict(line.split("=", 1) for line in proc.stdout.splitlines())
     assert set(env) == {"NODE_KIND", "NODE_VM", "NODE_ALIAS", "NODE_CERTNAME", "NODE_HOSTNAME", "NODE_HOSTONLY_IP",
-                        "NODE_SNAPSHOT", "NODE_OS_FAMILY"}
+                        "NODE_SNAPSHOT", "NODE_OS_FAMILY", "NODE_PARAVIRT"}
     out = subprocess.run(["bash", "-c", proc.stdout + 'echo "$NODE_VM|$NODE_SNAPSHOT|$NODE_OS_FAMILY"'],
                          capture_output=True, text=True).stdout
     assert out.strip() == "ubuntu24-puppet8-Node|P8NODE_BASELINE_GREEN_v5|Debian"
+
+
+def test_the_lab_paravirt_provider_is_hyperv(tmp_path):
+    # HQ 2026-11-24: hyperv is the lab's paravirtualization provider; the shell tools read it from here
+    assert REAL["paravirt_provider"] == "hyperv"
+    assert run(tmp_path, REAL, "provider").stdout == "hyperv\n"
+    assert "NODE_PARAVIRT=hyperv" in run(tmp_path, REAL, "env").stdout.splitlines()
 
 
 def test_an_invalid_inventory_stops_every_command_but_validate(tmp_path):
