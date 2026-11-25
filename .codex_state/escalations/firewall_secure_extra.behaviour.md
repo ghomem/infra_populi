@@ -71,3 +71,10 @@ No production node statement sets node_base's `firewall_secure_extra => true` (0
   (the kernel drops that destination before INPUT) and with route_localnet set to 1 on the node. The second result is
   unexplained.
 - **Rule 505 (SYN+FIN)** is shadowed by 501, which drops those packets as INVALID first.
+
+## 2026-11-25: reproduced on the duration-list re-run (ruled, no action)
+On hyperv clocks the author runs (20261125T153912Z, T161204Z, T164326Z) and the reviewer's (review 20261125T171428Z:
+PASS after correction 2 of the swept set) counted the RST limit 0 and 0 again: the in-connection RSTs are accepted by
+rule 003 before 519/520. HQ batch-11 ruling 2 (no fix) covers it; nothing new to decide. The swept set's two variants
+are now tested as behaviour from a network namespace on the node (plain: strict SSH and the opened port; ddosonly: the
+per-source connection limit and the new-connection rate).

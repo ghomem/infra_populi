@@ -1,0 +1,46 @@
+{
+ "class": "firewall_secure_extra",
+ "at": "20261125T171428Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-service-is-reached-only-from-the-whitelist @ manifests/firewall_secure_extra.pp:209-211: each ip_whitelist entry (fixture 192.168.56.124, the peer's +100) is marked good_mark in mangle PREROUTING; rule 521 (line 223) sends good_mark packets to WHITELIST_SIDE_CHAIN where 522 accepts NEW to 8888, and nothing else in INPUT accepts 8888, so the unlisted primary address falls to the DROP policy while its SSH passes the non-strict 110-116 path; 'whitelisted in / unlisted dropped / ssh unlisted in' is what the code produces (my run: pass)",
+  "bogus-packets-are-sent @ manifests/firewall_secure_extra.pp:162-163: rule 502 drops TCP packets in ctstate NEW without SYN; the setup sends 5 stray ACKs outside any connection (conntrack classes them NEW, with SYN+FIN and RSTs going to 501 INVALID as the set's correction note records) from the peer to port 22; its effect is only hping3's sent counts '5 50 5', and the following check reads 502's counter (>=5) after the counters were zeroed, so the pair tests what lines 162-163 declare (my run: both pass)",
+  "only-the-per-host-limit-dropped-the-held-connections @ manifests/firewall_secure_extra.pp:149: rule 112 drops new SSH from one host above connlimit_above $indilim (8, line 130); with 10 connections held, one every 4 s (slower than the 20/min overall limit's 3 s refill, and 10 in 40 s below 114's 15-in-60 s), only 112 should drop (the 9th and 10th plus retransmissions, >=2), 114 and 117 drop 0 and 116 accepts >=8; the counter deltas against the recorded before-values are what the code produces (my run: pass)",
+  "finding the-rst-limit-dropped-the-third: expected rule 519 to accept 2 and rule 520 to drop 1 of the 3 RSTs reset at once; the node counted 'accepted by the limit: 0, dropped beyond it: 0' (in-connection RSTs are accepted earlier by rule 003 RELATED,ESTABLISHED); the known finding ruled no fix (HQ batch-11 ruling 2), the only one in my run; every other base check and both variants passed, and every negative control failed on the clean node",
+  "purpose covered: Purpose (header lines 1-6 and the code) is stated correctly: firewall_secure's default-drop firewall with SSH limits plus anti-DDoS, whitelist side chain and blacklist. Base run (reviewer 20261125T165919Z) tests as behaviour from the peer: INPUT/FORWARD drop with whitelist SSH rules, loopback, the service reached only from the whitelisted source through the side chain, the per-source connection limit (3 held) and new-connection rate (in 9 of 20 in 2272 ms), blacklist dropping ICMP and SSH while an unlisted source is unaffected (local change #5), ICMP echo limit (7 of 20 in 1293 ms), mangle 501/502/503 drops by counters, SSH burst/connlimit/recent limits with counters, purge of an unmanaged rule, flush script and rebuild. Correction 2 closes the previous gap: the ddosonly variant (params ip_filter false, 2/sec) now tests both the per-source connection limit (3 of 5 from namespace 192.0.2.2) and the new-connection rate in INPUT (lines 282-301: in 8 of 20 in 2006 ms, bounded by 5+2*ceil(t)+1 and <20, so a missing 522/523 limit would fail it); the plain variant tests strict SSH (listed 192.0.2.3 in, unlisted dropped) and the opened port 555 from a namespace. Uncovered rows are honest with evidence and capability lifts: rule 002 (127/8 from another interface never reached INPUT, measured 0 with route_localnet 0 and 1), rule 518 (fragments reassembled by conntrack, measured 0), geoip (no xt_geoip/xtables-addons installed by any class), internal_forward (no internal network behind any lab node, nodes.yml). Minor, not gap-deciding: '000 accept all icmp' (plain, lines 100-105) and rule 003 have no row of their own."
+ ],
+ "review_s": 909.6,
+ "check_file_sha256": "c829c7bc9f948ac31c50816e86a87ead7e0be487d803cddcb11a095f99e6412a",
+ "content_sha256": "c829c7bc9f948ac31c50816e86a87ead7e0be487d803cddcb11a095f99e6412a",
+ "reviewer_result": "20261125T165919Z-reviewer",
+ "author_result": "20261125T164326Z-author",
+ "findings": [
+  "the-rst-limit-dropped-the-third"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "fa524b63-1629-43af-8332-92e4fc34e6fb",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "fa524b63-1629-43af-8332-92e4fc34e6fb",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "boot_id": "7e7b1dfe-1e9d-4874-9082-d52c3a95e5b7",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "7e7b1dfe-1e9d-4874-9082-d52c3a95e5b7",
+   "fresh": true
+  }
+ }
+}
