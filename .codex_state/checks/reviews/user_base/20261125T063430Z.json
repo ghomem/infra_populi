@@ -1,0 +1,35 @@
+{
+ "class": "user_base",
+ "at": "20261125T063430Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-agent-run-purges-the-out-of-band-key: user_base.pp:63-73 sets purge_ssh_keys => true on the user, so an authorized key Puppet does not manage is removed on the next agent run; after the planted ed25519 line and the node agent run (rc 2, 1 changed) the effect expects 1 non-comment line, 0 out-of-band lines and the fixture key's fingerprint SHA256:c3nO5X... with comment p8testuser@puppet, which is what ssh-keygen -lf gives for 'ssh-rsa <params mykey> p8testuser@puppet' (computed independently: 3072 SHA256:c3nO5XoVs1uB2+1IZ7smzFyWjvF8SXWkfav4BUMd4/E)",
+  "user-and-own-primary-group: user_base.pp:35-37 declares group $myusername, and with the fixture's empty mygrouplist :25-26 makes $title the gid; comment/home/shell come from myname 'P8 Test User', myhome '' -> /home/p8testuser (:8-10) and the default user_shell /bin/bash; the probe reads exactly name|gecos|home|shell from passwd and resolves the gid to p8testuser",
+  "password-hash-set: user_base.pp:63-72 password => $myhash writes the params hash into shadow; the fixture hash is $6$p8testsalt$... with no '!', so the algorithm+salt prefix $6$p8testsalt is what the code produces (:19-22 cited for the non-empty requirement)",
+  "purpose gap: Tested (reviewer run 20261125T063008Z, base + variants locked and emptykey ALL_PASS, every negative control failed clean): the account with its own primary group, comment, home created and owned, shell, no extra group; the hash set and used (su as nobody logs in with the test password, refused with a wrong one); the pushed key as the only authorized key with sshd-acceptable modes, and an out-of-band key purged by the next agent run; the locked hash (passwd -S L, userlocked key), group list [users] as primary, other home /srv/p8testhome mode 700 and shell /bin/sh; the empty key -> emptykey. Honest uncovered rows: the empty-hash fail() (compile time, compile-only evidence), a key login (no private key handed to the node; the sudo-first primary-group exception is tested in user_sudoer's set), ecryptfs (no ecryptfs home on any node kind). GAP: the ignorekey branch, baseline user_base.pp:94-102 ('# needed to avoid puppet errors on encrypted homedir scenarios' / if ( $ignorekey == false ) { ssh_authorized_key ... }), is in no outcome row and no check, and the purpose ('SSH access through exactly one pushed key') omits it. With ignorekey true no key is managed while purge_ssh_keys => true still applies, so the user ends with no authorized key; the parameter is forwarded by user_sudoer, user_desktop and user_desktop_sudoer, its production use is as undeterminable as the swept ones (passwd/ layer), and it is lab-exercisable on the default ubuntu node with a plain home (a variant with ignorekey true, as the fixture was until 2026-11-19), so it belongs in the table with a check, not left out."
+ ],
+ "review_s": 262.2,
+ "check_file_sha256": "908d5f0127fc5165d7148b15ddbfdef152c75c35741998cc402f1c0422dcbc22",
+ "content_sha256": "908d5f0127fc5165d7148b15ddbfdef152c75c35741998cc402f1c0422dcbc22",
+ "reviewer_result": "20261125T063008Z-reviewer",
+ "author_result": "20261123T141709Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "2cac5423-fc1b-4fb0-a14f-d37c5a134376",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "2cac5423-fc1b-4fb0-a14f-d37c5a134376",
+   "fresh": true
+  }
+ }
+}
