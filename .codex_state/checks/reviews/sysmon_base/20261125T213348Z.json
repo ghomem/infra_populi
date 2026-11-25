@@ -1,0 +1,43 @@
+{
+ "class": "sysmon_base",
+ "at": "20261125T213348Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "a-stale-package-list-raises-the-alarm: check_package_count.sh (whole file, sha256 a2a5bd07) lines 16-29 take the apt branch on Ubuntu and run check_file_age -w 93600 -c 93600 -i on /var/lib/apt-check-updates/list, echoing its output and exiting 1 when it is not 'FILE_AGE OK:'; a list touched to 2 days ago (> 26 h) must print check_file_age's 'FILE_AGE CRITICAL:' line with rc 1, as expected",
+  "the-cpu-plugin-is-critical-under-load: manifests/sysmon_base.pp:95-101 installs check_cpu.py from check_cpu.py.erb; the template's check_status() sets result 2 and prefixes 'CRITICAL: ' when total cpu% > crit (-c 50, warn 30 <= crit passes validation); two yes loops for 20 s push total usage over 50% on the node, so 'CRITICAL' rc 2 is what the code produces (passed in both runs)",
+  "a-pending-reboot-gives-a-warning: check_reboot_required.sh (whole file, sha256 9bacf362) lines 7-10 set 'WARNING - Reboot required to update host (/var/run/reboot-required found)' and status 1 when /var/run/reboot-required exists; the action touches exactly that file and the read-only effect runs the check, expecting that line and rc=1",
+  "purpose covered: Purpose read against the whole baseline manifest, every files/sysmon script and the check_cpu.py.erb template: the class installs 13 Nagios checks (the manifest header also names zimbra, but no zimbra code exists, so the purpose rightly omits it; elastic_query_check.py is in the code and in the purpose). Tested on ubuntu: every file root:root 0755, byte-identical to the baseline files (nagios-puppet.sh by owner/mode), check_cpu.py shebang from @bindir; nagios-puppet.sh OK, UNKNOWN under the run lock, CRITICAL when disabled (exit 1) and CRITICAL on failed resources (exit 4/6); reboot OK and WARNING; file handles vs /proc/sys/fs/file-nr; netstat listen/established and per-port IP counts (no 'command not found'); package count OK/WARNING at threshold and the stale-list check_file_age alarm; bandwidth OK, WARNING and CRITICAL with real peer traffic from ubuntu2; dd latency OK and CRITICAL with temp-file cleanup; cpu OK and CRITICAL under load, memory OK and CRITICAL; OS release; TLS expiry OK/WARNING in short words against a local s_server through check_http; elastic Unknown without ES, OK with no hits, Critical with time-ordered events, and the request path/size and query_string recorded by the stand-in. Variant rhel (rhel9): the same files installed, check_os_version from /etc/os-release (no lsb_release), and the dnf updateinfo branch counting Important security updates equal to dnf's own list with WARNING rc 1; the unused $packagename (nagios-plugins-disk / monitoring-plugins-standard, no resource) is stated honestly. Left out, not hiding behaviour: the WARNING bands of dd latency, cpu and memory (same comparison code as the CRITICAL branch that is tested), check_netstat_cip/conns never alarm by design (STATE always OK). No uncovered rows; the header note of 2026-11-18 that the netstat scripts and nagios-puppet.sh did not reach their results is historical, superseded by the later corrections whose checks now pass. Mutating checks declare their changes (agent runs, locks, the immutable 0700 file, stand-in units, the peer's ping unit); the latency and elastic effects run the class's own check (temp files in /tmp removed and counted, request recorded under /run/p8test-sysmon), within the declarations. Reviewer run 20261125T211518Z: clean phase all 25 negatives failed, applied phase all pass, variant rhel ALL_PASS, no findings."
+ ],
+ "review_s": 1110.9,
+ "check_file_sha256": "a574d104a879bcfa83f10c356f4e1b981aec43c9df9253b718fb8e4b4fc24373",
+ "content_sha256": "a574d104a879bcfa83f10c356f4e1b981aec43c9df9253b718fb8e4b4fc24373",
+ "reviewer_result": "20261125T211518Z-reviewer",
+ "author_result": "20261125T205617Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "3d026c90-0736-454d-b84b-f2d5b81bb0e5",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "3d026c90-0736-454d-b84b-f2d5b81bb0e5",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "boot_id": "cd4256cb-d2fe-44a7-b33f-e2cb18d2d4c2",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "cd4256cb-d2fe-44a7-b33f-e2cb18d2d4c2",
+   "fresh": true
+  }
+ }
+}
