@@ -1,0 +1,35 @@
+{
+ "class": "docker_container",
+ "at": "20261125T194651Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-container-runs-the-image-under-systemd -> manifests/docker_container.pp:82-84: docker::run titled $name (fixture title docker_container) with image $image_id, which with no digest is nginx:alpine (lines 41-47, tag alpine); puppetlabs-docker 10.4.1 runs it as unit docker-docker_container, so the probe's image nginx:alpine present, the unit active and container docker_container on nginx:alpine are what these lines produce",
+  "the-service-starts-it-again -> manifests/docker_container.pp:82-93: the docker::run sets no systemd_restart, so the module default 'on-failure' applies (run.pp:227, read on the master now); a killed container (the previous check's declared mutation, docker kill) exits non-zero and the unit starts it again. The effect reads the container's state (Running with a StartedAt different from the noted one) and nginx on 127.0.0.1:18080 (the fixture's host_port), not the action's output (the action is 'true')",
+  "environment-volume-and-command-reach-the-container (variant runopts) -> manifests/docker_container.pp:82-93: env, volumes and command pass straight to docker::run; under the runopts fixture (env P8TEST_ENV=on, volumes p8test-vol:/p8test-data, command nginx -g 'daemon off; worker_rlimit_nofile 4096;') the probe expects that env entry, a mount named p8test-vol at /p8test-data (created by the lines 59-79 exec as a named volume) and the command in Config.Cmd and PID 1; the command differs from the image's own CMD, so it proves the parameter reached the container",
+  "purpose gap: Tested (reviewer run 20261125T192803Z, ALL_PASS, base and the appport, runopts and nonet variants, agreeing with the author's run): image pulled at the tag; container running it as systemd unit docker-docker_container; port 18080 on 127.0.0.1 only with nginx answering (mismatch on the host-only address fails); a killed container started again (Restart=on-failure, run.pp:227 on the master); the image tag removed, then the agent run (rc 2, 8 changed) pulls it again and recreates the container (new ID; docker-run-start.epp runs docker rm before docker create, remove_container_on_start default true at run.pp:243); stopping the service keeps the container, exited (docker-run-stop.epp runs docker rm only when remove_container_on_stop is true; line 89 sets false); app_port without host_port publishes 127.0.0.1:80; env, a named volume and a command differing from the image's CMD reach the container; network none. Round 2 corrections hold. The uncovered rows hold: ensure (image.pp:140-183 read now: absent runs the remove exec onlyif the image is found; latest runs a noop-false notify and the install exec every run), registry login (no registry in the lab), digest (accepted gap, 0 statements). GAP: lines 59-80 split volumes into two kinds. The comment says 'keep only entries that don't look like absolute/relative paths (i.e. are real named-volumes)': the regex /^\\/|^\\./ excludes host-path entries from the 'docker volume create' exec, and docker::run receives them unchanged as bind mounts. The set exercises only the named kind (runopts volumes p8test-vol:/p8test-data). The outcome row says 'a named volume', but its reference 59-80 is the code that separates the kinds. No row and no check covers a host-path volume. That case needs both of these: (a) no mkvol exec for it, and (b) the path bind-mounted into the container. Production sets volumes on 5 node statements. The lab can exercise this: e.g. a variant with volumes ['/srv/p8test-bind:/p8test-bind', 'p8test-vol:/p8test-data'], checking that docker volume ls has no '/srv/p8test-bind' entry, that the container's Mounts list a bind with Source /srv/p8test-bind at /p8test-bind, and that the gate run stays event-free (a broken filter would make docker volume create /srv/... fail). restart_service_on_docker_refresh => true (line 90) needs no row: it acts only with docker_service set (run.pp:698-710, default false), so here it does nothing."
+ ],
+ "review_s": 1128.1,
+ "check_file_sha256": "3d82ff85734b332b350e2d4193bf7b8e3963710bcbd8020fa00a46bb9f6c9ed5",
+ "content_sha256": "3d82ff85734b332b350e2d4193bf7b8e3963710bcbd8020fa00a46bb9f6c9ed5",
+ "reviewer_result": "20261125T192803Z-reviewer",
+ "author_result": "20261125T190739Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "44dc115b-a551-4e8f-b0d2-01693cd02e3b",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "44dc115b-a551-4e8f-b0d2-01693cd02e3b",
+   "fresh": true
+  }
+ }
+}
