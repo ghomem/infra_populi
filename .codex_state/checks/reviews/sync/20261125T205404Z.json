@@ -1,0 +1,43 @@
+{
+ "class": "sync",
+ "at": "20261125T205404Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "script-carries-the-parameters: sync.sh.erb:9 renders HOSTS=\"<%= @hostlist %>\"; the probe greps HOSTS (and the other parameter lines) and expects exactly the fixture's hostlist 'p8test.example.invalid:22 p8test2.example.invalid:2222', which is what the template produces",
+  "the-peer-serves-the-remote-dir: sync.sh.erb:30 runs rsync -e \"ssh -p $PORT ...\" $REMOTEUSER@$HOST:$REMOTEDIR/; the setup makes the peer's p8testuser (the fixture's remoteuser, trusting root's key) own /srv/p8test (the fixture's remotedir), and makes the +100 alias (p8test2) reject 22 while an extra sshd listens on 2222, so line 30's -p $PORT decides whether the second mirror can succeed; the effect shows the files, the key's 600 mode, the 2222 listener and the REJECT rule",
+  "bandwidth-limit-converted: sync.pp:21 sprintf('%.2f') of 10*1e6/(8*1048576)=1.192 gives '1.19', so line 24 yields ' --bwlimit=1.19m' and erb:24 RSYNCOPTS='-av --partial --delete${BWLIMIT_OPT}'; the expectation is exactly that",
+  "purpose covered: Purpose (sync.pp:2 'simple multi host remote to local daily synchronization'; erb:3-5) is right. Base run: script installed root:root 0755 with the parameters and parsing; root's crontab entry 17 3 for it; the script run by hand mirrors both listed hosts into their own <localdir>/<host><suffix> over ssh as p8testuser, the second only reachable on its listed port 2222 (alias rejects 22), so the per-host port the previous review found unshown is now honoured behaviourally; the 12 MiB transfer took >= 9 s under the converted 1.19 MiB/s limit; a file removed on the peer is deleted from both mirrors on the next run (--delete). Variant other: bwlimit 0 renders no --bwlimit, the port-2222 host list, and the job in nobody's crontab. Left out honestly: cron actually firing at 03:17 (uncovered, lifted by the capability of a wall-clock trigger; the evidence, clock_check.py keeping lab clocks on the laptop's and no time-of-day wait in phase3.py, backs it); a full run as the non-root local user is not exercised, only its crontab placement, which is the variant's parameter-level effect."
+ ],
+ "review_s": 212.6,
+ "check_file_sha256": "f3a4d10100009bc3576689273a260d88c5a2af2e91499504a777773dcf562b65",
+ "content_sha256": "f3a4d10100009bc3576689273a260d88c5a2af2e91499504a777773dcf562b65",
+ "reviewer_result": "20261125T205032Z-reviewer",
+ "author_result": "20261125T204451Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "77cafb92-020d-4ea9-b359-34c518dac821",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "77cafb92-020d-4ea9-b359-34c518dac821",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "boot_id": "7d2bb87d-dfa9-4aa4-9e25-44646a1b5bac",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "7d2bb87d-dfa9-4aa4-9e25-44646a1b5bac",
+   "fresh": true
+  }
+ }
+}
