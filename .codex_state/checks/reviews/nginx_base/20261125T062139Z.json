@@ -1,0 +1,35 @@
+{
+ "class": "nginx_base",
+ "at": "20261125T062139Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "no-ad-hoc-file-by-default: nginx_base.pp:112-114 sets $config_ensure = 'absent' when ad_hoc_configs == [] (the defaults fixture), and the file resource at :117-124 takes that ensure, so the probe's 'absent' for /etc/nginx/conf.d/puppet_infrastructure.conf is what the lines produce; plausible invariant (the clean node has no nginx)",
+  "nginx-comes-from-the-ubuntu-archive: nginx_base.pp:78 passes manage_repo => false to class nginx (with :96 'we install nginx from the distribution repository'), so no nginx.org apt source is added and nginx comes from the Ubuntu archive; the probe counts nginx.org sources (0) and matches the installed version against apt-cache madison's ubuntu.com origin - tests exactly that",
+  "nginx-config-valid: nginx_base.pp:101-105 declares class nginx with the merged $configs on Ubuntu; nginx -t 2>&1 with rc 0 and 'test is successful' tests that the configuration this declaration produces under the defaults fixture is valid",
+  "purpose covered: Every run passed in both phases (base ubuntu, variants stream, rhel, custom). Tested on ubuntu with the defaults fixture: nginx from the Ubuntu archive with no nginx.org source, nginx -t valid, worker_processes auto and server_tokens off in nginx.conf and as a live Server header without version (the mismatch appends nginx -v's version and fails), main and compact log formats, the 2048-bit DH group mode 640, the ad-hoc file absent by default, and with a dynamic module installed one modules-enabled include, nginx -t passing and the service active. Variant rhel tests the non-Ubuntu branch (nginx_base.pp:106-110) on the active rhel9 node: Red Hat's package, no nginx.org repo, valid and active with modules-enabled included once, workers/tokens/log formats, the DH group, and the Server header via an added 127.0.0.1:81 server (mutates declares it; the effect is curl's header). Variant stream (my_configs {stream: true, package_name nginx-core, nginx_version 1.24.0}, nginx_frontend_mail's per-target fixture without mail) now covers the row the previous review found falsely uncovered: the stream block's access_log is 'off' (ruling A1), nginx -t passes and nginx runs. Variant custom tests my_configs (worker_connections 2048) and the ad-hoc line reaching the file and nginx -T (7 and 1 production statements). The only uncovered row, the accepted_gap log_formats_additional and dh_params_bits, really is those parameters' variants: fleet_variant_usage.md lists neither for nginx_base (only my_configs 7, ad_hoc_configs 1), and nothing the lab can test hides behind it. Not probed and not purpose: the ad-hoc file's mode/owner, and the apt_update ordering (unobservable after the fact)."
+ ],
+ "review_s": 615.5,
+ "check_file_sha256": "786781bfa4b8063e495c8bfb7ce4d720526def7fd65d95edf000c342770d3726",
+ "content_sha256": "786781bfa4b8063e495c8bfb7ce4d720526def7fd65d95edf000c342770d3726",
+ "reviewer_result": "20261125T061124Z-reviewer",
+ "author_result": "20261125T055740Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "2a031b11-a6d1-4be9-bfb4-a7e081d1e61a",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "2a031b11-a6d1-4be9-bfb4-a7e081d1e61a",
+   "fresh": true
+  }
+ }
+}

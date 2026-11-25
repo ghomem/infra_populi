@@ -1,0 +1,490 @@
+{
+ "class": "nginx_base",
+ "role": "reviewer",
+ "at": "20261125T061124Z",
+ "runner": "019f83b",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "786781bfa4b8063e495c8bfb7ce4d720526def7fd65d95edf000c342770d3726",
+ "content_sha256": "786781bfa4b8063e495c8bfb7ce4d720526def7fd65d95edf000c342770d3726",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "nginx-config-valid",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "bash: line 96: nginx: command not found\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "workers-auto-and-server-tokens-off",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/nginx/nginx.conf: No such file or directory\ngrep: /etc/nginx/nginx.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "log-formats-main-and-compact",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/nginx/nginx.conf: No such file or directory\ngrep: /etc/nginx/nginx.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "dh-group-2048-bits-not-world-readable",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/nginx/dhparams.pem': No such file or directory\nCan't open \"/etc/nginx/dhparams.pem\" for reading, No such file or directory\n40678D02717A0000:error:80000002:system library:BIO_new_file:No such file or directory:../crypto/bio/bss_file.c:67:calling fopen(/etc/nginx/dhparams.pem, r)\n40678D02717A0000:error:10000080:BIO routines:BIO_new_file:no such file:../crypto/bio/bss_file.c:75:\n",
+   "ok": true
+  },
+  {
+   "id": "a-dynamic-module-is-loaded-once-and-nginx-runs",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "0\n0\ninactive\n",
+   "stderr": "ls: cannot access '/etc/nginx/modules-enabled/': No such file or directory\ngrep: /etc/nginx/nginx.conf: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-server-header-names-no-version",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "no-ad-hoc-file-by-default",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "absent\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "nginx-comes-from-the-ubuntu-archive",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\nnot from the Ubuntu archive\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "nds\u001b[0m\nRUN1_EVENTS: 10 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795587177'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.51 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::nginx_base: 19 concrete resources (+0 defined-type instances)\n  Package[nginx]\n  File[/etc/nginx]\n  File[/etc/nginx/conf.stream.d]\n  File[/etc/nginx/conf.d]\n  File[/etc/nginx/conf.mail.d]\n  File[/etc/nginx/snippets]\n  File[/etc/nginx/modules-enabled]\n  File[/var/log/nginx]\n  File[/etc/nginx/sites-available]\n  File[/etc/nginx/sites-enabled]\n  File[/etc/nginx/streams-enabled]\n  File[/etc/nginx/streams-available]\n  File[/etc/nginx/nginx.conf]\n  File[/etc/nginx/mime.types]\n  File[/tmp/nginx.d]\n  File[/tmp/nginx.mail.d]\n  Service[nginx]\n  File[/etc/nginx/conf.d/puppet_infrastructure.conf]\n  Exec[Generate a new 2048-bit Diffie-Hellman group]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP nginx_base 532136eab972\n"
+ },
+ "applied": [
+  {
+   "id": "nginx-config-valid",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\n",
+   "stderr": ""
+  },
+  {
+   "id": "workers-auto-and-server-tokens-off",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "log-formats-main-and-compact",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "dh-group-2048-bits-not-world-readable",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "640\nDH Parameters: (2048 bit)\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-server-header-names-no-version",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Server: nginx\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the header's expected value is checked against nginx -v's version string instead (which server_tokens off must keep out)",
+    "rc": 0,
+    "passed": false,
+    "stdout": "Server: nginx/1.24.0 (Ubuntu)\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "no-ad-hoc-file-by-default",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "absent\n",
+   "stderr": ""
+  },
+  {
+   "id": "nginx-comes-from-the-ubuntu-archive",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\nfrom the Ubuntu archive\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-dynamic-module-is-loaded-once-and-nginx-runs",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n1\nactive\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs the Ubuntu dynamic-module package libnginx-mod-stream (it enables /etc/nginx/modules-enabled/50-mod-stream.conf) and restarts nginx",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "2a031b11-a6d1-4be9-bfb4-a7e081d1e61a",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "2a031b11-a6d1-4be9-bfb4-a7e081d1e61a",
+   "fresh": true
+  }
+ },
+ "variants": {
+  "stream": {
+   "name": "stream",
+   "node": "ubuntu",
+   "params": "stream",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "snapshot": "P8NODE_BASELINE_GREEN_v5",
+     "boot_id": "6dcef194-65e4-4cca-a1ac-062f0bec30c4",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "6dcef194-65e4-4cca-a1ac-062f0bec30c4",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "with-stream-enabled-the-stream-block-logs-nothing",
+     "control": "negative",
+     "rc": 4,
+     "passed": false,
+     "stdout": "0\ninactive\n",
+     "stderr": "awk: fatal: cannot open file `/etc/nginx/nginx.conf' for reading: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "de NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795587310'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.44 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::nginx_base: 19 concrete resources (+0 defined-type instances)\n  Package[nginx]\n  File[/etc/nginx]\n  File[/etc/nginx/conf.stream.d]\n  File[/etc/nginx/conf.d]\n  File[/etc/nginx/conf.mail.d]\n  File[/etc/nginx/snippets]\n  File[/etc/nginx/modules-enabled]\n  File[/var/log/nginx]\n  File[/etc/nginx/sites-available]\n  File[/etc/nginx/sites-enabled]\n  File[/etc/nginx/streams-enabled]\n  File[/etc/nginx/streams-available]\n  File[/etc/nginx/nginx.conf]\n  File[/etc/nginx/mime.types]\n  File[/tmp/nginx.d]\n  File[/tmp/nginx.mail.d]\n  Service[nginx]\n  File[/etc/nginx/conf.d/puppet_infrastructure.conf]\n  Exec[Generate a new 2048-bit Diffie-Hellman group]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant stream; never a Phase 1 record)\n"
+   },
+   "applied": [
+    {
+     "id": "with-stream-enabled-the-stream-block-logs-nothing",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "access_log off;\n1\nactive\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  },
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "snapshot": "P8LAB_RHEL9_BASELINE_v3",
+     "boot_id": "a3636826-6b87-4107-b181-f9b5f7f87b63",
+     "apt_mirror": null,
+     "boot_id_at_end": "a3636826-6b87-4107-b181-f9b5f7f87b63",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "on-redhat-nginx-comes-from-the-distribution",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "0\npackage nginx is not installed\n",
+     "stderr": "",
+     "ok": true
+    },
+    {
+     "id": "on-redhat-nginx-runs-valid-with-modules-enabled-once",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "0\ninactive\n",
+     "stderr": "grep: /etc/nginx/nginx.conf: No such file or directory\n",
+     "ok": true
+    },
+    {
+     "id": "on-redhat-workers-tokens-and-log-formats",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "",
+     "stderr": "grep: /etc/nginx/nginx.conf: No such file or directory\ngrep: /etc/nginx/nginx.conf: No such file or directory\ngrep: /etc/nginx/nginx.conf: No such file or directory\ngrep: /etc/nginx/nginx.conf: No such file or directory\n",
+     "ok": true
+    },
+    {
+     "id": "on-redhat-dh-group-2048-bits-not-world-readable",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "",
+     "stderr": "stat: cannot statx '/etc/nginx/dhparams.pem': No such file or directory\nCan't open \"/etc/nginx/dhparams.pem\" for reading, No such file or directory\n00EEC9C8227F0000:error:80000002:system library:BIO_new_file:No such file or directory:crypto/bio/bss_file.c:67:calling fopen(/etc/nginx/dhparams.pem, r)\n00EEC9C8227F0000:error:10000080:BIO routines:BIO_new_file:no such file:crypto/bio/bss_file.c:75:\n",
+     "ok": true
+    },
+    {
+     "id": "on-redhat-the-server-header-names-no-version",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "",
+     "stderr": "",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "te is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795587546'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.26 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::nginx_base: 19 concrete resources (+0 defined-type instances)\n  Package[nginx]\n  File[/etc/nginx]\n  File[/etc/nginx/conf.stream.d]\n  File[/etc/nginx/conf.d]\n  File[/etc/nginx/conf.mail.d]\n  File[/etc/nginx/snippets]\n  File[/etc/nginx/modules-enabled]\n  File[/var/log/nginx]\n  File[/etc/nginx/sites-available]\n  File[/etc/nginx/sites-enabled]\n  File[/etc/nginx/streams-enabled]\n  File[/etc/nginx/streams-available]\n  File[/etc/nginx/nginx.conf]\n  File[/etc/nginx/mime.types]\n  File[/tmp/nginx.d]\n  File[/tmp/nginx.mail.d]\n  Service[nginx]\n  File[/etc/nginx/conf.d/puppet_infrastructure.conf]\n  Exec[Generate a new 2048-bit Diffie-Hellman group]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP nginx_base 532136eab972\n==> required_external apt not declared: Debian-only, the target is RedHat\n==> required_external apt not declared: Debian-only, the target is RedHat\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-nginx-comes-from-the-distribution",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "0\nRed Hat, Inc.\n",
+     "stderr": ""
+    },
+    {
+     "id": "on-redhat-nginx-runs-valid-with-modules-enabled-once",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "1\nactive\n1\n",
+     "stderr": ""
+    },
+    {
+     "id": "on-redhat-workers-tokens-and-log-formats",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "1\n1\n1\n1\n",
+     "stderr": ""
+    },
+    {
+     "id": "on-redhat-dh-group-2048-bits-not-world-readable",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "640\nDH Parameters: (2048 bit)\n",
+     "stderr": ""
+    },
+    {
+     "id": "on-redhat-the-server-header-names-no-version",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "Server: nginx\n",
+     "stderr": "",
+     "mutating": true,
+     "action": {
+      "mutates": "adds /etc/nginx/conf.d/p8test-header.conf (a server on 127.0.0.1:81 answering 204) and reloads nginx",
+      "rc": 0,
+      "stdout": "",
+      "stderr": ""
+     }
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  },
+  "custom": {
+   "name": "custom",
+   "node": "ubuntu",
+   "params": "custom",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "snapshot": "P8NODE_BASELINE_GREEN_v5",
+     "boot_id": "3ff9799f-1616-475f-8d42-632de2b81c4d",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "3ff9799f-1616-475f-8d42-632de2b81c4d",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "my-configs-and-ad-hoc-lines-reach-nginx",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "",
+     "stderr": "cat: /etc/nginx/conf.d/puppet_infrastructure.conf: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "de NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795587678'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.47 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::nginx_base: 19 concrete resources (+0 defined-type instances)\n  Package[nginx]\n  File[/etc/nginx]\n  File[/etc/nginx/conf.stream.d]\n  File[/etc/nginx/conf.d]\n  File[/etc/nginx/conf.mail.d]\n  File[/etc/nginx/snippets]\n  File[/etc/nginx/modules-enabled]\n  File[/var/log/nginx]\n  File[/etc/nginx/sites-available]\n  File[/etc/nginx/sites-enabled]\n  File[/etc/nginx/streams-enabled]\n  File[/etc/nginx/streams-available]\n  File[/etc/nginx/nginx.conf]\n  File[/etc/nginx/mime.types]\n  File[/tmp/nginx.d]\n  File[/tmp/nginx.mail.d]\n  Service[nginx]\n  File[/etc/nginx/conf.d/puppet_infrastructure.conf]\n  Exec[Generate a new 2048-bit Diffie-Hellman group]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant custom; never a Phase 1 record)\n"
+   },
+   "applied": [
+    {
+     "id": "my-configs-and-ad-hoc-lines-reach-nginx",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "client_max_body_size 21m;\nclient_max_body_size 21m;\nworker_connections 2048;\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "nginx comes from the distribution's archive (manage_repo false), with no nginx.org repository added",
+   "checks": [
+    "nginx-comes-from-the-ubuntu-archive"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "nginx is installed and runs with a configuration that passes nginx -t, dynamic modules loaded once",
+   "checks": [
+    "nginx-config-valid",
+    "a-dynamic-module-is-loaded-once-and-nginx-runs"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "worker processes are auto, and nginx sends no version in its Server header (server_tokens off)",
+   "checks": [
+    "workers-auto-and-server-tokens-off",
+    "the-server-header-names-no-version"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the main and compact log formats are defined for the servers to use",
+   "checks": [
+    "log-formats-main-and-compact"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the Diffie-Hellman group /etc/nginx/dhparams.pem has dh_params_bits (2048) bits and is readable by owner and group only",
+   "checks": [
+    "dh-group-2048-bits-not-world-readable"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "with no ad-hoc configuration given, the ad-hoc file is absent",
+   "checks": [
+    "no-ad-hoc-file-by-default"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the stream block logs nothing (stream_access_log off, HQ 2026-11-18 ruling A1, a module-compatibility change in class_rulings.txt)",
+   "checks": [
+    "with-stream-enabled-the-stream-block-logs-nothing"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "ad-hoc configuration and my_configs overrides",
+   "checks": [
+    "my-configs-and-ad-hoc-lines-reach-nginx"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "additional log formats and another DH size",
+   "uncovered": {
+    "why": "parameter variants no production node uses (the fixture keeps the default 2048 bits and the two formats)",
+    "accepted_gap": [
+     "log_formats_additional",
+     "dh_params_bits"
+    ],
+    "evidence": "diagnosis/fleet_variant_usage.md (2026-11-23): no production node statement sets either, and no class of the repository sets them on nginx_base"
+   }
+  },
+  {
+   "outcome": "on RedHat (the class's non-Ubuntu branch: class nginx without the apt_update require, the modules-enabled include kept on every OS) nginx comes from the distribution and runs with a valid configuration that includes /etc/nginx/modules-enabled once, with auto workers, server_tokens off and no version in the Server header, the two log formats and the 2048-bit DH group kept private",
+   "checks": [
+    "on-redhat-nginx-comes-from-the-distribution",
+    "on-redhat-nginx-runs-valid-with-modules-enabled-once",
+    "on-redhat-workers-tokens-and-log-formats",
+    "on-redhat-dh-group-2048-bits-not-world-readable",
+    "on-redhat-the-server-header-names-no-version"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 596.8
+}
