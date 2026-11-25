@@ -23,6 +23,12 @@
 # ('client=unknown[...], sasl_method=PLAIN, sasl_username=p8test-relay').
 # 2026-11-23 (the sweep, HQ 2026-11-23 ruling 1): the RedHat branch is a check in the variant run `rhel` (rhel9); the
 # per-node Hiera variants name what is missing.
+# Correction round 1 of the swept set (2026-11-25, review 20261125T074313Z): the per-node Hiera row was uncovered for a
+# false reason. The keys are looked up under the node's certname, and the lab Hiera fixture (master_fixtures.sh) now
+# gives p8lab-rhel9 non-default values for all four, so the variant run `rhel` checks that they reach postfix.
+# 2026-11-25 authoring correction (run 20261125T075907Z-author): the new check expected mydestination to be the Hiera
+# value alone; the template appends ', localhost.localdomain, , localhost' to it (main.cf:34), as the base check's
+# expectation already shows. The node's value was as the baseline makes it.
 class: postfix_smtp_node
 baseline: release-0.9.10 (cf477c6)
 fixture: defaults
@@ -50,19 +56,16 @@ outcomes:
     from: manifests/postfix_smtp_node.pp:14, 78-85; templates/postfix_smtp_node/aliases
     checks: [root-alias-rendered-from-default]
   - outcome: a non-default root alias, mynetworks, mydestination or size limit (per-node Hiera keys)
-    from: manifests/postfix_smtp_node.pp:8-14
-    uncovered:
-      why: these come from per-node Hiera keys, which a variant run does not vary (the lab Hiera is the same for every run)
-      lifted_by: "capability: a Hiera variant per run (phase3.py variants vary the node kind and the class's params fixture)"
-      evidence: >-
-        manifests/postfix_smtp_node.pp:8-14 reads them with lookup(); phase3.py variant_problems (2026-11-23): a variant
-        takes node and/or params only; fleet_variant_usage.md does not read the fleet's Hiera data
+    from: manifests/postfix_smtp_node.pp:8-14; templates/postfix_smtp_node/aliases
+    checks: [on-redhat-the-per-node-values-reach-postfix]
   - outcome: the RedHat branch (cyrus-sasl-plain, /etc/ssl/certs/ca-bundle.crt)
     from: manifests/postfix_smtp_node.pp:24-28
     checks: [on-redhat-sasl-plain-and-the-ca-bundle]
 variants:
   - name: rhel
-    why: the RedHat branch (cyrus-sasl-plain, /etc/ssl/certs/ca-bundle.crt), on the rhel9 node (the lab Hiera has its relay keys)
+    why: >-
+      the RedHat branch (cyrus-sasl-plain, /etc/ssl/certs/ca-bundle.crt), on the rhel9 node (the lab Hiera has its relay
+      keys, and non-default per-node values for the root alias, mynetworks, mydestination and the size limit)
     node: rhel9
 checks:
   - id: effective-relay-config
@@ -297,3 +300,22 @@ checks:
       postconf -h smtp_tls_CAfile
       systemctl is-active postfix
     expect: {rc: 0, stdout: "\\Acyrus-sasl-plain\\n/etc/ssl/certs/ca-bundle\\.crt\\nactive\\n\\Z"}
+
+  - id: on-redhat-the-per-node-values-reach-postfix
+    variant: rhel
+    what: >-
+      the node's own Hiera values (p8lab-rhel9::postfix_smtp_node::*, lab fixture) override the defaults: mynetworks
+      127.0.0.0/8 192.0.2.0/24, mydestination p8test-dest.invalid, localhost (the template appends its own
+      localhost.localdomain, , localhost), size limit 20480000, and root's alias
+      p8test-admin@p8test.invalid in /etc/aliases
+    control: negative
+    derived_from:
+      - {path: manifests/postfix_smtp_node.pp, lines: "9", text: "$mynetworks = lookup({ name => \"${clientcert}::postfix_smtp_node::mynetworks\", default_value => '127.0.0.0/8' })"}
+      - {path: manifests/postfix_smtp_node.pp, lines: "10-13", text: "\"${clientcert}::postfix_smtp_node::message_size_limit\""}
+      - {path: manifests/postfix_smtp_node.pp, lines: "14", text: "$root_email_alias = lookup({ name => \"${clientcert}::postfix_smtp_node::root_email_alias\", default_value => '' })"}
+      - {path: templates/postfix_smtp_node/aliases, lines: "2-4", text: "root: <%=@root_email_alias%>"}
+      - {path: templates/postfix_smtp_node/main.cf, lines: "34", text: "mydestination = <%= @mydestination %>, localhost.localdomain, , localhost"}
+    probe: |
+      postconf -h mynetworks mydestination message_size_limit
+      grep '^root:' /etc/aliases
+    expect: {rc: 0, stdout: "\\A127\\.0\\.0\\.0/8 192\\.0\\.2\\.0/24\\np8test-dest\\.invalid, localhost, localhost\\.localdomain, , localhost\\n20480000\\nroot: p8test-admin@p8test\\.invalid\\n\\Z"}
