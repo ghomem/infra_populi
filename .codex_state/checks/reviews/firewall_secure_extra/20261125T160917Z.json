@@ -1,0 +1,46 @@
+{
+ "class": "firewall_secure_extra",
+ "at": "20261125T160917Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "a-whitelisted-source-is-held-to-the-new-connection-rate @ manifests/firewall_secure_extra.pp:230-250: rule 522 in WHITELIST_SIDE_CHAIN accepts ctstate NEW at ${ddos_limit_per_time_unit}/${ddos_limit_time_unit} (fixture 2/sec, iptables default burst 5) and 523 drops the rest; the peer's +100 address is the fixture's ip_whitelist entry (192.168.56.124), marked by 131313 and sent to the side chain by 521; 20 attempts 0.1 s apart, each closed within 80 ms so the connlimit of 3 is not reached, give at least 5 and at most 5 + 2/s of the measured duration + 1, which is what the lines produce (my run: in 8 of 20 in 2031 ms, limited)",
+  "held-ssh-connections-stop-at-eight @ manifests/firewall_secure_extra.pp:130: $indilim='8' is rule 112's connlimit_above (line 149) in LIMIT_INDIVIDUAL, reached via rule 110 by new SYNs from a source on no list; 10 held connections 4 s apart stay under the overall 20/min (116) and the recent 15/min (114), so 8 established and the 9th and 10th dropped is the code's result; the follow-up counter check attributes the drops to 112 only (my run: pass)",
+  "an-ssh-burst-is-cut-at-the-overall-limit @ manifests/firewall_secure_extra.pp:132: $overlim_minute='20' feeds rule 116 (LIMIT_OVERALL, limit 20/min, iptables default burst 5, accept) followed by 117 drop (153-154); 20 simultaneous SYNs from the unlisted peer address after a 61 s wait get 5 in and 15 dropped, the expected 'dropped 15 / in 5' (my run: pass)",
+  "finding the-rst-limit-dropped-the-third: expected rule 519 to accept 2 and 520 to drop 1 of 3 RSTs sent at once; the node counted 'accepted by the limit: 0, dropped beyond it: 0' (the in-connection RSTs are accepted by rule 003 RELATED,ESTABLISHED before 519/520 see them, the known finding ruled no fix in HQ batch-11 ruling 2); every other check of the base run and both variants passed, every negative control failed on the clean node",
+  "purpose gap: Purpose (header lines 1-6 and code) is stated correctly. Covered as behaviour in the base run (reviewer run 20261125T155458Z): INPUT/FORWARD drop with the whitelist SSH rules, loopback accepted, the service reached only from the whitelisted source through the side chain, the per-source connection limit (3 held of 5) and new-connection rate on it, the blacklist dropping ICMP and SSH while an unlisted source is unaffected, ICMP echo rate limit, bogus/invalid/not-SYN packets counted by 501/502, low-MSS SYN dropped by 503, the SSH burst/connlimit/recent limits with rule counters, purge of an unmanaged rule and flush script plus rebuild at the next agent run. Rule 002, rule 518 (fragments), geoip and internal_forward are uncovered with measured evidence and capability lifts: honest. GAP: the two variant outcomes are tested as rule text only, the same deficiency the firewall_secure review of 2026-11-25 failed. (1) plain (strict true, anti_ddos false; 37 production node statements set strict): the check greps for a '555 open service ports' rule, no 52x/110 rules and policy DROP; no check shows that in strict mode an SSH connection from an unlisted source is dropped while a listed one gets in (lines 135-143: nothing jumps to LIMIT_OVERALL, so unlisted SSH falls to the INPUT drop policy), nor that port 8888 is actually reachable from another source (lines 306-312). (2) ddosonly (anti_ddos without ip_filter, node_base's composite): the check counts the 521/522/523 rules on --dport 8888 in INPUT; no check shows any source held to the connection limit or rate (lines 269-303). Variant runs have no peer, but the lab can exercise both on the node from a network namespace behind a veth pair, as firewall_secure's approved strict-mode check does; the rows neither test this nor list it uncovered with evidence. Minor, not gap-deciding: without anti_ddos rule '000 accept all icmp' (lines 100-105) has no outcome row, and rule 003 (RELATED,ESTABLISHED) has none (exercised implicitly)."
+ ],
+ "review_s": 859.2,
+ "check_file_sha256": "e802cb010a55e1fc5dfac2b1bf5323984d63522d93b4319addc8fc8975a5e343",
+ "content_sha256": "e802cb010a55e1fc5dfac2b1bf5323984d63522d93b4319addc8fc8975a5e343",
+ "reviewer_result": "20261125T155458Z-reviewer",
+ "author_result": "20261125T153912Z-author",
+ "findings": [
+  "the-rst-limit-dropped-the-third"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "9e06f2b7-51ff-465f-a5a3-512064496183",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "9e06f2b7-51ff-465f-a5a3-512064496183",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "boot_id": "665fb6d0-88f6-4293-a157-6cbbf239e1cd",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "665fb6d0-88f6-4293-a157-6cbbf239e1cd",
+   "fresh": true
+  }
+ }
+}
