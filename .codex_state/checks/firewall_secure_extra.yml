@@ -112,7 +112,7 @@ outcomes:
         nodes.yml (2026-11-23): every node kind has NIC1 NAT and NIC2 on vboxnet0 only; no internal network exists
   - outcome: with anti_ddos but without ip_filter, every source is held to the per-source connection and rate limits on the listed services in INPUT
     from: manifests/firewall_secure_extra.pp:269-303
-    checks: [anti-ddos-without-ip-filter-limits-every-source, ddosonly-any-source-is-held-to-the-connection-limit]
+    checks: [anti-ddos-without-ip-filter-limits-every-source, ddosonly-any-source-is-held-to-the-connection-limit, ddosonly-any-source-is-held-to-the-new-connection-rate]
   - outcome: without anti_ddos the listed service ports are simply opened, and strict mode admits only listed SSH sources
     from: manifests/firewall_secure_extra.pp:139-143, 306-312
     checks: [without-anti-ddos-the-port-is-opened-and-ssh-is-strict, plain-strict-ssh-and-the-open-port-from-a-namespace]
@@ -121,6 +121,8 @@ outcomes:
 # (node side 192.0.2.1; RFC 5737 addresses), as firewall_secure's strict check does: in `plain` (acl now also lists
 # 192.0.2.3) a listed source reaches SSH, an unlisted one is dropped and still reaches the opened service port; in
 # `ddosonly` held connections from any source stop at ddos_limit.
+# Correction round 2 of the swept set (2026-11-25, review 20261125T164112Z): ddosonly's new-connection rate was still
+# rule text; a second namespace check makes the base run's 20 paced attempts from 192.0.2.2.
 variants:
   - name: ddosonly
     why: anti_ddos without ip_filter, which node_base passes through from its own parameters (a composite)
@@ -658,6 +660,39 @@ checks:
     effect: |
       cat /run/p8test-fwx/ns-held.txt
     expect: {rc: 0, stdout: "\\A3\\n\\Z"}
+
+  - id: ddosonly-any-source-is-held-to-the-new-connection-rate
+    variant: ddosonly
+    what: >-
+      with anti_ddos and no ip_filter, 20 new connections to the service from a source on no list (192.0.2.2, the
+      namespace of the previous check), one every 0.1 s: the rate limit (2 a second, iptables' default burst 5) lets in
+      at least 5 and at most 5 plus 2 per second of the measured duration (rounded up) plus 1, and drops the rest
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "269-303", text: "limit   => \"${ddos_limit_per_time_unit}/${ddos_limit_time_unit}\","}
+    mutates: >-
+      after 3 s (the limit refills), 20 TCP connection attempts from 192.0.2.2 in the namespace p8fwx to 192.0.2.1:8888,
+      one every 0.1 s, each closed after at most 80 ms; the count and duration go to /run/p8test-fwx/ns-rate.txt
+    probe: |
+      sleep 3
+      ip netns exec p8fwx python3 - > /run/p8test-fwx/ns-rate.txt <<'PY'
+      import socket, select, time
+      got, t0 = 0, time.monotonic()
+      for _ in range(20):
+          start = time.monotonic()
+          s = socket.socket(); s.setblocking(False); s.bind(("192.0.2.2", 0)); s.connect_ex(("192.0.2.1", 8888))
+          _, w, _ = select.select([], [s], [], 0.08)
+          if w and s.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR) == 0:
+              got += 1
+          s.close()
+          time.sleep(max(0, 0.1 - (time.monotonic() - start)))
+      print(f"in {got} of 20 in {int((time.monotonic() - t0) * 1000)} ms")
+      PY
+    effect: |
+      cat /run/p8test-fwx/ns-rate.txt
+      read _ n _ _ _ t _ < /run/p8test-fwx/ns-rate.txt
+      [ -n "$n" ] && [ -n "$t" ] && [ "$n" -ge 5 ] && [ "$n" -lt 20 ] && [ "$n" -le $(( 5 + 2 * ((t + 999) / 1000) + 1 )) ] && echo limited || echo "not limited"
+    expect: {rc: 0, stdout: "\\Ain \\d+ of 20 in \\d+ ms\\nlimited\\n\\Z"}
 
   - id: plain-strict-ssh-and-the-open-port-from-a-namespace
     variant: plain
