@@ -1,0 +1,43 @@
+{
+ "class": "firewall_secure",
+ "at": "20261125T153709Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "another-host-gets-icmp-and-ssh-but-not-other-ports @ manifests/firewall_secure.pp:49-50: the INPUT chain's policy drop means a port no rule allows (8888, listening on 0.0.0.0) is dropped for the unlisted peer, while ICMP (rule 000) and the first SSH connect (110 -> LIMIT_INDIVIDUAL -> 116, within the burst) get in; probe and expect match the lines under the default params",
+  "strict-mode-admits-a-listed-source-and-drops-an-unlisted-one @ manifests/firewall_secure.pp:29-34: $mylist = whitelist + acl; the strict variant's acl lists 192.0.2.3, so rule '100 SSH whitelist 192.0.2.3' accepts SSH from it, and 192.0.2.2 is on no list; the expectation '192.0.2.3 in / 192.0.2.2 dropped' is what the lines produce",
+  "strict-mode-admits-a-listed-source-and-drops-an-unlisted-one @ manifests/firewall_secure.pp:86-90: with strict true only LIMIT_OVERALL + 117 are declared and nothing jumps to them (no 110), so a new SSH connection from an unlisted source falls to the INPUT drop policy; the same namespace and nc mechanism admits the listed source, so the drop is the rule set's verdict, not a broken command; clean phase (both admitted) fails as a negative control must",
+  "purpose covered: Purpose (manifest header lines 1-3 and code) is stated correctly. Reviewer run 20261125T152512Z: base + strict + keep variants ALL_PASS, every control failed on the clean node. Behaviour tested: INPUT/FORWARD drop and OUTPUT accept; a non-allowed port dropped from another host; ICMP and SSH admitted; loopback reaches a local service; whitelist rules from Hiera + acl and a whitelisted source taking 20 parallel connects unlimited; the overall limit (5 of a 20-burst), the 8-held per-host connlimit (with counters showing only rule 112 dropped) and the 15-per-minute recent limit; purge of an unmanaged rule at the next agent run; flush script installed, clearing every rule, and the firewall rebuilt by the next run; rules saved to rules.v4 with netfilter-persistent enabled. The previous gap is closed: in the strict variant a listed source (192.0.2.3 in the acl) reaches SSH and an unlisted one (192.0.2.2) is dropped, from a network namespace; strict_purge false + ignore_patterns keeps the matching rule and purges the other. Left out: rule 002 (127.0.0.0/8 to a non-lo interface), uncovered because the kernel drops a loopback destination arriving from another interface before INPUT (martian destination), so the lab cannot exercise it; the row's evidence and capability lift are consistent with that. ssh_port is untested at a non-default value, and no production node statement sets it (fleet_variant_usage lists acl, strict, strict_purge, ignore_patterns only)."
+ ],
+ "review_s": 717.8,
+ "check_file_sha256": "87cc9a11efcd2582878b427542d14e47975e654d09aa76af958e3f9481e6a094",
+ "content_sha256": "87cc9a11efcd2582878b427542d14e47975e654d09aa76af958e3f9481e6a094",
+ "reviewer_result": "20261125T152512Z-reviewer",
+ "author_result": "20261125T151147Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "0a1d19be-18cd-44e9-92e2-7fc6111f61a6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "0a1d19be-18cd-44e9-92e2-7fc6111f61a6",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "boot_id": "a111a7f4-d2e0-4bef-928c-7b0d53e768f0",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "a111a7f4-d2e0-4bef-928c-7b0d53e768f0",
+   "fresh": true
+  }
+ }
+}
