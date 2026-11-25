@@ -1,0 +1,35 @@
+{
+ "class": "ssh_secure",
+ "at": "20261125T134057Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "on-redhat-the-service-and-the-admin-group: baseline :15-19 sets ssh_service 'sshd' and admin_group 'wheel' on RedHat, and :79 builds AllowGroups as \"${admin_group} naemon ${othergroups}\"; on the rhel9 variant node the probe checks systemctl is-active sshd and the first two sshd -T allowgroups entries wheel, naemon (applied: pass; clean: fail)",
+  "kex-only-dh-gex-sha256: baseline :10 defaults kex_algorithm to diffie-hellman-group-exchange-sha256, and :59 passes it as KexAlgorithms; neither params fixture (client_alive_interval 30) sets it, so sshd -T must print exactly that one algorithm (applied: pass; clean: fail)",
+  "with-password-authentication-a-password-logs-in: baseline :43-47 maps password_authentication true to 'yes', which :66 passes as PasswordAuthentication; the password variant's fixture sets password_authentication true (as node_base_domain_desktop.pp:10 does). The probe reads sshd -T passwordauthentication yes, logs in password-only as p8testpw (in ssh_in, so AllowGroups :79 admits it) with the right password, and has the wrong one refused. Observed: 'passwordauthentication yes / p8testpw / 1'. The wrong-password login serves as the built-in mismatch",
+  "purpose covered: The purpose (hardened sshd: restricted kex/ciphers/MACs and login rules) matches the class header comment and baseline :55-80. The checks test it as behaviour. Key exchange, cipher and MAC negotiation are refused for out-of-list algorithms, with mismatch controls showing the in-list ones negotiate. Key logins succeed for ssh_in and the Hiera othergroups group and are refused outside AllowGroups. Password logins are refused, and root is refused by PermitRootLogin (sshd logs ROOT LOGIN REFUSED). An idle session is ended 29-45 s after the 30 s fixture interval (local change #8, OpenSSH 9.6). The rest is checked too: the moduli file content and mode, the host key order, the other hardening values (as an invariant), the ssh_in group, and the RedHat branch on rhel9 (service sshd, wheel; idle not ended on OpenSSH 8.7, as approved). The password_authentication true variant node_base_domain_desktop sets is a real password login, right and wrong. The checks leave out three things. (1) Protocol 2 and UsePrivilegeSeparation: correctly uncovered, since both are ignored by OpenSSH 9.6/8.7 and the run's stderr shows 'Deprecated option UsePrivilegeSeparation'. (2) root_login, port, host_keys, kex_algorithm, ciphers and macs variants: an accepted gap. fleet_variant_usage.md has no row for any ssh_secure parameter, nor for node_base's ssh_port, ssh_allow_root_login, host_keys, kex_algorithm, ciphers or macs, which node_base.pp:59 forwards. These are true parameter variants; the defaults are what the checks test. (3) client_alive_interval at its 14400 default: the 30 s fixture exercises the same interpolation, as the header explains. My reviewer run was ALL_PASS: base, password and rhel, with the clean phase valid"
+ ],
+ "review_s": 736.4,
+ "check_file_sha256": "9071dc1920f061fd2ea8d4cfcc338f0e33cbc9c8979d674fefb252269d96eba5",
+ "content_sha256": "9071dc1920f061fd2ea8d4cfcc338f0e33cbc9c8979d674fefb252269d96eba5",
+ "reviewer_result": "20261125T132841Z-reviewer",
+ "author_result": "20261125T131110Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "7528eecf-b987-4a42-ba9e-1c896dd1b9a5",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "7528eecf-b987-4a42-ba9e-1c896dd1b9a5",
+   "fresh": true
+  }
+ }
+}
