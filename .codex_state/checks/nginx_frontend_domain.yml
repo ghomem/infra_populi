@@ -16,6 +16,10 @@
 # broke its own single quotes; the resolver line tested nothing dynamic (the resolver is rendered in every variant,
 # baseline :710) and gave way to proxy_locations_others_config (production sets it; the fixture lacked it) and www_fix_redirect.
 # The combination is Phase 5 backlog #14.
+# Correction round 1 of the swept set (2026-11-25, review 20261125T095356Z, purpose): decorate_naked, which production
+# sets, was untested, and the render line for the www server matched whatever it is (the HTTP www server is always
+# there). The line is removed and the prod variant tests decorate_naked as the naked domain's 301 to www over HTTP and
+# HTTPS. The parameters no production node sets that the table left out join the accepted-gap row.
 class: nginx_frontend_domain
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -35,14 +39,14 @@ outcomes:
   - outcome: only TLS 1.3 is accepted (the default protocol list)
     from: manifests/nginx_frontend_domain.pp:92, 311, 695
     checks: [only-tls-1-3-is-accepted]
-  - outcome: the parameters production sets (Let's Encrypt, proxy timeouts, ad-hoc location config, backend headers, protocols, the www server, a pass suffix, other locations, the www redirect fix, dynamic DNS, security headers)
+  - outcome: the parameters production sets (Let's Encrypt, proxy timeouts, ad-hoc location config, backend headers, protocols, the naked domain decorated to www, a pass suffix, other locations, the www redirect fix, dynamic DNS, security headers)
     from: manifests/nginx_frontend_domain.pp:1-140 (parameters)
-    checks: [production-parameters-render, dynamic-dns-proxies-through-the-variable]
-  - outcome: the parameters no production node sets (servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve)
+    checks: [production-parameters-render, the-naked-domain-redirects-to-www, dynamic-dns-proxies-through-the-variable]
+  - outcome: the parameters no production node sets (servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, ip_whitelist, proxy_locations_ignore_headers, redirect_http_www_to_https_www_create, server_https_www_create, redirects_external_prevented, redirects_external_location, redirects_external_whitelisted, redirects_external_prevented_adhoc_config, use_compact_log_format, resolver)
     from: manifests/nginx_frontend_domain.pp:1-140 (parameters)
     uncovered:
       why: parameter variants no production node uses
-      accepted_gap: [servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve]
+      accepted_gap: [servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, ip_whitelist, proxy_locations_ignore_headers, redirect_http_www_to_https_www_create, server_https_www_create, redirects_external_prevented, redirects_external_location, redirects_external_whitelisted, redirects_external_prevented_adhoc_config, use_compact_log_format, resolver]
       evidence: >-
         diagnosis/fleet_variant_usage.md (2026-11-23): no production node statement sets any of these on nginx_frontend_domain, and no
         class of the repository sets them on it
@@ -150,14 +154,32 @@ checks:
       printf '%s\n' "$T" | grep -qE 'add_header X-P8test-Adhoc on' && echo 'ad-hoc location config: rendered' || echo 'ad-hoc location config: missing'
       printf '%s\n' "$T" | grep -qE 'proxy_set_header +X-P8test-Set' && echo 'backend header: rendered' || echo 'backend header: missing'
       printf '%s\n' "$T" | grep -qE 'ssl_protocols +TLSv1\.2 TLSv1\.3' && echo 'protocols: rendered' || echo 'protocols: missing'
-      printf '%s\n' "$T" | grep -qE 'server_name +www\.p8test\.example\.com' && echo 'www server: rendered' || echo 'www server: missing'
       printf '%s\n' "$T" | grep -qE 'proxy_pass .*/p8test-suffix' && echo 'pass suffix: rendered' || echo 'pass suffix: missing'
       printf '%s\n' "$T" | grep -qE 'location +/p8test-other/' && echo 'other location config: rendered' || echo 'other location config: missing'
       printf '%s\n' "$T" | grep -qE 'add_header X-P8test-Other on' && echo 'other location line: rendered' || echo 'other location line: missing'
       printf '%s\n' "$T" | grep -qE 'proxy_redirect +http://\$host/ https://\$host/' && echo 'www fix redirect: rendered' || echo 'www fix redirect: missing'
       printf '%s\n' "$T" | grep -qE 'X-Frame-Options.*DENY' && echo 'security headers: rendered' || echo 'security headers: missing'
-    expect: {rc: 0, stdout: "\\ALet's Encrypt bundle: rendered\\nread timeout: rendered\\nconnect timeout: rendered\\nsend timeout: rendered\\nad-hoc location config: rendered\\nbackend header: rendered\\nprotocols: rendered\\nwww server: rendered\\npass suffix: rendered\\nother location config: rendered\\nother location line: rendered\\nwww fix redirect: rendered\\nsecurity headers: rendered\\n\\Z"}
+    expect: {rc: 0, stdout: "\\ALet's Encrypt bundle: rendered\\nread timeout: rendered\\nconnect timeout: rendered\\nsend timeout: rendered\\nad-hoc location config: rendered\\nbackend header: rendered\\nprotocols: rendered\\npass suffix: rendered\\nother location config: rendered\\nother location line: rendered\\nwww fix redirect: rendered\\nsecurity headers: rendered\\n\\Z"}
 
+
+  - id: the-naked-domain-redirects-to-www
+    variant: prod
+    what: >-
+      with decorate_naked true the naked domain gets 301 to https://www.<domain> with its path, over HTTP (the naked
+      HTTP server) and over HTTPS (the separate https_<domain> server)
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_frontend_domain.pp, lines: "416-417", text: "$naked_str = \"301 https://www.${domain}\\$request_uri\""}
+      - {path: manifests/nginx_frontend_domain.pp, lines: "494-519", text: "nginx::resource::server { \"https_${domain}\":"}
+    probe: |
+      curl -s -o /dev/null --max-time 5 --resolve p8test.example.com:80:127.0.0.1 -w 'naked http %{http_code} %{redirect_url}\n' 'http://p8test.example.com/p8test/path?q=1'
+      curl -s -k -o /dev/null --max-time 5 --resolve p8test.example.com:443:127.0.0.1 -w 'naked https %{http_code} %{redirect_url}\n' 'https://p8test.example.com/p8test/path?q=1'
+    mismatch:
+      varies: the name requested over HTTPS (www, which the domain's server holds and proxies, in place of the naked domain)
+      probe: |
+        curl -s -o /dev/null --max-time 5 --resolve p8test.example.com:80:127.0.0.1 -w 'naked http %{http_code} %{redirect_url}\n' 'http://p8test.example.com/p8test/path?q=1'
+        curl -s -k -o /dev/null --max-time 5 --resolve www.p8test.example.com:443:127.0.0.1 -w 'naked https %{http_code} %{redirect_url}\n' 'https://www.p8test.example.com/p8test/path?q=1'
+    expect: {rc: 0, stdout: "\\Anaked http 301 https://www\\.p8test\\.example\\.com/p8test/path\\?q=1\\nnaked https 301 https://www\\.p8test\\.example\\.com/p8test/path\\?q=1\\n\\Z"}
 
   - id: dynamic-dns-proxies-through-the-variable
     variant: dyn

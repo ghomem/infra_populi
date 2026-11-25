@@ -1,0 +1,389 @@
+{
+ "class": "nginx_frontend_domain",
+ "role": "author",
+ "at": "20261125T095701Z",
+ "runner": "d1e9a74",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "e522c2e8971adfc6c90eadf0f12f2e376391f8acb6ce982dee1d1d91759f29eb",
+ "content_sha256": "e522c2e8971adfc6c90eadf0f12f2e376391f8acb6ce982dee1d1d91759f29eb",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "a-backend-answers",
+   "control": "negative",
+   "rc": 7,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "http-redirects-to-https",
+   "control": "negative",
+   "rc": 7,
+   "passed": false,
+   "stdout": "000 \n000 \n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "https-proxies-to-the-backend",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "www.p8test.example.com: \np8test.example.com: \nother.example.com: \n",
+   "stderr": "awk: fatal: cannot open file `/etc/ssl/certs/p8test.nginx.bundle.crt' for reading: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "only-tls-1-3-is-accepted",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "tls1_3 refused\ntls1_2 refused\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "7d9]\n  Concat_fragment[http_p8test.example.com-header]\n  Concat_fragment[http_p8test.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/http_www.p8test.example.com.conf]\n  Concat::Fragment[http_www.p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_www.p8test.example.com-header]\n  Concat_fragment[http_www.p8test.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/https_p8test.example.com.conf]\n  Concat_fragment[https_p8test.example.com-header]\n  Concat_fragment[https_p8test.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/https_www.p8test.example.com.conf]\n  Concat_fragment[https_www.p8test.example.com-ssl-header]\n  Concat_fragment[https_www.p8test.example.com-ssl-footer]\n  Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\n  Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]\n  Concat_fragment[first_certificate_p8test]\n  Concat_fragment[intermediate_certificates_p8test]\n  Concat_fragment[backend_p8test.example.com_upstream_member_127.0.0.1:8080 in nginx_frontend_domain]\n  Concat_fragment[http_p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_www.p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\nGREEN: run 2 events limited to the plan's expected_run2_events (Notify[Generated Upstream members for *]) (gate v2).\nGREEN_STAMP nginx_frontend_domain ddf32d787dfd\n"
+ },
+ "applied": [
+  {
+   "id": "a-backend-answers",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test-backend\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "starts a transient unit p8test-backend (python3 -m http.server on 127.0.0.1:8080, serving /run/p8test-frontend/www, whose index.html says p8test-backend)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "http-redirects-to-https",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "301 https://p8test.example.com/p8test/path?q=1\n301 https://www.p8test.example.com/p8test/path?q=1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond two local HTTP requests (declared mutating so it runs after the backend starts)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "https-proxies-to-the-backend",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "www.p8test.example.com: p8test-backend\np8test.example.com: p8test-backend\nother.example.com: \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond two local HTTPS requests (declared mutating so it runs after the backend starts)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "only-tls-1-3-is-accepted",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "tls1_3 accepted\ntls1_2 refused\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond two local TLS handshakes (declared mutating so it runs after the backend starts)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "9b7d3551-c3f6-4eb8-be2d-d3f4fbc4b9f2",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "9b7d3551-c3f6-4eb8-be2d-d3f4fbc4b9f2",
+   "fresh": true
+  }
+ },
+ "variants": {
+  "prod": {
+   "name": "prod",
+   "node": "ubuntu",
+   "params": "prod",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "snapshot": "P8NODE_BASELINE_GREEN_v5",
+     "boot_id": "f0f1a463-a9cb-4c38-b9e7-2fbf7cb23b3a",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "f0f1a463-a9cb-4c38-b9e7-2fbf7cb23b3a",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "production-parameters-render",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "Let's Encrypt bundle: missing\nread timeout: missing\nconnect timeout: missing\nsend timeout: missing\nad-hoc location config: missing\nbackend header: missing\nprotocols: missing\npass suffix: missing\nother location config: missing\nother location line: missing\nwww fix redirect: missing\nsecurity headers: missing\n",
+     "stderr": "",
+     "ok": true
+    },
+    {
+     "id": "the-naked-domain-redirects-to-www",
+     "control": "negative",
+     "rc": 7,
+     "passed": false,
+     "stdout": "naked http 000 \nnaked https 000 \n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "s-available/https_p8test.example.com.conf]\n  Concat::Fragment[https_p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\n  Concat_fragment[https_p8test.example.com-ssl-header]\n  Concat_fragment[https_p8test.example.com-ssl-footer]\n  Concat_file[/etc/nginx/sites-available/https_www.p8test.example.com.conf]\n  Concat_fragment[https_www.p8test.example.com-ssl-header]\n  Concat_fragment[https_www.p8test.example.com-ssl-footer]\n  Concat::Fragment[https_www.p8test.example.com-800-7572b9c0e48d310e3b49983439d9279a-ssl]\n  Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\n  Concat_file[/etc/ssl/certs/p8test.nginx.bundle.pem]\n  Concat_fragment[first_certificate_p8test]\n  Concat_fragment[intermediate_certificates_p8test]\n  Concat_fragment[backend_p8test.example.com_upstream_member_127.0.0.1:8080 in nginx_frontend_domain]\n  Concat_fragment[http_p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_www.p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[https_p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\n  Concat_fragment[https_www.p8test.example.com-800-7572b9c0e48d310e3b49983439d9279a-ssl]\n  Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\nGREEN: run 2 events limited to the plan's expected_run2_events (Notify[Generated Upstream members for *]) (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant prod; never a Phase 1 record)\n"
+   },
+   "applied": [
+    {
+     "id": "production-parameters-render",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "Let's Encrypt bundle: rendered\nread timeout: rendered\nconnect timeout: rendered\nsend timeout: rendered\nad-hoc location config: rendered\nbackend header: rendered\nprotocols: rendered\npass suffix: rendered\nother location config: rendered\nother location line: rendered\nwww fix redirect: rendered\nsecurity headers: rendered\n",
+     "stderr": ""
+    },
+    {
+     "id": "the-naked-domain-redirects-to-www",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "naked http 301 https://www.p8test.example.com/p8test/path?q=1\nnaked https 301 https://www.p8test.example.com/p8test/path?q=1\n",
+     "stderr": "",
+     "mismatch": {
+      "varies": "the name requested over HTTPS (www, which the domain's server holds and proxies, in place of the naked domain)",
+      "rc": 0,
+      "passed": false,
+      "stdout": "naked http 301 https://www.p8test.example.com/p8test/path?q=1\nnaked https 502 \n",
+      "stderr": ""
+     }
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  },
+  "dyn": {
+   "name": "dyn",
+   "node": "ubuntu",
+   "params": "dyn",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "snapshot": "P8NODE_BASELINE_GREEN_v5",
+     "boot_id": "61b0b96a-41a6-4e9f-9e77-e0ad83c22761",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "61b0b96a-41a6-4e9f-9e77-e0ad83c22761",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "dynamic-dns-proxies-through-the-variable",
+     "control": "negative",
+     "rc": 7,
+     "passed": false,
+     "stdout": "0\n0\nno-resolver\n0\n",
+     "stderr": "awk: fatal: cannot open file `/etc/ssl/certs/p8test.nginx.bundle.crt' for reading: No such file or directory\n",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "t[http_p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_p8test.example.com-header]\n  Concat_fragment[http_p8test.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/http_www.p8test.example.com.conf]\n  Concat::Fragment[http_www.p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_www.p8test.example.com-header]\n  Concat_fragment[http_www.p8test.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/https_p8test.example.com.conf]\n  Concat_fragment[https_p8test.example.com-header]\n  Concat_fragment[https_p8test.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/https_www.p8test.example.com.conf]\n  Concat_fragment[https_www.p8test.example.com-ssl-header]\n  Concat_fragment[https_www.p8test.example.com-ssl-footer]\n  Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\n  Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]\n  Concat_fragment[first_certificate_p8test]\n  Concat_fragment[intermediate_certificates_p8test]\n  Concat_fragment[http_p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_www.p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\nGREEN: run 2 events limited to the plan's expected_run2_events (Notify[Generated Upstream members for *]) (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant dyn; never a Phase 1 record)\n"
+   },
+   "applied": [
+    {
+     "id": "dynamic-dns-proxies-through-the-variable",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "1\n1\nresolver\n1\np8test-backend\n",
+     "stderr": "",
+     "mutating": true,
+     "action": {
+      "mutates": "starts a transient unit p8test-backend (python3 -m http.server on 127.0.0.1:8080, serving /run/p8test-frontend/www, whose index.html says p8test-backend)",
+      "rc": 0,
+      "stdout": "",
+      "stderr": ""
+     }
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  },
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "snapshot": "P8LAB_RHEL9_BASELINE_v3",
+     "boot_id": "66aeeec6-de5e-49ad-8358-c279aec829a4",
+     "apt_mirror": null,
+     "boot_id_at_end": "66aeeec6-de5e-49ad-8358-c279aec829a4",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "on-redhat-the-key-is-read-from-pki-tls-private",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "0\n0\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "tp_www.p8test.example.com.conf]\n  Concat::Fragment[http_www.p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_www.p8test.example.com-header]\n  Concat_fragment[http_www.p8test.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/https_p8test.example.com.conf]\n  Concat_fragment[https_p8test.example.com-header]\n  Concat_fragment[https_p8test.example.com-footer]\n  Concat_file[/etc/nginx/sites-available/https_www.p8test.example.com.conf]\n  Concat_fragment[https_www.p8test.example.com-ssl-header]\n  Concat_fragment[https_www.p8test.example.com-ssl-footer]\n  Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\n  Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]\n  Concat_fragment[first_certificate_p8test]\n  Concat_fragment[intermediate_certificates_p8test]\n  Concat_fragment[backend_p8test.example.com_upstream_member_127.0.0.1:8080 in nginx_frontend_domain]\n  Concat_fragment[http_p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[http_www.p8test.example.com-500-6666cd76f96956469e7be39d750cc7d9]\n  Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]\nGREEN: run 2 events limited to the plan's expected_run2_events (Notify[Generated Upstream members for *]) (gate v2).\nGREEN_STAMP nginx_frontend_domain ddf32d787dfd\n==> required_external apt not declared: Debian-only, the target is RedHat\n==> required_external apt not declared: Debian-only, the target is RedHat\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-the-key-is-read-from-pki-tls-private",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "key from pki\n1\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "plain HTTP on the domain redirects (301) to HTTPS on the domain, keeping the path",
+   "checks": [
+    "a-backend-answers",
+    "http-redirects-to-https"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "plain HTTP on www redirects (301) to HTTPS on www, keeping the path",
+   "checks": [
+    "http-redirects-to-https"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "HTTPS on www and on the domain proxies to the backend, with the domain's certificate, which verifies against its issuer",
+   "checks": [
+    "https-proxies-to-the-backend"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "only TLS 1.3 is accepted (the default protocol list)",
+   "checks": [
+    "only-tls-1-3-is-accepted"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the parameters production sets (Let's Encrypt, proxy timeouts, ad-hoc location config, backend headers, protocols, the naked domain decorated to www, a pass suffix, other locations, the www redirect fix, dynamic DNS, security headers)",
+   "checks": [
+    "production-parameters-render",
+    "the-naked-domain-redirects-to-www",
+    "dynamic-dns-proxies-through-the-variable"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the parameters no production node sets (servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, ip_whitelist, proxy_locations_ignore_headers, redirect_http_www_to_https_www_create, server_https_www_create, redirects_external_prevented, redirects_external_location, redirects_external_whitelisted, redirects_external_prevented_adhoc_config, use_compact_log_format, resolver)",
+   "uncovered": {
+    "why": "parameter variants no production node uses",
+    "accepted_gap": [
+     "servers_create",
+     "enable_ssl",
+     "additional_ssl_protocols",
+     "additional_ssl_ciphers",
+     "base_ssl_ciphers_prefix",
+     "base_ssl_ciphers_suffix",
+     "base_ssl_ecdh_curve",
+     "ip_whitelist",
+     "proxy_locations_ignore_headers",
+     "redirect_http_www_to_https_www_create",
+     "server_https_www_create",
+     "redirects_external_prevented",
+     "redirects_external_location",
+     "redirects_external_whitelisted",
+     "redirects_external_prevented_adhoc_config",
+     "use_compact_log_format",
+     "resolver"
+    ],
+    "evidence": "diagnosis/fleet_variant_usage.md (2026-11-23): no production node statement sets any of these on nginx_frontend_domain, and no class of the repository sets them on it"
+   }
+  },
+  {
+   "outcome": "on RedHat the key is read from /etc/pki/tls/private",
+   "checks": [
+    "on-redhat-the-key-is-read-from-pki-tls-private"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 571.0
+}
