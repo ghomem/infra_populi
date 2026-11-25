@@ -1,0 +1,35 @@
+{
+ "class": "docker_container",
+ "at": "20261125T190511Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-container-runs-the-image-under-systemd -> manifests/docker_container.pp:82-84: docker::run titled $name (the fixture title docker_container) with image $image_id; with no digest that is nginx:alpine (tag alpine), so the probe's unit docker-docker_container active and container docker_container on nginx:alpine is what these lines produce",
+  "the-image-tag-is-removed -> manifests/docker_container.pp:41-47: docker::image with ensure present and image_tag alpine; the installed puppetlabs-docker 10.4.1 image.pp (read on the master) runs the pull exec only 'unless' the image is found locally, so removing the tag (the declared mutation, docker rmi -f) is the setup that makes the next agent run's Docker::Image change; the effect reads the node's image state (tag removed) and the noted file, not the action's output",
+  "without-host-port-the-app-port-is-published-on-loopback -> manifests/docker_container.pp:20-24: host_port '' gives myhost_port = app_port, so under the appport fixture (app_port 80, no host_port) lines 52-54 publish 127.0.0.1:80:80; the probe expects docker port to list exactly 127.0.0.1:80 and nginx to answer there; the mismatch changes only the address asked (the host-only address) and must fail, which it did in run 20261125T184535Z-reviewer",
+  "purpose gap: Tested (reviewer run 20261125T184535Z, ALL_PASS, base and the appport, runopts and nonet variants): the image pulled at the tag; the container running it as systemd unit docker-docker_container; port 18080 published on 127.0.0.1 only and nginx answering (mismatch on the host-only address fails); a killed container started again; the image tag removed, then the agent run (rc 2, 8 changed) pulls it again and restarts the container; app_port without host_port publishes 127.0.0.1:80; env, the named volume and a command that differs from the image's CMD (worker_rlimit_nofile 4096 in Config.Cmd and PID 1) reach the container; network none. The uncovered rows hold: ensure (image.pp:140-183 on the master, read now: absent runs the remove exec onlyif the image is found, latest notifies with noop false and runs the update exec each run; 1 production statement), registry login (no registry in the lab), digest (accepted gap, 0 statements). GAP: line 89 'remove_container_on_stop => false' overrides the module default (run.pp:244, true) on every production statement. Its outcome has no row in the outcomes table: when the service stops, the container stays (docker-run-stop.epp runs 'docker rm' only when the flag is true; the unit's ExecStop runs that script). The lab can test this with a mutating check: systemctl stop docker-docker_container, then docker ps -a shows the container Exited. Related, for the correction: the set's header says the image-change refresh keeps the container. The module's start script does 'docker rm' before 'docker create' (remove_container_on_start defaults to true), so a restart recreates the container. Restarting a killed container comes from the unit's Restart=on-failure (module default systemd_restart), not from the line 'restart_service_on_docker_refresh => true' that the-service-starts-it-again quotes. That flag only acts when docker_service is set (run.pp:698-710; the default is false), so here it does nothing."
+ ],
+ "review_s": 1176.5,
+ "check_file_sha256": "31f7d026c306c406ab97c73c7d1cdda61efeb524a04824ec85333e12ac30df0e",
+ "content_sha256": "31f7d026c306c406ab97c73c7d1cdda61efeb524a04824ec85333e12ac30df0e",
+ "reviewer_result": "20261125T184535Z-reviewer",
+ "author_result": "20261125T181500Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "5339b802-6386-4eaf-8796-1ee41e764fba",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "5339b802-6386-4eaf-8796-1ee41e764fba",
+   "fresh": true
+  }
+ }
+}
