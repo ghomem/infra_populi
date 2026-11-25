@@ -24,6 +24,10 @@ purpose: >-
   nginx_frontend_domain), the domain's certificate (through ssl_nginx_domain), a default server that answers 404 to
   unknown names, and a monitoring server with nginx's status page and a Nagios check reading it.
 outcomes:
+  # Correction round 1 of the swept set (2026-11-25, review 20261125T091633Z): two lines of production-parameters-render
+  # (the www server name and a `return 30x`) matched whatever decorate_naked and redirect_default are, since the HTTP
+  # servers always render them. They are removed, and the prod variant tests both parameters as redirects. manage_ssl
+  # and redirects_external_location, set by no production node, join the accepted-gap row.
   - outcome: plain HTTP on the domain and on www redirects (301) to HTTPS on the same name, keeping the path
     from: manifests/nginx_frontend.pp:280-315; manifests/nginx_frontend_domain.pp:416-454
     checks: [a-backend-answers, http-redirects-to-https]
@@ -48,12 +52,12 @@ outcomes:
     checks: [the-nginx-status-check-reports]
   - outcome: the parameters production sets (Let's Encrypt, proxy timeouts, ad-hoc location config, backend headers, protocols, the www server, a pass suffix, other locations, the www redirect fix, dynamic DNS, the default-server redirect)
     from: manifests/nginx_frontend.pp:23-79
-    checks: [production-parameters-render, dynamic-dns-proxies-through-the-variable]
-  - outcome: the parameters no production node sets (servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, security_headers, redirects_external_prevented, redirects_external_whitelisted, server_default_create, ip_whitelist, use_compact_log_format, resolver)
+    checks: [production-parameters-render, unknown-names-and-the-naked-domain-redirect-to-www, dynamic-dns-proxies-through-the-variable]
+  - outcome: the parameters no production node sets (servers_create, enable_ssl, manage_ssl, redirects_external_location, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, security_headers, redirects_external_prevented, redirects_external_whitelisted, server_default_create, ip_whitelist, use_compact_log_format, resolver)
     from: manifests/nginx_frontend.pp:23-79
     uncovered:
       why: parameter variants no production node uses
-      accepted_gap: [servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, security_headers, redirects_external_prevented, redirects_external_whitelisted, server_default_create, ip_whitelist, use_compact_log_format, resolver]
+      accepted_gap: [servers_create, enable_ssl, manage_ssl, redirects_external_location, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, security_headers, redirects_external_prevented, redirects_external_whitelisted, server_default_create, ip_whitelist, use_compact_log_format, resolver]
       evidence: >-
         diagnosis/fleet_variant_usage.md (2026-11-23): no production node statement sets any of these on nginx_frontend, and no
         class of the repository sets them on it
@@ -206,8 +210,9 @@ checks:
     variant: prod
     what: >-
       with the parameters production sets (given test values), nginx's running configuration carries each of them: the
-      Let's Encrypt bundle, the three timeouts, the ad-hoc location line, the backend header, the protocols, the www
-      server, the pass suffix, another location's config, the www redirect fix and the default-server redirect
+      Let's Encrypt bundle, the three timeouts, the ad-hoc location line, the backend header, the protocols, the pass
+      suffix, another location's config and the www redirect fix (decorate_naked and redirect_default are tested as
+      redirects in the next check)
     control: negative
     derived_from:
       - {path: manifests/nginx_frontend.pp, lines: "23-79", text: "Boolean $letsencrypt_certificate    = false,"}
@@ -220,13 +225,37 @@ checks:
       printf '%s\n' "$T" | grep -qE 'add_header X-P8test-Adhoc on' && echo 'ad-hoc location config: rendered' || echo 'ad-hoc location config: missing'
       printf '%s\n' "$T" | grep -qE 'proxy_set_header +X-P8test-Set' && echo 'backend header: rendered' || echo 'backend header: missing'
       printf '%s\n' "$T" | grep -qE 'ssl_protocols +TLSv1\.2 TLSv1\.3' && echo 'protocols: rendered' || echo 'protocols: missing'
-      printf '%s\n' "$T" | grep -qE 'server_name +www\.p8test\.example\.com' && echo 'www server: rendered' || echo 'www server: missing'
       printf '%s\n' "$T" | grep -qE 'proxy_pass .*/p8test-suffix' && echo 'pass suffix: rendered' || echo 'pass suffix: missing'
       printf '%s\n' "$T" | grep -qE 'location +/p8test-other/' && echo 'other location config: rendered' || echo 'other location config: missing'
       printf '%s\n' "$T" | grep -qE 'add_header X-P8test-Other on' && echo 'other location line: rendered' || echo 'other location line: missing'
       printf '%s\n' "$T" | grep -qE 'proxy_redirect +http://\$host/ https://\$host/' && echo 'www fix redirect: rendered' || echo 'www fix redirect: missing'
-      printf '%s\n' "$T" | grep -qE 'return +30[12]' && echo 'default server redirect: rendered' || echo 'default server redirect: missing'
-    expect: {rc: 0, stdout: "\\ALet's Encrypt bundle: rendered\\nread timeout: rendered\\nconnect timeout: rendered\\nsend timeout: rendered\\nad-hoc location config: rendered\\nbackend header: rendered\\nprotocols: rendered\\nwww server: rendered\\npass suffix: rendered\\nother location config: rendered\\nother location line: rendered\\nwww fix redirect: rendered\\ndefault server redirect: rendered\\n\\Z"}
+    expect: {rc: 0, stdout: "\\ALet's Encrypt bundle: rendered\\nread timeout: rendered\\nconnect timeout: rendered\\nsend timeout: rendered\\nad-hoc location config: rendered\\nbackend header: rendered\\nprotocols: rendered\\npass suffix: rendered\\nother location config: rendered\\nother location line: rendered\\nwww fix redirect: rendered\\n\\Z"}
+
+  - id: unknown-names-and-the-naked-domain-redirect-to-www
+    variant: prod
+    what: >-
+      with redirect_default true a request for a name no server holds gets 301 to https://www.<domain> with its path,
+      over HTTP and HTTPS; with decorate_naked true the naked domain gets 301 to https://www.<domain> with its path,
+      over HTTP and HTTPS
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_frontend.pp, lines: "150-152", text: "$default_str = \"301 https://www.${domain}\\$request_uri\""}
+      - {path: manifests/nginx_frontend.pp, lines: "193-196", text: "'return' => $default_str,"}
+      - {path: manifests/nginx_frontend_domain.pp, lines: "416-417", text: "$naked_str = \"301 https://www.${domain}\\$request_uri\""}
+      - {path: manifests/nginx_frontend_domain.pp, lines: "494-519", text: "nginx::resource::server { \"https_${domain}\":"}
+    probe: |
+      curl -s -o /dev/null --max-time 5 -H 'Host: unknown.invalid' -w 'unknown http %{http_code} %{redirect_url}\n' 'http://127.0.0.1/p8test/path?q=1'
+      curl -s -k -o /dev/null --max-time 5 --resolve unknown.invalid:443:127.0.0.1 -w 'unknown https %{http_code} %{redirect_url}\n' 'https://unknown.invalid/p8test/path?q=1'
+      curl -s -o /dev/null --max-time 5 --resolve p8test.example.com:80:127.0.0.1 -w 'naked http %{http_code} %{redirect_url}\n' 'http://p8test.example.com/p8test/path?q=1'
+      curl -s -k -o /dev/null --max-time 5 --resolve p8test.example.com:443:127.0.0.1 -w 'naked https %{http_code} %{redirect_url}\n' 'https://p8test.example.com/p8test/path?q=1'
+    mismatch:
+      varies: the name requested over HTTPS (www, which the domain's server holds and proxies, in place of the naked domain)
+      probe: |
+        curl -s -o /dev/null --max-time 5 -H 'Host: unknown.invalid' -w 'unknown http %{http_code} %{redirect_url}\n' 'http://127.0.0.1/p8test/path?q=1'
+        curl -s -k -o /dev/null --max-time 5 --resolve unknown.invalid:443:127.0.0.1 -w 'unknown https %{http_code} %{redirect_url}\n' 'https://unknown.invalid/p8test/path?q=1'
+        curl -s -o /dev/null --max-time 5 --resolve p8test.example.com:80:127.0.0.1 -w 'naked http %{http_code} %{redirect_url}\n' 'http://p8test.example.com/p8test/path?q=1'
+        curl -s -k -o /dev/null --max-time 5 --resolve www.p8test.example.com:443:127.0.0.1 -w 'naked https %{http_code} %{redirect_url}\n' 'https://www.p8test.example.com/p8test/path?q=1'
+    expect: {rc: 0, stdout: "\\Aunknown http 301 https://www\\.p8test\\.example\\.com/p8test/path\\?q=1\\nunknown https 301 https://www\\.p8test\\.example\\.com/p8test/path\\?q=1\\nnaked http 301 https://www\\.p8test\\.example\\.com/p8test/path\\?q=1\\nnaked https 301 https://www\\.p8test\\.example\\.com/p8test/path\\?q=1\\n\\Z"}
 
 
   - id: dynamic-dns-proxies-through-the-variable
