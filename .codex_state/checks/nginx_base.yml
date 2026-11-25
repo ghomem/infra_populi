@@ -18,6 +18,8 @@ purpose: >-
 # Purpose and outcomes table added 2026-11-19 (backfill batch 3, HQ batch-10 rulings 2 and C1), with the Server
 # header (server_tokens off) checked as behaviour and the default absence of the ad-hoc file.
 outcomes:
+  # Correction round 1 of the swept set (2026-11-25, review 20261125T053027Z): the class's non-Ubuntu branch was in no
+  # row although the rhel9 node kind is active; the variant run `rhel` now tests the base outcomes there.
   # Correction round 1 (2026-11-19, review 20261119T032919Z): nginx from the distribution (manage_repo false) got a row
   # and a check.
   - outcome: nginx comes from the distribution's archive (manage_repo false), with no nginx.org repository added
@@ -57,7 +59,17 @@ outcomes:
       evidence: >-
         diagnosis/fleet_variant_usage.md (2026-11-23): no production node statement sets either, and no class of the
         repository sets them on nginx_base
+  - outcome: >-
+      on RedHat (the class's non-Ubuntu branch: class nginx without the apt_update require, the modules-enabled include
+      kept on every OS) nginx comes from the distribution and runs with a valid configuration that includes
+      /etc/nginx/modules-enabled once, with auto workers, server_tokens off and no version in the Server header, the two
+      log formats and the 2048-bit DH group kept private
+    from: manifests/nginx_base.pp:63-86, 96-110, 130-145
+    checks: [on-redhat-nginx-comes-from-the-distribution, on-redhat-nginx-runs-valid-with-modules-enabled-once, on-redhat-workers-tokens-and-log-formats, on-redhat-dh-group-2048-bits-not-world-readable, on-redhat-the-server-header-names-no-version]
 variants:
+  - name: rhel
+    why: the class's non-Ubuntu branch (nginx_base.pp:106-110), on the rhel9 node with the set's own defaults fixture
+    node: rhel9
   - name: custom
     why: my_configs and ad_hoc_configs, which production sets (7 and 1 node statements)
     params: custom
@@ -172,3 +184,72 @@ checks:
       cat /etc/nginx/conf.d/puppet_infrastructure.conf
       nginx -T 2>/dev/null | grep -E '^\s*(worker_connections|client_max_body_size) ' | sed 's/^\s*//' | sort -u
     expect: {rc: 0, stdout: "\\Aclient_max_body_size 21m;\\nclient_max_body_size 21m;\\nworker_connections 2048;\\n\\Z"}
+
+  - id: on-redhat-nginx-comes-from-the-distribution
+    variant: rhel
+    what: on RedHat no repository file names nginx.org, and the installed nginx package is Red Hat's
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "78", text: "manage_repo       => false,"}
+      - {path: manifests/nginx_base.pp, lines: "96", text: "# we install nginx from the distribution repository"}
+    probe: |
+      grep -rl 'nginx\.org' /etc/yum.repos.d/ 2>/dev/null | wc -l
+      rpm -q --qf '%{VENDOR}\n' nginx
+    expect: {rc: 0, stdout: "\\A0\\nRed Hat, Inc\\.\\n\\Z"}
+
+  - id: on-redhat-nginx-runs-valid-with-modules-enabled-once
+    variant: rhel
+    what: >-
+      on RedHat the configuration passes `nginx -t`, nginx is running, and nginx.conf includes
+      /etc/nginx/modules-enabled exactly once (the class keeps that include on every OS)
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "106-110", text: "class { 'nginx':"}
+      - {path: manifests/nginx_base.pp, lines: "86", text: "nginx_cfg_prepend => {'include' => '/etc/nginx/modules-enabled/*'},"}
+    probe: |
+      nginx -t 2>&1 | grep -c 'test is successful'
+      systemctl is-active nginx
+      grep -c -E '^\s*include\s+/etc/nginx/modules-enabled/' /etc/nginx/nginx.conf
+    expect: {rc: 0, stdout: "\\A1\\nactive\\n1\\n\\Z"}
+
+  - id: on-redhat-workers-tokens-and-log-formats
+    variant: rhel
+    what: on RedHat nginx.conf sets worker_processes auto and server_tokens off, and defines the main and compact log formats
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "82-84", text: "server_tokens     => 'off',"}
+      - {path: manifests/nginx_base.pp, lines: "63-67", text: "$log_formats_main = {"}
+    probe: |
+      grep -c -E '^\s*worker_processes\s+auto;' /etc/nginx/nginx.conf
+      grep -c -E '^\s*server_tokens\s+off;' /etc/nginx/nginx.conf
+      grep -c -E '^\s*log_format\s+main\s' /etc/nginx/nginx.conf
+      grep -c -E '^\s*log_format\s+compact\s' /etc/nginx/nginx.conf
+    expect: {rc: 0, stdout: "\\A1\\n1\\n1\\n1\\n\\Z"}
+
+  - id: on-redhat-dh-group-2048-bits-not-world-readable
+    variant: rhel
+    what: on RedHat the custom DH group /etc/nginx/dhparams.pem has 2048 bits and mode u=rw,g=r,o=
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "36", text: "$dh_params_bits = 2048,"}
+      - {path: manifests/nginx_base.pp, lines: "140-143", text: "command => \"/usr/bin/openssl dhparam -out ${base_dh_params} ${dh_params_bits} && chmod u=rw,g=r,o= ${base_dh_params}\","}
+    probe: |
+      stat -c '%a' /etc/nginx/dhparams.pem
+      openssl dhparam -in /etc/nginx/dhparams.pem -noout -text | grep -o 'DH Parameters: ([0-9]* bit)'
+    expect: {rc: 0, stdout: "\\A640\\nDH Parameters: \\(2048 bit\\)\\n\\Z"}
+
+  - id: on-redhat-the-server-header-names-no-version
+    variant: rhel
+    what: >-
+      on RedHat, with a server on 127.0.0.1:81 (an http port SELinux allows nginx), a request gets a Server header that
+      says nginx and no version (the class's nginx.conf replaces the package's default server, so the check adds one)
+    control: negative
+    derived_from:
+      - {path: manifests/nginx_base.pp, lines: "84", text: "server_tokens     => 'off',"}
+    mutates: adds /etc/nginx/conf.d/p8test-header.conf (a server on 127.0.0.1:81 answering 204) and reloads nginx
+    probe: |
+      printf 'server {\n  listen 127.0.0.1:81;\n  return 204;\n}\n' > /etc/nginx/conf.d/p8test-header.conf
+      nginx -t -q && systemctl reload nginx && sleep 1
+    effect: |
+      curl -s -o /dev/null -D - --max-time 5 http://127.0.0.1:81/ | tr -d '\r' | grep -i '^server:'
+    expect: {rc: 0, stdout: "\\AServer: nginx\\n\\Z"}
