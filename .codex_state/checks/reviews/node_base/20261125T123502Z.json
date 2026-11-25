@@ -1,0 +1,35 @@
+{
+ "class": "node_base",
+ "at": "20261125T123502Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "on-redhat-firewalld-masked-chrony-and-the-yum-scripts: node_base.pp:140-147 is the RedHat branch's include ::chrony (custom_ntp false in the fixture), so chronyd active is what it declares; with lines 63-76 (firewalld stopped/disabled, exec systemctl mask) and 110-111 (filesystem_yum, whose baseline installs yum-update-surface.sh/yum-update-dist.sh in place of filesystem_apt) the expected masked/inactive/active/yum scripts present/0 apt-update scripts is what the code produces on rhel9",
+  "production-parameters-strict-keep-and-boot-run: node_base.pp:162-165 includes puppet_boot_run when run_puppet_on_boot is true (prod params set it); puppet_boot_run's baseline installs ${bindir}/puppet_boot_run.sh root:root 0750 and enables the puppet_boot_run service, matching enabled and root:root 750; the 0 '110 SSH' rules follows line 101 forwarding ssh_strict=true to firewall_secure, whose strict branch (lines 87-90) declares no 110 rule",
+  "the-base-components-are-all-applied: node_base.pp:55-57 declares sysmon_base, whose baseline installs ${localdir}/bin/nagios-puppet.sh (sysmon-scripts sentinel) and selects monitoring-plugins-standard on Ubuntu; packages_base's list holds aptitude, firewall_ipv6_drop, filesystem_lib64 and filesystem_apt give the other sentinels, so the expect follows from the composed components under the params fixture",
+  "purpose covered: The purpose (hardened SSH, default-drop firewall with the ACL and IPv6 drop, base packages without unattended upgrades, server-mode apt scripts, restricted tools, NTP, DNS left alone, no boot run) matches the header and baseline node_base.pp. The base run tests SSH behaviour over loopback (publickey only, kex/cipher refusal with a real cipher mismatch, root login no), the firewall policy/whitelist/limit chain, NTP actually synchronising, tool group/mode and component sentinels; the rhel variant tests the RedHat branch (firewalld masked, chrony, filesystem_yum) on rhel9; the prod variant tests strict SSH firewall, the boot-run unit, and that with firewall_strict_purge false and ignore pattern p8test-keep the next agent run keeps the matching planted rule and purges the other (both would be purged if node_base did not forward them, per firewall_secure.pp:37-51). The accepted-gap row lists exactly the 32 parameters other than the five production sets (fleet_variant_usage.md lines 102-106); each component's own set covers its behaviour. Nothing the lab can exercise is left out."
+ ],
+ "review_s": 1591.2,
+ "check_file_sha256": "314d5fa0016306570d834ee87f34abc9103d98298c19bf0e4219e882234b90a7",
+ "content_sha256": "314d5fa0016306570d834ee87f34abc9103d98298c19bf0e4219e882234b90a7",
+ "reviewer_result": "20261125T120831Z-reviewer",
+ "author_result": "20261125T114255Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "07eb6522-017f-46a4-9730-8301428ab474",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "07eb6522-017f-46a4-9730-8301428ab474",
+   "fresh": true
+  }
+ }
+}
