@@ -1,0 +1,35 @@
+{
+ "class": "backup_rsnapshot",
+ "at": "20261125T062754Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "other-parameters-render-the-config-and-the-cron-entry @ templates/backup/rsnapshot.conf.erb:12: the line renders backup<TAB>@basedir<TAB>./@prefix; with the variant fixture other (basedir /etc/default, prefix p8test-default) the probe's normalised grep expects exactly 'backup /etc/default ./p8test-default', which is what the line produces",
+  "cron-daily-2300 @ manifests/backup_rsnapshot.pp:3: the define's defaults are user root, hour 23, minute 0 and the base params fixture sets none of them; with lines 13-19 (command /usr/bin/rsnapshot -c ${myconffile} daily, myconffile /etc/rsnapshot.d/rsnapshot-${title}.conf, title backup_rsnapshot) the cron type writes '0 23 * * * /usr/bin/rsnapshot -c /etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf daily' into root's crontab, exactly the expected line",
+  "other-parameters-render-the-config-and-the-cron-entry @ templates/backup/rsnapshot.conf.erb:7: the line renders retain<TAB>daily<TAB>@ndays; the variant fixture sets ndays 3, and the expect requires 'retain daily 3', plus nobody's crontab '17 4 * * *' from user nobody, hour 4, minute 17 in the same fixture",
+  "purpose covered: Purpose (header '# This class implements simple rsnapshot based generic backups' plus the manifest: a per-title config and a daily cron running rsnapshot daily) is stated correctly. Tested: the config's mode/owner and rendered snapshot_root/retain/backup/lockfile, rsnapshot configtest Syntax OK on the whole template, the cron entry at 23:00 for root, rsnapshot -t daily planning rsync of /etc into daily.0, one real run of the cron's exact command leaving a byte-identical /etc/hostname under daily.0 (effect read separately from the action), and nine runs in all leaving exactly daily.0-daily.6 (retention ndays 7); variant other renders different basedir/prefix/backdir/ndays and puts the entry in nobody's crontab at 04:17. Uncovered honestly: cron actually firing at 23:00 - clock_check.py forces lab clocks to agree with the laptop and phase3.py has no wait-for-time step, so the lifted_by capability is genuinely missing; the exact cron command is run by hand instead. Not separately exercised: a real run under the variant's non-root user, but the parameters are pure substitutions whose rendered values are verified and whose run mechanism is exercised in the base run. Minor note: daily-backup-executes's mutates names daily.0 under /opt/puppet-infrastructure/backup but not that rsnapshot also creates that snapshot_root (no class in the required base declares it)."
+ ],
+ "review_s": 229.7,
+ "check_file_sha256": "99fb8f66d7efdf827455beeb95c14522a8802be48e219d69bc0c465414f1fa6f",
+ "content_sha256": "99fb8f66d7efdf827455beeb95c14522a8802be48e219d69bc0c465414f1fa6f",
+ "reviewer_result": "20261125T062405Z-reviewer",
+ "author_result": "20261123T130058Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "0aff3722-59a4-4b48-bd55-61a0b078ba13",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "0aff3722-59a4-4b48-bd55-61a0b078ba13",
+   "fresh": true
+  }
+ }
+}
