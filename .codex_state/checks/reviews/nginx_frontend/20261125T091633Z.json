@@ -1,0 +1,35 @@
+{
+ "class": "nginx_frontend",
+ "at": "20261125T091633Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "the-status-page-is-refused-off-loopback: nginx_frontend.pp:254-260 declares /nginx_status with location_allow 127.0.0.1 and location_deny all; a request via the node's enp0s8 address expects 403, and the mismatch (127.0.0.1, the one allowed address) must change the verdict to 200 - supported",
+  "on-redhat-the-key-is-read-from-pki-tls-private: nginx_frontend.pp:87-99 sets ssl_private_dir /etc/pki/tls/private on RedHat, so ssl_key_path (:145) becomes /etc/pki/tls/private/p8test.key; the rhel9 variant greps ssl_certificate_key for that dir plus nginx -t - supported",
+  "a-backend-answers: nginx_frontend_domain.pp:409-412 declares the upstream from backend_hosts_and_ports (fixture 127.0.0.1:8080); the check is the lab-side backend setup the frontend checks proxy to, mutates declares the transient unit and the effect curls it - supported as setup",
+  "purpose gap: Tested: HTTP->HTTPS 301 on naked and www keeping path/query; HTTPS proxy to the backend under both names with certificate verification (and failure under other.example.com); TLS1.3-only; default server 404 over HTTP and HTTPS (mismatch); monitoring name in /etc/hosts, Hello World text/plain, stub_status to 127.0.0.1 and 403 off loopback (mismatch); the Nagios check OK/WARNING/CRITICAL; dyn variant proxying via $proxy_backend; rhel key path; prod rendering of letsencrypt bundle, timeouts, adhoc/other location config, header, protocols, pass suffix, www fix redirect. GAP: in production-parameters-render two lines are vacuous: 'return +30[12]' (claimed: default-server redirect, redirect_default) and 'server_name +www\\.p8test\\.example\\.com' (claimed: the www server, decorate_naked) match whatever those parameters are, because the http_${domain} and http_www servers always render 'return 301 https://...' and 'server_name www.p8test.example.com' (nginx_frontend_domain.pp:424-455; seen on the node in the dyn variant, redirect_default and decorate_naked false: nginx -T lines 196, 206, 215). The lab CAN exercise both in the prod variant: a request for an unknown Host must get 301 https://www.p8test.example.com$request_uri (nginx_frontend.pp:150-152), and http/https to the naked domain must 301 to https://www.p8test.example.com (nginx_frontend_domain.pp:416-417, 496-519). Minor: manage_ssl (and redirects_external_location) appear neither in the checked rows nor in the accepted_gap row of the outcomes table."
+ ],
+ "review_s": 632.4,
+ "check_file_sha256": "e60fdf7b152d7b9ab7fe8c363867d404ec7cc7a6d0fa728ebab69a7381c56944",
+ "content_sha256": "e60fdf7b152d7b9ab7fe8c363867d404ec7cc7a6d0fa728ebab69a7381c56944",
+ "reviewer_result": "20261125T090601Z-reviewer",
+ "author_result": "20261123T145322Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "f79eab46-0465-4857-b4fe-87bb66407510",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "f79eab46-0465-4857-b4fe-87bb66407510",
+   "fresh": true
+  }
+ }
+}
