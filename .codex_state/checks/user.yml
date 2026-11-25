@@ -19,6 +19,9 @@
 # printed field 2 of every line of authorized_keys, the three `# HEADER:` comment lines Puppet's ssh_authorized_key
 # provider writes included; they now skip comment and empty lines, as the set's other key probes do. The keys were as
 # the baseline makes it (userlocked...).
+# Correction round 1 of the swept set, 2026-11-25 (review 20261125T065618Z FAIL, derived_from and purpose): the
+# planted key's mutates now names the key pair its action writes under /run; the variants row's keyless placeholder is
+# a check in the variant run `emptykey` (the set's fixture with mykey '').
 class: user
 baseline: release-0.9.10 (cf477c6)
 fixture: params
@@ -59,7 +62,7 @@ outcomes:
         checked instead
   - outcome: the parameter variants the wrapper passes on (a group list, another home, a home mode, another shell) and the locked or keyless placeholders
     from: manifests/user.pp:6-8
-    checks: [the-wrapper-passes-a-locked-hash-home-shell-and-groups]
+    checks: [the-wrapper-passes-a-locked-hash-home-shell-and-groups, the-wrapper-passes-an-empty-key]
 node_agent:
   after: [an-out-of-band-key-is-planted]
   why: user_base purges keys it does not manage, so the agent run after a planted key is the evidence
@@ -69,6 +72,9 @@ variants:
       the parameters the wrapper passes on (a locked hash, a group list, another home, home mode and shell); production's
       users are declared in the passwd/ layer, never read, so their use is undeterminable and they are tested
     params: locked
+  - name: emptykey
+    why: an empty key passed through the wrapper (undeterminable production use, as above); the set's fixture with mykey ''
+    params: emptykey
 checks:
   - id: user-and-own-primary-group
     what: the wrapped user exists with its own same-named primary group, the comment, /home/<title> and /bin/bash
@@ -168,7 +174,9 @@ checks:
     control: negative
     derived_from:
       - {path: manifests/user.pp, lines: "8", text: "puppet_infrastructure::user_base { $title : myname => $myname"}
-    mutates: appends a throwaway public key line (comment p8test-out-of-band) to /home/p8testuser/.ssh/authorized_keys
+    mutates: >-
+      generates a throwaway ed25519 key pair, /run/p8test-oob-key and /run/p8test-oob-key.pub, and appends its public key
+      (comment p8test-out-of-band) to /home/p8testuser/.ssh/authorized_keys
     probe: |
       ssh-keygen -q -t ed25519 -N '' -C p8test-out-of-band -f /run/p8test-oob-key <<< y >/dev/null 2>&1
       cat /run/p8test-oob-key.pub >> /home/p8testuser/.ssh/authorized_keys
@@ -204,3 +212,14 @@ checks:
       passwd -S p8testuser | awk '{print $2}'
       awk '!/^(#|$)/ {print substr($2, 1, 10)}' /srv/p8testhome/.ssh/authorized_keys
     expect: {rc: 0, stdout: "\\A/srv/p8testhome:/bin/sh\\nusers\\n700\\nL\\nuserlocked\\n\\Z"}
+
+  - id: the-wrapper-passes-an-empty-key
+    variant: emptykey
+    what: through the wrapper, an empty key (with an unlocked hash) reaches user_base, and the pushed key is the unusable emptykey one
+    control: negative
+    derived_from:
+      - {path: manifests/user.pp, lines: "8", text: "mykey => $mykey"}
+      - {path: manifests/user_base.pp, lines: "51-55", text: "$sshkey = join ( [ 'emptykey', $random_string ] )"}
+    probe: |
+      awk '!/^(#|$)/ {print substr($2, 1, 8)}' /home/p8testuser/.ssh/authorized_keys
+    expect: {rc: 0, stdout: "\\Aemptykey\\n\\Z"}

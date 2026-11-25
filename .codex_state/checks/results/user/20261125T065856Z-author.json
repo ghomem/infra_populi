@@ -1,0 +1,404 @@
+{
+ "class": "user",
+ "role": "author",
+ "at": "20261125T065856Z",
+ "runner": "c17426a",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "5665ab717580e2fe3d51b1ff75228a9ca7e12d4ec471a7b1825615f3fb158be8",
+ "content_sha256": "5665ab717580e2fe3d51b1ff75228a9ca7e12d4ec471a7b1825615f3fb158be8",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "user-and-own-primary-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "|||\nprimary group: \n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "no-supplementary-groups",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "id: 'p8testuser': no such user\n",
+   "ok": true
+  },
+  {
+   "id": "home-created-and-owned",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/home/p8testuser': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "password-hash-set",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-given-key-is-pushed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /home/p8testuser/.ssh/authorized_keys: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "key-file-owned-and-private",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/home/p8testuser/.ssh': No such file or directory\nstat: cannot statx '/home/p8testuser/.ssh/authorized_keys': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-password-logs-in-and-a-wrong-one-is-refused",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-user/pw.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "no-ecryptfs-passphrase-files",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "an-out-of-band-key-is-planted",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /home/p8testuser/.ssh/authorized_keys: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-purges-the-out-of-band-key",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /home/p8testuser/.ssh/authorized_keys: No such file or directory\ngrep: /home/p8testuser/.ssh/authorized_keys: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::User[p8testuser]/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::User[p8testuser]/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.32 seconds\u001b[0m\nRUN1_EVENTS: 3 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795590006'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::user: 3 concrete resources (+2 defined-type instances)\n  Puppet_infrastructure::User[p8testuser]\n  Puppet_infrastructure::User_base[p8testuser]\n  Group[p8testuser]\n  User[p8testuser]\n  Ssh_authorized_key[p8testuser@puppet]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP user f39bac535a38\n"
+ },
+ "applied": [
+  {
+   "id": "user-and-own-primary-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser|P8 Test User|/home/p8testuser|/bin/bash\nprimary group: p8testuser\n",
+   "stderr": ""
+  },
+  {
+   "id": "no-supplementary-groups",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser\n",
+   "stderr": ""
+  },
+  {
+   "id": "home-created-and-owned",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser p8testuser directory\n",
+   "stderr": ""
+  },
+  {
+   "id": "password-hash-set",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "$6$p8testsalt\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-given-key-is-pushed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCoGojLzXfOYoMg/8rNwk5YRfAdbJN8B/0El5HE5BPDs/QenJaGNH0nH8cGCJF87/bgIRN0nFkO0MqizXNcfcWZjJ7S360u1yZgRhUj+s9y23bUHXcODSgEfHHx3MmICaoOzouoR64NNmqMnlhbBvkfnGzLQa/mAm+2QA+TlXWxkMpIeR1EuH2ko0e/hiAeqLpHGX2GlixkFJ8n9hQwPO+IfhHXuDvwpiJkQxRtyMJnJE9qoPArR27KYJ82Rd2h1b2JjXpqbPJhMfvH7rrXPapCrFO9gQ9jHtkqPG86kNfZ5DN0JBgibKEYqIhjA33JZUnP3liYsYRY4SeNPtTuN7zB p8testuser@puppet\n",
+   "stderr": ""
+  },
+  {
+   "id": "key-file-owned-and-private",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser 700 /home/p8testuser/.ssh\np8testuser 600 /home/p8testuser/.ssh/authorized_keys\n",
+   "stderr": ""
+  },
+  {
+   "id": "no-ecryptfs-passphrase-files",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "account-exists\n0\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-password-logs-in-and-a-wrong-one-is-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "logged-in-as-p8testuser\nAuthentication failure\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "two su attempts as the account nobody (one with the test password, one with a wrong one); the outcomes go to /run/p8test-user/pw.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "an-out-of-band-key-is-planted",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "generates a throwaway ed25519 key pair, /run/p8test-oob-key and /run/p8test-oob-key.pub, and appends its public key (comment p8test-out-of-band) to /home/p8testuser/.ssh/authorized_keys",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-purges-the-out-of-band-key",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the file (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "a9fcc77c-4b41-4ccc-b321-6870e927ded8",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "a9fcc77c-4b41-4ccc-b321-6870e927ded8",
+   "fresh": true
+  }
+ },
+ "node_agent": {
+  "an-out-of-band-key-is-planted": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::User[p8testuser]/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8test-out-of-band]/ensure: removed\u001b[0m"
+   ],
+   "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795590029'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::User[p8testuser]/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8test-out-of-band]/ensure: removed\u001b[0m\n\u001b[0;32mInfo: Computing checksum on file /home/p8testuser/.ssh/authorized_keys\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=2\n"
+  }
+ },
+ "variants": {
+  "locked": {
+   "name": "locked",
+   "node": "ubuntu",
+   "params": "locked",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "snapshot": "P8NODE_BASELINE_GREEN_v5",
+     "boot_id": "c63b1b54-dfc1-4004-b0ef-16ae7dae3007",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "c63b1b54-dfc1-4004-b0ef-16ae7dae3007",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "the-wrapper-passes-a-locked-hash-home-shell-and-groups",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "",
+     "stderr": "id: 'p8testuser': no such user\nstat: cannot statx '/srv/p8testhome': No such file or directory\npasswd: user 'p8testuser' does not exist\nawk: fatal: cannot open file `/srv/p8testhome/.ssh/authorized_keys' for reading: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "ser]/Puppet_infrastructure::User_base[p8testuser]/File[/srv/p8testhome]/mode: mode changed '0750' to '0700'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::User[p8testuser]/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.34 seconds\u001b[0m\nRUN1_EVENTS: 4 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795590096'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.02 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::user: 4 concrete resources (+2 defined-type instances)\n  Puppet_infrastructure::User[p8testuser]\n  Puppet_infrastructure::User_base[p8testuser]\n  Group[p8testuser]\n  User[p8testuser]\n  File[/srv/p8testhome]\n  Ssh_authorized_key[p8testuser@puppet]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant locked; never a Phase 1 record)\n"
+   },
+   "applied": [
+    {
+     "id": "the-wrapper-passes-a-locked-hash-home-shell-and-groups",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "/srv/p8testhome:/bin/sh\nusers\n700\nL\nuserlocked\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  },
+  "emptykey": {
+   "name": "emptykey",
+   "node": "ubuntu",
+   "params": "emptykey",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "snapshot": "P8NODE_BASELINE_GREEN_v5",
+     "boot_id": "0b3e5aa2-6c7b-4637-b3ea-7ed9df8ffc38",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "0b3e5aa2-6c7b-4637-b3ea-7ed9df8ffc38",
+     "fresh": true
+    }
+   },
+   "clean": [
+    {
+     "id": "the-wrapper-passes-an-empty-key",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "",
+     "stderr": "awk: fatal: cannot open file `/home/p8testuser/.ssh/authorized_keys' for reading: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "uppet8node]/Puppet_infrastructure::User[p8testuser]/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Puppet_infrastructure::User[p8testuser]/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.28 seconds\u001b[0m\nRUN1_EVENTS: 3 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795590166'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.04 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::user: 3 concrete resources (+2 defined-type instances)\n  Puppet_infrastructure::User[p8testuser]\n  Puppet_infrastructure::User_base[p8testuser]\n  Group[p8testuser]\n  User[p8testuser]\n  Ssh_authorized_key[p8testuser@puppet]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant emptykey; never a Phase 1 record)\n"
+   },
+   "applied": [
+    {
+     "id": "the-wrapper-passes-an-empty-key",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "emptykey\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS"
+  }
+ },
+ "outcomes": [
+  {
+   "outcome": "the account exists with its own primary group, comment, home (created, owned) and shell, in no other group",
+   "checks": [
+    "user-and-own-primary-group",
+    "no-supplementary-groups",
+    "home-created-and-owned"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the given password hash is set, so the password logs in and a wrong one is refused",
+   "checks": [
+    "password-hash-set",
+    "the-password-logs-in-and-a-wrong-one-is-refused"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the given key is always pushed, as the user's only key, in a private file the user owns",
+   "checks": [
+    "the-given-key-is-pushed",
+    "key-file-owned-and-private"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "no ecryptfs passphrase is managed (the wrapper cannot pass myppsigs or myppwrapped)",
+   "checks": [
+    "no-ecryptfs-passphrase-files"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a key added out of band is purged by the next agent run (user_base's purge, behind the wrapper)",
+   "checks": [
+    "an-out-of-band-key-is-planted",
+    "the-agent-run-purges-the-out-of-band-key"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the empty-hash refusal behind the wrapper",
+   "uncovered": {
+    "why": "a refusal at compile time (user_base's fail()), which ends a run APPLY_FAILED, never a check",
+    "lifted_by": "capability: a variant run whose expected outcome is a compile refusal",
+    "evidence": "phase3.py run_locked: a red harness is APPLY_FAILED; user_base's set records the compile-only refusal (2026-11-19T17:23:25Z, COMPILE_FAILED \"Can't touch this - hash is empty!\"); this wrapper passes myhash on (user.pp:8)"
+   }
+  },
+  {
+   "outcome": "a login with the pushed key",
+   "uncovered": {
+    "why": "a login needs the private half of the pushed key on the node; the repository keeps no private keys and no run hands a file from the laptop to the node",
+    "lifted_by": "capability: a run step that hands a private key from the laptop to the node",
+    "evidence": "phase3.py fetch_node_files hands files from the node to the peer only; the key's line, owner and modes are checked instead"
+   }
+  },
+  {
+   "outcome": "the parameter variants the wrapper passes on (a group list, another home, a home mode, another shell) and the locked or keyless placeholders",
+   "checks": [
+    "the-wrapper-passes-a-locked-hash-home-shell-and-groups",
+    "the-wrapper-passes-an-empty-key"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 232.4
+}
