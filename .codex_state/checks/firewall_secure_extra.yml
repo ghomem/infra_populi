@@ -112,10 +112,15 @@ outcomes:
         nodes.yml (2026-11-23): every node kind has NIC1 NAT and NIC2 on vboxnet0 only; no internal network exists
   - outcome: with anti_ddos but without ip_filter, every source is held to the per-source connection and rate limits on the listed services in INPUT
     from: manifests/firewall_secure_extra.pp:269-303
-    checks: [anti-ddos-without-ip-filter-limits-every-source]
+    checks: [anti-ddos-without-ip-filter-limits-every-source, ddosonly-any-source-is-held-to-the-connection-limit]
   - outcome: without anti_ddos the listed service ports are simply opened, and strict mode admits only listed SSH sources
     from: manifests/firewall_secure_extra.pp:139-143, 306-312
-    checks: [without-anti-ddos-the-port-is-opened-and-ssh-is-strict]
+    checks: [without-anti-ddos-the-port-is-opened-and-ssh-is-strict, plain-strict-ssh-and-the-open-port-from-a-namespace]
+# Correction round 1 of the swept set (2026-11-25, review 20261125T160917Z, purpose): both variants were checked as rule
+# text only. Variant runs have no peer, so each now connects from a network namespace on the node behind a veth pair
+# (node side 192.0.2.1; RFC 5737 addresses), as firewall_secure's strict check does: in `plain` (acl now also lists
+# 192.0.2.3) a listed source reaches SSH, an unlisted one is dropped and still reaches the opened service port; in
+# `ddosonly` held connections from any source stop at ddos_limit.
 variants:
   - name: ddosonly
     why: anti_ddos without ip_filter, which node_base passes through from its own parameters (a composite)
@@ -619,3 +624,74 @@ checks:
       iptables -S INPUT | grep -c '110 SSH' || true
       iptables -S | grep -E '^-P INPUT '
     expect: {rc: 0, stdout: "\\A1\\n0\\n0\\n-P INPUT DROP\\n\\Z"}
+
+  - id: ddosonly-any-source-is-held-to-the-connection-limit
+    variant: ddosonly
+    what: >-
+      with anti_ddos and no ip_filter, held connections to the service from a source on no list (192.0.2.2, from a
+      network namespace on the node) stop at ddos_limit: 3 established of 5
+    control: negative
+    timeout: 150
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "269-303", text: "firewall { \"521 limit connections per source IP ${service}\":"}
+    mutates: >-
+      on the node: starts a transient unit p8test-listener (python3 -m http.server 8888 on 0.0.0.0); creates the network
+      namespace p8fwx and the veth pair p8fwx0 (node side, 192.0.2.1/24) and p8fwx1 (in the namespace, 192.0.2.2/24);
+      opens 5 TCP connections from 192.0.2.2 to 192.0.2.1:8888, one per second, each ended after 20 s; the established
+      count goes to /run/p8test-fwx/ns-held.txt
+    probe: |
+      systemd-run --unit p8test-listener -q python3 -m http.server 8888 --bind 0.0.0.0
+      ip netns add p8fwx
+      ip link add p8fwx0 type veth peer name p8fwx1
+      ip link set p8fwx1 netns p8fwx
+      ip addr add 192.0.2.1/24 dev p8fwx0
+      ip link set p8fwx0 up
+      ip netns exec p8fwx ip addr add 192.0.2.2/24 dev p8fwx1
+      ip netns exec p8fwx ip link set lo up
+      ip netns exec p8fwx ip link set p8fwx1 up
+      sleep 2
+      install -d -m 0700 /run/p8test-fwx
+      for i in $(seq 5); do (timeout 20 ip netns exec p8fwx nc -s 192.0.2.2 192.0.2.1 8888 </dev/null >/dev/null 2>&1) & sleep 1; done
+      sleep 1
+      ip netns exec p8fwx ss -tnH state established '( dport = :8888 )' | wc -l > /run/p8test-fwx/ns-held.txt
+      wait
+    effect: |
+      cat /run/p8test-fwx/ns-held.txt
+    expect: {rc: 0, stdout: "\\A3\\n\\Z"}
+
+  - id: plain-strict-ssh-and-the-open-port-from-a-namespace
+    variant: plain
+    what: >-
+      in strict mode without anti_ddos, from a network namespace on the node: a listed source (192.0.2.3, in the
+      variant's acl) reaches SSH, an unlisted one (192.0.2.2) is dropped at SSH, and the unlisted one still reaches the
+      opened service port 8888
+    control: negative
+    derived_from:
+      - {path: manifests/firewall_secure_extra.pp, lines: "139-143", text: "if ( $strict == true ) {"}
+      - {path: manifests/firewall_secure_extra.pp, lines: "306-312", text: "firewall { \"555 open service ports: ${service}\": chain => 'INPUT', proto => $service[1], dport => $service[0], action => 'accept', }"}
+    mutates: >-
+      on the node: starts a transient unit p8test-listener (python3 -m http.server 8888 on 0.0.0.0); creates the network
+      namespace p8fwx and the veth pair p8fwx0 (node side, 192.0.2.1/24) and p8fwx1 (in the namespace, 192.0.2.2/24 and
+      192.0.2.3/24); three TCP connection attempts (nc -z, 5 s timeout); results in /run/p8test-fwx/ns-plain.txt
+    probe: |
+      systemd-run --unit p8test-listener -q python3 -m http.server 8888 --bind 0.0.0.0
+      ip netns add p8fwx
+      ip link add p8fwx0 type veth peer name p8fwx1
+      ip link set p8fwx1 netns p8fwx
+      ip addr add 192.0.2.1/24 dev p8fwx0
+      ip link set p8fwx0 up
+      ip netns exec p8fwx ip addr add 192.0.2.2/24 dev p8fwx1
+      ip netns exec p8fwx ip addr add 192.0.2.3/24 dev p8fwx1
+      ip netns exec p8fwx ip link set lo up
+      ip netns exec p8fwx ip link set p8fwx1 up
+      sleep 2
+      install -d -m 0700 /run/p8test-fwx
+      t() { ip netns exec p8fwx nc -z -w 5 -s "$1" 192.0.2.1 "$2" 2>/dev/null && echo in || echo dropped; }
+      {
+        echo "ssh from listed $(t 192.0.2.3 22)"
+        echo "ssh from unlisted $(t 192.0.2.2 22)"
+        echo "service from unlisted $(t 192.0.2.2 8888)"
+      } > /run/p8test-fwx/ns-plain.txt
+    effect: |
+      cat /run/p8test-fwx/ns-plain.txt
+    expect: {rc: 0, stdout: "\\Assh from listed in\\nssh from unlisted dropped\\nservice from unlisted in\\n\\Z"}
