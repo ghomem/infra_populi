@@ -1,0 +1,35 @@
+{
+ "class": "docker_container",
+ "at": "20261125T174809Z",
+ "verdict": "FAIL",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "fail"
+ },
+ "evidence": [
+  "environment-volume-and-command-reach-the-container -> manifests/docker_container.pp:59-79: the lines create named volumes before Docker::Run; under the runopts fixture (volumes [p8test-vol:/p8test-data]) the probe's mount line 'p8test-vol /p8test-data' is what they produce (the command part of the probe is judged under purpose)",
+  "the-container-runs-the-image-under-systemd -> manifests/docker_container.pp:82-84: docker::run titled $name with image $image_id; the fixture title docker_container and image nginx:alpine give the probed unit docker-docker_container and the running container docker_container on nginx:alpine",
+  "the-container-runs-the-image-under-systemd -> manifests/docker_container.pp:42-46: no digest, so docker::image with image_tag $tag; fixture tag alpine gives the probed image nginx:alpine",
+  "purpose gap: Tested: the image is pulled at the tag; the container runs it as systemd unit docker-docker_container; port 18080 is published on 127.0.0.1 only and nginx answers there (the mismatch on the host-only address fails); a killed container is started again; env and a named volume reach the container (runopts); network none runs with no published port (nonet). Reviewer run 20261125T173222Z: ALL_PASS, base and both variants. GAP 1, the image-change recreation row (manifests/docker_container.pp:92, subscribe => Docker::Image): the uncovered reason is false. The installed puppetlabs-docker image.pp, read on the master: with ensure present and tag alpine, the pull exec runs only 'unless docker images -q nginx:alpine | grep .'. So a second image version behind the same tag is never pulled, registry or not. The Docker::Image event that the subscribe reacts to comes when the image is missing locally (or with ensure/tag latest). The lab can produce that: a mutating check removes the image (docker rmi -f nginx:alpine), then a node_agent run (a runner capability other sets use), then the container's ID or StartedAt is compared. The evidence given (no registry in nodes.yml) does not back the reason. GAP 2, the command row: the runopts command nginx -g 'daemon off;' is identical to nginx:alpine's own CMD. Read on the node: docker image inspect nginx:alpine gives [\"nginx\",\"-g\",\"daemon off;\"]. So grep -c 'daemon off;' on .Config.Cmd prints 1 whether or not $command reached the container; the command outcome is mapped but not tested. GAP 3, missing outcome rows: ensure (passed to docker::image, lines 37-46) is set by 1 production node statement (diagnosis/fleet_variant_usage.md) and has no outcome row, neither checks nor uncovered. The host_port fallback (lines 20-24: host_port '' publishes on app_port) is used by the 4 of 7 production statements that set app_port without host_port, and is untested: every fixture with app_port sets host_port 18080. The lab can exercise both as variants."
+ ],
+ "review_s": 947.0,
+ "check_file_sha256": "b4d3f6798f5226c725515b0020cf80f7289c8323348f0cc193937156f02ac492",
+ "content_sha256": "b4d3f6798f5226c725515b0020cf80f7289c8323348f0cc193937156f02ac492",
+ "reviewer_result": "20261125T173222Z-reviewer",
+ "author_result": "20261125T171635Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "8f29a0cf-7964-48bb-9605-8f7e44043d0f",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "8f29a0cf-7964-48bb-9605-8f7e44043d0f",
+   "fresh": true
+  }
+ }
+}
