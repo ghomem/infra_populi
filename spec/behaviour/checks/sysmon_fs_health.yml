@@ -1,0 +1,179 @@
+class: sysmon_fs_health
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+purpose: 'Gives the monitoring system a health check for a storage volume (a backup tree): a Nagios plugin that reports CRITICAL
+  when the tree is empty or below its size threshold, cannot be listed, or a sample of its files cannot be read, and OK otherwise;
+  the nagios account may run it as root through sudo.'
+outcomes:
+- outcome: the per-volume check script carries the base directory, the size threshold and the file count, and nagios may run
+    it through sudo
+  from: manifests/sysmon_fs_health.pp:3-17
+  checks:
+  - check-script-rendered
+  - nagios-may-run-it-through-sudo
+- outcome: an empty tree (at or under the size threshold) is reported CRITICAL with exit 2
+  from: templates/sysmon/check-fs-health.sh.erb:42-52, 80-83
+  checks:
+  - check-reports-critical-on-an-empty-tree
+- outcome: a readable tree above the threshold is listed, a sample of its files read, and reported OK with exit 0, also when
+    nagios runs it through sudo
+  from: templates/sysmon/check-fs-health.sh.erb:54-97
+  checks:
+  - check-reports-ok-on-a-healthy-tree
+  - nagios-runs-the-check-through-sudo
+- outcome: a file whose content cannot be read, or a tree that cannot be listed (I/O errors on the volume), is reported CRITICAL
+    with exit 2; the intact volume is OK
+  from: templates/sysmon/check-fs-health.sh.erb:54-93
+  checks:
+  - check-reports-critical-on-read-errors
+- outcome: only nagios may run the check through sudo without a password
+  from: manifests/sysmon_fs_health.pp:10
+  checks:
+  - nagios-runs-the-check-through-sudo
+checks:
+- id: check-script-rendered
+  what: the per-volume check script (root 0755) carries the base directory, the size threshold and the file count
+  control: negative
+  derived_from:
+  - path: manifests/sysmon_fs_health.pp
+    lines: '8'
+    text: $scriptname = "${prefix}-${volname}.sh"
+  - path: manifests/sysmon_fs_health.pp
+    lines: 13-16
+    text: content => template("puppet_infrastructure/sysmon/${prefix}.sh.erb"),
+  - path: templates/sysmon/check-fs-health.sh.erb
+    lines: 8-10
+    text: 'SIZE_THRESHOLD="<%= @size_threshold %>" # in KB, 4KB is an empty directory'
+  probe: |
+    f={{LOCALDIR}}/bin/check-fs-health-sysmon_fs_health.sh
+    stat -c '%U %a' "$f"; bash -n "$f" && grep -E '^(BASEDIR|SIZE_THRESHOLD|NFILES)=' "$f" | cut -d' ' -f1
+  expect:
+    rc: 0
+    stdout: \Aroot 755\nBASEDIR="/var/tmp/p8test-fs-health"\nSIZE_THRESHOLD="8"\nNFILES="3"\n\Z
+- id: nagios-may-run-it-through-sudo
+  what: a sudoers drop-in (priority 10) lets nagios run exactly this script without a password, and sudoers stays valid
+  control: negative
+  derived_from:
+  - path: manifests/sysmon_fs_health.pp
+    lines: '10'
+    text: 'sudo::conf { "nagios_fs_health_${volname}": priority => 10, content  => "nagios ALL=NOPASSWD:${bindir}/${scriptname}"
+      }'
+  probe: |
+    grep -h '^nagios ' /etc/sudoers.d/10_nagios_fs_health_sysmon_fs_health
+    visudo -c -q && echo sudoers-valid
+  expect:
+    rc: 0
+    stdout: \Anagios ALL=NOPASSWD:{{LOCALDIR}}/bin/check-fs-health-sysmon_fs_health\.sh\nsudoers-valid\n\Z
+- id: check-reports-critical-on-an-empty-tree
+  what: on an empty tree (4 KB, at most the 8 KB threshold) the check reports CRITICAL "storage space is empty" with exit
+    2
+  control: negative
+  derived_from:
+  - path: templates/sysmon/check-fs-health.sh.erb
+    lines: 42-52
+    text: if [ $MYSIZE -gt $SIZE_THRESHOLD ]; then
+  - path: templates/sysmon/check-fs-health.sh.erb
+    lines: 80-83
+    text: handle_error $RC "storage space is empty"
+  mutates: creates the empty directory /var/tmp/p8test-fs-health (the check itself only reads)
+  probe: |
+    install -d /var/tmp/p8test-fs-health
+  effect: |
+    {{LOCALDIR}}/bin/check-fs-health-sysmon_fs_health.sh; echo "rc=$?"
+  expect:
+    rc: 0
+    stdout: '\ACRITICAL: storage space is empty\nrc=2\n\Z'
+- id: check-reports-ok-on-a-healthy-tree
+  what: 'the exercise: on a readable tree above the size threshold the check lists the tree, reads N random files and reports
+    OK with exit 0'
+  control: negative
+  derived_from:
+  - path: templates/sysmon/check-fs-health.sh.erb
+    lines: 43-51
+    text: if [ $MYSIZE -gt $SIZE_THRESHOLD ]; then
+  - path: templates/sysmon/check-fs-health.sh.erb
+    lines: 96-97
+    text: 'echo "OK: exit code $RC $OUTPUT"'
+  mutates: creates /var/tmp/p8test-fs-health with five 4 KB files of random data (20 KB, above the 8 KB threshold); the read-only
+    effect runs the check script, which only reads the tree
+  probe: |
+    install -d /var/tmp/p8test-fs-health
+    for i in 1 2 3 4 5; do head -c 4096 /dev/urandom | install -m 0644 /dev/stdin "/var/tmp/p8test-fs-health/f$i"; done
+  effect: |
+    {{LOCALDIR}}/bin/check-fs-health-sysmon_fs_health.sh; echo "rc=$?"
+  expect:
+    rc: 0
+    stdout: '\AOK: exit code 0 \nrc=0\n\Z'
+- id: nagios-runs-the-check-through-sudo
+  what: the nagios account runs the check through sudo without a password (the drop-in's rule) and gets OK with exit 0 on
+    the healthy tree; nobody, which no rule names, is refused (sudo -n exits 1)
+  control: negative
+  derived_from:
+  - path: manifests/sysmon_fs_health.pp
+    lines: '10'
+    text: 'sudo::conf { "nagios_fs_health_${volname}": priority => 10, content  => "nagios ALL=NOPASSWD:${bindir}/${scriptname}"
+      }'
+  mutates: creates the system account nagios if absent (production's monitoring base provides it), then runs the check once
+    as nagios through sudo -n and tries it once as nobody (refused; sudo logs both to the journal and /var/log/auth.log);
+    the outputs go to /run/p8test-fs-health/sudo.out
+  probe: |
+    id nagios >/dev/null 2>&1 || useradd -r -s /usr/sbin/nologin nagios
+    install -d -m 0700 /run/p8test-fs-health
+    cd /tmp && runuser -u nagios -- sudo -n {{LOCALDIR}}/bin/check-fs-health-sysmon_fs_health.sh > /run/p8test-fs-health/sudo.out 2>&1; echo "rc=$?" >> /run/p8test-fs-health/sudo.out
+    runuser -u nobody -- sudo -n {{LOCALDIR}}/bin/check-fs-health-sysmon_fs_health.sh >/dev/null 2>&1; echo "nobody rc=$?" >> /run/p8test-fs-health/sudo.out
+  effect: |
+    cat /run/p8test-fs-health/sudo.out
+  expect:
+    rc: 0
+    stdout: '\AOK: exit code 0 \nrc=0\nnobody rc=1\n\Z'
+- id: check-reports-critical-on-read-errors
+  what: 'the tree on a volume with read errors: with one file''s blocks failing, the check reports CRITICAL "error checking
+    md5sum" for that file with exit 2; with a subdirectory''s block failing, CRITICAL "error listing files" with exit 2; on
+    the same volume intact, OK with exit 0'
+  control: negative
+  timeout: 300
+  derived_from:
+  - path: templates/sysmon/check-fs-health.sh.erb
+    lines: 63-74
+    text: handle_error $RC "error checking md5sum for $f"
+  - path: templates/sysmon/check-fs-health.sh.erb
+    lines: 54-60
+    text: find $BASEDIR > /dev/null
+  - path: templates/sysmon/check-fs-health.sh.erb
+    lines: 85-88
+    text: handle_error $RC "error listing files on the storage space"
+  mutates: 'replaces /var/tmp/p8test-fs-health with the mount point of a 16 MB ext4 image (/run/p8test-fsh/img on a loop device)
+    holding f1, f2 and sub/f3 (8 KB each, NFILES 3 so every file is read); mounts it read-only three times: through a device-mapper
+    device p8test-fsh whose table maps f1''s blocks to the error target, then the subdirectory''s block, then the plain loop
+    device; the kernel logs the I/O errors; everything is unmounted and removed afterwards; the outputs go to /run/p8test-fsh/out.txt'
+  probe: |
+    d=/run/p8test-fsh; B=/var/tmp/p8test-fs-health; C={{LOCALDIR}}/bin/check-fs-health-sysmon_fs_health.sh
+    install -d -m 0700 $d; rm -rf $B; install -d $B
+    truncate -s 16M $d/img; L=$(losetup -f --show $d/img); mkfs.ext4 -q -b 4096 -O ^inline_data $L
+    mount $L $B; install -d $B/sub
+    for f in f1 f2 sub/f3; do head -c 8192 /dev/urandom > $B/$f; done; sync
+    fb=$(filefrag -v $B/f1 | awk '/^ *0:/{sub(/\.\./,"",$4); print $4}'); db=$(debugfs -R "blocks /sub" $L 2>/dev/null | awk '{print $1}')
+    umount $B; S=$(blockdev --getsz $L)
+    inject() { s=$(( $1 * 8 )); n=$(( $2 * 8 ))
+      printf '0 %s linear %s 0\n%s %s error\n%s %s linear %s %s\n' $s $L $s $n $((s+n)) $((S-s-n)) $L $((s+n)) | dmsetup create p8test-fsh
+      mount -o ro,noload /dev/mapper/p8test-fsh $B; }
+    clear() { umount $B; dmsetup remove p8test-fsh; }
+    { inject "$fb" 2; $C 2>/dev/null; echo "file error rc=$?"; clear
+      inject "$db" 1; $C 2>/dev/null; echo "dir error rc=$?"; clear
+      mount -o ro $L $B; $C 2>/dev/null; echo "intact rc=$?"; umount $B; } > $d/out.txt
+    losetup -d $L
+  effect: |
+    cat /run/p8test-fsh/out.txt
+  expect:
+    rc: 0
+    stdout: '\ACRITICAL: error checking md5sum for /var/tmp/p8test-fs-health/f1\nfile error rc=2\nCRITICAL: error listing
+      files on the storage space\ndir error rc=2\nOK: exit code 0 \nintact rc=0\n\Z'
+apply:
+  resource_type: define
+  node: ubuntu
+  title: sysmon_fs_health
+  catalog:
+    Debian:
+    - class: filesystem_base
+    - external: sudo
+    - class: sysmon_fs_health

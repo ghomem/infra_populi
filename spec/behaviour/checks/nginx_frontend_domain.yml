@@ -1,0 +1,300 @@
+class: nginx_frontend_domain
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+purpose: 'A TLS frontend for one domain in nginx: plain HTTP on the domain and on www redirects to HTTPS, and HTTPS on the
+  domain and www proxies to the domain''s backends (an upstream), with the domain''s certificate and modern TLS settings.'
+outcomes:
+- outcome: plain HTTP on the domain redirects (301) to HTTPS on the domain, keeping the path
+  from: manifests/nginx_frontend_domain.pp:416-433
+  checks:
+  - a-backend-answers
+  - http-redirects-to-https
+- outcome: plain HTTP on www redirects (301) to HTTPS on www, keeping the path
+  from: manifests/nginx_frontend_domain.pp:445-454
+  checks:
+  - http-redirects-to-https
+- outcome: HTTPS on www and on the domain proxies to the backend, with the domain's certificate, which verifies against its
+    issuer
+  from: manifests/nginx_frontend_domain.pp:409-412, 521-524, 564, 576-577, 684-696
+  checks:
+  - https-proxies-to-the-backend
+- outcome: only TLS 1.3 is accepted (the default protocol list)
+  from: manifests/nginx_frontend_domain.pp:92, 311, 695
+  checks:
+  - only-tls-1-3-is-accepted
+- outcome: the parameters production sets (Let's Encrypt, proxy timeouts, ad-hoc location config, backend headers, protocols,
+    the naked domain decorated to www, a pass suffix, other locations, the www redirect fix, dynamic DNS, security headers)
+  from: manifests/nginx_frontend_domain.pp:1-140 (parameters)
+  checks:
+  - production-parameters-render
+  - the-naked-domain-redirects-to-www
+  - dynamic-dns-proxies-through-the-variable
+- outcome: with TLSv1.2 enabled (base_ssl_protocols_prefix, as production sets it), only the class's cipher list is accepted
+    for it
+  from: manifests/nginx_frontend_domain.pp:96-112, 315-318, 696
+  checks:
+  - under-tls-1-2-only-the-class-ciphers-are-accepted
+- outcome: the parameters no production node sets (servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers,
+    base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, ip_whitelist, proxy_locations_ignore_headers, redirect_http_www_to_https_www_create,
+    server_https_www_create, redirects_external_prevented, redirects_external_location, redirects_external_whitelisted, redirects_external_prevented_adhoc_config,
+    use_compact_log_format, resolver)
+  from: manifests/nginx_frontend_domain.pp:1-140 (parameters)
+  uncovered:
+    why: parameter variants no production node uses
+    accepted_gap:
+    - servers_create
+    - enable_ssl
+    - additional_ssl_protocols
+    - additional_ssl_ciphers
+    - base_ssl_ciphers_prefix
+    - base_ssl_ciphers_suffix
+    - base_ssl_ecdh_curve
+    - ip_whitelist
+    - proxy_locations_ignore_headers
+    - redirect_http_www_to_https_www_create
+    - server_https_www_create
+    - redirects_external_prevented
+    - redirects_external_location
+    - redirects_external_whitelisted
+    - redirects_external_prevented_adhoc_config
+    - use_compact_log_format
+    - resolver
+    evidence: '{{SITE:fleet-usage}} (2026-11-23): no production node statement sets any of these on nginx_frontend_domain,
+      and no class of the repository sets them on it'
+- outcome: on RedHat the key is read from /etc/pki/tls/private
+  from: manifests/nginx_frontend_domain.pp:272-283
+  checks:
+  - on-redhat-the-key-is-read-from-pki-tls-private
+variants:
+- name: prod
+  why: 'the parameters production sets on nginx_frontend_domain ({{SITE:fleet-usage}}: letsencrypt_certificate, the proxy
+    timeouts, ad-hoc and other location config, backend headers, decorate_naked, www_fix_redirect and more), with test values;
+    dynamic_dns_resolution is in `dyn` (the class cannot take both, see the header)'
+  params: prod
+- name: dyn
+  why: dynamic_dns_resolution, which production sets on nginx_frontend_domain ({{SITE:fleet-usage}}), with the set's own fixture
+    otherwise
+  params: dyn
+- name: rhel
+  why: the RedHat branch (the key read from /etc/pki/tls/private), on the rhel9 node with the set's own params fixture
+  node: rhel9
+checks:
+- id: a-backend-answers
+  what: setup for the frontend checks, a backend on 127.0.0.1:8080 (the fixture's backend) serving a page that names it
+  control: negative
+  derived_from:
+  - path: manifests/nginx_frontend_domain.pp
+    lines: 409-412
+    text: 'nginx::resource::upstream { $backend_name:'
+  mutates: starts a transient unit p8test-backend (python3 -m http.server on 127.0.0.1:8080, serving /run/p8test-frontend/www,
+    whose index.html says p8test-backend)
+  probe: |
+    install -d -m 0755 /run/p8test-frontend/www
+    echo p8test-backend > /run/p8test-frontend/www/index.html
+    systemd-run --unit p8test-backend -q python3 -m http.server 8080 --bind 127.0.0.1 --directory /run/p8test-frontend/www
+    sleep 2
+  effect: |
+    curl -s --max-time 5 http://127.0.0.1:8080/
+  expect:
+    rc: 0
+    stdout: \Ap8test-backend\n\Z
+- id: http-redirects-to-https
+  what: plain HTTP to the domain and to www answers 301 to HTTPS on the same name, with the path and query kept
+  control: negative
+  derived_from:
+  - path: manifests/nginx_frontend_domain.pp
+    lines: '420'
+    text: $naked_str = "301 https://${domain}\$request_uri"
+  - path: manifests/nginx_frontend_domain.pp
+    lines: '453'
+    text: '''return'' => "301 https://www.${domain}\$request_uri",'
+  mutates: none beyond two local HTTP requests (declared mutating so it runs after the backend starts)
+  probe: |
+    true
+  effect: |
+    for h in p8test.example.com www.p8test.example.com; do
+      curl -s -o /dev/null --max-time 5 --resolve "$h:80:127.0.0.1" -w '%{http_code} %{redirect_url}\n' "http://$h/p8test/path?q=1"
+    done
+  expect:
+    rc: 0
+    stdout: \A301 https://p8test\.example\.com/p8test/path\?q=1\n301 https://www\.p8test\.example\.com/p8test/path\?q=1\n\Z
+- id: https-proxies-to-the-backend
+  what: HTTPS to www and to the domain returns the backend's page, over a certificate that verifies against the issuer in
+    the domain's bundle under each name; under a name the certificate does not hold (other.example.com) the verification fails
+    and no page is returned
+  control: negative
+  derived_from:
+  - path: manifests/nginx_frontend_domain.pp
+    lines: 521-524
+    text: $domain_list = [ $domain, "www.${domain}" ]
+  - path: manifests/nginx_frontend_domain.pp
+    lines: '564'
+    text: $proxy_value = "${backend_protocol}://${backend_name}"
+  mutates: none beyond two local HTTPS requests (declared mutating so it runs after the backend starts)
+  probe: |
+    true
+  effect: |
+    ca=$(awk '/BEGIN CERT/{i++} i==2' /etc/ssl/certs/p8test.nginx.bundle.crt)
+    for h in www.p8test.example.com p8test.example.com other.example.com; do
+      echo "$h: $(curl -s --max-time 5 --cacert <(echo "$ca") --resolve "$h:443:127.0.0.1" "https://$h/")"
+    done
+  expect:
+    rc: 0
+    stdout: '\Awww\.p8test\.example\.com: p8test-backend\np8test\.example\.com: p8test-backend\nother\.example\.com: \n\Z'
+- id: only-tls-1-3-is-accepted
+  what: a TLS 1.3 handshake with the frontend succeeds and a TLS 1.2 one is refused
+  control: negative
+  derived_from:
+  - path: manifests/nginx_frontend_domain.pp
+    lines: '92'
+    text: $base_ssl_protocols_prefix = ['TLSv1.3', ],
+  - path: manifests/nginx_frontend_domain.pp
+    lines: '695'
+    text: ssl_protocols             => $base_ssl_protocols,
+  mutates: none beyond two local TLS handshakes (declared mutating so it runs after the backend starts)
+  probe: |
+    true
+  effect: |
+    for v in tls1_3 tls1_2; do
+      openssl s_client -connect 127.0.0.1:443 -servername www.p8test.example.com -$v </dev/null 2>/dev/null | grep -q '^New, TLSv1' && echo "$v accepted" || echo "$v refused"
+    done
+  expect:
+    rc: 0
+    stdout: \Atls1_3 accepted\ntls1_2 refused\n\Z
+- id: production-parameters-render
+  variant: prod
+  what: 'with the parameters production sets (given test values), nginx''s running configuration carries each of them: the
+    Let''s Encrypt bundle, the three timeouts, the ad-hoc location line, the backend header, the protocols, the www server,
+    the pass suffix, another location''s config, the www redirect fix and the security headers'
+  control: negative
+  derived_from:
+  - path: manifests/nginx_frontend_domain.pp
+    lines: 1-140
+    text: $letsencrypt_certificate
+  probe: |
+    T=$(nginx -T 2>/dev/null)
+    printf '%s\n' "$T" | grep -qE 'ssl_certificate .*p8test\.nginx\.bundle\.pem' && echo "Let's Encrypt bundle: rendered" || echo "Let's Encrypt bundle: missing"
+    printf '%s\n' "$T" | grep -qE 'proxy_read_timeout +121s' && echo 'read timeout: rendered' || echo 'read timeout: missing'
+    printf '%s\n' "$T" | grep -qE 'proxy_connect_timeout +31s' && echo 'connect timeout: rendered' || echo 'connect timeout: missing'
+    printf '%s\n' "$T" | grep -qE 'proxy_send_timeout +122s' && echo 'send timeout: rendered' || echo 'send timeout: missing'
+    printf '%s\n' "$T" | grep -qE 'add_header X-P8test-Adhoc on' && echo 'ad-hoc location config: rendered' || echo 'ad-hoc location config: missing'
+    printf '%s\n' "$T" | grep -qE 'proxy_set_header +X-P8test-Set' && echo 'backend header: rendered' || echo 'backend header: missing'
+    printf '%s\n' "$T" | grep -qE 'ssl_protocols +TLSv1\.2 TLSv1\.3' && echo 'protocols: rendered' || echo 'protocols: missing'
+    printf '%s\n' "$T" | grep -qE 'proxy_pass .*/p8test-suffix' && echo 'pass suffix: rendered' || echo 'pass suffix: missing'
+    printf '%s\n' "$T" | grep -qE 'location +/p8test-other/' && echo 'other location config: rendered' || echo 'other location config: missing'
+    printf '%s\n' "$T" | grep -qE 'add_header X-P8test-Other on' && echo 'other location line: rendered' || echo 'other location line: missing'
+    printf '%s\n' "$T" | grep -qE 'proxy_redirect +http://\$host/ https://\$host/' && echo 'www fix redirect: rendered' || echo 'www fix redirect: missing'
+    printf '%s\n' "$T" | grep -qE 'X-Frame-Options.*DENY' && echo 'security headers: rendered' || echo 'security headers: missing'
+  expect:
+    rc: 0
+    stdout: '\ALet''s Encrypt bundle: rendered\nread timeout: rendered\nconnect timeout: rendered\nsend timeout: rendered\nad-hoc
+      location config: rendered\nbackend header: rendered\nprotocols: rendered\npass suffix: rendered\nother location config:
+      rendered\nother location line: rendered\nwww fix redirect: rendered\nsecurity headers: rendered\n\Z'
+- id: the-naked-domain-redirects-to-www
+  variant: prod
+  what: with decorate_naked true the naked domain gets 301 to https://www.<domain> with its path, over HTTP (the naked HTTP
+    server) and over HTTPS (the separate https_<domain> server)
+  control: negative
+  derived_from:
+  - path: manifests/nginx_frontend_domain.pp
+    lines: 416-417
+    text: $naked_str = "301 https://www.${domain}\$request_uri"
+  - path: manifests/nginx_frontend_domain.pp
+    lines: 494-519
+    text: 'nginx::resource::server { "https_${domain}":'
+  probe: |
+    curl -s -o /dev/null --max-time 5 --resolve p8test.example.com:80:127.0.0.1 -w 'naked http %{http_code} %{redirect_url}\n' 'http://p8test.example.com/p8test/path?q=1'
+    curl -s -k -o /dev/null --max-time 5 --resolve p8test.example.com:443:127.0.0.1 -w 'naked https %{http_code} %{redirect_url}\n' 'https://p8test.example.com/p8test/path?q=1'
+  mismatch:
+    varies: the name requested over HTTPS (www, which the domain's server holds and proxies, in place of the naked domain)
+    probe: |
+      curl -s -o /dev/null --max-time 5 --resolve p8test.example.com:80:127.0.0.1 -w 'naked http %{http_code} %{redirect_url}\n' 'http://p8test.example.com/p8test/path?q=1'
+      curl -s -k -o /dev/null --max-time 5 --resolve www.p8test.example.com:443:127.0.0.1 -w 'naked https %{http_code} %{redirect_url}\n' 'https://www.p8test.example.com/p8test/path?q=1'
+  expect:
+    rc: 0
+    stdout: \Anaked http 301 https://www\.p8test\.example\.com/p8test/path\?q=1\nnaked https 301 https://www\.p8test\.example\.com/p8test/path\?q=1\n\Z
+- id: under-tls-1-2-only-the-class-ciphers-are-accepted
+  variant: prod
+  what: with TLSv1.2 enabled, a TLSv1.2 handshake on www offering only ECDHE-RSA-AES128-GCM-SHA256 (in the class's list) succeeds,
+    and one offering only AES128-SHA (not in it) is refused; the client allows every cipher (SECLEVEL 0), so the refusal is
+    the server's
+  control: negative
+  derived_from:
+  - path: manifests/nginx_frontend_domain.pp
+    lines: '110'
+    text: ECDHE-RSA-AES128-GCM-SHA256
+  - path: manifests/nginx_frontend_domain.pp
+    lines: '318'
+    text: $base_ssl_ciphers = "${base_ssl_ciphers_prefix}:${additional_ssl_ciphers_string}:${base_ssl_ciphers_suffix}"
+  probe: |
+    for c in ECDHE-RSA-AES128-GCM-SHA256 AES128-SHA; do
+      if echo | openssl s_client -connect 127.0.0.1:443 -servername www.p8test.example.com -tls1_2 -cipher "$c:@SECLEVEL=0" 2>/dev/null | grep -q "Cipher is $c\$"; then echo "$c accepted"; else echo "$c refused"; fi
+    done
+  mismatch:
+    varies: the cipher offered second (ECDHE-RSA-AES256-GCM-SHA384, in the class's list, in place of AES128-SHA)
+    probe: |
+      for c in ECDHE-RSA-AES128-GCM-SHA256 ECDHE-RSA-AES256-GCM-SHA384; do
+        if echo | openssl s_client -connect 127.0.0.1:443 -servername www.p8test.example.com -tls1_2 -cipher "$c:@SECLEVEL=0" 2>/dev/null | grep -q "Cipher is $c\$"; then echo "$c accepted"; else echo "$c refused"; fi
+      done
+  expect:
+    rc: 0
+    stdout: \AECDHE-RSA-AES128-GCM-SHA256 accepted\nAES128-SHA refused\n\Z
+- id: dynamic-dns-proxies-through-the-variable
+  variant: dyn
+  what: with dynamic_dns_resolution, the server sets $proxy_backend to the backend (http://127.0.0.1:8080), the root location
+    proxies to that variable with the resolver, nginx's configuration is valid, and HTTPS to www returns the backend's page
+    through it
+  control: negative
+  derived_from:
+  - path: manifests/nginx_frontend_domain.pp
+    lines: '397'
+    text: $server_cfg_prepend = { 'set' => "\$proxy_backend ${backend_protocol}://${backend_reconstructed_upstreams[0]}" }
+  - path: manifests/nginx_frontend_domain.pp
+    lines: 560-561
+    text: $proxy_value = '$proxy_backend'
+  mutates: starts a transient unit p8test-backend (python3 -m http.server on 127.0.0.1:8080, serving /run/p8test-frontend/www,
+    whose index.html says p8test-backend)
+  probe: |
+    install -d -m 0755 /run/p8test-frontend/www
+    echo p8test-backend > /run/p8test-frontend/www/index.html
+    systemd-run --unit p8test-backend -q python3 -m http.server 8080 --bind 127.0.0.1 --directory /run/p8test-frontend/www
+    sleep 2
+  effect: |
+    T=$(nginx -T 2>/dev/null)
+    printf '%s\n' "$T" | grep -cE 'set +\$proxy_backend +http://127\.0\.0\.1:8080;'
+    printf '%s\n' "$T" | grep -cE 'proxy_pass +\$proxy_backend;'
+    printf '%s\n' "$T" | grep -qE 'resolver +127\.0\.0\.53' && echo resolver || echo no-resolver
+    nginx -t 2>&1 | grep -c 'test is successful'
+    ca=$(awk '/BEGIN CERT/{i++} i==2' /etc/ssl/certs/p8test.nginx.bundle.crt)
+    curl -s --max-time 5 --cacert <(echo "$ca") --resolve www.p8test.example.com:443:127.0.0.1 https://www.p8test.example.com/
+  expect:
+    rc: 0
+    stdout: \A1\n1\nresolver\n1\np8test-backend\n\Z
+- id: on-redhat-the-key-is-read-from-pki-tls-private
+  variant: rhel
+  what: on RedHat nginx reads the frontend's key from /etc/pki/tls/private, and its configuration is valid
+  control: negative
+  derived_from:
+  - path: manifests/nginx_frontend_domain.pp
+    lines: 272-283
+    text: /etc/pki/tls/private
+  probe: |
+    nginx -T 2>/dev/null | grep -E '^\s*ssl_certificate_key ' | grep -c '/etc/pki/tls/private/p8test' | sed 's/^[1-9][0-9]*$/key from pki/'
+    nginx -t 2>&1 | grep -c 'test is successful'
+  expect:
+    rc: 0
+    stdout: \Akey from pki\n1\n\Z
+apply:
+  resource_type: define
+  node: ubuntu
+  title: nginx_frontend_domain
+  catalog:
+    Debian:
+    - external: apt
+    - class: nginx_base
+    - class: nginx_frontend_domain
+    RedHat:
+    - class: nginx_base
+    - class: nginx_frontend_domain
+  expected_run2_events:
+  - Notify[Generated Upstream members for *]

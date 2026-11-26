@@ -1,0 +1,91 @@
+class: filesystem_yum
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+purpose: 'Yum update helpers for RedHat-family servers: a surface script that updates the exposed packages (ssh, TLS, web
+  servers) one by one, and a full update script.'
+outcomes:
+- outcome: the two update scripts are installed root-owned 0755 as the module's files
+  from: manifests/filesystem_yum.pp:8-24
+  checks:
+  - update-scripts-installed
+- outcome: the surface script brings the exposed packages up to date
+  from: manifests/filesystem_yum.pp:8-15
+  checks:
+  - the-surface-script-brings-the-exposed-packages-up-to-date
+- outcome: the full update script leaves nothing to update
+  from: manifests/filesystem_yum.pp:17-24
+  checks:
+  - the-full-update-script-leaves-nothing-to-update
+checks:
+- id: update-scripts-installed
+  what: both scripts are installed root-owned 0755, byte for byte the module's files
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_yum.pp
+    lines: 9-15
+    text: source  => 'puppet:///modules/puppet_infrastructure/yum/yum-update-surface.sh',
+  - path: manifests/filesystem_yum.pp
+    lines: 18-24
+    text: source  => 'puppet:///modules/puppet_infrastructure/yum/yum-update-dist.sh',
+  - path: files/yum/yum-update-surface.sh
+    sha256: bd37299aae40c6109f00a550093d5149266f1f5a4a3b3186a1f2fad514ea8c77
+  - path: files/yum/yum-update-dist.sh
+    sha256: 70fdcab7adbf19055578358a3b9d1d6b1baf27b7f179eb236175e629d9c60f6e
+  probe: |
+    cd {{LOCALDIR}}/bin
+    stat -c '%n %U %a' yum-update-surface.sh yum-update-dist.sh
+    sha256sum yum-update-surface.sh yum-update-dist.sh | awk '{print $1}'
+  expect:
+    rc: 0
+    stdout: \Ayum-update-surface\.sh root 755\nyum-update-dist\.sh root 755\nbd37299aae40c6109f00a550093d5149266f1f5a4a3b3186a1f2fad514ea8c77\n70fdcab7adbf19055578358a3b9d1d6b1baf27b7f179eb236175e629d9c60f6e\n\Z
+- id: the-surface-script-brings-the-exposed-packages-up-to-date
+  what: run as an operator runs it, the surface script updates each installed surface package; afterwards none of them has
+    an update pending, and its only error lines name surface packages that are not installed
+  control: negative
+  timeout: 600
+  derived_from:
+  - path: files/yum/yum-update-surface.sh
+    sha256: bd37299aae40c6109f00a550093d5149266f1f5a4a3b3186a1f2fad514ea8c77
+  - path: manifests/filesystem_yum.pp
+    lines: '8'
+    text: '# security surface updates'
+  mutates: 'runs {{LOCALDIR}}/bin/yum-update-surface.sh on the node (yum update -y of openssh-server, openssh, nginx, openssl,
+    ca-certificates, httpd: installed ones are updated, the others are skipped by yum); its output goes to /run/p8test-yum/surface.txt'
+  probe: |
+    install -d -m 0700 /run/p8test-yum
+    {{LOCALDIR}}/bin/yum-update-surface.sh > /run/p8test-yum/surface.txt 2>&1; echo "rc=$?" >> /run/p8test-yum/surface.txt
+  effect: |
+    tail -1 /run/p8test-yum/surface.txt
+    bad=0; for p in $(sed -n 's/^error updating package //p' /run/p8test-yum/surface.txt); do rpm -q "$p" >/dev/null 2>&1 && bad=$((bad+1)); done; echo "errors for installed packages: $bad"
+    installed=$(rpm -q --qf '%{NAME}\n' openssh-server openssh nginx openssl ca-certificates httpd 2>/dev/null | grep -v 'not installed')
+    dnf -q check-update $installed >/dev/null 2>&1; echo "pending rc=$?"
+  expect:
+    rc: 0
+    stdout: '\Arc=0\nerrors for installed packages: 0\npending rc=0\n\Z'
+- id: the-full-update-script-leaves-nothing-to-update
+  what: run as an operator runs it, yum-update-dist.sh updates every package, after which dnf finds nothing to update
+  control: negative
+  timeout: 600
+  derived_from:
+  - path: files/yum/yum-update-dist.sh
+    sha256: 70fdcab7adbf19055578358a3b9d1d6b1baf27b7f179eb236175e629d9c60f6e
+  - path: manifests/filesystem_yum.pp
+    lines: 17-24
+    text: '# full updates'
+  mutates: runs {{LOCALDIR}}/bin/yum-update-dist.sh on the node (yum update -y of every package); the result goes to /run/p8test-yum/dist.txt
+  probe: |
+    install -d -m 0700 /run/p8test-yum
+    {{LOCALDIR}}/bin/yum-update-dist.sh >/dev/null 2>&1; echo "rc=$?" > /run/p8test-yum/dist.txt
+  effect: |
+    cat /run/p8test-yum/dist.txt
+    dnf -q check-update >/dev/null 2>&1; echo "pending rc=$?"
+  expect:
+    rc: 0
+    stdout: \Arc=0\npending rc=0\n\Z
+apply:
+  resource_type: class
+  node: rhel9
+  catalog:
+    RedHat:
+    - class: filesystem_base
+    - class: filesystem_yum

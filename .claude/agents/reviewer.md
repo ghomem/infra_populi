@@ -88,8 +88,10 @@ Steps, all required:
    nothing else. PASS requires every mechanical check `ok` and faithful `ok`; the tool computes it.
 
 ## Phase 3 check-set review (`<class> --phase3`)
-If you are given `<class> --phase3`, you verify the class's Phase 3 check set `.codex_state/checks/<class>.yml` and
-its results instead of a migration (HQ batch-3 acceptance B). Same independence rules as above. In addition, do NOT
+If you are given `<class> --phase3`, you verify the class's Phase 3 check set `spec/behaviour/checks/<class>.yml` and
+its results instead of a migration (HQ batch-3 acceptance B). The file writes the run's machines and site paths as
+placeholders (`{{NODE_ADDR}}`, `{{LOCALDIR}}`, `{{SITE:...}}` for a record the prose cites); `phase3.py validate`,
+`spot` and `run` read it rendered with the lab's values, which is what the node gets. Same independence rules as above. In addition, do NOT
 read `.codex_state/checks/results/<class>/*-author.*`: the verdict tool compares runs mechanically. Steps, all required:
 1. Run the checks yourself: `python3 .codex_state/tools/phase3.py run <class> --role reviewer`. It validates the set
    (every derived_from must resolve at the class's baseline), reverts the node, runs every probe on the CLEAN node

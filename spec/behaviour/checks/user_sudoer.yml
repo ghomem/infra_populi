@@ -1,0 +1,125 @@
+class: user_sudoer
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+purpose: 'Creates a user account that can administer the machine: the user (through user_base) with its name, password and
+  SSH key, in the OS family''s admin group (sudo on Debian, wheel on RedHat), so it can run any command as root with sudo.'
+outcomes:
+- outcome: the account exists with its name, home, shell and own primary group, and its SSH key is pushed
+  from: manifests/user_sudoer.pp:6, 14; manifests/user_base.pp:25-26, 63-99
+  checks:
+  - user-with-own-primary-group
+  - the-given-key-is-pushed
+- outcome: on Debian the user is in sudo (and only its own group besides), and sudo grants it every command
+  from: manifests/user_sudoer.pp:8-12
+  checks:
+  - member-of-sudo
+  - sudo-grants-all
+- outcome: the user becomes root with sudo and its password; a wrong password and an account outside the admin group are refused
+  from: manifests/user_sudoer.pp:2, 8-14
+  checks:
+  - the-user-becomes-root-with-sudo
+- outcome: on RedHat the admin group is wheel
+  from: manifests/user_sudoer.pp:8-9
+  uncovered:
+    why: the RedHat branch needs the set run on a RedHat node; the runner runs a set on the class's plan node only (ubuntu)
+    lifted_by: 'capability: a phase3 run of a set on a node kind other than the class''s plan node (rhel9)'
+    evidence: '{{SITE:engine-runner}} run takes the node from the plan (nodes.select by class); it has no option for another
+      node kind'
+checks:
+- id: user-with-own-primary-group
+  what: the user exists with its own same-named primary group (sudo first in the list keeps the default primary)
+  control: negative
+  derived_from:
+  - path: manifests/user_sudoer.pp
+    lines: '14'
+    text: mygrouplist => $grouplist,
+  - path: manifests/user_base.pp
+    lines: 25-26
+    text: if ( $mygrouplist == [] or $mygrouplist[0] == 'sudo' or $mygrouplist[0] == 'wheel' ){
+  probe: |
+    IFS=: read -r name _ uid gid gecos home shell < <(getent passwd p8testuser)
+    echo "$name|$gecos|$home|$shell"
+    echo "primary group: $(getent group "$gid" | cut -d: -f1)"
+  expect:
+    rc: 0
+    stdout: '\Ap8testuser\|P8 Test User\|/home/p8testuser\|/bin/bash\nprimary group: p8testuser\n\Z'
+- id: member-of-sudo
+  what: on Debian the user's groups are its own and sudo, nothing else
+  control: negative
+  derived_from:
+  - path: manifests/user_sudoer.pp
+    lines: 10-11
+    text: $grouplist = flatten( [ $mygrouplist, [ 'sudo' ] ] )
+  probe: id -nG p8testuser | tr ' ' '\n' | sort | tr '\n' ' '
+  expect:
+    rc: 0
+    stdout: \Ap8testuser sudo \Z
+- id: sudo-grants-all
+  what: through the sudo group the node's sudoers grants the user every command (sudo's own verdict)
+  control: negative
+  derived_from:
+  - path: manifests/user_sudoer.pp
+    lines: '2'
+    text: '# This class defines a sudoer user'
+  - path: manifests/user_sudoer.pp
+    lines: 10-11
+    text: $grouplist = flatten( [ $mygrouplist, [ 'sudo' ] ] )
+  probe: |
+    sudo -l -U p8testuser | grep -E '^\s+\(ALL : ALL\) ALL$'
+  mismatch:
+    varies: 'the user: `nobody` is in no admin group, so sudo must not list the ALL rule for it'
+    probe: |
+      sudo -l -U nobody | grep -E '^\s+\(ALL : ALL\) ALL$'
+  expect:
+    rc: 0
+    stdout: '\A\s+\(ALL : ALL\) ALL\n\Z'
+- id: the-given-key-is-pushed
+  what: the key is pushed (ignorekey defaults to false), one ssh-rsa line with comment <title>@puppet
+  control: negative
+  derived_from:
+  - path: manifests/user_sudoer.pp
+    lines: '6'
+    text: $ignorekey = false
+  - path: manifests/user_base.pp
+    lines: 96-99
+    text: 'ssh_authorized_key { "${myusername}@puppet" :'
+  probe: |
+    grep -v '^#' /home/p8testuser/.ssh/authorized_keys | grep -v '^$'
+  expect:
+    rc: 0
+    stdout: \Assh-rsa AAAAB3NzaC1yc2EAAAADAQAB[A-Za-z0-9+/=]{200,} p8testuser@puppet\n\Z
+- id: the-user-becomes-root-with-sudo
+  what: as p8testuser, `sudo -S -k id -u` with the test password answers 0 (root); with a wrong password sudo refuses; the
+    account nobody, given the same password, is refused (not in the admin group)
+  control: negative
+  timeout: 90
+  derived_from:
+  - path: manifests/user_sudoer.pp
+    lines: '2'
+    text: '# This class defines a sudoer user'
+  - path: manifests/user_sudoer.pp
+    lines: 10-11
+    text: $grouplist = flatten( [ $mygrouplist, [ 'sudo' ] ] )
+  mutates: three sudo attempts (p8testuser with the test password and with a wrong one, nobody with the test password); sudo
+    logs them to the journal and /var/log/auth.log, and the successful one creates Ubuntu's marker /home/p8testuser/.sudo_as_admin_successful
+    (-k keeps no credential timestamp); the answers go to /run/p8test-sudoer/sudo.txt
+  probe: |
+    install -d -m 0700 /run/p8test-sudoer; o=/run/p8test-sudoer/sudo.txt; : > $o
+    a=$(printf '%s\n' 'p8test-user-not-a-secret' | timeout 20 runuser -u p8testuser -- sudo -S -k -p '' id -u 2>/dev/null)
+    echo "user, test password: ${a:-refused}" >> $o
+    a=$(printf '%s\n' 'p8test-wrong-password' | timeout 20 runuser -u p8testuser -- sudo -S -k -p '' id -u 2>/dev/null)
+    echo "user, wrong password: ${a:-refused}" >> $o
+    a=$(printf '%s\n' 'p8test-user-not-a-secret' | timeout 20 runuser -u nobody -- sudo -S -k -p '' id -u 2>/dev/null)
+    echo "nobody, test password: ${a:-refused}" >> $o
+  effect: |
+    cat /run/p8test-sudoer/sudo.txt
+  expect:
+    rc: 0
+    stdout: '\Auser, test password: 0\nuser, wrong password: refused\nnobody, test password: refused\n\Z'
+apply:
+  resource_type: define
+  node: ubuntu
+  title: p8testuser
+  catalog:
+    Debian:
+    - class: user_sudoer

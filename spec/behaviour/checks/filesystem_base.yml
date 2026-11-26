@@ -1,0 +1,170 @@
+class: filesystem_base
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+purpose: 'The basic filesystem of every non-desktop machine: the local tree for custom scripts and data, a locale setting
+  that stops locale errors in ssh sessions, the mypython link to the system Python 3, and (when asked) the syslog file''s
+  owner and mode kept as set.'
+outcomes:
+- outcome: the local tree for custom scripts and data exists (localdir, bin, etc, backup, pkgsdir), root-owned
+  from: manifests/filesystem_base.pp:10-24
+  checks:
+  - the-local-tree-exists
+- outcome: the locale setting stops locale errors in ssh sessions
+  from: manifests/filesystem_base.pp:26-32
+  checks:
+  - the-locale-setting-works
+- outcome: mypython runs the system Python 3
+  from: manifests/filesystem_base.pp:34-54
+  checks:
+  - mypython-runs-python-3
+- outcome: when asked (customize_syslog_mode true), the syslog file's owner and mode are kept as set
+  from: manifests/filesystem_base.pp:4-7, 56-63
+  checks:
+  - the-syslog-mode-drifts
+  - the-next-agent-run-restores-the-syslog-mode
+- outcome: by default (customize_syslog_mode false) the syslog file is left alone
+  from: manifests/filesystem_base.pp:6, 56
+  checks:
+  - the-syslog-file-is-left-alone-by-default
+- outcome: the RedHat paths (/var/log/messages owned root:root)
+  from: manifests/filesystem_base.pp:36-41
+  checks:
+  - on-redhat-the-messages-file-is-managed
+variants:
+- name: default
+  why: customize_syslog_mode false, which node_base passes to this class by default on every server (node_base.pp:9, 108-110),
+    so production uses it although no node file sets it
+  params: default
+- name: rhel
+  why: the RedHat branch (/var/log/messages owned root:root), on the rhel9 node with the set's own params fixture
+  node: rhel9
+node_agent:
+  after: the-syslog-mode-drifts
+  why: the class keeps the syslog file's mode, which only its next agent run after a change can show
+checks:
+- id: the-local-tree-exists
+  what: the local, bin, etc, backup and pkgsdir directories exist, root-owned, searchable (0644 plus Puppet's x for directories)
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_base.pp
+    lines: 10-16
+    text: $basedirs = [ $localdir, $bindir, $etcdir, $backdir, $pkgsdir ]
+  - path: manifests/filesystem_base.pp
+    lines: 19-24
+    text: mode   => '0644'
+  probe: |
+    cd {{LOCALDIR}} && stat -c '%n %U:%G %a' . bin etc backup pkgsdir
+  expect:
+    rc: 0
+    stdout: \A\. root:root 755\nbin root:root 755\netc root:root 755\nbackup root:root 755\npkgsdir root:root 755\n\Z
+- id: the-locale-setting-works
+  what: /etc/default/locale is the module's file, and a shell that takes its settings (as PAM does for ssh sessions) gets
+    en_US.UTF-8 for LANG and LC_ALL without any locale error
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_base.pp
+    lines: 26-32
+    text: source => 'puppet:///modules/puppet_infrastructure/locale/locale',
+  - path: files/locale/locale
+    sha256: 26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb
+  probe: |
+    test -L /etc/default/locale && echo link || sha256sum /etc/default/locale | cut -d' ' -f1
+    env -i /bin/sh -c 'set -a; . /etc/default/locale; set +a; locale 2>&1 >/dev/null; echo "LANG=$LANG LC_ALL=$LC_ALL"'
+  expect:
+    rc: 0
+    stdout: \A26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb\nLANG=en_US\.UTF-8 LC_ALL=en_US\.UTF-8\n\Z
+- id: mypython-runs-python-3
+  what: bin/mypython links to /usr/bin/python3 and runs it
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_base.pp
+    lines: 42-47
+    text: $mypython_target = '/usr/bin/python3'
+  - path: manifests/filesystem_base.pp
+    lines: 50-54
+    text: 'file {"${bindir}/mypython":'
+  probe: |
+    readlink {{LOCALDIR}}/bin/mypython
+    {{LOCALDIR}}/bin/mypython -c 'import sys; print("python", sys.version_info[0])'
+  expect:
+    rc: 0
+    stdout: \A/usr/bin/python3\npython 3\n\Z
+- id: the-syslog-mode-drifts
+  what: setup for the next check, the syslog file made world-readable by hand (drift)
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_base.pp
+    lines: 56-63
+    text: mode   => $syslog_mode,
+  mutates: chmod 0644 /var/log/syslog on the node
+  probe: |
+    chmod 0644 /var/log/syslog
+  effect: |
+    stat -c '%a' /var/log/syslog
+    test -L {{LOCALDIR}}/bin/mypython && echo class-applied
+  expect:
+    rc: 0
+    stdout: \A644\nclass-applied\n\Z
+- id: the-next-agent-run-restores-the-syslog-mode
+  what: after the node's agent run, /var/log/syslog is back to syslog:adm u=rw,g=r,o= (0640)
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_base.pp
+    lines: 42-47
+    text: $syslog_group    = 'adm'
+  - path: manifests/filesystem_base.pp
+    lines: 56-63
+    text: mode   => $syslog_mode,
+  - path: manifests/filesystem_base.pp
+    lines: '7'
+    text: String $syslog_mode            = 'u=rw,g=r,o=',
+  mutates: none beyond reading the file's mode (declared mutating so it runs after the node's agent run)
+  probe: |
+    true
+  effect: |
+    stat -c '%U:%G %a' /var/log/syslog
+    test -L {{LOCALDIR}}/bin/mypython && echo class-applied
+  expect:
+    rc: 0
+    stdout: \Asyslog:adm 640\nclass-applied\n\Z
+- id: the-syslog-file-is-left-alone-by-default
+  variant: default
+  what: with customize_syslog_mode false the class is applied (bin/mypython links to python3) and the catalog manages no syslog
+    file
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_base.pp
+    lines: 56-63
+    text: if ($customize_syslog_mode) {
+  probe: |
+    readlink {{LOCALDIR}}/bin/mypython
+    python3 -c 'import json,sys; r=json.load(open(sys.argv[1]))["resources"]; print("syslog file resources:", sum(1 for x in r if x["type"]=="File" and x["title"] in ("/var/log/syslog", "/var/log/messages")))' $(ls /opt/puppetlabs/puppet/cache/client_data/catalog/*.json 2>/dev/null | head -1) 2>/dev/null || echo "no catalog"
+  expect:
+    rc: 0
+    stdout: '\A/usr/bin/python3\nsyslog file resources: 0\n\Z'
+- id: on-redhat-the-messages-file-is-managed
+  variant: rhel
+  what: on RedHat, with customize_syslog_mode true, /var/log/messages is root:root with the u=rw,g=r,o= mode (0640), and bin/mypython
+    links to /usr/bin/python3
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_base.pp
+    lines: 36-41
+    text: $syslog_filepath = '/var/log/messages'
+  - path: manifests/filesystem_base.pp
+    lines: 56-63
+    text: 'file { $syslog_filepath:'
+  probe: |
+    stat -c '%U:%G %a' /var/log/messages
+    readlink {{LOCALDIR}}/bin/mypython
+  expect:
+    rc: 0
+    stdout: \Aroot:root 640\n/usr/bin/python3\n\Z
+apply:
+  resource_type: class
+  node: ubuntu
+  catalog:
+    Debian:
+    - class: filesystem_base
+    RedHat:
+    - class: filesystem_base

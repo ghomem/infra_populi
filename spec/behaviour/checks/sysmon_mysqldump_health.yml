@@ -1,0 +1,289 @@
+class: sysmon_mysqldump_health
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+purpose: 'Gives the monitoring system a Nagios check that proves the MySQL dumps under the configured directories can be restored:
+  each .sql file that is a mysqldump is loaded into a scratch database of its own name, which is then dropped; any failure
+  (create, load, drop), or a .sql file that is not a mysqldump, is reported CRITICAL with exit 2, and OK with exit 0 otherwise.'
+outcomes:
+- outcome: the check script carries the MySQL user and password and the dump directories, root 0755
+  from: manifests/sysmon_mysqldump_health.pp:3-15; templates/sysmon/check-mysqldump-health.sh.erb:5-6, 74
+  checks:
+  - check-script-rendered
+- outcome: a good dump is restored into a scratch database, which is dropped again, and the check reports OK with exit 0
+  from: templates/sysmon/check-mysqldump-health.sh.erb:42-57, 73-81
+  checks:
+  - a-mysql-server-with-a-dump
+  - restores-are-checked
+- outcome: a dump that does not load is reported CRITICAL (Load database dump) with exit 2, and its scratch database is dropped
+  from: templates/sysmon/check-mysqldump-health.sh.erb:11-39, 50-52
+  checks:
+  - restores-are-checked
+- outcome: a .sql file that is not a mysqldump (the empty file a failed dump leaves, or a dump without its header comments)
+    is reported CRITICAL with exit 2
+  from: templates/sysmon/check-mysqldump-health.sh.erb:60-70
+  checks:
+  - a-file-that-is-not-a-dump-is-critical
+- outcome: every configured directory is checked, subdirectories included (a broken dump in a dated subdirectory of the second
+    directory is reported)
+  from: templates/sysmon/check-mysqldump-health.sh.erb:60-62, 74-78
+  checks:
+  - restores-are-checked
+- outcome: 'a dump that would create or use a database that already exists is not restored: the file is validated only (a
+    complete mysqldump), the output says the restore test was skipped because the database exists, and the existing database
+    keeps every row; an incomplete dump of such a database is reported CRITICAL'
+  from: templates/sysmon/check-mysqldump-health.sh.erb:42-57 (local change
+  checks:
+  - a-live-database-of-the-dump-name-is-left-intact
+  - an-incomplete-dump-of-an-existing-database-is-critical
+- outcome: a dump made with --databases (its own CREATE DATABASE and USE lines) whose database is absent gets the full restore
+    test and leaves nothing behind
+  from: templates/sysmon/check-mysqldump-health.sh.erb:42-57 (local change
+  checks:
+  - a-databases-dump-is-restored-and-removed
+- outcome: a database the dump needs that cannot be created (absent at the pre-check, CREATE refused) is reported CRITICAL
+    (Create database) with exit 2, and nothing is dropped
+  from: templates/sysmon/check-mysqldump-health.sh.erb:46-48 (baseline); local change
+  checks:
+  - a-failed-create-is-critical-and-drops-nothing
+- outcome: a scratch database that cannot be dropped is reported CRITICAL (Drop database) with exit 2
+  from: templates/sysmon/check-mysqldump-health.sh.erb:54-56
+  checks:
+  - a-failed-drop-is-critical
+checks:
+- id: check-script-rendered
+  what: the check script (root 0755, valid bash) carries the MySQL user and password and the dump directories
+  control: negative
+  derived_from:
+  - path: manifests/sysmon_mysqldump_health.pp
+    lines: 8-15
+    text: content => template("puppet_infrastructure/sysmon/${script_prefix}.sh.erb"),
+  - path: templates/sysmon/check-mysqldump-health.sh.erb
+    lines: 5-6
+    text: MYSQLUSER="<%= @mysqluser %>"
+  - path: templates/sysmon/check-mysqldump-health.sh.erb
+    lines: '74'
+    text: DIRS="<%= @dirs %>"
+  probe: |
+    f={{LOCALDIR}}/bin/check-mysqldump-health.sh
+    stat -c '%U %G %a' "$f"; bash -n "$f" && grep -E '^(MYSQLUSER|MYSQLPWD|DIRS)=' "$f"
+  expect:
+    rc: 0
+    stdout: \Aroot root 755\nMYSQLUSER="p8test_check"\nMYSQLPWD="p8test-not-a-secret"\nDIRS="/var/tmp/p8test-dumps /var/tmp/p8test-dumps2"\n\Z
+- id: a-mysql-server-with-a-dump
+  what: setup for the restores, a MySQL server on the node, the fixture user, and a mysqldump of a source database (the source
+    dropped afterwards)
+  control: negative
+  timeout: 600
+  derived_from:
+  - path: templates/sysmon/check-mysqldump-health.sh.erb
+    lines: 42-46
+    text: mysql -u $MYSQLUSER -p$MYSQLPWD -e "CREATE DATABASE $DBNAME;" > /dev/null 2>&1
+  mutates: installs mysql-server (Ubuntu's MySQL 8.0) and starts it; creates the MySQL user p8test_check@localhost with the
+    fixture password and all privileges; creates the database p8testsrc with one table, writes its mysqldump to /var/tmp/p8test-dumps/good.sql
+    (that directory and /var/tmp/p8test-dumps2 created) and drops p8testsrc again
+  probe: |
+    DEBIAN_FRONTEND=noninteractive apt-get -qq -y install mysql-server >/dev/null 2>&1
+    mysql -e "CREATE USER 'p8test_check'@'localhost' IDENTIFIED BY 'p8test-not-a-secret'; GRANT ALL ON *.* TO 'p8test_check'@'localhost'; CREATE DATABASE p8testsrc; CREATE TABLE p8testsrc.t (id INT PRIMARY KEY, v VARCHAR(20)); INSERT INTO p8testsrc.t VALUES (1,'one'),(2,'two');"
+    install -d /var/tmp/p8test-dumps /var/tmp/p8test-dumps2
+    mysqldump p8testsrc > /var/tmp/p8test-dumps/good.sql
+    mysql -e "DROP DATABASE p8testsrc;"
+  effect: |
+    head -1 /var/tmp/p8test-dumps/good.sql | grep -o '^-- MySQL dump'
+    grep -m1 -o 'Database: p8testsrc' /var/tmp/p8test-dumps/good.sql
+    mysql -N -e "SHOW DATABASES LIKE 'p8testsrc'" | p8_count .
+  expect:
+    rc: 0
+    stdout: '\A-- MySQL dump\nDatabase: p8testsrc\n0\n\Z'
+- id: restores-are-checked
+  what: with the good dump alone the check reports OK (exit 0); with a dump that does not load (a MySQL dump header for p8testbroken,
+    then invalid SQL) in a dated subdirectory of the second configured directory it reports CRITICAL "Load database dump ./2026-11-21/broken.sql"
+    (exit 2); neither run leaves a p8test database behind
+  control: negative
+  timeout: 300
+  derived_from:
+  - path: templates/sysmon/check-mysqldump-health.sh.erb
+    lines: 50-52
+    text: handle_error $RC "Load database dump $f"
+  - path: templates/sysmon/check-mysqldump-health.sh.erb
+    lines: 54-56
+    text: handle_error $RC "Drop database $DBNAME"
+  - path: templates/sysmon/check-mysqldump-health.sh.erb
+    lines: 80-81
+    text: 'echo "OK: exit code $RC_OK"'
+  mutates: runs the check twice as root (it creates and drops the scratch databases p8testsrc and p8testbroken); writes /var/tmp/p8test-dumps2/2026-11-21/broken.sql
+    between the runs and removes that directory after; the outputs go to /run/p8test-dumps/out.txt
+  probe: |
+    install -d -m 0700 /run/p8test-dumps; D=/var/tmp/p8test-dumps; C={{LOCALDIR}}/bin/check-mysqldump-health.sh
+    { cd /tmp; $C 2>/dev/null; echo "good rc=$?"
+      mysql -N -e "SHOW DATABASES LIKE 'p8test%'" | p8_count . | sed 's/^/left: /'
+      install -d ${D}2/2026-11-21
+      { head -5 $D/good.sql | sed 's/p8testsrc/p8testbroken/'; echo 'CREATE TABLE broken ( this is not sql'; } > ${D}2/2026-11-21/broken.sql
+      $C 2>/dev/null; echo "broken rc=$?"
+      mysql -N -e "SHOW DATABASES LIKE 'p8test%'" | p8_count . | sed 's/^/left: /'
+      rm -rf ${D}2/2026-11-21; } > /run/p8test-dumps/out.txt
+  effect: |
+    cat /run/p8test-dumps/out.txt
+  expect:
+    rc: 0
+    stdout: '\AOK: exit code 0\ngood rc=0\nleft: 0\nCRITICAL: Load database dump \./2026-11-21/broken\.sql\nbroken rc=2\nleft:
+      0\n\Z'
+- id: a-file-that-is-not-a-dump-is-critical
+  what: an empty .sql file beside the good dump (what a failed mysqldump leaves) is reported CRITICAL "SQL File ... is not
+    a MySQLDump" with exit 2, and so is a dump written without its header comments (mysqldump --skip-comments)
+  control: negative
+  timeout: 300
+  derived_from:
+  - path: templates/sysmon/check-mysqldump-health.sh.erb
+    lines: 64-69
+    text: handle_error $RC "SQL File $f is not a MySQLDump"
+  mutates: writes the empty file /var/tmp/p8test-dumps/empty.sql and runs the check once as root (it restores and drops p8testsrc),
+    then removes it; creates the database p8testnc, writes its dump without comments to /var/tmp/p8test-dumps/nocomments.sql,
+    drops p8testnc, runs the check again and removes the file; the outputs go to /run/p8test-dumps/empty.txt
+  probe: |
+    install -d -m 0700 /run/p8test-dumps; D=/var/tmp/p8test-dumps
+    : > $D/empty.sql
+    { cd /tmp; {{LOCALDIR}}/bin/check-mysqldump-health.sh 2>/dev/null; echo "rc=$?"; } > /run/p8test-dumps/empty.txt
+    rm -f $D/empty.sql
+    mysql -e "CREATE DATABASE p8testnc; CREATE TABLE p8testnc.t (id INT);"; mysqldump --skip-comments p8testnc > $D/nocomments.sql; mysql -e "DROP DATABASE p8testnc;"
+    { cd /tmp; {{LOCALDIR}}/bin/check-mysqldump-health.sh 2>/dev/null; echo "rc=$?"; } >> /run/p8test-dumps/empty.txt
+    rm -f $D/nocomments.sql
+  effect: |
+    cat /run/p8test-dumps/empty.txt
+  expect:
+    rc: 0
+    stdout: '\ACRITICAL: SQL File \./empty\.sql is not a MySQLDump\nrc=2\nCRITICAL: SQL File \./nocomments\.sql is not a MySQLDump\nrc=2\n\Z'
+- id: a-live-database-of-the-dump-name-is-left-intact
+  what: 'with a database of the dump''s name already on the host (p8testsrc, 3 rows), the check does not restore: it validates
+    the file, reports OK saying the restore test was skipped because the database exists, and the existing database keeps
+    its 3 rows'
+  control: negative
+  timeout: 300
+  derived_from:
+  - path: templates/sysmon/check-mysqldump-health.sh.erb
+    lines: 46-48
+    text: handle_error $RC "Create database $DBNAME"
+  - path: templates/sysmon/check-mysqldump-health.sh.erb
+    lines: 19-23
+    text: clear_database
+  mutates: creates the database p8testsrc with a table of 3 rows, runs the check once as root, then drops p8testsrc if it
+    is still there; the outputs go to /run/p8test-dumps/live.txt
+  probe: |
+    install -d -m 0700 /run/p8test-dumps
+    mysql -e "CREATE DATABASE p8testsrc; CREATE TABLE p8testsrc.t (id INT PRIMARY KEY); INSERT INTO p8testsrc.t VALUES (1),(2),(3);"
+    { cd /tmp; {{LOCALDIR}}/bin/check-mysqldump-health.sh 2>/dev/null; echo "rc=$?"
+      mysql -N -e "SELECT COUNT(*) FROM p8testsrc.t" 2>/dev/null | sed 's/^/rows: /'; } > /run/p8test-dumps/live.txt
+    mysql -e "DROP DATABASE IF EXISTS p8testsrc;"
+  effect: |
+    cat /run/p8test-dumps/live.txt
+  expect:
+    rc: 0
+    stdout: '\AOK: exit code 0; restore test skipped for \./good\.sql because database p8testsrc exists \(file validated\)\nrc=0\nrows:
+      3\n\Z'
+- id: an-incomplete-dump-of-an-existing-database-is-critical
+  what: with p8testsrc on the host and the dump cut short (its last lines, with '-- Dump completed', removed), the check does
+    not restore and reports CRITICAL that the dump is incomplete, with exit 2; p8testsrc keeps its rows
+  control: negative
+  timeout: 300
+  derived_from:
+  - path: templates/sysmon/check-mysqldump-health.sh.erb
+    lines: 42-46
+    text: mysql -u $MYSQLUSER -p$MYSQLPWD -e "CREATE DATABASE $DBNAME;" > /dev/null 2>&1
+  mutates: creates p8testsrc (2 rows), replaces /var/tmp/p8test-dumps/good.sql with a copy missing its last 3 lines, runs
+    the check once, then restores the full dump and drops p8testsrc; the outputs go to /run/p8test-dumps/incomplete.txt
+  probe: |
+    install -d -m 0700 /run/p8test-dumps; D=/var/tmp/p8test-dumps
+    mysql -e "CREATE DATABASE p8testsrc; CREATE TABLE p8testsrc.t (id INT PRIMARY KEY); INSERT INTO p8testsrc.t VALUES (1),(2);"
+    cp $D/good.sql /run/p8test-dumps/full.sql; head -n -3 /run/p8test-dumps/full.sql > $D/good.sql
+    { cd /tmp; {{LOCALDIR}}/bin/check-mysqldump-health.sh 2>/dev/null; echo "rc=$?"
+      mysql -N -e "SELECT COUNT(*) FROM p8testsrc.t" 2>/dev/null | sed 's/^/rows: /'; } > /run/p8test-dumps/incomplete.txt
+    cp /run/p8test-dumps/full.sql $D/good.sql; mysql -e "DROP DATABASE IF EXISTS p8testsrc;"
+  effect: |
+    cat /run/p8test-dumps/incomplete.txt
+  expect:
+    rc: 0
+    stdout: '\ACRITICAL: Dump \./good\.sql is incomplete \(no ''-- Dump completed'' line\)\nrc=2\nrows: 2\n\Z'
+- id: a-databases-dump-is-restored-and-removed
+  what: 'a dump made with --databases of p8testmulti (absent from the host) gets the full restore test: the check reports
+    plain OK (no restore skipped) with exit 0, and no p8test database is left behind'
+  control: negative
+  timeout: 300
+  derived_from:
+  - path: templates/sysmon/check-mysqldump-health.sh.erb
+    lines: 50-56
+    text: handle_error $RC "Load database dump $f"
+  mutates: creates p8testmulti, writes its dump made with --databases to /var/tmp/p8test-dumps2/multi.sql and drops p8testmulti;
+    runs the check once (it restores and drops p8testsrc and p8testmulti), then removes multi.sql; the outputs go to /run/p8test-dumps/multi.txt
+  probe: |
+    install -d -m 0700 /run/p8test-dumps; D=/var/tmp/p8test-dumps2
+    mysql -e "CREATE DATABASE p8testmulti; CREATE TABLE p8testmulti.t (id INT PRIMARY KEY); INSERT INTO p8testmulti.t VALUES (7);"
+    mysqldump --databases p8testmulti > $D/multi.sql; mysql -e "DROP DATABASE p8testmulti;"
+    { grep -c -E '^(CREATE DATABASE|USE `p8testmulti`)' $D/multi.sql | sed 's/^/create and use lines: /'
+      cd /tmp; {{LOCALDIR}}/bin/check-mysqldump-health.sh 2>/dev/null; echo "rc=$?"
+      mysql -N -e "SHOW DATABASES LIKE 'p8test%'" | p8_count . | sed 's/^/left: /'; } > /run/p8test-dumps/multi.txt
+    rm -f $D/multi.sql
+  effect: |
+    cat /run/p8test-dumps/multi.txt
+  expect:
+    rc: 0
+    stdout: '\Acreate and use lines: 2\nOK: exit code 0\nrc=0\nleft: 0\n\Z'
+- id: a-failed-create-is-critical-and-drops-nothing
+  what: with CREATE revoked from the check's user p8test_check and p8testsrc absent, the check reports CRITICAL "Create database
+    p8testsrc" with exit 2, and the server's p8test databases are the same before and after (nothing dropped)
+  control: negative
+  timeout: 300
+  derived_from:
+  - path: templates/sysmon/check-mysqldump-health.sh.erb
+    lines: 46-48
+    text: handle_error $RC "Create database $DBNAME"
+  - path: templates/sysmon/check-mysqldump-health.sh.erb
+    lines: 19-23
+    text: clear_database
+  mutates: creates the database p8testkeep (1 row) as a witness, revokes CREATE from p8test_check, runs the check once as
+    root, then grants ALL again and drops p8testkeep; the outputs go to /run/p8test-dumps/create.txt
+  probe: |
+    install -d -m 0700 /run/p8test-dumps
+    mysql -e "CREATE DATABASE p8testkeep; CREATE TABLE p8testkeep.t (id INT PRIMARY KEY); INSERT INTO p8testkeep.t VALUES (1); REVOKE CREATE ON *.* FROM 'p8test_check'@'localhost';"
+    before=$(mysql -N -e "SHOW DATABASES LIKE 'p8test%'" | sort | tr '\n' ' ')
+    { cd /tmp; {{LOCALDIR}}/bin/check-mysqldump-health.sh 2>/dev/null; echo "rc=$?"
+      after=$(mysql -N -e "SHOW DATABASES LIKE 'p8test%'" | sort | tr '\n' ' ')
+      [ "$before" = "$after" ] && echo "p8test databases unchanged: $after"
+      mysql -N -e "SELECT COUNT(*) FROM p8testkeep.t" | sed 's/^/witness rows: /'; } > /run/p8test-dumps/create.txt
+    mysql -e "GRANT ALL ON *.* TO 'p8test_check'@'localhost'; DROP DATABASE IF EXISTS p8testkeep;"
+  effect: |
+    cat /run/p8test-dumps/create.txt
+  expect:
+    rc: 0
+    stdout: '\ACRITICAL: Create database p8testsrc\nrc=2\np8test databases unchanged: p8testkeep \nwitness rows: 1\n\Z'
+- id: a-failed-drop-is-critical
+  what: with a dump that loads (written without DROP TABLE statements) and the check's user lacking the DROP privilege, the
+    check reports CRITICAL "Drop database p8testsrc" with exit 2
+  control: negative
+  timeout: 300
+  derived_from:
+  - path: templates/sysmon/check-mysqldump-health.sh.erb
+    lines: 54-56
+    text: handle_error $RC "Drop database $DBNAME"
+  mutates: replaces /var/tmp/p8test-dumps/good.sql with a dump of a fresh p8testsrc written with --skip-add-drop-table (source
+    dropped), revokes DROP from p8test_check, runs the check once as root, then grants ALL again, drops the scratch p8testsrc
+    and restores the plain dump; the output goes to /run/p8test-dumps/drop.txt
+  probe: |
+    install -d -m 0700 /run/p8test-dumps; D=/var/tmp/p8test-dumps
+    mysql -e "CREATE DATABASE p8testsrc; CREATE TABLE p8testsrc.t (id INT PRIMARY KEY); INSERT INTO p8testsrc.t VALUES (1);"
+    mysqldump p8testsrc > /run/p8test-dumps/plain.sql; mysqldump --skip-add-drop-table p8testsrc > $D/good.sql
+    mysql -e "DROP DATABASE p8testsrc; REVOKE DROP ON *.* FROM 'p8test_check'@'localhost';"
+    { cd /tmp; {{LOCALDIR}}/bin/check-mysqldump-health.sh 2>/dev/null; echo "rc=$?"; } > /run/p8test-dumps/drop.txt
+    mysql -e "GRANT ALL ON *.* TO 'p8test_check'@'localhost'; DROP DATABASE IF EXISTS p8testsrc;"
+    cp /run/p8test-dumps/plain.sql $D/good.sql
+  effect: |
+    cat /run/p8test-dumps/drop.txt
+  expect:
+    rc: 0
+    stdout: '\ACRITICAL: Drop database p8testsrc\nrc=2\n\Z'
+apply:
+  resource_type: define
+  node: ubuntu
+  title: sysmon_mysqldump_health
+  catalog:
+    Debian:
+    - class: filesystem_base
+    - class: sysmon_mysqldump_health

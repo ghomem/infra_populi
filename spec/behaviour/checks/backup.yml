@@ -1,0 +1,202 @@
+class: backup
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+purpose: 'Simple tar-based generic backups: a per-title script, run by cron, that archives the base directories into the backup
+  directory as a dated, gzip-compressed tar (unless compression is off), and deletes that prefix''s archives older than the
+  retention period.'
+outcomes:
+- outcome: the per-title script is installed root:root 0755 with the parameters, and the user's crontab runs it at 23:00 every
+    day of the month
+  from: manifests/backup.pp:3-28; templates/backup/backup.sh.erb:4-15
+  checks:
+  - script-installed-with-the-parameters
+  - cron-runs-it-at-2300
+- outcome: the backup directory is there, declared by the define (owned by the cron user), inside filesystem_base's parent
+  from: manifests/backup.pp:5-13
+  checks:
+  - the-backup-directory-is-declared
+- outcome: a run writes a dated gzip tar of the base directory into the backup directory, from which a file restores byte
+    for byte
+  from: manifests/backup.pp:1-2; templates/backup/backup.sh.erb:14-20, 31
+  checks:
+  - aged-archives-are-planted
+  - a-run-writes-a-restorable-gzip-tar
+- outcome: the run deletes the prefix's archives older than ndays-1 full days and keeps newer ones and other prefixes' files
+  from: templates/backup/backup.sh.erb:22-23, 33-37
+  checks:
+  - aged-archives-are-planted
+  - a-run-deletes-only-its-own-old-archives
+- outcome: a run that cannot write its archive fails loudly (non-zero exit, an error line on stderr and in syslog) and stops
+    before retention, so no old archive is deleted
+  from: templates/backup/backup.sh.erb:31-37
+  checks:
+  - a-failed-run-is-loud
+- outcome: cron itself firing at 23:00
+  from: manifests/backup.pp:21-28
+  uncovered:
+    why: a run would have to wait for 23:00; the crontab entry is checked and the script it names is run by hand
+    lifted_by: 'capability: a clock-controlled cron trigger inside a phase3 run'
+    evidence: '{{SITE:engine-runner}} runs probes and agent runs only; it has no step that advances or waits for the node''s
+      cron schedule'
+- outcome: compression off, several base directories, another user, time or monthday
+  from: manifests/backup.pp:4-9; templates/backup/backup.sh.erb:3, 18-20
+  uncovered:
+    why: parameter variants; one set holds one params fixture (compression on, one base directory, root, 23:00)
+    lifted_by: 'capability: more than one params fixture per set'
+    evidence: '{{SITE:engine-runner}} applies the class once with its single `fixture` (params or defaults)'
+checks:
+- id: script-installed-with-the-parameters
+  what: backup-backup.sh is installed in bindir, root:root 0755, carrying the base directory, prefix, backup directory, ndays
+    and compression
+  control: negative
+  derived_from:
+  - path: manifests/backup.pp
+    lines: 14-19
+    text: content => template('puppet_infrastructure/backup/backup.sh.erb'),
+  - path: templates/backup/backup.sh.erb
+    lines: 4-7
+    text: FILETARGETDIRS=<%= @basedir %>
+  - path: templates/backup/backup.sh.erb
+    lines: '15'
+    text: COMPRESSION=<%= @compression %>
+  probe: |
+    stat -c '%U %G %a' {{LOCALDIR}}/bin/backup-backup.sh
+    grep -E '^(FILETARGETDIRS|FILEPREFIX|BACKDIR|NC|COMPRESSION)=' {{LOCALDIR}}/bin/backup-backup.sh
+  expect:
+    rc: 0
+    stdout: \Aroot root 755\nFILETARGETDIRS=/etc/default\nFILEPREFIX=p8test-backup\nBACKDIR={{LOCALDIR}}/backup/p8test\nNC=7\nCOMPRESSION=true\n\Z
+- id: cron-runs-it-at-2300
+  what: root's crontab runs the script at 23:00 every day of the month, named cron_backup_backup
+  control: negative
+  derived_from:
+  - path: manifests/backup.pp
+    lines: 21-28
+    text: command   => "${bindir}/backup-${title}.sh",
+  - path: manifests/backup.pp
+    lines: 5-8
+    text: $monthday = '*',
+  probe: |
+    crontab -l -u root 2>/dev/null | grep -A1 -x '# Puppet Name: cron_backup_backup'
+  expect:
+    rc: 0
+    stdout: '\A# Puppet Name: cron_backup_backup\n0 23 \* \* \* {{LOCALDIR}}/bin/backup-backup\.sh\n\Z'
+- id: the-backup-directory-is-declared
+  what: the backup directory exists after the apply, root-owned (the cron user) 0755, with the parent filesystem_base declares
+  control: negative
+  derived_from:
+  - path: manifests/backup.pp
+    lines: 3-4
+    text: $basedir, $prefix, $backdir, $ndays, $bindir,
+  - path: templates/backup/backup.sh.erb
+    lines: '6'
+    text: BACKDIR=<%= @backdir %>
+  probe: |
+    stat -c '%U %G %a' {{LOCALDIR}}/backup/p8test {{LOCALDIR}}/backup
+  expect:
+    rc: 0
+    stdout: \Aroot root 755\nroot root 755\n\Z
+- id: aged-archives-are-planted
+  what: setup for the run, three files of known ages in the backup directory
+  control: negative
+  derived_from:
+  - path: templates/backup/backup.sh.erb
+    lines: 35-37
+    text: for i in `find $BACKDIR -maxdepth 1 -mtime +$DAYS -type f -name "$FILEPREFIX*" `; do
+  mutates: 'creates in {{LOCALDIR}}/backup/p8test: p8test-backup-old.tar.gz dated 8 days ago, p8test-backup-recent.tar.gz
+    dated 3 days ago, and p8test-other-old.tar.gz (another prefix) dated 30 days ago'
+  probe: |
+    d={{LOCALDIR}}/backup/p8test  # not created here: the class must leave it in place for its own script
+    for f in p8test-backup-old:8 p8test-backup-recent:3 p8test-other-old:30; do
+      printf 'p8test planted\n' > "$d/${f%%:*}.tar.gz"; touch -d "${f##*:} days ago" "$d/${f%%:*}.tar.gz"
+    done
+  effect: |
+    cd {{LOCALDIR}}/backup/p8test && find . -maxdepth 1 -type f -name 'p8test-*' -mtime +6 | sort | tr '\n' ' '; echo
+  expect:
+    rc: 0
+    stdout: \A\./p8test-backup-old\.tar\.gz \./p8test-other-old\.tar\.gz \n\Z
+- id: a-run-writes-a-restorable-gzip-tar
+  what: the script, run once by hand, writes one new dated archive p8test-backup-<date>.tar.gz, gzip-compressed, holding etc/default,
+    from which etc/default/cron restores byte for byte
+  control: negative
+  timeout: 120
+  derived_from:
+  - path: templates/backup/backup.sh.erb
+    lines: '31'
+    text: tar $EXCLUDELINE -cv${COMPRESSION_FLAG}f $BACKDIR/$FILEPREFIX-`date +%Y-%b-%d-%Hh%Mm`.tar.gz $FILETARGETDIRS
+  - path: templates/backup/backup.sh.erb
+    lines: 14-20
+    text: COMPRESSION_FLAG="z"
+  mutates: runs {{LOCALDIR}}/bin/backup-backup.sh once as root (a new archive in the backup directory; the planted 8-day-old
+    file of its prefix is deleted); restores etc/default/cron from the archive into /run/p8test-backup
+  probe: |
+    install -d -m 0700 /run/p8test-backup
+    {{LOCALDIR}}/bin/backup-backup.sh > /run/p8test-backup/run.log 2>&1; echo $? > /run/p8test-backup/run.rc
+    a=$(ls -1t {{LOCALDIR}}/backup/p8test/p8test-backup-2*.tar.gz 2>/dev/null | head -1)
+    echo "$a" > /run/p8test-backup/archive
+    [ -n "$a" ] && tar -xzf "$a" -C /run/p8test-backup etc/default/cron
+  effect: |
+    echo "rc $(cat /run/p8test-backup/run.rc)"
+    a=$(cat /run/p8test-backup/archive)
+    basename "$a" | sed -E 's/-[0-9]{4}-[A-Z][a-z]{2}-[0-9]{2}-[0-9]{2}h[0-9]{2}m\.tar\.gz$/-DATE.tar.gz/'
+    gzip -t "$a" && echo gzip-ok
+    cmp -s /run/p8test-backup/etc/default/cron /etc/default/cron && echo restores-byte-for-byte
+  expect:
+    rc: 0
+    stdout: \Arc 0\np8test-backup-DATE\.tar\.gz\ngzip-ok\nrestores-byte-for-byte\n\Z
+- id: a-run-deletes-only-its-own-old-archives
+  what: after the run, the prefix's 8-day-old archive is gone, its 3-day-old one and the other prefix's 30-day-old file remain
+    (find -mtime +6 on files named p8test-backup*)
+  control: negative
+  derived_from:
+  - path: templates/backup/backup.sh.erb
+    lines: 22-23
+    text: let DAYS=$INTERVAL*$NC-1
+  - path: templates/backup/backup.sh.erb
+    lines: 35-37
+    text: rm -f  $i
+  mutates: none beyond listing the backup directory (declared mutating so it runs after the run)
+  probe: |
+    true
+  effect: |
+    cd {{LOCALDIR}}/backup/p8test && ls -1 | grep -E '^p8test-' | sed -E 's/-[0-9]{4}-[A-Z][a-z]{2}-[0-9]{2}-[0-9]{2}h[0-9]{2}m\.tar\.gz$/-DATE.tar.gz/' | LC_ALL=C sort | tr '\n' ' '; echo
+  expect:
+    rc: 0
+    stdout: \Ap8test-backup-DATE\.tar\.gz p8test-backup-recent\.tar\.gz p8test-other-old\.tar\.gz \n\Z
+- id: a-failed-run-is-loud
+  what: 'with the backup directory full (a one-page tmpfs over it, holding only an archive of the prefix dated 8 days ago),
+    the script run as cron would cannot write its archive: it exits non-zero, writes an ERROR line on stderr and to syslog,
+    and stops before its retention step, so the 8-day-old archive, which retention would delete, is kept'
+  control: negative
+  timeout: 120
+  derived_from:
+  - path: templates/backup/backup.sh.erb
+    lines: '31'
+    text: tar $EXCLUDELINE -cv${COMPRESSION_FLAG}f $BACKDIR/$FILEPREFIX-`date +%Y-%b-%d-%Hh%Mm`.tar.gz $FILETARGETDIRS
+  - path: manifests/backup.pp
+    lines: 21-28
+    text: command   => "${bindir}/backup-${title}.sh",
+  mutates: 'mounts a 4 KiB tmpfs over {{LOCALDIR}}/backup/p8test (left mounted: the node is reverted after the run) and writes
+    p8test-backup-ancient.tar.gz into it, dated 8 days ago; runs backup-backup.sh once as root; its exit code and stderr go
+    to /run/p8test-backup-fail (rc, stderr); the script logs its ERROR line to syslog (the journal, /var/log/syslog)'
+  probe: |
+    d={{LOCALDIR}}/backup/p8test
+    install -d -m 0700 /run/p8test-backup-fail
+    mount -t tmpfs -o size=4k p8test-full "$d"
+    printf 'p8test planted\n' > "$d/p8test-backup-ancient.tar.gz"; touch -d '8 days ago' "$d/p8test-backup-ancient.tar.gz"
+    {{LOCALDIR}}/bin/backup-backup.sh >/dev/null 2>/run/p8test-backup-fail/stderr; echo $? > /run/p8test-backup-fail/rc
+  effect: |
+    [ "$(cat /run/p8test-backup-fail/rc)" -ne 0 ] && echo "exit non-zero"
+    p8_count '^ERROR: backup of /etc/default into {{LOCALDIR}}/backup/p8test failed' /run/p8test-backup-fail/stderr
+    journalctl -t backup-p8test-backup -o cat --no-pager | p8_count '^ERROR: backup of /etc/default into {{LOCALDIR}}/backup/p8test failed'
+    test -e {{LOCALDIR}}/backup/p8test/p8test-backup-ancient.tar.gz && echo "the 8-day-old archive is kept"
+  expect:
+    rc: 0
+    stdout: \Aexit non-zero\n1\n1\nthe 8-day-old archive is kept\n\Z
+apply:
+  resource_type: define
+  node: ubuntu
+  title: backup
+  catalog:
+    Debian:
+    - class: filesystem_base
+    - class: backup

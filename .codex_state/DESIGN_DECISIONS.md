@@ -2715,3 +2715,30 @@ Verbatim:
    re-verification, so that pass runs on an up-to-date machine.
 10. Order: build the suite now (items 1–8), then stop for HQ with the neutrality and sample results. The rename follows,
     and its full re-verification runs on the public runner. Phase 1 approval is separate and stays with Salatiel."
+
+## 2026-11-26 — Behaviour suite, steps 1-4: the sets moved to spec/behaviour/checks, neutrally (HQ review of design note F)
+- **Built so far:** spec/behaviour/lib (placeholders {{NAME}}, {{NAME|re}}, {{NAME+N}}, {{NAME:arg}}; probe rules and
+  verdicts; the public validator: purpose and outcomes required, derived_from ignored as provenance, ruling 5),
+  spec/behaviour/kinds.yml (each node kind by OS, capabilities and the tooling it provides), suite_check.py in the
+  pre-commit hook (no lab value, no engine reference, fake-only params fixtures; rulings 2 and 8), and the engine's
+  converter behaviour_move.py (57e3f2e, 60b6ab6, 8c48593).
+- **The move (ruling 6):** all 90 sets now live in spec/behaviour/checks as templates. Their machines and site paths are
+  placeholders by role in what runs (NODE_NAME, NODE_ADDR, PEER_ADDR, SERVER_NAME, CONTROLLER_ADDR, LOCALDIR, ...)
+  and by kind in prose ({{NODE:rhel9}}); the runner variable P8_PEER_ADDR is PEER_ADDR (ruling 4). Each set gained an
+  `apply:` block: the catalog the harness builds for it from the plan, per OS family, with its node kind, node fixture
+  and expected run-2 events, so a runner without the plan can build it. The neutrality check renders each template with
+  the lab's values (each run's own node and peer) and names PEER_ADDR back: all 90 equal their old files, every string
+  byte for byte, with no lab value left. `behaviour_move.py verify` re-proves it against the old files as git holds
+  them, and a test runs it. moved.json ties each new file to its old identity, so phase3.reviewed_as_is keeps every
+  review valid: behaviour state unchanged (86 pass, 3 finding, 1 deferred), approval_report.md regenerates identical.
+- **The engine reads the public sets:** phase3.load_set renders the template with the lab's values (behaviour_move.
+  lab_view) and leaves the `apply` block to the harness; it runs exactly the old probes. Results and reviews stay in
+  .codex_state/checks/{results,reviews}; each set's comments (its authoring history) moved to
+  .codex_state/checks/notes/<class>.md. CLAUDE.md, the migrate-next skill and the reviewer agent name the new path.
+- **Ruling 8, as read:** the sets no longer name .codex_state, the advisor, Codex, or an engine file. The prose cites the
+  engine's records and tools (phase3.py 56 times, the fleet usage count, nodes.yml, escalation files, ...) as
+  {{SITE:<record>}} placeholders, which render back exactly for the engine and which a runner never needs. The generic
+  word "plan" and references to HQ rulings stay in the prose. Reported to HQ at the stop.
+- **Caught on the way:** a lab name or address written escaped (`\Apuppet8node`, `192\.168\.56\.20` inside a probe's
+  grep pattern) first escaped the converter; the leftover check and suite_check.py found both, and the converter now
+  handles escaped forms in every executed string.

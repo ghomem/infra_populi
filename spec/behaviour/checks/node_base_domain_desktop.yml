@@ -1,0 +1,215 @@
+class: node_base_domain_desktop
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+purpose: 'The base profile of a domain-joined desktop: the common packages with unattended upgrades, SSH hardened but accepting
+  passwords (domain accounts), the firewall with all IPv6 input and forwarding dropped, desktop APT helpers, an NTP daemon,
+  and the Puppet agent running as a daemon.'
+outcomes:
+- outcome: SSH is hardened but accepts password logins, and unattended upgrades stay installed
+  from: manifests/node_base_domain_desktop.pp:9-10
+  checks:
+  - ssh-hardened-but-password-login-allowed
+  - unattended-upgrades-kept
+- outcome: the IPv4 firewall is firewall_secure's (INPUT and FORWARD dropped by default, the SSH whitelist and limit)
+  from: manifests/node_base_domain_desktop.pp:11
+  checks:
+  - the-ipv4-firewall-is-firewall-secure
+- outcome: the local directories are in place (filesystem_base_desktop), and syslog's file is left to rsyslog (customize_syslog_mode
+    false by default)
+  from: manifests/node_base_domain_desktop.pp:4, 13-16
+  checks:
+  - the-local-directories-are-in-place
+- outcome: all IPv6 input and forwarding are dropped (firewall_ipv6_drop)
+  from: manifests/node_base_domain_desktop.pp:12
+  checks:
+  - ipv6-input-and-forward-dropped
+- outcome: the APT helpers are in desktop mode (server_mode false; the desktop surface list, the desktop link) and the relevant-updates
+    script exists
+  from: manifests/node_base_domain_desktop.pp:17-20
+  checks:
+  - apt-helpers-in-desktop-mode
+- outcome: an NTP daemon runs, and the puppet service is enabled and running
+  from: manifests/node_base_domain_desktop.pp:22-27
+  checks:
+  - ntp-daemon-running
+  - puppet-service-enabled-and-running
+- outcome: the puppet agent daemon running on its interval
+  from: manifests/node_base_domain_desktop.pp:23-27
+  checks:
+  - the-agent-daemon-runs-the-catalog
+checks:
+- id: ssh-hardened-but-password-login-allowed
+  what: ssh_secure is applied (its single KEX) with the profile's password_authentication => true, so sshd still accepts passwords
+  control: negative
+  derived_from:
+  - path: manifests/node_base_domain_desktop.pp
+    lines: '10'
+    text: 'class { ''puppet_infrastructure::ssh_secure'': password_authentication => true }'
+  - path: manifests/ssh_secure.pp
+    lines: 43-47
+    text: $my_password_authentication = 'yes'
+  - path: manifests/ssh_secure.pp
+    lines: '10'
+    text: String $kex_algorithm            = 'diffie-hellman-group-exchange-sha256',
+  - path: manifests/ssh_secure.pp
+    lines: '59'
+    text: '''KexAlgorithms''           => $kex_algorithm,'
+  - path: manifests/ssh_secure.pp
+    lines: '66'
+    text: '''PasswordAuthentication''  => $my_password_authentication ,'
+  probe: |
+    sshd -T 2>/dev/null | grep -E '^(kexalgorithms|passwordauthentication) ' | sort
+  expect:
+    rc: 0
+    stdout: \Akexalgorithms diffie-hellman-group-exchange-sha256\npasswordauthentication yes\n\Z
+- id: unattended-upgrades-kept
+  what: packages_base runs with unattended_upgrades => true, so the unattended-upgrades package stays installed
+  control: invariant
+  why_invariant: the clean node has unattended-upgrades installed (inventory v4 lists its files); with false packages_base
+    would remove it
+  derived_from:
+  - path: manifests/node_base_domain_desktop.pp
+    lines: '9'
+    text: 'class { ''puppet_infrastructure::packages_base'': unattended_upgrades => true }'
+  - path: manifests/packages_base.pp
+    lines: 53-55
+    text: 'package { ''unattended-upgrades'': ensure => installed, }'
+  probe: |
+    dpkg-query -W -f '${Status}\n' unattended-upgrades
+  expect:
+    rc: 0
+    stdout: \Ainstall ok installed\n\Z
+- id: ntp-daemon-running
+  what: 'the profile includes ntp, so an NTP daemon is running under the module''s Debian-family service name ntp (puppetlabs-ntp
+    11.2.0 data: Debian-family service_name ntp; Ubuntu-24.04 package ntpsec); the clean node has no ntp unit'
+  control: negative
+  derived_from:
+  - path: manifests/node_base_domain_desktop.pp
+    lines: '22'
+    text: include ::ntp
+  probe: |
+    systemctl is-active ntp
+  expect:
+    rc: 0
+    stdout: \Aactive\n\Z
+- id: puppet-service-enabled-and-running
+  what: the profile declares the puppet service running and enabled (desktops run puppet directly)
+  control: negative
+  derived_from:
+  - path: manifests/node_base_domain_desktop.pp
+    lines: 24-28
+    text: 'service { ''puppet'':'
+  - path: manifests/node_base_domain_desktop.pp
+    lines: 26-27
+    text: enable => true,
+  probe: |
+    systemctl is-enabled puppet; systemctl is-active puppet
+  expect:
+    rc: 0
+    stdout: \Aenabled\nactive\n\Z
+- id: the-agent-daemon-runs-the-catalog
+  what: 'the puppet service is the real agent daemon (its main process runs `agent --no-daemonize`, no stand-in body), and
+    restarted it makes a catalog run of its own that changes nothing besides Exec[apt_update] (the plan''s expected run-2
+    event: puppetlabs-apt with update frequency ''always'' runs it on every agent run)'
+  control: negative
+  timeout: 420
+  derived_from:
+  - path: manifests/node_base_domain_desktop.pp
+    lines: 24-28
+    text: 'service { ''puppet'':'
+  - path: manifests/node_base_domain_desktop.pp
+    lines: 26-27
+    text: enable => true,
+  mutates: restarts puppet.service (the daemon makes a catalog run at start, applying the node's catalog from the lab master);
+    the restart time goes to /run/p8test-agentd.since
+  probe: |
+    date +%s > /run/p8test-agentd.since; systemctl restart puppet
+  effect: |
+    since=$(cat /run/p8test-agentd.since)
+    pid=$(systemctl show puppet -p MainPID --value)
+    tr '\0' ' ' < /proc/$pid/cmdline | grep -c 'agent --no-daemonize' | sed 's/^1$/the daemon is the real agent/'
+    for i in $(seq 360); do journalctl --no-pager -q -o cat -u puppet.service --since @$since | grep -q 'Applied catalog in' && break; sleep 1; done
+    log=$(journalctl --no-pager -q -o cat -u puppet.service --since @$since)
+    printf '%s\n' "$log" | grep -c 'Applied catalog in' | sed 's/^[1-9][0-9]*$/a daemon run applied the catalog/'
+    printf '%s\n' "$log" | grep '^(/Stage\[main\]' | grep -vc 'Apt::Update/Exec\[apt_update\]' | sed 's/^/resource events besides Exec[apt_update]: /'
+  expect:
+    rc: 0
+    stdout: '\Athe daemon is the real agent\na daemon run applied the catalog\nresource events besides Exec\[apt_update\]:
+      0\n\Z'
+- id: ipv6-input-and-forward-dropped
+  what: ip6tables drops all IPv6 input and forwarding (rules 600 and 601 of firewall_ipv6_drop)
+  control: negative
+  derived_from:
+  - path: manifests/node_base_domain_desktop.pp
+    lines: '12'
+    text: include puppet_infrastructure::firewall_ipv6_drop
+  - path: manifests/firewall_ipv6_drop.pp
+    lines: '8'
+    text: 'firewall { ''600 Drop ALL IPv6 - INPUT'':'
+  probe: |
+    ip6tables -S INPUT | p8_count '"600 Drop ALL IPv6 - INPUT" -j DROP$'
+    ip6tables -S FORWARD | p8_count '"601 Drop ALL IPv6 - FORWARD" -j DROP$'
+  expect:
+    rc: 0
+    stdout: \A1\n1\n\Z
+- id: apt-helpers-in-desktop-mode
+  what: 'filesystem_apt runs in desktop mode (server_mode false, the default empty list): the surface update script holds
+    the desktop list (firefox, not the server''s nginx-core or postfix), the desktop compatibility link points at it, and
+    the relevant-updates script exists, root 0755'
+  control: negative
+  derived_from:
+  - path: manifests/node_base_domain_desktop.pp
+    lines: 17-20
+    text: server_mode       => false,
+  - path: manifests/filesystem_apt.pp
+    lines: 53-58
+    text: $_apt_surface_list = join($apt_surface_desktop, " ")
+  - path: manifests/filesystem_apt.pp
+    lines: 72-81
+    text: target  => "${localdir}/bin/apt-update-surface.sh",
+  probe: |
+    s=$(grep '^SURFACE=' {{LOCALDIR}}/bin/apt-update-surface.sh)
+    for p in nginx-core postfix firefox; do case " ${s#SURFACE=\"} " in *" $p "*|*" $p\""*) echo "$p listed";; *) echo "$p not listed";; esac; done
+    readlink {{LOCALDIR}}/bin/apt-update-surface-desktop.sh
+    stat -c '%U %a' {{LOCALDIR}}/bin/apt-update-relevant.sh
+  expect:
+    rc: 0
+    stdout: \Anginx-core not listed\npostfix not listed\nfirefox listed\n{{LOCALDIR}}/bin/apt-update-surface\.sh\nroot 755\n\Z
+- id: the-ipv4-firewall-is-firewall-secure
+  what: INPUT and FORWARD drop by default, the lab Hiera's one address is whitelisted for SSH, and firewall_secure's limit
+    chain stands
+  control: negative
+  derived_from:
+  - path: manifests/node_base_domain_desktop.pp
+    lines: '11'
+    text: include puppet_infrastructure::firewall_secure
+  probe: |
+    iptables -S | grep -E '^-P (INPUT|FORWARD) '
+    iptables -S INPUT | grep -c -- '--comment "100 SSH whitelist '
+    iptables -S LIMIT_OVERALL 2>/dev/null | grep -c -- '--comment "116 SSH LIMIT_OVERALL"'
+  expect:
+    rc: 0
+    stdout: \A-P INPUT DROP\n-P FORWARD DROP\n1\n1\n\Z
+- id: the-local-directories-are-in-place
+  what: filesystem_base_desktop's local, bin and etc directories exist, root-owned 0755
+  control: negative
+  derived_from:
+  - path: manifests/node_base_domain_desktop.pp
+    lines: 13-16
+    text: 'class { ''puppet_infrastructure::filesystem_base_desktop'':'
+  - path: manifests/filesystem_base_desktop.pp
+    lines: 8-17
+    text: $basedirs = [ $localdir, $bindir, $etcdir ]
+  probe: |
+    stat -c '%U %a %n' {{LOCALDIR}} {{LOCALDIR}}/bin {{LOCALDIR}}/etc
+  expect:
+    rc: 0
+    stdout: \Aroot 755 {{LOCALDIR}}\nroot 755 {{LOCALDIR}}/bin\nroot 755 {{LOCALDIR}}/etc\n\Z
+apply:
+  resource_type: class
+  node: ubuntu
+  catalog:
+    Debian:
+    - class: node_base_domain_desktop
+  expected_run2_events:
+  - Exec[apt_update]

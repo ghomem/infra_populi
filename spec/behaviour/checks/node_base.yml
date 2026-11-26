@@ -1,0 +1,365 @@
+class: node_base
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+purpose: 'The base of a generic Ubuntu server: hardened SSH (key-only, no root login, a fixed set of ciphers, MACs and key
+  exchange), a default-drop firewall that admits SSH from the node''s ACL and drops IPv6, base packages without unattended
+  upgrades, the local tree with the server update scripts, restricted network tools, and time kept by NTP.'
+outcomes:
+- outcome: every base component is applied together on an Ubuntu node (packages, monitoring scripts, SSH, firewall, IPv6 drop,
+    local tree, lib64 link, apt scripts, restricted tools)
+  from: manifests/node_base.pp:52-59, 79-120, 131-133
+  checks:
+  - the-base-components-are-all-applied
+- outcome: SSH negotiates only node_base's ciphers, MACs and key exchange, admits keys only, and refuses root
+  from: manifests/node_base.pp:3, 26, 29-32, 59
+  checks:
+  - ssh-negotiates-only-the-node-base-algorithms-and-keys
+- outcome: the firewall is firewall_secure (not the extra variant) with the node's ACL whitelisted for SSH, and IPv6 is dropped
+  from: manifests/node_base.pp:5, 8, 79-104
+  checks:
+  - the-firewall-is-firewall-secure-with-the-acl
+- outcome: unattended upgrades are not installed (node_base passes unattended_upgrades false)
+  from: manifests/node_base.pp:52-54
+  checks:
+  - unattended-upgrades-are-not-installed
+- outcome: the apt update scripts use the server surface list (server_mode true), with no desktop link
+  from: manifests/node_base.pp:114-119
+  checks:
+  - the-apt-scripts-are-in-server-mode
+- outcome: the network tools are restricted to the group Hiera names for Ubuntu
+  from: manifests/node_base.pp:123-133
+  checks:
+  - the-tools-are-restricted-to-the-hiera-group
+- outcome: time is kept by the ntp module's service (ntpsec on Ubuntu 24.04) from the Hiera servers, and it synchronises
+  from: manifests/node_base.pp:148-160
+  checks:
+  - ntp-keeps-the-time
+- outcome: with no nameservers given, the node's DNS setup is left as it is
+  from: manifests/node_base.pp:46, 167-169
+  checks:
+  - dns-is-left-alone
+- outcome: no boot-time agent run unless asked (run_puppet_on_boot false)
+  from: manifests/node_base.pp:27, 163-165
+  checks:
+  - no-boot-run-by-default
+- outcome: on RedHat, firewalld is stopped, disabled and masked, chrony keeps the time, and filesystem_yum replaces the apt
+    scripts
+  from: manifests/node_base.pp:61-76, 110-111, 135-147
+  checks:
+  - on-redhat-firewalld-masked-chrony-and-the-yum-scripts
+- outcome: strict SSH, firewall purge off with ignore patterns, and the boot run, when their parameters are set
+  from: manifests/node_base.pp:4, 27, 101, 164
+  checks:
+  - production-parameters-strict-keep-and-boot-run
+  - prod-two-unmanaged-rules-are-planted
+  - prod-the-agent-run-keeps-the-matching-rule
+- outcome: the parameters node_base forwards that no production node sets (custom NTP, nameservers, the extra firewall and
+    its options, SSH options, syslog mode, apt and update options, filesystem security)
+  from: manifests/node_base.pp:1-50 (parameters), 52-170
+  uncovered:
+    why: parameter variants no production node uses on node_base
+    accepted_gap:
+    - anti_ddos
+    - apt_surface_list
+    - bad_mark
+    - ciphers
+    - country_whitelist
+    - customize_syslog_mode
+    - custom_ntp
+    - ddos_limit
+    - ddos_limit_per_time_unit
+    - ddos_limit_time_unit
+    - filesystem_security
+    - firewall_secure_extra
+    - forward_iniface
+    - good_mark
+    - host_keys
+    - internal_forward
+    - internal_forward_list
+    - ip_blacklist
+    - ip_filter
+    - ip_whitelist
+    - kex_algorithm
+    - macs
+    - nameservers
+    - ntp_servers
+    - password_authentication
+    - relevant_updates_method
+    - relevant_updates_no_kernel
+    - server_ppa
+    - service_list
+    - ssh_allow_root_login
+    - ssh_port
+    - syslog_mode
+    evidence: '{{SITE:fleet-usage}} (2026-11-23): production sets firewall_ignore_patterns, firewall_strict_purge, run_puppet_on_boot,
+      ssh_acl and ssh_strict on node_base, none of these; no class of the repository declares node_base'
+node_agent:
+  after:
+  - prod-two-unmanaged-rules-are-planted
+  why: firewall_secure purges unmanaged rules, except those matching an ignore pattern, only on its next agent run
+variants:
+- name: rhel
+  why: the RedHat branch (firewalld masked, chrony, filesystem_yum), on the rhel9 node with the set's own params fixture
+  node: rhel9
+- name: prod
+  why: 'the parameters production sets on node_base (ssh_strict, firewall_strict_purge false with firewall_ignore_patterns:
+    37, 11 and 11 node statements; run_puppet_on_boot: 2)'
+  params: prod
+checks:
+- id: the-base-components-are-all-applied
+  what: one sentinel per component node_base applies on Ubuntu, each from that component's code
+  control: negative
+  derived_from:
+  - path: manifests/node_base.pp
+    lines: 52-54
+    text: 'class { ''puppet_infrastructure::packages_base'':'
+  - path: manifests/node_base.pp
+    lines: 55-57
+    text: 'class { ''puppet_infrastructure::sysmon_base'':'
+  - path: manifests/node_base.pp
+    lines: '104'
+    text: include puppet_infrastructure::firewall_ipv6_drop
+  - path: manifests/node_base.pp
+    lines: 112-113
+    text: include puppet_infrastructure::filesystem_lib64
+  probe: |
+    dpkg-query -W -f '${Package} ${Status}\n' aptitude monitoring-plugins-standard
+    test -x {{LOCALDIR}}/bin/nagios-puppet.sh && echo sysmon-scripts
+    ip6tables -S INPUT | grep -c -- '--comment "600 Drop ALL IPv6 - INPUT"'
+    readlink /usr/lib64/nagios
+    test -x {{LOCALDIR}}/bin/apt-update-pkg.sh && echo apt-scripts
+  expect:
+    rc: 0
+    stdout: \Aaptitude install ok installed\nmonitoring-plugins-standard install ok installed\nsysmon-scripts\n1\n/usr/lib/nagios\napt-scripts\n\Z
+- id: ssh-negotiates-only-the-node-base-algorithms-and-keys
+  what: over loopback, a client offering node_base's cipher, MAC and key exchange is offered public keys only; one offering
+    only curve25519 key exchange finds no match; sshd refuses root login
+  control: negative
+  derived_from:
+  - path: manifests/node_base.pp
+    lines: 30-32
+    text: String $kex_algorithm                             = 'diffie-hellman-group-exchange-sha256',
+  - path: manifests/node_base.pp
+    lines: '59'
+    text: 'class { ''puppet_infrastructure::ssh_secure'': password_authentication => $password_authentication, root_login
+      => $ssh_allow_root_login, port => $ssh_port, host_keys => $host_keys, kex_algorithm => $kex_algorithm, ciphers => $ciphers,
+      macs => $macs}'
+  probe: |
+    o='-o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5'
+    ssh $o -c aes256-ctr -m hmac-sha2-256 -o KexAlgorithms=diffie-hellman-group-exchange-sha256 p8testuser@127.0.0.1 true 2>&1 | grep -o 'Permission denied ([a-z,-]*)'
+    ssh $o -o KexAlgorithms=curve25519-sha256 p8testuser@127.0.0.1 true 2>&1 | grep -o 'no matching key exchange method found'
+    sshd -T 2>/dev/null | grep -E '^permitrootlogin '
+  mismatch:
+    varies: the cipher (aes128-cbc, which node_base's list does not hold) in the first connection
+    probe: |
+      o='-o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5'
+      ssh $o -c aes128-cbc -m hmac-sha2-256 -o KexAlgorithms=diffie-hellman-group-exchange-sha256 p8testuser@127.0.0.1 true 2>&1 | grep -o 'Permission denied ([a-z,-]*)'
+      ssh $o -o KexAlgorithms=curve25519-sha256 p8testuser@127.0.0.1 true 2>&1 | grep -o 'no matching key exchange method found'
+      sshd -T 2>/dev/null | grep -E '^permitrootlogin '
+  expect:
+    rc: 0
+    stdout: \APermission denied \(publickey\)\nno matching key exchange method found\npermitrootlogin no\n\Z
+- id: the-firewall-is-firewall-secure-with-the-acl
+  what: INPUT drops by default, two addresses are whitelisted for SSH (the lab Hiera's 127.0.0.1 and the ACL's one), firewall_secure's
+    limit chain stands and the extra variant's side chain does not
+  control: negative
+  derived_from:
+  - path: manifests/node_base.pp
+    lines: 100-102
+    text: 'class { ''puppet_infrastructure::firewall_secure'': strict => $ssh_strict, acl => $ssh_acl, strict_purge => $firewall_strict_purge,
+      ignore_patterns => $firewall_ignore_patterns, ssh_port => $ssh_port }'
+  probe: |
+    iptables -S | grep -E '^-P INPUT '
+    iptables -S INPUT | grep -c -- '--comment "100 SSH whitelist '
+    iptables -S LIMIT_OVERALL | grep -c -- '--comment "116 SSH LIMIT_OVERALL"'
+    iptables -S WHITELIST_SIDE_CHAIN >/dev/null 2>&1 && echo side-chain || echo no-side-chain
+  expect:
+    rc: 0
+    stdout: \A-P INPUT DROP\n2\n1\nno-side-chain\n\Z
+- id: unattended-upgrades-are-not-installed
+  what: the unattended-upgrades package is not installed (removed if it was)
+  control: negative
+  derived_from:
+  - path: manifests/node_base.pp
+    lines: 52-54
+    text: unattended_upgrades => false,
+  probe: |
+    dpkg-query -W -f '${Status}\n' unattended-upgrades 2>/dev/null | grep -q '^install ok installed$' && echo installed || echo not-installed
+  expect:
+    rc: 0
+    stdout: \Anot-installed\n\Z
+- id: the-apt-scripts-are-in-server-mode
+  what: the surface update script holds the server list (nginx-core, postfix, no firefox) and no desktop compatibility link
+    exists
+  control: negative
+  derived_from:
+  - path: manifests/node_base.pp
+    lines: 114-119
+    text: server_mode                => true,
+  probe: |
+    s=$(grep '^SURFACE=' {{LOCALDIR}}/bin/apt-update-surface.sh)
+    for p in nginx-core postfix rsyslog-gnutls firefox; do case " ${s#SURFACE=\"} " in *" $p "*|*" $p\""*) echo "$p listed";; *) echo "$p not listed";; esac; done
+    test -e {{LOCALDIR}}/bin/apt-update-surface-desktop.sh && echo desktop-link || echo no-desktop-link
+  expect:
+    rc: 0
+    stdout: \Anginx-core listed\npostfix listed\nrsyslog-gnutls listed\nfirefox not listed\nno-desktop-link\n\Z
+- id: the-tools-are-restricted-to-the-hiera-group
+  what: the restricted commands belong to the group the lab Hiera names for Ubuntu (sudo), mode 750
+  control: negative
+  derived_from:
+  - path: manifests/node_base.pp
+    lines: 127-129
+    text: $restricted_group = lookup( [ "${clientcert}::filesystem::restricted_group", 'filesystem::restricted_group_ubuntu'
+      ] )
+  - path: manifests/node_base.pp
+    lines: 131-133
+    text: 'puppet_infrastructure::filesystem_sec { ''filesystem_sec'': restricted_cmds => $restricted_cmds, restricted_group
+      => $restricted_group , restricted_mode => $restricted_mode }'
+  probe: |
+    stat -c '%n %U:%G %a' /usr/bin/wget /usr/bin/curl /usr/bin/ssh
+  expect:
+    rc: 0
+    stdout: \A/usr/bin/wget root:sudo 750\n/usr/bin/curl root:sudo 750\n/usr/bin/ssh root:sudo 750\n\Z
+- id: ntp-keeps-the-time
+  what: ntpsec (the ntp module's package on Ubuntu 24.04) runs with the Hiera server in its managed config, has selected a
+    time source within 60 s, and the system clock reports synchronised
+  control: negative
+  derived_from:
+  - path: manifests/node_base.pp
+    lines: 158-160
+    text: include ::ntp
+  probe: |
+    systemctl is-active ntpsec
+    grep -E '^server ' /etc/ntpsec/ntp.conf
+    for i in $(seq 12); do ntpq -pn 2>/dev/null | grep -q '^\*' && break; sleep 5; done
+    ntpq -pn 2>/dev/null | grep -c '^\*'
+    timedatectl show -p NTPSynchronized --value
+  expect:
+    rc: 0
+    stdout: \Aactive\nserver pt\.pool\.ntp\.org iburst\n1\nyes\n\Z
+- id: dns-is-left-alone
+  what: with no nameservers given, /etc/resolv.conf stays the node's own (its nameservers unchanged)
+  control: invariant
+  why_invariant: the node's own resolv.conf (P8NODE_BASELINE_GREEN_v4) is what node_base must leave unchanged, so it holds
+    before and after the apply
+  derived_from:
+  - path: manifests/dns_client.pp
+    lines: 8-12
+    text: if ($nameservers != []) {
+  - path: manifests/node_base.pp
+    lines: 167-169
+    text: nameservers => $nameservers,
+  probe: |
+    grep -E '^nameserver ' /etc/resolv.conf
+  expect:
+    rc: 0
+    stdout: \Anameserver 1\.1\.1\.1\nnameserver 8\.8\.8\.8\n\Z
+- id: no-boot-run-by-default
+  what: no boot-run unit or script is installed
+  control: invariant
+  why_invariant: the clean node has no boot-run unit, and node_base must not add one by default
+  derived_from:
+  - path: manifests/node_base.pp
+    lines: 163-165
+    text: if ($run_puppet_on_boot){
+  probe: |
+    test -e /etc/systemd/system/puppet_boot_run.service && echo unit || echo no-unit
+    test -e {{LOCALDIR}}/bin/puppet_boot_run.sh && echo script || echo no-script
+  expect:
+    rc: 0
+    stdout: \Ano-unit\nno-script\n\Z
+- id: on-redhat-firewalld-masked-chrony-and-the-yum-scripts
+  variant: rhel
+  what: on RedHat firewalld is masked and stopped, chronyd keeps the time, and the local bin holds filesystem_yum's scripts
+    and none of filesystem_apt's
+  control: negative
+  derived_from:
+  - path: manifests/node_base.pp
+    lines: 63-76
+    text: command => '/bin/systemctl mask firewalld',
+  - path: manifests/node_base.pp
+    lines: 140-147
+    text: include ::chrony
+  - path: manifests/node_base.pp
+    lines: 110-111
+    text: include puppet_infrastructure::filesystem_yum
+  probe: |
+    systemctl is-enabled firewalld 2>/dev/null
+    systemctl is-active firewalld 2>/dev/null || true
+    systemctl is-active chronyd
+    ls {{LOCALDIR}}/bin | grep -c yum | sed 's/^[1-9][0-9]*$/yum scripts present/'
+    ls {{LOCALDIR}}/bin | grep -c '^apt-update' || true
+  expect:
+    rc: 0
+    stdout: \Amasked\ninactive\nactive\nyum scripts present\n0\n\Z
+- id: production-parameters-strict-keep-and-boot-run
+  variant: prod
+  what: 'with ssh_strict, firewall_strict_purge false with an ignore pattern, and run_puppet_on_boot: INPUT has no SSH rate-limit
+    rule (strict mode), the boot-run unit is enabled and its script installed root 0750'
+  control: negative
+  derived_from:
+  - path: manifests/node_base.pp
+    lines: '101'
+    text: 'class { ''puppet_infrastructure::firewall_secure'': strict => $ssh_strict, acl => $ssh_acl, strict_purge => $firew'
+  - path: manifests/node_base.pp
+    lines: 162-165
+    text: include puppet_infrastructure::puppet_boot_run
+  probe: |
+    iptables -S | grep -E '^-P INPUT '
+    iptables -S INPUT | grep -c '110 SSH' | sed 's/^/rate-limit rules: /'
+    systemctl is-enabled puppet_boot_run.service
+    stat -c '%U:%G %a' {{LOCALDIR}}/bin/puppet_boot_run.sh
+  expect:
+    rc: 0
+    stdout: '\A-P INPUT DROP\nrate-limit rules: 0\nenabled\nroot:root 750\n\Z'
+- id: prod-two-unmanaged-rules-are-planted
+  variant: prod
+  what: setup for the next check, two rules Puppet does not manage added to INPUT by hand, one matching the ignore pattern
+    p8test-keep
+  control: negative
+  derived_from:
+  - path: manifests/node_base.pp
+    lines: '101'
+    text: strict_purge => $firewall_strict_purge, ignore_patterns => $firewall_ignore_patterns
+  mutates: appends two ACCEPT rules to INPUT on the node, commented p8test-keep-me (source 10.255.255.2) and p8test-other
+    (source 10.255.255.3)
+  probe: |
+    iptables -A INPUT -s 10.255.255.2/32 -m comment --comment p8test-keep-me -j ACCEPT
+    iptables -A INPUT -s 10.255.255.3/32 -m comment --comment p8test-other -j ACCEPT
+  effect: |
+    iptables -S INPUT | grep -cE 'p8test-(keep-me|other)'
+  expect:
+    rc: 0
+    stdout: \A2\n\Z
+- id: prod-the-agent-run-keeps-the-matching-rule
+  variant: prod
+  what: after the node's agent run, the rule matching node_base's firewall_ignore_patterns stays and the other unmanaged rule
+    is purged (firewall_strict_purge false, forwarded to firewall_secure)
+  control: negative
+  derived_from:
+  - path: manifests/node_base.pp
+    lines: '101'
+    text: 'class { ''puppet_infrastructure::firewall_secure'': strict => $ssh_strict'
+  - path: manifests/firewall_secure.pp
+    lines: 39-44
+    text: if ( ! $strict_purge and ! $ignore_patterns.empty )
+  mutates: none beyond reading the rules (declared mutating so it runs after the node's agent run)
+  probe: |
+    true
+  effect: |
+    iptables -S INPUT | grep -c p8test-keep-me | sed 's/^/kept: /'
+    iptables -S INPUT | grep -c p8test-other | sed 's/^/other: /'
+  expect:
+    rc: 0
+    stdout: '\Akept: 1\nother: 0\n\Z'
+apply:
+  resource_type: class
+  node: ubuntu
+  catalog:
+    Debian:
+    - class: node_base
+    RedHat:
+    - class: node_base
+  expected_run2_events:
+  - Exec[apt_update]
+  - Exec[dnf-makecache]

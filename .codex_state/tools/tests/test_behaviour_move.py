@@ -84,10 +84,19 @@ def test_the_catalog_follows_the_harness_bases_first_then_externals_and_apt_only
                                                {"external": "firewall"}, {"class": "x"}]
 
 
-def test_every_set_of_the_repository_moves_neutrally():
-    bad = []
-    for cls in bm.all_classes():
-        _, _, diff = bm.convert(cls)
-        if diff:
-            bad.append(f"{cls}: {diff}")
-    assert not bad, bad[:5]
+def test_an_escaped_address_in_a_probe_becomes_a_placeholder_too():
+    probe = "grep -c 'unknown\\[192\\.168\\.56\\.20\\]' x"
+    assert bm.templatise(probe, BASE, "probe") == "grep -c 'unknown\\[{{NODE_ADDR|re}}\\]' x"
+    assert bm.lab_left({"probe": probe}, CTXS) == {"192.168.56.20"}
+
+
+def test_lab_view_leaves_a_set_without_placeholders_as_it_is():
+    plain = {"class": "p8x", "checks": [{"id": "a", "probe": "true"}]}
+    assert bm.lab_view("p8x", plain) is plain
+
+
+def test_every_moved_set_is_still_the_neutral_move_of_its_old_file():
+    moved = __import__("json").loads(bm.MOVED.read_text())
+    bad = {cls: diff for cls in moved if (diff := bm.verify(cls, moved))
+           and diff != "the set changed after the move (its reviews judge it as any changed set)"}
+    assert not bad, dict(list(bad.items())[:3])

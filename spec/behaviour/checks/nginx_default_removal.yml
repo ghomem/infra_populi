@@ -1,0 +1,60 @@
+class: nginx_default_removal
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+purpose: Removes the default site that the nginx package enables (/etc/nginx/sites-enabled/default) from nginx's configuration,
+  as its comment says ("removes the default config file from the package"). The class notifies nothing, so a running nginx
+  drops the site at its next reload.
+node_agent:
+  after: the-nginx-package-enables-its-default-site
+  why: the site appears when the nginx package is installed, after the class's first apply; only the next agent run can remove
+    it
+outcomes:
+- outcome: once the nginx package has enabled its default site, the next agent run removes it and nginx's configuration no
+    longer includes it
+  from: manifests/nginx_default_removal.pp:2-5
+  checks:
+  - the-nginx-package-enables-its-default-site
+  - the-next-agent-run-removes-the-default-site
+checks:
+- id: the-nginx-package-enables-its-default-site
+  what: setup for the next check, the nginx package installed, its default site enabled and serving the welcome page on port
+    80
+  control: negative
+  timeout: 300
+  derived_from:
+  - path: manifests/nginx_default_removal.pp
+    lines: 2-5
+    text: 'file { ''/etc/nginx/sites-enabled/default'':'
+  mutates: installs the nginx package on the node (apt), which enables /etc/nginx/sites-enabled/default and starts nginx
+  probe: |
+    DEBIAN_FRONTEND=noninteractive apt-get -qq -y install nginx >/dev/null 2>&1
+  effect: |
+    test -e /etc/nginx/sites-enabled/default && echo default-site-enabled
+    curl -s --max-time 5 http://127.0.0.1/ | grep -c '<h1>Welcome to nginx'
+  expect:
+    rc: 0
+    stdout: \Adefault-site-enabled\n1\n\Z
+- id: the-next-agent-run-removes-the-default-site
+  what: after the node's agent run, nginx is still installed, the default site is gone, and nginx's configuration (nginx -T)
+    no longer includes it
+  control: negative
+  derived_from:
+  - path: manifests/nginx_default_removal.pp
+    lines: 3-5
+    text: ensure => absent,
+  mutates: none beyond reading files and nginx's configuration (declared mutating so it runs after the node's agent run)
+  probe: |
+    true
+  effect: |
+    command -v nginx >/dev/null && echo nginx-installed
+    test -e /etc/nginx/sites-enabled/default && echo default-site-enabled || echo default-site-removed
+    nginx -T 2>/dev/null | grep -c '^# configuration file /etc/nginx/sites-enabled/default' || true
+  expect:
+    rc: 0
+    stdout: \Anginx-installed\ndefault-site-removed\n0\n\Z
+apply:
+  resource_type: class
+  node: ubuntu
+  catalog:
+    Debian:
+    - class: nginx_default_removal

@@ -1,0 +1,175 @@
+class: mysql_db
+baseline: 874f854 (874f854)
+fixture: params
+peer:
+  kind: ubuntu2
+  why: the accounts are for any host, so another machine must log in to the class node over the network
+purpose: Creates a MySQL database with a read/write account and, optionally, a read-only one, both reachable from any host
+  but only over TLS, so applications get a database of their own with the privileges they need.
+outcomes:
+- outcome: the MySQL server stays the one running beside the database (no MariaDB replaces it)
+  from: manifests/mysql_db.pp:26
+  checks:
+  - mysql-server-survives-the-define
+- outcome: the database exists with the utf8mb3 charset and collation
+  from: manifests/mysql_db.pp:17-27
+  checks:
+  - database-created-with-charset-and-collation
+- outcome: both accounts exist for any host, require TLS, and carry their grants (rw ALL, ro SELECT and SHOW VIEW)
+  from: manifests/mysql_db.pp:17-41
+  checks:
+  - users-from-any-host-require-tls
+  - grants-on-the-database
+- outcome: the rw account logs in over TLS with its password and writes; the ro account logs in over TLS and reads, and its
+    write is refused
+  from: manifests/mysql_db.pp:17-41
+  checks:
+  - rw-user-logs-in-over-tls
+  - the-accounts-read-and-write-as-granted
+- outcome: another host logs in over the network with TLS, and without TLS is refused
+  from: manifests/mysql_db.pp:1-3, 17-27
+  checks:
+  - another-host-logs-in-over-tls
+- outcome: a database without a read-only account, and the refusal of a half-given read-only pair
+  from: manifests/mysql_db.pp:9-15
+  uncovered:
+    why: one set holds one params fixture (both accounts given)
+    lifted_by: 'capability: more than one params fixture per set'
+    evidence: '{{SITE:engine-runner}} applies the class once with its single `fixture` (params or defaults)'
+checks:
+- id: mysql-server-survives-the-define
+  what: after mysql_db applies, the MySQL 8.0 server and client packages are installed, no MariaDB server or client is, and
+    the mysql service is active (HQ 2026-11-17 ruling 1)
+  control: negative
+  derived_from:
+  - path: manifests/mysql_server.pp
+    lines: '48'
+    text: package_name            => "mysql-server-${version}",
+  - path: manifests/mysql_db.pp
+    lines: '17'
+    text: 'mysql::db { "${db_name}-rw":'
+  probe: |
+    dpkg-query -W -f '${Package} ${Status}\n' mysql-server-8.0 mysql-client-8.0
+    dpkg-query -W -f '${Status}\n' mariadb-server mariadb-client 2>/dev/null | grep -c 'install ok installed' || true
+    systemctl is-active mysql
+  expect:
+    rc: 0
+    stdout: \Amysql-client-8\.0 install ok installed\nmysql-server-8\.0 install ok installed\n0\nactive\n\Z
+- id: database-created-with-charset-and-collation
+  what: the database exists with utf8mb3 / utf8mb3_general_ci
+  control: negative
+  derived_from:
+  - path: manifests/mysql_db.pp
+    lines: 18-22
+    text: collate     => 'utf8mb3_general_ci',
+  probe: |
+    mysql -NB -e "SELECT DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = 'p8test_db'"
+  expect:
+    rc: 0
+    stdout: \Autf8mb3\tutf8mb3_general_ci\n\Z
+- id: users-from-any-host-require-tls
+  what: both users exist for host % and require TLS (ssl_type ANY)
+  control: negative
+  derived_from:
+  - path: manifests/mysql_db.pp
+    lines: 23-25
+    text: tls_options => ['SSL'],
+  - path: manifests/mysql_db.pp
+    lines: 36-38
+    text: host        => '%',
+  probe: |
+    mysql -NB -e "SELECT user, host, ssl_type FROM mysql.user WHERE user IN ('p8test_rw', 'p8test_ro') ORDER BY user"
+  expect:
+    rc: 0
+    stdout: \Ap8test_ro\t%\tANY\np8test_rw\t%\tANY\n\Z
+- id: grants-on-the-database
+  what: the rw user has ALL on the database and the ro user SELECT and SHOW VIEW
+  control: negative
+  derived_from:
+  - path: manifests/mysql_db.pp
+    lines: '24'
+    text: grant       => ['ALL'],
+  - path: manifests/mysql_db.pp
+    lines: '37'
+    text: grant       => ['SELECT', 'SHOW VIEW'],
+  probe: |
+    mysql -NB -e "SHOW GRANTS FOR 'p8test_rw'@'%'; SHOW GRANTS FOR 'p8test_ro'@'%'" | grep 'p8test_db'
+  expect:
+    rc: 0
+    stdout: \AGRANT ALL PRIVILEGES ON `p8test_db`\.\* TO `p8test_rw`@`%`\nGRANT SELECT, SHOW VIEW ON `p8test_db`\.\* TO `p8test_ro`@`%`\n\Z
+- id: rw-user-logs-in-over-tls
+  what: the rw user logs in over TCP with TLS with its password
+  control: negative
+  derived_from:
+  - path: manifests/mysql_db.pp
+    lines: 17-25
+    text: password    => $rw_pass,
+  probe: |
+    mysql --protocol=TCP -h 127.0.0.1 --ssl-mode=REQUIRED -u p8test_rw -p'p8test-rw-not-a-secret' -NB -e 'SELECT CURRENT_USER()' 2>/dev/null
+  mismatch:
+    varies: 'only the password (p8test-wrong-password): the server must refuse the login, so the user line must not come back'
+    probe: |
+      mysql --protocol=TCP -h 127.0.0.1 --ssl-mode=REQUIRED -u p8test_rw -p'p8test-wrong-password' -NB -e 'SELECT CURRENT_USER()' 2>/dev/null
+  expect:
+    rc: 0
+    stdout: \Ap8test_rw@%\n\Z
+- id: the-accounts-read-and-write-as-granted
+  what: over TCP with TLS, the rw account creates a table and inserts a row in the database; the ro account reads the row
+    back, and its own insert is refused (ERROR 1142, the command is denied)
+  control: negative
+  derived_from:
+  - path: manifests/mysql_db.pp
+    lines: 17-25
+    text: grant       => ['ALL'],
+  - path: manifests/mysql_db.pp
+    lines: 30-38
+    text: grant       => ['SELECT', 'SHOW VIEW'],
+  mutates: 'as p8test_rw, creates the table p8test_db.p8test_t and inserts one row; as p8test_ro, one SELECT and one refused
+    INSERT; the server records them in its data directory (/srv/mysql, mysql_server fixture: tablespaces, redo, undo and binary
+    logs); the answers go to /run/p8test-mysqldb/answers.txt'
+  probe: |
+    install -d -m 0700 /run/p8test-mysqldb; o=/run/p8test-mysqldb/answers.txt
+    m="mysql --protocol=TCP -h 127.0.0.1 --ssl-mode=REQUIRED -NB p8test_db"
+    $m -u p8test_rw -p'p8test-rw-not-a-secret' -e "CREATE TABLE IF NOT EXISTS p8test_t (v VARCHAR(32)); INSERT INTO p8test_t VALUES ('p8test-row')" 2>&1 | grep -oE 'ERROR [0-9]+' | head -1 | sed 's/^/rw write: /' > $o
+    $m -u p8test_ro -p'p8test-ro-not-a-secret' -e 'SELECT v FROM p8test_t' 2>/dev/null | sed 's/^/ro read: /' >> $o
+    $m -u p8test_ro -p'p8test-ro-not-a-secret' -e "INSERT INTO p8test_t VALUES ('p8test-ro')" 2>&1 | grep -oE 'ERROR [0-9]+' | head -1 | sed 's/^/ro write: /' >> $o
+  effect: |
+    cat /run/p8test-mysqldb/answers.txt
+  expect:
+    rc: 0
+    stdout: '\Aro read: p8test-row\nro write: ERROR 1142\n\Z'
+- id: another-host-logs-in-over-tls
+  what: from another machine (the peer), the rw account logs in to the class node's MySQL over TLS and the class node answers;
+    the same login without TLS is refused
+  control: negative
+  host: peer
+  timeout: 300
+  derived_from:
+  - path: manifests/mysql_db.pp
+    lines: 1-3
+    text: '# a read-only user. Remote accounts require TLS; network access is'
+  - path: manifests/mysql_db.pp
+    lines: 17-25
+    text: host        => '%',
+  mutates: installs mysql-client-core-8.0 on the peer if absent; makes three TCP logins from the peer to the class node's
+    port 3306 (the server logs nothing for them beyond its counters); the answers go to /run/p8test-mysqldb-peer/answers.txt
+  probe: |
+    command -v mysql >/dev/null || DEBIAN_FRONTEND=noninteractive apt-get -qq -y install mysql-client-core-8.0 >/dev/null 2>&1
+    install -d -m 0700 /run/p8test-mysqldb-peer; o=/run/p8test-mysqldb-peer/answers.txt
+    m="mysql --protocol=TCP -h {{NODE_ADDR}} -P3306 -u p8test_rw -pp8test-rw-not-a-secret -NB"
+    $m --ssl-mode=REQUIRED -e 'SELECT CURRENT_USER(), @@hostname' 2>/dev/null > $o
+    $m --ssl-mode=REQUIRED -e "SHOW SESSION STATUS LIKE 'Ssl_version'" 2>/dev/null | cut -f2 | sed 's/^TLSv1\.[23]$/TLS/' >> $o
+    $m --ssl-mode=DISABLED -e 'SELECT 1' 2>&1 | grep -oE 'ERROR [0-9]+' | head -1 >> $o
+  effect: |
+    cat /run/p8test-mysqldb-peer/answers.txt
+  expect:
+    rc: 0
+    stdout: \Ap8test_rw@%\t{{NODE_NAME}}\nTLS\nERROR 1045\n\Z
+apply:
+  resource_type: define
+  node: ubuntu
+  title: p8test_db
+  catalog:
+    Debian:
+    - class: mysql_server
+    - class: mysql_db

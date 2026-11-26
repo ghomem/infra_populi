@@ -1,0 +1,157 @@
+class: filesystem_base_desktop
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+node_agent:
+  after: the-syslog-file-drifts
+  why: the class corrects the syslog file's owner and mode only on an agent run after they changed
+purpose: 'Basic filesystem definitions for desktop machines: the local directories for custom scripts and configuration (localdir,
+  bindir, etcdir), root-owned and usable by everyone, and, when asked, the syslog file''s owner and mode enforced over what
+  rsyslog sets.'
+outcomes:
+- outcome: localdir, bindir and etcdir exist, root:root, traversable (0644 as declared, 0755 in effect for directories)
+  from: manifests/filesystem_base_desktop.pp:10-22
+  checks:
+  - base-directories
+- outcome: a script placed in bindir runs, and a configuration file placed in etcdir reads, for an unprivileged user
+  from: manifests/filesystem_base_desktop.pp:16-22
+  checks:
+  - a-script-in-bindir-runs-for-an-unprivileged-user
+- outcome: with customize_syslog_mode, /var/log/syslog is syslog:adm with syslog_mode, and a change to its owner or mode is
+    undone by the next agent run
+  from: manifests/filesystem_base_desktop.pp:4-7, 27-37
+  checks:
+  - syslog-file-owner-and-mode
+  - the-syslog-file-drifts
+  - the-agent-run-restores-the-syslog-file
+- outcome: without customize_syslog_mode (the default) the syslog file is left alone; another syslog_mode
+  from: manifests/filesystem_base_desktop.pp:6-7, 30
+  checks:
+  - the-syslog-file-is-left-alone-by-default
+  - another-syslog-mode-is-applied
+variants:
+- name: default
+  why: customize_syslog_mode false, passed by node_base_desktop and node_base_domain_desktop (composites)
+  params: default
+- name: mode
+  why: another syslog_mode (u=rw,g=,o=), a parameter the same composites pass through
+  params: mode
+checks:
+- id: base-directories
+  what: '{{LOCALDIR}}, its bin and its etc are directories, root:root, mode 755 in effect'
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_base_desktop.pp
+    lines: 14-22
+    text: $basedirs = [ $localdir, $bindir, $etcdir ]
+  - path: manifests/filesystem_base_desktop.pp
+    lines: '21'
+    text: mode   => '0644'
+  probe: stat -c '%n %F %U %G %a' {{LOCALDIR}} {{LOCALDIR}}/bin {{LOCALDIR}}/etc
+  expect:
+    rc: 0
+    stdout: \A{{LOCALDIR}} directory root root 755\n{{LOCALDIR}}/bin directory root root 755\n{{LOCALDIR}}/etc directory root
+      root 755\n\Z
+- id: syslog-file-owner-and-mode
+  what: /var/log/syslog is syslog:adm, mode 640
+  control: invariant
+  why_invariant: rsyslog on Ubuntu 24.04 creates /var/log/syslog as syslog:adm 0640, the class's own values, so it holds on
+    the clean node too; the class's part is the enforcement checked by the drift pair below
+  derived_from:
+  - path: manifests/filesystem_base_desktop.pp
+    lines: 27-36
+    text: mode   => $syslog_mode,
+  - path: manifests/filesystem_base_desktop.pp
+    lines: '7'
+    text: String $syslog_mode            = 'u=rw,g=r,o=',
+  probe: stat -c '%U %G %a' /var/log/syslog
+  expect:
+    rc: 0
+    stdout: \Asyslog adm 640\n\Z
+- id: a-script-in-bindir-runs-for-an-unprivileged-user
+  what: an executable placed in bindir by root runs for the account nobody, and a 0644 file placed in etcdir reads for it
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_base_desktop.pp
+    lines: 16-22
+    text: '# local dir for custom scripts'
+  mutates: writes {{LOCALDIR}}/bin/p8test-hello.sh (0755, prints p8test-hello) and {{LOCALDIR}}/etc/p8test.conf (0644), runs
+    the script and reads the file as nobody; the output goes to /run/p8test-fsd/hello.out
+  probe: |
+    install -d -m 0700 /run/p8test-fsd
+    printf '#!/bin/sh\necho p8test-hello\n' > {{LOCALDIR}}/bin/p8test-hello.sh && chmod 0755 {{LOCALDIR}}/bin/p8test-hello.sh
+    printf 'p8test-conf\n' > {{LOCALDIR}}/etc/p8test.conf && chmod 0644 {{LOCALDIR}}/etc/p8test.conf
+    { runuser -u nobody -- {{LOCALDIR}}/bin/p8test-hello.sh; runuser -u nobody -- cat {{LOCALDIR}}/etc/p8test.conf; } > /run/p8test-fsd/hello.out 2>&1
+  effect: |
+    cat /run/p8test-fsd/hello.out
+  expect:
+    rc: 0
+    stdout: \Ap8test-hello\np8test-conf\n\Z
+- id: the-syslog-file-drifts
+  what: setup for the agent run, /var/log/syslog's owner and mode changed by hand (root:root 0644)
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_base_desktop.pp
+    lines: 4-5
+    text: '# Notice rsyslog may set different permissions when creating the syslog file'
+  mutates: chown root:root and chmod 0644 on /var/log/syslog; writes the marker /run/p8test-fsd/drifted
+  probe: |
+    install -d -m 0700 /run/p8test-fsd
+    chown root:root /var/log/syslog && chmod 0644 /var/log/syslog && touch /run/p8test-fsd/drifted
+  effect: |
+    stat -c '%U %G %a' /var/log/syslog
+  expect:
+    rc: 0
+    stdout: \Aroot root 644\n\Z
+- id: the-agent-run-restores-the-syslog-file
+  what: after the node's agent run, the file that was changed by hand is syslog:adm 640 again
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_base_desktop.pp
+    lines: 30-36
+    text: owner  => $syslog_owner,
+  mutates: none beyond reading the marker and the file (declared mutating so it runs after the node's agent run)
+  probe: |
+    true
+  effect: |
+    test -e /run/p8test-fsd/drifted && echo "changed by hand earlier"
+    stat -c '%U %G %a' /var/log/syslog
+  expect:
+    rc: 0
+    stdout: \Achanged by hand earlier\nsyslog adm 640\n\Z
+- id: the-syslog-file-is-left-alone-by-default
+  variant: default
+  what: with customize_syslog_mode false the class is applied (its base directories exist) and the catalog manages no syslog
+    file
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_base_desktop.pp
+    lines: 30-37
+    text: if ($customize_syslog_mode) {
+  probe: |
+    test -d {{LOCALDIR}}/bin && echo "base directories"
+    python3 -c 'import json,sys; r=json.load(open(sys.argv[1]))["resources"]; print("syslog file resources:", sum(1 for x in r if x["type"]=="File" and x["title"]=="/var/log/syslog"))' $(ls /opt/puppetlabs/puppet/cache/client_data/catalog/*.json 2>/dev/null | head -1) 2>/dev/null || echo "no catalog"
+  expect:
+    rc: 0
+    stdout: '\Abase directories\nsyslog file resources: 0\n\Z'
+- id: another-syslog-mode-is-applied
+  variant: mode
+  what: with customize_syslog_mode true and syslog_mode u=rw,g=,o= the syslog file is syslog:adm 0600
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_base_desktop.pp
+    lines: 30-37
+    text: mode   => $syslog_mode,
+  - path: manifests/filesystem_base_desktop.pp
+    lines: '7'
+    text: String $syslog_mode            = 'u=rw,g=r,o=',
+  probe: |
+    stat -c '%U:%G %a' /var/log/syslog
+  expect:
+    rc: 0
+    stdout: \Asyslog:adm 600\n\Z
+apply:
+  resource_type: class
+  node: ubuntu
+  catalog:
+    Debian:
+    - class: filesystem_base_desktop

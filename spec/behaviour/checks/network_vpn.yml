@@ -1,0 +1,330 @@
+class: network_vpn
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+peer:
+  kind: ubuntu2
+  why: the VPN client must be a second machine that connects over UDP and resolves through the VPN's nameserver
+  files:
+  - /etc/openvpn/keys/ca.crt
+purpose: 'A VPN gateway: an OpenVPN server whose clients resolve names through the VPN''s own caching nameserver on the VPN
+  bridge (allowed through the firewall on the bridge), and reach the WAN through the server, forwarded and masqueraded.'
+outcomes:
+- outcome: a client connects, gets an address on the VPN network and the VPN's nameserver as DNS
+  from: manifests/network_vpn.pp:13-27, 47-60
+  checks:
+  - vpn-server-on-the-vpn-network
+  - vpn-account-on-the-server
+  - client-connects-and-resolves-through-the-vpn-nameserver
+- outcome: the VPN's nameserver answers VPN clients recursively through the bridge, over a default drop
+  from: manifests/network_vpn.pp:1-4, 29-37
+  checks:
+  - nameserver-serves-the-vpn-network
+  - firewall-accepts-dns-on-the-bridge
+  - the-lab-nat-ipv6-route-is-removed
+  - a-wan-host-and-default-drops
+  - the-client-resolves-and-reaches-the-wan-through-the-server
+  - the-composed-rules-counted-the-flows
+- outcome: a VPN client reaches the WAN through the server, masqueraded behind the server's WAN address
+  from: manifests/network_vpn.pp:39-44
+  checks:
+  - forwarding-and-nat-to-the-wan
+  - a-wan-host-and-default-drops
+  - the-client-resolves-and-reaches-the-wan-through-the-server
+  - the-composed-rules-counted-the-flows
+- outcome: a client that uses the class's cipher (openvpn_cipher AES-256-CBC, the default) connects with it
+  from: manifests/network_vpn.pp:25, 57
+  checks:
+  - a-client-on-the-class-cipher-connects
+- outcome: client isolation, the bridge and the server at boot, the hairpin rule, the data channel's compression, and each
+    composed class's own behaviours
+  from: manifests/network_vpn.pp:14, 41-60
+  uncovered:
+    why: these are the composed classes' own behaviours, checked by their own sets under their own fixtures (openvpn_server,
+      firewall_addon_openvpn_server, caching_nameserver, firewall_addon_caching_nameserver; openvpn_server's compression is
+      a finding, {{SITE:escalation-openvpn-server}}); this set covers what the composition adds
+    lifted_by: 'capability: running each composed class''s checks inside network_vpn''s own run (a set holds its own class''s
+      checks)'
+    evidence: '{{SITE:engine-runner}} runs the checks of one set per run; the composed classes'' sets each pass their own
+      reviews ({{SITE:engine-runner}} state, 2026-11-23)'
+- outcome: another client DNS server pushed to VPN clients (openvpn_client_dns)
+  from: manifests/network_vpn.pp:26, 56
+  checks:
+  - another-client-dns-is-pushed
+- outcome: another VPN network size, cipher, renegotiation interval or client isolation off
+  from: manifests/network_vpn.pp:14-26
+  uncovered:
+    why: parameter variants no production node uses (the fixture sets the network itself, wan_iface as production does)
+    accepted_gap:
+    - openvpn_netmask
+    - openvpn_cipher
+    - openvpn_reneg_sec
+    - client_isolation
+    evidence: '{{SITE:fleet-usage}} (2026-11-23): production sets openvpn_client_dns and wan_iface on network_vpn and none
+      of these; no class of the repository sets them on network_vpn'
+variants:
+- name: clientdns
+  why: another client DNS server, which a production node sets ({{SITE:fleet-usage}}, 1 node statement)
+  params: clientdns
+checks:
+- id: nameserver-serves-the-vpn-network
+  what: bind listens on the VPN bridge address and allows queries from the VPN network
+  control: negative
+  derived_from:
+  - path: manifests/network_vpn.pp
+    lines: 31-32
+    text: allowed_networks => ["${openvpn_network}/24"]
+  - path: templates/bind/named.conf.options.erb
+    lines: '9'
+    text: allow-query     { localhost; <% @allowed_networks.each do |network| %> <%= network %>; <% end %>  };
+  probe: |
+    ss -ulnH 'sport = :53' | awk '{print $4}' | grep -c -x '198\.51\.100\.1:53'
+    grep -c -E '^\s*allow-query\s+\{ localhost;\s+198\.51\.100\.0/24;\s+\};' /etc/bind/named.conf.options
+  expect:
+    rc: 0
+    stdout: \A[1-9]\n1\n\Z
+- id: firewall-accepts-dns-on-the-bridge
+  what: the INPUT rule accepts UDP 53 arriving on the VPN bridge
+  control: negative
+  derived_from:
+  - path: manifests/network_vpn.pp
+    lines: '36'
+    text: lan_iface => $openvpn_bridge_iface
+  - path: manifests/firewall_addon_caching_nameserver.pp
+    lines: '11'
+    text: 'firewall { ''1301 accept nameserver'': proto => ''udp'', iniface => $lan_iface, dport => $port, action => ''accept''
+      }'
+  probe: |
+    iptables -S INPUT | grep -c -F -- '-A INPUT -i br0 -p udp -m udp --dport 53 -m comment --comment "1301 accept nameserver" -j ACCEPT'
+  expect:
+    rc: 0
+    stdout: \A1\n\Z
+- id: forwarding-and-nat-to-the-wan
+  what: the bridge forwards to and from the WAN interface (return traffic only), loops on itself, NATs out of the WAN, and
+    IP forwarding is on
+  control: negative
+  derived_from:
+  - path: manifests/network_vpn.pp
+    lines: 42-43
+    text: wan_iface        => $wan_iface,
+  - path: manifests/firewall_addon_openvpn_server.pp
+    lines: '21'
+    text: jump => 'MASQUERADE'
+  - path: manifests/firewall_addon_openvpn_server.pp
+    lines: '25'
+    text: 'sysctl   { ''net.ipv4.ip_forward'': value => ''1''  }'
+  probe: |
+    iptables -S FORWARD | grep -E -- '--comment "20[234] ' | sed -E 's/ -m comment --comment "[^"]*"//'
+    iptables -t nat -S POSTROUTING | grep -F -- '--comment "205 performing nat"' | sed -E 's/ -m comment --comment "[^"]*"//'
+    sysctl -n net.ipv4.ip_forward
+  expect:
+    rc: 0
+    stdout: \A-A FORWARD -i br0 -o p8test0 -j ACCEPT\n-A FORWARD -i p8test0 -o br0 -m state --state RELATED,ESTABLISHED -j
+      ACCEPT\n-A FORWARD -i br0 -o br0 -j ACCEPT\n-A POSTROUTING -o p8test0 -j MASQUERADE\n1\n\Z
+- id: vpn-server-on-the-vpn-network
+  what: the composed OpenVPN server bridges the VPN network's pool and pushes the VPN's own nameserver as DNS
+  control: negative
+  derived_from:
+  - path: manifests/network_vpn.pp
+    lines: '26'
+    text: $openvpn_client_dns       = $openvpn_static_ip,
+  - path: manifests/network_vpn.pp
+    lines: 55-56
+    text: push_dns_server  => $openvpn_client_dns,
+  probe: |
+    grep -E '^(server-bridge|push "dhcp-option)' /etc/openvpn/server/puppet_infrastructure.conf
+  expect:
+    rc: 0
+    stdout: \Aserver-bridge 198\.51\.100\.1 255\.255\.255\.0 198\.51\.100\.101 198\.51\.100\.200\npush "dhcp-option DNS 198\.51\.100\.1"\n\Z
+- id: vpn-account-on-the-server
+  what: a local account exists on the server for PAM authentication (setup for the client check)
+  control: negative
+  derived_from:
+  - path: manifests/network_vpn.pp
+    lines: '47'
+    text: 'class { ''puppet_infrastructure::openvpn_server'':'
+  mutates: creates the local account p8vpnuser on the server node with the fake password p8test-vpn-not-a-secret
+  probe: |
+    useradd -M -s /usr/sbin/nologin p8vpnuser && echo 'p8vpnuser:p8test-vpn-not-a-secret' | chpasswd
+  effect: |
+    getent passwd p8vpnuser | cut -d: -f1
+  expect:
+    rc: 0
+    stdout: \Ap8vpnuser\n\Z
+- id: the-lab-nat-ipv6-route-is-removed
+  what: 'lab-environment fixture for the resolution check: the lab NAT has no IPv6, so its IPv6 default route (learned by
+    router advertisement, reaching no internet) is removed and named runs IPv4-only (-4), then resolves'
+  control: negative
+  timeout: 150
+  derived_from:
+  - path: manifests/caching_nameserver.pp
+    lines: 28-31
+    text: ensure  => 'running',
+  mutates: sets net.ipv6.conf.enp0s3.accept_ra to 0, deletes the IPv6 default route on enp0s3 (the VirtualBox NAT interface),
+    sets OPTIONS="-u bind -4" in /etc/default/named (the Ubuntu default is "-u bind"), restarts named and waits up to 90 s
+    until it resolves example.com (a name the checks do not ask; measured for caching_nameserver's set 2026-11-19)
+  probe: |
+    sysctl -q -w net.ipv6.conf.enp0s3.accept_ra=0
+    ip -6 route del default dev enp0s3 2>/dev/null || true
+    sed -i 's/^OPTIONS="-u bind"$/OPTIONS="-u bind -4"/' /etc/default/named
+    systemctl restart named
+    for i in $(seq 30); do dig +time=2 +tries=1 @127.0.0.1 example.com A +noall +comments | grep -q 'status: NOERROR' && break; sleep 3; done
+  effect: |
+    ip -6 route show default dev enp0s3 | wc -l
+    tr '\0' ' ' < "/proc/$(systemctl show -p MainPID --value named)/cmdline" | p8_count ' -4( |$)'
+    p8_service named | cut -d' ' -f1
+    dig +time=3 +tries=1 @127.0.0.1 example.com A +noall +comments | grep -o 'status: [A-Z]*'
+  expect:
+    rc: 0
+    stdout: '\A0\n1\nactive\nstatus: NOERROR\n\Z'
+- id: a-wan-host-and-default-drops
+  what: 'setup for the composition checks: a TCP server on the WAN side (namespace p8testdhcp, 203.0.113.1:8090, answering
+    with the client address it sees) and stand-ins for the base firewall''s default drop appended after the class''s rules'
+  control: negative
+  derived_from:
+  - path: manifests/network_vpn.pp
+    lines: 39-44
+    text: 'class { ''puppet_infrastructure::firewall_addon_openvpn_server'':'
+  mutates: starts transient unit p8test-wansrv (python TCP server in namespace p8testdhcp on 203.0.113.1:8090); appends `-A
+    INPUT -i br0 -p udp --dport 53 -m comment --comment p8test-default-drop -j DROP`, `-A FORWARD -i br0 -m comment --comment
+    p8test-default-drop -j DROP` and the same for -i p8test0
+  probe: |
+    systemd-run --unit p8test-wansrv -q ip netns exec p8testdhcp python3 -c "import socket; s=socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); s.bind(('203.0.113.1', 8090)); s.listen(5)
+    while True:
+        c, a = s.accept(); c.sendall((a[0] + chr(10)).encode()); c.close()"
+    iptables -A INPUT -i br0 -p udp --dport 53 -m comment --comment p8test-default-drop -j DROP
+    iptables -A FORWARD -i br0 -m comment --comment p8test-default-drop -j DROP
+    iptables -A FORWARD -i p8test0 -m comment --comment p8test-default-drop -j DROP
+    sleep 1
+  effect: |
+    p8_service p8test-wansrv | cut -d' ' -f1
+    iptables -S | p8_count 'p8test-default-drop'
+  expect:
+    rc: 0
+    stdout: \Aactive\n3\n\Z
+- id: client-connects-and-resolves-through-the-vpn-nameserver
+  what: the peer's client gets a pool address on the VPN network, receives the VPN nameserver as its DNS, and that nameserver
+    answers it through the tunnel (the client's tunnel address is in allow-query)
+  control: negative
+  host: peer
+  derived_from:
+  - path: manifests/network_vpn.pp
+    lines: 23-24
+    text: $openvpn_pool_end         = '192.168.101.200',
+  - path: manifests/network_vpn.pp
+    lines: 31-32
+    text: allowed_networks => ["${openvpn_network}/24"]
+  mutates: 'on the peer: installs openvpn and the dig client, adds the host route 203.0.113.50 via the node''s host-only address,
+    writes a client config and credentials under /run/p8vpn and starts an openvpn client daemon'
+  probe: |
+    DEBIAN_FRONTEND=noninteractive apt-get -qq -y install openvpn bind9-dnsutils >/dev/null
+    ip route replace 203.0.113.50/32 via {{NODE_ADDR}}
+    mkdir -p /run/p8vpn
+    printf 'p8vpnuser\np8test-vpn-not-a-secret\n' > /run/p8vpn/auth
+    printf 'client\ndev tap\nproto udp\nremote 203.0.113.50 1194\nca /run/p8test-from-node/ca.crt\nauth-user-pass /run/p8vpn/auth\ncipher AES-256-CBC\ndata-ciphers AES-256-GCM:AES-256-CBC\ncomp-lzo\nallow-compression yes\npull-filter ignore "redirect-gateway"\nverb 3\n' > /run/p8vpn/client.conf
+    openvpn --config /run/p8vpn/client.conf --daemon --log /run/p8vpn/client.log --writepid /run/p8vpn/pid
+    for i in $(seq 40); do grep -q 'Initialization Sequence Completed' /run/p8vpn/client.log && break; sleep 1; done
+  effect: |
+    ip -4 -br addr show "$(ip -br link | awk '$1 ~ /^tap/ {print $1; exit}')" | awk '{print $3}'
+    grep -o 'PUSH_REPLY,[^]]*' /run/p8vpn/client.log | head -1 | grep -o 'dhcp-option DNS [0-9.]*'
+    dig +short +time=3 +tries=2 @198.51.100.1 localhost A
+  expect:
+    rc: 0
+    stdout: \A198\.51\.100\.(1\d\d|200)/24\ndhcp-option DNS 198\.51\.100\.1\n127\.0\.0\.1\n\Z
+- id: the-client-resolves-and-reaches-the-wan-through-the-server
+  what: through the tunnel, the client gets a recursive answer for a real name from the VPN's nameserver, and connects to
+    the WAN-side server, which sees the server's WAN address 203.0.113.50 (masqueraded)
+  control: negative
+  host: peer
+  derived_from:
+  - path: manifests/network_vpn.pp
+    lines: 1-4
+    text: '# and an internal caching nameserver for DNS resolution to be'
+  - path: manifests/network_vpn.pp
+    lines: 41-44
+    text: wan_iface        => $wan_iface,
+  mutates: on the peer, adds the route 203.0.113.1/32 via 198.51.100.1 on the client's tap interface (the pushed redirect-gateway
+    is filtered)
+  probe: |
+    tap=$(ip -br link | awk '$1 ~ /^tap/ {print $1; exit}')
+    ip route replace 203.0.113.1/32 via 198.51.100.1 dev "$tap"
+  effect: |
+    dig +time=5 +tries=2 @198.51.100.1 www.debian.org A +noall +comments | grep -o 'status: [A-Z]*' | head -1
+    python3 -c "import socket
+    try:
+        s = socket.create_connection(('203.0.113.1', 8090), 5); print('WAN server saw ' + s.recv(64).decode().strip())
+    except OSError:
+        print('no connection')"
+  expect:
+    rc: 0
+    stdout: '\Astatus: NOERROR\nWAN server saw 203\.0\.113\.50\n\Z'
+- id: the-composed-rules-counted-the-flows
+  what: on the node, rule 1301 (DNS on the bridge), 202 (bridge to WAN), 203 (replies into the bridge) and 205 (masquerade)
+    counted the client's traffic
+  control: negative
+  derived_from:
+  - path: manifests/network_vpn.pp
+    lines: 35-44
+    text: 'class { ''puppet_infrastructure::firewall_addon_caching_nameserver'':'
+  mutates: none beyond reading the rule counters (declared mutating so it runs after the client's traffic)
+  probe: |
+    true
+  effect: |
+    iptables -v -x -L INPUT -n | awk '/1301 accept nameserver/ {d=$1} END {print "1301: " (d+0 != 0 ? "counted" : "zero")}'
+    iptables -v -x -L FORWARD -n | awk '/202 allow flow/ {a=$1} /203 allow flow/ {b=$1} END {print "202: " (a+0 != 0 ? "counted" : "zero"); print "203: " (b+0 != 0 ? "counted" : "zero")}'
+    iptables -t nat -v -x -L POSTROUTING -n | awk '/205 performing nat/ {n=$1} END {print "205: " (n+0 != 0 ? "counted" : "zero")}'
+  expect:
+    rc: 0
+    stdout: '\A1301: counted\n202: counted\n203: counted\n205: counted\n\Z'
+- id: a-client-on-the-class-cipher-connects
+  what: a client that offers only the class's cipher (AES-256-CBC) connects as p8vpnuser and its data channel uses that cipher
+  control: negative
+  host: peer
+  timeout: 120
+  derived_from:
+  - path: manifests/network_vpn.pp
+    lines: '25'
+    text: $openvpn_cipher           = 'AES-256-CBC',
+  - path: manifests/network_vpn.pp
+    lines: '57'
+    text: cipher           => $openvpn_cipher,
+  mutates: 'on the peer: stops the first client (its pid in /run/p8vpn/pid), writes a client config that offers only AES-256-CBC
+    (data-ciphers AES-256-CBC) with the same credentials under /run/p8vpncbc and starts it'
+  probe: |
+    kill "$(cat /run/p8vpn/pid)" 2>/dev/null || true
+    sleep 1
+    mkdir -p /run/p8vpncbc
+    sed -e 's#^data-ciphers .*#data-ciphers AES-256-CBC#' /run/p8vpn/client.conf > /run/p8vpncbc/client.conf
+    openvpn --config /run/p8vpncbc/client.conf --daemon --log /run/p8vpncbc/client.log --writepid /run/p8vpncbc/pid
+    for i in $(seq 40); do grep -q -e 'Initialization Sequence Completed' -e 'AUTH_FAILED' /run/p8vpncbc/client.log && break; sleep 1; done
+  effect: |
+    p8_count 'Initialization Sequence Completed' /run/p8vpncbc/client.log
+    grep -o "Data Channel: cipher '[^']*'" /run/p8vpncbc/client.log | head -1
+    grep -o 'AUTH_FAILED,.*)' /run/p8vpncbc/client.log | head -1
+  expect:
+    rc: 0
+    stdout: '\A1\nData Channel: cipher ''AES-256-CBC''\n\Z'
+- id: another-client-dns-is-pushed
+  variant: clientdns
+  what: with openvpn_client_dns 9.9.9.9 the composed OpenVPN server pushes DNS 9.9.9.9 to its clients
+  control: negative
+  derived_from:
+  - path: manifests/network_vpn.pp
+    lines: '56'
+    text: push_dns_server  => $openvpn_client_dns,
+  - path: manifests/openvpn_server.pp
+    lines: '172'
+    text: '"dhcp-option DNS ${push_dns_server}"]'
+  probe: |
+    grep -E '^push "dhcp-option DNS ' /etc/openvpn/server/puppet_infrastructure.conf
+  expect:
+    rc: 0
+    stdout: \Apush "dhcp-option DNS 9\.9\.9\.9"\n\Z
+apply:
+  resource_type: class
+  node: ubuntu
+  catalog:
+    Debian:
+    - class: network_dhcp
+    - external: firewall
+    - class: network_vpn
+  node_fixture: p8test_dhcp_primary

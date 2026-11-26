@@ -1,0 +1,140 @@
+class: firewall_ipv6_drop
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+purpose: Drops all IPv6 traffic coming in to or forwarded through the node (an add-on to firewall_secure, whose rules are
+  IPv4 only), so the node cannot be reached over IPv6 while IPv4 is unaffected.
+peer:
+  kind: ubuntu2
+  why: what a firewall drops can only be seen from another machine on the same link
+  files:
+  - /run/p8test-ipv6/linklocal
+  - /run/p8test-ipv6/mac
+outcomes:
+- outcome: ip6tables drops every protocol on INPUT and FORWARD
+  from: manifests/firewall_ipv6_drop.pp:8-19
+  checks:
+  - ip6tables-drops-input-and-forward
+- outcome: another machine on the link cannot reach the node over IPv6 (ping, SSH), while IPv4 still reaches it
+  from: manifests/firewall_ipv6_drop.pp:1-2 (header), 8-13
+  checks:
+  - the-node-publishes-its-link-local-address
+  - another-host-cannot-reach-the-node-over-ipv6-but-can-over-ipv4
+- outcome: IPv6 traffic forwarded through the node is dropped
+  from: manifests/firewall_ipv6_drop.pp:14-19
+  checks:
+  - the-node-publishes-its-link-local-address
+  - another-host-routes-ipv6-through-the-node
+  - the-forward-drop-rule-counted-the-routed-packets
+checks:
+- id: ip6tables-drops-input-and-forward
+  what: ip6tables holds the two DROP rules for all protocols on INPUT and FORWARD
+  control: negative
+  derived_from:
+  - path: manifests/firewall_ipv6_drop.pp
+    lines: 8-13
+    text: 'firewall { ''600 Drop ALL IPv6 - INPUT'':'
+  - path: manifests/firewall_ipv6_drop.pp
+    lines: 14-19
+    text: 'firewall { ''601 Drop ALL IPv6 - FORWARD'':'
+  probe: |
+    ip6tables -S | grep -E -- '--comment "60[01] Drop ALL IPv6' | sed -E 's/ -m comment --comment "[^"]*"//'
+  expect:
+    rc: 0
+    stdout: \A-A INPUT -j DROP\n-A FORWARD -j DROP\n\Z
+- id: the-node-publishes-its-link-local-address
+  what: setup for the peer checks, the node's IPv6 link-local address on the host-only NIC written for the peer
+  control: negative
+  derived_from:
+  - path: manifests/firewall_ipv6_drop.pp
+    lines: 8-13
+    text: provider => 'ip6tables',
+  mutates: writes the host-only NIC's link-local address and MAC to /run/p8test-ipv6/linklocal and /run/p8test-ipv6/mac on
+    the node, turns IPv6 forwarding on (net.ipv6.conf.all.forwarding=1) and adds an on-link route for the documentation prefix
+    2001:db8:99::/64 on the host-only NIC, until the next revert, so that packets for that prefix are routed through FORWARD
+    (without a route the kernel drops them before FORWARD)
+  probe: |
+    install -d -m 0755 /run/p8test-ipv6
+    sysctl -q -w net.ipv6.conf.all.forwarding=1
+    ip -6 route replace 2001:db8:99::/64 dev enp0s8
+    ip -6 -o addr show dev enp0s8 scope link | awk '{print $4}' | cut -d/ -f1 > /run/p8test-ipv6/linklocal
+    cat /sys/class/net/enp0s8/address > /run/p8test-ipv6/mac
+  effect: |
+    grep -c -E '^fe80::' /run/p8test-ipv6/linklocal
+    ip6tables -S INPUT | grep -c -- '600 Drop ALL IPv6'
+  expect:
+    rc: 0
+    stdout: \A1\n1\n\Z
+- id: another-host-cannot-reach-the-node-over-ipv6-but-can-over-ipv4
+  what: from the peer on the same link, an IPv6 ping and an IPv6 SSH connection to the node's link-local address are dropped,
+    while an IPv4 SSH connection to the node still gets through
+  control: negative
+  host: peer
+  derived_from:
+  - path: manifests/firewall_ipv6_drop.pp
+    lines: 1-2
+    text: '# This class provides an add on to firewall_secure that DROPs all IPv6 traffic'
+  - path: manifests/firewall_ipv6_drop.pp
+    lines: 8-13
+    text: chain    => 'INPUT',
+  mutates: three connection attempts from the peer to the class node (ICMPv6, TCP 22 over IPv6, TCP 22 over IPv4); results
+    in /run/p8test-ipv6/reach.txt on the peer
+  probe: |
+    install -d -m 0700 /run/p8test-ipv6
+    ll=$(cat /run/p8test-from-node/linklocal)
+    {
+      [ -n "$ll" ] || echo "no link-local address handed over"
+      ping -6 -c2 -W2 -q "$ll%enp0s8" >/dev/null 2>&1 && echo "icmpv6 in" || echo "icmpv6 dropped"
+      nc -6 -z -w3 "$ll%enp0s8" 22 >/dev/null 2>&1 && echo "ssh over ipv6 in" || echo "ssh over ipv6 dropped"
+      nc -4 -z -w3 {{NODE_ADDR}} 22 >/dev/null 2>&1 && echo "ssh over ipv4 in" || echo "ssh over ipv4 dropped"
+    } > /run/p8test-ipv6/reach.txt
+  effect: |
+    cat /run/p8test-ipv6/reach.txt
+  expect:
+    rc: 0
+    stdout: \Aicmpv6 dropped\nssh over ipv6 dropped\nssh over ipv4 in\n\Z
+- id: another-host-routes-ipv6-through-the-node
+  what: setup for the next check, the peer sends IPv6 packets for a documentation prefix with the node as their router
+  control: negative
+  host: peer
+  derived_from:
+  - path: manifests/firewall_ipv6_drop.pp
+    lines: 14-19
+    text: 'firewall { ''601 Drop ALL IPv6 - FORWARD'':'
+  mutates: 'on the peer: adds a static neighbour entry for the node''s link-local address (its MAC handed over, as the class
+    drops neighbour discovery), the unique-local source address fd8e:2b3c:4d5e::24/64 to its host-only NIC (the kernel does
+    not forward packets from a link-local source), a route for 2001:db8:99::/64 via the node''s link-local address, and sends
+    5 pings to 2001:db8:99::1 through it; the ping summary goes to /run/p8test-ipv6/routed.txt'
+  probe: |
+    install -d -m 0700 /run/p8test-ipv6
+    ll=$(cat /run/p8test-from-node/linklocal); mac=$(cat /run/p8test-from-node/mac)
+    ip -6 neigh replace "$ll" lladdr "$mac" dev enp0s8 nud permanent
+    ip -6 addr replace fd8e:2b3c:4d5e::24/64 dev enp0s8 nodad
+    ip -6 route replace 2001:db8:99::/64 via "$ll" dev enp0s8 src fd8e:2b3c:4d5e::24
+    ping -6 -c5 -W1 -q -I fd8e:2b3c:4d5e::24 2001:db8:99::1 2>&1 | grep -E 'packets transmitted' > /run/p8test-ipv6/routed.txt
+  effect: |
+    grep -o -E '^5 packets transmitted, 0 received' /run/p8test-ipv6/routed.txt
+  expect:
+    rc: 0
+    stdout: \A5 packets transmitted, 0 received\n\Z
+- id: the-forward-drop-rule-counted-the-routed-packets
+  what: the node's FORWARD drop rule (601) counted the peer's routed packets (dropped instead of forwarded)
+  control: negative
+  derived_from:
+  - path: manifests/firewall_ipv6_drop.pp
+    lines: 14-19
+    text: chain    => 'FORWARD',
+  mutates: none beyond reading the rule counters (declared mutating so it runs after the peer sent its packets)
+  probe: |
+    true
+  effect: |
+    n=$(ip6tables -v -x -L FORWARD -n | awk '/601 Drop ALL IPv6/ {print $1}')
+    [ -n "$n" ] && [ "$n" -ge 5 ] && echo "forward drop counted the routed packets"
+  expect:
+    rc: 0
+    stdout: \Aforward drop counted the routed packets\n\Z
+apply:
+  resource_type: class
+  node: ubuntu
+  catalog:
+    Debian:
+    - class: firewall_ipv6_drop

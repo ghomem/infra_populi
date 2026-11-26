@@ -1,0 +1,346 @@
+class: rsyslog_client
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+purpose: Forwards all of the node's local logs to a remote rsyslog server over TLS, authenticated with the node's Puppet certificate
+  and CA, with the target optionally pinned in /etc/hosts.
+peer:
+  kind: ubuntu2
+  why: forwarding logs needs a remote log server on another machine that receives them
+node_agent:
+  after: the-forwarding-rule-drifts
+  why: the forwarding rule notifies rsyslog, which only the next agent run after a change to it can show
+outcomes:
+- outcome: the forwarding rule sends every facility and severity to the target over TLS with the node's certificate, key and
+    CA, validating the server's certificate
+  from: manifests/rsyslog_client.pp:1, 40-55; templates/rsyslog/forward_simple.conf.epp
+  checks:
+  - forwarding-rule-sends-everything-over-tls
+  - tls-material-is-the-nodes-puppet-identity
+- outcome: the target is pinned in /etc/hosts when its IP is given
+  from: manifests/rsyslog_client.pp:22-29
+  checks:
+  - the-target-is-pinned-in-hosts
+- outcome: a line logged on the node reaches the remote TLS log server, under the node's name
+  from: manifests/rsyslog_client.pp:1
+  checks:
+  - the-peer-runs-a-tls-log-server
+  - a-local-log-line-leaves-over-tls
+  - the-server-received-the-line-from-the-node
+- outcome: a changed forwarding rule is restored by the next agent run, which restarts rsyslog once
+  from: manifests/rsyslog_client.pp:40-55
+  checks:
+  - the-forwarding-rule-drifts
+  - the-agent-run-restores-the-rule-and-restarts-rsyslog-once
+- outcome: with forward_auth_log, rsyslog accepts the configuration and starts with no configuration error, on Ubuntu 24.04
+    and on RHEL 9.5 with the rsyslog the class installs there (local change
+  from: templates/rsyslog/forward_simple.conf.epp:65-77 (the imfile input; local change
+  checks:
+  - rsyslog-starts-without-a-config-error
+  - on-redhat-rsyslog-starts-without-a-config-error
+- outcome: with forward_auth_log, a line written to /var/log/auth.log reaches the remote TLS log server through the auth.log
+    input
+  from: manifests/rsyslog_client.pp:11; templates/rsyslog/forward_simple.conf.epp:26-77
+  checks:
+  - a-line-is-written-to-auth-log
+  - the-server-received-the-auth-log-line
+- outcome: forward_auth_log, check_names and a failover target render their rules (auth.log read and forwarded on its own
+    ruleset, the peer name enforced, a failover action only while the first is suspended)
+  from: manifests/rsyslog_client.pp:7-11, 31-38; templates/rsyslog/forward_simple.conf.epp:15-25, 26-77
+  checks:
+  - options-render-the-forwarding-rules
+- outcome: forwarding switches to the failover target while the first target is suspended
+  from: templates/rsyslog/forward_simple.conf.epp:21-25
+  uncovered:
+    why: 'a switch needs a dead first target and a live failover, the peer: a second fixture with the peer, and a variant
+      run has no peer'
+    lifted_by: 'capability: a peer in a variant run ({{SITE:engine-runner}} variant runs have none)'
+    evidence: '{{SITE:engine-runner}} variant_problems (2026-11-23) refuses `host: peer` in a variant''s check; the base fixture
+      forwards to the live peer only'
+variants:
+- name: options
+  why: 'forward_auth_log (a production node sets it), check_names (node_base_desktop passes it) and a failover target (production
+    use undeterminable from node files: no statement sets it, no composite either; tested with the others)'
+  params: options
+- name: rhel
+  why: forward_auth_log's configuration on RHEL 9.5 (rsyslog 8.2310), on the rhel9 node; no peer in a variant run, so the
+    target is a name that is never reached
+  node: rhel9
+  params: rhelauth
+checks:
+- id: forwarding-rule-sends-everything-over-tls
+  what: the forward rule sends every facility and severity to the target on 6514 over gtls with the node's certificate, key
+    and CA, validating the server's certificate (x509/certvalid, check_names false)
+  control: negative
+  derived_from:
+  - path: manifests/rsyslog_client.pp
+    lines: 42-55
+    text: 'file { ''/etc/rsyslog.d/40-forward.conf'':'
+  - path: templates/rsyslog/forward_simple.conf.epp
+    sha256: ef43a4f10d8babd1057b4048d7398b7f81da3ff67733e50e00c78ac99ad25f73
+  probe: |
+    grep -E '^(\$DefaultNetstreamDriver |\$ActionSendStreamDriverMode|\$ActionSendStreamDriverAuthMode|\*\.\*)' /etc/rsyslog.d/40-forward.conf | sed -E 's/ +/ /g; s/@@[^:]+:/@@TARGET:/'
+    rsyslogd -N1 >/dev/null 2>&1 && echo config-valid
+  expect:
+    rc: 0
+    stdout: \A\$DefaultNetstreamDriver gtls\n\$ActionSendStreamDriverMode 1\n\$ActionSendStreamDriverAuthMode x509/certvalid\n\*\.\*
+      @@TARGET:6514\nconfig-valid\n\Z
+- id: tls-material-is-the-nodes-puppet-identity
+  what: rsyslog's TLS files are the node's Puppet CA, certificate and key (byte for byte), the key readable by syslog only,
+    and the certificate verifies against that CA
+  control: negative
+  derived_from:
+  - path: manifests/rsyslog_base.pp
+    lines: 49-71
+    text: source  => "${ssldir}/private_keys/${certname}.pem",
+  - path: manifests/rsyslog_client.pp
+    lines: 16-18
+    text: 'class { ''puppet_infrastructure::rsyslog_base'':'
+  probe: |
+    s=/etc/puppetlabs/puppet/ssl; c=$(hostname); t=/etc/rsyslog.d/tls
+    cmp -s $s/certs/ca.pem $t/ca.pem && cmp -s $s/certs/$c.pem $t/$c.pem && cmp -s $s/private_keys/$c.pem $t/$c.key && echo same-as-puppet
+    stat -c '%U %a' $t/$c.key
+    openssl verify -CAfile $t/ca.pem $t/$c.pem | sed 's/^.*: //'
+  mismatch:
+    varies: the CA (the system bundle instead of the Puppet CA), which did not sign the node's certificate
+    probe: |
+      c=$(hostname); t=/etc/rsyslog.d/tls
+      cmp -s /etc/puppetlabs/puppet/ssl/certs/ca.pem $t/ca.pem && cmp -s /etc/puppetlabs/puppet/ssl/certs/$c.pem $t/$c.pem && cmp -s /etc/puppetlabs/puppet/ssl/private_keys/$c.pem $t/$c.key && echo same-as-puppet
+      stat -c '%U %a' $t/$c.key
+      openssl verify -CAfile /etc/ssl/certs/ca-certificates.crt $t/$c.pem 2>&1 | sed 's/^.*: //' | tail -1
+  expect:
+    rc: 0
+    stdout: \Asame-as-puppet\nsyslog 600\nOK\n\Z
+- id: the-target-is-pinned-in-hosts
+  what: the target's name resolves to target_ip through the /etc/hosts entry the class adds
+  control: negative
+  derived_from:
+  - path: manifests/rsyslog_client.pp
+    lines: 24-28
+    text: 'host { $target:'
+  probe: |
+    t=$(grep -oE '@@[^:]+' /etc/rsyslog.d/40-forward.conf | head -1 | cut -c3-)
+    getent hosts "$t" | awk '{print $1}'
+    grep -c -E "^[0-9.]+[[:space:]]+$t([[:space:]]|$)" /etc/hosts
+  expect:
+    rc: 0
+    stdout: \A{{PEER_ADDR|re}}\n1\n\Z
+- id: the-peer-runs-a-tls-log-server
+  what: setup for the forwarding checks, an rsyslog TLS listener on the peer's 6514 with the peer's own Puppet certificate
+  control: negative
+  host: peer
+  derived_from:
+  - path: manifests/rsyslog_client.pp
+    lines: '6'
+    text: Integer           $port             = 6514,
+  mutates: 'on the peer: installs rsyslog-gnutls, copies its own Puppet CA, certificate and key to /etc/rsyslog.d/p8test-tls
+    (syslog-readable), adds /etc/rsyslog.d/10-p8test-server.conf (an imtcp gtls listener on 6514, x509/certvalid, writing
+    what it receives to /var/log/p8test-remote.log) and restarts rsyslog'
+  probe: |
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get -qq -y install rsyslog-gnutls >/dev/null 2>&1
+    s=/etc/puppetlabs/puppet/ssl; c=$(hostname); d=/etc/rsyslog.d/p8test-tls
+    install -d -m 0750 -o root -g syslog $d
+    install -m 0640 -o root -g syslog $s/certs/ca.pem $d/ca.pem
+    install -m 0640 -o root -g syslog $s/certs/$c.pem $d/cert.pem
+    install -m 0640 -o root -g syslog $s/private_keys/$c.pem $d/key.pem
+    cat > /etc/rsyslog.d/10-p8test-server.conf <<'EOF'
+    global(DefaultNetstreamDriver="gtls" DefaultNetstreamDriverCAFile="/etc/rsyslog.d/p8test-tls/ca.pem"
+           DefaultNetstreamDriverCertFile="/etc/rsyslog.d/p8test-tls/cert.pem" DefaultNetstreamDriverKeyFile="/etc/rsyslog.d/p8test-tls/key.pem")
+    module(load="imtcp" StreamDriver.Name="gtls" StreamDriver.Mode="1" StreamDriver.AuthMode="x509/certvalid")
+    template(name="p8testRemote" type="string" string="%HOSTNAME% %syslogtag%%msg%\n")
+    ruleset(name="p8test_remote") { action(type="omfile" file="/var/log/p8test-remote.log" template="p8testRemote") }
+    input(type="imtcp" port="6514" ruleset="p8test_remote")
+    EOF
+    systemctl restart rsyslog
+    sleep 2
+  effect: |
+    ss -ltnH 'sport = :6514' | wc -l
+  expect:
+    rc: 0
+    stdout: \A[1-9]\n\Z
+- id: a-local-log-line-leaves-over-tls
+  what: 'a line logged on the node with logger is forwarded: rsyslog holds an established TCP session to the target''s 6514'
+  control: negative
+  derived_from:
+  - path: templates/rsyslog/forward_simple.conf.epp
+    sha256: ef43a4f10d8babd1057b4048d7398b7f81da3ff67733e50e00c78ac99ad25f73
+  mutates: restarts rsyslog on the node, logs `p8test-rsyslog-forward-token` with tag p8test-rsyslog through logger, then
+    waits 5 s
+  probe: |
+    systemctl restart rsyslog
+    sleep 2
+    logger -t p8test-rsyslog p8test-rsyslog-forward-token
+    sleep 5
+  effect: |
+    ss -tnpH state established '( dport = :6514 )' | grep -c rsyslogd
+  expect:
+    rc: 0
+    stdout: \A[1-9]\n\Z
+- id: the-server-received-the-line-from-the-node
+  what: the peer's log server wrote the node's line, under the node's host name, in the order sent
+  control: negative
+  host: peer
+  derived_from:
+  - path: templates/rsyslog/forward_simple.conf.epp
+    sha256: ef43a4f10d8babd1057b4048d7398b7f81da3ff67733e50e00c78ac99ad25f73
+  - path: manifests/rsyslog_client.pp
+    lines: 42-55
+    text: 'file { ''/etc/rsyslog.d/40-forward.conf'':'
+  mutates: none beyond reading the peer's received log (declared mutating so it runs after the node's line was sent)
+  probe: |
+    true
+  effect: |
+    grep -m1 'p8test-rsyslog-forward-token' /var/log/p8test-remote.log
+  expect:
+    rc: 0
+    stdout: '\A{{NODE_NAME}} p8test-rsyslog: ?p8test-rsyslog-forward-token\n\Z'
+- id: rsyslog-starts-without-a-config-error
+  what: with forward_auth_log rendered, rsyslog's validation run completes and rsyslog has logged no configuration error since
+    the node booted
+  control: negative
+  derived_from:
+  - path: templates/rsyslog/forward_simple.conf.epp
+    lines: 65-77
+    text: module(load="imfile")
+  - path: manifests/rsyslog_client.pp
+    lines: '11'
+    text: Boolean           $forward_auth_log = false,
+  probe: |
+    grep -c 'ruleset="forward_authlog_only"' /etc/rsyslog.d/40-forward.conf
+    rsyslogd -N1 2>&1 | grep -c 'End of config validation run'
+    systemctl is-active rsyslog
+    journalctl -b -u rsyslog --no-pager -q | grep -ciE 'error during parsing|not known|could not interpret' || true
+  expect:
+    rc: 0
+    stdout: \A1\n1\nactive\n0\n\Z
+- id: a-line-is-written-to-auth-log
+  what: setup for the next check, a token line appended directly to /var/log/auth.log on the node (bypassing syslog)
+  control: negative
+  derived_from:
+  - path: templates/rsyslog/forward_simple.conf.epp
+    lines: 65-77
+    text: File="/var/log/auth.log"
+  mutates: appends one line carrying `p8test-authlog-token` to /var/log/auth.log on the node, then waits 5 s
+  probe: |
+    printf '%s %s p8test-authlog: p8test-authlog-token\n' "$(date '+%b %e %T')" "$(hostname)" >> /var/log/auth.log
+    sleep 5
+  effect: |
+    p8_count 'p8test-authlog-token' /var/log/auth.log
+    grep -c 'ruleset="forward_authlog_only"' /etc/rsyslog.d/40-forward.conf
+  expect:
+    rc: 0
+    stdout: \A1\n1\n\Z
+- id: the-server-received-the-auth-log-line
+  what: the peer's log server wrote the line read from the node's auth.log, under the node's host name and the tag auth
+  control: negative
+  host: peer
+  derived_from:
+  - path: templates/rsyslog/forward_simple.conf.epp
+    lines: 65-77
+    text: Tag="auth"
+  - path: templates/rsyslog/forward_simple.conf.epp
+    lines: 26-40
+    text: ruleset(name="forward_authlog_only") {
+  mutates: none beyond reading the peer's received log (declared mutating so it runs after the node's line was written)
+  probe: |
+    true
+  effect: |
+    grep -m1 'p8test-authlog-token' /var/log/p8test-remote.log | sed -E 's/^(\S+) (auth)\S* .*(p8test-authlog-token)$/\1 \2 \3/'
+  expect:
+    rc: 0
+    stdout: \A{{NODE_NAME}} auth p8test-authlog-token\n\Z
+- id: the-forwarding-rule-drifts
+  what: setup for the next check, the forwarding rule changed by hand, with rsyslog's process id and journal cursor noted
+  control: negative
+  derived_from:
+  - path: manifests/rsyslog_client.pp
+    lines: 40-55
+    text: notify => Service['rsyslog'],
+  mutates: notes rsyslog's main PID and its journal cursor in /run/p8test-rsyslog/before-rule, then appends a comment line
+    to /etc/rsyslog.d/40-forward.conf on the node
+  probe: |
+    install -d -m 0700 /run/p8test-rsyslog
+    printf "pid='%s'\ncursor='%s'\n" "$(systemctl show -p MainPID --value rsyslog)" "$(journalctl -u rsyslog -n 0 --show-cursor --no-pager -q | sed -n 's/^-- cursor: //p')" > /run/p8test-rsyslog/before-rule
+    echo '# p8test drift' >> /etc/rsyslog.d/40-forward.conf
+  effect: |
+    p8_count '^# p8test drift$' /etc/rsyslog.d/40-forward.conf
+    grep -q "^pid='[1-9]" /run/p8test-rsyslog/before-rule && echo noted
+  expect:
+    rc: 0
+    stdout: \A1\nnoted\n\Z
+- id: the-agent-run-restores-the-rule-and-restarts-rsyslog-once
+  what: after the node's agent run, the forwarding rule is restored and rsyslog was restarted exactly once (a new main PID;
+    one start in its journal since the change)
+  control: negative
+  derived_from:
+  - path: manifests/rsyslog_client.pp
+    lines: '40'
+    text: '# Render the forwarding rule and restart rsyslog if it changes.'
+  mutates: none beyond reading the rule, rsyslog's state and its journal (declared mutating so it runs after the node's agent
+    run)
+  probe: |
+    true
+  effect: |
+    p8_count '^# p8test drift$' /etc/rsyslog.d/40-forward.conf
+    . /run/p8test-rsyslog/before-rule
+    now=$(systemctl show -p MainPID --value rsyslog)
+    [ -n "$now" ] && [ "$now" != 0 ] && [ "$now" != "$pid" ] && echo restarted
+    journalctl -u rsyslog --after-cursor "$cursor" --no-pager -q | p8_count 'Started rsyslog.service'
+  expect:
+    rc: 0
+    stdout: \A0\nrestarted\n1\n\Z
+- id: options-render-the-forwarding-rules
+  variant: options
+  what: 'with check_names, a failover target and forward_auth_log: the rule authenticates by name and permits the target,
+    a failover action runs only while the first is suspended, auth.log is read into its own forwarding ruleset, the failover
+    name is pinned in /etc/hosts, and rsyslog accepts the configuration'
+  control: negative
+  derived_from:
+  - path: templates/rsyslog/forward_simple.conf.epp
+    lines: 15-18
+    text: $ActionSendStreamDriverPermittedPeer <%= $target %>
+  - path: templates/rsyslog/forward_simple.conf.epp
+    lines: 21-25
+    text: $ActionExecOnlyWhenPreviousIsSuspended on
+  - path: templates/rsyslog/forward_simple.conf.epp
+    lines: 26-77
+    text: ruleset(name="forward_authlog_only") {
+  probe: |
+    f=/etc/rsyslog.d/40-forward.conf
+    grep -c 'AuthMode  *x509/name' $f
+    grep -c '^\$ActionSendStreamDriverPermittedPeer ' $f
+    grep -c '^\*\.\*  @@p8test-failover\.invalid:6514' $f
+    grep -c 'ruleset(name="forward_authlog_only")' $f
+    grep -E '^203\.0\.113\.77[[:space:]]' /etc/hosts | awk '{print $2}'
+    rsyslogd -N1 2>&1 | grep -c 'End of config validation run'
+  expect:
+    rc: 0
+    stdout: \A1\n1\n1\n1\np8test-failover\.invalid\n1\n\Z
+- id: on-redhat-rsyslog-starts-without-a-config-error
+  variant: rhel
+  what: on RHEL 9.5 with forward_auth_log rendered, rsyslog's validation run completes and rsyslog has logged no configuration
+    error since the node booted
+  control: negative
+  derived_from:
+  - path: templates/rsyslog/forward_simple.conf.epp
+    lines: 65-77
+    text: module(load="imfile")
+  - path: manifests/rsyslog_client.pp
+    lines: '11'
+    text: Boolean           $forward_auth_log = false,
+  probe: |
+    grep -c 'ruleset="forward_authlog_only"' /etc/rsyslog.d/40-forward.conf
+    rsyslogd -N1 2>&1 | grep -c 'End of config validation run'
+    systemctl is-active rsyslog
+    journalctl -b -u rsyslog --no-pager -q | grep -ciE 'error during parsing|not known|could not interpret' || true
+  expect:
+    rc: 0
+    stdout: \A1\n1\nactive\n0\n\Z
+apply:
+  resource_type: class
+  node: ubuntu
+  catalog:
+    Debian:
+    - class: rsyslog_client
+    RedHat:
+    - class: rsyslog_client

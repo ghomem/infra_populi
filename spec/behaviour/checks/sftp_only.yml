@@ -1,0 +1,132 @@
+class: sftp_only
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+purpose: 'Restricts a user to SFTP only, jailed in a given directory and only from the given addresses: from a whitelisted
+  address the user gets internal-sftp chrooted to the directory''s parent, placed in the directory, files created with the
+  umask, no shell, no forwarding; from any other address the user is denied.'
+outcomes:
+- outcome: sshd applies the allow block to the user from a whitelisted address and the deny block from any other
+  from: manifests/sftp_only.pp:38-73
+  checks:
+  - allow-block-from-the-whitelist
+  - deny-block-from-other-addresses
+- outcome: from a whitelisted address the user transfers files with SFTP inside the jail, files get the umask, and the jail's
+    root shows only the directory
+  from: manifests/sftp_only.pp:49-59
+  checks:
+  - an-sftp-user-and-its-jail
+  - sftp-works-in-the-jail-and-nothing-else
+- outcome: the user gets no shell (a command is refused) and cannot log in from an address not whitelisted
+  from: manifests/sftp_only.pp:54, 61-72
+  checks:
+  - an-sftp-user-and-its-jail
+  - sftp-works-in-the-jail-and-nothing-else
+- outcome: an empty whitelist (any address allowed, no deny block) and password authentication for the jail
+  from: manifests/sftp_only.pp:40-42, 55, 61-62
+  uncovered:
+    why: the fixture names one address and keeps password_authentication no; one set holds one params fixture
+    lifted_by: 'capability: more than one params fixture per set'
+    evidence: 'the params fixture: ip_whitelist [127.0.0.1], password_authentication at its default no; {{SITE:engine-runner}}
+      runs a set with one fixture'
+checks:
+- id: allow-block-from-the-whitelist
+  what: for p8testuser from 127.0.0.1, sshd's effective settings are the jail, the forced internal-sftp in the directory with
+    umask 007, and no password, TCP or X11 forwarding
+  control: negative
+  derived_from:
+  - path: manifests/sftp_only.pp
+    lines: 49-58
+    text: '''ForceCommand''           => "internal-sftp -d ${subdirectory} -u ${umask}",'
+  probe: |
+    sshd -T -C user=p8testuser,addr=127.0.0.1,host=localhost | grep -E '^(chrootdirectory|forcecommand|passwordauthentication|allowtcpforwarding|x11forwarding|denyusers) ' | sort
+  mismatch:
+    varies: the user (p8testother, whom no block names), so the allow block must not apply
+    probe: |
+      sshd -T -C user=p8testother,addr=127.0.0.1,host=localhost | grep -E '^(chrootdirectory|forcecommand|passwordauthentication|allowtcpforwarding|x11forwarding|denyusers) ' | sort
+  expect:
+    rc: 0
+    stdout: \Aallowtcpforwarding no\nchrootdirectory /srv/p8test-jail\nforcecommand internal-sftp -d upload -u 007\npasswordauthentication
+      no\nx11forwarding no\n\Z
+- id: deny-block-from-other-addresses
+  what: for p8testuser from ::1 (not whitelisted), sshd's effective settings deny the user and apply no jail
+  control: negative
+  derived_from:
+  - path: manifests/sftp_only.pp
+    lines: 66-71
+    text: '''DenyUsers'' => $user_name,'
+  probe: |
+    sshd -T -C user=p8testuser,addr=::1,host=localhost | grep -E '^(chrootdirectory|forcecommand|denyusers) ' | sort
+  mismatch:
+    varies: the address (127.0.0.1, the whitelisted one), so the deny block must not apply
+    probe: |
+      sshd -T -C user=p8testuser,addr=127.0.0.1,host=localhost | grep -E '^(chrootdirectory|forcecommand|denyusers) ' | grep -v -E '^(chrootdirectory /srv|forcecommand internal-sftp)' | sort
+  expect:
+    rc: 0
+    stdout: \Achrootdirectory none\ndenyusers p8testuser\nforcecommand none\n\Z
+- id: an-sftp-user-and-its-jail
+  what: setup for the exercise, the user (in the Hiera SSH group) with a throwaway key, and the jail (root-owned parent, the
+    directory the user's)
+  control: negative
+  derived_from:
+  - path: manifests/sftp_only.pp
+    lines: '6'
+    text: '##   We do not manage the user here, neither the directory, and neither the parent (root jail) directories.'
+  mutates: creates the group p8testgroup if absent and the user p8testuser in it (home /home/p8testuser), an ed25519 key pair
+    in /run/p8test-jail (the public half in the user's authorized_keys), /srv/p8test-jail (root 0755) and /srv/p8test-jail/upload
+    (p8testuser:p8testuser 0770)
+  probe: |
+    install -d -m 0700 /run/p8test-jail
+    getent group p8testgroup >/dev/null || groupadd p8testgroup
+    id p8testuser >/dev/null 2>&1 || useradd -m -s /bin/bash -G p8testgroup p8testuser
+    ssh-keygen -q -t ed25519 -N '' -C p8test-jail -f /run/p8test-jail/key
+    install -d -m 0700 -o p8testuser -g p8testuser /home/p8testuser/.ssh
+    install -m 0600 -o p8testuser -g p8testuser /run/p8test-jail/key.pub /home/p8testuser/.ssh/authorized_keys
+    install -d -m 0755 -o root -g root /srv/p8test-jail
+    install -d -m 0770 -o p8testuser -g p8testuser /srv/p8test-jail/upload
+  effect: |
+    stat -c '%U %a %n' /srv/p8test-jail /srv/p8test-jail/upload
+    id -nG p8testuser | tr ' ' '\n' | p8_count '^p8testgroup$'
+  expect:
+    rc: 0
+    stdout: \Aroot 755 /srv/p8test-jail\np8testuser 770 /srv/p8test-jail/upload\n1\n\Z
+- id: sftp-works-in-the-jail-and-nothing-else
+  what: 'from 127.0.0.1 the user uploads a file with sftp (it lands in the directory, mode 0640: curl requests 0644 and umask
+    007 removes the others'' read bit) and the jail''s root lists only the directory; an ssh command is refused (internal-sftp
+    forced); from ::1 the login is refused'
+  control: negative
+  timeout: 120
+  derived_from:
+  - path: manifests/sftp_only.pp
+    lines: 49-58
+    text: '''ChrootDirectory''        => $parent,'
+  - path: manifests/sftp_only.pp
+    lines: 66-71
+    text: '''DenyUsers'' => $user_name,'
+  mutates: 'four SSH sessions to the node''s own sshd as p8testuser with the throwaway key (from 127.0.0.1: curl''s SFTP uploading
+    /run/p8test-jail/p8test.txt and listing the jail''s root, then a command; a login from ::1); sshd logs them; the uploaded
+    file stays in /srv/p8test-jail/upload; the outcomes go to /run/p8test-jail/out.txt'
+  probe: |
+    O='-i /run/p8test-jail/key -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5'
+    echo p8test-content > /run/p8test-jail/p8test.txt
+    K='--key /run/p8test-jail/key --pubkey /run/p8test-jail/key.pub --insecure --max-time 20'
+    {
+      curl -s $K -T /run/p8test-jail/p8test.txt sftp://p8testuser@127.0.0.1/upload/ && echo "upload: done"
+      curl -s $K --list-only sftp://p8testuser@127.0.0.1/ | grep -v -E '^\.{1,2}$' | sed 's/^/listing: \//'
+      stat -c 'uploaded: %U %a %n' /srv/p8test-jail/upload/p8test.txt 2>&1
+      ssh -n $O p8testuser@127.0.0.1 'echo shell-for-$(id -un)' 2>&1 | grep -o -e 'shell-for-[a-z0-9]*' -e 'allows .ftp connections only' | head -1 | sed 's/^/command: /'
+      ssh -n $O p8testuser@::1 'echo logged-in' >/dev/null 2>&1 && echo "from ::1: logged in" || echo "from ::1: refused"
+    } > /run/p8test-jail/out.txt
+  effect: |
+    cat /run/p8test-jail/out.txt
+  expect:
+    rc: 0
+    stdout: '\Aupload: done\nlisting: /upload\nuploaded: p8testuser 640 /srv/p8test-jail/upload/p8test\.txt\ncommand: allows
+      sftp connections only\nfrom ::1: refused\n\Z'
+apply:
+  resource_type: define
+  node: ubuntu
+  title: sftp_only
+  catalog:
+    Debian:
+    - class: ssh_secure
+    - class: sftp_only

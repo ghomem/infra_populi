@@ -1,0 +1,127 @@
+class: users_sudoers
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+node_agent:
+  after: an-unmanaged-account-made-by-hand
+  why: an unmanaged entry is excluded from management, which shows when an agent run leaves a hand-made account of that name
+    as it is
+purpose: 'Manages several sudoer users from one hash, while excluding chosen entries from management: every entry not named
+  in unmanaged_users becomes a sudoer user (user_sudoer: own group plus sudo, key, password), and the named ones are neither
+  created nor changed, even if the account exists.'
+outcomes:
+- outcome: a managed entry becomes a sudoer user that can become root with its password (a wrong password and a non-member
+    are refused)
+  from: manifests/users_sudoers.pp:13-18; manifests/user_sudoer.pp:10-11
+  checks:
+  - managed-user-is-a-sudoer
+  - the-managed-user-becomes-root-with-sudo
+- outcome: an entry named in unmanaged_users is not created
+  from: manifests/users_sudoers.pp:15
+  checks:
+  - unmanaged-user-is-left-alone
+- outcome: an existing account of an unmanaged entry's name is left as it is by an agent run (not made a sudoer, its password
+    and groups untouched)
+  from: manifests/users_sudoers.pp:6-7, 15
+  checks:
+  - an-unmanaged-account-made-by-hand
+  - the-agent-run-leaves-the-unmanaged-account-alone
+checks:
+- id: managed-user-is-a-sudoer
+  what: the managed entry becomes a sudoer user (own primary group plus sudo)
+  control: negative
+  derived_from:
+  - path: manifests/users_sudoers.pp
+    lines: '18'
+    text: create_resources (puppet_infrastructure::user_sudoer, $configs_filtered)
+  probe: |
+    getent passwd p8testuser | cut -d: -f1,5
+    id -nG p8testuser | tr ' ' '\n' | sort | tr '\n' ' '
+  expect:
+    rc: 0
+    stdout: \Ap8testuser:P8 Test User\np8testuser sudo \Z
+- id: unmanaged-user-is-left-alone
+  what: an entry named in unmanaged_users is filtered out, so no account is created for it
+  control: invariant
+  why_invariant: the clean node has no p8testuser2 account, and the filter must keep it that way
+  derived_from:
+  - path: manifests/users_sudoers.pp
+    lines: '15'
+    text: $configs_filtered = $configs.filter |$key, $value| {!member($unmanaged_users, $key)}
+  probe: |
+    getent passwd p8testuser2 || echo no-p8testuser2
+  expect:
+    rc: 0
+    stdout: \Ano-p8testuser2\n\Z
+- id: the-managed-user-becomes-root-with-sudo
+  what: as p8testuser, `sudo -S -k id -u` with the test password answers 0 (root); with a wrong password sudo refuses; the
+    account nobody, given the same password, is refused
+  control: negative
+  timeout: 90
+  derived_from:
+  - path: manifests/users_sudoers.pp
+    lines: '18'
+    text: create_resources (puppet_infrastructure::user_sudoer, $configs_filtered)
+  - path: manifests/user_sudoer.pp
+    lines: 10-11
+    text: $grouplist = flatten( [ $mygrouplist, [ 'sudo' ] ] )
+  mutates: three sudo attempts (p8testuser with the test password and with a wrong one, nobody with the test password); sudo
+    logs them to the journal and /var/log/auth.log, and the successful one creates Ubuntu's marker /home/p8testuser/.sudo_as_admin_successful
+    (-k keeps no credential timestamp); the answers go to /run/p8test-sudoers/sudo.txt
+  probe: |
+    install -d -m 0700 /run/p8test-sudoers; o=/run/p8test-sudoers/sudo.txt; : > $o
+    a=$(printf '%s\n' 'p8test-user-not-a-secret' | timeout 20 runuser -u p8testuser -- sudo -S -k -p '' id -u 2>/dev/null)
+    echo "user, test password: ${a:-refused}" >> $o
+    a=$(printf '%s\n' 'p8test-wrong-password' | timeout 20 runuser -u p8testuser -- sudo -S -k -p '' id -u 2>/dev/null)
+    echo "user, wrong password: ${a:-refused}" >> $o
+    a=$(printf '%s\n' 'p8test-user-not-a-secret' | timeout 20 runuser -u nobody -- sudo -S -k -p '' id -u 2>/dev/null)
+    echo "nobody, test password: ${a:-refused}" >> $o
+  effect: |
+    cat /run/p8test-sudoers/sudo.txt
+  expect:
+    rc: 0
+    stdout: '\Auser, test password: 0\nuser, wrong password: refused\nnobody, test password: refused\n\Z'
+- id: an-unmanaged-account-made-by-hand
+  what: setup for the agent run, an account p8testuser2 made by hand (the unmanaged entry's name) and its passwd, shadow and
+    group state noted
+  control: negative
+  derived_from:
+  - path: manifests/users_sudoers.pp
+    lines: '15'
+    text: $configs_filtered = $configs.filter |$key, $value| {!member($unmanaged_users, $key)}
+  mutates: creates the account p8testuser2 (useradd -m, shell /bin/sh, password p8test-user2-by-hand) and writes its passwd
+    line, shadow hash digest and groups to /run/p8test-sudoers/before.txt
+  probe: |
+    install -d -m 0700 /run/p8test-sudoers
+    useradd -m -s /bin/sh p8testuser2; echo 'p8testuser2:p8test-user2-by-hand' | chpasswd
+    { getent passwd p8testuser2; getent shadow p8testuser2 | cut -d: -f2 | sha256sum | cut -d' ' -f1; id -nG p8testuser2; } > /run/p8test-sudoers/before.txt
+  effect: |
+    getent passwd p8testuser2 | cut -d: -f1,7
+    p8_count . /run/p8test-sudoers/before.txt
+  expect:
+    rc: 0
+    stdout: \Ap8testuser2:/bin/sh\n3\n\Z
+- id: the-agent-run-leaves-the-unmanaged-account-alone
+  what: after the node's agent run, p8testuser2's passwd line, password hash and groups are exactly as before (not in sudo,
+    no key pushed)
+  control: negative
+  derived_from:
+  - path: manifests/users_sudoers.pp
+    lines: 15-18
+    text: create_resources (puppet_infrastructure::user_sudoer, $configs_filtered)
+  mutates: none beyond reading the account (declared mutating so it runs after the agent run)
+  probe: |
+    true
+  effect: |
+    [ -s /run/p8test-sudoers/before.txt ] && diff -q /run/p8test-sudoers/before.txt <({ getent passwd p8testuser2; getent shadow p8testuser2 | cut -d: -f2 | sha256sum | cut -d' ' -f1; id -nG p8testuser2; }) && echo "unchanged"
+    id -nG p8testuser2 | tr ' ' '\n' | p8_count '^sudo$'
+    [ -e /home/p8testuser2/.ssh/authorized_keys ] && echo "key pushed" || echo "no key"
+  expect:
+    rc: 0
+    stdout: \Aunchanged\n0\nno key\n\Z
+apply:
+  resource_type: define
+  node: ubuntu
+  title: users_sudoers
+  catalog:
+    Debian:
+    - class: users_sudoers

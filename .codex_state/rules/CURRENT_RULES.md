@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-144 entries; 6 marked superseded (in whole or part); newest first.
+145 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-26 — Behaviour suite, steps 1-4: the sets moved to spec/behaviour/checks, neutrally (HQ review of design note F)
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-26 — HQ review of design note F: approved, with rulings
 - 1. Location: spec/behaviour/. spec/acceptance/ is where the Puppet community's standard acceptance tools look, and this

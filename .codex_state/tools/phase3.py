@@ -40,7 +40,8 @@ it); it counts as `deferred` only once that review passed (HQ 2026-11-16 item 7b
 second-node -> second-node). Any set may also list what it does NOT cover (item 7a):
   uncovered: [{what: <behaviour>, why: <why not here>, lifted_by: <node kind>}]
 
-Check file .codex_state/checks/<class>.yml:
+Check file spec/behaviour/checks/<class>.yml (the public suite's set, HQ review of design note F; the engine renders its
+placeholders with the lab's values, behaviour_move.lab_view, and runs exactly the old probes):
   class: <short name>             # = the file name
   baseline: release-0.9.10 (cf477c6)   # = `baseline.py for <class>`
   fixture: params | defaults      # what the harness applies: the class's params file, or no params file at all
@@ -178,7 +179,30 @@ LOCAL_TARGET = re.compile(r"(\S+@)?(127\.0\.0\.1|localhost|::1)\b")
 
 
 def phase3_dir() -> Path:
+    """Where the engine keeps its records of the sets: results/ and reviews/ (and, before the move, the sets)."""
     return Path(os.environ.get("P8_PHASE3_DIR") or REPO / ".codex_state" / "checks")
+
+
+SUITE = REPO / "spec" / "behaviour"
+MOVED = REPO / ".codex_state" / "checks" / "moved.json"
+
+
+def sets_dir() -> Path:
+    """The check sets: the public suite's (spec/behaviour/checks, HQ review of design note F); a test's P8_PHASE3_DIR
+    keeps its own sets beside its records."""
+    env = os.environ.get("P8_PHASE3_DIR")
+    return Path(env) if env else SUITE / "checks"
+
+
+def set_path(cls: str) -> Path:
+    return sets_dir() / f"{cls}.yml"
+
+
+def moved_entry(cls: str) -> dict | None:
+    """The set's neutral move (behaviour_move.py): the old file's identity and the new file's, or None."""
+    if os.environ.get("P8_PHASE3_DIR") or not MOVED.is_file():
+        return None
+    return json.loads(MOVED.read_text()).get(cls)
 
 
 def now() -> str:
@@ -199,7 +223,9 @@ def label(base: baseline.Baseline) -> str:
 # ------------------------------------------------------------------ validate
 
 def load_set(cls: str) -> tuple[dict, bytes]:
-    path = phase3_dir() / f"{cls}.yml"
+    """The set as the engine runs it: the public template rendered with the lab's values (behaviour_move.lab_view: the
+    run's machines, the site paths, P8_PEER_ADDR), its `apply` block left to the harness; and the file's bytes."""
+    path = set_path(cls)
     if not path.is_file():
         raise SystemExit(f"ERROR: no check file {path}")
     raw = path.read_bytes()
@@ -210,7 +236,8 @@ def load_set(cls: str) -> tuple[dict, bytes]:
                          f"({' '.join(str(err).split())[-80:]})") from None
     if not isinstance(data, dict):
         raise SystemExit(f"ERROR: {path} is not a YAML mapping")
-    return data, raw
+    import behaviour_move  # noqa: PLC0415
+    return behaviour_move.lab_view(cls, data), raw
 
 
 def parse_lines(spec: str, length: int) -> tuple[int, int] | None:
@@ -424,7 +451,7 @@ def uncovered_problems(u, where: str, strict: bool, cls: str = "") -> list[str]:
 def open_uncovered(cls: str) -> int:
     """The class's open uncovered rows: outcomes of its set that no check probes yet (HQ batch-15 follow-up 3: status.py
     and the approval report show the count). 0 without a set or with an unreadable one."""
-    path = phase3_dir() / f"{cls}.yml"
+    path = set_path(cls)
     try:
         data = yaml.safe_load(path.read_bytes()) if path.is_file() else None
     except yaml.YAMLError:
@@ -472,12 +499,20 @@ def reviewed_as_is(cls: str, record: dict | None, raw: bytes, repo: Path | None 
     full-file sha names)."""
     if not record:
         return False
-    if record.get("check_file_sha256") == hashlib.sha256(raw).hexdigest():
+    sha = hashlib.sha256(raw).hexdigest()
+    if record.get("check_file_sha256") == sha:
         return True
-    mine = content_sha(raw)
+    moved = moved_entry(cls)
+    if moved and moved.get("new_sha256") == sha:
+        # HQ review of design note F, ruling 6: the set as it stands is the neutral move of the old file, so a record
+        # of the old file judged this one
+        if record.get("check_file_sha256") == moved["old_sha256"]:
+            return True
+        mine, path = moved["old_content_sha256"], REPO / ".codex_state" / "checks" / f"{cls}.yml"
+    else:
+        mine, path = content_sha(raw), set_path(cls)
     if record.get("content_sha256"):
         return record["content_sha256"] == mine
-    path = phase3_dir() / f"{cls}.yml"
     return _content_shas_by_full_sha(str(path), str(repo or REPO)).get(record.get("check_file_sha256")) == mine
 
 
@@ -726,7 +761,7 @@ def variant_problems(cls: str, data: dict, checks: list) -> list[str]:
 
 def sweep_pending(cls: str, data: dict) -> list[str]:
     """The uncovered rows of an approved, unchanged set that the strict rule would refuse (the scheduled sweep)."""
-    raw = (phase3_dir() / f"{cls}.yml").read_bytes()
+    raw = set_path(cls).read_bytes()
     if "deferred" in data or not approved_unchanged(cls, raw):
         return []
     return [p for p in outcome_problems(data, strict=True) if ".uncovered" in p]
@@ -735,7 +770,7 @@ def sweep_pending(cls: str, data: dict) -> list[str]:
 def cmd_sweep() -> int:
     """List every approved set whose uncovered rows await the HQ batch-15 ruling-3 sweep, with the row count."""
     total = 0
-    for path in sorted(phase3_dir().glob("*.yml")):
+    for path in sorted(sets_dir().glob("*.yml")):
         cls = path.stem
         problems, data, _ = validate(cls)
         if problems:
@@ -1435,7 +1470,7 @@ def behaviour_state(cls: str) -> dict:
     """Derived (P2) from .codex_state/checks: the check file, the latest results and the latest phase-3 review."""
     row = {"class": cls, "state": "none", "detail": "", "author_run_s": None,
            "reviewer_run_s": None, "review_s": None}
-    if not (phase3_dir() / f"{cls}.yml").is_file():
+    if not set_path(cls).is_file():
         return row
     problems, data, raw = validate(cls)
     # HQ 2026-11-18 ruling C1: a set that states no purpose yet, or whose review predates the purpose judgement, is
@@ -1478,7 +1513,7 @@ def behaviour_state(cls: str) -> dict:
 
 def cmd_state(classes: list[str]) -> int:
     if not classes:
-        classes = sorted(p.stem for p in phase3_dir().glob("*.yml"))
+        classes = sorted(p.stem for p in sets_dir().glob("*.yml"))
     rows = [behaviour_state(c) for c in classes]
     m = lambda v, unit: "–" if v is None else f"{v:g}{unit}"  # noqa: E731
     print("| class | behaviour | detail | author run | reviewer run | review |")

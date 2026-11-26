@@ -1,0 +1,193 @@
+class: puppet_backup
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+purpose: 'Backs up the Puppet master''s configuration and code (/etc/puppetlabs) every night: a dated gzip tar in the puppet
+  backup directory, keeping the configured number of days of archives.'
+outcomes:
+- outcome: the backup script carries the values of the Hiera keys puppet::basedir and the like, and root's crontab runs it
+    at 23:00 every day
+  from: manifests/puppet_backup.pp:3-13; manifests/backup.pp:14-28
+  checks:
+  - script-carries-the-puppet-hiera-values
+  - cron-runs-it-at-2300
+- outcome: the backup directory the script writes into is there after the apply
+  from: manifests/puppet_backup.pp:8
+  checks:
+  - the-backup-directory-exists
+- outcome: a run writes a dated gzip tar of /etc/puppetlabs from which a file restores byte for byte
+  from: manifests/puppet_backup.pp:1-2; templates/backup/backup.sh.erb:14-20, 31
+  checks:
+  - aged-archives-are-planted
+  - a-run-writes-a-restorable-gzip-tar
+- outcome: the run deletes the prefix's archives older than 9 full days and keeps newer ones and other prefixes' files
+  from: templates/backup/backup.sh.erb:22-23, 33-37
+  checks:
+  - aged-archives-are-planted
+  - a-run-deletes-only-its-own-old-archives
+- outcome: a run that cannot write its archive fails loudly (non-zero exit, an error line on stderr and in syslog) and stops
+    before retention, so no old archive is deleted
+  from: templates/backup/backup.sh.erb:31-37
+  checks:
+  - a-failed-run-is-loud
+- outcome: cron itself firing at 23:00
+  from: manifests/backup.pp:21-28
+  uncovered:
+    why: a run would have to wait for 23:00; the crontab entry is checked and the script it names is run by hand
+    lifted_by: 'capability: a clock-controlled cron trigger inside a phase3 run'
+    evidence: '{{SITE:engine-runner}} runs probes and agent runs only; it has no step that advances or waits for the node''s
+      cron schedule'
+checks:
+- id: script-carries-the-puppet-hiera-values
+  what: backup-puppet.sh is in bindir, root:root 0755, with the base directory, prefix, backup directory, ndays and compression
+    from the Hiera keys puppet::basedir and the like
+  control: negative
+  derived_from:
+  - path: manifests/puppet_backup.pp
+    lines: 7-13
+    text: $mybackdir = lookup("${mysystype}::backdir")
+  - path: manifests/puppet_backup.pp
+    lines: '13'
+    text: 'puppet_infrastructure::backup { $mysystype: basedir => $mybasedir, prefix => $myprefix, backdir => $mybackdir,
+      ndays => $myndays, bindir => $mybindir, compression => $compression }'
+  - path: templates/backup/backup.sh.erb
+    lines: 4-7
+    text: FILETARGETDIRS=<%= @basedir %>
+  probe: |
+    stat -c '%U %G %a' {{LOCALDIR}}/bin/backup-puppet.sh
+    grep -E '^(FILETARGETDIRS|FILEPREFIX|BACKDIR|NC|COMPRESSION)=' {{LOCALDIR}}/bin/backup-puppet.sh
+  expect:
+    rc: 0
+    stdout: \Aroot root 755\nFILETARGETDIRS=/etc/puppetlabs/\nFILEPREFIX=puppet\.example\.com\nBACKDIR={{LOCALDIR}}/backup/puppet\nNC=10\nCOMPRESSION=true\n\Z
+- id: cron-runs-it-at-2300
+  what: root's crontab runs the script at 23:00 every day of the month, named cron_puppet_backup
+  control: negative
+  derived_from:
+  - path: manifests/backup.pp
+    lines: 21-28
+    text: command   => "${bindir}/backup-${title}.sh",
+  probe: |
+    crontab -l -u root 2>/dev/null | grep -A1 -x '# Puppet Name: cron_puppet_backup'
+  expect:
+    rc: 0
+    stdout: '\A# Puppet Name: cron_puppet_backup\n0 23 \* \* \* {{LOCALDIR}}/bin/backup-puppet\.sh\n\Z'
+- id: the-backup-directory-exists
+  what: the directory the script writes into, {{LOCALDIR}}/backup/puppet, exists after the apply, root-owned 0755
+  control: negative
+  derived_from:
+  - path: manifests/puppet_backup.pp
+    lines: '8'
+    text: $mybackdir = lookup("${mysystype}::backdir")
+  - path: templates/backup/backup.sh.erb
+    lines: '31'
+    text: tar $EXCLUDELINE -cv${COMPRESSION_FLAG}f $BACKDIR/$FILEPREFIX-`date +%Y-%b-%d-%Hh%Mm`.tar.gz $FILETARGETDIRS
+  probe: |
+    test -d {{LOCALDIR}}/backup/puppet && echo present || echo absent
+    stat -c '%U %G %a' {{LOCALDIR}}/backup/puppet 2>/dev/null
+  expect:
+    rc: 0
+    stdout: \Apresent\nroot root 755\n\Z
+- id: aged-archives-are-planted
+  what: setup for the run, three files of known ages in the backup directory (the directory is not created here)
+  control: negative
+  derived_from:
+  - path: templates/backup/backup.sh.erb
+    lines: 35-37
+    text: for i in `find $BACKDIR -maxdepth 1 -mtime +$DAYS -type f -name "$FILEPREFIX*" `; do
+  mutates: 'creates in {{LOCALDIR}}/backup/puppet: puppet.example.com-old.tar.gz dated 12 days ago, puppet.example.com-recent.tar.gz
+    dated 5 days ago, and p8test-other-old.tar.gz (another prefix) dated 30 days ago'
+  probe: |
+    d={{LOCALDIR}}/backup/puppet
+    for f in puppet.example.com-old:12 puppet.example.com-recent:5 p8test-other-old:30; do
+      printf 'p8test planted\n' > "$d/${f%%:*}.tar.gz"; touch -d "${f##*:} days ago" "$d/${f%%:*}.tar.gz"
+    done
+  effect: |
+    cd {{LOCALDIR}}/backup/puppet && find . -maxdepth 1 -type f -mtime +9 | LC_ALL=C sort | tr '\n' ' '; echo
+  expect:
+    rc: 0
+    stdout: \A\./p8test-other-old\.tar\.gz \./puppet\.example\.com-old\.tar\.gz \n\Z
+- id: a-run-writes-a-restorable-gzip-tar
+  what: the script, run once by hand as cron would, exits 0 and writes one new archive puppet.example.com-<date>.tar.gz, gzip-compressed,
+    from which etc/puppetlabs/puppet/puppet.conf restores byte for byte
+  control: negative
+  timeout: 180
+  derived_from:
+  - path: templates/backup/backup.sh.erb
+    lines: '31'
+    text: tar $EXCLUDELINE -cv${COMPRESSION_FLAG}f $BACKDIR/$FILEPREFIX-`date +%Y-%b-%d-%Hh%Mm`.tar.gz $FILETARGETDIRS
+  - path: templates/backup/backup.sh.erb
+    lines: 14-20
+    text: COMPRESSION_FLAG="z"
+  mutates: runs {{LOCALDIR}}/bin/backup-puppet.sh once as root (a new archive in the backup directory; the planted 12-day-old
+    file of its prefix is deleted); writes its output, exit code and the archive's name to /run/p8test-backup (run.log, run.rc,
+    archive) and restores etc/puppetlabs/puppet/puppet.conf from the archive there
+  probe: |
+    install -d -m 0700 /run/p8test-backup
+    {{LOCALDIR}}/bin/backup-puppet.sh > /run/p8test-backup/run.log 2>&1; echo $? > /run/p8test-backup/run.rc
+    a=$(ls -1t {{LOCALDIR}}/backup/puppet/puppet.example.com-2*.tar.gz 2>/dev/null | head -1)
+    echo "$a" > /run/p8test-backup/archive
+    [ -n "$a" ] && tar -xzf "$a" -C /run/p8test-backup etc/puppetlabs/puppet/puppet.conf
+  effect: |
+    echo "rc $(cat /run/p8test-backup/run.rc)"
+    a=$(cat /run/p8test-backup/archive)
+    basename "$a" | sed -E 's/-[0-9]{4}-[A-Z][a-z]{2}-[0-9]{2}-[0-9]{2}h[0-9]{2}m\.tar\.gz$/-DATE.tar.gz/'
+    gzip -t "$a" && echo gzip-ok
+    cmp -s /run/p8test-backup/etc/puppetlabs/puppet/puppet.conf /etc/puppetlabs/puppet/puppet.conf && echo restores-byte-for-byte
+  expect:
+    rc: 0
+    stdout: \Arc 0\npuppet\.example\.com-DATE\.tar\.gz\ngzip-ok\nrestores-byte-for-byte\n\Z
+- id: a-run-deletes-only-its-own-old-archives
+  what: after the run, the prefix's 12-day-old archive is gone, its 5-day-old one and the other prefix's 30-day-old file remain
+    (find -mtime +9 on files named puppet.example.com*)
+  control: negative
+  derived_from:
+  - path: templates/backup/backup.sh.erb
+    lines: 22-23
+    text: let DAYS=$INTERVAL*$NC-1
+  - path: templates/backup/backup.sh.erb
+    lines: 35-37
+    text: rm -f  $i
+  mutates: none beyond listing the backup directory (declared mutating so it runs after the run)
+  probe: |
+    true
+  effect: |
+    cd {{LOCALDIR}}/backup/puppet && ls -1 | sed -E 's/-[0-9]{4}-[A-Z][a-z]{2}-[0-9]{2}-[0-9]{2}h[0-9]{2}m\.tar\.gz$/-DATE.tar.gz/' | LC_ALL=C sort | tr '\n' ' '; echo
+  expect:
+    rc: 0
+    stdout: \Ap8test-other-old\.tar\.gz puppet\.example\.com-DATE\.tar\.gz puppet\.example\.com-recent\.tar\.gz \n\Z
+- id: a-failed-run-is-loud
+  what: 'with the backup directory full (a one-page tmpfs over it, holding only an archive of the prefix dated 12 days ago),
+    the script run as cron would cannot write its archive: it exits non-zero, writes an ERROR line on stderr and to syslog,
+    and stops before its retention step, so the 12-day-old archive, which retention would delete, is kept'
+  control: negative
+  timeout: 120
+  derived_from:
+  - path: templates/backup/backup.sh.erb
+    lines: '31'
+    text: tar $EXCLUDELINE -cv${COMPRESSION_FLAG}f $BACKDIR/$FILEPREFIX-`date +%Y-%b-%d-%Hh%Mm`.tar.gz $FILETARGETDIRS
+  - path: manifests/backup.pp
+    lines: 21-28
+    text: command   => "${bindir}/backup-${title}.sh",
+  mutates: 'mounts a 4 KiB tmpfs over {{LOCALDIR}}/backup/puppet (left mounted: the node is reverted after the run) and writes
+    puppet.example.com-ancient.tar.gz into it, dated 12 days ago; runs backup-puppet.sh once as root; its exit code and stderr
+    go to /run/p8test-backup-fail (rc, stderr); the script logs its ERROR line to syslog (the journal, /var/log/syslog)'
+  probe: |
+    d={{LOCALDIR}}/backup/puppet
+    install -d -m 0700 /run/p8test-backup-fail
+    mount -t tmpfs -o size=4k p8test-full "$d"
+    printf 'p8test planted\n' > "$d/puppet.example.com-ancient.tar.gz"; touch -d '12 days ago' "$d/puppet.example.com-ancient.tar.gz"
+    {{LOCALDIR}}/bin/backup-puppet.sh >/dev/null 2>/run/p8test-backup-fail/stderr; echo $? > /run/p8test-backup-fail/rc
+  effect: |
+    [ "$(cat /run/p8test-backup-fail/rc)" -ne 0 ] && echo "exit non-zero"
+    p8_count '^ERROR: backup of /etc/puppetlabs/ into {{LOCALDIR}}/backup/puppet failed' /run/p8test-backup-fail/stderr
+    journalctl -t backup-puppet.example.com -o cat --no-pager | p8_count '^ERROR: backup of /etc/puppetlabs/ into {{LOCALDIR}}/backup/puppet failed'
+    test -e {{LOCALDIR}}/backup/puppet/puppet.example.com-ancient.tar.gz && echo "the 12-day-old archive is kept"
+  expect:
+    rc: 0
+    stdout: \Aexit non-zero\n1\n1\nthe 12-day-old archive is kept\n\Z
+apply:
+  resource_type: class
+  node: ubuntu
+  catalog:
+    Debian:
+    - class: filesystem_base
+    - class: puppet_backup

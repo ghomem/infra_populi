@@ -1,0 +1,296 @@
+class: docker_container
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+purpose: Runs one container from an image (pulled at a tag or digest, optionally from a registry with credentials) under systemd,
+  with its app port published on 127.0.0.1 only, and refreshes it when its image resource changes.
+outcomes:
+- outcome: the image is pulled at the given tag
+  from: manifests/docker_container.pp:41-47
+  checks:
+  - the-container-runs-the-image-under-systemd
+- outcome: the container runs from that image as a systemd service named after the title
+  from: manifests/docker_container.pp:49-50, 82-93
+  checks:
+  - the-container-runs-the-image-under-systemd
+- outcome: the app port is published on 127.0.0.1 at the host port, and on no other address
+  from: manifests/docker_container.pp:20-24, 52-57, 86
+  checks:
+  - the-app-answers-on-loopback-only
+- outcome: a container that dies is started again by its service
+  from: manifests/docker_container.pp:82-93
+  checks:
+  - the-container-is-killed
+  - the-service-starts-it-again
+- outcome: when its service stops, the container stays, exited (remove_container_on_stop false)
+  from: manifests/docker_container.pp:82-93
+  checks:
+  - stopping-the-service-keeps-the-container
+- outcome: when its image resource changes (an image missing locally is pulled again) the container is recreated (subscribe
+    to the image)
+  from: manifests/docker_container.pp:41-47, 92
+  checks:
+  - the-image-tag-is-removed
+  - the-agent-run-pulls-the-image-and-restarts-the-container
+- outcome: with app_port and no host_port the app port is published on 127.0.0.1 at the same port
+  from: manifests/docker_container.pp:20-24, 52-54
+  checks:
+  - without-host-port-the-app-port-is-published-on-loopback
+- outcome: ensure (passed to docker::image), set on 1 production node statement whose value is not read
+  from: manifests/docker_container.pp:6, 37-46
+  uncovered:
+    why: 'the values other than present cannot pass the harness: with latest puppetlabs-docker (image.pp:149-170) runs a noop-false
+      notify and its pull exec on every agent run, so the gate''s run 2 is never event-free; with absent it removes an image
+      the running container uses'
+    lifted_by: 'capability: a variant run whose gate allows the run-2 events a parameter makes by design'
+    evidence: 'puppetlabs-docker on the lab master, manifests/image.pp:140-183 (read 2026-11-25): absent removes the image
+      onlyif it is found; latest notifies ''Check if image ... is in-sync'' (noop => false) and runs the update exec each
+      run; {{SITE:fleet-usage}}: ensure on 1 node statement'
+- outcome: environment, a named volume, a host-path (bind) volume, a command and another network reach the container
+  from: manifests/docker_container.pp:7-14, 26-40, 59-80
+  checks:
+  - environment-volume-and-command-reach-the-container
+  - another-network-is-used
+- outcome: a registry login (username and token)
+  from: manifests/docker_container.pp:7-14, 26-40, 59-80
+  uncovered:
+    why: a login needs a private registry with credentials; production sets them (5 node statements)
+    lifted_by: 'capability: a private container registry in the lab'
+    evidence: '{{SITE:node-inventory}} (2026-11-23): no node kind runs a registry; {{SITE:fleet-usage}}: username and token
+      set on 5 production node statements'
+- outcome: an image pinned by digest
+  from: manifests/docker_container.pp:7-14, 26-40, 59-80
+  uncovered:
+    why: a parameter variant no production node uses
+    accepted_gap:
+    - digest
+    evidence: '{{SITE:fleet-usage}} (2026-11-23): no production node statement sets digest, and no class of the repository
+      sets it on docker_container'
+node_agent:
+  after:
+  - the-image-tag-is-removed
+  why: the container is refreshed by its image's change, which only the next agent run makes
+variants:
+- name: appport
+  why: app_port without host_port, which 4 of the 7 production statements that set app_port do
+  params: appport
+- name: runopts
+  why: environment, a named volume and a command, which production sets (7, 5 and 1 node statements)
+  params: runopts
+- name: nonet
+  why: another network (none here), which production sets (2 node statements), without published ports
+  params: nonet
+checks:
+- id: the-container-runs-the-image-under-systemd
+  what: the image nginx:alpine is present, the unit docker-docker_container is active, and the running container docker_container
+    uses that image
+  control: negative
+  derived_from:
+  - path: manifests/docker_container.pp
+    lines: 42-46
+    text: image_tag => $tag,
+  - path: manifests/docker_container.pp
+    lines: 82-84
+    text: 'docker::run { $container_name:'
+  probe: |
+    docker image inspect nginx:alpine --format '{{index .RepoTags 0}}' 2>/dev/null
+    systemctl is-active docker-docker_container
+    docker ps --filter name='^docker_container$' --format '{{.Names}} {{.Image}}'
+  expect:
+    rc: 0
+    stdout: \Anginx:alpine\nactive\ndocker_container nginx:alpine\n\Z
+- id: the-app-answers-on-loopback-only
+  what: port 18080 is published on 127.0.0.1 only, and the container's nginx answers there
+  control: negative
+  derived_from:
+  - path: manifests/docker_container.pp
+    lines: 52-54
+    text: $myapp_port = ["127.0.0.1:${myhost_port}:${app_port}"]
+  probe: |
+    docker port docker_container 80/tcp
+    ss -ltnH 'sport = :18080' | awk '{print $4}' | sort -u
+    curl -s --max-time 5 http://127.0.0.1:18080/ | grep -c '<h1>Welcome to nginx'
+  mismatch:
+    varies: the address asked (the node's host-only address instead of 127.0.0.1), where nothing may listen
+    probe: |
+      docker port docker_container 80/tcp
+      ss -ltnH 'sport = :18080' | awk '{print $4}' | sort -u
+      curl -s --max-time 5 "http://$(ip -4 -o addr show enp0s8 | awk '{print $4}' | cut -d/ -f1):18080/" | grep -c '<h1>Welcome to nginx'
+  expect:
+    rc: 0
+    stdout: \A127\.0\.0\.1:18080\n127\.0\.0\.1:18080\n1\n\Z
+- id: the-container-is-killed
+  what: setup for the next check, the container killed by hand (as a crash would end it), with its start time noted
+  control: negative
+  derived_from:
+  - path: manifests/docker_container.pp
+    lines: 82-93
+    text: remove_container_on_stop          => false,
+  mutates: notes the container's start time in /run/p8test-docker/before, then kills the container docker_container on the
+    node
+  probe: |
+    install -d -m 0700 /run/p8test-docker
+    docker inspect -f '{{.State.StartedAt}}' docker_container > /run/p8test-docker/before
+    docker kill docker_container >/dev/null
+  effect: |
+    test -s /run/p8test-docker/before && echo noted
+  expect:
+    rc: 0
+    stdout: \Anoted\n\Z
+- id: the-service-starts-it-again
+  what: within 60 s the service has started the container again (a new start time) and the app answers
+  control: negative
+  timeout: 120
+  derived_from:
+  - path: manifests/docker_container.pp
+    lines: 82-93
+    text: 'docker::run { $container_name:'
+  mutates: none beyond waiting up to 60 s and reading the container's state (declared mutating so it runs after the kill)
+  probe: |
+    true
+  effect: |
+    before=$(cat /run/p8test-docker/before)
+    for i in $(seq 30); do
+      now=$(docker inspect -f '{{.State.Running}} {{.State.StartedAt}}' docker_container 2>/dev/null)
+      [ "${now%% *}" = true ] && [ "${now#* }" != "$before" ] && break; sleep 2
+    done
+    [ "${now%% *}" = true ] && [ "${now#* }" != "$before" ] && echo started-again
+    curl -s --max-time 5 http://127.0.0.1:18080/ | grep -c '<h1>Welcome to nginx'
+  expect:
+    rc: 0
+    stdout: \Astarted-again\n1\n\Z
+- id: the-image-tag-is-removed
+  what: setup for the next check, the image's tag removed by hand (the running container keeps its image), with the container's
+    start time noted
+  control: negative
+  derived_from:
+  - path: manifests/docker_container.pp
+    lines: 41-47
+    text: image_tag => $tag,
+  mutates: notes the container's start time and ID in /run/p8test-docker/before-image and before-image-id, then removes the
+    tag nginx:alpine (docker rmi -f) on the node
+  probe: |
+    install -d -m 0700 /run/p8test-docker
+    docker inspect -f '{{.State.StartedAt}}' docker_container > /run/p8test-docker/before-image
+    docker inspect -f '{{.Id}}' docker_container > /run/p8test-docker/before-image-id
+    docker rmi -f nginx:alpine >/dev/null
+  effect: |
+    docker image inspect nginx:alpine >/dev/null 2>&1 && echo "tag present" || echo "tag removed"
+    test -s /run/p8test-docker/before-image && echo noted
+  expect:
+    rc: 0
+    stdout: \Atag removed\nnoted\n\Z
+- id: the-agent-run-pulls-the-image-and-restarts-the-container
+  what: after the node's agent run the image nginx:alpine is present again, the container was recreated (a new container ID)
+    and runs, and the app answers
+  control: negative
+  timeout: 120
+  derived_from:
+  - path: manifests/docker_container.pp
+    lines: '92'
+    text: subscribe                         => Docker::Image[$image],
+  mutates: none beyond waiting up to 60 s and reading the image and the container's state (declared mutating so it runs after
+    the node's agent run)
+  probe: |
+    true
+  effect: |
+    docker image inspect nginx:alpine >/dev/null 2>&1 && echo "image pulled"
+    before=$(cat /run/p8test-docker/before-image)
+    for i in $(seq 30); do
+      now=$(docker inspect -f '{{.State.Running}} {{.State.StartedAt}}' docker_container 2>/dev/null)
+      [ "${now%% *}" = true ] && [ "${now#* }" != "$before" ] && break; sleep 2
+    done
+    [ "${now%% *}" = true ] && [ "${now#* }" != "$before" ] && echo restarted
+    [ "$(docker inspect -f '{{.Id}}' docker_container 2>/dev/null)" != "$(cat /run/p8test-docker/before-image-id)" ] && echo recreated
+    for i in $(seq 15); do curl -s --max-time 2 http://127.0.0.1:18080/ | grep -q '<h1>Welcome to nginx' && break; sleep 1; done
+    curl -s --max-time 5 http://127.0.0.1:18080/ | grep -c '<h1>Welcome to nginx'
+  expect:
+    rc: 0
+    stdout: \Aimage pulled\nrestarted\nrecreated\n1\n\Z
+- id: stopping-the-service-keeps-the-container
+  what: when the service docker-docker_container is stopped, the unit is inactive and the container docker_container still
+    exists, exited
+  control: negative
+  derived_from:
+  - path: manifests/docker_container.pp
+    lines: 82-93
+    text: remove_container_on_stop          => false,
+  mutates: stops the unit docker-docker_container on the node (last of the base run's checks)
+  probe: |
+    systemctl stop docker-docker_container
+    sleep 2
+  effect: |
+    systemctl is-active docker-docker_container || true
+    docker inspect -f '{{.State.Status}}' docker_container
+  expect:
+    rc: 0
+    stdout: \Ainactive\nexited\n\Z
+- id: without-host-port-the-app-port-is-published-on-loopback
+  variant: appport
+  what: with app_port 80 and no host_port the container's port 80 is published on 127.0.0.1:80 only, and nginx answers there
+  control: negative
+  derived_from:
+  - path: manifests/docker_container.pp
+    lines: 20-24
+    text: $myhost_port = $app_port
+  - path: manifests/docker_container.pp
+    lines: 52-54
+    text: $myapp_port = ["127.0.0.1:${myhost_port}:${app_port}"]
+  probe: |
+    docker port docker_container 80/tcp
+    curl -s --max-time 5 http://127.0.0.1:80/ | grep -c '<h1>Welcome to nginx'
+  mismatch:
+    varies: the address asked (the node's host-only address instead of 127.0.0.1), where nothing may listen
+    probe: |
+      docker port docker_container 80/tcp
+      curl -s --max-time 5 "http://$(ip -4 -o addr show enp0s8 | awk '{print $4}' | cut -d/ -f1):80/" | grep -c '<h1>Welcome to nginx'
+  expect:
+    rc: 0
+    stdout: \A127\.0\.0\.1:80\n1\n\Z
+- id: environment-volume-and-command-reach-the-container
+  variant: runopts
+  what: the running container has the environment variable P8TEST_ENV=on, the named volume p8test-vol mounted at /p8test-data,
+    the host path /srv/p8test-bind bind-mounted at /p8test-bind with no docker volume created for it, and the given command
+  control: negative
+  derived_from:
+  - path: manifests/docker_container.pp
+    lines: 82-93
+    text: env                               => $env,
+  - path: manifests/docker_container.pp
+    lines: 59-79
+    text: command => "/usr/bin/docker volume create ${vol}",
+  - path: manifests/docker_container.pp
+    lines: 62-66
+    text: ) |$n| { $n !~ /^\/|^\./ }
+  probe: |
+    docker inspect -f '{{.State.Running}}' docker_container
+    docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' docker_container | grep -x 'P8TEST_ENV=on'
+    docker inspect -f '{{range .Mounts}}{{.Name}} {{.Destination}}{{println}}{{end}}' docker_container | grep -x 'p8test-vol /p8test-data'
+    docker inspect -f '{{range .Mounts}}{{.Type}} {{.Source}} {{.Destination}}{{println}}{{end}}' docker_container | grep -x 'bind /srv/p8test-bind /p8test-bind'
+    docker volume ls -q | grep -cv '^p8test-vol$' | sed 's/^/other volumes: /'
+    docker inspect -f '{{json .Config.Cmd}}' docker_container | grep -c 'worker_rlimit_nofile 4096;'
+    docker exec docker_container cat /proc/1/cmdline | tr '\0' ' ' | grep -c 'worker_rlimit_nofile 4096;'
+  expect:
+    rc: 0
+    stdout: '\Atrue\nP8TEST_ENV=on\np8test-vol /p8test-data\nbind /srv/p8test-bind /p8test-bind\nother volumes: 0\n1\n1\n\Z'
+- id: another-network-is-used
+  variant: nonet
+  what: with network none the container runs in that network mode, with no published port
+  control: negative
+  derived_from:
+  - path: manifests/docker_container.pp
+    lines: 82-93
+    text: net                               => $network,
+  probe: |
+    docker inspect -f '{{.State.Running}} {{.HostConfig.NetworkMode}}' docker_container
+    docker port docker_container | wc -l
+  expect:
+    rc: 0
+    stdout: \Atrue none\n0\n\Z
+apply:
+  resource_type: define
+  node: ubuntu
+  title: docker_container
+  catalog:
+    Debian:
+    - external: docker
+    - class: docker_container

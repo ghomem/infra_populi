@@ -7,6 +7,9 @@ design note F, ruling 6).
   behaviour_move.py write [<class> ...]   the same, then writes each NEUTRAL set to spec/behaviour/checks/<class>.yml,
                                            its comments to .codex_state/checks/notes/<class>.md and its identities to
                                            .codex_state/checks/moved.json (no class = every set)
+  behaviour_move.py verify [<class> ...]  after the move: re-proves each moved set neutral against the old file as git
+                                           holds it (the commit before the old file was removed), and that the new file
+                                           is still the one moved.json names; exit 1 if any is not
 
 The conversion replaces the lab's values with the suite's placeholders ({{NAME}}, spec/behaviour/lib/behaviour/
 render.py): the run's machines and site paths in every string, the engine's records and tools cited in prose
@@ -155,7 +158,7 @@ def templatise(text: str, values: dict, field: str | None) -> str:
             seen.add(v)
             ordered.append((v, p))
     for value, ph in ordered:
-        if field in REGEXES:
+        if executed:  # a probe's grep pattern or an expectation may write the value escaped
             esc = rn.re_escape(value)
             if esc != value:
                 text = re.sub(rf"{START}{re.escape(esc)}(?![\w-])", ph[:-2] + "|re}}", text)
@@ -182,7 +185,7 @@ def templatise(text: str, values: dict, field: str | None) -> str:
                 return f"{role}+{n}"
         return None
 
-    if field in REGEXES:
+    if executed:
         def escaped(m: re.Match) -> str:
             ph = name_of(m.group(1).replace("\\.", "."))
             return "{{%s|re}}" % ph if ph else m.group(0)
@@ -204,7 +207,7 @@ def lab_left(data, values_by_run: dict) -> set[str]:
 
     def look(s, f):
         for v in lab:
-            if word(v).search(s) or (f in REGEXES and rn.re_escape(v) != v and
+            if word(v).search(s) or (rn.re_escape(v) != v and
                                      re.search(rf"{START}{re.escape(rn.re_escape(v))}(?![\w-])", s)):
                 found.add(v)
         return s
@@ -247,6 +250,14 @@ def to_lab(data: dict, ctxs: dict) -> dict:
         out = rn.render(s, vals)
         return re.sub(r"(?<!\w)PEER_ADDR\b", "P8_PEER_ADDR", out)
     return per_run(data, ctxs, one)
+
+
+def lab_view(cls: str, data: dict) -> dict:
+    """The set as the engine runs it: a template rendered with the lab's values, without its `apply` block (the
+    harness builds the catalog from the plan). A set with no placeholders and no `apply` (a test's) is returned as is."""
+    if "apply" not in data and not rn.needed(data):
+        return data
+    return to_lab({k: v for k, v in data.items() if k != "apply"}, contexts(cls, data))
 
 
 # ------------------------------------------------------------------ the apply recipe (from the plan)
@@ -379,6 +390,41 @@ def convert(cls: str) -> tuple[dict, str, str | None]:
     return new, text, first_difference(old, lab)
 
 
+def git(*args: str) -> str:
+    import subprocess  # noqa: PLC0415
+    return subprocess.run(["git", "-C", str(REPO), *args], capture_output=True, check=True).stdout.decode("utf-8")
+
+
+def old_from_git(cls: str) -> bytes:
+    """The old set file as it was just before the move removed it: the worktree's while it is there, HEAD's while the
+    removal is not committed, else the commit before the one that removed it."""
+    import subprocess  # noqa: PLC0415
+    rel = f".codex_state/checks/{cls}.yml"
+    if (OLD_DIR / f"{cls}.yml").is_file():
+        return (OLD_DIR / f"{cls}.yml").read_bytes()
+    gone = git("log", "-n1", "--format=%H", "--diff-filter=D", "--", rel).strip()
+    ref = f"{gone}^:{rel}" if gone else f"HEAD:{rel}"
+    proc = subprocess.run(["git", "-C", str(REPO), "show", ref], capture_output=True)
+    if proc.returncode != 0:
+        raise SystemExit(f"{rel}: not in git history")
+    return proc.stdout
+
+
+def verify(cls: str, moved: dict) -> str | None:
+    """None when the moved set is still the neutral move of the old one, else what differs."""
+    entry = moved.get(cls)
+    if not entry:
+        return "not in moved.json"
+    new_raw = (NEW_DIR / f"{cls}.yml").read_bytes()
+    if hashlib.sha256(new_raw).hexdigest() != entry["new_sha256"]:
+        return "the set changed after the move (its reviews judge it as any changed set)"
+    old_raw = old_from_git(cls)
+    if hashlib.sha256(old_raw).hexdigest() != entry["old_sha256"]:
+        return "the old file in git is not the one moved.json names"
+    old = yaml.safe_load(old_raw)
+    return first_difference(old, lab_view(cls, yaml.safe_load(new_raw)))
+
+
 def comments(raw: str) -> str:
     return "".join(line for line in raw.splitlines(keepends=True) if line.lstrip().startswith("#"))
 
@@ -388,11 +434,19 @@ def all_classes() -> list[str]:
 
 
 def main(argv: list[str]) -> int:
-    if not argv or argv[0] not in ("check", "write"):
+    if not argv or argv[0] not in ("check", "write", "verify"):
         print(__doc__)
         return 2
-    classes = argv[1:] or all_classes()
     moved = json.loads(MOVED.read_text()) if MOVED.is_file() else {}
+    if argv[0] == "verify":
+        bad = 0
+        for cls in argv[1:] or sorted(moved):
+            diff = verify(cls, moved)
+            print(f"NOT NEUTRAL {cls}: {diff}" if diff else f"NEUTRAL {cls}")
+            bad += bool(diff)
+        print(f"{len(argv[1:] or moved) - bad} neutral, {bad} not neutral")
+        return 1 if bad else 0
+    classes = argv[1:] or all_classes()
     bad = 0
     for cls in classes:
         try:

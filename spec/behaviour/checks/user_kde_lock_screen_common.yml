@@ -1,0 +1,69 @@
+class: user_kde_lock_screen_common
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+purpose: Provides the screen locker settings script, configure_lock_screen.sh, in the shared bindir, root-owned and executable
+  by every user, for the per-user KDE lock screen define to run as each desktop user.
+outcomes:
+- outcome: the script is in bindir, the module's exact file, root:root 0755
+  from: manifests/user_kde_lock_screen_common.pp:6-14
+  checks:
+  - the-script-is-the-modules-file
+- outcome: an ordinary user can run it, and while that user is not logged in it exits 0, leaves its note and writes no settings
+  from: files/user_kde_lock_screen/configure_lock_screen.sh:10-21
+  checks:
+  - a-logged-out-user-runs-it
+- outcome: run by a user logged in to KDE, it writes the lock settings and reloads them in the session
+  from: files/user_kde_lock_screen/configure_lock_screen.sh:58-106
+  uncovered:
+    why: needs a logged-in KDE session; the class's plan node is a server without a desktop
+    lifted_by: 'capability: a KDE session on the class''s plan node (the same behaviour is checked through the define in user_kde_lock_screen''s
+      set on kubuntu)'
+    evidence: '{{SITE:node-inventory}}: the class''s node is ubuntu (capabilities [server]); the runner''s `session` needs
+      the kde capability ({{SITE:engine-runner}} session_problems)'
+checks:
+- id: the-script-is-the-modules-file
+  what: '{{LOCALDIR}}/bin/configure_lock_screen.sh is root:root 0755 with the module file''s content'
+  control: negative
+  derived_from:
+  - path: manifests/user_kde_lock_screen_common.pp
+    lines: 8-15
+    text: source => 'puppet:///modules/puppet_infrastructure/user_kde_lock_screen/configure_lock_screen.sh',
+  - path: files/user_kde_lock_screen/configure_lock_screen.sh
+    sha256: 8bc3f286c0ea1b4142e10e2cf14bffa38ab099bc7e71265248d49ebe402d5e9d
+  probe: |
+    p8_digest {{LOCALDIR}}/bin/configure_lock_screen.sh | cut -d' ' -f2-
+  expect:
+    rc: 0
+    stdout: \Aroot:root 755 8bc3f286c0ea1b4142e10e2cf14bffa38ab099bc7e71265248d49ebe402d5e9d\n\Z
+- id: a-logged-out-user-runs-it
+  what: 'the fixture account p8testkde, not logged in, runs the script with the define''s default arguments (5 0): exit 0,
+    the "not loged in, skipping" note in the journal, and no kscreenlockerrc in its home'
+  control: negative
+  derived_from:
+  - path: files/user_kde_lock_screen/configure_lock_screen.sh
+    lines: 14-21
+    text: logger -p local1.notice -t $SYSLOG_TAG "User ${USERNAME} not loged in, skipping screenlock settings update"
+  - path: manifests/user_kde_lock_screen.pp
+    lines: 15-17
+    text: user    => $myusername,
+  mutates: creates the account p8testkde (useradd -m), runs the script once as it (one syslog note); the exit code goes to
+    /run/p8test-kde/rc
+  probe: |
+    id p8testkde >/dev/null 2>&1 || useradd -m -s /bin/bash p8testkde
+    install -d -m 0755 /run/p8test-kde
+    cd /tmp && runuser -u p8testkde -- {{LOCALDIR}}/bin/configure_lock_screen.sh 5 0
+    echo "rc=$?" | tee /run/p8test-kde/rc
+  effect: |
+    cat /run/p8test-kde/rc
+    journalctl -t linuxint-screenlocker -o cat --no-pager | p8_count '^User p8testkde not loged in, skipping screenlock settings update$'
+    test -e /home/p8testkde/.config/kscreenlockerrc && echo "settings written" || echo "no settings"
+  expect:
+    rc: 0
+    stdout: \Arc=0\n1\nno settings\n\Z
+apply:
+  resource_type: class
+  node: ubuntu
+  catalog:
+    Debian:
+    - class: filesystem_base
+    - class: user_kde_lock_screen_common

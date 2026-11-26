@@ -1,0 +1,110 @@
+class: user_lock
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+purpose: 'Locks an existing user in hashman, the fleet''s user database on the Puppet master: hashman''s own pp_auth.py marks
+  the user''s password entry locked, so hashman (and the services that authenticate through it) refuse the user.'
+outcomes:
+- outcome: hashman's pp_auth.py lock marks the user's entry locked, in place (one entry, not a duplicate), and invalidates
+    the user's Samba hash the same way
+  from: manifests/user_lock.pp:5-16
+  checks:
+  - user-entry-locked-by-hashman
+  - exactly-one-entry
+  - the-samba-hash-is-locked-too
+- outcome: the locked user is refused by hashman's authentication (pp_auth auth, which hashman's web interface and services
+    use), although the password matches the entry under the lock prefix
+  from: manifests/user_lock.pp:2, 11-14; templates/hashman/libhashman/dbutils.py.erb:168-206
+  checks:
+  - the-locked-user-is-refused-by-hashman
+checks:
+- id: user-entry-locked-by-hashman
+  what: the user's password entry in hashman's database carries the lock prefix '!' before hashman's own entry for a new user
+    (SHA-512, $6$; the fixture cleared hashman's initial expiry), written by `pp_auth.py lock` in hashman's `$<user>_pwd_hash
+    = '<value>'` format
+  control: negative
+  derived_from:
+  - path: manifests/user_lock.pp
+    lines: 11-14
+    text: command => "${hashmandir}/common/pp_auth.py lock ${myuser} DUMMYARG; exit 0",
+  - path: templates/hashman/libhashman/config.py.erb
+    lines: '58'
+    text: LOCKPREFIX = '!'
+  - path: templates/hashman/libhashman/config.py.erb
+    lines: '59'
+    text: EXPIREPREFIX = '!'
+  probe: |
+    grep -E '^[$]p8testuser_pwd_hash' /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp
+  expect:
+    rc: 0
+    stdout: \A\$p8testuser_pwd_hash = '!\$6\$[./A-Za-z0-9]+\$[./A-Za-z0-9]{86}'\n\Z
+- id: exactly-one-entry
+  what: locking rewrites the user's entry in place (one line for the user, no duplicate appended)
+  control: negative
+  derived_from:
+  - path: manifests/user_lock.pp
+    lines: 11-14
+    text: command => "${hashmandir}/common/pp_auth.py lock ${myuser} DUMMYARG; exit 0",
+  - path: templates/hashman/libhashman/dbutils.py.erb
+    lines: 804-807
+    text: return setpw(username, pwentry, True, '', smbhashentry)
+  probe: |
+    grep -cE '^[$]p8testuser_pwd_hash' /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp
+  expect:
+    rc: 0
+    stdout: \A1\n\Z
+- id: the-locked-user-is-refused-by-hashman
+  what: 'hashman''s pp_auth auth refuses p8testuser with the initial password hashman gave it (exit 1), while that password
+    does match the stored entry once the lock prefix is taken off (with the expiry prefix, which auth accepts, read as hashman
+    reads it: crypt of the password with the entry''s salt equals it): the refusal is the lock'
+  control: negative
+  timeout: 120
+  derived_from:
+  - path: templates/hashman/libhashman/dbutils.py.erb
+    lines: 199-205
+    text: ourentry = crypt.crypt( password , '$' + salttype + '$' + saltstr + '$')
+  - path: manifests/user_lock.pp
+    lines: 11-14
+    text: command => "${hashmandir}/common/pp_auth.py lock ${myuser} DUMMYARG; exit 0",
+  mutates: one authentication attempt through hashman's CLI (it takes hashman's database lock briefly and logs to syslog);
+    the outcomes go to /run/p8test-lock/auth.txt
+  probe: |
+    install -d -m 0700 /run/p8test-lock
+    pw=$(cat /root/p8test-hashman-initial)
+    { {{LOCALDIR}}/bin/pp_auth.sh auth p8testuser "$pw" >/dev/null 2>&1; echo "hashman auth rc=$?"
+      e=$(sed -n "s/^[$]p8testuser_pwd_hash = '\(.*\)'$/\1/p" /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp)
+      python3 -W ignore -c 'import crypt,sys; e=sys.argv[1]; print("locked" if e.startswith("!") else "not locked"); u=e[1:].replace("$!6$", "$6$", 1); print("password matches the unlocked entry" if crypt.crypt(sys.argv[2], u) == u else "password does not match")' "$e" "$pw"
+    } > /run/p8test-lock/auth.txt
+  effect: |
+    cat /run/p8test-lock/auth.txt
+  expect:
+    rc: 0
+    stdout: \Ahashman auth rc=1\nlocked\npassword matches the unlocked entry\n\Z
+- id: the-samba-hash-is-locked-too
+  what: the user's Samba hash entry in hashes_smb.pp (hashman's base64 NT hash), valid before the lock (the fixture's record
+    after unlock and unexpire), now carries the lock prefix '!', rewritten in place (one line), so Samba services using it
+    refuse the user as well
+  control: negative
+  derived_from:
+  - path: templates/hashman/libhashman/dbutils.py.erb
+    lines: 804-807
+    text: return setpw(username, pwentry, True, '', smbhashentry)
+  - path: templates/hashman/libhashman/miscutils.py.erb
+    lines: 129-148
+    text: return LOCKPREFIX + currentsmbhash
+  probe: |
+    sed 's/^/before the lock: /' /root/p8test-hashman-smb-before-lock
+    grep -E '^[$]p8testuser_pwd_hash_smb ' /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes_smb.pp
+  expect:
+    rc: 0
+    stdout: '\Abefore the lock: valid\n\$p8testuser_pwd_hash_smb = ''![A-Za-z0-9+/]{22}==''\n\Z'
+apply:
+  resource_type: define
+  node: puppetserver
+  title: p8testuser
+  catalog:
+    Debian:
+    - class: filesystem_base
+    - class: postfix_smtp_node
+    - class: hashman_base
+    - class: user_lock
+  node_fixture: hashman_user_via_hashman

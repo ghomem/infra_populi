@@ -181,8 +181,12 @@ Run rule (HQ batch-12 ruling 5, amending batch-10 ruling 1):
   Phase 5 backlog) without a ruling; if the protection does not hold, it is a finding (batch-12 ruling 1).
 
 ## Phase 3 checks (ruling 11, 2026-10-27; runner built for HQ batch-3 acceptance B)
-Behaviour checks per class in `.codex_state/checks/<class>.yml` (advisor-authored, advisor-only), run by
-`.codex_state/tools/phase3.py` (laptop-side, over ssh to the node only):
+Behaviour checks per class in `spec/behaviour/checks/<class>.yml` (the public behaviour suite since 2026-11-26, HQ review
+of design note F; advisor-authored, advisor-only), run by `.codex_state/tools/phase3.py` (laptop-side, over ssh to the
+node only). A set names the lab's machines and site paths only as placeholders (`{{NODE_ADDR}}`, `{{LOCALDIR}}`, ...;
+spec/behaviour/lib/behaviour/render.py); the engine renders them with the lab's values (behaviour_move.lab_view) and
+runs exactly those probes. Results and reviews stay in `.codex_state/checks/{results,reviews}/`; the authoring
+history of each moved set is in `.codex_state/checks/notes/<class>.md`:
 - `validate <class>` (no node): every check carries `derived_from` lines that must resolve at the class's baseline
   commit (exact text, or the whole file's sha256). Probes may not reach another host or change the node.
 - `run <class>`:

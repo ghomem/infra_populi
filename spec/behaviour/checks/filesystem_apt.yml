@@ -1,0 +1,483 @@
+class: filesystem_apt
+baseline: release-0.9.10 (cf477c6)
+fixture: defaults
+purpose: 'Apt update tooling for Ubuntu 24.04 servers (the target release; the 20.04/22.04 openscap package branch is not
+  in Phase 1): a wrapper that upgrades a package only if it is installed and has an update (never installing anything new),
+  surface, kernel and full update scripts, and a daily job that lists the relevant (High or above) security updates from Canonical''s
+  OVAL data with openscap (for monitoring), and a script that installs the updates on that list through the wrapper; each
+  script is run here.'
+outcomes:
+- outcome: the update scripts are installed (wrapper, surface, kernel, full, relevant updates) and openscap is available for
+    the relevant-updates job
+  from: manifests/filesystem_apt.pp:23-30, 63-70, 84-100, 113-157, 184-190
+  checks:
+  - helper-scripts-installed
+- outcome: the wrapper updates an installed package and never installs a missing one
+  from: manifests/filesystem_apt.pp:23-30
+  checks:
+  - the-wrapper-never-installs-a-missing-package
+  - the-wrapper-upgrades-an-installed-package-with-an-update
+- outcome: the surface script updates the server surface list (server_mode true) through the wrapper
+  from: manifests/filesystem_apt.pp:32-70
+  checks:
+  - surface-list-and-daily-job
+  - the-surface-script-updates-an-outdated-surface-package
+- outcome: a daily job lists the relevant (High and above) security updates from Canonical's OVAL data, and the relevant-updates
+    script installs them
+  from: manifests/filesystem_apt.pp:102-190
+  checks:
+  - surface-list-and-daily-job
+  - the-daily-job-lists-relevant-updates
+  - the-job-s-list-is-installed-by-the-relevant-updates-script
+  - the-relevant-updates-on-the-list-get-installed
+- outcome: the kernel script brings the kernel metapackage up to date
+  from: manifests/filesystem_apt.pp:84-91
+  checks:
+  - the-kernel-script-brings-the-kernel-metapackage-up-to-date
+- outcome: the full update script leaves nothing to upgrade
+  from: manifests/filesystem_apt.pp:93-100
+  checks:
+  - the-full-update-script-leaves-nothing-to-upgrade
+- outcome: 'the desktop variant (server_mode false): the desktop surface list and the compatibility link'
+  from: manifests/filesystem_apt.pp:10, 54-58, 72-82
+  checks:
+  - the-desktop-surface-list-and-link
+- outcome: 'the parameter variants: relevant_updates_method 0 (no relevant-updates script), relevant_updates_no_kernel true
+    and a custom apt_surface_list'
+  from: manifests/filesystem_apt.pp:12-18, 52-61, 113-176
+  checks:
+  - method-0-installs-no-relevant-updates-script
+  - no-kernel-and-a-custom-surface-list
+  - the-no-kernel-job-lists-no-kernel-package
+- outcome: the Hiera variants prio_threshold, checkhour and checkmin (the daily job's priority and time)
+  from: manifests/filesystem_apt.pp:163-176
+  uncovered:
+    why: the daily job's priority and time come from Hiera keys (per node or global), which a variant run does not vary
+    lifted_by: 'capability: a Hiera variant per run ({{SITE:engine-runner}} variants vary the node kind and the class''s params
+      fixture)'
+    evidence: '{{SITE:engine-runner}} variant_problems (2026-11-23): a variant takes node and/or params only; the lab Hiera
+      on the master is the same for every run'
+variants:
+- name: desktop
+  why: server_mode false, which node_base_desktop and node_base_domain_desktop pass to this class (composites)
+  params: desktop
+- name: method0
+  why: relevant_updates_method 0, which node_base passes through from its own parameter (node_base.pp:117-122)
+  params: method0
+- name: custom
+  why: relevant_updates_no_kernel true and a custom surface list, both passed through by node_base (node_base.pp:117-122)
+    from parameters a node may set
+  params: custom
+- name: nokernel
+  why: relevant_updates_no_kernel true alone (node_base passes it through, node_base.pp:117-122), so the job's run is not
+    held back by the custom surface list's finding in `custom` (a run's mutating checks wait for its read-only ones)
+  params: nokernel
+checks:
+- id: helper-scripts-installed
+  what: the helper scripts are installed root-owned 0755 (the static ones byte for byte), and openscap-scanner is installed
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_apt.pp
+    lines: 24-30
+    text: source  => 'puppet:///modules/puppet_infrastructure/apt/apt-update-pkg.sh',
+  - path: manifests/filesystem_apt.pp
+    lines: 120-128
+    text: $openscap_pkg = 'openscap-scanner'
+  - path: files/apt/apt-update-pkg.sh
+    sha256: b19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5
+  - path: files/apt/apt-update-kernel.sh
+    sha256: 8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db
+  - path: files/apt/apt-update-dist.sh
+    sha256: c240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3
+  - path: files/apt/get-relevant-updates-list
+    sha256: 077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6
+  - path: manifests/filesystem_apt.pp
+    lines: 178-191
+    text: 'file { "${localdir}/bin/apt-update-relevant.sh":'
+  probe: |
+    cd {{LOCALDIR}}/bin
+    stat -c '%n %U %a' apt-update-pkg.sh apt-update-surface.sh apt-update-kernel.sh apt-update-dist.sh get-relevant-updates-list apt-check-updates.sh apt-update-relevant.sh
+    stat -c '%n %a' /var/lib/apt-check-updates
+    sha256sum apt-update-pkg.sh apt-update-kernel.sh apt-update-dist.sh get-relevant-updates-list | awk '{print $1}'
+    dpkg-query -W -f '${Package} ${Status}\n' openscap-scanner
+  expect:
+    rc: 0
+    stdout: \Aapt-update-pkg\.sh root 755\napt-update-surface\.sh root 755\napt-update-kernel\.sh root 755\napt-update-dist\.sh
+      root 755\nget-relevant-updates-list root 755\napt-check-updates\.sh root 755\napt-update-relevant\.sh root 755\n/var/lib/apt-check-updates
+      755\nb19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5\n8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db\nc240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3\n077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6\nopenscap-scanner
+      install ok installed\n\Z
+- id: surface-list-and-daily-job
+  what: the surface script updates the server surface list through the wrapper, and root's crontab runs the relevant updates
+    job daily at 00:00 with threshold High
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_apt.pp
+    lines: 33-41
+    text: $apt_surface_server = ['openssh-server', 'openssh-client', 'openssh-sftp-server',
+  - path: manifests/filesystem_apt.pp
+    lines: 163-176
+    text: command  => "${localdir}/bin/apt-check-updates.sh ${prio_threshold}",
+  probe: |
+    grep -E '^(UPDATE_CMD|SURFACE)=' {{LOCALDIR}}/bin/apt-update-surface.sh
+    crontab -l -u root | grep -v '^#' | grep apt-check-updates
+  expect:
+    rc: 0
+    stdout: \AUPDATE_CMD={{LOCALDIR}}/bin/apt-update-pkg\.sh\nSURFACE="openssh-server openssh-client openssh-sftp-server openssl
+      libssl1\.1 libudev1 ca-certificates vim vim-runtime vim-common coreutils gzip less multitail util-linux openvpn nginx-core
+      nginx-extras postfix dovecot-core rsyslog rsyslog-gnutls"\n0 0 \* \* \* {{LOCALDIR}}/bin/apt-check-updates\.sh High\n\Z
+- id: the-wrapper-never-installs-a-missing-package
+  what: asked to update a package that is not installed (cowsay), the wrapper refuses and installs nothing
+  control: negative
+  derived_from:
+  - path: files/apt/apt-update-pkg.sh
+    sha256: b19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5
+  - path: manifests/filesystem_apt.pp
+    lines: '23'
+    text: '# wrapper for apt-get install the avoid undesired installs'
+  mutates: runs {{LOCALDIR}}/bin/apt-update-pkg.sh cowsay on the node; its output and exit code go to /run/p8test-apt/missing.txt
+  probe: |
+    install -d -m 0700 /run/p8test-apt
+    { {{LOCALDIR}}/bin/apt-update-pkg.sh cowsay; echo "rc=$?"; } > /run/p8test-apt/missing.txt 2>&1
+  effect: |
+    cat /run/p8test-apt/missing.txt
+    dpkg-query -W -f '${Status}\n' cowsay 2>/dev/null | grep -c ' installed$'
+  expect:
+    rc: 1
+    stdout: \Apackage cowsay not installed\nrc=1\n0\n\Z
+- id: the-wrapper-upgrades-an-installed-package-with-an-update
+  what: an installed package one version behind the archive (a small one, downgraded first) is upgraded by the wrapper to
+    the archive's candidate version
+  control: negative
+  timeout: 300
+  derived_from:
+  - path: files/apt/apt-update-pkg.sh
+    sha256: b19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5
+  - path: manifests/filesystem_apt.pp
+    lines: 24-30
+    text: 'file { "${localdir}/bin/apt-update-pkg.sh":'
+  mutates: picks the first of wget, less, tzdata, curl, vim-tiny whose archive has an older version than the installed candidate,
+    downgrades it to that version (apt-get install --allow-downgrades), then runs apt-update-pkg.sh on it; the package and
+    its versions go to /run/p8test-apt/upgrade.vars
+  probe: |
+    install -d -m 0700 /run/p8test-apt
+    for p in wget less tzdata curl vim-tiny; do
+      cand=$(apt-cache policy "$p" | awk '/Candidate:/ {print $2}')
+      old=$(apt-cache madison "$p" | awk -F'|' '{gsub(/ /,"",$2); print $2}' | grep -v -x "$cand" | head -1)
+      [ -n "$old" ] && dpkg-query -W "$p" >/dev/null 2>&1 && break
+      old=""
+    done
+    [ -n "$old" ] || { echo "no package with an older archive version" > /run/p8test-apt/upgrade.none; exit 0; }
+    DEBIAN_FRONTEND=noninteractive apt-get -qq -y --allow-downgrades install "$p=$old" >/dev/null 2>&1
+    before=$(dpkg-query -W -f '${Version}' "$p")
+    out=$({{LOCALDIR}}/bin/apt-update-pkg.sh "$p" 2>&1)
+    printf '%s\n' "$out" | grep -q "^package $p updated to version $cand$" && reported=yes || reported=no
+    printf 'p=%s\ncand=%s\nold=%s\nbefore=%s\nreported=%s\n' "$p" "$cand" "$old" "$before" "$reported" > /run/p8test-apt/upgrade.vars
+  effect: |
+    . /run/p8test-apt/upgrade.vars
+    [ -n "$old" ] && [ "$before" = "$old" ] && echo "downgraded to the archive's older version"
+    [ "$(dpkg-query -W -f '${Version}' "$p")" = "$cand" ] && echo "upgraded to the candidate"
+    [ "$reported" = yes ] && echo "wrapper reported the update"
+  expect:
+    rc: 0
+    stdout: \Adowngraded to the archive's older version\nupgraded to the candidate\nwrapper reported the update\n\Z
+- id: the-daily-job-lists-relevant-updates
+  what: 'run as the cron runs it, the job fetches Canonical''s OVAL data for the release, evaluates it with openscap and writes
+    the list of updates of priority >= High: at least one package, one per line, each installed below its candidate (the reverted
+    node has pending security updates)'
+  control: negative
+  timeout: 600
+  derived_from:
+  - path: manifests/filesystem_apt.pp
+    lines: 149-155
+    text: content => template('puppet_infrastructure/apt/apt-check-updates-v2.sh.erb'),
+  - path: manifests/filesystem_apt.pp
+    lines: 106-107
+    text: $update_cache_dir = '/var/lib/apt-check-updates'
+  - path: manifests/filesystem_apt.pp
+    lines: 131-137
+    text: source  => 'puppet:///modules/puppet_infrastructure/apt/get-relevant-updates-list',
+  mutates: runs {{LOCALDIR}}/bin/apt-check-updates.sh High on the node (downloads the release's OVAL file from security-metadata.canonical.com
+    into a temporary directory, writes /var/lib/apt-check-updates/list); its exit code goes to /run/p8test-apt/check.txt
+  probe: |
+    install -d -m 0700 /run/p8test-apt
+    {{LOCALDIR}}/bin/apt-check-updates.sh High >/dev/null 2>&1; echo "rc=$?" > /run/p8test-apt/check.txt
+  effect: |
+    cat /run/p8test-apt/check.txt
+    l=/var/lib/apt-check-updates/list
+    test -f "$l" && echo list-written
+    awk 'NF != 1' "$l" | wc -l
+    n=$(p8_count . "$l"); [ "$n" -ge 1 ] && echo "listed: at least 1"
+    for p in $(cat "$l"); do apt-cache policy "$p" | awk '/Installed:/ {i=$2} /Candidate:/ {c=$2} END {if (i == c || i == "(none)") print "not behind"}'; done | p8_count 'not behind'
+  expect:
+    rc: 0
+    stdout: '\Arc=0\nlist-written\n0\nlisted: at least 1\n0\n\Z'
+- id: the-job-s-list-is-installed-by-the-relevant-updates-script
+  what: 'apt-update-relevant.sh, run after the daily job, installs the job''s own list: every package on it ends at its candidate'
+  control: negative
+  timeout: 600
+  derived_from:
+  - path: manifests/filesystem_apt.pp
+    lines: 183-191
+    text: content => template('puppet_infrastructure/apt/apt-update-relevant.sh.erb'),
+  - path: templates/apt/apt-update-relevant.sh.erb
+    sha256: 0953a9fc34832eb2a15c3d1aa42ea2bf14428789054d249f910b4c32b65f3eb2
+  mutates: copies the job's list to /run/p8test-apt/job-list, then runs {{LOCALDIR}}/bin/apt-update-relevant.sh on the node
+    (it upgrades every listed package through the wrapper)
+  probe: |
+    install -d -m 0700 /run/p8test-apt
+    cp /var/lib/apt-check-updates/list /run/p8test-apt/job-list
+    {{LOCALDIR}}/bin/apt-update-relevant.sh >/dev/null 2>&1
+  effect: |
+    n=$(p8_count . /run/p8test-apt/job-list); [ "$n" -ge 1 ] && echo "the job listed at least 1"
+    for p in $(cat /run/p8test-apt/job-list); do apt-cache policy "$p" | awk '/Installed:/ {i=$2} /Candidate:/ {c=$2} END {if (i != c) print "still behind"}'; done | p8_count 'still behind'
+  expect:
+    rc: 0
+    stdout: \Athe job listed at least 1\n0\n\Z
+- id: the-relevant-updates-on-the-list-get-installed
+  what: a package on the relevant-updates list (one version behind the archive) is upgraded to the archive's candidate by
+    apt-update-relevant.sh, through the wrapper
+  control: negative
+  timeout: 300
+  derived_from:
+  - path: manifests/filesystem_apt.pp
+    lines: 183-191
+    text: content => template('puppet_infrastructure/apt/apt-update-relevant.sh.erb'),
+  - path: templates/apt/apt-update-relevant.sh.erb
+    sha256: 0953a9fc34832eb2a15c3d1aa42ea2bf14428789054d249f910b4c32b65f3eb2
+  mutates: picks the first of wget, less, tzdata, curl, vim-tiny whose archive has an older version, downgrades it, writes
+    its name as the only line of /var/lib/apt-check-updates/list (as the daily job writes the list), runs apt-update-relevant.sh;
+    the package's versions go to /run/p8test-apt/relevant.vars
+  probe: |
+    install -d -m 0700 /run/p8test-apt
+    for p in wget less tzdata curl vim-tiny; do
+      cand=$(apt-cache policy "$p" | awk '/Candidate:/ {print $2}')
+      old=$(apt-cache madison "$p" | awk -F'|' '{gsub(/ /,"",$2); print $2}' | grep -v -x "$cand" | head -1)
+      [ -n "$old" ] && dpkg-query -W "$p" >/dev/null 2>&1 && break
+      old=""
+    done
+    [ -n "$old" ] || { echo "no package with an older archive version" > /run/p8test-apt/relevant.none; exit 0; }
+    DEBIAN_FRONTEND=noninteractive apt-get -qq -y --allow-downgrades install "$p=$old" >/dev/null 2>&1
+    printf '%s\n' "$p" > /var/lib/apt-check-updates/list
+    before=$(dpkg-query -W -f '${Version}' "$p")
+    out=$({{LOCALDIR}}/bin/apt-update-relevant.sh 2>&1)
+    printf '%s\n' "$out" | grep -q "^package $p updated to version $cand$" && reported=yes || reported=no
+    printf 'p=%s\ncand=%s\nold=%s\nbefore=%s\nreported=%s\n' "$p" "$cand" "$old" "$before" "$reported" > /run/p8test-apt/relevant.vars
+  effect: |
+    . /run/p8test-apt/relevant.vars
+    [ -n "$old" ] && [ "$before" = "$old" ] && echo "on the list one version behind"
+    [ "$(dpkg-query -W -f '${Version}' "$p")" = "$cand" ] && echo "upgraded to the candidate"
+    [ "$reported" = yes ] && echo "reported through the wrapper"
+  expect:
+    rc: 0
+    stdout: \Aon the list one version behind\nupgraded to the candidate\nreported through the wrapper\n\Z
+- id: the-surface-script-updates-an-outdated-surface-package
+  what: a surface-list package one version behind the archive (less, gzip or vim, downgraded first) is brought to the archive's
+    candidate by apt-update-surface.sh, through the wrapper
+  control: negative
+  timeout: 600
+  derived_from:
+  - path: manifests/filesystem_apt.pp
+    lines: 63-70
+    text: content => template('puppet_infrastructure/apt/apt-update-surface.sh.erb'),
+  - path: manifests/filesystem_apt.pp
+    lines: 33-41
+    text: '''coreutils'', ''gzip'', ''less'', ''multitail'','
+  mutates: picks the first of less, gzip, vim whose archive has an older version, downgrades it, then runs apt-update-surface.sh
+    (which updates every installed surface package that has an update); the package's versions go to /run/p8test-apt/surface.vars
+  probe: |
+    install -d -m 0700 /run/p8test-apt
+    for p in less gzip vim; do
+      cand=$(apt-cache policy "$p" | awk '/Candidate:/ {print $2}')
+      old=$(apt-cache madison "$p" | awk -F'|' '{gsub(/ /,"",$2); print $2}' | grep -v -x "$cand" | head -1)
+      [ -n "$old" ] && dpkg-query -W "$p" >/dev/null 2>&1 && break
+      old=""
+    done
+    [ -n "$old" ] || { echo "no surface package with an older archive version" > /run/p8test-apt/surface.none; exit 0; }
+    DEBIAN_FRONTEND=noninteractive apt-get -qq -y --allow-downgrades install "$p=$old" >/dev/null 2>&1
+    before=$(dpkg-query -W -f '${Version}' "$p")
+    out=$({{LOCALDIR}}/bin/apt-update-surface.sh 2>&1)
+    printf '%s\n' "$out" | grep -q "^package $p updated to version $cand$" && reported=yes || reported=no
+    printf 'p=%s\ncand=%s\nold=%s\nbefore=%s\nreported=%s\n' "$p" "$cand" "$old" "$before" "$reported" > /run/p8test-apt/surface.vars
+  effect: |
+    . /run/p8test-apt/surface.vars
+    [ -n "$old" ] && [ "$before" = "$old" ] && echo "surface package one version behind"
+    [ "$(dpkg-query -W -f '${Version}' "$p")" = "$cand" ] && echo "upgraded to the candidate"
+    [ "$reported" = yes ] && echo "reported through the wrapper"
+  expect:
+    rc: 0
+    stdout: \Asurface package one version behind\nupgraded to the candidate\nreported through the wrapper\n\Z
+- id: the-kernel-script-brings-the-kernel-metapackage-up-to-date
+  what: apt-update-kernel.sh finds the installed kernel metapackage and leaves it at the archive's candidate, exit 0
+  control: negative
+  timeout: 600
+  derived_from:
+  - path: manifests/filesystem_apt.pp
+    lines: 84-91
+    text: source  => 'puppet:///modules/puppet_infrastructure/apt/apt-update-kernel.sh',
+  - path: files/apt/apt-update-kernel.sh
+    sha256: 8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db
+  mutates: runs apt-update-kernel.sh on the node (an --only-upgrade install of the kernel metapackage, if newer); the result
+    goes to /run/p8test-apt/kernel.txt
+  probe: |
+    install -d -m 0700 /run/p8test-apt
+    {{LOCALDIR}}/bin/apt-update-kernel.sh >/dev/null 2>&1; echo "rc=$?" > /run/p8test-apt/kernel.txt
+  effect: |
+    cat /run/p8test-apt/kernel.txt
+    m=$(dpkg -l 'linux-image-*' | awk '/^ii/ && $2 !~ /-[0-9]+\.[0-9]+\.[0-9]/ {print $2}')
+    [ -n "$m" ] && [ "$(dpkg-query -W -f '${Version}' "$m")" = "$(apt-cache policy "$m" | awk '/Candidate:/ {print $2}')" ] && echo "metapackage at the candidate"
+  expect:
+    rc: 0
+    stdout: \Arc=0\nmetapackage at the candidate\n\Z
+- id: the-full-update-script-leaves-nothing-to-upgrade
+  what: apt-update-dist.sh runs a non-interactive dist-upgrade, after which nothing is left to upgrade
+  control: negative
+  timeout: 600
+  derived_from:
+  - path: manifests/filesystem_apt.pp
+    lines: 93-100
+    text: source  => 'puppet:///modules/puppet_infrastructure/apt/apt-update-dist.sh',
+  - path: files/apt/apt-update-dist.sh
+    sha256: c240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3
+  mutates: runs apt-update-dist.sh on the node (apt-get dist-upgrade -y, keeping changed configuration files); the result
+    goes to /run/p8test-apt/dist.txt
+  probe: |
+    install -d -m 0700 /run/p8test-apt
+    {{LOCALDIR}}/bin/apt-update-dist.sh >/dev/null 2>&1; echo "rc=$?" > /run/p8test-apt/dist.txt
+  effect: "cat /run/p8test-apt/dist.txt\napt-get -s dist-upgrade | grep -E '^[0-9]+ upgraded' \n"
+  expect:
+    rc: 0
+    stdout: \Arc=0\n0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded\.\n\Z
+- id: the-desktop-surface-list-and-link
+  variant: desktop
+  what: with server_mode false the surface script lists the desktop packages (firefox, not nginx-core or postfix), and apt-update-surface-desktop.sh
+    links to apt-update-surface.sh
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_apt.pp
+    lines: 52-58
+    text: $_apt_surface_list = join($apt_surface_desktop, " ")
+  - path: manifests/filesystem_apt.pp
+    lines: 72-82
+    text: if ( ! $server_mode ) {
+  - path: templates/apt/apt-update-surface.sh.erb
+    lines: '5'
+    text: SURFACE="<%= @_apt_surface_list %>"
+  probe: |
+    b={{LOCALDIR}}/bin
+    sed -n 's/^SURFACE="\(.*\)"$/\1/p' $b/apt-update-surface.sh | tr ' ' '\n' | grep -cxE 'firefox|nginx-core|postfix' | sed 's/^/listed of firefox, nginx-core, postfix: /'
+    sed -n 's/^SURFACE="\(.*\)"$/\1/p' $b/apt-update-surface.sh | tr ' ' '\n' | grep -x firefox
+    readlink $b/apt-update-surface-desktop.sh
+  expect:
+    rc: 0
+    stdout: '\Alisted of firefox, nginx-core, postfix: 1\nfirefox\n{{LOCALDIR}}/bin/apt-update-surface\.sh\n\Z'
+- id: method-0-installs-no-relevant-updates-script
+  variant: method0
+  what: with relevant_updates_method 0 the class is applied (the surface script is installed) but installs neither the relevant-updates
+    script nor apt-check-updates.sh
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_apt.pp
+    lines: 113-116
+    text: if ($relevant_updates_method == 0) {
+  probe: |
+    b={{LOCALDIR}}/bin
+    test -x $b/apt-update-surface.sh && echo "surface script installed"
+    for f in get-relevant-updates-list apt-check-updates.sh; do test -e $b/$f && echo "$f present" || echo "$f absent"; done
+  expect:
+    rc: 0
+    stdout: \Asurface script installed\nget-relevant-updates-list absent\napt-check-updates\.sh absent\n\Z
+- id: no-kernel-and-a-custom-surface-list
+  variant: custom
+  what: with relevant_updates_no_kernel true the daily job's script sets NO_KERNEL=1 (it passes --no-kernel), and with a custom
+    apt_surface_list the surface script lists exactly the given packages
+  control: negative
+  derived_from:
+  - path: manifests/filesystem_apt.pp
+    lines: 139-144
+    text: $apt_check_updates_no_kernel = 1
+  - path: templates/apt/apt-check-updates-v2.sh.erb
+    lines: '24'
+    text: NO_KERNEL="<%= @apt_check_updates_no_kernel %>"
+  - path: manifests/filesystem_apt.pp
+    lines: 59-61
+    text: $_apt_surface_list = $apt_surface_list
+  probe: |
+    b={{LOCALDIR}}/bin
+    grep -E '^NO_KERNEL=' $b/apt-check-updates.sh
+    sed -n 's/^SURFACE=//p' $b/apt-update-surface.sh
+  expect:
+    rc: 0
+    stdout: \ANO_KERNEL="1"\n"vim less"\n\Z
+- id: the-no-kernel-job-lists-no-kernel-package
+  variant: nokernel
+  what: with relevant_updates_no_kernel true, the installed daily job, run as the cron runs it (traced with sh -x), hands
+    --no-kernel to get-relevant-updates-list; and that installed tool, given an OVAL results file (a p8test fixture written
+    by the probe) in which a High issue involves linux-image-p8test, intel-microcode and p8test-tool, lists all three without
+    --no-kernel and only p8test-tool with it
+  control: negative
+  timeout: 600
+  derived_from:
+  - path: manifests/filesystem_apt.pp
+    lines: 139-144
+    text: $apt_check_updates_no_kernel = 1
+  - path: templates/apt/apt-check-updates-v2.sh.erb
+    lines: 103-104
+    text: NO_KERNEL_OPT='--no-kernel'
+  - path: templates/apt/apt-check-updates-v2.sh.erb
+    lines: '110'
+    text: -pt ${PRIO_THRESHOLD} -dp ${DEFAULT_PRIO} ${NO_KERNEL_OPT}"
+  - path: files/apt/get-relevant-updates-list
+    lines: 10-13
+    text: return (bin_pkg_name.startswith('linux') or
+  - path: files/apt/get-relevant-updates-list
+    lines: 236-238
+    text: 'if no_kernel_updates and is_kernel_package(bin_pkg_name):'
+  mutates: runs {{LOCALDIR}}/bin/apt-check-updates.sh High under sh -x (downloads the release's OVAL file into a temporary
+    directory, writes /var/lib/apt-check-updates/list), its trace and exit code kept under /run/p8test-apt; writes the fixture
+    results file there and runs get-relevant-updates-list on it twice, its lists kept there too
+  probe: |
+    install -d -m 0700 /run/p8test-apt
+    sh -x {{LOCALDIR}}/bin/apt-check-updates.sh High > /dev/null 2> /run/p8test-apt/job-trace.txt; echo "job rc=$?" > /run/p8test-apt/nk.txt
+    cat > /run/p8test-apt/fixture.xccdf <<'X'
+    <root>
+      <oval_definitions><definitions>
+        <definition id="p8test:def:1"><metadata><advisory><severity>High</severity></advisory></metadata><criteria/></definition>
+      </definitions></oval_definitions>
+      <results><system>
+        <definitions>
+          <definition definition_id="p8test:def:1" result="true"><criteria result="true"><criterion test_ref="p8test:tst:1" result="true"/></criteria></definition>
+        </definitions>
+        <tests/>
+        <oval_system_characteristics>
+          <collected_objects>
+            <object id="p8test:obj:1"><variable_value>linux-image-p8test</variable_value><variable_value>intel-microcode</variable_value><variable_value>p8test-tool</variable_value></object>
+          </collected_objects>
+          <system_data>
+            <dpkginfo_item><name>linux-image-p8test</name></dpkginfo_item>
+            <dpkginfo_item><name>intel-microcode</name></dpkginfo_item>
+            <dpkginfo_item><name>p8test-tool</name></dpkginfo_item>
+          </system_data>
+        </oval_system_characteristics>
+      </system></results>
+    </root>
+    X
+    g={{LOCALDIR}}/bin/get-relevant-updates-list
+    $g -q -if /run/p8test-apt/fixture.xccdf -of /run/p8test-apt/without.txt -pt High -dp High; echo "without rc=$?" >> /run/p8test-apt/nk.txt
+    $g -q -if /run/p8test-apt/fixture.xccdf -of /run/p8test-apt/with.txt -pt High -dp High --no-kernel; echo "with rc=$?" >> /run/p8test-apt/nk.txt
+  effect: |
+    cat /run/p8test-apt/nk.txt
+    echo "the job passes --no-kernel: $(p8_count '^\+ {{LOCALDIR}}/bin/get-relevant-updates-list .* --no-kernel$' /run/p8test-apt/job-trace.txt)"
+    echo "without --no-kernel: $(sort /run/p8test-apt/without.txt | tr '\n' ' ')"
+    echo "with --no-kernel: $(sort /run/p8test-apt/with.txt | tr '\n' ' ')"
+  expect:
+    rc: 0
+    stdout: '\Ajob rc=0\nwithout rc=0\nwith rc=0\nthe job passes --no-kernel: 1\nwithout --no-kernel: intel-microcode linux-image-p8test
+      p8test-tool \nwith --no-kernel: p8test-tool \n\Z'
+apply:
+  resource_type: class
+  node: ubuntu
+  catalog:
+    Debian:
+    - class: filesystem_base
+    - class: packages_base
+    - class: filesystem_apt

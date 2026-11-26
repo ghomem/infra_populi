@@ -1,0 +1,171 @@
+class: mount_shares_desktop
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+peer:
+  kind: ubuntu2
+  why: the generated mount script mounts a CIFS share from a server, so a second machine must serve one
+purpose: Gives a desktop user two scripts on their Desktop that mount and unmount their network (CIFS) shares under /tmp with
+  their own credentials, asking for the password when it is not given, and optionally open them in the file manager or link
+  them.
+outcomes:
+- outcome: the mount and unmount scripts are on the user's Desktop, root-owned and executable, rendered with the shares and
+    options
+  from: manifests/mount_shares_desktop.pp:5-23
+  checks:
+  - scripts-on-the-desktop-root-owned-executable
+  - scripts-render-the-share-and-options
+- outcome: run as the user with the right password, the mount script mounts the share, private to the user, with the server's
+    files readable; a wrong password mounts nothing and fails
+  from: templates/shares/shares.sh.erb:1-165
+  checks:
+  - the-server-serves-the-test-share
+  - the-mount-script-mounts-the-share
+  - a-wrong-password-does-not-mount
+- outcome: the unmount script unmounts the shares it lists
+  from: templates/shares/unmount-shares.sh.erb:1-15
+  checks:
+  - the-unmount-script-unmounts-it
+- outcome: the password asked in a kdialog box, the file manager opened on the mount (explorer), symlinks and the cache/delay
+    options
+  from: manifests/mount_shares_desktop.pp:5
+  uncovered:
+    why: the dialog needs input to a desktop session; the explorer (dolphin, the class's default) is on the kubuntu kind,
+      not on this class's plan node gnome, and a set is judged on its plan node only; symlinks, cache and delay are parameter
+      variants
+    lifted_by: 'capability: a phase3 set for a node kind other than the class''s plan node (kubuntu), input to a desktop session,
+      and more than one params fixture per set'
+    evidence: the fixture sets explorer False and passes the password in $PASSWORD (the script asks kdialog only when it is
+      empty); {{SITE:engine-runner}} applies one `fixture` on the plan's node (gnome, no dolphin) and sends no desktop input
+checks:
+- id: scripts-on-the-desktop-root-owned-executable
+  what: the mount and unmount scripts are in the user's Desktop, root:root 0755
+  control: negative
+  derived_from:
+  - path: manifests/mount_shares_desktop.pp
+    lines: 7-12
+    text: $desktop_dir = "/home/${myusername}/Desktop"
+  - path: manifests/mount_shares_desktop.pp
+    lines: 16-19
+    text: 'file { "${desktop_dir}/shares${suffix}-unmount.sh":'
+  probe: |
+    stat -c '%U %G %a %n' /home/p8testuser/Desktop/shares-mount.sh /home/p8testuser/Desktop/shares-unmount.sh
+  expect:
+    rc: 0
+    stdout: \Aroot root 755 /home/p8testuser/Desktop/shares-mount\.sh\nroot root 755 /home/p8testuser/Desktop/shares-unmount\.sh\n\Z
+- id: scripts-render-the-share-and-options
+  what: the mount script mounts the fixture's share with its CIFS version as $USER (auth_user default), with the explorer
+    off; the unmount script unmounts the same share
+  control: negative
+  derived_from:
+  - path: templates/shares/shares.sh.erb
+    lines: '9'
+    text: USERNAME=<%= @auth_user %>
+  - path: templates/shares/shares.sh.erb
+    lines: 153-157
+    text: mountshare $SERVER $SHARENAME $USERNAME "" true "$DOMAIN" $CIFSVERSION
+  - path: templates/shares/unmount-shares.sh.erb
+    lines: 10-12
+    text: $SUDO umount $MDIR/<%=share['share_name']%>
+  probe: |
+    m=/home/p8testuser/Desktop/shares-mount.sh; u=/home/p8testuser/Desktop/shares-unmount.sh
+    grep -c -x 'USERNAME=\$USER' $m
+    grep -c -x 'SHARENAME=p8share' $m
+    grep -c -x 'CIFSVERSION="3.0"' $m
+    grep -c -x 'mountshare \$SERVER \$SHARENAME \$USERNAME "" true "\$DOMAIN" \$CIFSVERSION' $m
+    grep -c -x 'EXPLORER="False"' $m
+    grep -c -x '\$SUDO umount \$MDIR/p8share' $u
+  expect:
+    rc: 0
+    stdout: \A1\n1\n1\n1\n1\n1\n\Z
+- id: the-server-serves-the-test-share
+  what: the peer serves the CIFS share p8share to the account p8testuser (setup for the mount checks)
+  control: negative
+  host: peer
+  derived_from:
+  - path: templates/shares/shares.sh.erb
+    lines: 153-157
+    text: SERVER=<%=share['share_server']%>
+  mutates: 'on the peer: installs samba, creates the local account p8testuser (no login shell) with the fake Samba password
+    p8test-share-not-a-secret, adds a read-only share [p8share] at /srv/p8share holding p8test-share.txt, restarts smbd'
+  probe: |
+    DEBIAN_FRONTEND=noninteractive apt-get -qq -y install samba >/dev/null 2>&1
+    id p8testuser >/dev/null 2>&1 || useradd -M -s /usr/sbin/nologin p8testuser
+    printf 'p8test-share-not-a-secret\np8test-share-not-a-secret\n' | smbpasswd -a -s p8testuser >/dev/null
+    install -d -m 0755 /srv/p8share && echo 'p8test share content' > /srv/p8share/p8test-share.txt
+    grep -q '^\[p8share\]' /etc/samba/smb.conf || printf '\n[p8share]\n   path = /srv/p8share\n   read only = yes\n   valid users = p8testuser\n' >> /etc/samba/smb.conf
+    systemctl restart smbd
+  effect: |
+    testparm -s 2>/dev/null | grep -c -x '\[p8share\]'
+    systemctl is-active smbd
+  expect:
+    rc: 0
+    stdout: \A1\nactive\n\Z
+- id: a-wrong-password-does-not-mount
+  what: run with a wrong password, the mount script reports the failed mount, exits 1 and leaves nothing mounted
+  control: negative
+  derived_from:
+  - path: templates/shares/shares.sh.erb
+    lines: 125-131
+    text: echo "Problem mounting //$SERVER/$SHARE on $TDIR."
+  mutates: 'installs cifs-utils (mount.cifs, which desktop installs carry); adds the fixture sudoers drop-in /etc/sudoers.d/p8test-shares
+    (0440) letting p8testuser run exactly the template''s sudo commands (mount.cifs, umount) without a password, as a desktop
+    user''s own sudo rights would; runs the mount script as p8testuser with a wrong $PASSWORD; output in /tmp/p8test-mount-bad.out
+    (its kdialog error dialog fails: no kdialog on GNOME)'
+  probe: |
+    DEBIAN_FRONTEND=noninteractive apt-get -qq -y install cifs-utils >/dev/null 2>&1
+    printf 'p8testuser ALL=(root) NOPASSWD: /sbin/mount.cifs, /usr/sbin/mount.cifs, /bin/umount, /usr/bin/umount\n' > /etc/sudoers.d/p8test-shares; chmod 0440 /etc/sudoers.d/p8test-shares
+    cd /tmp && runuser -u p8testuser -- env USER=p8testuser PASSWORD=p8test-wrong-password bash /home/p8testuser/Desktop/shares-mount.sh > /tmp/p8test-mount-bad.out 2>&1; echo "rc $?" >> /tmp/p8test-mount-bad.out
+  effect: |
+    grep -c 'Problem mounting //.*/p8share on /tmp/p8testuser/mnt-manual/p8share\.' /tmp/p8test-mount-bad.out
+    tail -1 /tmp/p8test-mount-bad.out
+    findmnt -n /tmp/p8testuser/mnt-manual/p8share >/dev/null || echo not-mounted
+  expect:
+    rc: 0
+    stdout: \A1\nrc 1\nnot-mounted\n\Z
+- id: the-mount-script-mounts-the-share
+  what: run by the user with the right password, the mount script mounts the share as CIFS under /tmp/<user>/mnt-manual, a
+    directory the user owns (0700); the user reads the server's file there, and another account (nobody) cannot
+  control: negative
+  derived_from:
+  - path: templates/shares/shares.sh.erb
+    lines: '8'
+    text: MDIR="/tmp/$USER/mnt-manual"
+  - path: templates/shares/shares.sh.erb
+    lines: '125'
+    text: $SUDO /sbin/mount.cifs "//$SERVER/$SHARE" "$TDIR"
+  mutates: runs the mount script as p8testuser with the right $PASSWORD (its sudo mounts the share; sudo logs to the journal
+    and /var/log/auth.log); output in /tmp/p8test-mount.out
+  probe: |
+    cd /tmp && runuser -u p8testuser -- env USER=p8testuser PASSWORD=p8test-share-not-a-secret bash /home/p8testuser/Desktop/shares-mount.sh > /tmp/p8test-mount.out 2>&1; echo "rc $?" >> /tmp/p8test-mount.out
+  effect: |
+    tail -1 /tmp/p8test-mount.out
+    findmnt -n -o FSTYPE /tmp/p8testuser/mnt-manual/p8share
+    stat -c '%U %a' /tmp/p8testuser/mnt-manual
+    runuser -u p8testuser -- cat /tmp/p8testuser/mnt-manual/p8share/p8test-share.txt
+    runuser -u nobody -- cat /tmp/p8testuser/mnt-manual/p8share/p8test-share.txt 2>&1 | p8_count 'Permission denied'
+  expect:
+    rc: 0
+    stdout: \Arc 0\ncifs\np8testuser 700\np8test share content\n1\n\Z
+- id: the-unmount-script-unmounts-it
+  what: the unmount script unmounts the share it lists (its closing kdialog message fails on GNOME; the unmount is the behaviour)
+  control: negative
+  derived_from:
+  - path: templates/shares/unmount-shares.sh.erb
+    lines: 5-12
+    text: $SUDO umount $MDIR/<%=share['share_name']%>
+  mutates: runs the unmount script as p8testuser (its sudo unmounts the share; sudo logs to the journal and /var/log/auth.log)
+  probe: |
+    cd /tmp && runuser -u p8testuser -- env USER=p8testuser bash /home/p8testuser/Desktop/shares-unmount.sh >/dev/null 2>&1 || true
+  effect: |
+    test -d /tmp/p8testuser/mnt-manual/p8share && ! findmnt -n /tmp/p8testuser/mnt-manual/p8share >/dev/null && echo unmounted
+  expect:
+    rc: 0
+    stdout: \Aunmounted\n\Z
+apply:
+  resource_type: define
+  node: gnome
+  title: p8testuser
+  catalog:
+    Debian:
+    - class: mount_shares_desktop
+  node_fixture: p8test_desktop_login

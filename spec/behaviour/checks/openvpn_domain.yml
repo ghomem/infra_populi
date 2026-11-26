@@ -1,0 +1,258 @@
+class: openvpn_domain
+baseline: release-0.9.10 (cf477c6)
+fixture: params
+peer:
+  kind: dc
+  why: the class joins the node to an Active Directory domain, so a domain controller must serve that domain
+purpose: 'Joins an OpenVPN server''s node to the Windows (Active Directory) domain so that domain accounts in the listed groups
+  can log in to the VPN with their domain password: Samba/winbind and Kerberos configured as a domain member, the node joined
+  once, domain users and groups resolved through nsswitch, and pam_winbind restricted to the listed groups. openvpn_server''s
+  PAM plugin authenticates through the login service, whose common stacks reach pam_winbind.'
+outcomes:
+- outcome: the node is configured as a member of the domain and joined (its machine account works and the DC holds it)
+  from: manifests/openvpn_domain.pp:22-91; templates/openvpn/smb.conf.erb; templates/openvpn/join-domain.sh.erb
+  checks:
+  - smb-conf-joins-as-a-domain-member
+  - the-node-is-joined-to-the-domain
+  - the-dc-holds-the-node-machine-account
+- outcome: domain users and groups resolve on the node through nsswitch and winbind
+  from: manifests/openvpn_domain.pp:49-56; files/openvpn/nsswitch.conf
+  checks:
+  - domain-users-and-groups-resolve-through-winbind
+- outcome: pam_winbind requires membership of the listed groups, and the openvpn PAM file is installed
+  from: manifests/openvpn_domain.pp:14-15, 31-38, 58-65
+  checks:
+  - pam-winbind-requires-the-group-and-openvpn-pam-installed
+- outcome: a domain user in a listed group logs in through PAM (login, the service openvpn_server's plugin uses) with the
+    domain password, with the domain prefix and by the bare name (winbind use default domain); a wrong password and a domain
+    user outside the listed groups are refused
+  from: manifests/openvpn_domain.pp:14-15, 31-38; templates/openvpn/pam_winbind.conf.erb:30; templates/openvpn/smb.conf.erb:19;
+    manifests/openvpn_server.pp:169
+  checks:
+  - domain-users-for-the-login-checks
+  - pam-logins-through-winbind
+- outcome: 'Kerberos: the default realm is the domain''s realm (the NetBIOS name and the tld, upper-case as AD realms are),
+    and the only realm stanza is the template''s literal DOMAIN.LOCAL, so a Kerberos client finds the DC''s KDC through DNS;
+    kinit for a domain user without naming a realm gets a ticket, also with a lowercase tld parameter. Nothing in the class''s
+    login path uses Kerberos (security = domain joins over RPC; pam_winbind''s krb5_auth stays off); the [logging] section
+    is read by a KDC, which the node does not run'
+  from: manifests/openvpn_domain.pp:40-47; templates/openvpn/krb5.conf.erb:1-18; templates/openvpn/pam_winbind.conf.erb:21
+  checks:
+  - kerberos-realms-against-the-dc
+- outcome: 'host names also resolve through NetBIOS/WINS (nsswitch''s hosts line ends in wins; smb.conf names the DC as the
+    WINS server): the DC''s NetBIOS name resolves through the wins source to the address DNS gives its FQDN, and an unknown
+    name does not'
+  from: files/openvpn/nsswitch.conf:13-14; templates/openvpn/smb.conf.erb:8
+  checks:
+  - the-dc-name-resolves-through-wins
+checks:
+- id: smb-conf-joins-as-a-domain-member
+  what: smb.conf makes the node a member of P8TEST (security = domain, realm, WINS server name) under its own NetBIOS name,
+    the node's host name (empty on Puppet 8 without the structured-fact fix)
+  control: negative
+  derived_from:
+  - path: templates/openvpn/smb.conf.erb
+    lines: 4-8
+    text: netbios name = <%= @hostname %>
+  - path: templates/openvpn/smb.conf.erb
+    lines: '8'
+    text: wins server = <%= @domain_hostname %>.<%= @domain_netbios_name %>.<%= @domain_tld %>
+  probe: |
+    grep -E '^(security|netbios name|realm|wins server|workgroup|winbind separator) = ' /etc/samba/smb.conf
+  expect:
+    rc: 0
+    stdout: \Asecurity = domain\nnetbios name = {{NODE_NAME}}\nrealm = P8TEST\.example\nwins server = {{PEER_NAME}}\.P8TEST\.example\nworkgroup
+      = P8TEST\nwinbind separator = \+\n\Z
+- id: the-node-is-joined-to-the-domain
+  what: the machine account works (net rpc testjoin succeeds for the workgroup)
+  control: negative
+  derived_from:
+  - path: manifests/openvpn_domain.pp
+    lines: 86-88
+    text: 'exec { ''join domain'':'
+  - path: templates/openvpn/join-domain.sh.erb
+    sha256: 44727c6b39ee6abf83293f3015f0f7ba04d0b7aabafec684b26eeab389954eea
+  probe: |
+    net rpc testjoin 2>&1 | tail -1
+  mismatch:
+    varies: the workgroup (P8NOPE, a domain that does not exist), so the join test must fail
+    probe: |
+      net rpc testjoin -w P8NOPE 2>&1 | tail -1
+  expect:
+    rc: 0
+    stdout: Join to 'P8TEST' is OK
+- id: domain-users-and-groups-resolve-through-winbind
+  what: through nsswitch and winbind the join user resolves as a domain user in the required group
+  control: negative
+  derived_from:
+  - path: manifests/openvpn_domain.pp
+    lines: '88'
+    text: unless  => "id ${join_user}@${domain_netbios_name}.${domain_tld}",
+  - path: files/openvpn/nsswitch.conf
+    sha256: 300e2c53d0076734999257ceb0cb7ca9c20f0912b21c512e5360bdbd2b98dbcb
+  probe: |
+    id -nG p8testuser@P8TEST.example | grep -o -w -e 'domain users' -e p8testgroup | sort
+  mismatch:
+    varies: the user (p8nouser, no such domain account), so winbind must not resolve it
+    probe: |
+      id -nG p8nouser@P8TEST.example | grep -o -w -e 'domain users' -e p8testgroup | sort
+  expect:
+    rc: 0
+    stdout: \Adomain users\np8testgroup\n\Z
+- id: pam-winbind-requires-the-group-and-openvpn-pam-installed
+  what: pam_winbind requires membership of P8TEST+p8testgroup; /etc/pam.d/openvpn is the module's file byte for byte
+  control: negative
+  derived_from:
+  - path: manifests/openvpn_domain.pp
+    lines: 14-15
+    text: $prefixed_groups        = $groups.map | $group | { "${domain_netbios_name}${winbind_separator}${group}" }
+  - path: templates/openvpn/pam_winbind.conf.erb
+    lines: '30'
+    text: require_membership_of = <%= @comma_separated_groups %>
+  - path: files/openvpn/openvpn_pam
+    sha256: e664b2eb0c148c0c6765e30f2ff4e09ee24d111406efb86dfa60ffe1e47e2b51
+  probe: |
+    grep -x 'require_membership_of = P8TEST+p8testgroup' /etc/security/pam_winbind.conf
+    sha256sum /etc/pam.d/openvpn | cut -d' ' -f1
+  expect:
+    rc: 0
+    stdout: \Arequire_membership_of = P8TEST\+p8testgroup\ne664b2eb0c148c0c6765e30f2ff4e09ee24d111406efb86dfa60ffe1e47e2b51\n\Z
+- id: the-dc-holds-the-node-machine-account
+  what: the domain controller now lists the node's machine account (the join happened on the DC's side too)
+  control: negative
+  host: peer
+  derived_from:
+  - path: templates/openvpn/join-domain.sh.erb
+    sha256: 44727c6b39ee6abf83293f3015f0f7ba04d0b7aabafec684b26eeab389954eea
+  probe: |
+    samba-tool computer list | grep -c -x 'PUPPET8NODE\$'
+  expect:
+    rc: 0
+    stdout: \A1\n\Z
+- id: domain-users-for-the-login-checks
+  what: setup for the login checks, two domain users on the DC, p8testvpnin in p8testgroup and p8testvpnout in no listed group
+  control: negative
+  host: peer
+  derived_from:
+  - path: templates/openvpn/pam_winbind.conf.erb
+    lines: '30'
+    text: require_membership_of = <%= @comma_separated_groups %>
+  mutates: creates the domain users p8testvpnin (password P8test-vpn-in-not-a-secret1) and p8testvpnout (password P8test-vpn-out-not-a-secret1)
+    in the DC's directory and adds p8testvpnin to p8testgroup
+  probe: |
+    set -e
+    samba-tool user create p8testvpnin 'P8test-vpn-in-not-a-secret1' >/dev/null
+    samba-tool user create p8testvpnout 'P8test-vpn-out-not-a-secret1' >/dev/null
+    samba-tool group addmembers p8testgroup p8testvpnin >/dev/null
+  effect: |
+    samba-tool group listmembers p8testgroup | grep -x -e p8testvpnin -e p8testvpnout | sort
+    samba-tool user list | grep -x -e p8testvpnin -e p8testvpnout | sort
+  expect:
+    rc: 0
+    stdout: \Ap8testvpnin\np8testvpnin\np8testvpnout\n\Z
+- id: pam-logins-through-winbind
+  what: 'through the login PAM service (auth and account stacks): p8testvpnin with its domain password is accepted; the same
+    user with a wrong password and p8testvpnout (not in p8testgroup) with its right password are refused, while the DC itself
+    accepts p8testvpnout''s password (wbinfo -a, no membership rule): the refusal is the membership rule. By the bare name
+    (no domain prefix, the name a VPN user types; winbind use default domain), the member resolves with its group and logs
+    in, and the outsider is refused'
+  control: negative
+  timeout: 300
+  derived_from:
+  - path: manifests/openvpn_domain.pp
+    lines: 31-38
+    text: content => template('puppet_infrastructure/openvpn/pam_winbind.conf.erb'),
+  - path: templates/openvpn/pam_winbind.conf.erb
+    lines: '30'
+    text: require_membership_of = <%= @comma_separated_groups %>
+  - path: manifests/openvpn_server.pp
+    lines: '169'
+    text: pam                      => true,
+  - path: templates/openvpn/smb.conf.erb
+    lines: '19'
+    text: winbind use default domain = yes
+  mutates: installs pamtester if absent; runs five PAM logins through the login service (winbind and the system log record
+    them, the DC counts the wrong password once against p8testvpnin) and one direct winbind authentication of p8testvpnout
+    (wbinfo -a); the outcomes go to /run/p8test-pam/logins.txt
+  probe: |
+    command -v pamtester >/dev/null || DEBIAN_FRONTEND=noninteractive apt-get -qq -y install pamtester >/dev/null 2>&1
+    install -d -m 0700 /run/p8test-pam
+    try() { printf '%s\n' "$3" | pamtester login "$2" authenticate acct_mgmt >/dev/null 2>&1; echo "$1 rc=$?"; }
+    { try member-right 'P8TEST+p8testvpnin' 'P8test-vpn-in-not-a-secret1'
+      try member-wrong 'P8TEST+p8testvpnin' 'P8test-wrong-password1'
+      try outsider-right 'P8TEST+p8testvpnout' 'P8test-vpn-out-not-a-secret1'
+      try member-bare p8testvpnin 'P8test-vpn-in-not-a-secret1'
+      try outsider-bare p8testvpnout 'P8test-vpn-out-not-a-secret1'
+      id -nG p8testvpnin 2>&1 | grep -o -w p8testgroup | sed 's/^/bare name in group: /'
+      wbinfo -a 'P8TEST+p8testvpnout%P8test-vpn-out-not-a-secret1' 2>&1 | grep -o 'plaintext password authentication [a-z]*' | sed 's/^/outsider at the DC: /'; } > /run/p8test-pam/logins.txt
+  effect: |
+    cat /run/p8test-pam/logins.txt
+  expect:
+    rc: 0
+    stdout: '\Amember-right rc=0\nmember-wrong rc=[1-9][0-9]*\noutsider-right rc=[1-9][0-9]*\nmember-bare rc=0\noutsider-bare
+      rc=[1-9][0-9]*\nbare name in group: p8testgroup\noutsider at the DC: plaintext password authentication succeeded\n\Z'
+- id: kerberos-realms-against-the-dc
+  what: krb5.conf's default realm is the domain's realm in upper case (P8TEST.EXAMPLE, from the lowercase-tld fixture); kinit
+    for p8testvpnin without naming a realm gets a ticket for P8TEST.EXAMPLE, as does kinit naming it (KDC through DNS)
+  control: negative
+  timeout: 180
+  derived_from:
+  - path: templates/openvpn/krb5.conf.erb
+    lines: '6'
+    text: default_realm = <%= @domain_netbios_name %>.<%= @domain_tld %>
+  - path: templates/openvpn/krb5.conf.erb
+    lines: 8-14
+    text: DOMAIN.LOCAL = {
+  - path: manifests/openvpn_domain.pp
+    lines: 40-47
+    text: content => template('puppet_infrastructure/openvpn/krb5.conf.erb'),
+  mutates: asks the DC for two tickets for p8testvpnin (kinit, the DC logs both) into the credential cache /run/p8test-krb5/cc,
+    which is destroyed after each; the outcomes go to /run/p8test-krb5/kinit.txt
+  probe: |
+    install -d -m 0700 /run/p8test-krb5
+    { grep -E '^\s*default_realm' /etc/krb5.conf | sed 's/^ *//'
+      printf '%s\n' 'P8test-vpn-in-not-a-secret1' | timeout 60 kinit -c FILE:/run/p8test-krb5/cc p8testvpnin >/dev/null 2>&1; echo "default realm rc=$?"
+      klist -c FILE:/run/p8test-krb5/cc 2>/dev/null | grep -o 'Default principal: .*'
+      kdestroy -c FILE:/run/p8test-krb5/cc 2>/dev/null
+      printf '%s\n' 'P8test-vpn-in-not-a-secret1' | timeout 60 kinit -c FILE:/run/p8test-krb5/cc p8testvpnin@P8TEST.EXAMPLE >/dev/null 2>&1; echo "dc realm rc=$?"
+      kdestroy -c FILE:/run/p8test-krb5/cc 2>/dev/null; } > /run/p8test-krb5/kinit.txt
+  effect: |
+    cat /run/p8test-krb5/kinit.txt
+  expect:
+    rc: 0
+    stdout: '\Adefault_realm = P8TEST\.EXAMPLE\ndefault realm rc=0\nDefault principal: p8testvpnin@P8TEST\.EXAMPLE\ndc realm
+      rc=0\n\Z'
+- id: the-dc-name-resolves-through-wins
+  what: through nsswitch's wins source (libnss_wins, smb.conf's WINS server and broadcast) the NetBIOS name of the WINS server
+    smb.conf names (the DC, {{NODE:dc}}) resolves, to the same address DNS gives its FQDN (read from smb.conf, so the probe
+    reaches the DC only through what the class configures)
+  control: negative
+  derived_from:
+  - path: files/openvpn/nsswitch.conf
+    lines: 13-14
+    text: 'hosts:          files mdns4_minimal [NOTFOUND=return] dns mdns4 wins'
+  - path: templates/openvpn/smb.conf.erb
+    lines: '8'
+    text: wins server = <%= @domain_hostname %>.<%= @domain_netbios_name %>.<%= @domain_tld %>
+  probe: |
+    fqdn=$(sed -n 's/^[[:space:]]*wins server = //p' /etc/samba/smb.conf)
+    w=$(timeout 60 getent -s wins hosts "${fqdn%%.*}" | awk '{print $1}')
+    d=$(getent -s dns hosts "$fqdn" | awk '{print $1}')
+    [ -n "$fqdn" ] && [ -n "$w" ] && [ "$w" = "$d" ] && echo "the WINS server's name resolves through wins to its DNS address"
+  mismatch:
+    varies: the name (p8nohost, which no machine holds), so WINS must not resolve it
+    probe: |
+      fqdn=$(sed -n 's/^[[:space:]]*wins server = //p' /etc/samba/smb.conf)
+      w=$(timeout 60 getent -s wins hosts p8nohost | awk '{print $1}')
+      d=$(getent -s dns hosts "$fqdn" | awk '{print $1}')
+      [ -n "$fqdn" ] && [ -n "$w" ] && [ "$w" = "$d" ] && echo "the WINS server's name resolves through wins to its DNS address"
+  expect:
+    rc: 0
+    stdout: \Athe WINS server's name resolves through wins to its DNS address\n\Z
+apply:
+  resource_type: class
+  node: ubuntu
+  catalog:
+    Debian:
+    - class: openvpn_domain
+  node_fixture: p8test_domain_dns

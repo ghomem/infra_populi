@@ -75,10 +75,12 @@ def local_changes(path: Path = LOCAL_CHANGES) -> dict[str, list[tuple[str, str]]
 
 
 def set_of(cls: str) -> dict:
-    path = phase3.phase3_dir() / f"{cls}.yml"
+    """The class's set as the engine reads it (the public template rendered with the lab's values), or {}."""
+    if not phase3.set_path(cls).is_file():
+        return {}
     try:
-        data = yaml.safe_load(path.read_bytes()) if path.is_file() else None
-    except yaml.YAMLError:
+        data, _ = phase3.load_set(cls)
+    except (SystemExit, yaml.YAMLError):
         data = None
     return data if isinstance(data, dict) else {}
 
