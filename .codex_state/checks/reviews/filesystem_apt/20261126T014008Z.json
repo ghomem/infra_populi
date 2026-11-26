@@ -1,0 +1,38 @@
+{
+ "class": "filesystem_apt",
+ "at": "20261126T014008Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "the-desktop-surface-list-and-link @ manifests/filesystem_apt.pp:72-82: with server_mode false (desktop params fixture) the baseline declares apt-update-surface-desktop.sh as ensure link, target ${localdir}/bin/apt-update-surface.sh; the probe's readlink expects exactly /opt/puppet-infrastructure/bin/apt-update-surface.sh",
+  "the-desktop-surface-list-and-link @ manifests/filesystem_apt.pp:52-58: with an empty apt_surface_list and server_mode false the baseline renders join($apt_surface_desktop, ' '), which holds firefox (firefox-locale-en is not an exact match) and neither nginx-core nor postfix, so the exact-word count of firefox|nginx-core|postfix is 1 and firefox is listed, as expected",
+  "helper-scripts-installed @ manifests/filesystem_apt.pp:178-191: the baseline declares $update_cache_dir (/var/lib/apt-check-updates, line 107) as a directory mode 0755 and apt-update-relevant.sh as root:root 0755 from its template; the probe's stat expects 'apt-update-relevant.sh root 755' and '/var/lib/apt-check-updates 755'",
+  "finding the-full-update-script-leaves-nothing-to-upgrade: the action (apt-update-dist.sh, apt-get dist-upgrade -y on the freshly reverted node) hit the 600s probe timeout (rc 124) and never wrote /run/p8test-apt/dist.txt; the effect then saw '201 upgraded, 20 newly installed, 0 to remove and 0 not upgraded.' instead of 'rc=0' and '0 upgraded ...' (the clean phase showed 255 upgraded / 27 new pending); the dist-upgrade of the snapshot's backlog does not finish in 600s, an environment/timeout issue, not a class defect",
+  "purpose covered: Purpose (apt update tooling for Ubuntu 24.04 servers) matches the baseline header and code. Every outcome of the manifest, its templates (surface, relevant, check-updates-v2) and files (pkg, kernel, dist, get-relevant-updates-list) is in the outcomes table and run end to end: the wrapper refuses a missing package and upgrades a downgraded one; the surface script upgrades a downgraded surface package; the daily job (cron 0 0 * * *, High) fetches Canonical's OVAL data, evaluates it with openscap and writes a non-empty list of packages behind their candidate, which apt-update-relevant.sh then installs; the kernel script leaves the metapackage at its candidate; the full update script is run (its check timed out in this run: a finding, not a coverage gap). Variants desktop (desktop list + compatibility link), method0 (no relevant-updates scripts), custom (NO_KERNEL=1 and the custom list rendered as 'vim less', the expectation of local change #24 rather than baseline line 60, which rendered the array text) and nokernel (the installed job hands --no-kernel to the tool, and the tool drops linux-image/intel-microcode from a p8test results fixture) all pass. Left out honestly: the Hiera keys prio_threshold/checkhour/checkmin, since a variant varies only node and params fixture (capability evidence stated); the script's TERMOUTPUT/lockfile operator options are internal script behaviour, not class outcomes."
+ ],
+ "review_s": 2768.9,
+ "check_file_sha256": "48e01207e7af6d702e56e0e02f67e1290b33a8d8ecede020e42faf7289df6fe9",
+ "content_sha256": "48e01207e7af6d702e56e0e02f67e1290b33a8d8ecede020e42faf7289df6fe9",
+ "reviewer_result": "20261126T005400Z-reviewer",
+ "author_result": "20261125T233018Z-author",
+ "findings": [
+  "the-full-update-script-leaves-nothing-to-upgrade"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "boot_id": "9ddc10c4-73c4-473e-b9d0-5efe8d56d0cb",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "9ddc10c4-73c4-473e-b9d0-5efe8d56d0cb",
+   "fresh": true
+  }
+ }
+}

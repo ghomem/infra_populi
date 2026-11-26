@@ -1,4 +1,4 @@
-# filesystem_apt — behaviour finding: a custom apt_surface_list is not joined (OPEN: one clear fix, queued as a policy-B local change after the sweep)
+# filesystem_apt — behaviour findings: a custom apt_surface_list was not joined (CLOSED 2026-11-25: local change #24); the dist-upgrade check cannot finish within 600 s on this uplink (OPEN, environment, for HQ)
 
 Found by the sweep's variant run `custom` (results/filesystem_apt/.json): with apt_surface_list ["vim", "less"] the
 surface script renders `SURFACE="["vim", "less"]"`. At the baseline, manifests/filesystem_apt.pp:59-61 assigns the
@@ -33,3 +33,13 @@ Options (more than one reasonable design, so escalated under the run rule; the r
   passes as the evidence that the script works.
 Recommendation: C now (the 2026-11-23 passes show the behaviour; nothing in the class changed since), and A at the
 next baseline Salatiel takes for other reasons.
+
+## 2026-11-26: local change #24 done; the timeout reproduced by the reviewer
+- **Surface list (CLOSED):** local change #24 joins a custom list with spaces (bb5bafd). Before:
+  results/filesystem_apt/20261125T214543Z-author (variant custom rendered `"["vim", "less"]"`); after:
+  results/filesystem_apt/20261125T233018Z-author (`"vim less"`). Phase 1 PASS (reviews/filesystem_apt/20261126T005123Z),
+  Phase 3 PASS (checks/reviews/filesystem_apt/20261126T014008Z). The first Phase 1 review failed on records only:
+  review_class.py read a local change's after-check from the base run alone; fixed in 66e621d (a row names a variant's
+  check as `<id> (variant <name>)`).
+- **Dist-upgrade timeout (OPEN):** the reviewer's run reproduced it (action rc 124 at 600 s; 201 upgraded and 20 new
+  pending after; 255 and 27 on the clean node) and judged it environment, not the class. The options above stand.
