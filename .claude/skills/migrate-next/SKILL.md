@@ -74,7 +74,7 @@ pregate are fine.
    - Author `spec/behaviour/checks/<class>.yml` from the BASELINE (CLAUDE.md "Phase 3 checks"; the lab's machines and
      site paths only as placeholders, spec/behaviour/README.md; `suite_check.py` refuses lab names). For a firewall rule,
      take its effective attributes from the compiled catalog, module defaults included (HQ batch-11 ruling 4). Use the
-     probe helpers of `.codex_state/tools/probe_helpers.sh` wherever one fits (HQ batch-12 ruling 6):
+     probe helpers of `spec/behaviour/probe_helpers.sh` wherever one fits (HQ batch-12 ruling 6):
      - every check with its derived_from lines;
      - negative controls;
      - a `mismatch` control wherever a probe hands a name/user/key/cipher/vhost to a tool and takes its verdict;

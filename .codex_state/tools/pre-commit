@@ -55,7 +55,7 @@ if [[ -d "$tests" ]]; then
   report="$(git diff --cached --name-only | grep -E '^\.codex_state/escalations/batch-.*\.md$' | head -1 || true)"
   if [[ -n "$report" ]]; then
     selection=(); label="full suite (batch report staged)"
-  elif git diff --cached --name-only | grep -qE '^(\.codex_state/tools/|spec/behaviour/lib/|\.claude/settings[^/]*\.json$)'; then
+  elif git diff --cached --name-only | grep -qE '^(\.codex_state/tools/|spec/behaviour/(lib/|tests/|run$|probe_helpers\.sh$)|\.claude/settings[^/]*\.json$)'; then
     selection=(); label="full suite (tools or settings staged)"
   else
     selection=(-m "not slow and not repo_state"); label="fast subset"

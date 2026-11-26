@@ -1004,7 +1004,7 @@ def test_every_node_and_peer_script_starts_with_the_helpers(monkeypatch):
     monkeypatch.setattr(phase3, "PEER_FILES", {})
     phase3.on_node("echo node")
     phase3.on_peer("echo peer")
-    helpers = (TOOLS / "probe_helpers.sh").read_text(encoding="utf-8")
+    helpers = (TOOLS.parents[1] / "spec" / "behaviour" / "probe_helpers.sh").read_text(encoding="utf-8")
     assert seen == [helpers + "echo node", helpers + "echo peer"]
 
 
@@ -1018,7 +1018,7 @@ def test_node_scripts_get_the_peer_address_only_when_a_peer_is_declared(monkeypa
     class Done:
         returncode, stdout, stderr = 0, "", ""
     monkeypatch.setattr(subprocess, "run", lambda *a, **k: (seen.append(k["input"]), Done())[1])
-    helpers = (TOOLS / "probe_helpers.sh").read_text(encoding="utf-8")
+    helpers = (TOOLS.parents[1] / "spec" / "behaviour" / "probe_helpers.sh").read_text(encoding="utf-8")
     monkeypatch.setattr(phase3, "PEER_ADDR", "")
     phase3.on_node("echo a")
     monkeypatch.setattr(phase3, "PEER_ADDR", "192.0.2.24")

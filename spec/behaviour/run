@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+"""Run behaviour check sets against fresh nodes (README.md, "Running a set").
+
+  run [options] <class> [<class> ...]
+  run --validate [<class> ...]          validate the sets only (no node); no class = every set
+  run --manifest <class> --kind <kind>  print the manifest a run would apply
+
+Nodes (one of):
+  --provider <cmd>              `<cmd> fresh <kind>` gives a fresh node as JSON {"dest", "addr"[, "boot"]},
+                                `<cmd> boot <dest>` its boot id, `<cmd> release <dest>` lets it go
+  --node <kind>=<dest>@<addr>   a fresh node given by hand (repeatable; each is used once, and marked)
+  --other <kind>=<dest>@<addr>  another machine a set's prose or probes name by kind ({{NODE:kind}}, {{ADDR:kind}})
+Applying the class:
+  --apply agent|local|command   (default agent)
+  --classify <cmd>              agent mode: `<cmd> <node name> <manifest file>` classifies the node on the server
+  --apply-command <cmd>         command mode: `<cmd> <class> <node dest> <kind> <manifest file>`
+  --modulepath <path>           local mode: the modules on the node
+  --hiera-config <path>         local mode: Hiera configuration on the node
+  --server <name>@<addr>        the Puppet server the node uses ({{SERVER_NAME}}, {{SERVER_ADDR}})
+Values and output:
+  --localdir <path>             the site's local directory on the node ({{LOCALDIR}}; default /opt/puppet-infrastructure)
+  --params <dir>                more params fixtures, searched before the suite's own (repeatable)
+  --variant <name>              run only this variant (repeatable; default all)
+  --no-variants                 the base run only
+  --out <dir>                   records (default ./behaviour-results): <dir>/<class>/<UTC>.json and .xml
+  --ssh "<ssh command>"         default "ssh -o BatchMode=yes"
+Exit: 0 all pass, 1 findings, 2 invalid set, 3 apply or environment failure, 4 skipped (the worst over all classes).
+"""
+
+import argparse
+import shlex
+import sys
+from pathlib import Path
+
+sys.dont_write_bytecode = True
+SUITE = Path(__file__).resolve().parent
+sys.path.insert(0, str(SUITE / "lib"))
+
+from behaviour import manifest as mf  # noqa: E402
+from behaviour import results, runner, setfile  # noqa: E402
+
+
+def machine(spec: str) -> runner.Machine:
+    kind, _, rest = spec.partition("=")
+    dest, _, addr = rest.rpartition("@")
+    if not (kind and dest and addr):
+        raise SystemExit(f"bad machine {spec!r}: <kind>=<dest>@<addr>")
+    return runner.Machine(kind, dest, addr)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(add_help=False)
+    ap.add_argument("classes", nargs="*")
+    ap.add_argument("-h", "--help", action="store_true")
+    ap.add_argument("--validate", action="store_true")
+    ap.add_argument("--manifest", action="store_true")
+    ap.add_argument("--kind")
+    ap.add_argument("--provider")
+    ap.add_argument("--node", action="append", default=[])
+    ap.add_argument("--other", action="append", default=[])
+    ap.add_argument("--apply", choices=("agent", "local", "command"), default="agent")
+    ap.add_argument("--classify")
+    ap.add_argument("--apply-command")
+    ap.add_argument("--modulepath", default="")
+    ap.add_argument("--hiera-config", default="")
+    ap.add_argument("--server", default="")
+    ap.add_argument("--localdir", default="/opt/puppet-infrastructure")
+    ap.add_argument("--params", action="append", default=[])
+    ap.add_argument("--variant", action="append")
+    ap.add_argument("--no-variants", action="store_true")
+    ap.add_argument("--out", default="behaviour-results")
+    ap.add_argument("--ssh", default="ssh -o BatchMode=yes")
+    a = ap.parse_args()
+    if a.help:
+        print(__doc__)
+        return 0
+    checks = SUITE / "checks"
+    classes = a.classes or ([p.stem for p in sorted(checks.glob("*.yml"))] if a.validate else [])
+    if not classes:
+        print(__doc__)
+        return 2
+    if a.validate:
+        bad = 0
+        for cls in classes:
+            problems = setfile.validate(checks / f"{cls}.yml")
+            print(f"{'VALID' if not problems else 'INVALID'} {cls}")
+            for p in problems:
+                print(f"  {p}")
+            bad += bool(problems)
+        return 2 if bad else 0
+    params_dirs = [Path(p) for p in a.params]
+    if a.manifest:
+        data, _ = setfile.load(checks / f"{classes[0]}.yml")
+        kind = a.kind or data["apply"]["node"]
+        print(mf.build(data, kind, setfile.kinds(), [*params_dirs, SUITE / "fixtures" / "params"], SUITE / "fixtures",
+                       render=lambda t: t), end="")
+        return 0
+    if a.apply == "local" and not a.modulepath:
+        raise SystemExit("local mode needs --modulepath (the modules on the node)")
+    if a.apply == "command" and not a.apply_command:
+        raise SystemExit("command mode needs --apply-command")
+    sname, _, saddr = a.server.rpartition("@") if "@" in a.server else (a.server, "", "")
+    shell = runner.Shell(shlex.split(a.ssh))
+    given: dict = {}
+    for spec in a.node:
+        m = machine(spec)
+        given.setdefault(m.kind, []).append(m)
+    others = {m.kind: m for m in map(machine, a.other)}
+    provider = runner.Provider(shell, shlex.split(a.provider) if a.provider else None, given)
+    applier = runner.Applier(a.apply, shell, shlex.split(a.apply_command or a.classify or "") or None,
+                             a.modulepath, a.hiera_config)
+    outcomes = []
+    for cls in classes:
+        run = runner.Run(checks / f"{cls}.yml", provider, applier, shell, {"name": sname, "addr": saddr},
+                         a.localdir, others, params_dirs)
+        record = run.run(a.apply, [] if a.no_variants else a.variant)
+        stem = results.write(Path(a.out), cls, record, runner.now())
+        outcomes.append(record["outcome"])
+        print(f"{cls}: {record['outcome']} ({stem}.json)")
+        for p in record["problems"]:
+            print(f"  {p}")
+    return results.OUTCOME_RC[results.combined(outcomes)]
+
+
+if __name__ == "__main__":
+    sys.exit(main())

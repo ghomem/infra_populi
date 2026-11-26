@@ -78,7 +78,7 @@ placeholders with the lab's values, behaviour_move.lab_view, and runs exactly th
         - {path: manifests/x.pp, lines: "12-14", text: "<exact substring of those lines>"}
         - {path: files/x, sha256: <of the whole baseline file>}
       probe: <shell, run as root on the node via `ssh <node> sudo -n bash -s`>
-      # every node and peer script starts with tools/probe_helpers.sh (HQ batch-12 ruling 6): p8_count, p8_listening,
+      # every node and peer script starts with spec/behaviour/probe_helpers.sh (HQ batch-12 ruling 6): p8_count, p8_listening,
       # p8_tcp, p8_http, p8_service, p8_digest, p8_rc, p8_tls, p8_established read; p8_hold (mutating) only in an action
       expect: {rc: 0, stdout: <regex, re.M>, stdout_not: <regex>}   # rc defaults to 0
       # opt-in MUTATING check (HQ 2026-11-10): `probe` is an action that changes the node; the evidence is its effect
@@ -303,7 +303,7 @@ def lifting_problems(kind, need: str | None, where: str) -> list[str]:
     return []
 HOST_RULES = 3  # FORBIDDEN[:3] keep probes on the node and away from Puppet; the rest keep them read-only
 # Probe helpers (HQ batch-12 ruling 6): prepended to every node and peer script; the mutating ones only in an action.
-HELPERS = (TOOLS / "probe_helpers.sh").read_text(encoding="utf-8")
+HELPERS = (REPO / "spec" / "behaviour" / "probe_helpers.sh").read_text(encoding="utf-8")  # the public suite's
 MUTATING_HELPER = re.compile(r"\bp8_hold\b")
 
 

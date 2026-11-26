@@ -208,7 +208,7 @@ history of each moved set is in `.codex_state/checks/notes/<class>.md`:
 - Effective attributes (HQ batch-11 ruling 4): before writing an expectation about a firewall rule, take the rule's
   effective attributes from the compiled catalog, including module defaults such as the protocol (`proto` defaults
   to tcp), not from the manifest's text.
-- Probe helpers (HQ batch-12 ruling 6): `.codex_state/tools/probe_helpers.sh` is prepended to every node and peer
+- Probe helpers (HQ batch-12 ruling 6): `spec/behaviour/probe_helpers.sh` is prepended to every node and peer
   script; use a helper wherever one fits (p8_count, p8_listening, p8_tcp, p8_http, p8_service, p8_digest, p8_rc, p8_tls,
   p8_established; p8_hold only in a check's action).
 - Mismatch controls (HQ 2026-11-16): a probe that takes a tool's verdict on a name/user/key/cipher/vhost needs a

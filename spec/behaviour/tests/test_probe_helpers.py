@@ -1,5 +1,5 @@
-"""Tests for probe_helpers.sh (HQ batch-12 ruling 6): each helper runs here in bash against local listeners, files
-and stubs, never against the lab."""
+"""Tests for probe_helpers.sh: each helper runs here in bash against local listeners, files and stubs, never against
+a remote machine."""
 import http.server
 import os
 import shutil

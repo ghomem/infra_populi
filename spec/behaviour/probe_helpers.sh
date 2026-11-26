@@ -1,10 +1,10 @@
 # shellcheck shell=bash
-# probe_helpers.sh — helper functions for Phase 3 probes (HQ batch-12 ruling 6). phase3.py prepends this file to
-# every script it runs on a node or the peer, so a check's probe, effect, action or mismatch may call them.
+# probe_helpers.sh — helper functions for behaviour probes. The runner prepends this file to every script it runs on a
+# node or the peer, so a check's probe, effect, action or mismatch may call them.
 #
 # Each helper prints one stable line (or one line per item) and exits 0, so a probe's exit code is never a helper's
-# accident. Read-only helpers only observe. Mutating helpers (p8_hold) belong in a check's action; phase3.py refuses
-# them in a probe, an effect or a mismatch.
+# accident. Read-only helpers only observe. Mutating helpers (p8_hold) belong in a check's action; the validator
+# refuses them in a probe, an effect or a mismatch.
 #
 # Read-only: p8_count, p8_listening, p8_tcp, p8_http, p8_service, p8_digest, p8_rc, p8_tls, p8_established
 # Mutating:  p8_hold
