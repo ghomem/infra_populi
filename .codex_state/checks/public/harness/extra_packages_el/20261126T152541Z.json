@@ -1,0 +1,162 @@
+{
+ "class": "extra_packages_el",
+ "role": "command",
+ "at": "20261126T150739Z",
+ "set_sha256": "b3c25bef5cb4082df788c4edb7fccce869ba8d486fce76a9b854a86e9b475697",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "epel-release-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "package epel-release is not installed\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "codeready-builder-enabled",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "baseos-appstream-still-enabled",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rhel-9-for-x86_64-appstream-rpms\nrhel-9-for-x86_64-baseos-rpms\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "an-epel-package-installs-from-epel",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-codeready-builder-package-installs-from-it",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "ge[main]/Puppet_infrastructure::Extra_packages_el/Exec[install-epel-release]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Extra_packages_el/Exec[enable-codeready-builder-repo]/returns: executed successfully\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 402.20 seconds\u001b[0m\nRUN1_EVENTS: 2 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795706497'\u001b[0m\n\u001b[mNotice: Applied catalog in 10.34 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::extra_packages_el: 2 concrete resources (+0 defined-type instances)\n  Exec[install-epel-release]\n  Exec[enable-codeready-builder-repo]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP extra_packages_el b960a947c89c\n\nNODE_FRESH: yes (boot 5b07d783 of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "epel-release-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "epel-release 9\nepel\n",
+   "stderr": ""
+  },
+  {
+   "id": "codeready-builder-enabled",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "codeready-builder-for-rhel-9-x86_64-rpms\ncodeready-builder-for-rhel-9-x86_64-rpms\n",
+   "stderr": ""
+  },
+  {
+   "id": "baseos-appstream-still-enabled",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rhel-9-for-x86_64-appstream-rpms\nrhel-9-for-x86_64-baseos-rpms\n",
+   "stderr": ""
+  },
+  {
+   "id": "an-epel-package-installs-from-epel",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "htop from epel\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs the package htop on the node with dnf",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-codeready-builder-package-installs-from-it",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ninja-build from codeready-builder-for-rhel-9-x86_64-rpms\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs the package ninja-build on the node with dnf",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "rhel9",
+   "dest": "p8lab-rhel9",
+   "boot_id": "5b07d783-cef4-4c29-a633-c1e3546f3ca6",
+   "boot_id_at_end": "5b07d783-cef4-4c29-a633-c1e3546f3ca6",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "p8lab-rhel9",
+  "NODE_ADDR": "192.168.56.21",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "5b5901a76fd0841df63928df36bb62c178109d384f364f52582e728e9fdbf7b4",
+ "duration_s": 1081.9
+}

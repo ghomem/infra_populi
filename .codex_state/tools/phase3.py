@@ -493,6 +493,21 @@ def _content_shas_by_full_sha(path: str, repo: str) -> dict:
     return out
 
 
+def view_sha(cls: str, raw: bytes) -> str | None:
+    """The sha256 of the set as the engine runs it (behaviour_move.lab_view: rendered with the lab's values, without
+    its `apply` block), canonical JSON; None for a file that does not parse. An edit to the `apply` block alone (how
+    the public runner builds the catalog, e.g. `requires: [server]`) leaves it unchanged."""
+    try:
+        data = yaml.safe_load(raw)
+    except yaml.YAMLError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    import behaviour_move  # noqa: PLC0415
+    view = behaviour_move.lab_view(cls, data)
+    return hashlib.sha256(json.dumps(view, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
 def reviewed_as_is(cls: str, record: dict | None, raw: bytes, repo: Path | None = None) -> bool:
     """Whether `record` (a review or a result) judged the set as it stands: the same file, or the same file but for the
     removed `authoring:` block (its own content sha, or for an older record the content sha of the git version its
@@ -503,7 +518,8 @@ def reviewed_as_is(cls: str, record: dict | None, raw: bytes, repo: Path | None 
     if record.get("check_file_sha256") == sha:
         return True
     moved = moved_entry(cls)
-    if moved and moved.get("new_sha256") == sha:
+    if moved and (moved.get("new_sha256") == sha or
+                  (moved.get("view_sha256") is not None and moved["view_sha256"] == view_sha(cls, raw))):
         # HQ review of design note F, ruling 6: the set as it stands is the neutral move of the old file, so a record
         # of the old file judged this one
         if record.get("check_file_sha256") == moved["old_sha256"]:

@@ -1,0 +1,206 @@
+{
+ "class": "mount_shares_desktop",
+ "role": "command",
+ "at": "20261126T152541Z",
+ "set_sha256": "761b66dc856af1885db65e02c176b2803f8a46e957ecb3d63e500a402977b4d4",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "scripts-on-the-desktop-root-owned-executable",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/home/p8testuser/Desktop/shares-mount.sh': No such file or directory\nstat: cannot statx '/home/p8testuser/Desktop/shares-unmount.sh': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "scripts-render-the-share-and-options",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /home/p8testuser/Desktop/shares-mount.sh: No such file or directory\ngrep: /home/p8testuser/Desktop/shares-mount.sh: No such file or directory\ngrep: /home/p8testuser/Desktop/shares-mount.sh: No such file or directory\ngrep: /home/p8testuser/Desktop/shares-mount.sh: No such file or directory\ngrep: /home/p8testuser/Desktop/shares-mount.sh: No such file or directory\ngrep: /home/p8testuser/Desktop/shares-unmount.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-server-serves-the-test-share",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "0\ninactive\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-wrong-password-does-not-mount",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "not-mounted\n",
+   "stderr": "grep: /tmp/p8test-mount-bad.out: No such file or directory\ntail: cannot open '/tmp/p8test-mount-bad.out' for reading: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-mount-script-mounts-the-share",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "tail: cannot open '/tmp/p8test-mount.out' for reading: No such file or directory\nstat: cannot statx '/tmp/p8testuser/mnt-manual': No such file or directory\nrunuser: user p8testuser does not exist or the user entry does not contain all the required fields\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-unmount-script-unmounts-it",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "ile[/home/p8testuser/Desktop/shares-unmount.sh]/ensure: defined content as '{sha256}2ea7aa9b52c90160d618e493aeffc333a3776dedc95ebf5347e29e46849d6e21'\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 2.71 seconds\u001b[0m\nRUN1_EVENTS: 5 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-gnome\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795706890'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::mount_shares_desktop: 2 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::Mount_shares_desktop[p8testuser]\n  File[/home/p8testuser/Desktop/shares-mount.sh]\n  File[/home/p8testuser/Desktop/shares-unmount.sh]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP mount_shares_desktop 7fb1e93ea7d6\n\nNODE_FRESH: yes (boot 8ceea014 of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "scripts-on-the-desktop-root-owned-executable",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755 /home/p8testuser/Desktop/shares-mount.sh\nroot root 755 /home/p8testuser/Desktop/shares-unmount.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "scripts-render-the-share-and-options",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n1\n1\n1\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-server-serves-the-test-share",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nactive\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: installs samba, creates the local account p8testuser (no login shell) with the fake Samba password p8test-share-not-a-secret, adds a read-only share [p8share] at /srv/p8share holding p8test-share.txt, restarts smbd",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-wrong-password-does-not-mount",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nrc 1\nnot-mounted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs cifs-utils (mount.cifs, which desktop installs carry); adds the fixture sudoers drop-in /etc/sudoers.d/p8test-shares (0440) letting p8testuser run exactly the template's sudo commands (mount.cifs, umount) without a password, as a desktop user's own sudo rights would; runs the mount script as p8testuser with a wrong $PASSWORD; output in /tmp/p8test-mount-bad.out (its kdialog error dialog fails: no kdialog on GNOME)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-mount-script-mounts-the-share",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0\ncifs\np8testuser 700\np8test share content\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs the mount script as p8testuser with the right $PASSWORD (its sudo mounts the share; sudo logs to the journal and /var/log/auth.log); output in /tmp/p8test-mount.out",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-unmount-script-unmounts-it",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "unmounted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs the unmount script as p8testuser (its sudo unmounts the share; sudo logs to the journal and /var/log/auth.log)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "dest": "p8lab-gnome",
+   "boot_id": "8ceea014-7b9e-4201-88c4-f506b2163ccd",
+   "boot_id_at_end": "8ceea014-7b9e-4201-88c4-f506b2163ccd",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "b9cd9226-ff55-44e4-b895-bc513d32d9ae",
+   "boot_id_at_end": "b9cd9226-ff55-44e4-b895-bc513d32d9ae",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "p8lab-gnome",
+  "NODE_ADDR": "192.168.56.23",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "7fe42d8398236742ef10455ea870b4cee96fa6d61827394fa8e5cd4a34f35f9b",
+ "duration_s": 228.5
+}

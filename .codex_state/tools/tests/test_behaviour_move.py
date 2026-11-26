@@ -100,3 +100,31 @@ def test_every_moved_set_is_still_the_neutral_move_of_its_old_file():
     bad = {cls: diff for cls in moved if (diff := bm.verify(cls, moved))
            and diff != "the set changed after the move (its reviews judge it as any changed set)"}
     assert not bad, dict(list(bad.items())[:3])
+
+
+def test_an_edit_to_the_apply_block_alone_keeps_the_engine_view():
+    import phase3
+    cls = "filesystem_lib64"
+    raw = (bm.NEW_DIR / f"{cls}.yml").read_bytes()
+    data = yaml.safe_load(raw)
+    data["apply"]["requires"] = ["server"]
+    edited = bm.dump(data).encode("utf-8")
+    assert phase3.view_sha(cls, edited) == phase3.view_sha(cls, raw)
+    data["checks"][0]["probe"] += " "
+    assert phase3.view_sha(cls, bm.dump(data).encode("utf-8")) != phase3.view_sha(cls, raw)
+
+
+def test_a_review_of_the_old_file_still_judges_the_set_after_an_apply_only_edit(monkeypatch):
+    import json
+    import phase3
+    cls = "filesystem_lib64"
+    entry = json.loads(bm.MOVED.read_text())[cls]
+    raw = (bm.NEW_DIR / f"{cls}.yml").read_bytes()
+    data = yaml.safe_load(raw)
+    data["apply"]["requires"] = ["server"]
+    edited = bm.dump(data).encode("utf-8")
+    monkeypatch.setattr(phase3, "moved_entry", lambda c: entry)
+    review = {"check_file_sha256": entry["old_sha256"]}
+    assert phase3.reviewed_as_is(cls, review, edited)
+    data["checks"][0]["probe"] += " "
+    assert not phase3.reviewed_as_is(cls, review, bm.dump(data).encode("utf-8"))

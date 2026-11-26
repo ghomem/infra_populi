@@ -424,7 +424,10 @@ def verify(cls: str, moved: dict) -> str | None:
         return "not in moved.json"
     new_raw = (NEW_DIR / f"{cls}.yml").read_bytes()
     if hashlib.sha256(new_raw).hexdigest() != entry["new_sha256"]:
-        return "the set changed after the move (its reviews judge it as any changed set)"
+        import phase3  # noqa: PLC0415
+        if not entry.get("view_sha256") or phase3.view_sha(cls, new_raw) != entry["view_sha256"]:
+            return "the set changed after the move (its reviews judge it as any changed set)"
+        # only its `apply` block changed (how the public runner builds the catalog): the engine's view is the moved one
     old_raw = old_from_git(cls)
     if hashlib.sha256(old_raw).hexdigest() != entry["old_sha256"]:
         return "the old file in git is not the one moved.json names"
@@ -484,7 +487,8 @@ def main(argv: list[str]) -> int:
                 "moved to spec/behaviour/checks/)\n\n```\n" + note + "```\n", encoding="utf-8")
             import phase3  # noqa: PLC0415
             moved[cls] = {"old_sha256": hashlib.sha256(raw).hexdigest(), "old_content_sha256": phase3.content_sha(raw),
-                          "new_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest()}
+                          "new_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+                          "view_sha256": phase3.view_sha(cls, text.encode("utf-8"))}
     if argv[0] == "write":
         MOVED.write_text(json.dumps(moved, indent=1, sort_keys=True) + "\n")
     print(f"{len(classes) - bad} neutral, {bad} not neutral")

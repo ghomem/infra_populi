@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The lab's hooks for the public behaviour runner (HQ review of design note F, rulings 3 and 7).
 
-  behaviour_lab.py run [--local] [--out <dir>] [--variant <name>]... <class>...
+  behaviour_lab.py run [--local] [--resume] [--out <dir>] [--variant <name>]... <class>... | --all
       holds the lab lock and runs spec/behaviour/run with the lab's machines: a fresh node is a reverted one
       (revert_node.sh), the server is the master, the params are the suite's fixtures and the local ones, and the
       class is applied
@@ -9,7 +9,9 @@
           manifest the runner built (the engine's path of record);
         - with --local by `puppet apply` on the node, the module from this repository and its dependencies and Hiera
           data from the master copied onto the node first (ruling 3's measurement).
-      Records go to .codex_state/checks/public/<mode>/<class>/ (default --out).
+      Records go to .codex_state/checks/public/<mode>/<class>/ (default --out). --all: every set that is not deferred.
+      --resume: skips a class whose latest record there is not ENVIRONMENT_FAILED (a slow uplink makes reverts fail
+      now and then; the measurement is run again until each set has a real outcome).
   behaviour_lab.py provider fresh <kind> | boot <dest> | release <dest>      (the runner's provider hook)
   behaviour_lab.py harness <class> <dest> <kind> <manifest>                  (the runner's apply hook)
 """
@@ -149,13 +151,25 @@ def harness(argv: list[str]) -> int:
 # ------------------------------------------------------------------ run
 
 def run(argv: list[str]) -> int:
-    local = "--local" in argv
-    argv = [a for a in argv if a != "--local"]
+    local, resume = "--local" in argv, "--resume" in argv
+    argv = [a for a in argv if a not in ("--local", "--resume")]
     out = REPO / ".codex_state" / "checks" / "public" / ("local" if local else "harness")
     if "--out" in argv:
         i = argv.index("--out")
         out = Path(argv[i + 1])
         del argv[i:i + 2]
+    if "--all" in argv:
+        argv.remove("--all")
+        argv += [p.stem for p in sorted((SUITE / "checks").glob("*.yml"))
+                 if "deferred" not in __import__("yaml").safe_load(p.read_text())]
+    if resume:
+        def done(cls: str) -> bool:
+            files = sorted((out / cls).glob("*.json"))
+            return bool(files) and json.loads(files[-1].read_text()).get("outcome") != "ENVIRONMENT_FAILED"
+        argv = [a for a in argv if a.startswith("-") or not done(a)]
+        if not [a for a in argv if not a.startswith("-")]:
+            print("nothing left to run")
+            return 0
     me = str(Path(__file__).resolve())
     lock = subprocess.run([str(TOOLS / "lab_lock.sh"), "take", str(os.getpid()), f"behaviour_lab.py run {' '.join(argv)}"],
                           capture_output=True, text=True)
