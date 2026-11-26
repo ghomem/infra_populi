@@ -2646,3 +2646,37 @@ Verbatim:
   here the measurement itself, at the moment it wrote them (/dev/shm's mtime changed at 03:39:07-23Z on all five, the
   runs' end; no VM rebooted). The 2026-11-24 20:33Z run was also cut by the sleep guard (lab down at 01:42Z, battery
   24%). Results now go to /var/tmp.
+
+## 2026-11-26 — HQ 2026-11-24 item 4 carried out; the final approval report; stopped for Salatiel
+- **4a, reviews with no durations:** the 11 sets pass: ssl_nginx_domain, nginx_base, backup_rsnapshot, user_base,
+  user, openvpn_server (its ruled compression finding reproduced), network_vpn, postfix_smtp_node, hashman_web,
+  nginx_frontend, nginx_frontend_domain. Eight needed corrections of the swept set, none past round 2. Every correction
+  was a purpose gap the reviewer found: an outcome claimed but tested as rule text, a row left uncovered for a reason
+  the lab disproves, or a parameter production sets with no check. The lab Hiera fixture gives p8lab-rhel9 non-default
+  postfix_smtp_node per-node values (3a02162).
+- **4b, the duration list on hyperv clocks:** node_base, ssh_secure, firewall_secure, firewall_secure_extra (its ruled
+  RST finding reproduced), docker_container (correction 3, the last), sync and sysmon_base re-run by author and
+  reviewer, all PASS; gnome_lock_screen's 2026-11-24 run counted and its review PASS. Variant runs have no peer, so
+  the firewall sets' strict and anti-DDoS variants are tested from a network namespace on the node behind a veth pair
+  (RFC 5737 addresses).
+- **4c, the rhel9 block:** no block was left. It held the three rhel variants that failed on the environment (node_base,
+  ssh_secure, sysmon_base), and all three re-ran in 4b: node_base and ssh_secure inside v3's 24 h window,
+  sysmon_base's author and reviewer runs after it (from about 21:05Z, past 19:27Z; its revert downloaded 327668172
+  bytes in 334.857 s). A refresh just before them would have been the ruling's order; no baseline was refreshed.
+- **4d, filesystem_apt:** local change #24 (a custom apt_surface_list joined with spaces), Phase 1 and Phase 3 PASS.
+  The first Phase 1 review failed on records only: review_class.py read a local change's after-check from the base
+  run, so a check that runs in a variant could not be found; fixed with tests (66e621d). A new item, escalated (OPEN,
+  environment): the dist-upgrade check's action cannot finish within phase3's 600 s cap on this uplink (986 MB
+  pending on the node baseline); options in escalations/filesystem_apt.behaviour.md.
+- **Measured on the way:** dnf after a rhel9 restore treats every repository as expired and re-downloads what Red Hat
+  has published since the refresh (138 MB at 9 h, 327 MB at 26 h).
+- **Reviewers' minor notes, not gaps (for the report's reader):** backup_rsnapshot's daily-backup-executes mutates text
+  omits that rsnapshot creates its snapshot_root; user_base's locked variant does not assert group p8testuser still
+  exists when the primary group is users; nginx_frontend's server_monitoring_create default (no monitoring server) is
+  untested, production keeps it; firewall_secure's ssh_port is untested at a non-default value, no production
+  statement sets it.
+- **Housekeeping:** escalations/sweep.md marked closed (ruled 2026-11-23, carried out).
+- **4e:** approval_report.md regenerated: 90 done (89 reviewer-verified, 1 owner-validated), behaviour 86 pass,
+  3 findings (filesystem_apt's timeout, open for HQ; firewall_secure_extra's RST limit and openvpn_server's compression,
+  both ruled), 1 deferred (letsencrypt_certificate, a stand-in); 84 open rows in 61 classes; 24 local changes in 19
+  classes; 7 stand-ins. The run stops here for Salatiel; the lab is down.

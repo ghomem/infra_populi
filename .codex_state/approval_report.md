@@ -6,14 +6,15 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ## Summary
 
 - Done classes: 90 (89 verified by the Phase 1 reviewer). Owner-validated: postfix_smtp_base_config_file. Retired: nginx_proxy_smtp_auth_ppa. Blocked: none.
-- Behaviour (Phase 3): 1 deferred, 2 finding, 86 pass, 1 review-failed.
-- Open rows (outcomes no check probes): 118 in 72 classes.
-- Stand-ins: 7. Local changes: 21 (in 17 classes).
+- Behaviour (Phase 3): 1 deferred, 3 finding, 86 pass.
+- Open rows (outcomes no check probes): 84 in 61 classes.
+- Stand-ins: 7. Local changes: 24 (in 19 classes).
 
 ## For Salatiel's decision
 
 ### Behaviour findings
 
+- **filesystem_apt** — the-full-update-script-leaves-nothing-to-upgrade (escalations/filesystem_apt.behaviour.md)
 - **firewall_secure_extra** — the-rst-limit-dropped-the-third (escalations/firewall_secure_extra.behaviour.md)
 - **openvpn_server** — the-data-channel-is-compressed-both-ways (escalations/openvpn_server.behaviour.md)
 
@@ -27,27 +28,38 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 - **user_samba** — fixture `samba_dc_standin`; lifted by: a Zentyal/Samba AD domain controller node with Zentyal's user scripts (none yet; the planned dc kind, p8lab-dc, is a plain Samba AD DC). *stays; for Salatiel's explicit acceptance (HQ after batch 20, item 6)*
 - **user_sysmon** — fixture `sysmon_server`; lifted by: a monitoring-server node running Naemon + Thruk from the monitoring repository (no nodes.yml kind). *stays; for Salatiel's explicit acceptance (HQ after batch 20, item 6)*
 
+### Accepted gaps (parameter variants production does not use)
+
+- **docker_container** — digest: an image pinned by digest — a parameter variant no production node uses
+- **firewall_addon_caching_nameserver** — port: another nameserver port (port parameter) — another port is a parameter variant (the fixture keeps the default 53)
+- **network_vpn** — openvpn_netmask, openvpn_cipher, openvpn_reneg_sec, client_isolation: another VPN network size, cipher, renegotiation interval or client isolation off — parameter variants no production node uses (the fixture sets the network itself, wan_iface as production does)
+- **nginx_base** — log_formats_additional, dh_params_bits: additional log formats and another DH size — parameter variants no production node uses (the fixture keeps the default 2048 bits and the two formats)
+- **nginx_frontend** — servers_create, enable_ssl, manage_ssl, redirects_external_location, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, security_headers, redirects_external_prevented, redirects_external_whitelisted, server_default_create, ip_whitelist, use_compact_log_format, resolver: the parameters no production node sets (servers_create, enable_ssl, manage_ssl, redirects_external_location, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, security_headers, redirects_external_prevented, redirects_external_whitelisted, server_default_create, ip_whitelist, use_compact_log_format, resolver) — parameter variants no production node uses
+- **nginx_frontend_domain** — servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, ip_whitelist, proxy_locations_ignore_headers, redirect_http_www_to_https_www_create, server_https_www_create, redirects_external_prevented, redirects_external_location, redirects_external_whitelisted, redirects_external_prevented_adhoc_config, use_compact_log_format, resolver: the parameters no production node sets (servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, ip_whitelist, proxy_locations_ignore_headers, redirect_http_www_to_https_www_create, server_https_www_create, redirects_external_prevented, redirects_external_location, redirects_external_whitelisted, redirects_external_prevented_adhoc_config, use_compact_log_format, resolver) — parameter variants no production node uses
+- **node_base** — anti_ddos, apt_surface_list, bad_mark, ciphers, country_whitelist, customize_syslog_mode, custom_ntp, ddos_limit, ddos_limit_per_time_unit, ddos_limit_time_unit, filesystem_security, firewall_secure_extra, forward_iniface, good_mark, host_keys, internal_forward, internal_forward_list, ip_blacklist, ip_filter, ip_whitelist, kex_algorithm, macs, nameservers, ntp_servers, password_authentication, relevant_updates_method, relevant_updates_no_kernel, server_ppa, service_list, ssh_allow_root_login, ssh_port, syslog_mode: the parameters node_base forwards that no production node sets (custom NTP, nameservers, the extra firewall and its options, SSH options, syslog mode, apt and update options, filesystem security) — parameter variants no production node uses on node_base
+- **openvpn_server** — force_ifupdown, compression: force_ifupdown true and compression none — parameter variants no production node uses (the fixture keeps their defaults)
+- **ssh_secure** — root_login, port, host_keys, kex_algorithm, ciphers, macs: the other parameter variants (root_login true, another port, other host keys, kex algorithms, ciphers or MACs) — parameter variants no production node uses
+
 ### Open escalations
 
-- escalations/sweep.md: The sweep of open uncovered rows — approach (OPEN, for HQ: the run is stopped before it)
-- escalations/user_lock.checkset.md: user_lock — the check set after the stand-in lift: purpose FAIL past the correction cap (OPEN, for HQ)
+- escalations/filesystem_apt.behaviour.md: filesystem_apt — behaviour findings: a custom apt_surface_list was not joined (CLOSED 2026-11-25: local change #24); the dist-upgrade check cannot finish within 600 s on this uplink (OPEN, environment, for HQ)
 
 ## One row per class
 
 | class | prod | node | behaviour | proven | open | stand-in | finding | local changes |
 |---|---:|---|---|---:|---:|---|---|---|
 | backup | 2 | ubuntu | pass | 5 | 2 |  |  | #14, #15 |
-| backup_rsnapshot | 2 | ubuntu | pass | 4 | 2 |  |  |  |
-| backup_rsnapshot_pre | 2 | ubuntu | pass | 4 | 1 |  |  |  |
+| backup_rsnapshot | 2 | ubuntu | pass | 5 | 1 |  |  |  |
+| backup_rsnapshot_pre | 2 | ubuntu | pass | 5 | 0 |  |  |  |
 | caching_nameserver | 3 | ubuntu + ubuntu2 | pass | 5 | 2 |  |  | #9 |
-| dns_client | 58 | ubuntu | pass | 3 | 1 |  |  |  |
-| docker_container | 13 | ubuntu | pass | 4 | 2 |  |  |  |
+| dns_client | 58 | ubuntu | pass | 4 | 0 |  |  |  |
+| docker_container | 13 | ubuntu | pass | 8 | 3 |  |  |  |
 | extra_packages_el | 78 | rhel9 | pass | 3 | 1 |  |  |  |
-| filesystem_apt | 58 | ubuntu | pass | 6 | 2 |  |  |  |
-| filesystem_base | 58 | ubuntu | pass | 4 | 2 |  |  |  |
-| filesystem_base_desktop | 20 | ubuntu | pass | 3 | 1 |  |  |  |
+| filesystem_apt | 58 | ubuntu | finding | 8 | 1 |  | yes | #24 |
+| filesystem_base | 58 | ubuntu | pass | 6 | 0 |  |  |  |
+| filesystem_base_desktop | 20 | ubuntu | pass | 4 | 0 |  |  |  |
 | filesystem_lib64 | 58 | ubuntu | pass | 2 | 0 |  |  |  |
-| filesystem_sec | 58 | ubuntu | pass | 5 | 2 |  |  | #6 |
+| filesystem_sec | 58 | ubuntu | pass | 7 | 0 |  |  | #6 |
 | filesystem_yum | 58 | rhel9 | pass | 3 | 0 |  |  |  |
 | firewall | 0 | ubuntu + ubuntu2 | pass | 7 | 1 |  |  |  |
 | firewall_addon_caching_nameserver | 3 | ubuntu | pass | 2 | 1 |  |  |  |
@@ -57,12 +69,12 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 | firewall_addon_xrdp | 0 | ubuntu + ubuntu2 | pass | 3 | 0 |  |  |  |
 | firewall_ipv6_drop | 58 | ubuntu + ubuntu2 | pass | 3 | 0 |  |  |  |
 | firewall_ipv6_drop_policy | 0 | ubuntu + ubuntu2 | pass | 5 | 0 |  |  |  |
-| firewall_ipv6_drop_policy_desktop | 20 | ubuntu + ubuntu2 | pass | 5 | 1 |  |  |  |
-| firewall_secure | 78 | ubuntu + ubuntu2 | pass | 8 | 2 |  |  |  |
-| firewall_secure_extra | 58 | ubuntu + ubuntu2 | finding | 12 | 6 |  | yes | #5 |
-| gnome_lock_screen | 20 | ubuntu | pass | 3 | 2 |  |  |  |
+| firewall_ipv6_drop_policy_desktop | 20 | ubuntu + ubuntu2 | pass | 6 | 0 |  |  |  |
+| firewall_secure | 78 | ubuntu + ubuntu2 | pass | 9 | 1 |  |  |  |
+| firewall_secure_extra | 58 | ubuntu + ubuntu2 | finding | 14 | 4 |  | yes | #5 |
+| gnome_lock_screen | 20 | ubuntu | pass | 5 | 0 |  |  |  |
 | hashman_base | 1 | puppetserver + ubuntu2 | pass | 8 | 3 |  |  |  |
-| hashman_web | 1 | puppetserver + ubuntu2 | pass | 9 | 3 |  |  | #2 |
+| hashman_web | 1 | puppetserver + ubuntu2 | pass | 11 | 1 |  |  | #2 |
 | hello_world_flask | 0 | ubuntu | pass | 4 | 2 |  |  | #16 |
 | hello_world_flask_common | 0 | ubuntu | pass | 2 | 1 |  |  |  |
 | letsencrypt_base | 1 | puppetserver | pass | 4 | 3 |  |  |  |
@@ -75,53 +87,53 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 | mysql_server | 1 | ubuntu | pass | 5 | 0 |  |  |  |
 | network_dhcp | 3 | ubuntu | pass | 5 | 1 |  |  | #10 |
 | network_static | 0 | ubuntu | pass | 6 | 1 |  |  | #11, #12 |
-| network_vpn | 3 | ubuntu + ubuntu2 | pass | 4 | 2 | yes |  |  |
-| nginx_base | 33 | ubuntu | pass | 6 | 2 |  |  |  |
+| network_vpn | 3 | ubuntu + ubuntu2 | pass | 5 | 2 | yes |  |  |
+| nginx_base | 33 | ubuntu | pass | 9 | 1 |  |  |  |
 | nginx_default_removal | 36 | ubuntu | pass | 1 | 0 |  |  |  |
-| nginx_frontend | 24 | ubuntu | pass | 7 | 2 |  |  |  |
-| nginx_frontend_domain | 35 | ubuntu | pass | 4 | 2 |  |  |  |
+| nginx_frontend | 24 | ubuntu | pass | 9 | 1 |  |  |  |
+| nginx_frontend_domain | 35 | ubuntu | pass | 7 | 1 |  |  |  |
 | nginx_frontend_mail | 0 | ubuntu + ubuntu2 | pass | 5 | 1 |  |  |  |
 | nginx_static | 0 | ubuntu | pass | 3 | 1 |  |  |  |
 | nginx_static_domain | 1 | ubuntu | pass | 4 | 2 |  |  |  |
-| node_base | 58 | ubuntu | pass | 9 | 2 |  |  |  |
+| node_base | 58 | ubuntu | pass | 11 | 1 |  |  |  |
 | node_base_desktop | 0 | gnome | pass | 10 | 1 |  |  |  |
 | node_base_domain_desktop | 0 | ubuntu | pass | 7 | 0 |  |  |  |
 | openvpn_domain | 0 | ubuntu + dc | pass | 6 | 0 | yes |  | #17 |
 | openvpn_nm_connection | 0 | gnome + ubuntu2 | pass | 4 | 1 | yes |  |  |
-| openvpn_server | 3 | ubuntu + ubuntu2 | finding | 8 | 1 | yes | yes | #7 |
+| openvpn_server | 3 | ubuntu + ubuntu2 | finding | 9 | 1 | yes | yes | #7 |
 | openvpn_set_vpn_passwd_file | 0 | kubuntu + ubuntu2 | pass | 5 | 1 |  |  | #21 |
-| packages_base | 78 | ubuntu | pass | 4 | 2 |  |  |  |
+| packages_base | 78 | ubuntu | pass | 6 | 0 |  |  |  |
 | postfix_smtp_base | 0 | ubuntu + ubuntu2 | pass | 8 | 2 |  |  |  |
-| postfix_smtp_node | 3 | ubuntu + ubuntu2 | pass | 5 | 2 |  |  |  |
+| postfix_smtp_node | 3 | ubuntu + ubuntu2 | pass | 7 | 0 |  |  |  |
 | puppet_backup | 1 | ubuntu | pass | 5 | 1 |  |  |  |
 | puppet_boot_run | 58 | ubuntu | pass | 4 | 2 |  |  | #13 |
 | puppet_commush | 2 | ubuntu | pass | 4 | 1 |  |  |  |
 | puppet_reports_cleanup | 1 | ubuntu | pass | 2 | 1 |  |  |  |
 | rsyslog_apparmor_exception | 1 | ubuntu | pass | 3 | 0 |  |  |  |
-| rsyslog_base | 77 | ubuntu | pass | 6 | 1 |  |  | #1 |
-| rsyslog_client | 76 | ubuntu + ubuntu2 | pass | 4 | 1 |  |  |  |
+| rsyslog_base | 77 | ubuntu | pass | 8 | 1 |  |  | #1, #23 |
+| rsyslog_client | 76 | ubuntu + ubuntu2 | pass | 7 | 1 |  |  | #22 |
 | rsyslog_server | 1 | ubuntu | pass | 5 | 1 |  |  |  |
 | sftp_only | 0 | ubuntu | pass | 3 | 1 |  |  |  |
-| ssh_secure | 58 | ubuntu | pass | 6 | 3 |  |  | #8 |
-| ssl_base | 38 | ubuntu | pass | 3 | 3 |  |  |  |
+| ssh_secure | 58 | ubuntu | pass | 9 | 2 |  |  | #8 |
+| ssl_base | 38 | ubuntu | pass | 6 | 1 |  |  |  |
 | ssl_nginx | 0 | ubuntu | pass | 3 | 1 |  |  |  |
-| ssl_nginx_domain | 37 | ubuntu | pass | 4 | 2 |  |  |  |
+| ssl_nginx_domain | 37 | ubuntu | pass | 6 | 0 |  |  |  |
 | ssl_postfix | 0 | ubuntu | pass | 3 | 1 |  |  |  |
-| sync | 2 | ubuntu + ubuntu2 | pass | 5 | 2 |  |  |  |
+| sync | 2 | ubuntu + ubuntu2 | pass | 6 | 1 |  |  |  |
 | sysmon_backup | 1 | ubuntu | pass | 5 | 2 |  |  |  |
-| sysmon_base | 58 | ubuntu + ubuntu2 | pass | 12 | 2 |  |  | #3, #4 |
+| sysmon_base | 58 | ubuntu + ubuntu2 | pass | 14 | 0 |  |  | #3, #4 |
 | sysmon_fs_health | 0 | ubuntu | pass | 5 | 0 |  |  |  |
 | sysmon_integrity_master | 0 | ubuntu | pass | 2 | 1 |  |  |  |
 | sysmon_integrity_node | 0 | ubuntu | pass | 4 | 1 |  |  |  |
 | sysmon_mysqldump_health | 0 | ubuntu | pass | 9 | 0 |  |  | #18, #20 |
 | sysmon_puppet_cert_status | 0 | ubuntu | pass | 3 | 0 |  |  | #19 |
-| user | 2 | ubuntu | pass | 4 | 3 |  |  |  |
-| user_base | 3 | ubuntu | pass | 3 | 4 |  |  |  |
+| user | 2 | ubuntu | pass | 6 | 2 |  |  |  |
+| user_base | 3 | ubuntu | pass | 5 | 3 |  |  |  |
 | user_desktop | 0 | kubuntu | pass | 3 | 1 |  |  |  |
 | user_desktop_sudoer | 0 | kubuntu | pass | 4 | 1 |  |  |  |
 | user_kde_lock_screen | 20 | kubuntu | pass | 5 | 3 |  |  |  |
 | user_kde_lock_screen_common | 20 | ubuntu | pass | 2 | 1 |  |  |  |
-| user_lock | 0 | puppetserver | review-failed | 2 | 0 |  |  |  |
+| user_lock | 0 | puppetserver | pass | 2 | 0 |  |  |  |
 | user_samba | 0 | ubuntu | pass | 1 | 1 | yes |  |  |
 | user_sudoer | 1 | ubuntu | pass | 3 | 1 |  |  |  |
 | user_sysmon | 0 | ubuntu | pass | 2 | 1 | yes |  |  |
@@ -155,9 +167,9 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - root's crontab runs `rsnapshot -c <conf> daily` at 23:00, which rsyncs the backup point into the snapshot root (`cron-daily-2300`, `daily-plan`)
   - a run takes a daily snapshot holding a byte-identical copy of the backup point, so its files can be restored from there (`daily-backup-executes`)
   - retention keeps exactly ndays daily snapshots, rotating the oldest away (`daily-retention-keeps-ndays`)
+  - other users, times, backup points, prefixes or retention counts (`other-parameters-render-the-config-and-the-cron-entry`)
 - **Open rows:**
-  - cron itself firing at 23:00 — why: a run would have to wait for 23:00; the crontab entry is checked and its exact command is run by hand — lifted by: ubuntu
-  - other users, times, backup points, prefixes or retention counts — why: parameter variants (one set holds one params fixture); untested — lifted by: ubuntu
+  - cron itself firing at 23:00 — why: a run would have to wait for 23:00; the crontab entry is checked and its exact command is run by hand — lifted by: capability: a wall-clock trigger in phase3.py runs (waiting for, or shifting, the node's time)
 
 ### backup_rsnapshot_pre
 
@@ -168,9 +180,8 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - rsnapshot is installed and runs (`rsnapshot-installed-and-runs`)
   - /etc/rsnapshot.d exists, root:root, traversable (0644 as declared, 0755 in effect for a directory) (`config-directory`)
   - rdiff.sh is installed root:root 0755 and reports, for each pair of consecutive snapshots, the files that differ and the files only in one (`rdiff-installed`, `two-snapshots-are-planted`, `rdiff-reports-what-changed-between-snapshots`)
+  - rsnapshot driven from /etc/rsnapshot.d by backup_rsnapshot (`a-config-in-the-directory-drives-rsnapshot`)
   - in interactive mode (a second argument) rdiff.sh waits for ENTER after each pair's report and ends with Done! (`two-snapshots-are-planted`, `rdiff-pages-the-pairs-in-interactive-mode`)
-- **Open rows:**
-  - rsnapshot driven from /etc/rsnapshot.d by backup_rsnapshot — why: backup_rsnapshot's behaviour, checked in backup_rsnapshot's set, which runs on this class as its required base — lifted by: ubuntu
 
 ### caching_nameserver
 
@@ -197,12 +208,11 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the resolver names exactly the given servers, in order (`resolv-conf-names-exactly-the-given-servers`)
   - names resolve through the given servers (`names-resolve-through-the-given-server`)
   - a server added by hand is removed again by the next agent run (the resolver is kept to the given list) (`a-nameserver-is-added-by-hand`, `the-next-agent-run-keeps-only-the-given-servers`)
-- **Open rows:**
-  - an empty list leaves the node's resolver untouched — why: a fixture variant (one set holds one fixture, and this one sets servers); exercised elsewhere: node_base's fixture passes nameservers [] to this class, and node_base's check dns-is-left-alone (review PASS 20261118T194756Z) shows /etc/resolv.conf unchanged — lifted by: ubuntu
+  - an empty list leaves the node's resolver untouched (`an-empty-list-leaves-the-resolver-alone`)
 
 ### docker_container
 
-- **Purpose:** Runs one container from an image (pulled at a tag or digest, optionally from a registry with credentials) under systemd, with its app port published on 127.0.0.1 only, and recreates it when the image changes.
+- **Purpose:** Runs one container from an image (pulled at a tag or digest, optionally from a registry with credentials) under systemd, with its app port published on 127.0.0.1 only, and refreshes it when its image resource changes.
 - **Behaviour:** pass; node ubuntu; production machines: 13.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
@@ -210,9 +220,14 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the container runs from that image as a systemd service named after the title (`the-container-runs-the-image-under-systemd`)
   - the app port is published on 127.0.0.1 at the host port, and on no other address (`the-app-answers-on-loopback-only`)
   - a container that dies is started again by its service (`the-container-is-killed`, `the-service-starts-it-again`)
+  - when its service stops, the container stays, exited (remove_container_on_stop false) (`stopping-the-service-keeps-the-container`)
+  - when its image resource changes (an image missing locally is pulled again) the container is recreated (subscribe to the image) (`the-image-tag-is-removed`, `the-agent-run-pulls-the-image-and-restarts-the-container`)
+  - with app_port and no host_port the app port is published on 127.0.0.1 at the same port (`without-host-port-the-app-port-is-published-on-loopback`)
+  - environment, a named volume, a host-path (bind) volume, a command and another network reach the container (`environment-volume-and-command-reach-the-container`, `another-network-is-used`)
 - **Open rows:**
-  - the container is recreated when its image changes (subscribe to the image) — why: needs a second image version behind the same tag between two agent runs, which needs a registry the lab controls — lifted by: ubuntu
-  - registry login, a digest, named volumes, environment, command and network variants — why: fixture variants (one set holds one fixture); a registry login also needs a private registry — lifted by: ubuntu
+  - ensure (passed to docker::image), set on 1 production node statement whose value is not read — why: the values other than present cannot pass the harness: with latest puppetlabs-docker (image.pp:149-170) runs a noop-false notify and its pull exec on every agent run, so the gate's run 2 is never event-free; with absent it removes an image the running container uses — lifted by: capability: a variant run whose gate allows the run-2 events a parameter makes by design
+  - a registry login (username and token) — why: a login needs a private registry with credentials; production sets them (5 node statements) — lifted by: capability: a private container registry in the lab
+  - an image pinned by digest — why: a parameter variant no production node uses — accepted gap (production does not use digest)
 
 ### extra_packages_el
 
@@ -224,12 +239,12 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - CodeReady Builder is enabled for the node's major version and architecture, and a package from it installs (`codeready-builder-enabled`, `a-codeready-builder-package-installs-from-it`)
   - the base repositories (BaseOS, AppStream) stay enabled (`baseos-appstream-still-enabled`)
 - **Open rows:**
-  - the same on RHEL 8 — why: the lab has a RHEL 9 node only; nodes.yml has no RHEL 8 kind — lifted by: rhel9
+  - the same on RHEL 8 — why: the lab has a RHEL 9 node only, so the RHEL 8 branch of the package list is not applied anywhere — lifted by: capability: a RHEL 8 node kind in nodes.yml
 
 ### filesystem_apt
 
 - **Purpose:** Apt update tooling for Ubuntu 24.04 servers (the target release; the 20.04/22.04 openscap package branch is not in Phase 1): a wrapper that upgrades a package only if it is installed and has an update (never installing anything new), surface, kernel and full update scripts, and a daily job that lists the relevant (High or above) security updates from Canonical's OVAL data with openscap (for monitoring), and a script that installs the updates on that list through the wrapper; each script is run here.
-- **Behaviour:** pass; node ubuntu; production machines: 58.
+- **Behaviour:** finding — the-full-update-script-leaves-nothing-to-upgrade; node ubuntu; production machines: 58.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the update scripts are installed (wrapper, surface, kernel, full, relevant updates) and openscap is available for the relevant-updates job (`helper-scripts-installed`)
@@ -238,9 +253,12 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - a daily job lists the relevant (High and above) security updates from Canonical's OVAL data, and the relevant-updates script installs them (`surface-list-and-daily-job`, `the-daily-job-lists-relevant-updates`, `the-job-s-list-is-installed-by-the-relevant-updates-script`, `the-relevant-updates-on-the-list-get-installed`)
   - the kernel script brings the kernel metapackage up to date (`the-kernel-script-brings-the-kernel-metapackage-up-to-date`)
   - the full update script leaves nothing to upgrade (`the-full-update-script-leaves-nothing-to-upgrade`)
+  - the desktop variant (server_mode false): the desktop surface list and the compatibility link (`the-desktop-surface-list-and-link`)
+  - the parameter variants: relevant_updates_method 0 (no relevant-updates script), relevant_updates_no_kernel true and a custom apt_surface_list (`method-0-installs-no-relevant-updates-script`, `no-kernel-and-a-custom-surface-list`, `the-no-kernel-job-lists-no-kernel-package`)
 - **Open rows:**
-  - the desktop variant (server_mode false): the desktop surface list and the compatibility link — why: a fixture variant: the fixture is a server and one set holds one fixture; untested — lifted by: gnome
-  - the other parameter variants: relevant_updates_method 0 (no relevant-updates job), relevant_updates_no_kernel true, a custom apt_surface_list, and Hiera prio_threshold/checkhour/checkmin — why: fixture variants of the same server (one set holds one fixture, the defaults); untested — lifted by: ubuntu
+  - the Hiera variants prio_threshold, checkhour and checkmin (the daily job's priority and time) — why: the daily job's priority and time come from Hiera keys (per node or global), which a variant run does not vary — lifted by: capability: a Hiera variant per run (phase3.py variants vary the node kind and the class's params fixture)
+- **Finding:** the-full-update-script-leaves-nothing-to-upgrade (escalations/filesystem_apt.behaviour.md)
+- **Local changes:** #24: filesystem_apt.pp, the else branch of the surface-list selection (baseline :60): a custom `apt_surface_list` is joined with spaces (`join($apt_surface_list, " ")`), as the server and desktop lists already are (baseline :54, :56), with a one-line comment;
 
 ### filesystem_base
 
@@ -252,9 +270,8 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the locale setting stops locale errors in ssh sessions (`the-locale-setting-works`)
   - mypython runs the system Python 3 (`mypython-runs-python-3`)
   - when asked (customize_syslog_mode true), the syslog file's owner and mode are kept as set (`the-syslog-mode-drifts`, `the-next-agent-run-restores-the-syslog-mode`)
-- **Open rows:**
-  - by default (customize_syslog_mode false) the syslog file is left alone — why: a fixture variant (one set holds one fixture, and this one sets it true to test the managed mode); untested — lifted by: ubuntu
-  - the RedHat paths (/var/log/messages owned root:root) — why: the RedHat branch; this set runs on the plan's Ubuntu node — lifted by: rhel9
+  - by default (customize_syslog_mode false) the syslog file is left alone (`the-syslog-file-is-left-alone-by-default`)
+  - the RedHat paths (/var/log/messages owned root:root) (`on-redhat-the-messages-file-is-managed`)
 
 ### filesystem_base_desktop
 
@@ -265,8 +282,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - localdir, bindir and etcdir exist, root:root, traversable (0644 as declared, 0755 in effect for directories) (`base-directories`)
   - a script placed in bindir runs, and a configuration file placed in etcdir reads, for an unprivileged user (`a-script-in-bindir-runs-for-an-unprivileged-user`)
   - with customize_syslog_mode, /var/log/syslog is syslog:adm with syslog_mode, and a change to its owner or mode is undone by the next agent run (`syslog-file-owner-and-mode`, `the-syslog-file-drifts`, `the-agent-run-restores-the-syslog-file`)
-- **Open rows:**
-  - without customize_syslog_mode (the default) the syslog file is left alone; another syslog_mode — why: parameter variants (one set holds one params fixture, which turns the option on); untested — lifted by: ubuntu
+  - without customize_syslog_mode (the default) the syslog file is left alone; another syslog_mode (`the-syslog-file-is-left-alone-by-default`, `another-syslog-mode-is-applied`)
 
 ### filesystem_lib64
 
@@ -288,9 +304,8 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - only members of the restricted group can run the listed commands that are links (nc, telnet, ftp) (`the-linked-commands-are-restricted-too`)
   - a listed command that is not installed is left alone (not created) (`uninstalled-commands-are-left-alone`)
   - a command opened by hand is restricted again by the next agent run (`a-restricted-command-is-opened-by-hand`, `the-next-agent-run-restricts-it-again`)
-- **Open rows:**
-  - the RedHat default group (wheel) — why: the RedHat branch; this set runs on the plan's Ubuntu node — lifted by: rhel9
-  - a custom restricted_group or restricted_mode — why: a fixture variant (one set holds one fixture, and this one uses the default group and 0750); node_base passes the lab Hiera's group to this define, and node_base's check the-tools-are-restricted-to-the-hiera-group (review PASS 20261118T194756Z) shows it, which is again sudo — lifted by: ubuntu
+  - the RedHat default group (wheel) (`on-redhat-the-commands-belong-to-wheel`)
+  - a custom restricted_group or restricted_mode (`a-custom-group-and-mode-are-applied`)
 - **Local changes:** #6: `links => follow` added to the file resource over $restricted_cmds (filesystem_sec.pp;
 
 ### filesystem_yum
@@ -328,7 +343,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the rule accepts UDP to the nameserver port (53) on the LAN interface only (`the-nameserver-rule`)
   - a client on the LAN interface reaches the nameserver port over a default drop, while another UDP port stays dropped (`a-lan-client-a-responder-and-a-default-drop`, `the-lan-client-reaches-port-53-only`, `rule-1301-accepted-the-lan-client`)
 - **Open rows:**
-  - another nameserver port (port parameter) — why: a fixture variant (one set holds one fixture, the default 53); untested — lifted by: ubuntu
+  - another nameserver port (port parameter) — why: another port is a parameter variant (the fixture keeps the default 53) — accepted gap (production does not use port)
 
 ### firewall_addon_hosting
 
@@ -353,7 +368,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - IPv4 forwarding is on, now and after a reboot (`ipv4-forwarding-on-and-persistent`)
   - traffic that enters the bridge and leaves it again (hairpin) is forwarded (`forward-bridge-loopback`, `a-lan-and-a-wan-behind-the-node`, `a-lan-host-reaches-another-subnet-on-the-bridge`, `the-forward-rules-counted-the-flows`)
 - **Open rows:**
-  - client isolation (client_isolation) — why: the parameter is declared but no code uses it (the class's own warning: still to be implemented); there is no behaviour to test — lifted by: ubuntu
+  - client isolation (client_isolation) — why: the parameter is declared but no code uses it, so it has no behaviour to test — lifted by: capability: an implementation of client_isolation in the class (the class's own warning: still to be implemented)
 
 ### firewall_addon_web
 
@@ -407,8 +422,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - another machine on the link cannot reach the node over IPv6, while IPv4 still reaches it (`the-node-publishes-its-link-local-address`, `another-host-cannot-reach-the-node-over-ipv6-but-can-over-ipv4`)
   - IPv6 traffic forwarded through the node is dropped (`the-node-publishes-its-link-local-address`, `another-host-routes-ipv6-through-the-node`, `the-forward-policy-counted-the-routed-packets`)
   - an IPv6 rule Puppet does not manage is removed by the next agent run (`an-unmanaged-ipv6-rule-is-planted`, `the-agent-run-purges-it`)
-- **Open rows:**
-  - a desktop login using ::1 — why: the plan's node has no desktop session; ::1 itself is checked on the node — lifted by: kubuntu
+  - a desktop login using ::1 (`a-desktop-login-works-under-the-drop-policy`)
 
 ### firewall_secure
 
@@ -424,9 +438,9 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - rules Puppet does not manage are purged at the next agent run (strict_purge true) (`an-unmanaged-rule-is-added`, `the-next-agent-run-purges-the-unmanaged-rule`)
   - the emergency flush script is installed, clears every rule when run, and the next agent run rebuilds the firewall (`flush-script-installed`, `the-flush-script-clears-every-rule`, `the-next-agent-run-rebuilds-the-firewall`)
   - the running rules are saved for the next boot (`the-running-rules-are-saved-for-the-next-boot`)
+  - strict mode (only listed hosts reach SSH), and strict_purge false with ignore_patterns (unmanaged rules matching a pattern kept) (`strict-mode-has-no-rate-limit-only-the-whitelist`, `strict-mode-admits-a-listed-source-and-drops-an-unlisted-one`, `keep-two-unmanaged-rules-are-planted`, `keep-the-agent-run-keeps-the-matching-rule`)
 - **Open rows:**
-  - traffic to 127.0.0.0/8 arriving on another interface is rejected (rule 002) — why: no node kind in nodes.yml would show this rule act: the same rule in firewall_secure_extra's set (2026-11-18) counted none of 3 hand-built frames from the peer to 127.0.0.1 through the node's NIC, with route_localnet 0 (the kernel drops that destination before INPUT) and with it set to 1 (unexplained); a lead in escalations/firewall_secure_extra.behaviour.md — lifted by: ubuntu
-  - strict mode (only listed hosts reach SSH), and strict_purge false with ignore_patterns (unmanaged rules matching a pattern kept) — why: fixture variants (one set holds one fixture), untested: this fixture leaves strict, strict_purge and ignore_patterns at their defaults — lifted by: ubuntu
+  - traffic to 127.0.0.0/8 arriving on another interface is rejected (rule 002) — why: a packet to 127.0.0.0/8 that arrives on a non-loopback interface never reached INPUT on a lab node, so rule 002 has nothing to act on there — lifted by: capability: a node kind whose kernel passes a 127.0.0.0/8 destination from another interface to INPUT
 
 ### firewall_secure_extra
 
@@ -446,13 +460,13 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - a blacklisted source is dropped outright, every protocol (local change (`a-blacklisted-source-gets-nothing`)
   - rules Puppet does not manage are purged at the next agent run (`an-unmanaged-rule-is-added`, `the-next-agent-run-purges-the-unmanaged-rule`)
   - the flush script the WARNING asks for clears every rule, and the next agent run rebuilds the class's firewall (`the-flush-script-clears-every-rule`, `the-next-agent-run-rebuilds-the-firewall`)
+  - with anti_ddos but without ip_filter, every source is held to the per-source connection and rate limits on the listed services in INPUT (`anti-ddos-without-ip-filter-limits-every-source`, `ddosonly-any-source-is-held-to-the-connection-limit`, `ddosonly-any-source-is-held-to-the-new-connection-rate`)
+  - without anti_ddos the listed service ports are simply opened, and strict mode admits only listed SSH sources (`without-anti-ddos-the-port-is-opened-and-ssh-is-strict`, `plain-strict-ssh-and-the-open-port-from-a-namespace`)
 - **Open rows:**
-  - traffic to 127.0.0.0/8 arriving on another interface is rejected (rule 002) — why: no node kind in nodes.yml would show this rule act; measured on the ubuntu node 2026-11-18: 3 hand-built Ethernet frames from the peer to 127.0.0.1 through the node's NIC were counted 0 by rule 002 with route_localnet 0 (the kernel drops such a destination before INPUT) and again 0 with route_localnet set to 1 on the node, for a reason not found; no check can show the rule act, and it is listed as a lead in escalations/firewall_secure_extra.behaviour.md — lifted by: ubuntu
-  - TCP fragments are dropped (rule 518; tcp by the type's default) — why: no node kind in nodes.yml would show this rule act (Phase 5 backlog #8); measured on the ubuntu node 2026-11-18: 5 TCP-fragmented SYNs from the peer (hping3 -f) reached the node's NIC (tcpdump: 8-byte fragments) and were counted 0 by rule 518 and 0 by 501; the kernel's connection tracking reassembles fragments at a hook that runs before the mangle table (defrag priority -400, mangle -150), so the rule only ever sees whole packets. An unreachable rule like the RST limit, reported to HQ in escalations/firewall_secure_extra.behaviour.md — lifted by: ubuntu
-  - sources from whitelisted countries reach the services (country_whitelist, src_cc) — why: the geoip match (xt_geoip) is not on Ubuntu 24.04 without xtables-addons and a GeoIP database, which no class installs; whether production sets country_whitelist is a production read — lifted by: ubuntu
-  - unlisted sources on the service port are forwarded to an internal landing server (internal_forward) — why: needs an internal network behind the node with a server on it; the lab's nodes share one host-only link — lifted by: ubuntu2
-  - with anti_ddos but without ip_filter, every source is held to the per-source connection and rate limits on the listed services in INPUT — why: a fixture variant of the same node (one set holds one fixture); this one exercises the side-chain variant of the same limits (lines 225-250), which pass — lifted by: ubuntu
-  - without anti_ddos the listed service ports are simply opened, and strict mode admits only listed SSH sources — why: fixture variants of the same node (one set holds one fixture); this one exercises the class's DDoS and filter extras — lifted by: ubuntu
+  - traffic to 127.0.0.0/8 arriving on another interface is rejected (rule 002) — why: a packet to 127.0.0.0/8 that arrives on a non-loopback interface never reached INPUT on a lab node — lifted by: capability: a node kind whose kernel passes a 127.0.0.0/8 destination from another interface to INPUT
+  - TCP fragments are dropped (rule 518; tcp by the type's default) — why: TCP fragments never reached rule 518 on a lab node (connection tracking reassembles them before the filter) — lifted by: capability: a node kind where fragments reach the filter table unreassembled (Phase 5 backlog #8)
+  - sources from whitelisted countries reach the services (country_whitelist, src_cc) — why: the geoip match (xt_geoip) needs xtables-addons and a GeoIP database, which no class installs — lifted by: capability: xt_geoip with a GeoIP database on a lab node
+  - unlisted sources on the service port are forwarded to an internal landing server (internal_forward) — why: forwarding to an internal landing server needs an internal network behind the node with a server on it — lifted by: capability: an internal network behind a lab node (the lab's nodes share one host-only link)
 - **Finding:** the-rst-limit-dropped-the-third (escalations/firewall_secure_extra.behaviour.md)
 - **Local changes:** #5: the blacklist rule `666 grounding naughty boys: <ip>` becomes `00 grounding naughty boys: <ip>` with `proto => 'all'` (firewall_secure_extra.pp, the ip_blacklist loop;
 
@@ -465,9 +479,8 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - dconf-cli is installed and the dconf profile stacks the user database over the system database local (`dconf-cli-installed`, `profile-uses-system-db-local`)
   - the system database sets idle-delay 300 (5 minutes), lock-enabled true and lock-delay 0, compiled by dconf update (`keyfile-and-locks-rendered`, `compiled-db-serves-the-policy`)
   - a user cannot override the three locked keys, while a key the class does not lock stays writable (`keyfile-and-locks-rendered`, `a-user-cannot-override-the-locked-keys`)
-- **Open rows:**
-  - a GNOME session actually locking after 5 idle minutes — why: needs a running GNOME session; the runner starts only a Plasma session (kubuntu), and the plan's node has no desktop — lifted by: gnome
-  - another timeout or grace period — why: parameter variants (one set holds one fixture, the defaults); untested — lifted by: ubuntu
+  - a GNOME session that goes idle locks after the idle time and the grace period, and sees the policy as not writable (`a-gnome-session-locks-after-the-idle-time`)
+  - another timeout or grace period (`another-timeout-and-grace-period-are-served`)
 
 ### hashman_base
 
@@ -503,10 +516,10 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - hashman's database holds the new password, and only the new one verifies (`the-record-holds-the-new-password`)
   - another machine accepts the new password after its agent run against the master (`the-client-accepts-the-new-password-after-its-agent-run`)
   - the password-strength API answers OK for a strong password and NOK for a weak one, through nginx (`the-password-strength-api-answers-through-nginx`)
+  - help requests and password e-mails reach the team and the user (`the-peer-plays-the-relay-for-hashmans-mail`, `a-help-request-and-a-password-mail-leave-through-the-relay`, `the-relay-received-the-help-request-and-the-password-mail`)
+  - users sign data and verify signatures with the portal's key (`signing-and-verifying-through-nginx-with-a-lab-key-pair`)
 - **Open rows:**
-  - help requests and password e-mails reach the team and the user — why: the lab's relay host is fake, so mail leaves the master's MTA for nowhere; delivery needs ubuntu2 running a mail server that the master's postfix relays to (not in its baseline) — lifted by: ubuntu2
-  - users sign data and verify signatures with the portal's key — why: no baseline class deploys ${hashmandir}/ssl/hashman-key.pem or hashman-pubkey.pem (files/hashman/ssl ships only a public key that no manifest installs), so a site provides the key pair by hand — lifted by: puppetserver
-  - with server-side session expiry on, an idle session is ended after the timeout — why: off under the default, which this fixture keeps; a second fixture with hashman::active_session_expiration true would test it — lifted by: puppetserver
+  - with server-side session expiry on, an idle session is ended after the timeout — why: off under the default, which the lab Hiera keeps; server-side session expiry is the Hiera key hashman::active_session_expiration, which a variant run does not vary — lifted by: capability: a Hiera variant per run (phase3.py variants vary the node kind and the class's params fixture)
 - **Local changes:** #2: the backend binds 127.0.0.1:8080 instead of 0.0.0.0:8080 (templates/hashman/hashman.service.erb:7), and the unit file notifies Service['hashman'] (hashman_web.pp:167-172) so a master already running the old unit is rebound at its next agent run;
 
 ### hello_world_flask
@@ -677,9 +690,10 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the VPN's nameserver answers VPN clients recursively through the bridge, over a default drop (`nameserver-serves-the-vpn-network`, `firewall-accepts-dns-on-the-bridge`, `the-lab-nat-ipv6-route-is-removed`, `a-wan-host-and-default-drops`, `the-client-resolves-and-reaches-the-wan-through-the-server`, `the-composed-rules-counted-the-flows`)
   - a VPN client reaches the WAN through the server, masqueraded behind the server's WAN address (`forwarding-and-nat-to-the-wan`, `a-wan-host-and-default-drops`, `the-client-resolves-and-reaches-the-wan-through-the-server`, `the-composed-rules-counted-the-flows`)
   - a client that uses the class's cipher (openvpn_cipher AES-256-CBC, the default) connects with it (`a-client-on-the-class-cipher-connects`)
+  - another client DNS server pushed to VPN clients (openvpn_client_dns) (`another-client-dns-is-pushed`)
 - **Open rows:**
-  - client isolation, the bridge and the server at boot, the hairpin rule, the data channel's compression, and each composed class's own behaviours — why: covered as behaviour by the composed classes' own sets (openvpn_server, firewall_addon_openvpn_server, caching_nameserver, firewall_addon_caching_nameserver) under their own fixtures, where openvpn_server's compression is a finding (escalations/openvpn_server.behaviour.md); this set covers what the composition adds (the VPN network wired through all four) and the cipher this class passes — lifted by: ubuntu
-  - parameter variants (another VPN network, another cipher, renegotiation, client DNS, client_isolation false) — why: parameter variants (one set holds one params fixture); untested — lifted by: ubuntu
+  - client isolation, the bridge and the server at boot, the hairpin rule, the data channel's compression, and each composed class's own behaviours — why: these are the composed classes' own behaviours, checked by their own sets under their own fixtures (openvpn_server, firewall_addon_openvpn_server, caching_nameserver, firewall_addon_caching_nameserver; openvpn_server's compression is a finding, escalations/openvpn_server.behaviour.md); this set covers what the composition adds — lifted by: capability: running each composed class's checks inside network_vpn's own run (a set holds its own class's checks)
+  - another VPN network size, cipher, renegotiation interval or client isolation off — why: parameter variants no production node uses (the fixture sets the network itself, wan_iface as production does) — accepted gap (production does not use openvpn_netmask, openvpn_cipher, openvpn_reneg_sec, client_isolation)
 - **Stand-in:** `p8test_dhcp_primary` — lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). Plan: stays; for Salatiel's explicit acceptance: the first VPN gateway is migrated as a recreated test gateway before any live one (documentation list, cutover row 9) (HQ 2026-11-23)
 
 ### nginx_base
@@ -694,9 +708,11 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the main and compact log formats are defined for the servers to use (`log-formats-main-and-compact`)
   - the Diffie-Hellman group /etc/nginx/dhparams.pem has dh_params_bits (2048) bits and is readable by owner and group only (`dh-group-2048-bits-not-world-readable`)
   - with no ad-hoc configuration given, the ad-hoc file is absent (`no-ad-hoc-file-by-default`)
+  - the stream block logs nothing (stream_access_log off, HQ 2026-11-18 ruling A1, a module-compatibility change in class_rulings.txt) (`with-stream-enabled-the-stream-block-logs-nothing`)
+  - ad-hoc configuration and my_configs overrides (`my-configs-and-ad-hoc-lines-reach-nginx`)
+  - on RedHat (the class's non-Ubuntu branch: class nginx without the apt_update require, the modules-enabled include kept on every OS) nginx comes from the distribution and runs with a valid configuration that includes /etc/nginx/modules-enabled once, with auto workers, server_tokens off and no version in the Server header, the two log formats and the 2048-bit DH group kept private (`on-redhat-nginx-comes-from-the-distribution`, `on-redhat-nginx-runs-valid-with-modules-enabled-once`, `on-redhat-workers-tokens-and-log-formats`, `on-redhat-dh-group-2048-bits-not-world-readable`, `on-redhat-the-server-header-names-no-version`)
 - **Open rows:**
-  - the stream block logs nothing (stream_access_log off, HQ 2026-11-18 ruling A1, a module-compatibility change in class_rulings.txt) — why: the stream block exists only when a stream server is declared; this fixture declares none. Exercised elsewhere: nginx_frontend_mail's set checks access_log off in the stream block (review PASS) — lifted by: ubuntu
-  - ad-hoc configuration, my_configs overrides, additional log formats and another DH size — why: fixture variants (one set holds one fixture, the defaults); untested — lifted by: ubuntu
+  - additional log formats and another DH size — why: parameter variants no production node uses (the fixture keeps the default 2048 bits and the two formats) — accepted gap (production does not use log_formats_additional, dh_params_bits)
 
 ### nginx_default_removal
 
@@ -719,9 +735,10 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the monitoring server, pinned to 127.0.0.1 in /etc/hosts, answers Hello World and serves nginx's status to 127.0.0.1 (`the-monitoring-server-answers`)
   - the status page is refused (403) to a request that does not come from 127.0.0.1 (`the-status-page-is-refused-off-loopback`)
   - the Nagios check reads nginx's status, OK under its thresholds, WARNING and CRITICAL over them (`the-nginx-status-check-reports`)
+  - the parameters production sets (Let's Encrypt, proxy timeouts, ad-hoc location config, backend headers, protocols, the www server, a pass suffix, other locations, the www redirect fix, dynamic DNS, the default-server redirect) (`production-parameters-render`, `unknown-names-and-the-naked-domain-redirect-to-www`, `dynamic-dns-proxies-through-the-variable`)
+  - on RedHat the key is read from /etc/pki/tls/private (`on-redhat-the-key-is-read-from-pki-tls-private`)
 - **Open rows:**
-  - the variants (redirect_default, no default or monitoring server, no SSL, Let's Encrypt, IP whitelist and the other pass-through parameters) — why: fixture variants (one set holds one fixture), untested: this fixture sets only server_monitoring_create and leaves the rest at their defaults — lifted by: ubuntu
-  - on RedHat the key is read from /etc/pki/tls/private — why: the RedHat branch; this set runs on the plan's Ubuntu node — lifted by: rhel9
+  - the parameters no production node sets (servers_create, enable_ssl, manage_ssl, redirects_external_location, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, security_headers, redirects_external_prevented, redirects_external_whitelisted, server_default_create, ip_whitelist, use_compact_log_format, resolver) — why: parameter variants no production node uses — accepted gap (production does not use servers_create, enable_ssl, manage_ssl, redirects_external_location, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, security_headers, redirects_external_prevented, redirects_external_whitelisted, server_default_create, ip_whitelist, use_compact_log_format, resolver)
 
 ### nginx_frontend_domain
 
@@ -733,9 +750,11 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - plain HTTP on www redirects (301) to HTTPS on www, keeping the path (`http-redirects-to-https`)
   - HTTPS on www and on the domain proxies to the backend, with the domain's certificate, which verifies against its issuer (`https-proxies-to-the-backend`)
   - only TLS 1.3 is accepted (the default protocol list) (`only-tls-1-3-is-accepted`)
+  - the parameters production sets (Let's Encrypt, proxy timeouts, ad-hoc location config, backend headers, protocols, the naked domain decorated to www, a pass suffix, other locations, the www redirect fix, dynamic DNS, security headers) (`production-parameters-render`, `the-naked-domain-redirects-to-www`, `dynamic-dns-proxies-through-the-variable`)
+  - with TLSv1.2 enabled (base_ssl_protocols_prefix, as production sets it), only the class's cipher list is accepted for it (`under-tls-1-2-only-the-class-ciphers-are-accepted`)
+  - on RedHat the key is read from /etc/pki/tls/private (`on-redhat-the-key-is-read-from-pki-tls-private`)
 - **Open rows:**
-  - the variants (decorate_naked, security headers, IP whitelist, external-redirect prevention, dynamic DNS, Let's Encrypt, extra protocols and ciphers, timeouts, servers_create false) — why: fixture variants (one set holds one fixture), untested: this fixture leaves every one of them at its default — lifted by: ubuntu
-  - on RedHat the key is read from /etc/pki/tls/private — why: the RedHat branch; this set runs on the plan's Ubuntu node — lifted by: rhel9
+  - the parameters no production node sets (servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, ip_whitelist, proxy_locations_ignore_headers, redirect_http_www_to_https_www_create, server_https_www_create, redirects_external_prevented, redirects_external_location, redirects_external_whitelisted, redirects_external_prevented_adhoc_config, use_compact_log_format, resolver) — why: parameter variants no production node uses — accepted gap (production does not use servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, ip_whitelist, proxy_locations_ignore_headers, redirect_http_www_to_https_www_create, server_https_www_create, redirects_external_prevented, redirects_external_location, redirects_external_whitelisted, redirects_external_prevented_adhoc_config, use_compact_log_format, resolver)
 
 ### nginx_frontend_mail
 
@@ -792,9 +811,10 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - time is kept by the ntp module's service (ntpsec on Ubuntu 24.04) from the Hiera servers, and it synchronises (`ntp-keeps-the-time`)
   - with no nameservers given, the node's DNS setup is left as it is (`dns-is-left-alone`)
   - no boot-time agent run unless asked (run_puppet_on_boot false) (`no-boot-run-by-default`)
+  - on RedHat, firewalld is stopped, disabled and masked, chrony keeps the time, and filesystem_yum replaces the apt scripts (`on-redhat-firewalld-masked-chrony-and-the-yum-scripts`)
+  - strict SSH, firewall purge off with ignore patterns, and the boot run, when their parameters are set (`production-parameters-strict-keep-and-boot-run`, `prod-two-unmanaged-rules-are-planted`, `prod-the-agent-run-keeps-the-matching-rule`)
 - **Open rows:**
-  - on RedHat, firewalld is stopped, disabled and masked, chrony keeps the time, and filesystem_yum replaces the apt scripts — why: the set runs on the plan's Ubuntu node; the RedHat branch needs a run of node_base on the rhel9 node, which one set (one node) does not hold — lifted by: rhel9
-  - custom NTP servers, nameservers, the extra firewall and the boot run when their parameters are set — why: fixture variants (one set holds one fixture); each component's own set covers it with its parameters set (firewall_secure_extra, dns_client, puppet_boot_run) — lifted by: ubuntu
+  - the parameters node_base forwards that no production node sets (custom NTP, nameservers, the extra firewall and its options, SSH options, syslog mode, apt and update options, filesystem security) — why: parameter variants no production node uses on node_base — accepted gap (production does not use anti_ddos, apt_surface_list, bad_mark, ciphers, country_whitelist, customize_syslog_mode, custom_ntp, ddos_limit, ddos_limit_per_time_unit, ddos_limit_time_unit, filesystem_security, firewall_secure_extra, forward_iniface, good_mark, host_keys, internal_forward, internal_forward_list, ip_blacklist, ip_filter, ip_whitelist, kex_algorithm, macs, nameservers, ntp_servers, password_authentication, relevant_updates_method, relevant_updates_no_kernel, server_ppa, service_list, ssh_allow_root_login, ssh_port, syslog_mode)
 
 ### node_base_desktop
 
@@ -872,8 +892,9 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - a client with a local account connects, gets a pool address and the pushed options, and reaches the server's LAN side (`vpn-account-on-the-server`, `client-connects-gets-a-pool-address-and-reaches-the-server-side`)
   - a wrong password is refused (`wrong-password-rejected`)
   - clients cannot reach each other (client isolation, the default) (`client-isolation-on-the-bridge`, `a-second-vpn-account`, `a-second-client-reaches-the-server-side-but-not-the-first`)
+  - another DNS server pushed to clients, another cipher, and client isolation off (proxy_arp_pvlan on the bridge) (`another-dns-cipher-and-isolation-off`)
 - **Open rows:**
-  - the variants force_ifupdown, client_isolation false, compression none, another cipher or DNS server — why: parameter variants (one set holds one params fixture, which keeps their defaults); untested — lifted by: ubuntu
+  - force_ifupdown true and compression none — why: parameter variants no production node uses (the fixture keeps their defaults) — accepted gap (production does not use force_ifupdown, compression)
 - **Stand-in:** `p8test_dhcp_primary` — lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). Plan: stays; for Salatiel's explicit acceptance: the first VPN gateway is migrated as a recreated test gateway before any live one (documentation list, cutover row 9) (HQ 2026-11-23)
 - **Finding:** the-data-channel-is-compressed-both-ways (escalations/openvpn_server.behaviour.md)
 - **Local changes:** #7: `$data_ciphers = join(unique(['AES-256-GCM', 'AES-128-GCM', 'CHACHA20-POLY1305', $cipher]), ':')` (openvpn_server.pp:157-159, with a two-line comment) and `'data-ciphers' => $data_ciphers` added to the server's custom_options (:185;
@@ -903,9 +924,8 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - supervisor and cloud-init are removed, and unattended upgrades are off by default (`supervisor-cloud-init-and-unattended-upgrades-are-removed`)
   - the package lists are refreshed on every agent run (`package-lists-refresh-on-every-agent-run`)
   - the exec update-package-lists refreshes the lists before the packages are installed (`the-update-package-lists-exec-never-runs`)
-- **Open rows:**
-  - unattended upgrades installed when asked (unattended_upgrades true) — why: a fixture variant (one set holds one fixture), untested: this fixture leaves unattended_upgrades at its default false — lifted by: ubuntu
-  - the RedHat branch (dnf makecache every run, extra_packages_el, the RedHat package list and dnf-automatic) — why: the RedHat branch; this set runs on the plan's Ubuntu node (the class's Phase 1 verdict on rhel9 covers its apply, not its behaviour) — lifted by: rhel9
+  - unattended upgrades installed when asked (unattended_upgrades true) (`unattended-upgrades-installed-when-asked`, `on-redhat-dnf-automatic-installed-when-asked`)
+  - the RedHat branch (dnf makecache every run, extra_packages_el, the RedHat package list and dnf-automatic) (`on-redhat-the-package-list-and-dnf-automatic-absent`)
 
 ### postfix_smtp_base
 
@@ -936,9 +956,8 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - a message over the size limit is refused (`a-message-over-the-size-limit-is-refused`)
   - another host cannot relay through the node (only mynetworks and authenticated clients may) (`another-host-cannot-relay-through-the-node`)
   - root's mail alias, rendered from root_email_alias and compiled (`root-alias-rendered-from-default`)
-- **Open rows:**
-  - a non-default root alias, mynetworks, mydestination or size limit (per-node Hiera keys) — why: fixture variants (one set holds one lab Hiera fixture, which leaves these at their defaults); untested — lifted by: ubuntu
-  - the RedHat branch (cyrus-sasl-plain, /etc/ssl/certs/ca-bundle.crt) — why: the RedHat branch; this set runs on the plan's Ubuntu node — lifted by: rhel9
+  - a non-default root alias, mynetworks, mydestination or size limit (per-node Hiera keys) (`on-redhat-the-per-node-values-reach-postfix`)
+  - the RedHat branch (cyrus-sasl-plain, /etc/ssl/certs/ca-bundle.crt) (`on-redhat-sasl-plain-and-the-ca-bundle`)
 
 ### puppet_backup
 
@@ -980,7 +999,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - declining the confirmation commits and pushes nothing; a missing email prints the usage and exits 1 (`a-declined-run-and-a-missing-email-change-nothing`)
   - a branch argument other than the current branch prints an error and the run goes on (the baseline's guard does not stop) (`a-run-on-another-branch-warns-and-goes-on`)
 - **Open rows:**
-  - an https remote with a token prompt — why: the https URL and the token prompt belong to git and the deployment's server, not to the script, whose commands are the same against any remote (the local origin here); the lab has no https git server — lifted by: ubuntu
+  - an https remote with a token prompt — why: the https URL and the token prompt belong to git and the deployment's server, not to the script, whose commands are the same against any remote (the set pushes to a local origin) — lifted by: capability: an https git server in the lab that asks for a token
 
 ### puppet_reports_cleanup
 
@@ -1010,14 +1029,16 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - rsyslog and its GnuTLS driver are installed, and rsyslog runs and starts at boot (`rsyslog-and-its-tls-driver-are-installed-and-running`)
-  - the node's Puppet CA, certificate and key are copied for rsyslog, byte for byte, and form a valid identity (`the-tls-files-are-the-nodes-puppet-identity`)
+  - with no ssldir_override, the node's Puppet CA, certificate and key are copied for rsyslog from the agent's own ssldir (an AIO agent's /etc/puppetlabs/puppet/ssl, local change #23), byte for byte, and form a valid identity (`the-tls-files-are-the-nodes-puppet-identity`, `the-catalog-copies-from-the-agents-ssldir`, `on-redhat-a-syslog-account-with-ids-0-exists`)
+  - with ssldir_override, the copies come from the directory given (`the-catalog-copies-from-the-override`)
   - the user rsyslog drops to (syslog) can read the key, and other users cannot (`rsyslog-can-read-the-key-as-the-user-it-runs-as`)
   - a stopped rsyslog runs again after the next agent run (`rsyslog-is-stopped`, `the-next-agent-run-starts-rsyslog-again`)
   - a change to the TLS directory restarts rsyslog at the next agent run (`the-tls-directory-drifts`, `the-agent-run-restores-the-directory-and-restarts-rsyslog`)
   - a change to a TLS file (a renewed certificate) restarts rsyslog once at the next agent run (`a-tls-file-changes`, `the-agent-run-restores-the-file-and-restarts-rsyslog-once`)
+  - on RedHat, a syslog user and group (uid/gid 0) exist for the copied files' ownership (`on-redhat-a-syslog-account-with-ids-0-exists`)
 - **Open rows:**
-  - on RedHat, a syslog user and group (uid/gid 0) exist for the copied files' ownership — why: these checks run on the Ubuntu node, where the syslog account exists already — lifted by: rhel9
-- **Local changes:** #1: `subscribe => File['/etc/rsyslog.d/tls']` becomes a subscribe to the directory and the three TLS files, ca.pem, `${certname}.pem` and `${certname}.key` (rsyslog_base.pp:79 at the baseline);
+  - on an agent without the aio_agent_version fact (the pre-AIO packages), the copies come from /var/lib/puppet/ssl — why: every lab agent is an AIO agent, and so is the production agent read on the laptop (puppet-agent 5.5.22); no lab node kind runs the pre-AIO packages — lifted by: capability: an agent without the aio_agent_version fact (the pre-AIO puppet packages)
+- **Local changes:** #1: `subscribe => File['/etc/rsyslog.d/tls']` becomes a subscribe to the directory and the three TLS files, ca.pem, `${certname}.pem` and `${certname}.key` (rsyslog_base.pp:79 at the baseline);; #23: rsyslog_base.pp:33-42 (`$ssldir`, with a 2-line comment, baseline :32-35): with no `ssldir_override`, an agent with the `aio_agent_version` fact (puppet-agent 4 and later, OpenVox) copies its TLS files from /etc/puppetlabs/puppet/ssl, its own ssldir;
 
 ### rsyslog_client
 
@@ -1029,8 +1050,12 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the target is pinned in /etc/hosts when its IP is given (`the-target-is-pinned-in-hosts`)
   - a line logged on the node reaches the remote TLS log server, under the node's name (`the-peer-runs-a-tls-log-server`, `a-local-log-line-leaves-over-tls`, `the-server-received-the-line-from-the-node`)
   - a changed forwarding rule is restored by the next agent run, which restarts rsyslog once (`the-forwarding-rule-drifts`, `the-agent-run-restores-the-rule-and-restarts-rsyslog-once`)
+  - with forward_auth_log, rsyslog accepts the configuration and starts with no configuration error, on Ubuntu 24.04 and on RHEL 9.5 with the rsyslog the class installs there (local change (`rsyslog-starts-without-a-config-error`, `on-redhat-rsyslog-starts-without-a-config-error`)
+  - with forward_auth_log, a line written to /var/log/auth.log reaches the remote TLS log server through the auth.log input (`a-line-is-written-to-auth-log`, `the-server-received-the-auth-log-line`)
+  - forward_auth_log, check_names and a failover target render their rules (auth.log read and forwarded on its own ruleset, the peer name enforced, a failover action only while the first is suspended) (`options-render-the-forwarding-rules`)
 - **Open rows:**
-  - the failover target (forwarding switches to it while the first target is suspended), forward_auth_log and check_names — why: fixture variants: the fixture forwards to one live target and sets none of them; failover needs a second fixture (a dead target, the peer as failover), which one set cannot hold; untested — lifted by: ubuntu2
+  - forwarding switches to the failover target while the first target is suspended — why: a switch needs a dead first target and a live failover, the peer: a second fixture with the peer, and a variant run has no peer — lifted by: capability: a peer in a variant run (phase3.py variant runs have none)
+- **Local changes:** #22: templates/rsyslog/forward_simple.conf.epp:74 (baseline :75): the line `deleteStateOnFileMove="on"` is removed from the imfile input that forward_auth_log renders for /var/log/auth.log;
 
 ### rsyslog_server
 
@@ -1068,12 +1093,14 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - a member of an allowed group (sudo, naemon, the node's Hiera othergroups, ssh_in) logs in with a key; a user in none of them is refused even with a valid key (`allow-groups`, `ssh-in-group`, `login-test-accounts-and-key`, `a-key-login-in-an-allowed-group-works`, `a-key-login-in-the-hiera-group-works`, `a-key-login-outside-the-allowed-groups-is-refused`)
   - password logins and root logins are refused (`password-auth-off`, `root-login-off`, `login-test-accounts-and-key`, `password-and-root-logins-are-refused`)
   - an idle session is ended after client_alive_interval (on OpenSSH 9.2+ by sshd's own idle timeouts, local change (`client-alive`, `login-test-accounts-and-key`, `an-idle-session-is-ended-after-the-interval`)
-  - the host keys are offered in the given order, and the class's own moduli file is used (`host-keys-in-order`, `moduli-file`)
+  - on an sshd older than 9.2 (RHEL 9) the idle disconnect is not enforced (HQ batch-14 ruling 3; approval_conditions.md) (`rhel-login-account-and-key`, `on-redhat-an-idle-session-is-not-ended`)
+  - the host keys are offered in the given order, and the class's own moduli file is installed (its content and mode) (`host-keys-in-order`, `moduli-file`)
   - the other hardening settings hold (no host-based auth, rhosts ignored, 120 s login grace, empty passwords refused, strict modes, port) (`unchanged-hardening-defaults`)
+  - with password_authentication true (node_base_domain_desktop sets it) a password logs in, and a wrong one is refused (`with-password-authentication-a-password-logs-in`)
+  - the RedHat branch (service sshd, admin group wheel) (`on-redhat-the-service-and-the-admin-group`)
 - **Open rows:**
-  - on an sshd older than 9.2 (RHEL 9) the idle disconnect is not enforced (HQ batch-14 ruling 3; approval_conditions.md) — why: an sshd without ChannelTimeout/UnusedConnectionTimeout; this set runs on Ubuntu 24.04 (OpenSSH 9.6) — lifted by: rhel9
-  - Protocol 2 and UsePrivilegeSeparation yes — why: deprecated and ignored by OpenSSH 7.5 and later (the node runs 9.6p1), so they have no behaviour to test (Phase 5 backlog #3) — lifted by: ubuntu
-  - the RedHat branch (service sshd, admin group wheel) — why: the RedHat branch; this set runs on the plan's Ubuntu node — lifted by: rhel9
+  - the other parameter variants (root_login true, another port, other host keys, kex algorithms, ciphers or MACs) — why: parameter variants no production node uses — accepted gap (production does not use root_login, port, host_keys, kex_algorithm, ciphers, macs)
+  - Protocol 2 and UsePrivilegeSeparation yes — why: deprecated and ignored by OpenSSH 7.5 and later, so they have no behaviour on any lab sshd (Phase 5 backlog — lifted by: capability: an OpenSSH older than 7.5 in the lab
 - **Local changes:** #8: `$idle_timeouts` (ssh_secure.pp:57-64, with a three-line comment): when the sshd version fact `ssh_server_version_release` (saz-ssh 13.1.0's, from `sshd -V`) is 9.2 or later, `ChannelTimeout session:*=<client_alive_interval>s` and `UnusedConnectionTimeout <client_alive_interval>s`;
 
 ### ssl_base
@@ -1085,10 +1112,11 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the key is deployed to /etc/ssl/private/<prefix>.key, 0600, and it is the key of the deployed certificate (`the-key-is-private-and-matches-the-certificate`)
   - the bundle /etc/ssl/certs/<prefix>.<service>.bundle.crt is the certificate then its intermediate, 0644, and the certificate verifies against that intermediate (`the-bundle-is-the-leaf-then-its-issuer`)
   - the service is restarted once when the key or certificate changes (`the-key-and-bundle-drift`, `the-agent-run-restores-both-and-restarts-the-service-once`)
+  - Let's Encrypt material (<prefix>-key.pem into the private directory, <prefix>.pem then <prefix>-chain.pem into <prefix>.<service>.bundle.pem) (`letsencrypt-key-and-bundle`)
+  - on RedHat the key goes to /etc/pki/tls/private (`on-redhat-the-key-is-in-pki-tls-private`)
+  - other owners and groups for the files (`other-owners-and-groups`)
 - **Open rows:**
-  - Let's Encrypt material (<prefix>-key.pem into the private directory, <prefix>.pem then <prefix>-chain.pem into <prefix>.<service>.bundle.pem) — why: a fixture variant (letsencrypt_certificate true; one set holds one fixture). Covered elsewhere in part: nginx_frontend_mail's set (fixture letsencrypt_certificate true, reaching ssl_base through ssl_nginx_domain) checks, in smtps-and-imaps-serve-the-frontend-certificate, that 465 and 993 serve the first certificate of p8test.nginx.bundle.pem, which nginx loads with p8test-key.pem, so the file names and the leaf-first order hold there. Checked by no set: the -chain.pem second certificate in the bundle, the two files' modes and owners, and the restart on change. The lab's test PKI already provides the -key.pem, .pem and -chain.pem files — lifted by: ubuntu
-  - on RedHat the key goes to /etc/pki/tls/private — why: the RedHat branch; this set runs on the plan's Ubuntu node — lifted by: rhel9
-  - other owners and groups for the files, and a warning notify for services other than nginx and postfix — why: untested: no consumer at the baseline (ssl_nginx, ssl_nginx_domain, ssl_postfix) passes owner or group or a service other than nginx or postfix, and this set's fixture uses the defaults — lifted by: ubuntu
+  - a warning notify for services other than nginx and postfix — why: the warning is a notify resource, which reports an event on every agent run, so the harness's run-2 gate refuses the apply of such a variant (the plan lists no expected run-2 event for this define) — lifted by: capability: an expected run-2 event per variant run (expected_run2_events is per class in the plan)
 
 ### ssl_nginx
 
@@ -1112,9 +1140,8 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the bundle /etc/ssl/certs/<prefix>.nginx.bundle.crt is the certificate then its intermediate (`the-bundle-is-the-leaf-then-its-issuer`)
   - nginx serves TLS with the pair, sending the certificate and its intermediate (`nginx-serves-tls-with-the-pair`)
   - nginx is restarted once when the key or certificate changes (`the-bundle-alone-drifts`, `the-agent-run-restores-the-bundle-and-restarts-nginx-once`, `the-key-alone-drifts`, `the-agent-run-restores-the-key-and-restarts-nginx-once`)
-- **Open rows:**
-  - on RedHat (ssl_base's CentOS/RHEL branch) the key goes to /etc/pki/tls/private — why: the RedHat branch; this set runs on the plan's Ubuntu node — lifted by: rhel9
-  - a Let's Encrypt certificate (letsencrypt_certificate true, passed to ssl_base) — why: a fixture variant (one set holds one fixture). Covered elsewhere in part: nginx_frontend_mail's set (fixture letsencrypt_certificate true, which reaches this define) checks that 465 and 993 serve the first certificate of p8test.nginx.bundle.pem, loaded with p8test-key.pem. Checked by no set: the -chain.pem second certificate, the files' modes and owners, and the restart on change — lifted by: ubuntu
+  - on RedHat (ssl_base's CentOS/RHEL branch) the key goes to /etc/pki/tls/private (`on-redhat-the-key-is-in-pki-tls-private`)
+  - with a Let's Encrypt certificate (letsencrypt_certificate true, passed to ssl_base) the key is <prefix>-key.pem, 0600, the bundle <prefix>.nginx.bundle.pem is the certificate then its chain, and nginx serves that pair (`letsencrypt-key-is-private-and-matches-the-certificate`, `letsencrypt-bundle-is-the-leaf-then-its-chain`, `letsencrypt-pair-served-by-nginx`)
 
 ### ssl_postfix
 
@@ -1136,12 +1163,12 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 - **Proven:**
   - the per-tag script is installed root:root 0755 with the parameters, and parses (`script-installed-root-0755`, `script-carries-the-parameters`, `script-is-valid-bash`)
   - the local user's crontab runs it daily at hour:minute (`daily-cron-for-the-local-user`)
-  - a run mirrors each listed host's directory into its own <localdir>/<host><suffix> over ssh as the remote user (`root-key-and-the-remote-host-name`, `the-peer-serves-the-remote-dir`, `the-script-mirrors-the-remote-dir`)
+  - a run mirrors each listed host's directory into its own <localdir>/<host><suffix> over ssh as the remote user, on that host's listed port (`root-key-and-the-remote-host-name`, `the-peer-serves-the-remote-dir`, `the-script-mirrors-the-remote-dir`)
   - the bandwidth limit (Mbit/s converted to rsync's MiB/s) slows the transfer (`bandwidth-limit-converted`, `the-script-mirrors-the-remote-dir`)
   - a file removed on the remote host is removed locally by the next run (--delete) (`a-file-is-removed-on-the-remote`, `the-next-run-removes-it-locally-too`)
+  - other ports, no limit, another local user (`no-limit-another-port-and-local-user`)
 - **Open rows:**
-  - cron itself firing at 03:17 — why: a run would have to wait for 03:17; the crontab entry is checked and the script it names is run by hand — lifted by: ubuntu
-  - other ports, no limit, another local user — why: parameter variants (one set holds one params fixture); untested — lifted by: ubuntu
+  - cron itself firing at 03:17 — why: a run would have to wait for 03:17; the crontab entry is checked and the script it names is run by hand — lifted by: capability: a wall-clock trigger in phase3.py runs (waiting for, or shifting, the node's time)
 
 ### sysmon_backup
 
@@ -1176,9 +1203,8 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the OS check reports the release (`the-os-check-reports-the-release`)
   - the TLS certificate check reports a certificate's expiry in short words, WARNING inside the warning window (`the-certificate-check-reports-expiry-in-short-words`)
   - the Elasticsearch query check asks localhost:9200 for matching sshd events, OK when there are none, Critical listing each event's time, user and host, and Unknown with the error when Elasticsearch cannot be asked (`the-elastic-check-is-unknown-without-elasticsearch`, `the-elastic-check-is-ok-with-no-events`, `the-elastic-check-is-critical-with-events`, `the-elastic-check-asks-for-the-query`)
-- **Open rows:**
-  - on RedHat the package-count check counts the security updates of a severity (dnf or yum updateinfo, Important by default) — why: the RedHat branch of the script; the set runs on the plan's Ubuntu node — lifted by: rhel9
-  - on RedHat the same checks are installed (the computed package name nagios-plugins-disk is not used by any resource) — why: the set runs on the plan's Ubuntu node; sysmon_base's RedHat run is the Phase 1 per-node verdict on rhel9 — lifted by: rhel9
+  - on RedHat the package-count check counts the security updates of a severity (dnf or yum updateinfo, Important by default) (`on-redhat-the-package-count-uses-updateinfo`)
+  - on RedHat the same checks are installed (the computed package name nagios-plugins-disk is not used by any resource) (`on-redhat-the-checks-are-installed`, `on-redhat-the-os-version-check-reads-os-release`)
 - **Local changes:** #3: `package { 'net-tools': ensure => installed, }` added (sysmon_base.pp, after the lookups): check_netstat_conns.sh and check_netstat_cip.sh run `netstat`, which Ubuntu 24.04 does not install (absent from the clean node's inventory;; #4: files/sysmon/nagios-puppet.sh: the lock test searches `$TEMP` (the whole agent output) instead of `$OUTPUT` (its first 160 characters, kept for display), with a two-line comment;
 
 ### sysmon_fs_health
@@ -1255,25 +1281,27 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the given password hash is set, so the password logs in and a wrong one is refused (`password-hash-set`, `the-password-logs-in-and-a-wrong-one-is-refused`)
   - the given key is always pushed, as the user's only key, in a private file the user owns (`the-given-key-is-pushed`, `key-file-owned-and-private`)
   - no ecryptfs passphrase is managed (the wrapper cannot pass myppsigs or myppwrapped) (`no-ecryptfs-passphrase-files`)
+  - a key added out of band is purged by the next agent run (user_base's purge, behind the wrapper) (`an-out-of-band-key-is-planted`, `the-agent-run-purges-the-out-of-band-key`)
+  - the parameter variants the wrapper passes on (a group list, another home, a home mode, another shell) and the locked or keyless placeholders (`the-wrapper-passes-a-locked-hash-home-shell-and-groups`, `the-wrapper-passes-an-empty-key`)
 - **Open rows:**
-  - user_base's own behaviour behind the wrapper, the purge of other keys and the empty-hash refusal — why: checked in user_base's set: the purge by a check after an agent run, the refusal by a compile-only run (compile time); this wrapper passes the same parameters on — lifted by: ubuntu
-  - a login with the pushed key — why: the private half of the fixture key would have to be on the node, and the repository keeps no private keys; the key line, owner and modes are checked instead, as in user_base's set — lifted by: ubuntu
-  - the parameter variants the wrapper passes on (a group list, another home, a home mode, another shell) and the locked or keyless placeholders — why: parameter variants (one set holds one params fixture); untested here and in user_base's set — lifted by: ubuntu
+  - the empty-hash refusal behind the wrapper — why: a refusal at compile time (user_base's fail()), which ends a run APPLY_FAILED, never a check — lifted by: capability: a variant run whose expected outcome is a compile refusal
+  - a login with the pushed key — why: a login needs the private half of the pushed key on the node; the repository keeps no private keys and no run hands a file from the laptop to the node — lifted by: capability: a run step that hands a private key from the laptop to the node
 
 ### user_base
 
-- **Purpose:** A base wrapper for a system user: the account with its own same-named primary group, comment, home and shell, the given password hash (refusing an empty one), and SSH access through exactly one pushed key (any other authorized key is purged; a locked or keyless user gets an unusable key), with optional home mode and ecryptfs wrapped passphrase.
+- **Purpose:** A base wrapper for a system user: the account with its own same-named primary group, comment, home and shell, the given password hash (refusing an empty one), and SSH access through exactly one pushed key (any other authorized key is purged; a locked or keyless user gets an unusable key; with ignorekey, for encrypted homes, no key is pushed), with optional home mode and ecryptfs wrapped passphrase.
 - **Behaviour:** pass; node ubuntu; production machines: 3.
 - **Tracker:** `[from: release-0.9.10; upstream defect fixed: exec guarded by its post-condition]`
 - **Proven:**
   - the account exists with its own primary group, comment, home (created, owned by the user) and shell, and no other group with an empty list (`user-and-own-primary-group`, `no-supplementary-groups`, `home-created-and-owned`)
   - the given password hash is set, so the password logs in and a wrong one is refused (`password-hash-set`, `the-password-logs-in-and-a-wrong-one-is-refused`)
   - the given key is pushed as the user's only authorized key, and a key added out of band is purged by the next agent run (`the-pushed-key-is-the-only-authorized-key`, `an-out-of-band-key-is-planted`, `the-agent-run-purges-the-out-of-band-key`)
+  - a locked hash or an empty key pushes an unusable key; a group list sets the primary group; another home, home mode or shell (`a-locked-hash-with-other-home-shell-and-groups`, `an-empty-key-pushes-an-unusable-key`)
+  - with ignorekey true (for encrypted homes) no key is pushed, so the account has no authorized key (`with-ignorekey-no-key-is-pushed`)
 - **Open rows:**
-  - an empty password hash is refused, so no account is created without one — why: a refusal at compile time (fail()), which no probe on the node can see and which needs a second params fixture; shown instead by test_class.sh --compile-only with myhash '' on 2026-11-19T17:23:25Z: COMPILE_FAILED, "Can't touch this - hash is empty! Where is the user database?" — lifted by: ubuntu
-  - a login with the pushed key — why: the private half of the fixture key would have to be on the node, and the repository keeps no private keys; the key's line, owner and modes are checked instead (key logins as behaviour are in ssh_secure's set) — lifted by: ubuntu
-  - a locked hash or an empty key pushes an unusable key; a group list sets the primary group; another home, home mode or shell — why: parameter variants (one set holds one params fixture); untested — lifted by: ubuntu
-  - the ecryptfs branch (wrapped passphrase written from the .b64 file, with the HQ-ruled exec guard) — why: the fixture user has no ecryptfs home, and the lab node has no ecryptfs setup to create /home/.ecryptfs/<user>/.ecryptfs (HQ 2026-11-16 item 7a: an ecryptfs fixture user) — lifted by: kubuntu
+  - an empty password hash is refused, so no account is created without one — why: a refusal at compile time (fail()): a variant run whose apply is refused ends APPLY_FAILED, never a check; shown by test_class.sh --compile-only with myhash '' on 2026-11-19T17:23:25Z: COMPILE_FAILED, "Can't touch this - hash is empty! Where is the user database?" — lifted by: capability: a variant run whose expected outcome is a compile refusal
+  - a login with the pushed key — why: a login needs the private half of the pushed key on the node; the repository keeps no private keys and no run hands a file from the laptop to the node (the key's line, owner and modes are checked; key logins as behaviour are in ssh_secure's set) — lifted by: capability: a run step that hands a private key from the laptop to the node
+  - the ecryptfs branch (wrapped passphrase written from the .b64 file, with the HQ-ruled exec guard) — why: the fixture user has no ecryptfs home, and no lab node has an ecryptfs setup to create /home/.ecryptfs/<user>/.ecryptfs — lifted by: capability: an ecryptfs fixture user with a mounted private directory (HQ 2026-11-16 item 7a)
 
 ### user_desktop
 
@@ -1330,7 +1358,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### user_lock
 
 - **Purpose:** Locks an existing user in hashman, the fleet's user database on the Puppet master: hashman's own pp_auth.py marks the user's password entry locked, so hashman (and the services that authenticate through it) refuse the user.
-- **Behaviour:** review-failed — purpose; node puppetserver; production machines: 0.
+- **Behaviour:** pass; node puppetserver; production machines: 0.
 - **Tracker:** `[from: release-0.9.10; upstream defect fixed: exec guarded by its post-condition]`
 - **Proven:**
   - hashman's pp_auth.py lock marks the user's entry locked, in place (one entry, not a duplicate), and invalidates the user's Samba hash the same way (`user-entry-locked-by-hashman`, `exactly-one-entry`, `the-samba-hash-is-locked-too`)

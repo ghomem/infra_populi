@@ -1,4 +1,4 @@
-# The sweep of open uncovered rows — approach (OPEN, for HQ: the run is stopped before it)
+# The sweep of open uncovered rows — approach (CLOSED 2026-11-23: HQ ruling 1, option B; carried out, the swept sets reviewed 2026-11-25)
 
 HQ after batch 20, item 7: the sweep of open uncovered rows, then the final approval report (stop for Salatiel).
 `phase3.py sweep` lists 67 rows in 34 approved sets written before HQ batch-15 ruling 3. Each lacks `evidence`, and
@@ -29,3 +29,9 @@ and a Phase 3 review: 34 runs and 34 reviews, whichever approach is taken.
 - **C: A now, B as Phase 5 backlog items** named in the approval report.
 
 The final approval report follows the sweep; the test-suite design note and the rename come after Salatiel's stop.
+
+## Closed
+HQ ruled option B on 2026-11-23 (DESIGN_DECISIONS "HQ rulings on the sweep and the escalated lifts", ruling 1): the
+sets were swept once (variants for the parameters production uses, accepted gaps for the others, RedHat rows on
+rhel9). The swept sets were reviewed on 2026-11-25 (the reviews with no durations and the duration list, HQ
+2026-11-24 item 4); the approval report regenerated that day lists 84 open rows in 61 classes, down from 118 in 72.

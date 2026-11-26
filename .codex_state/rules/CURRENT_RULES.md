@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-141 entries; 6 marked superseded (in whole or part); newest first.
+142 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-26 — HQ 2026-11-24 item 4 carried out; the final approval report; stopped for Salatiel
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-25 — The lab's paravirt provider is hyperv, enforced (HQ 2026-11-24 "experiment accepted")
 - 1. Salatiel has run steps 2 and 3 (node restored to v4, set to hyperv, P8NODE_BASELINE_GREEN_v5 taken without booting;
