@@ -1,0 +1,35 @@
+# The kinds of test node the check sets run on. A set runs on its `node` kind (apply.node, default ubuntu); a
+# variant may name another kind; a set with a `peer` needs a second machine of the peer's kind. Every node is a fresh,
+# disposable machine with the Puppet agent (OpenVox 8 or Puppet 8) installed, reachable over ssh with passwordless
+# sudo, whose certname is its host name. `provides` lists test tooling the sets expect a kind to have already.
+ubuntu:
+  os_family: Debian
+  description: Ubuntu 24.04 server
+  capabilities: [server]
+ubuntu2:
+  os_family: Debian
+  description: a second Ubuntu 24.04 server, the peer of the two-machine sets
+  capabilities: [server, second-node]
+  provides:
+    - pamtester and python3-venv
+    - /opt/p8test-browser, a Python venv with Playwright and its headless Chromium (the browser flow)
+rhel9:
+  os_family: RedHat
+  description: RHEL 9, registered with a subscription (BaseOS and AppStream enabled)
+  capabilities: [server, rhel-subscription]
+kubuntu:
+  os_family: Debian
+  description: Kubuntu 24.04 desktop (KDE Plasma, SDDM)
+  capabilities: [desktop, kde]
+gnome:
+  os_family: Debian
+  description: Ubuntu 24.04 desktop (GNOME, GDM)
+  capabilities: [desktop, gnome]
+dc:
+  os_family: Debian
+  description: an Ubuntu 24.04 server running a Samba 4 Active Directory domain controller (realm P8TEST.EXAMPLE, domain P8TEST)
+  capabilities: [server, second-node, ad-dc]
+puppetserver:
+  os_family: Debian
+  description: an Ubuntu 24.04 server that is also a Puppet server (OpenVox server 8) with its own CA
+  capabilities: [server, puppet-server]

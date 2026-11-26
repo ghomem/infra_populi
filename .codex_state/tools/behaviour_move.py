@@ -296,7 +296,7 @@ def apply_block(cls: str, data: dict, ctx_kinds: dict) -> dict:
     row = rows.get(cls)
     kinds = nodes_data()["nodes"]
     families = sorted({kinds[k]["os_family"] for k in ctx_kinds})
-    block = {"resource_type": getattr(row, "resource_type", None) or "class"}
+    block = {"resource_type": getattr(row, "resource_type", None) or "class", "node": base_kind(cls)}
     title = getattr(row, "title", None)
     if title:
         block["title"] = title
