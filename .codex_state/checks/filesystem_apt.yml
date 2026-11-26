@@ -346,6 +346,9 @@ checks:
       for f in get-relevant-updates-list apt-check-updates.sh; do test -e $b/$f && echo "$f present" || echo "$f absent"; done
     expect: {rc: 0, stdout: "\\Asurface script installed\\nget-relevant-updates-list absent\\napt-check-updates\\.sh absent\\n\\Z"}
 
+  # 2026-11-25 authoring correction (after run 20261125T224123Z-author, local change #24): the probe strips SURFACE=
+  # with sed, but the expectation kept it, so the check could not pass; the node rendered "vim less", as the fixed
+  # code makes it. The expectation now matches the probe's output.
   - id: no-kernel-and-a-custom-surface-list
     variant: custom
     what: >-
@@ -360,7 +363,7 @@ checks:
       b=/opt/puppet-infrastructure/bin
       grep -E '^NO_KERNEL=' $b/apt-check-updates.sh
       sed -n 's/^SURFACE=//p' $b/apt-update-surface.sh
-    expect: {rc: 0, stdout: "\\ANO_KERNEL=\"1\"\\nSURFACE=\"vim less\"\\n\\Z"}
+    expect: {rc: 0, stdout: "\\ANO_KERNEL=\"1\"\\n\"vim less\"\\n\\Z"}
 
   - id: the-no-kernel-job-lists-no-kernel-package
     variant: nokernel
