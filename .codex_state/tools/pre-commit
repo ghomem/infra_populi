@@ -33,6 +33,16 @@ if git diff --cached --name-only | grep -qxE '\.codex_state/(DESIGN_DECISIONS\.m
   python3 "$repo/.codex_state/tools/gen_rules_digest.py" --staged
 fi
 
+# HQ review of design note F, rulings 2 and 8: the public behaviour suite stays free of the lab and the engine, and
+# its params fixtures are fake (suite_check.py).
+if git diff --cached --name-only | grep -q '^spec/behaviour/'; then
+  if ! found="$(python3 "$repo/.codex_state/tools/suite_check.py" --staged)"; then
+    printf '%s\n' "$found" >&2
+    echo "SUITE: commit rejected — a staged file of spec/behaviour/ names the lab or the engine, or a fixture is not fake" >&2
+    exit 1
+  fi
+fi
+
 # HQ 2026-11-11 ruling 3: no commit lands with a failing test. Fast subset on every commit; the full suite when a
 # batch report is staged, or (HQ 2026-11-16 NAT review I) when the commit touches the engine's tools
 # (.codex_state/tools/) or the Claude Code settings (.claude/settings*.json). Skipped only where the engine's tests
