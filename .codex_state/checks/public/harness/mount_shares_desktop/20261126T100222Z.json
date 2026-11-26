@@ -1,0 +1,24 @@
+{
+ "class": "mount_shares_desktop",
+ "role": "command",
+ "at": "20261126T095643Z",
+ "set_sha256": "761b66dc856af1885db65e02c176b2803f8a46e957ecb3d63e500a402977b4d4",
+ "valid": true,
+ "problems": [
+  "the provider gave no fresh ubuntu2 node: 0%...70%...80%...90%...100%\nERROR: The primary archive failed (apt-get update failed on node 'p8lab-ubuntu2' (mirror unreachable?).), and so did the fallback mirror http://mirrors.edge.kernel.org/ubuntu/ (apt-get update failed on node 'p8lab-ubuntu2' (mirror unreachable?).).\nrevert of ubuntu2 failed"
+ ],
+ "clean": [],
+ "apply": null,
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ENVIRONMENT_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "dest": "p8lab-gnome",
+   "boot_id": "3c685661-4ac6-4be8-8974-863a88d75240"
+  }
+ },
+ "duration_s": 338.5
+}

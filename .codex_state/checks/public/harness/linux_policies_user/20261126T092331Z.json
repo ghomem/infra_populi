@@ -1,0 +1,147 @@
+{
+ "class": "linux_policies_user",
+ "role": "command",
+ "at": "20261126T091730Z",
+ "set_sha256": "d84b480c44458f34d95dcace2cc6df168c1fe20464e3a22f3f4daf40e1054601",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "user-policy-script-composed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh': No such file or directory\nhead: cannot open '/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh' for reading: No such file or directory\ngrep: /opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh: No such file or directory\ntail: cannot open '/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh' for reading: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "policies-run-on-an-agent-run-while-logged-in",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "autostart-runs-the-policies-at-login",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\nno session or no agent run\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "no-policy-runs-before-the-session",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "no session\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "r.sh.tmp_1], Exec[Execute linux policies for: p8testuser]; inherited: none] (plan expected_run2_events)\nCOVERAGE puppet_infrastructure::linux_policies_user: 6 concrete resources (+1 defined-type instances)\n  Puppet_infrastructure::Linux_policies_user[linux_policies_user]\n  File[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp]\n  File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_0]\n  File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_1]\n  File[/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh]\n  Tidy[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp]\n  Exec[Execute linux policies for: p8testuser]\nGREEN: run 2 events limited to the plan's expected_run2_events (File[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp] File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_0] File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_1] Exec[Execute linux policies for: p8testuser]) (gate v2).\nGREEN_STAMP linux_policies_user 3e435e5a35d1\n\nNODE_FRESH: yes (boot fa01250e of the latest revert, no agent run since)\nGREEN: run 2 events limited to the plan's expected_run2_events (File[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp] File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_0] File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_1] Exec[Execute linux policies for: p8testuser]) (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "user-policy-script-composed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser p8testuser 700\n#!/bin/bash\n1\nlogger -t p8testpolicy \"p8test policy 1 as $(id -un)\"\nlogger -t p8testpolicy p8test-policy-2\n",
+   "stderr": ""
+  },
+  {
+   "id": "policies-run-on-an-agent-run-while-logged-in",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ran-on-agent-run\nlogged-in-on-agent-run\npolicy-ran-on-agent-run-as-p8testuser\n",
+   "stderr": ""
+  },
+  {
+   "id": "autostart-runs-the-policies-at-login",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ran-at-login\npolicies-ran-at-login-as-p8testuser\n",
+   "stderr": ""
+  },
+  {
+   "id": "no-policy-runs-before-the-session",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\nafter the session: some\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "dest": "p8lab-kubuntu",
+   "boot_id": "fa01250e-3de9-4eb9-b9df-1e882bd1ea80",
+   "boot_id_at_end": "fa01250e-3de9-4eb9-b9df-1e882bd1ea80",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "p8lab-kubuntu",
+  "NODE_ADDR": "192.168.56.22",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "6d2612f38b1607de470c6720a954d7cbfbe61cf8b182c02907c8d9fa5f255cd9",
+ "session": {
+  "user": "p8testuser",
+  "up": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Puppet_infrastructure::Linux_policies_user[linux_policies_user]/Exec[Execute linux policies for: p8testuser]/returns: executed successfully (corrective)\u001b[0m"
+    ],
+    "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-kubuntu\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795684794'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Puppet_infrastructure::Linux_policies_user[linux_policies_user]/Exec[Execute linux policies for: p8testuser]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 0.33 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Puppet_infrastructure::Linux_policies_user[linux_policies_user]/Exec[Execute linux policies for: p8testuser]/returns: executed successfully (corrective)\u001b[0m"
+    ],
+    "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-kubuntu\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795684810'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Puppet_infrastructure::Linux_policies_user[linux_policies_user]/Exec[Execute linux policies for: p8testuser]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 0.33 seconds\u001b[0m\nAGENT_RC=2\n"
+   }
+  ]
+ },
+ "duration_s": 360.5
+}

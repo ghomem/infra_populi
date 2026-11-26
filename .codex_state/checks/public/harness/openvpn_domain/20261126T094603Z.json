@@ -1,0 +1,271 @@
+{
+ "class": "openvpn_domain",
+ "role": "command",
+ "at": "20261126T094014Z",
+ "set_sha256": "cb79a907edc91902f9ff6e2cdc5141a5e7a25038feb73fd9c0734b70fc62af7a",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "smb-conf-joins-as-a-domain-member",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/samba/smb.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-node-is-joined-to-the-domain",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "bash: line 97: net: command not found\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "domain-users-and-groups-resolve-through-winbind",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "id: 'p8testuser@P8TEST.example': no such user\n",
+   "ok": true
+  },
+  {
+   "id": "pam-winbind-requires-the-group-and-openvpn-pam-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/security/pam_winbind.conf: No such file or directory\nsha256sum: /etc/pam.d/openvpn: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-dc-holds-the-node-machine-account",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "host": "peer",
+   "ok": true
+  },
+  {
+   "id": "domain-users-for-the-login-checks",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "pam-logins-through-winbind",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-pam/logins.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "kerberos-realms-against-the-dc",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-krb5/kinit.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-dc-name-resolves-through-wins",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "sed: can't read /etc/samba/smb.conf: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "main]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 174.21 seconds\u001b[0m\nRUN1_EVENTS: 15 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795686336'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.88 seconds\u001b[0m\nCOVERAGE puppet_infrastructure::openvpn_domain: 15 concrete resources (+0 defined-type instances)\n  Package[samba]\n  Package[winbind]\n  Package[krb5-user]\n  Package[libnss-winbind]\n  Package[libpam-winbind]\n  Package[cifs-utils]\n  Package[ntpdate]\n  File[/etc/samba/smb.conf]\n  File[/etc/security/pam_winbind.conf]\n  File[/etc/krb5.conf]\n  File[/etc/nsswitch.conf]\n  File[/etc/pam.d/openvpn]\n  File[/etc/pam.d]\n  File[/root/join-domain.sh]\n  Exec[join domain]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP openvpn_domain 14e173dc91cc\n\nNODE_FRESH: yes (boot a5f49f63 of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "smb-conf-joins-as-a-domain-member",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "security = domain\nnetbios name = puppet8node\nrealm = P8TEST.example\nwins server = p8lab-dc.P8TEST.example\nworkgroup = P8TEST\nwinbind separator = +\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-node-is-joined-to-the-domain",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Join to 'P8TEST' is OK\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the workgroup (P8NOPE, a domain that does not exist), so the join test must fail",
+    "rc": 0,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "domain-users-and-groups-resolve-through-winbind",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "domain users\np8testgroup\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the user (p8nouser, no such domain account), so winbind must not resolve it",
+    "rc": 0,
+    "passed": false,
+    "stdout": "",
+    "stderr": "id: 'p8nouser@P8TEST.example': no such user\n"
+   }
+  },
+  {
+   "id": "pam-winbind-requires-the-group-and-openvpn-pam-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "require_membership_of = P8TEST+p8testgroup\ne664b2eb0c148c0c6765e30f2ff4e09ee24d111406efb86dfa60ffe1e47e2b51\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-dc-holds-the-node-machine-account",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "host": "peer"
+  },
+  {
+   "id": "the-dc-name-resolves-through-wins",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "the WINS server's name resolves through wins to its DNS address\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the name (p8nohost, which no machine holds), so WINS must not resolve it",
+    "rc": 1,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "domain-users-for-the-login-checks",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testvpnin\np8testvpnin\np8testvpnout\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the domain users p8testvpnin (password P8test-vpn-in-not-a-secret1) and p8testvpnout (password P8test-vpn-out-not-a-secret1) in the DC's directory and adds p8testvpnin to p8testgroup",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "pam-logins-through-winbind",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "member-right rc=0\nmember-wrong rc=1\noutsider-right rc=1\nmember-bare rc=0\noutsider-bare rc=1\nbare name in group: p8testgroup\noutsider at the DC: plaintext password authentication succeeded\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs pamtester if absent; runs five PAM logins through the login service (winbind and the system log record them, the DC counts the wrong password once against p8testvpnin) and one direct winbind authentication of p8testvpnout (wbinfo -a); the outcomes go to /run/p8test-pam/logins.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "kerberos-realms-against-the-dc",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "default_realm = P8TEST.EXAMPLE\ndefault realm rc=0\nDefault principal: p8testvpnin@P8TEST.EXAMPLE\ndc realm rc=0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "asks the DC for two tickets for p8testvpnin (kinit, the DC logs both) into the credential cache /run/p8test-krb5/cc, which is destroyed after each; the outcomes go to /run/p8test-krb5/kinit.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "a5f49f63-d9fc-4cc4-bd1d-65efe1c38353",
+   "boot_id_at_end": "a5f49f63-d9fc-4cc4-bd1d-65efe1c38353",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "dc",
+   "dest": "p8lab-dc",
+   "boot_id": "e8472b0e-3227-4cda-97ca-92979a5d83e1",
+   "boot_id_at_end": "e8472b0e-3227-4cda-97ca-92979a5d83e1",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-dc",
+  "PEER_ADDR": "192.168.56.25",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "ede2e8f7a2d2e3a87ebc417bbfc95f984745023fac83a55446b71fb657769db0",
+ "duration_s": 348.8
+}

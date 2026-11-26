@@ -39,6 +39,9 @@ MARKER = "/var/lib/behaviour-suite/used"
 EXECUTED = setfile.EXECUTED
 # A run-2 line that reports a change (the gate: run 2 changes nothing but the set's expected_run2_events).
 EVENT = re.compile(r"Notice: /Stage\[main\]/")
+# An error Puppet logs without failing the run: an exec's `unless`/`onlyif` check that times out is logged as an error
+# and the exec is taken as in sync, and the run exits 0. Either run with one is not clean.
+ERROR = re.compile(r"^(?:\x1b\[[0-9;]*m)?Error: ", re.M)
 SESSION_LOGIN = """set -e
 u={user}
 id "$u" >/dev/null
@@ -140,8 +143,9 @@ class Provider:
 # ------------------------------------------------------------------ applying the class
 
 def gate(first: dict, second: dict, expected: list[str]) -> bool:
-    """Run 1 applied (exit 0 or 2); run 2 changed nothing, or only the set's expected_run2_events."""
-    if first["rc"] not in (0, 2):
+    """Run 1 applied (exit 0 or 2); run 2 changed nothing, or only the set's expected_run2_events; neither run logged
+    an error."""
+    if first["rc"] not in (0, 2) or first.get("errors") or second.get("errors"):
         return False
     if second["rc"] == 0 and not second["events"]:
         return True
@@ -152,6 +156,7 @@ def gate(first: dict, second: dict, expected: list[str]) -> bool:
 def agent_result(rc: int, out: str, err: str) -> dict:
     m = re.search(r"AGENT_RC=(\d+)", out)
     return {"rc": int(m.group(1)) if m else rc, "events": [l.strip() for l in out.splitlines() if EVENT.search(l)],
+            "errors": [line.strip()[:300] for line in out.splitlines() if ERROR.match(line)],
             "tail": (out + err)[-1500:]}
 
 
@@ -355,8 +360,9 @@ class Run:
                     entry["boot_id_at_end"] = self.provider.boot(m)
                     entry["fresh"] = bool(entry["boot_id"]) and entry["boot_id_at_end"] == entry["boot_id"] and \
                         (role != "node" or bool((record.get("apply") or {}).get("node_fresh", True)))
-            if peer is not None:
-                self.provider.release(peer)
+            for m in (peer, node):  # a run keeps only the machines it uses
+                if m is not None:
+                    self.provider.release(m)
 
     def session(self, node: Machine, record: dict, expected: list[str], say) -> bool:
         user = self.data["session"]["user"]

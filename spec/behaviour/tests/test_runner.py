@@ -147,3 +147,13 @@ def test_a_node_fixture_is_rendered_with_the_run(tmp_path):
     text = mf.build(data, "ubuntu", setfile.kinds(), [tmp_path], tmp_path,
                     render=lambda t: t.replace("{{PEER_ADDR}}", "203.0.113.5"))
     assert "host { 'peer': ip => '203.0.113.5' }" in text
+
+
+def test_an_error_puppet_logs_without_failing_the_run_fails_the_gate():
+    first = runner.agent_result(0, "Notice: /Stage[main]/X/Exec[e]/returns: executed successfully\nAGENT_RC=2\n", "")
+    second = runner.agent_result(0, "Error: /Stage[main]/X/Exec[e]/unless: Check \"x\" exceeded timeout\n"
+                                    "Notice: Applied catalog in 300.21 seconds\nAGENT_RC=0\n", "")
+    assert second["rc"] == 0 and not second["events"] and second["errors"]
+    assert runner.gate(first, second, []) is False
+    clean = runner.agent_result(0, "Notice: Applied catalog in 3.1 seconds\nAGENT_RC=0\n", "")
+    assert runner.gate(first, clean, []) is True
