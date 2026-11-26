@@ -145,14 +145,16 @@ Exit codes:
 
 ## Fixtures
 
-`fixtures/params/<class>.json` holds a class's parameters for a run. Lookup order, first match wins:
+`fixtures/params/<class>.json` holds a class's parameters for a run. Lookup order (the most specific level with a file
+wins, in any params directory):
 
 1. `for/<target>/<class>.json`: the class as a base of the target class.
 2. `variants/<params>/<class>.json`
 3. `kinds/<kind>/<class>.json`
 4. `<class>.json`
 
-Directories given with `--params` are searched before the suite's own. Use them for values that cannot be committed,
+A file or directory may also carry the module prefix (`puppet_infrastructure::<class>.json`).
+Within a level, directories given with `--params` are searched before the suite's own. Use them for values that cannot be committed,
 such as a real resolver or a password hash.
 
 Committed fixtures must be **plainly fake**. A commit hook refuses anything else:
@@ -161,7 +163,9 @@ Committed fixtures must be **plainly fake**. A commit hook refuses anything else
 - identities named `p8test...` (users `p8testuser`, interfaces `p8test0`);
 - no private keys, and no hashes or tokens unless they carry `p8test`.
 
-A fixture may use placeholders (`{{PEER_ADDR}}`), and the run fills them in.
+A fixture may use placeholders (`{{PEER_ADDR}}`), and the run fills them in. So may a node fixture,
+`fixtures/node/<name>.pp`: Puppet code applied before the class, standing in for a service, path or user the class
+expects and a test node lacks. A set names it in `apply.node_fixture`.
 
 ## Writing a set
 

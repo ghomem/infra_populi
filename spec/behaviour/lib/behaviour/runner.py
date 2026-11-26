@@ -173,7 +173,9 @@ class Applier:
       local    `puppet apply` of the manifest on the node, with the module and its dependencies already under
                --modulepath on the node (and Hiera data under --hiera-config, when the classes look keys up)
       command  `<cmd> <class> <node dest> <node kind> <manifest file>`: exit 0 and a `GREEN:` line when the class
-               applied cleanly twice (`NODE_FRESH: yes` when it checked the node was the fresh one)
+               applied cleanly twice (`NODE_FRESH: yes` when it checked the node was the fresh one); a variant run sets
+               BEHAVIOUR_VARIANT (its name) and BEHAVIOUR_PARAMS (its params fixture, if any) in the command's
+               environment
     """
 
     def __init__(self, mode: str, shell: Shell, command: list[str] | None = None, modulepath: str = "",
@@ -195,14 +197,17 @@ class Applier:
         """One more run on the node (a desktop session, or a correction the set waits for)."""
         return self.once(node)
 
-    def apply(self, cls: str, node: Machine, manifest: str, expected: list[str]) -> dict:
+    def apply(self, cls: str, node: Machine, manifest: str, expected: list[str], variant: str = "",
+              params: str = "") -> dict:
         import tempfile  # noqa: PLC0415
         self.manifest = manifest
         with tempfile.NamedTemporaryFile("w", suffix=".pp", delete=False) as f:
             f.write(manifest)
         if self.mode == "command":
+            import os  # noqa: PLC0415
+            env = {**(self.shell.env or os.environ), "BEHAVIOUR_VARIANT": variant, "BEHAVIOUR_PARAMS": params}
             p = subprocess.run([*self.command, cls, node.dest, node.kind, f.name], capture_output=True, text=True,
-                               env=self.shell.env)
+                               env=env)
             return {"rc": p.returncode, "green": p.returncode == 0 and "GREEN:" in p.stdout,
                     "node_fresh": "NODE_FRESH: yes" in p.stdout, "tail": (p.stdout + p.stderr)[-1500:]}
         if self.mode == "agent" and self.command:
@@ -243,7 +248,10 @@ class Run:
         v["PEER_NAME"] = p.name if p else "peer.invalid"
         v["PEER_ADDR"] = p.addr if p else "198.51.100.1"  # a variant run without the base run's peer: unreachable
         for kind, m in self.others.items():
-            v[f"NODE:{kind}"], v[f"ADDR:{kind}"] = m.name or "", m.addr
+            v[f"NODE:{kind}"], v[f"ADDR:{kind}"] = m.name or m.dest.rsplit("@", 1)[-1], m.addr  # its host name
+        for m in (node, p):  # the run's own machines answer for their kinds too
+            if m is not None:
+                v[f"NODE:{m.kind}"], v[f"ADDR:{m.kind}"] = m.name or "", m.addr
         return v
 
     def rendered(self, check: dict, values: dict) -> dict:
@@ -328,7 +336,8 @@ class Run:
             text = mf.build(self.data, kind, self.kinds, self.params_dirs, SUITE / "fixtures",
                             variant=params, render=lambda t: render.render(t, values))
             record["manifest_sha256"] = hashlib.sha256(text.encode()).hexdigest()
-            record["apply"] = self.applier.apply(self.cls, node, text, expected)
+            record["apply"] = self.applier.apply(self.cls, node, text, expected, record.get("name") or "",
+                                                 params or "")
             if not record["apply"]["green"]:
                 record["outcome"] = "APPLY_FAILED"
                 return peer

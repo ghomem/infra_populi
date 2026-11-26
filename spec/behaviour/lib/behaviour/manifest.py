@@ -2,14 +2,16 @@
 
 In the order the set gives: its node fixture first (stand-ins for a service the node does not run), then each catalog
 entry: a module's base class (`include <module>`), or one of this module's classes declared with its params fixture
-(a define with its title), or plainly included when it has none.
+(a define with its title: the set's apply.title for the class under test, the entry's `define:` for a base), or
+plainly included when it has none.
 
-Params fixtures are looked up, first match wins, in each params directory given (the suite's own fake fixtures, then
-the operator's):  for/<target>/<class>.json  (the class as a base of this target)
+Params fixtures are looked up level by level, the first level with a file in any of the params directories winning
+(directories in the order given: the operator's, then the suite's own fake fixtures):  for/<target>/<class>.json  (the class as a base of this target)
                   variants/<variant>/<target>.json  (a variant's own params for the target)
                   kinds/<kind>/<class>.json  (the class on that node kind)
                   <class>.json
-where <class> is the short name (no module prefix).
+where <class> is the short name (a file or directory named with the module prefix, `puppet_infrastructure::<class>`,
+is found too).
 """
 
 from __future__ import annotations
@@ -37,14 +39,17 @@ def literal(v) -> str:
 
 
 def params_file(cls: str, target: str, kind: str, variant: str | None, dirs: list[Path]) -> Path | None:
-    for d in dirs:
-        candidates = [d / "for" / target / f"{cls}.json"]
-        if variant and cls == target:
-            candidates.append(d / "variants" / variant / f"{target}.json")
-        candidates += [d / "kinds" / kind / f"{cls}.json", d / f"{cls}.json"]
-        for c in candidates:
-            if c.is_file():
-                return c
+    def named(x: str) -> list[str]:
+        return [x, f"{MODULE}::{x}"]
+    levels = [[Path("for") / t / f"{c}.json" for t in named(target) for c in named(cls)]]
+    if variant and cls == target:
+        levels.append([Path("variants") / variant / f"{t}.json" for t in named(target)])
+    levels += [[Path("kinds") / kind / f"{c}.json" for c in named(cls)], [Path(f"{c}.json") for c in named(cls)]]
+    for level in levels:  # a more specific file wins over a general one, whichever directory holds it
+        for d in dirs:
+            for rel in level:
+                if (d / rel).is_file():
+                    return d / rel
     return None
 
 
@@ -54,7 +59,7 @@ def family_of(kind: str, kinds: dict) -> str:
 
 def build(data: dict, kind: str, kinds: dict, params_dirs: list[Path], fixtures: Path,
           variant: str | None = None, render=lambda s: s) -> str:
-    """The manifest for the set on a node of `kind`. `render` fills the placeholders a params fixture may carry."""
+    """The manifest for the set on a node of `kind`. `render` fills the placeholders a node or params fixture carries."""
     apply = data["apply"]
     target = data["class"]
     lines = []
@@ -62,7 +67,7 @@ def build(data: dict, kind: str, kinds: dict, params_dirs: list[Path], fixtures:
         path = fixtures / "node" / f"{apply['node_fixture']}.pp"
         if not path.is_file():
             raise FileNotFoundError(f"node fixture {apply['node_fixture']} not found ({path})")
-        lines += [f"# node fixture: {apply['node_fixture']}", path.read_text(encoding="utf-8").rstrip("\n")]
+        lines.append(render(path.read_text(encoding="utf-8")).rstrip("\n"))
     family = family_of(kind, kinds)
     for entry in apply["catalog"][family]:
         if "external" in entry:
@@ -71,14 +76,15 @@ def build(data: dict, kind: str, kinds: dict, params_dirs: list[Path], fixtures:
         cls = entry["class"]
         full = f"{MODULE}::{cls}"
         is_target = cls == target
-        define = is_target and apply.get("resource_type") == "define"
+        define = (is_target and apply.get("resource_type") == "define") or "define" in entry
+        title = apply.get("title", "") if is_target else entry.get("define", "")
         pfile = params_file(cls, target, kind, variant, params_dirs)
         if pfile is None:
             if define:
-                raise FileNotFoundError(f"{target} is a define and needs a params fixture ({target}.json)")
+                raise FileNotFoundError(f"{cls} is a define and needs a params fixture ({cls}.json)")
             lines.append(f"include {full}")
             continue
         params = json.loads(render(pfile.read_text(encoding="utf-8")))
-        head = f"{full} {{ {literal(apply.get('title', ''))}:" if define else f"class {{ '{full}':"
+        head = f"{full} {{ {literal(title)}:" if define else f"class {{ '{full}':"
         lines += [head, *(f"  {k} => {literal(v)}," for k, v in params.items()), "}"]
     return "\n".join(lines) + "\n"

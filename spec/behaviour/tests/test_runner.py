@@ -129,3 +129,21 @@ def test_the_junit_report_counts_a_finding():
 def test_the_worst_outcome_wins():
     assert results.combined(["ALL_PASS", "FINDINGS", "SKIPPED"]) == "FINDINGS"
     assert results.combined(["ALL_PASS", None]) == "ENVIRONMENT_FAILED"
+
+
+def test_a_base_define_is_declared_with_its_title(tmp_path):
+    (tmp_path / "user_base.json").write_text(json.dumps({"uid": 2001}))
+    data = {"class": "x", "apply": {"resource_type": "class", "node": "ubuntu", "catalog": {
+        "Debian": [{"class": "user_base", "define": "p8testuser"}, {"class": "x"}]}}}
+    text = mf.build(data, "ubuntu", setfile.kinds(), [tmp_path], tmp_path)
+    assert text.splitlines()[:3] == ["puppet_infrastructure::user_base { 'p8testuser':", "  uid => 2001,", "}"]
+
+
+def test_a_node_fixture_is_rendered_with_the_run(tmp_path):
+    (tmp_path / "node").mkdir()
+    (tmp_path / "node" / "p8x.pp").write_text("# a fixture\nhost { 'peer': ip => '{{PEER_ADDR}}' }\n")
+    data = {"class": "x", "apply": {"resource_type": "class", "node": "ubuntu", "node_fixture": "p8x",
+                                    "catalog": {"Debian": [{"class": "x"}]}}}
+    text = mf.build(data, "ubuntu", setfile.kinds(), [tmp_path], tmp_path,
+                    render=lambda t: t.replace("{{PEER_ADDR}}", "203.0.113.5"))
+    assert "host { 'peer': ip => '203.0.113.5' }" in text

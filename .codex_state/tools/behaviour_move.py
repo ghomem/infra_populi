@@ -274,6 +274,8 @@ def expand(cls: str, rows: dict, family: str) -> list[dict]:
     out, state = [], {}
 
     def bases_of(row) -> list[str]:
+        if hasattr(row, "bases_for"):  # the plan's own resolution of `<class> [Debian|RedHat]` (gen_migration_order)
+            return [b.removeprefix(f"{MODULE}::") for b in row.bases_for(family)]
         found = []
         for b in getattr(row, "required_base", None) or []:
             m = re.fullmatch(r"(?:\[(Debian|RedHat)\])?(?:puppet_infrastructure::)?(\w+)", str(b).strip())
@@ -311,7 +313,12 @@ def apply_block(cls: str, data: dict, ctx_kinds: dict) -> dict:
     title = getattr(row, "title", None)
     if title:
         block["title"] = title
-    block["catalog"] = {fam: [dict(e) for e in expand(cls, rows, fam)] for fam in families}
+    def entry(e: dict) -> dict:
+        base = rows.get(e.get("class")) if e.get("class") != cls else None
+        if base is not None and getattr(base, "resource_type", None) == "define" and getattr(base, "title", None):
+            return {**e, "define": base.title}  # a base define, declared with its plan title (the harness's way)
+        return dict(e)
+    block["catalog"] = {fam: [entry(e) for e in expand(cls, rows, fam)] for fam in families}
     fixture = getattr(row, "node_fixture", None)
     if fixture:
         block["node_fixture"] = fixture
@@ -368,7 +375,7 @@ def first_difference(a, b, path="") -> str | None:
 
 def convert(cls: str) -> tuple[dict, str, str | None]:
     """(new set, its YAML text, the first difference that makes it not neutral or None)."""
-    raw = (OLD_DIR / f"{cls}.yml").read_text(encoding="utf-8")
+    raw = old_from_git(cls).decode("utf-8")  # the worktree's old file before the move, git's after it
     old = yaml.safe_load(raw)
     ctxs = contexts(cls, old)
     new = to_template(old, ctxs)
@@ -430,7 +437,9 @@ def comments(raw: str) -> str:
 
 
 def all_classes() -> list[str]:
-    return sorted(p.stem for p in OLD_DIR.glob("*.yml"))
+    """The sets to convert: the old files while they are there, the moved ones after the move."""
+    found = sorted(p.stem for p in OLD_DIR.glob("*.yml"))
+    return found or sorted(json.loads(MOVED.read_text())) if MOVED.is_file() or found else found
 
 
 def main(argv: list[str]) -> int:
@@ -459,7 +468,13 @@ def main(argv: list[str]) -> int:
             continue
         print(f"NEUTRAL {cls}")
         if argv[0] == "write":
-            raw = (OLD_DIR / f"{cls}.yml").read_bytes()
+            current = NEW_DIR / f"{cls}.yml"
+            if current.is_file() and cls in moved and \
+                    hashlib.sha256(current.read_bytes()).hexdigest() != moved[cls]["new_sha256"]:
+                bad += 1
+                print(f"REFUSED {cls}: the set changed after the move; a re-conversion would undo that change")
+                continue
+            raw = old_from_git(cls)
             NEW_DIR.mkdir(parents=True, exist_ok=True)
             (NEW_DIR / f"{cls}.yml").write_text(text, encoding="utf-8")
             note = comments(raw.decode("utf-8"))

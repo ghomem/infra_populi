@@ -1,0 +1,36 @@
+{
+  "domain": "p8test.example.com",
+  "frontend_sslprefix": "p8test",
+  "backend_hosts_and_ports": [
+    "127.0.0.1:8080"
+  ],
+  "backend_protocol": "http",
+  "manage_ssl": true,
+  "letsencrypt_certificate": true,
+  "proxy_read_timeout": "121s",
+  "proxy_connect_timeout": "31s",
+  "proxy_send_timeout": "122s",
+  "proxy_locations_adhoc_config": [
+    "add_header X-P8test-Adhoc on;"
+  ],
+  "domain_backend_set_headers": [
+    "X-P8test-Set p8test"
+  ],
+  "base_ssl_protocols_prefix": [
+    "TLSv1.2",
+    "TLSv1.3"
+  ],
+  "decorate_naked": true,
+  "www_fix_redirect": true,
+  "domain_backend_pass_suffix": "/p8test-suffix",
+  "security_headers": true,
+  "x_frame_options_value": "DENY",
+  "proxy_locations_others_config": [
+    {
+      "location": "/p8test-other/",
+      "raw_append": [
+        "add_header X-P8test-Other on;"
+      ]
+    }
+  ]
+}

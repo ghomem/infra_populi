@@ -125,8 +125,11 @@ def apply_problems(data: dict, cls: str, known: dict) -> list[str]:
     else:
         for fam, entries in cat.items():
             if not isinstance(entries, list) or not entries or entries[-1] != {"class": cls} or not all(
-                    isinstance(e, dict) and len(e) == 1 and set(e) <= {"class", "external"} for e in entries):
-                out.append(f"apply.catalog.{fam}: a list of {{class: ...}} / {{external: ...}} ending with the class")
+                    isinstance(e, dict) and (set(e) == {"external"} or set(e) == {"class"} or (
+                        set(e) == {"class", "define"} and isinstance(e["define"], str) and e["define"]))
+                    for e in entries):
+                out.append(f"apply.catalog.{fam}: a list of {{class: ...}} (a base define with define: <title>) / "
+                           "{external: ...} ending with the class")
     if "node_fixture" in a and not re.fullmatch(r"[a-z0-9_]+", str(a["node_fixture"])):
         out.append("apply.node_fixture names a manifest of fixtures/node/")
     events = a.get("expected_run2_events", [])

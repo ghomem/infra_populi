@@ -1,0 +1,14 @@
+{
+  "image": "nginx",
+  "tag": "alpine",
+  "app_port": "80",
+  "host_port": "18080",
+  "env": [
+    "P8TEST_ENV=on"
+  ],
+  "volumes": [
+    "/srv/p8test-bind:/p8test-bind",
+    "p8test-vol:/p8test-data"
+  ],
+  "command": "nginx -g 'daemon off; worker_rlimit_nofile 4096;'"
+}

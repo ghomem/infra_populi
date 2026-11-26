@@ -1,0 +1,39 @@
+{
+  "smtp_hostname": "smtp.p8test.example.com",
+  "smtp_sslprefix": "p8test",
+  "postfix_port": 587,
+  "smtp_users": [
+    {
+      "name": "p8testuser",
+      "password_hash": "{PLAIN}p8test-not-a-secret"
+    },
+    {
+      "name": "p8testuser2",
+      "password_hash": "{PLAIN}p8test-user2-not-a-secret"
+    }
+  ],
+  "allowed_client_ips": [
+    "127.0.0.1"
+  ],
+  "allowed_mail_from_addresses": [
+    "p8test@p8test.example.com",
+    "p8test-other@p8test.example.com"
+  ],
+  "allowed_users_per_mail_from_address": [
+    {
+      "mail_from_address": "p8test@p8test.example.com",
+      "allowed_users": [
+        "p8testuser"
+      ]
+    },
+    {
+      "mail_from_address": "p8test-other@p8test.example.com",
+      "allowed_users": [
+        "p8testuser2"
+      ]
+    }
+  ],
+  "do_not_warn_from_addresses_regexes": [
+    "p8test@p8test\\.example\\.com"
+  ]
+}
