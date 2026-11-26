@@ -249,13 +249,27 @@ def unlisted_comment_removals(removed: list[tuple[str, str]], listed: list[tuple
 AFTER_RE = re.compile(r"PASS after \((?:checks/)?results/([a-z0-9_]+)/(\d{8}T\d{6}Z)-(author|reviewer)")
 
 
+VARIANT_ID_RE = re.compile(r"^(?P<id>\S+?)\s*\(variant\s+(?P<variant>[\w-]+)\)$")
+
+
+def check_passed(data: dict, check_id: str, variant: str | None) -> bool:
+    """Whether a result's check passed in its base run's applied phase, or with `variant` in that variant run's."""
+    phase = data.get("applied", [])
+    if variant is not None:
+        runs = data.get("variants") or []
+        runs = runs.values() if isinstance(runs, dict) else runs
+        phase = next((v.get("applied") or [] for v in runs if isinstance(v, dict) and v.get("name") == variant), [])
+    return any(r.get("id") == check_id and r.get("passed") is True for r in phase)
+
+
 def local_change_after_problems(cls: str, class_files: list[str], path: Path | None = None,
                                 results: Path | None = None, changed=None) -> list[str]:
     """HQ batch-15 ruling 2: a class carrying a local change gets its Phase 1 PASS only once the change's after-check has
     passed. Each of the class's rows must name its after result, that result must exist with every check the row names
     passed, and the class's latest result (author or reviewer) must have run on the current code (no class file changed
     between its runner commit and HEAD) with those checks passed too: a later change may not ride on an earlier after
-    result. `changed(runner, files)` says whether any of the files differ from HEAD (git by default)."""
+    result. `changed(runner, files)` says whether any of the files differ from HEAD (git by default). A check that runs
+    in a variant is named `<check id> (variant <name>)` in the row and read from that variant's applied phase."""
     path = path or STATE / "rules" / "local_changes.md"
     results = results or STATE / "checks" / "results"
     if changed is None:
@@ -275,16 +289,20 @@ def local_change_after_problems(cls: str, class_files: list[str], path: Path | N
             problems.append(f"local change #{n} names no after result (`PASS after (results/...)`): its after-check "
                             "must pass before the Phase 1 PASS (HQ batch-15 ruling 2)")
             continue
-        ids = [i.strip() for i in re.split(r"\s+and\s+|,\s*", check_col.split(":", 1)[0]) if i.strip()]
+        ids = []
+        for i in re.split(r"\s+and\s+|,\s*", check_col.split(":", 1)[0]):
+            if i.strip():
+                v = VARIANT_ID_RE.match(i.strip())
+                ids.append((v.group("id"), v.group("variant")) if v else (i.strip(), None))
         res = results / m.group(1) / f"{m.group(2)}-{m.group(3)}.json"
         if not res.is_file():
             problems.append(f"local change #{n}: its after result results/{m.group(1)}/{res.name} does not exist")
             continue
         data = json.loads(res.read_text(encoding="utf-8"))
-        passed = {r["id"]: r.get("passed") for r in data.get("applied", [])}
-        for check_id in ids:
-            if passed.get(check_id) is not True:
-                problems.append(f"local change #{n}: check {check_id} did not pass in {res.name}")
+        for check_id, variant in ids:
+            if not check_passed(data, check_id, variant):
+                where = f" (variant {variant})" if variant else ""
+                problems.append(f"local change #{n}: check {check_id}{where} did not pass in {res.name}")
         latest = max((p for p in res.parent.glob("*.json") if p.stem.endswith(("-author", "-reviewer"))),
                      key=lambda p: p.name[:16])
         last = json.loads(latest.read_text(encoding="utf-8"))
@@ -295,10 +313,10 @@ def local_change_after_problems(cls: str, class_files: list[str], path: Path | N
             problems.append(f"local change #{n}: the latest result {latest.name} ran on {runner}, and the class's files "
                             "changed since: run the after-check on the current code")
         else:
-            now = {r["id"]: r.get("passed") for r in last.get("applied", [])}
-            for check_id in ids:
-                if now.get(check_id) is not True:
-                    problems.append(f"local change #{n}: check {check_id} did not pass in the latest result "
+            for check_id, variant in ids:
+                if not check_passed(last, check_id, variant):
+                    where = f" (variant {variant})" if variant else ""
+                    problems.append(f"local change #{n}: check {check_id}{where} did not pass in the latest result "
                                     f"{latest.name} on the current code")
     return problems
 

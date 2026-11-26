@@ -468,6 +468,41 @@ def test_a_local_change_without_a_current_passing_after_check_is_refused(tmp_pat
     assert any(message in p for p in problems), problems
 
 
+# 2026-11-25 (filesystem_apt, local change #24): an after-check that runs only in a variant is named
+# "<id> (variant <name>)" in the row and read from that variant's applied phase.
+def variant_fixture(tmp_path, row_check, variant_passed, base=None):
+    lc = tmp_path / "local_changes.md"
+    lc.write_text("| # | class | change | check | reviewer | date |\n|---|---|---|---|---|---|\n"
+                  f"| 9 | p8cls | x | {row_check} | pending | 2026-11-25 |\n")
+    rdir = tmp_path / "results" / "p8cls"
+    rdir.mkdir(parents=True)
+    (rdir / "20261125T100000Z-author.json").write_text(json.dumps({
+        "runner": "c1", "applied": [{"id": i, "passed": p} for i, p in (base or {}).items()],
+        "variants": [{"name": "custom", "applied": [{"id": "chk-v", "passed": variant_passed}]},
+                     {"name": "other", "applied": [{"id": "chk-o", "passed": True}]}]}))
+    return lc, tmp_path / "results"
+
+
+VARIANT_ROW = "chk-v (variant custom): FAIL before (x); PASS after (results/p8cls/20261125T100000Z-author: ok)"
+
+
+def test_an_after_check_in_a_variant_is_read_from_that_variant(tmp_path):
+    lc, res = variant_fixture(tmp_path, VARIANT_ROW, True)
+    assert rc.local_change_after_problems("p8cls", ["m.pp"], lc, res, changed=lambda r, f: False) == []
+
+
+@pytest.mark.parametrize("row, variant_passed, message", [
+    (VARIANT_ROW, False, "check chk-v (variant custom) did not pass in"),
+    ("chk-v (variant missing): PASS after (results/p8cls/20261125T100000Z-author: ok)", True,
+     "check chk-v (variant missing) did not pass in"),
+    ("chk-v: PASS after (results/p8cls/20261125T100000Z-author: ok)", True, "check chk-v did not pass in"),
+])
+def test_an_after_check_in_a_variant_must_pass_there(tmp_path, row, variant_passed, message):
+    lc, res = variant_fixture(tmp_path, row, variant_passed)
+    problems = rc.local_change_after_problems("p8cls", ["m.pp"], lc, res, changed=lambda r, f: False)
+    assert any(message in p for p in problems), problems
+
+
 def test_the_after_check_gate_ignores_other_classes_rows(tmp_path):
     lc, res = after_fixture(tmp_path, "chk-a: PASS after: pending", {})
     assert rc.local_change_after_problems("another", ["m.pp"], lc, res, changed=lambda r, f: False) == []
