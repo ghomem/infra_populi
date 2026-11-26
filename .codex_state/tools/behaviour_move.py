@@ -322,7 +322,14 @@ def apply_block(cls: str, data: dict, ctx_kinds: dict) -> dict:
     fixture = getattr(row, "node_fixture", None)
     if fixture:
         block["node_fixture"] = fixture
-    events = list(getattr(row, "expected_run2_events", None) or [])
+    # the harness allows the expected run-2 events of the target and of every class of its catalog (test_class.sh
+    # collect_expected_run2), so the block lists them all, the bases' first, each once (over the set's OS families)
+    events = []
+    for fam in families:
+        for e in expand(cls, rows, fam):
+            for ref in getattr(rows.get(e.get("class")), "expected_run2_events", None) or []:
+                if ref not in events:
+                    events.append(ref)
     if events:
         block["expected_run2_events"] = events
     return block

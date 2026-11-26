@@ -149,8 +149,9 @@ def gate(first: dict, second: dict, expected: list[str]) -> bool:
         return False
     if second["rc"] == 0 and not second["events"]:
         return True
-    return second["rc"] == 2 and bool(second["events"]) and bool(expected) and \
-        all(any(ref in line for ref in expected) for line in second["events"])
+    refs = [re.compile(".*".join(re.escape(part) for part in ref.split("*"))) for ref in expected]  # `*`: any text
+    return second["rc"] == 2 and bool(second["events"]) and bool(refs) and \
+        all(any(r.search(line) for r in refs) for line in second["events"])
 
 
 def agent_result(rc: int, out: str, err: str) -> dict:

@@ -481,3 +481,6 @@ apply:
     - class: filesystem_base
     - class: packages_base
     - class: filesystem_apt
+  expected_run2_events:
+  - Exec[apt_update]
+  - Exec[dnf-makecache]

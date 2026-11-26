@@ -66,7 +66,9 @@ def copy_modules(dest: str) -> None:
     """The node gets the master's modules, this repository's module in place of the deployed one, and the master's
     Hiera data under a hiera.yaml of its own (local apply has no server to ask)."""
     steps = [
-        (["ssh", "-o", "BatchMode=yes", MASTER, f"sudo -n tar -C {MASTER_ENV} -cf - modules data hiera.yaml"],
+        # the master's plain alias forces a terminal (RequestTTY force), which mangles a binary stream: its -rsync
+        # alias does not
+        (["ssh", "-o", "BatchMode=yes", f"{MASTER}-rsync", f"sudo -n tar -C {MASTER_ENV} -cf - modules data hiera.yaml"],
          ["ssh", "-o", "BatchMode=yes", dest, f"sudo -n bash -c 'rm -rf {MODULES_ON_NODE} {HIERA_ON_NODE}; "
           f"install -d {MODULES_ON_NODE} {HIERA_ON_NODE}; tar -C {HIERA_ON_NODE} -xf - && "
           f"mv {HIERA_ON_NODE}/modules/* {MODULES_ON_NODE}/ && rmdir {HIERA_ON_NODE}/modules'"]),

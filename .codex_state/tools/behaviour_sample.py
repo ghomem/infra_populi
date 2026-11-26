@@ -5,6 +5,9 @@
                                            .codex_state/checks/public/local/, HQ ruling 3's measurement) (.codex_state/checks/public/harness/) next
                                            to the engine's latest run the set's review judged (checks/results), per
                                            check and phase, base and variants; exit 1 on any difference
+  behaviour_sample.py measure              ruling 3's measurement: per set, the local-apply record next to the engine's
+                                           (outcome, differing checks, measured durations); a set whose local run
+                                           differs is a candidate for `apply.requires: [server]`
   behaviour_sample.py cover [<class>...]   what the classes cover of ruling 7's list (every probe helper, every node kind,
                                            a second node, a mutating probe, the desktop session, the browser flow)
 
@@ -101,7 +104,34 @@ def cover(classes: list[str]) -> int:
     return 1 if any(w in used and w not in got for w in wanted) else 0
 
 
+def measure() -> int:
+    global NEW
+    NEW = NEW.parent / "local"
+    rows, same = [], 0
+    for path in sorted((SUITE / "checks").glob("*.yml")):
+        cls = path.stem
+        if "deferred" in yaml.safe_load(path.read_text()):
+            continue
+        old, new = engine_record(cls), latest(NEW / cls)
+        if not new:
+            rows.append((cls, "not run", (old or {}).get("outcome"), "", (old or {}).get("duration_s"), None))
+            continue
+        diffs = compare(cls)
+        same += not diffs
+        rows.append((cls, new.get("outcome"), (old or {}).get("outcome"), len(diffs), (old or {}).get("duration_s"),
+                     new.get("duration_s")))
+    print("| set | local | engine | differing checks | engine s | local s |")
+    print("|---|---|---|---|---|---|")
+    for r in rows:
+        print("| " + " | ".join("" if x is None else str(x) for x in r) + " |")
+    ran = sum(1 for r in rows if r[1] != "not run")
+    print(f"\n{len(rows)} sets: {ran} measured, {same} identical to the engine, {ran - same} differ")
+    return 0
+
+
 def main(argv: list[str]) -> int:
+    if argv[:1] == ["measure"]:
+        return measure()
     if not argv or argv[0] not in ("compare", "cover"):
         print(__doc__)
         return 2

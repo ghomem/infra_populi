@@ -157,3 +157,11 @@ def test_an_error_puppet_logs_without_failing_the_run_fails_the_gate():
     assert runner.gate(first, second, []) is False
     clean = runner.agent_result(0, "Notice: Applied catalog in 3.1 seconds\nAGENT_RC=0\n", "")
     assert runner.gate(first, clean, []) is True
+
+
+def test_an_expected_run2_event_may_carry_a_wildcard():
+    first = runner.agent_result(0, "AGENT_RC=2\n", "")
+    second = runner.agent_result(0, "Notice: /Stage[main]/X/Notify[sync p8test0]/message: defined 'message' as 'x'\n"
+                                    "AGENT_RC=2\n", "")
+    assert runner.gate(first, second, ["Notify[sync *]"]) is True
+    assert runner.gate(first, second, ["Notify[other *]"]) is False
