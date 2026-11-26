@@ -45,14 +45,17 @@ if [[ -d "$tests" ]]; then
   report="$(git diff --cached --name-only | grep -E '^\.codex_state/escalations/batch-.*\.md$' | head -1 || true)"
   if [[ -n "$report" ]]; then
     selection=(); label="full suite (batch report staged)"
-  elif git diff --cached --name-only | grep -qE '^(\.codex_state/tools/|\.claude/settings[^/]*\.json$)'; then
+  elif git diff --cached --name-only | grep -qE '^(\.codex_state/tools/|spec/behaviour/lib/|\.claude/settings[^/]*\.json$)'; then
     selection=(); label="full suite (tools or settings staged)"
   else
     selection=(-m "not slow and not repo_state"); label="fast subset"
   fi
   junit="$(mktemp)"
+  # The public behaviour suite's own tests (spec/behaviour/tests, HQ review of design note F) run with the engine's.
+  suite_tests=()
+  [[ -d "$repo/spec/behaviour/tests" ]] && suite_tests=("$repo/spec/behaviour/tests")
   if ! out="$(cd "$repo" && PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -x -p no:cacheprovider --junitxml="$junit" \
-      "${selection[@]}" "$tests" 2>&1)"; then
+      "${selection[@]}" "$tests" "${suite_tests[@]}" 2>&1)"; then
     rm -f "$junit"
     printf '%s\n' "$out" | tail -25 >&2
     echo "TESTS: commit rejected — the ${label} failed" >&2
