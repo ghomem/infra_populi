@@ -1,4 +1,4 @@
-# filesystem_apt — behaviour findings: a custom apt_surface_list was not joined (CLOSED 2026-11-25: local change #24); the dist-upgrade check cannot finish within 600 s on this uplink (OPEN, environment, for HQ)
+# filesystem_apt — behaviour findings: a custom apt_surface_list was not joined (CLOSED 2026-11-25: local change #24); the dist-upgrade check cannot finish within 600 s on this uplink (RULED 2026-11-26: option C now, option A before the rename's re-verification)
 
 Found by the sweep's variant run `custom` (results/filesystem_apt/.json): with apt_surface_list ["vim", "less"] the
 surface script renders `SURFACE="["vim", "less"]"`. At the baseline, manifests/filesystem_apt.pp:59-61 assigns the
@@ -43,3 +43,8 @@ next baseline Salatiel takes for other reasons.
   check as `<id> (variant <name>)`).
 - **Dist-upgrade timeout (OPEN):** the reviewer's run reproduced it (action rc 124 at 600 s; 201 upgraded and 20 new
   pending after; 255 and 27 on the clean node) and judged it environment, not the class. The options above stand.
+
+## 2026-11-26: ruled (HQ review of design note F, ruling 9)
+Option C now: the check is recorded as environment-limited on this uplink, with its 2026-11-23 passes (four author and
+reviewer runs, nothing left to upgrade) as the evidence that apt-update-dist.sh works. Option A, a fresh node baseline,
+is taken just before the rename's full re-verification, so that pass runs on an up-to-date machine.

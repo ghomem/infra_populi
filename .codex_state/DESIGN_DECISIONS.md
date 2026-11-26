@@ -2689,3 +2689,29 @@ apply, the gate moved in), probes read runner variables instead of lab names (wh
 kept, and the engine keeps its lab provider, records and baseline checks around the public runner after a sameness
 proof. Five open questions for HQ (location, committing fake-only fixtures, local apply, names, derived_from in
 public). The drafted observations moved into its appendix. The run stops for HQ review; the lab is down.
+
+## 2026-11-26 — HQ review of design note F: approved, with rulings
+Verbatim:
+"HQ review of design note F: approved, with these rulings.
+1. Location: spec/behaviour/. spec/acceptance/ is where the Puppet community's standard acceptance tools look, and this
+   suite is not one of them.
+2. Fixtures: fake-only params fixtures may be committed inside the suite. This is the one exception to "never commit
+   params", enforced by the fake-values check in the pre-commit hook. Real or lab-specific values stay outside git.
+3. puppet apply: allowed as the public default only for sets shown to give the same result as the agent path. Measure
+   every set. A set that needs a Puppet server (file mounts, server facts, anything apply cannot do) declares it and is
+   skipped in apply mode with a clear message. The server path stays the engine's gate of record.
+4. Names: runner variables get neutral names with no P8_ prefix. The suite is built under the current module name and
+   renamed with everything else by the rename script.
+5. derived_from: becomes optional provenance that the public validator ignores. The engine keeps validating it against
+   the pinned baseline while the migration lasts. The public validator requires the purpose and outcomes table.
+6. Moving the sets must be provably neutral: for every set whose probes change (addresses, hostnames and paths becoming
+   variables), the probes rendered with the lab's values must be byte-identical to the old ones. Build that check; sets
+   that pass it are not stale.
+7. The engine's switch to the public runner needs a sample that covers every probe helper, every node kind, a
+   second-node set, a mutating probe, the desktop session and the browser flow.
+8. The guide is written for an outside contributor: nothing in spec/behaviour/ refers to .codex_state, the advisor or
+   Codex.
+9. filesystem_apt timeout: option C now. Option A (a fresh node baseline) is done just before the rename's full
+   re-verification, so that pass runs on an up-to-date machine.
+10. Order: build the suite now (items 1–8), then stop for HQ with the neutrality and sample results. The rename follows,
+    and its full re-verification runs on the public runner. Phase 1 approval is separate and stays with Salatiel."

@@ -2,7 +2,19 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-143 entries; 6 marked superseded (in whole or part); newest first.
+144 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-26 — HQ review of design note F: approved, with rulings
+- 1. Location: spec/behaviour/. spec/acceptance/ is where the Puppet community's standard acceptance tools look, and this
+- 2. Fixtures: fake-only params fixtures may be committed inside the suite. This is the one exception to "never commit
+- 3. puppet apply: allowed as the public default only for sets shown to give the same result as the agent path. Measure
+- 4. Names: runner variables get neutral names with no P8_ prefix. The suite is built under the current module name and
+- 5. derived_from: becomes optional provenance that the public validator ignores. The engine keeps validating it against
+- 6. Moving the sets must be provably neutral: for every set whose probes change (addresses, hostnames and paths becoming
+- 7. The engine's switch to the public runner needs a sample that covers every probe helper, every node kind, a
+- 8. The guide is written for an outside contributor: nothing in spec/behaviour/ refers to .codex_state, the advisor or
+- 9. filesystem_apt timeout: option C now. Option A (a fresh node baseline) is done just before the rename's full
+- 10. Order: build the suite now (items 1–8), then stop for HQ with the neutrality and sample results. The rename follows,
 
 ## 2026-11-26 — Test-suite design note written (ruling F); stopped for HQ review
 - (no numbered/Rule/Decision lines; read the entry)

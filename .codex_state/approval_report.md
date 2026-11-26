@@ -42,7 +42,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 
 ### Open escalations
 
-- escalations/filesystem_apt.behaviour.md: filesystem_apt — behaviour findings: a custom apt_surface_list was not joined (CLOSED 2026-11-25: local change #24); the dist-upgrade check cannot finish within 600 s on this uplink (OPEN, environment, for HQ)
+- none
 
 ## One row per class
 
