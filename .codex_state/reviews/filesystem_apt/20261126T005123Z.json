@@ -1,0 +1,100 @@
+{
+ "schema": 1,
+ "class": "filesystem_apt",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-26T00:51:23Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "bb5bafd57dd3",
+ "migrate_subject": "P8: migrate puppet_infrastructure::filesystem_apt",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit bb5bafd57dd3; 6 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/filesystem_apt.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `filesystem_apt Done [from: release-0.9.10; local changes: #24]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-cron_core', '1.3.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 27 catalog events; run 2: 1 event(s) only from expected_run2_events Exec[apt_update] Exec[dnf-makecache] [own: none; inherited: Exec[apt_update] via packages_base, Exec[dnf-makecache] via packages_base] (judge the header justification); COVERAGE puppet_infrastructure::filesystem_apt: 10 concrete resources (+0 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A hunk 1 (lines 1-2): the 2-line migration header comment only (names local change #24 and puppetlabs-cron_core 1.3.0, which header_modules confirms on the master); all baseline comments kept",
+   "DIFF A hunk 2 (baseline :60): $_apt_surface_list = $apt_surface_list -> join($apt_surface_list, \" \") plus a one-line comment; exactly local change #24 and minimal: the template apt-update-surface.sh.erb:5 renders SURFACE=\"<%= @_apt_surface_list %>\" and loops 'for p in $SURFACE', so an array rendered as [\"vim\", \"less\"] gave words '[vim,' and 'less]'; the fix uses the same join(..., \" \") as baseline :55/:57 for the default lists; no resource, default, type or other logic changed; no other hunk",
+   "DIFF B: re-migration replacing the earlier 'validated unchanged' header line with the #24 header and adding the same :60 hunk; matches DIFF A",
+   "idempotent: run-2 event Exec[apt_update] is inherited from required_base packages_base, baseline packages_base.pp:19 class { 'apt': update => { frequency => 'always' } } runs apt update every run by upstream design (Exec[dnf-makecache] is the RedHat-only baseline :13-17 exec with refreshonly => false); filesystem_apt itself has no own run-2 events"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 4,
+  "removed": 1,
+  "non_comment_changes": 2,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest, plus a local change (policy B; rules/local_changes.md): #24: a custom apt_surface_list is joined with spaces, as the default lists are, so the surface script gets package names.",
+  "# Module dependency: puppetlabs-cron_core 1.3.0 (vendored with Puppet 8.24.2)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 27,
+  "coverage": [
+   "COVERAGE puppet_infrastructure::filesystem_apt: 10 concrete resources (+0 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "total_s": 48.822,
+   "master_check_s": 0.628,
+   "poweroff_s": 1.413,
+   "restore_s": 0.863,
+   "boot_to_ssh_s": 19.182,
+   "apt_update_s": 26.034,
+   "verify_s": 0.702,
+   "nic1_rx_bytes": 14067660,
+   "apt_mirror": "primary"
+  },
+  "log": ".codex_state/logs/reviews/filesystem_apt.20261126T004632Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": "RUN2_EXPECTED_EVENTS: 1 from Exec[apt_update] Exec[dnf-makecache] [own: none; inherited: Exec[apt_update] via packages_base, Exec[dnf-makecache] via packages_base] (plan"
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "ubuntu"
+}
