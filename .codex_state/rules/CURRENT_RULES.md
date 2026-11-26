@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-142 entries; 6 marked superseded (in whole or part); newest first.
+143 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-26 — Test-suite design note written (ruling F); stopped for HQ review
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-26 — HQ 2026-11-24 item 4 carried out; the final approval report; stopped for Salatiel
 - (no numbered/Rule/Decision lines; read the entry)

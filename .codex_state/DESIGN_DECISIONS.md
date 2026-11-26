@@ -2680,3 +2680,12 @@ Verbatim:
   3 findings (filesystem_apt's timeout, open for HQ; firewall_secure_extra's RST limit and openvpn_server's compression,
   both ruled), 1 deferred (letsencrypt_certificate, a stand-in); 84 open rows in 61 classes; 24 local changes in 19
   classes; 7 stand-ins. The run stops here for Salatiel; the lab is down.
+
+## 2026-11-26 — Test-suite design note written (ruling F); stopped for HQ review
+Salatiel, at the approval-report stop: write the test-suite design note now, Phase 1 not yet approved; the rename
+stays untouched. The note is `.codex_state/test_suite_design.md` (a proposal, nothing built): the suite moves to
+`spec/behaviour/` with its own runner (any disposable node over ssh, a provider hook for fresh nodes, agent or local
+apply, the gate moved in), probes read runner variables instead of lab names (which also shrinks the rename), JUnit
+kept, and the engine keeps its lab provider, records and baseline checks around the public runner after a sameness
+proof. Five open questions for HQ (location, committing fake-only fixtures, local apply, names, derived_from in
+public). The drafted observations moved into its appendix. The run stops for HQ review; the lab is down.
