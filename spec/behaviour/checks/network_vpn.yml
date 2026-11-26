@@ -328,3 +328,6 @@ apply:
     - external: firewall
     - class: network_vpn
   node_fixture: p8test_dhcp_primary
+  requires:
+  - server
+  requires_why: openvpn_server takes its keys from the server's file mount puppet:///extra_files

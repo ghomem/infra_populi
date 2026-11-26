@@ -180,3 +180,6 @@ apply:
   catalog:
     Debian:
     - class: mysql_server
+  requires:
+  - server
+  requires_why: it takes its TLS files from the server's file mount puppet:///extra_files

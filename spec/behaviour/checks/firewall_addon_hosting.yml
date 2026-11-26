@@ -184,3 +184,6 @@ apply:
     Debian:
     - external: firewall
     - class: firewall_addon_hosting
+  requires:
+  - server
+  requires_why: its master rule's destination is the server fact $server_facts['servername']

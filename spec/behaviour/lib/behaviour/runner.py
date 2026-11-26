@@ -54,7 +54,12 @@ for i in $(seq 120); do
 done
 echo SESSION_DOWN
 """
-AGENT = "timeout 900 /opt/puppetlabs/bin/puppet agent -t --detailed-exitcodes 2>&1; echo \"AGENT_RC=$?\"\n"
+# After each run, the resources Puppet's own last-run report marks changed: a change shows even when its log line does
+# not (a resource whose loglevel is below notice).
+CHANGED = ("/opt/puppetlabs/puppet/bin/ruby -rpuppet -e 'Puppet.initialize_settings; "
+           "r = YAML.unsafe_load_file(Puppet[:lastrunreport]); "
+           "r.resource_statuses.each { |k, st| puts \"CHANGED #{k}\" if st.changed }' 2>/dev/null\n")
+AGENT = "timeout 900 /opt/puppetlabs/bin/puppet agent -t --detailed-exitcodes 2>&1; echo \"AGENT_RC=$?\"\n" + CHANGED
 PEER_AGENT = """set -e
 d=/etc/p8test-agent/{certname}
 install -d -m 0755 "$d" /var/lib/p8test-agent/{certname} /run/p8test-agent/{certname} /var/log/p8test-agent/{certname}
@@ -156,7 +161,11 @@ def gate(first: dict, second: dict, expected: list[str]) -> bool:
 
 def agent_result(rc: int, out: str, err: str) -> dict:
     m = re.search(r"AGENT_RC=(\d+)", out)
-    return {"rc": int(m.group(1)) if m else rc, "events": [l.strip() for l in out.splitlines() if EVENT.search(l)],
+    logged = [l.strip() for l in out.splitlines() if EVENT.search(l)]
+    changed = [l.strip() for l in out.splitlines() if l.startswith("CHANGED ")]
+    # a changed resource whose change no log line shows is an event of its own
+    silent = [c for c in changed if not any(c[len("CHANGED "):] in l for l in logged)]
+    return {"rc": int(m.group(1)) if m else rc, "events": logged + silent,
             "errors": [line.strip()[:300] for line in out.splitlines() if ERROR.match(line)],
             "tail": (out + err)[-1500:]}
 
@@ -167,7 +176,7 @@ install -d -m 0700 "$d"
 printf '%s' '{b64}' | base64 -d > "$d/site.pp"
 timeout 900 /opt/puppetlabs/bin/puppet apply --detailed-exitcodes --modulepath {modulepath} {hiera} "$d/site.pp" 2>&1
 echo "AGENT_RC=$?"
-"""
+""" + CHANGED.replace("{", "{{").replace("}", "}}")
 
 
 class Applier:

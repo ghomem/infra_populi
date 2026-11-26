@@ -137,6 +137,8 @@ def apply_problems(data: dict, cls: str, known: dict) -> list[str]:
         out.append("apply.expected_run2_events lists resource references")
     if "requires" in a and a["requires"] != ["server"]:
         out.append("apply.requires is [server] (a set that local apply cannot run)")
+    if "requires" in a and len(str(a.get("requires_why", ""))) < 20:
+        out.append("apply.requires_why: what the set needs a Puppet server for (a server fact, a file mount, ...)")
     return out
 
 

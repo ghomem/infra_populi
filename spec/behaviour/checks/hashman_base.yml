@@ -381,3 +381,6 @@ apply:
     - class: filesystem_base
     - class: postfix_smtp_node
     - class: hashman_base
+  requires:
+  - server
+  requires_why: a second machine runs an agent against the node as its Puppet server, which must serve the module

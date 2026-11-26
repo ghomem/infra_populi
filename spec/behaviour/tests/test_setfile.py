@@ -88,3 +88,11 @@ def test_every_set_of_the_suite_is_valid():
     sets = sorted(checks.glob("*.yml")) if checks.is_dir() else []
     bad = {p.stem: found for p in sets if (found := setfile.validate(p))}
     assert not bad, dict(list(bad.items())[:3])
+
+
+def test_a_set_that_needs_a_server_says_what_for(tmp_path):
+    data = copy.deepcopy(GOOD)
+    data["apply"]["requires"] = ["server"]
+    assert any("requires_why" in p for p in setfile.validate(write(tmp_path, data)))
+    data["apply"]["requires_why"] = "its files come from the server's file mount puppet:///extra_files"
+    assert setfile.validate(write(tmp_path, data)) == []

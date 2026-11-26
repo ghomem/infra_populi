@@ -173,3 +173,6 @@ apply:
     Debian:
     - class: mysql_server
     - class: mysql_db
+  requires:
+  - server
+  requires_why: mysql_server takes its TLS files from the server's file mount puppet:///extra_files

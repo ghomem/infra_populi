@@ -126,7 +126,9 @@ A run does the following:
 2. **CLEAN phase**: runs every check on the untouched node. Each negative control must fail and each invariant must pass. Otherwise the set is INVALID.
 3. **Applies** the class twice. The second run must change nothing, except the `expected_run2_events` the set's `apply:` names. Three modes:
    - `--apply agent` (the default): the node's Puppet agent, against a server that serves the module. `--classify <cmd>` is called as `<cmd> <node name> <manifest file>` so the server gives the node that manifest.
-   - `--apply local`: `puppet apply` on the node, with the modules already under `--modulepath`. A set that needs a server declares `apply: {requires: [server]}` and is skipped in this mode.
+   - `--apply local`: `puppet apply` on the node, with the modules already under `--modulepath`. A set that needs a server declares `apply: {requires: [server], requires_why: <what for>}` (a server fact, a
+     file mount such as `puppet:///extra_files`, the agent's catalog cache, another machine using the node as its server)
+     and is skipped in this mode.
    - `--apply command --apply-command <cmd>`: your own command, called as `<cmd> <class> <dest> <kind> <manifest>`.
 4. **APPLIED phase**: every check must now pass. Read-only checks and their mismatch controls run first, then mutating checks in file order. A failed check is a **finding**: the class does not do what the set says.
 5. Runs each **variant** the same way, on another fresh node.

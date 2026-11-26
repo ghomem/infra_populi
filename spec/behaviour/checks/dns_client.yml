@@ -119,3 +119,7 @@ apply:
   catalog:
     Debian:
     - class: dns_client
+  requires:
+  - server
+  requires_why: the empty variant's check reads the catalog the agent cached (client_data/catalog), which puppet apply does
+    not write

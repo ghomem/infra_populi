@@ -165,3 +165,14 @@ def test_an_expected_run2_event_may_carry_a_wildcard():
                                     "AGENT_RC=2\n", "")
     assert runner.gate(first, second, ["Notify[sync *]"]) is True
     assert runner.gate(first, second, ["Notify[other *]"]) is False
+
+
+def test_a_change_no_log_line_shows_is_still_an_event():
+    second = runner.agent_result(0, "Notice: Applied catalog in 0.96 seconds\nAGENT_RC=2\nCHANGED Exec[quiet]\n", "")
+    assert second["events"] == ["CHANGED Exec[quiet]"]
+    first = runner.agent_result(0, "AGENT_RC=2\n", "")
+    assert runner.gate(first, second, []) is False
+    assert runner.gate(first, second, ["Exec[quiet]"]) is True
+    logged = runner.agent_result(0, "Notice: /Stage[main]/X/Exec[e]/returns: executed successfully\nAGENT_RC=2\n"
+                                    "CHANGED Exec[e]\n", "")
+    assert len(logged["events"]) == 1
