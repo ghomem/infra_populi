@@ -29,6 +29,9 @@ MODE="${1:-}"
 refuse() { echo "LAB ${MODE^^} REFUSED: $*" >&2; exit 1; }
 vm_state() { VBoxManage showvminfo "$1" --machinereadable 2>/dev/null | sed -n 's/^VMState="\(.*\)"$/\1/p'; }
 lab_vms() { printf '%s\n' "$MASTER_VM"; python3 "${TOOLS}/nodes.py" list 2>/dev/null | awk '{print $3}'; }
+# The lab's services (nodes.yml `services`: the apt cache, HQ review of the behaviour suite ruling 6): never reverted,
+# so started before the nodes and stopped through ACPI like the master, never powered off hard.
+service_vms() { python3 "${TOOLS}/nodes.py" services 2>/dev/null | awk '{print $2}'; }
 pause() { command -p sleep "$POLL"; }
 
 take_lock() {
@@ -63,6 +66,13 @@ case "$MODE" in
         stopped=$((stopped + 1))
       fi
     done < <(lab_vms)
+    # 3b. the services: ACPI with a timeout (lab_vm.sh stop), never a hard power-off
+    while read -r vm; do
+      [[ -n "$vm" && "$(vm_state "$vm")" == running ]] || continue
+      "${TOOLS}/lab_vm.sh" stop "$vm" >/dev/null 2>&1 ||
+        refuse "service ${vm} did not stop through ACPI; NOT forcing it; ${stopped} other VM(s) powered off"
+      stopped=$((stopped + 1))
+    done < <(service_vms)
     # 4. the master: ACPI with a timeout, never a hard power-off
     master="$(vm_state "$MASTER_VM")"
     if [[ "$master" == running ]]; then
@@ -110,6 +120,11 @@ case "$MODE" in
       pause
     done
     "${TOOLS}/clock_check.py" "$MASTER_HOST" >&2 || refuse "the master's clock is off the laptop's (CLOCK above)"
+    # the services first: the node's revert refreshes apt through the cache when it answers (direct otherwise)
+    while read -r vm; do
+      [[ -n "$vm" && "$(vm_state "$vm")" != running ]] || continue
+      "${TOOLS}/lab_vm.sh" start "$vm" >/dev/null 2>&1 || echo "WARNING: service ${vm} did not start; nodes use apt directly" >&2
+    done < <(service_vms)
     "${TOOLS}/revert_node.sh" || refuse "the node revert failed (above); the master is up"
     echo "LAB UP: master healthy (puppetserver active, 8140 running, clock checked); node reverted"
     ;;

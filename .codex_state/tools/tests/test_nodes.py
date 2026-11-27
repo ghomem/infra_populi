@@ -115,3 +115,22 @@ def test_an_invalid_inventory_stops_every_command_but_validate(tmp_path):
     data["nodes"]["rhel9"]["vm"] = "Ubuntu24-puppet8-Master"
     proc = run(tmp_path, data, "env")
     assert proc.returncode != 0 and "nodes.yml is invalid" in proc.stderr
+
+
+def test_services_are_listed_and_validated(tmp_path):
+    # HQ review of the behaviour suite (2026-11-27) ruling 6: the lab's apt cache, never a class's node
+    import subprocess
+    import sys
+    import yaml
+    real = yaml.safe_load((TOOLS.parent / "lab" / "nodes.yml").read_text())
+    p = subprocess.run([sys.executable, str(TOOLS / "nodes.py"), "service", "apt_cache"], capture_output=True, text=True)
+    assert p.stdout.split() == [real["services"]["apt_cache"]["hostonly_ip"], "3142"]
+    for bad, why in [({"vm": "cache"}, "is not a p8lab-* VM"), ({"hostonly_ip": "192.168.56.20"}, "is a node's"),
+                     ({"extra": 1}, "takes vm, alias, hostname, hostonly_ip and port")]:
+        data = yaml.safe_load(yaml.safe_dump(real))
+        data["services"]["apt_cache"].update(bad)
+        path = tmp_path / "nodes.yml"
+        path.write_text(yaml.safe_dump(data))
+        v = subprocess.run([sys.executable, str(TOOLS / "nodes.py"), "validate"], capture_output=True, text=True,
+                           env={**__import__("os").environ, "P8_NODES": str(path)})
+        assert v.returncode == 2 and why in v.stderr, v.stderr

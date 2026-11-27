@@ -67,6 +67,16 @@ def problems(data: dict) -> list[str]:
     if data.get("paravirt_provider") not in PARAVIRT_PROVIDERS - {"default"}:
         out.append(f"paravirt_provider {data.get('paravirt_provider')!r} must name the lab's provider, one of "
                    f"{sorted(PARAVIRT_PROVIDERS - {'default'})} (VirtualBox's effective value; HQ 2026-11-24: hyperv)")
+    ips = [n.get("hostonly_ip") for n in nodes.values()]
+    for name, s in (data.get("services") or {}).items():
+        if not isinstance(s, dict) or set(s) != {"vm", "alias", "hostname", "hostonly_ip", "port"}:
+            out.append(f"service {name}: takes vm, alias, hostname, hostonly_ip and port")
+            continue
+        if not str(s["vm"]).startswith("p8lab-"):
+            out.append(f"service {name}: vm {s['vm']!r} is not a p8lab-* VM")
+        if s["hostonly_ip"] in ips:
+            out.append(f"service {name}: address {s['hostonly_ip']} is a node's")
+        ips.append(s["hostonly_ip"])
     if data.get("default") not in nodes:
         out.append(f"default {data.get('default')!r} is not a node kind")
     elif nodes[data["default"]].get("status") != "active":
@@ -143,6 +153,15 @@ def main(argv: list[str]) -> int:
     if argv == ["list"]:
         for kind, n in data["nodes"].items():
             print(f"{kind} {n['status']} {n['vm']} {n['alias']} {n['hostonly_ip']} {n['os_family']}")
+        return 0
+    if argv == ["services"]:  # name vm alias hostonly_ip port
+        for name, s in (data.get("services") or {}).items():
+            print(f"{name} {s['vm']} {s['alias']} {s['hostonly_ip']} {s['port']}")
+        return 0
+    if argv[:1] == ["service"] and len(argv) == 2:  # one service's address and port, or nothing
+        s = (data.get("services") or {}).get(argv[1])
+        if s:
+            print(f"{s['hostonly_ip']} {s['port']}")
         return 0
     if argv == ["kinds"]:
         print("\n".join(data["nodes"]))

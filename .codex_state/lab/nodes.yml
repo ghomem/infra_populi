@@ -104,3 +104,15 @@ nodes:
     os_family: Debian
     os: Ubuntu 24.04 server + openvox-server 8.11.0 (a second Puppet server)
     capabilities: [server, puppet-server]
+# Lab services (HQ review of the behaviour suite, 2026-11-27, ruling 6): machines the nodes use, never a class's node
+# and never reverted. lab_power.sh starts them before the nodes and stops them through ACPI (never a hard power-off);
+# the sleep guard counts them as lab VMs; lab_exec.sh reaches them by alias.
+#   apt_cache          apt-cacher-ng on port 3142, http only: revert_node.sh points a Debian-family node's apt at it
+#                      when it answers, directly otherwise (Proxy-Auto-Detect)
+services:
+  apt_cache:
+    vm: p8lab-cache2
+    alias: p8lab-cache2
+    hostname: p8lab-cache2
+    hostonly_ip: 192.168.56.27
+    port: 3142

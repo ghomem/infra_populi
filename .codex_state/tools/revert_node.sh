@@ -310,6 +310,12 @@ node_hostname="${node_hostname//$'\n'/}"
 [[ "$node_hostname" == "$NODE_HOSTNAME" ]] ||
   fail "Node hostname verification failed: expected '$NODE_HOSTNAME', got '$node_hostname'."
 
+# One root command on the node over the revert's own connection; stdin passes through.
+node_root() {
+  # shellcheck disable=SC2029  # the command is a local constant
+  ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" "sudo -n $1"
+}
+
 # One apt refresh. Sets apt_error (the failure, for messages), apt_failed_on (exit | fetch) and apt_fetch_errors.
 apt_refresh() {
   local out
@@ -366,6 +372,7 @@ if grep -qF " ${HOME_LAN_PREFIX}" <<<"$node_addrs"; then
   fail "The node holds an address on the home LAN (${HOME_LAN_PREFIX}x): NIC1 must be NAT."
 fi
 apt_mirror=""  # RedHat nodes have no apt mirror: null in REVERT_METRICS
+apt_proxy=""   # the cache check's answer on a Debian node (the cache's URL, or DIRECT); null otherwise
 if [[ "$NODE_OS_FAMILY" == "RedHat" ]]; then
   # A RHEL node must be registered after every restore (HQ 2026-11-16 item 5): no valid subscription, no packages.
   ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" 'sudo -n subscription-manager identity' >/dev/null 2>&1 ||
@@ -383,6 +390,23 @@ if [[ "$NODE_OS_FAMILY" == "RedHat" ]]; then
   ssh "${SSH_OPTIONS[@]}" "$NODE_SSH_ALIAS" "sudo -n timeout ${DNF_TIMEOUT_SECONDS} dnf -q makecache" >/dev/null 2>&1 ||
     fail "dnf makecache failed on node '$NODE_SSH_ALIAS' (no internet, DNS or repositories)."
 else
+  # HQ review of the behaviour suite (2026-11-27) ruling 6: apt goes through the lab's package cache (nodes.yml
+  # services.apt_cache) when it answers within a second, directly otherwise (Proxy-Auto-Detect; http only: https
+  # sources stay direct). Written after every restore until a baseline carries it (the same content each time).
+  if cache="$(python3 "${TOOLS_DIR}/nodes.py" service apt_cache 2>/dev/null)" && [[ -n "$cache" ]]; then
+    read -r cache_ip cache_port <<<"$cache"
+    node_root "install -m 0755 /dev/stdin /etc/apt/lab-cache-detect" <<DETECT ||
+#!/bin/sh
+# The lab's apt cache when it answers within a second, else direct (revert_node.sh; HQ ruling 6, 2026-11-27)
+if timeout 1 bash -c '</dev/tcp/${cache_ip}/${cache_port}' 2>/dev/null; then echo http://${cache_ip}:${cache_port}; else echo DIRECT; fi
+DETECT
+      fail "Could not point node '$NODE_SSH_ALIAS' apt at the lab's package cache (detect script)."
+    printf '%s\n' 'Acquire::http::Proxy-Auto-Detect "/etc/apt/lab-cache-detect";' |
+      node_root "install -m 0644 /dev/stdin /etc/apt/apt.conf.d/00lab-apt-cache" ||
+      fail "Could not point node '$NODE_SSH_ALIAS' apt at the lab's package cache (apt configuration)."
+    apt_proxy="$(node_root /etc/apt/lab-cache-detect </dev/null 2>/dev/null)" || apt_proxy=""
+    printf 'apt through %s (the lab cache when it answers, else direct)\n' "${apt_proxy:-an unreadable proxy check}"
+  fi
   printf 'Refreshing apt package lists on the node...\n'
   apt_mirror="primary"
   if ! apt_refresh; then
@@ -426,9 +450,10 @@ node_state_token | python3 "${TOOLS_DIR}/records.py" revert-mark "$NODE_SNAPSHOT
 
 printf 'SUCCESS: node %q restored to %q; host-only path, SSH, hostname, and %s:%s connectivity verified.\n' \
   "$NODE_VM" "$NODE_SNAPSHOT" "$MASTER_SERVICE_HOST" "$MASTER_SERVICE_PORT"
-printf 'REVERT_METRICS {"node":"%s","snapshot":"%s","total_s":%s,"master_check_s":%s,"poweroff_s":%s,"restore_s":%s,"boot_to_ssh_s":%s,"apt_update_s":%s,"verify_s":%s,"nic1_rx_bytes":%s,"apt_mirror":%s}\n' \
+printf 'REVERT_METRICS {"node":"%s","snapshot":"%s","total_s":%s,"master_check_s":%s,"poweroff_s":%s,"restore_s":%s,"boot_to_ssh_s":%s,"apt_update_s":%s,"verify_s":%s,"nic1_rx_bytes":%s,"apt_mirror":%s,"apt_proxy":%s}\n' \
   "$NODE_KIND" "$NODE_SNAPSHOT" \
   "$(ms_to_s $((t_end - t_start)))" "$(ms_to_s $((t_master - t_start)))" "$(ms_to_s $((t_off - t_master)))" \
   "$(ms_to_s $((t_restore - t_off)))" "$(ms_to_s $((t_ssh - t_restore)))" \
   "$(ms_to_s $((t_apt - t_ssh)))" "$(ms_to_s $((t_end - t_apt)))" "$nic1_rx" \
-  "$([[ -n "$apt_mirror" ]] && printf '"%s"' "$apt_mirror" || printf 'null')"
+  "$([[ -n "$apt_mirror" ]] && printf '"%s"' "$apt_mirror" || printf 'null')" \
+  "$([[ -n "$apt_proxy" ]] && printf '"%s"' "$apt_proxy" || printf 'null')"

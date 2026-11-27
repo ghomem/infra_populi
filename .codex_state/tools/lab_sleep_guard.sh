@@ -44,7 +44,8 @@ guard_pid() {
 lab_vms_running() {
   local running vms
   running="$(VBoxManage list runningvms 2>/dev/null | sed -n 's/^"\(.*\)" {.*}$/\1/p')"
-  vms="$(printf '%s\n' "$MASTER_VM"; python3 "${TOOLS_DIR}/nodes.py" list 2>/dev/null | awk '{print $3}')"
+  vms="$(printf '%s\n' "$MASTER_VM"; python3 "${TOOLS_DIR}/nodes.py" list 2>/dev/null | awk '{print $3}'
+         python3 "${TOOLS_DIR}/nodes.py" services 2>/dev/null | awk '{print $2}')"
   grep -qxF -f <(printf '%s\n' "$vms") <<<"$running"
 }
 

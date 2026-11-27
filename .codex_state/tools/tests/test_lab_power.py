@@ -167,3 +167,33 @@ def test_up_refuses_while_another_run_holds_the_lab(lab, holder):
 def test_usage(lab):
     proc = power(lab, "sideways")
     assert proc.returncode == 2 and "lab_power.sh down" in proc.stderr
+
+
+# HQ review of the behaviour suite (2026-11-27) ruling 6: the lab's apt cache (nodes.yml services) is never reverted:
+# started before the node's revert, stopped through ACPI, never powered off hard.
+CACHE = "p8lab-cache2"
+
+
+def test_up_starts_the_cache_before_reverting_the_node(lab, tmp_path):
+    from test_lab_vm import vbox_file
+    for vm in (MASTER, NODE):
+        lab.world["vms"][vm]["state"] = "poweroff"
+    lab.world["vms"][CACHE] = {"state": "poweroff", "snapshot": None, "memory": 1024,
+                               "config": {"nic1": "nat", "nic2": "hostonly", "hostonlyadapter2": "vboxnet0",
+                                          "CfgFile": str(vbox_file(tmp_path, CACHE))}}
+    meminfo = tmp_path / "meminfo"
+    meminfo.write_text("MemTotal: 32000000 kB\nMemAvailable: 16777216 kB\n")
+    healthy_master(lab)
+    proc = power(lab, "up", P8_MEMINFO=str(meminfo))
+    assert proc.returncode == 0, proc.stderr
+    calls = [c[1:3] for c in lab.calls("VBoxManage") if c[1] in ("startvm", "snapshot")]
+    assert ["startvm", CACHE] in calls and calls.index(["startvm", CACHE]) < calls.index(["snapshot", NODE])
+
+
+def test_down_stops_the_cache_through_acpi_never_hard(lab):
+    lab.world["vms"][CACHE] = {"state": "running", "snapshot": None}
+    proc = power(lab, "down")
+    assert proc.returncode == 0, proc.stderr
+    cache = [c[1:4] for c in lab.calls("VBoxManage") if CACHE in c and c[1] == "controlvm"]
+    assert cache == [["controlvm", CACHE, "acpipowerbutton"]]
+    assert lab.state()["vms"][CACHE]["state"] == "poweroff"

@@ -385,3 +385,30 @@ def test_a_master_started_with_a_wrong_clock_fails_the_revert(lab):
     lab.world["ssh"].insert(0, {"match": r"puppet8master date -u", "clock": 300})
     proc = lab.run([SCRIPT])
     assert proc.returncode == 1 and "The master's clock is off" in proc.stderr
+
+
+# HQ review of the behaviour suite (2026-11-27) ruling 6: a Debian node's apt goes through the lab's package cache
+# (nodes.yml services.apt_cache) when it answers, directly otherwise; the revert writes the detector before the refresh.
+def test_a_debian_revert_points_apt_at_the_cache_before_the_refresh_and_records_the_route(lab):
+    lab.world["read_stdin"] = True
+    lab.world["ssh"].insert(0, {"match": r"sudo -n /etc/apt/lab-cache-detect$", "stdout": "http://192.168.56.27:3142\n"})
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 0, proc.stderr
+    sent = [json.loads(l) for l in (lab.calls_path.parent / "calls.jsonl.stdin").read_text().splitlines()]
+    detect = next(s for s in sent if "install -m 0755 /dev/stdin /etc/apt/lab-cache-detect" in s[1])
+    assert "</dev/tcp/192.168.56.27/3142" in detect[2] and "echo http://192.168.56.27:3142" in detect[2]
+    assert "else echo DIRECT" in detect[2]
+    conf = next(s for s in sent if "/etc/apt/apt.conf.d/00lab-apt-cache" in s[1])
+    assert conf[2] == 'Acquire::http::Proxy-Auto-Detect "/etc/apt/lab-cache-detect";\n'
+    ssh = [" ".join(c) for c in lab.calls("ssh")]
+    assert next(i for i, c in enumerate(ssh) if "lab-cache-detect" in c) < \
+        next(i for i, c in enumerate(ssh) if "apt-get -q update" in c)
+    assert '"apt_proxy":"http://192.168.56.27:3142"}' in proc.stdout.strip().splitlines()[-1]
+
+
+def test_a_redhat_revert_leaves_its_package_manager_alone(lab, tmp_path):
+    rhel_lab(lab)
+    proc = lab.run([SCRIPT, "--node", "rhel9"], env={"P8_NODES": rhel_inventory(tmp_path)})
+    assert proc.returncode == 0, proc.stderr
+    assert not any("lab-cache" in " ".join(c) for c in lab.calls("ssh"))
+    assert '"apt_proxy":null}' in proc.stdout.strip().splitlines()[-1]

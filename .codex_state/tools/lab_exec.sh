@@ -23,6 +23,7 @@ shift
 lab_hosts() {
   printf '%s\n' puppet8master puppet8master-rsync puppet8node-rsync
   python3 "${TOOLS}/nodes.py" list 2>/dev/null | awk '{print $4}'
+  python3 "${TOOLS}/nodes.py" services 2>/dev/null | awk '{print $3}'  # the lab's services (the apt cache)
 }
 # matched against the captured list: `lab_hosts | grep -q` would fail under pipefail when grep stops at an early match
 hosts="$(lab_hosts)"
