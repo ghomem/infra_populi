@@ -32,6 +32,6 @@ file { '/usr/local/sbin/p8test-seed-hashman-user':
 exec { 'p8test seed p8testuser into the hashman database':
   command => '/usr/local/sbin/p8test-seed-hashman-user',
   unless  => '/usr/local/sbin/p8test-seed-hashman-user --check',
-  require => [File['/usr/local/sbin/p8test-seed-hashman-user'], Class['puppet_infrastructure::hashman_base']],
+  require => [File['/usr/local/sbin/p8test-seed-hashman-user'], Class['infra_populi::hashman_base']],
   before  => Exec['user_lock_p8testuser'],
 }

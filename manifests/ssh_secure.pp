@@ -3,7 +3,7 @@
 ### Purpose ########
 # This class provides sshd management class with improved security settings
 
-class puppet_infrastructure::ssh_secure (
+class infra_populi::ssh_secure (
   Integer $client_alive_interval   = 14400, 
   Boolean $password_authentication = false, 
   Boolean $root_login              = false, 
@@ -30,7 +30,7 @@ class puppet_infrastructure::ssh_secure (
   owner  => root,
   group  => root,
   mode   => '0644',
-  source => 'puppet:///modules/puppet_infrastructure/ssh/moduli',
+  source => 'puppet:///modules/infra_populi/ssh/moduli',
   notify => Service[ $ssh_service ]
   }
 

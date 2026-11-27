@@ -9,10 +9,10 @@ node 'nginx-static07' {
   # <IP_of_this_machine> internalfiles.puppetdemo.test
 
   # Basic desirable configuration for a generic Ubuntu node
-  include puppet_infrastructure::node_base
+  include infra_populi::node_base
   include passwd_common
   # Install nginx and perform configurations common to all servers
-  include puppet_infrastructure::nginx_base
+  include infra_populi::nginx_base
   # Open ports for http and https
   firewall { '200 nginx http': proto => 'tcp', dport => 80, action => 'accept', }
   firewall { '210 nginx https': proto => 'tcp', dport => 443, action => 'accept', }
@@ -35,7 +35,7 @@ node 'nginx-static07' {
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    require => Class[ 'puppet_infrastructure::nginx_base' ],
+    require => Class[ 'infra_populi::nginx_base' ],
   }
 
   # Main static site
@@ -128,7 +128,7 @@ node 'nginx-static07' {
   # This class always removes the default config file from the package
   # Note that server_default_create is set to false.
   # You should be able to browse https://files.puppetdemo.test/
-  class { 'puppet_infrastructure::nginx_static':
+  class { 'infra_populi::nginx_static':
     domain                  => 'files.puppetdemo.test',
     www_root                => "/var/www/html/${domain}/files",
     ssl                     => true,
@@ -144,7 +144,7 @@ node 'nginx-static07' {
   # This defined type creates another https server that does NOT allow directory listing
   # Thefore, you won't be able to browse https://basicfiles.puppetdemo.test/ but you will
   # be able to wget https://basicfiles.puppetdemo.test/basicfile.txt
-  puppet_infrastructure::nginx_static_domain { 'basicfiles.puppetdemo.test':
+  infra_populi::nginx_static_domain { 'basicfiles.puppetdemo.test':
     domain                  => 'basicfiles.puppetdemo.test',
     www_root                => "/var/www/html/${domain}/basicfiles",
     ssl                     => true,
@@ -156,7 +156,7 @@ node 'nginx-static07' {
 
   # This defined type creates another https server that allows directory listing
   # You should be able to browse https://listedfiles.puppetdemo.test/
-  puppet_infrastructure::nginx_static_domain { 'listedfiles.puppetdemo.test':
+  infra_populi::nginx_static_domain { 'listedfiles.puppetdemo.test':
     domain                  => 'listedfiles.puppetdemo.test',
     www_root                => "/var/www/html/${domain}/listedfiles",
     ssl                     => true,
@@ -169,7 +169,7 @@ node 'nginx-static07' {
   # This defined type creates one https server that only allows access by clients with IPs between 10.103.21.1 and 10.103.21.0.254
   # If your IP is in ip_whitelist you should be able to browse https://internalfiles.puppetdemo.test/
   # If your IP is not in the whitelist you will get a '403 Forbidden' at https://internalfiles.puppetdemo.test/
-  puppet_infrastructure::nginx_static_domain { 'internalfiles.pupetdemo.test':
+  infra_populi::nginx_static_domain { 'internalfiles.pupetdemo.test':
     domain                  => 'internalfiles.puppetdemo.test',
     www_root                => "/var/www/html/${domain}/internalfiles",
     ssl                     => true,
@@ -187,7 +187,7 @@ node 'nginx-static07' {
   # - the default server that listens to http and https, is accessed by IP and redirects to the https_www server, because redirect_default is set to true.
   # The https_www server would be accessed directly, in this example, by:
   # https://www.puppetdemo.test
-  puppet_infrastructure::nginx_static_domain { 'puppetdemo.test':
+  infra_populi::nginx_static_domain { 'puppetdemo.test':
     domain                => 'puppetdemo.test',
     www_root              => "/var/www/html/${domain}/site",
     ssl                   => true,

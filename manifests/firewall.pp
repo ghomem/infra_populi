@@ -9,7 +9,7 @@
 
 # IMPORTANT: consider using firewall_secure instead of this class
 
-class puppet_infrastructure::firewall {
+class infra_populi::firewall {
   Firewall {
     require => undef,
   }
@@ -21,7 +21,7 @@ class puppet_infrastructure::firewall {
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    source  => 'puppet:///modules/puppet_infrastructure/iptables/iptables-flush.sh',
+    source  => 'puppet:///modules/infra_populi/iptables/iptables-flush.sh',
     require => File[ "${localdir}/bin" ],
   }
 

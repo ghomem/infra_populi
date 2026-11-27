@@ -1,6 +1,6 @@
 # Behaviour suite
 
-This suite checks what each class of the `puppet_infrastructure` module *does* on a machine, not only that it
+This suite checks what each class of the `infra_populi` module *does* on a machine, not only that it
 compiles. For each class, a set says what the class is for, what can be observed on a node once it has been applied,
 and how to probe that. The runner checks a fresh node before the class is applied, applies the class twice, and checks
 the node again.
@@ -155,7 +155,7 @@ wins, in any params directory):
 3. `kinds/<kind>/<class>.json`
 4. `<class>.json`
 
-A file or directory may also carry the module prefix (`puppet_infrastructure::<class>.json`).
+A file or directory may also carry the module prefix (`infra_populi::<class>.json`).
 Within a level, directories given with `--params` are searched before the suite's own. Use them for values that cannot be committed,
 such as a real resolver or a password hash.
 

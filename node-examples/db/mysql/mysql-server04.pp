@@ -1,7 +1,7 @@
 node 'mysql-server-node' {
 
   # Basic declarations
-  include puppet_infrastructure::node_base
+  include infra_populi::node_base
   include passwd_common
 
   # To make the variable below works, add this line to
@@ -33,7 +33,7 @@ node 'mysql-server-node' {
 
   # the users created here are MySQL server users not pre-assgined to any db
   # they are for the team to administer the server
-  class { 'puppet_infrastructure::mysql_server':
+  class { 'infra_populi::mysql_server':
     root_pw               => $root_pw,
     rw_user               => 'userrw',
     rw_hash               => $my_rw_hash,
@@ -52,7 +52,7 @@ node 'mysql-server-node' {
     password => $dbpass, # The password for the database user
     host     => $host,
     grant    => [ 'SELECT', 'SHOW VIEW' ], # Specify the permissions to grant this user
-    require  => Class['puppet_infrastructure::mysql_server'],
+    require  => Class['infra_populi::mysql_server'],
   }
 
   # Create a firewall rule for this host to allow incoming connections to the MySQL server

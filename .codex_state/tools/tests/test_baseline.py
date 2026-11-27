@@ -35,11 +35,11 @@ def upstream(tmp_path):
     git(repo, "config", "user.email", "t@example.invalid")
     git(repo, "config", "user.name", "t")
     files = {
-        "manifests/same.pp": "class same { file { '/x': content => template('puppet_infrastructure/same/a.erb') } }\n",
+        "manifests/same.pp": "class same { file { '/x': content => template('infra_populi/same/a.erb') } }\n",
         "templates/same/a.erb": "a\n",
-        "manifests/rsyslog_server.pp": "class r { file { '/y': content => epp('puppet_infrastructure/rsyslog/l.epp') } }\n",
+        "manifests/rsyslog_server.pp": "class r { file { '/y': content => epp('infra_populi/rsyslog/l.epp') } }\n",
         "templates/rsyslog/l.epp": "v1\n",
-        "manifests/dyn.pp": "class dyn { file { '/z': source => \"puppet:///modules/puppet_infrastructure/dyn/${n}\" } }\n",
+        "manifests/dyn.pp": "class dyn { file { '/z': source => \"puppet:///modules/infra_populi/dyn/${n}\" } }\n",
         "files/dyn/one": "1\n",
     }
     for path, content in files.items():
@@ -56,10 +56,10 @@ def upstream(tmp_path):
 
 
 def test_referenced_paths_literal_and_prefix():
-    manifest = ("content => template('puppet_infrastructure/a/b.erb')\n"
-                "x => file('puppet_infrastructure/c/d')\n"
-                "source => 'puppet:///modules/puppet_infrastructure/e/f.sh',\n"
-                "y => template(\"puppet_infrastructure/sysmon/${p}.sh.erb\")\n")
+    manifest = ("content => template('infra_populi/a/b.erb')\n"
+                "x => file('infra_populi/c/d')\n"
+                "source => 'puppet:///modules/infra_populi/e/f.sh',\n"
+                "y => template(\"infra_populi/sysmon/${p}.sh.erb\")\n")
     assert baseline.referenced_paths(manifest) == [
         ("files/c/d", False), ("files/e/f.sh", False),
         ("templates/a/b.erb", False), ("templates/sysmon/", True)]

@@ -5,7 +5,7 @@
 
 ### Dependencies ###
 #  modules: puppetlabs-firewall
-class puppet_infrastructure::firewall_ipv6_drop {
+class infra_populi::firewall_ipv6_drop {
 
   firewall { '600 Drop ALL IPv6 - INPUT':
     chain    => 'INPUT',

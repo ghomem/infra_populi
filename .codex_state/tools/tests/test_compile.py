@@ -65,7 +65,7 @@ def test_first_error_joins_continuation_lines():
 def test_compile_only_never_runs_the_agent_and_maps_exit_codes(lab):
     lab.world["ssh"].insert(0, {"match": r"puppet facts show", "stdout": json.dumps({"os": {"family": "Debian"}})})
     lab.world["ssh"].insert(0, {"match": r"run\.sh", "rc": 5, "stdout": "Error: boom\nCOMPILE_FAILED: x\n"})
-    proc = lab.run([HARNESS, "--compile-only", "--no-expand", "puppet_infrastructure::puppet_backup"])
+    proc = lab.run([HARNESS, "--compile-only", "--no-expand", "infra_populi::puppet_backup"])
     assert proc.returncode == 1 and "COMPILE FAILED (debian)" in proc.stderr
     assert not any("agent -t" in " ".join(c) for c in lab.calls("ssh"))
     assert lab.calls("VBoxManage") == []
@@ -74,13 +74,13 @@ def test_compile_only_never_runs_the_agent_and_maps_exit_codes(lab):
 def test_compile_only_ok(lab):
     lab.world["ssh"].insert(0, {"match": r"puppet facts show", "stdout": "{}"})
     lab.world["ssh"].insert(0, {"match": r"run\.sh", "stdout": "COMPILE_COVERAGE x: 2 concrete\n"})
-    proc = lab.run([HARNESS, "--compile-only", "--facts", "redhat", "puppet_infrastructure::puppet_backup"])
+    proc = lab.run([HARNESS, "--compile-only", "--facts", "redhat", "infra_populi::puppet_backup"])
     assert proc.returncode == 0, proc.stderr
     assert "COMPILE OK (redhat)" in proc.stdout
 
 
 def test_compile_only_rejects_unknown_facts_variant(lab):
-    assert lab.run([HARNESS, "--compile-only", "--facts", "suse", "puppet_infrastructure::x"]).returncode == 1
+    assert lab.run([HARNESS, "--compile-only", "--facts", "suse", "infra_populi::x"]).returncode == 1
 
 
 def test_compile_only_file_digest_ships_the_titles_to_the_master(lab):
@@ -90,13 +90,13 @@ def test_compile_only_file_digest_ships_the_titles_to_the_master(lab):
     lab.world["ssh"].insert(0, {"match": r"run\.sh.*digest_paths.*/etc/nginx/nginx\.conf",
                                 "stdout": "FILE_DIGEST /etc/nginx/nginx.conf: sha256:ab bytes:1\n"})
     proc = lab.run([HARNESS, "--compile-only", "--file-digest", "/etc/nginx/nginx.conf",
-                    "puppet_infrastructure::puppet_backup"])
+                    "infra_populi::puppet_backup"])
     assert proc.returncode == 0, proc.stderr
     assert "FILE_DIGEST /etc/nginx/nginx.conf: sha256:ab" in proc.stdout
 
 
 def test_compile_only_file_digest_needs_an_absolute_title(lab):
-    proc = lab.run([HARNESS, "--compile-only", "--file-digest", "nginx.conf", "puppet_infrastructure::x"])
+    proc = lab.run([HARNESS, "--compile-only", "--file-digest", "nginx.conf", "infra_populi::x"])
     assert proc.returncode == 1 and "absolute File title" in proc.stderr
 
 
@@ -115,19 +115,19 @@ def run_filter(stdin: str, *targets: str, digest: str = "") -> subprocess.Comple
 
 @LAB
 def test_filter_prints_titles_never_parameters_on_the_master():
-    catalog = {"tags": [], "classes": ["puppet_infrastructure::a", "passwd_common"], "resources": [
-        {"type": "File", "title": "/x", "tags": ["puppet_infrastructure::a"], "parameters": {"content": SECRET}},
+    catalog = {"tags": [], "classes": ["infra_populi::a", "passwd_common"], "resources": [
+        {"type": "File", "title": "/x", "tags": ["infra_populi::a"], "parameters": {"content": SECRET}},
         {"type": "User", "title": "p8user", "tags": ["passwd_common"], "parameters": {"password": SECRET}}]}
-    proc = run_filter("Notice: Compiled catalog\n" + json.dumps(catalog), "puppet_infrastructure::a")
+    proc = run_filter("Notice: Compiled catalog\n" + json.dumps(catalog), "infra_populi::a")
     assert proc.returncode == 0, proc.stderr
-    assert "COMPILE_COVERAGE puppet_infrastructure::a: 1 concrete" in proc.stdout and "File[/x]" in proc.stdout
+    assert "COMPILE_COVERAGE infra_populi::a: 1 concrete" in proc.stdout and "File[/x]" in proc.stdout
     assert "PASSWD_COMMON: 1 resources" in proc.stdout
     assert SECRET not in proc.stdout + proc.stderr
 
 
 @LAB
 def test_filter_withholds_unparseable_input_on_the_master():
-    proc = run_filter('Notice: x\n{"tags": [ broken ' + SECRET, "puppet_infrastructure::a")
+    proc = run_filter('Notice: x\n{"tags": [ broken ' + SECRET, "infra_populi::a")
     assert proc.returncode == 4
     assert SECRET not in proc.stdout + proc.stderr
 
@@ -135,11 +135,11 @@ def test_filter_withholds_unparseable_input_on_the_master():
 @LAB
 def test_filter_file_digest_hashes_never_prints_content_on_the_master():
     import hashlib
-    catalog = {"tags": [], "classes": ["puppet_infrastructure::a"], "resources": [
-        {"type": "File", "title": "/etc/a.conf", "tags": ["puppet_infrastructure::a"], "parameters": {"content": SECRET}},
-        {"type": "File", "title": "/etc/dir", "tags": ["puppet_infrastructure::a"], "parameters": {"ensure": "directory"}},
+    catalog = {"tags": [], "classes": ["infra_populi::a"], "resources": [
+        {"type": "File", "title": "/etc/a.conf", "tags": ["infra_populi::a"], "parameters": {"content": SECRET}},
+        {"type": "File", "title": "/etc/dir", "tags": ["infra_populi::a"], "parameters": {"ensure": "directory"}},
         {"type": "File", "title": "/etc/pw", "tags": ["passwd_common"], "parameters": {"content": SECRET}}]}
-    proc = run_filter(json.dumps(catalog), "puppet_infrastructure::a", digest="/etc/a.conf\n/etc/dir\n/etc/pw\n/etc/none\n")
+    proc = run_filter(json.dumps(catalog), "infra_populi::a", digest="/etc/a.conf\n/etc/dir\n/etc/pw\n/etc/none\n")
     assert proc.returncode == 0, proc.stderr
     want = hashlib.sha256(SECRET.encode()).hexdigest()
     assert f"FILE_DIGEST /etc/a.conf: sha256:{want} bytes:{len(SECRET)}" in proc.stdout
@@ -151,7 +151,7 @@ def test_filter_file_digest_hashes_never_prints_content_on_the_master():
 
 @LAB
 def test_filter_empty_target_exit_code_on_the_master():
-    proc = run_filter(json.dumps({"tags": [], "classes": [], "resources": []}), "puppet_infrastructure::a")
+    proc = run_filter(json.dumps({"tags": [], "classes": [], "resources": []}), "infra_populi::a")
     assert proc.returncode == 3
 
 
@@ -167,7 +167,7 @@ def test_composites_compile_on_the_default_node_whatever_the_classes_lab_nodes(m
     cc.compile_only(["user_kde_lock_screen", "packages_base"], "debian")
     argv = seen["argv"]
     assert argv[1:3] == ["--node", "ubuntu"] and argv[3] == "--compile-only"
-    assert argv[-2:] == ["puppet_infrastructure::user_kde_lock_screen", "puppet_infrastructure::packages_base"]
+    assert argv[-2:] == ["infra_populi::user_kde_lock_screen", "infra_populi::packages_base"]
 
 
 def test_composites_report_the_environment_when_the_default_node_is_down(monkeypatch, capsys):

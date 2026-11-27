@@ -4,7 +4,7 @@
 # This class opens firewall ports so sysadmins
 # are able to access machines with the helpdesk feature
 # Ref: https://bitbucket.org/asolidodev/is-desktop8/wiki/Helpdesk%20connection
-class puppet_infrastructure::firewall_addon_xrdp {
+class infra_populi::firewall_addon_xrdp {
     
   firewall { '3389 allow xrdp':
     proto  => 'tcp',

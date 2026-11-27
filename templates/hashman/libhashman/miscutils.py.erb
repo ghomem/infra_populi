@@ -151,8 +151,8 @@ def mk_smb_lockness(username, unix_password):
 def check_hashman_web(command):
     if not os.path.exists(EMAIL_TEMPLATE):
         if command in ['inform', 'reset', 'testemail']:
-            print("This command requires class puppet_infrastructure::hashman_web, which was not included in the node declaration.")
+            print("This command requires class infra_populi::hashman_web, which was not included in the node declaration.")
             sys.exit(1)
         elif command in ['useradd', 'test']:
-            print("Class puppet_infrastructure::hashman_web not included. Please run the command with [silent] option")
+            print("Class infra_populi::hashman_web not included. Please run the command with [silent] option")
             sys.exit(1)

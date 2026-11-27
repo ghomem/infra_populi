@@ -1,16 +1,16 @@
 node 'puppet' {
 
-  include puppet_infrastructure::node_base
-  include puppet_infrastructure::puppet_reports_cleanup
-  include puppet_infrastructure::hashman_base
-  include puppet_infrastructure::mcollective_master
+  include infra_populi::node_base
+  include infra_populi::puppet_reports_cleanup
+  include infra_populi::hashman_base
+  include infra_populi::mcollective_master
 
   # uncomment only after SSL cert and key are deployed
-  #include puppet_infrastructure::hashman_web
+  #include infra_populi::hashman_web
 
   # uncoment only when credentials are set on common.yaml
   # email sending via external relay
-  # include puppet_infrastructure::postfix_smtp_node
+  # include infra_populi::postfix_smtp_node
 
   # puppet specific firewall rules
   firewall { '200 accept puppet':      proto  => 'tcp', dport  => 8140,  action => 'accept', }

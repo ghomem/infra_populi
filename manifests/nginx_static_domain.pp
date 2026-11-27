@@ -15,7 +15,7 @@
 # - you will need a certificate and key for the needed domains if you intend to serve https
 # For more documentation, read the comments in nginx_frontend_domain, and the wiki:
 # https://bitbucket.org/asolidodev/puppet_infrastructure/wiki/NGINX%20Static%20server
-define puppet_infrastructure::nginx_static_domain (
+define infra_populi::nginx_static_domain (
   String $domain,
   # The directory from which the files are served
   String $www_root,
@@ -57,10 +57,10 @@ define puppet_infrastructure::nginx_static_domain (
 ) {
 
   # includes the nginx_base class, can get overriden
-  require Class[ 'puppet_infrastructure::nginx_base' ]
+  require Class[ 'infra_populi::nginx_base' ]
 
   # This removes the default nginx config file from the package
-  include puppet_infrastructure::nginx_default_removal
+  include infra_populi::nginx_default_removal
 
   case $::facts['os']['family'] {
     'RedHat': {
@@ -78,7 +78,7 @@ define puppet_infrastructure::nginx_static_domain (
       fail('manage_ssl can only be true when ssl is true and static_sslprefix has a value!')
     }
     else {
-      puppet_infrastructure::ssl_nginx_domain { $static_sslprefix:
+      infra_populi::ssl_nginx_domain { $static_sslprefix:
         sslprefix               => $static_sslprefix,
         letsencrypt_certificate => $letsencrypt_certificate,
       }

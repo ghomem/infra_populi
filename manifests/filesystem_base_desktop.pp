@@ -2,7 +2,7 @@
 # Module dependencies: none (uses Puppet built-in file resources and lookup()).
 ### Purpose ########
 # This class provides basic filesystem definitions for all desktop machines
-class puppet_infrastructure::filesystem_base_desktop (
+class infra_populi::filesystem_base_desktop (
   # Notice rsyslog may set different permissions when creating the syslog file
   # but then they will be changed by puppet
   Boolean $customize_syslog_mode = false,

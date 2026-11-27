@@ -15,7 +15,7 @@ pregate = importlib.util.module_from_spec(spec)
 sys.modules["pregate"] = pregate
 spec.loader.exec_module(pregate)
 
-UNGUARDED_OS = """class puppet_infrastructure::x {
+UNGUARDED_OS = """class infra_populi::x {
   $v = $facts['os']['release']['major']
   exec { 'install-epel':
     command => "dnf install -y epel-release-${v}",
@@ -23,7 +23,7 @@ UNGUARDED_OS = """class puppet_infrastructure::x {
   }
 }
 """
-GUARDED_OS = """class puppet_infrastructure::y {
+GUARDED_OS = """class infra_populi::y {
   case $facts['os']['family'] {
     'RedHat': {
       exec { 'dnf-makecache': command => '/usr/bin/dnf makecache', refreshonly => true }
@@ -70,7 +70,7 @@ def test_missing_module_types_and_classes_use_master_inventory():
     inv = {"modules": {"apt"}, "types": {"firewall"}, "defines": {"apt", "apt::source"}, "bases": {"apt"}}
     manifest = ("include apt\ninclude ::ntp\nclass { 'nginx': }\n"
                 "firewall { '100 x': }\nhtpasswd { $u: }\napt::source { 'a': }\nfile { '/x': }\n"
-                "puppet_infrastructure::backup { 'b': }\n")
+                "infra_populi::backup { 'b': }\n")
     r = pregate.Report("m")
     pregate.scan_hazards(manifest, inv, r)
     got = findings(r, "hazard1-types")
@@ -438,12 +438,12 @@ def test_hazard5_is_info_only_when_routed_to_the_commands_os_family(routed, leve
         assert "routes the class to the rhel9 node (RedHat)" in got[0][2]
 
 
-# HQ 2026-11-17 ruling 4 (the user_desktop miss, batch 6): the probe walks the puppet_infrastructure classes and defines
+# HQ 2026-11-17 ruling 4 (the user_desktop miss, batch 6): the probe walks the infra_populi classes and defines
 # the target declares; their needs are the target's needs, and their declarations count as declared.
-TARGET = ("class puppet_infrastructure::t {\n  include puppet_infrastructure::h\n"
-          "  puppet_infrastructure::d { 'x': }\n}\n")
-HELPER = "class puppet_infrastructure::h {\n  $bindir = lookup('filesystem::bindir')\n  file { \"${bindir}/lock.sh\": }\n}\n"
-DEFINE = "define puppet_infrastructure::d {\n  file { '/srv/missing/x.conf': content => 'x' }\n}\n"
+TARGET = ("class infra_populi::t {\n  include infra_populi::h\n"
+          "  infra_populi::d { 'x': }\n}\n")
+HELPER = "class infra_populi::h {\n  $bindir = lookup('filesystem::bindir')\n  file { \"${bindir}/lock.sh\": }\n}\n"
+DEFINE = "define infra_populi::d {\n  file { '/srv/missing/x.conf': content => 'x' }\n}\n"
 
 
 def test_probe_walks_declared_internal_classes_and_defines(tmp_path, monkeypatch):
@@ -460,8 +460,8 @@ def test_probe_walks_declared_internal_classes_and_defines(tmp_path, monkeypatch
 
 
 def test_walk_survives_cycles_and_missing_manifests(tmp_path, monkeypatch):
-    a = "class puppet_infrastructure::a {\n  include puppet_infrastructure::c\n  include puppet_infrastructure::gone\n}\n"
-    c = "class puppet_infrastructure::c {\n  include puppet_infrastructure::a\n}\n"
+    a = "class infra_populi::a {\n  include infra_populi::c\n  include infra_populi::gone\n}\n"
+    c = "class infra_populi::c {\n  include infra_populi::a\n}\n"
     repo = probe_repo(tmp_path, monkeypatch, {"a": a, "c": c}, {"a": ([], []), "c": ([], [])})
     assert pregate.declared_internal("a", repo) == ["a", "c"]
 

@@ -10,7 +10,7 @@
 
 ### Dependencies ###
 #  modules: puppetlabs-firewall
-class puppet_infrastructure::firewall_ipv6_drop_policy_desktop {
+class infra_populi::firewall_ipv6_drop_policy_desktop {
 
   firewall { '000 accept all IPv6 to lo interface':
     chain    => 'INPUT',

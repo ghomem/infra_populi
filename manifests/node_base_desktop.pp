@@ -9,7 +9,7 @@
 # - Optional KDE per-user screen lock
 # - Optional GNOME system-wide screen lock policy
 
-class puppet_infrastructure::node_base_desktop (
+class infra_populi::node_base_desktop (
   Boolean $customize_syslog_mode              = false,
   String  $syslog_mode                        = 'u=rw,g=r,o=',
   Array[String] $apt_surface_list             = [],   # empty → builtin desktop list
@@ -39,33 +39,33 @@ class puppet_infrastructure::node_base_desktop (
   # Base packages are intentionally part of the desktop baseline.
   # On Ubuntu/Debian this provides iptables-persistent/netfilter-persistent,
   # which is required for firewall rules to survive reboot.
-  class { 'puppet_infrastructure::packages_base':
+  class { 'infra_populi::packages_base':
     unattended_upgrades => false,
   }
 
-  class { 'puppet_infrastructure::ssh_secure':
+  class { 'infra_populi::ssh_secure':
     password_authentication => $password_authentication,
     root_login              => $ssh_allow_root_login,
     port                    => $ssh_port,
   }
 
-  class { 'puppet_infrastructure::filesystem_base_desktop':
+  class { 'infra_populi::filesystem_base_desktop':
     customize_syslog_mode => $customize_syslog_mode,
     syslog_mode           => $syslog_mode,
   }
 
-  class { 'puppet_infrastructure::firewall_secure':
+  class { 'infra_populi::firewall_secure':
     strict_purge    => $firewall_strict_purge,
     ignore_patterns => $firewall_ignore_patterns,
   }
 
-  include puppet_infrastructure::firewall_ipv6_drop_policy_desktop
+  include infra_populi::firewall_ipv6_drop_policy_desktop
 
   # Make the firewall baseline dependency explicit.
-  Class['puppet_infrastructure::packages_base'] -> Class['puppet_infrastructure::firewall_secure']
+  Class['infra_populi::packages_base'] -> Class['infra_populi::firewall_secure']
 
   # APT helpers tailored for desktops.
-  class { 'puppet_infrastructure::filesystem_apt':
+  class { 'infra_populi::filesystem_apt':
     apt_surface_list => $apt_surface_list,
     server_mode      => false,
   }
@@ -80,7 +80,7 @@ class puppet_infrastructure::node_base_desktop (
   }
 
   # Central logs.
-  class { 'puppet_infrastructure::rsyslog_client':
+  class { 'infra_populi::rsyslog_client':
     target      => $log_target,
     target_ip   => $log_target_ip,
     port        => $log_port,
@@ -89,7 +89,7 @@ class puppet_infrastructure::node_base_desktop (
 
   # KDE lock screen policy is per user.
   $screenlock_users.each |String $u| {
-    puppet_infrastructure::user_kde_lock_screen { $u:
+    infra_populi::user_kde_lock_screen { $u:
       screenlock_timeout_minutes => $screenlock_timeout_minutes,
       screenlock_grace_seconds   => $screenlock_grace_seconds,
     }
@@ -97,7 +97,7 @@ class puppet_infrastructure::node_base_desktop (
 
   # GNOME lock screen policy is system-wide.
   if $manage_gnome_screenlock {
-    class { 'puppet_infrastructure::gnome_lock_screen':
+    class { 'infra_populi::gnome_lock_screen':
       screenlock_timeout_minutes => $screenlock_timeout_minutes,
       screenlock_grace_seconds   => $screenlock_grace_seconds,
     }

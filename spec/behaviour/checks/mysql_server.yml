@@ -73,7 +73,7 @@ checks:
     lines: 6-10
     text: datadir = <%= $data_dir %>
   probe: |
-    f=/etc/mysql/mysql.conf.d/zz-puppet-infrastructure.cnf
+    f=/etc/mysql/mysql.conf.d/zz-infra-populi.cnf
     stat -c '%U %a' "$f"; grep -E '^(datadir|ssl-ca|ssl-cert|ssl-key|require_secure_transport) =' "$f"
   expect:
     rc: 0

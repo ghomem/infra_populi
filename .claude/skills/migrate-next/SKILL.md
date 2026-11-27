@@ -48,7 +48,7 @@ FOR EACH CLASS:
    - `syntax-work` → steps 3–4 (Codex). `ERROR` → stop the run and report.
 3. REVERT: the wrapper reverts the node itself before Codex starts (step 1.2). If it prints
    `REVERT_FAILED`, stop the run and report.
-4. CODEX: `~/.local/bin/codex_migrate_class puppet_infrastructure::<class> 2>&1 | tee .codex_state/logs/<class>.$(date +%s).log`.
+4. CODEX: `~/.local/bin/codex_migrate_class infra_populi::<class> 2>&1 | tee .codex_state/logs/<class>.$(date +%s).log`.
    The wrapper puts the orientation packet (`.codex_state/tools/orientation.py <class>`) in the prompt and
    tells Codex to record through `record_green.sh` only. Run it in the foreground with a long timeout. Do not
    interrupt it. Read only the LAST 60 lines to classify the outcome: GREEN+recorded (`RECORDED ... P8: migrate`)

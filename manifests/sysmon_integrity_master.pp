@@ -2,7 +2,7 @@
 # Module dependencies: none (core file resource only).
 ### Purpose ########
 # This class provides a script that generates checksum lists for the sysmon_integrity_node class to use
-class puppet_infrastructure::sysmon_integrity_master ( $filelist = '' ) {
+class infra_populi::sysmon_integrity_master ( $filelist = '' ) {
 
   $bindir   = lookup('filesystem::bindir')
   $outdir   = lookup('puppet::manifdir')
@@ -13,7 +13,7 @@ class puppet_infrastructure::sysmon_integrity_master ( $filelist = '' ) {
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  content => template('puppet_infrastructure/sysmon/checklist-integrity.sh.erb'),
+  content => template('infra_populi/sysmon/checklist-integrity.sh.erb'),
   require => File[ $bindir ],
   }
 

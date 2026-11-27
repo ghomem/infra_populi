@@ -26,7 +26,7 @@
 #
 # before we can use the mysql root user without sudo.
 
-class puppet_infrastructure::mariadb_server (
+class infra_populi::mariadb_server (
   $root_pw,
   $rw_user = undef,
   $rw_hash = undef,
@@ -95,7 +95,7 @@ class puppet_infrastructure::mariadb_server (
       owner   => root,
       group   => root,
       mode    => '0755',
-      content => template('puppet_infrastructure/mariadb/deploy_self_signed_certificates.sh.erb'),
+      content => template('infra_populi/mariadb/deploy_self_signed_certificates.sh.erb'),
       require => File[ $ssl_dir ]
     }
 

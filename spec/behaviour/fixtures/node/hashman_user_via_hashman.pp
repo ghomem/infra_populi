@@ -23,6 +23,6 @@ file { '/usr/local/sbin/p8test-create-hashman-user':
 exec { 'p8test create p8testuser through hashman':
   command => '/usr/local/sbin/p8test-create-hashman-user',
   unless  => '/usr/local/sbin/p8test-create-hashman-user --check',
-  require => [File['/usr/local/sbin/p8test-create-hashman-user'], Class['puppet_infrastructure::hashman_base']],
+  require => [File['/usr/local/sbin/p8test-create-hashman-user'], Class['infra_populi::hashman_base']],
   before  => Exec['user_lock_p8testuser'],
 }

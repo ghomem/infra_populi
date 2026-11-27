@@ -10,7 +10,7 @@
 ### Dependencies ###
 #  packages: see below
 #  hiera: see below
-class puppet_infrastructure::hashman_base (
+class infra_populi::hashman_base (
   # if true, the execution of /usr/local/<PREFIX>/bin/pp_auth.sh will print extra debug output
   $debug_mode = false,
 ) {
@@ -68,7 +68,7 @@ class puppet_infrastructure::hashman_base (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    source  => 'puppet:///modules/puppet_infrastructure/hashman/common/hashman_utils.py',
+    source  => 'puppet:///modules/infra_populi/hashman/common/hashman_utils.py',
     require => File[ "${hashmandir}/common" ],
   }
 
@@ -76,7 +76,7 @@ class puppet_infrastructure::hashman_base (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hashman/pp_auth.py.erb'),
+    content => template('infra_populi/hashman/pp_auth.py.erb'),
     require => File[ "${hashmandir}/common" ],
   }
 
@@ -84,7 +84,7 @@ class puppet_infrastructure::hashman_base (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hashman/libhashman/switch.py.erb'),
+    content => template('infra_populi/hashman/libhashman/switch.py.erb'),
     require => File[ "${hashmandir}/common/libhashman" ],
   }
 
@@ -92,7 +92,7 @@ class puppet_infrastructure::hashman_base (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hashman/libhashman/config.py.erb'),
+    content => template('infra_populi/hashman/libhashman/config.py.erb'),
     require => File[ "${hashmandir}/common/libhashman" ],
   }
 
@@ -100,7 +100,7 @@ class puppet_infrastructure::hashman_base (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hashman/libhashman/coding.py.erb'),
+    content => template('infra_populi/hashman/libhashman/coding.py.erb'),
     require => File[ "${hashmandir}/common/libhashman" ],
   }
 
@@ -108,7 +108,7 @@ class puppet_infrastructure::hashman_base (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hashman/libhashman/typeutils.py.erb'),
+    content => template('infra_populi/hashman/libhashman/typeutils.py.erb'),
     require => File[ "${hashmandir}/common/libhashman" ],
   }
 
@@ -116,7 +116,7 @@ class puppet_infrastructure::hashman_base (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hashman/libhashman/dbutils.py.erb'),
+    content => template('infra_populi/hashman/libhashman/dbutils.py.erb'),
     require => File[ "${hashmandir}/common/libhashman" ],
   }
 
@@ -124,7 +124,7 @@ class puppet_infrastructure::hashman_base (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hashman/libhashman/mailutils.py.erb'),
+    content => template('infra_populi/hashman/libhashman/mailutils.py.erb'),
     require => File[ "${hashmandir}/common/libhashman" ],
   }
 
@@ -132,7 +132,7 @@ class puppet_infrastructure::hashman_base (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hashman/libhashman/miscutils.py.erb'),
+    content => template('infra_populi/hashman/libhashman/miscutils.py.erb'),
     require => File[ "${hashmandir}/common/libhashman" ],
   }
 
@@ -140,7 +140,7 @@ class puppet_infrastructure::hashman_base (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hashman/libhashman/interface.py.erb'),
+    content => template('infra_populi/hashman/libhashman/interface.py.erb'),
     require => File[ "${hashmandir}/common/libhashman" ],
   }
 
@@ -148,7 +148,7 @@ class puppet_infrastructure::hashman_base (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hashman/libhashman/test.py.erb'),
+    content => template('infra_populi/hashman/libhashman/test.py.erb'),
     require => File[ "${hashmandir}/common/libhashman" ],
   }
 
@@ -157,7 +157,7 @@ class puppet_infrastructure::hashman_base (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hashman/pp_auth.sh.erb'),
+    content => template('infra_populi/hashman/pp_auth.sh.erb'),
     require => File[ "${localdir}/bin" ],
   }
 

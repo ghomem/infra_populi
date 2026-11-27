@@ -107,7 +107,7 @@ checks:
     lines: 8-12
     text: if ($nameservers != []) {
   probe: |
-    python3 -c 'import json,sys; c=json.load(open(sys.argv[1])); r=c["resources"]; print("dns_client applied:", any(x["type"]=="Class" and x["title"]=="Puppet_infrastructure::Dns_client" for x in r)); print("resolv_conf resources:", sum(1 for x in r if "resolv_conf" in x["title"].lower() or "Resolv_conf" in x["type"]))' $(ls /opt/puppetlabs/puppet/cache/client_data/catalog/*.json 2>/dev/null | head -1) 2>/dev/null || echo "no catalog"
+    python3 -c 'import json,sys; c=json.load(open(sys.argv[1])); r=c["resources"]; print("dns_client applied:", any(x["type"]=="Class" and x["title"]=="Infra_populi::Dns_client" for x in r)); print("resolv_conf resources:", sum(1 for x in r if "resolv_conf" in x["title"].lower() or "Resolv_conf" in x["type"]))' $(ls /opt/puppetlabs/puppet/cache/client_data/catalog/*.json 2>/dev/null | head -1) 2>/dev/null || echo "no catalog"
     c=$(ls /opt/puppetlabs/puppet/cache/client_data/catalog/*.json 2>/dev/null | head -1)
     [ -n "$c" ] && [ /etc/resolv.conf -ot "$c" ] && echo "resolv.conf last written before the applied catalog"
   expect:

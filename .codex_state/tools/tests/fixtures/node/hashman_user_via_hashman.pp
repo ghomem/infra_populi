@@ -21,7 +21,7 @@ file { '/usr/local/sbin/p8test-create-hashman-user':
     db=/etc/puppetlabs/code/environments/production/manifests/01_hashman
     if [ "$1" = --check ]; then grep -q '^\$p8testuser_pwd_hash ' "$db/hashes.pp"; exit $?; fi
     set -e
-    cd /opt/puppet-infrastructure/hashman/common
+    cd /opt/infra-populi/hashman/common
     out=$(./pp_auth.py useradd p8testuser p8testuser@example.invalid "P8test User" p8test SILENT 2>&1)
     umask 077
     printf '%s' "$out" | sed -n 's/.*created with initial password //p' | head -1 | tr -d '\n' > /root/p8test-hashman-initial
@@ -37,6 +37,6 @@ file { '/usr/local/sbin/p8test-create-hashman-user':
 exec { 'p8test create p8testuser through hashman':
   command => '/usr/local/sbin/p8test-create-hashman-user',
   unless  => '/usr/local/sbin/p8test-create-hashman-user --check',
-  require => [File['/usr/local/sbin/p8test-create-hashman-user'], Class['puppet_infrastructure::hashman_base']],
+  require => [File['/usr/local/sbin/p8test-create-hashman-user'], Class['infra_populi::hashman_base']],
   before  => Exec['user_lock_p8testuser'],
 }

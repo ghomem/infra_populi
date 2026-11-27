@@ -12,14 +12,14 @@
 #
 #
 # Example of placement in our local bin dir
-# puppet_infrastructure::openvpn_set_vpn_passwd_file { '/usr/local/AS/bin/set_vpn_passwd.sh':
+# infra_populi::openvpn_set_vpn_passwd_file { '/usr/local/AS/bin/set_vpn_passwd.sh':
 #   vpn_list => ['VPN1', 'VPN2', 'VPN3']
 # }
 #
 
 # this class is a define type because we might want
 # to manage more than one group of vpn connections
-define puppet_infrastructure::openvpn_set_vpn_passwd_file(
+define infra_populi::openvpn_set_vpn_passwd_file(
 
     # vpn_list is an array containing the name of the configured connections
     # vpn names should not have spaces
@@ -32,6 +32,6 @@ define puppet_infrastructure::openvpn_set_vpn_passwd_file(
         mode    => '0755',
         owner   => $file_owner,
         group   => $file_owner,
-        content => template('puppet_infrastructure/openvpn/set_vpn_passwd.sh.erb'),
+        content => template('infra_populi/openvpn/set_vpn_passwd.sh.erb'),
     }
 }

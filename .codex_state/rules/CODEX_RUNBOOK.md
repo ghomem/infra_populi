@@ -34,7 +34,7 @@ Phase 1 scope: Puppet 5 -> Puppet 8 / Vox Pupuli syntax migration, behaviour pre
    between (the harness prints `NODE_FRESH: yes|no`; record_green.sh refuses `no`). After iterating on a used node,
    finish with `test_class.sh --revert-first <class>` and record that GREEN.
 5. Add the 2-line header to the manifest: purpose (or '<baseline> manifest validated unchanged') and every module dependency with its installed version.
-6. Record: .codex_state/tools/record_green.sh <class>. It is the ONLY recorder: it checks the GREEN stamp, the header, the worktree and the standing composites, writes the tracker marker, commits 'P8: migrate puppet_infrastructure::<class>', regenerates the order file, commits and pushes. Never hand-write migrated_classes.txt or migration_order.md, never commit class files yourself.
+6. Record: .codex_state/tools/record_green.sh <class>. It is the ONLY recorder: it checks the GREEN stamp, the header, the worktree and the standing composites, writes the tracker marker, commits 'P8: migrate infra_populi::<class>', regenerates the order file, commits and pushes. Never hand-write migrated_classes.txt or migration_order.md, never commit class files yourself.
 
 ## 2b. Plan columns are the advisor's (HQ 2026-11-10)
 

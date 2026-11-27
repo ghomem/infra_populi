@@ -10,7 +10,7 @@ Params fixtures are looked up level by level, the first level with a file in any
                   variants/<variant>/<target>.json  (a variant's own params for the target)
                   kinds/<kind>/<class>.json  (the class on that node kind)
                   <class>.json
-where <class> is the short name (a file or directory named with the module prefix, `puppet_infrastructure::<class>`,
+where <class> is the short name (a file or directory named with the module prefix, `infra_populi::<class>`,
 is found too).
 """
 

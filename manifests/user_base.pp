@@ -3,7 +3,7 @@
 ### Purpose ########
 # This defined type provides a wrapper with added features for a system user
 # It is a base defined type for other classes to use.
-define puppet_infrastructure::user_base( $myname = 'Dummy Dummier', $myhash = '', $mykey = 'dummykey', $mygrouplist = [ ], $ignorekey = false, $myppsigs = '', $myppwrapped = '', $myhome = '', String $myhomemode = '', String $user_shell = '/bin/bash') {
+define infra_populi::user_base( $myname = 'Dummy Dummier', $myhash = '', $mykey = 'dummykey', $mygrouplist = [ ], $ignorekey = false, $myppsigs = '', $myppwrapped = '', $myhome = '', String $myhomemode = '', String $user_shell = '/bin/bash') {
 
   $myusername = $title
 

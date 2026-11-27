@@ -3,7 +3,7 @@
 ### Purpose ########
 # This class provides helper scripts for apt based system updates
 
-class puppet_infrastructure::filesystem_apt (
+class infra_populi::filesystem_apt (
   # list of critical surface packages, if empty it will use a builtin default list
   Array[String] $apt_surface_list = [],
   # this parameter must be set to:
@@ -27,7 +27,7 @@ class puppet_infrastructure::filesystem_apt (
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/apt/apt-update-pkg.sh',
+  source  => 'puppet:///modules/infra_populi/apt/apt-update-pkg.sh',
   require => File[ "${localdir}/bin" ],
   }
 
@@ -68,7 +68,7 @@ class puppet_infrastructure::filesystem_apt (
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  content => template('puppet_infrastructure/apt/apt-update-surface.sh.erb'),
+  content => template('infra_populi/apt/apt-update-surface.sh.erb'),
   require => File[ "${localdir}/bin" ],
   }
 
@@ -89,7 +89,7 @@ class puppet_infrastructure::filesystem_apt (
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/apt/apt-update-kernel.sh',
+  source  => 'puppet:///modules/infra_populi/apt/apt-update-kernel.sh',
   require => File[ "${localdir}/bin" ],
   }
 
@@ -98,7 +98,7 @@ class puppet_infrastructure::filesystem_apt (
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/apt/apt-update-dist.sh',
+  source  => 'puppet:///modules/infra_populi/apt/apt-update-dist.sh',
   require => File[ "${localdir}/bin" ],
   }
 
@@ -135,7 +135,7 @@ class puppet_infrastructure::filesystem_apt (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    source  => 'puppet:///modules/puppet_infrastructure/apt/get-relevant-updates-list',
+    source  => 'puppet:///modules/infra_populi/apt/get-relevant-updates-list',
     require => File[ "${localdir}/bin" ]
     }
 
@@ -153,7 +153,7 @@ class puppet_infrastructure::filesystem_apt (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/apt/apt-check-updates-v2.sh.erb'),
+    content => template('infra_populi/apt/apt-check-updates-v2.sh.erb'),
     require => File[ "${localdir}/bin" ]
     }
 
@@ -189,7 +189,7 @@ class puppet_infrastructure::filesystem_apt (
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  content => template('puppet_infrastructure/apt/apt-update-relevant.sh.erb'),
+  content => template('infra_populi/apt/apt-update-relevant.sh.erb'),
   require => File[ "${localdir}/bin" ],
   }
 

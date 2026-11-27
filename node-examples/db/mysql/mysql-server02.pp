@@ -1,7 +1,7 @@
 node 'mysql-server02' {
 
   # Basic declarations
-  include puppet_infrastructure::node_base
+  include infra_populi::node_base
   include passwd_common
 
   # To make the variable below works, add this line to
@@ -20,7 +20,7 @@ node 'mysql-server02' {
   $my_ro_hash = 'this is the mariadb ed25519 hash of a read only operations user'
   $my_rw_hash = 'this is the mariadb ed25519 hash of a read write operations user'
 
-  class { 'puppet_infrastructure::mysql_server': 
+  class { 'infra_populi::mysql_server': 
     root_pw => $root_pw,
     rw_user => 'userrw',
     rw_hash => $my_rw_hash,

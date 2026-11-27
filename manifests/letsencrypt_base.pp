@@ -1,6 +1,6 @@
 # Puppet 8 migration: release-0.9.10 manifest validated unchanged.
 # Module dependencies: puppet-letsencrypt 13.4.0 (with puppetlabs-inifile 6.5.0, puppet-epel 6.0.0, puppetlabs-stdlib 9.7.0); puppetlabs-cron_core 1.3.0 (vendored with Puppet 8.24.2).
-class puppet_infrastructure::letsencrypt_base (
+class infra_populi::letsencrypt_base (
   String $email,
   String $dns_creds_file              = "${lookup('filesystem::etcdir')}/dns-creds.ini",
   String $dns_api_token,
@@ -59,7 +59,7 @@ class puppet_infrastructure::letsencrypt_base (
     owner     => 'root',
     group     => 'root',
     show_diff => false,
-    content => template('puppet_infrastructure/letsencrypt/dns-creds.ini.erb'),
+    content => template('infra_populi/letsencrypt/dns-creds.ini.erb'),
   }
 
   class { 'letsencrypt':
@@ -87,7 +87,7 @@ class puppet_infrastructure::letsencrypt_base (
     mode      => '0700',
     owner     => 'root',
     group     => 'root',
-    content   => template('puppet_infrastructure/letsencrypt/deploy_maintained_certificates.sh.erb'),
+    content   => template('infra_populi/letsencrypt/deploy_maintained_certificates.sh.erb'),
   }
 
   # Cronjob to run the scripts. The cronjob is set to present if the variable $automate_deployment is passed as true. Otherwise it is set to absent.

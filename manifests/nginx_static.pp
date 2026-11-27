@@ -1,5 +1,5 @@
 # Puppet 8 migration: release-0.9.10 manifest validated unchanged.
-# Module dependencies: none directly; through puppet_infrastructure::nginx_static_domain: puppet-nginx 8.4.0 (nginx::resource::server).
+# Module dependencies: none directly; through infra_populi::nginx_static_domain: puppet-nginx 8.4.0 (nginx::resource::server).
 ### Purpose ########
 # Our nginx static class does two things:
 # - it installs nginx servers for the given domain (using our defined type
@@ -12,7 +12,7 @@
 #   "${ssl_private_dir}/${domain}.key",
 # For more documentation, read the comments in nginx_static_domain, nginx_frontend and nginx_frontend_domain
 # and the wiki: https://bitbucket.org/asolidodev/puppet_infrastructure/wiki/NGINX%20Static%20server
-class puppet_infrastructure::nginx_static (
+class infra_populi::nginx_static (
   # These are the same parameters as those of our defined type nginx_static_domain,
   # so the explanation is given there. 
   String $domain,
@@ -45,12 +45,12 @@ class puppet_infrastructure::nginx_static (
 ) {
 
   # includes the nginx_base class, can get overriden
-  require Class[ 'puppet_infrastructure::nginx_base' ]
+  require Class[ 'infra_populi::nginx_base' ]
 
   # This removes the default nginx config file from the package
-  include puppet_infrastructure::nginx_default_removal
+  include infra_populi::nginx_default_removal
 
-  puppet_infrastructure::nginx_static_domain { $domain:
+  infra_populi::nginx_static_domain { $domain:
     domain                    => $domain,
     www_root                  => $www_root,
     static_sslprefix          => $static_sslprefix,

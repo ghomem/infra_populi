@@ -4,8 +4,8 @@
 # This class locks an existing user
 
 ### Dependencies ###
-# classes: puppet_infrastructure::hashman_base
-define puppet_infrastructure::user_lock( ){
+# classes: infra_populi::hashman_base
+define infra_populi::user_lock( ){
 
   $myuser = $title
   $hashmandir = lookup('hashman::bindir')
@@ -15,7 +15,7 @@ define puppet_infrastructure::user_lock( ){
   # the last part is to avoid E_ERR on already locked users
   command => "${hashmandir}/common/pp_auth.py lock ${myuser} DUMMYARG; exit 0",
   unless => "/bin/grep -Eq \"^[[:space:]]*[\$]${myuser}_pwd_hash[[:space:]]*=[[:space:]]*'!\" ${hashmandb}/hashes.pp",
-  require =>  Class[ 'puppet_infrastructure::hashman_base' ],
+  require =>  Class[ 'infra_populi::hashman_base' ],
   }
 
 }

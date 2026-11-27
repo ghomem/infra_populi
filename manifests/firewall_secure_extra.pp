@@ -13,7 +13,7 @@
 ### WARNING ###
 # this class provides a whitelist with a firewall sidechain based on country
 # When performing changes to the input variables of this class, running /usr/local/AS/bin/iptables-flush.sh IS REQUIRED
-class puppet_infrastructure::firewall_secure_extra ( $strict = false,
+class infra_populi::firewall_secure_extra ( $strict = false,
                                         $acl = [],
                                         $anti_ddos = false, # if this is true all the variables bellow will be used
                                         # WARNING Changes to this variable may require manual iptables flush
@@ -67,7 +67,7 @@ class puppet_infrastructure::firewall_secure_extra ( $strict = false,
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    source  => 'puppet:///modules/puppet_infrastructure/iptables/iptables-flush.sh',
+    source  => 'puppet:///modules/infra_populi/iptables/iptables-flush.sh',
     require => File[ "${localdir}/bin" ],
   }
 

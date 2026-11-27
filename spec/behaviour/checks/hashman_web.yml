@@ -212,7 +212,7 @@ checks:
     printf '%s' "$out" | sed -n 's/.*created with initial password //p' | head -1 | tr -d '\n' > /run/p8test-hashman/initial
     chmod 0600 /run/p8test-hashman/initial
     ./pp_auth.py unlock p8hashuser "p8test end to end" > /dev/null 2>&1
-    line=$(./pp_auth.py printinfo p8hashuser 2>/dev/null | grep -E '^  puppet_infrastructure::user +[{]')
+    line=$(./pp_auth.py printinfo p8hashuser 2>/dev/null | grep -E '^  infra_populi::user +[{]')
     install -d -m 0755 /etc/puppetlabs/code/environments/production/manifests/nodes
     printf "node 'p8test-hashman-client' {\n%s\n}\n" "$line" > /etc/puppetlabs/code/environments/production/manifests/nodes/p8test-hashman-client.pp
   effect: |
@@ -223,7 +223,7 @@ checks:
     sed -n 2p /etc/puppetlabs/code/environments/production/manifests/nodes/p8test-hashman-client.pp
   expect:
     rc: 0
-    stdout: '\A1\n7\ninitial-kept\n  puppet_infrastructure::user        \{ ''p8hashuser'': myname => \$::p8hashuser_cname,
+    stdout: '\A1\n7\ninitial-kept\n  infra_populi::user        \{ ''p8hashuser'': myname => \$::p8hashuser_cname,
       myhash => \$::p8hashuser_pwd_hash, mykey  => \$::p8hashuser_ssh_key,  \}\n\Z'
 - id: the-user-changes-the-password-in-a-browser
   what: from the peer, a headless Chromium logs p8hashuser in through nginx with the initial password (typed, as the page's

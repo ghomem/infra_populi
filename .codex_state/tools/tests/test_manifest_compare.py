@@ -12,16 +12,16 @@ HARNESS_OUT = """==> Lab node: ubuntu
 # MOCK-APPLY node fixture: x
 # history of the fixture
 file { '/x': ensure => file }
-include puppet_infrastructure::a
+include infra_populi::a
 # END CODEX MANAGED
 include outside
 """
 
 
 def test_only_the_managed_block_code_counts():
-    assert mc.code(HARNESS_OUT) == ["file { '/x': ensure => file }", "include puppet_infrastructure::a"]
+    assert mc.code(HARNESS_OUT) == ["file { '/x': ensure => file }", "include infra_populi::a"]
 
 
 def test_the_public_manifest_compares_without_its_comments():
-    public = "# Node fixture x: ...\nfile { '/x': ensure => file }\n\ninclude puppet_infrastructure::a\n"
+    public = "# Node fixture x: ...\nfile { '/x': ensure => file }\n\ninclude infra_populi::a\n"
     assert mc.public_code(public) == mc.code(HARNESS_OUT)

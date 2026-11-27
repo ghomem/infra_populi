@@ -5,12 +5,12 @@
 ### Warnings #######
 # Do not forget to do the main firewall configuration,
 # either by including one of our base classes
-# (puppet_infrastructure::firewall or puppet_infrastructure::firewall_secure)
+# (infra_populi::firewall or infra_populi::firewall_secure)
 # or trough some other alternative (e.g. bash scripts).
 ### Dependencies ###
 #  modules: puppetlabs-firewall
 
-class puppet_infrastructure::firewall_addon_hosting {
+class infra_populi::firewall_addon_hosting {
 
   # override the default OUTPUT from the firewall class - can't touch this!
   firewallchain { 'OUTPUT:filter:IPv4':  ensure => present, purge => true, policy => drop }

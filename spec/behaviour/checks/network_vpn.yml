@@ -131,7 +131,7 @@ checks:
     lines: 55-56
     text: push_dns_server  => $openvpn_client_dns,
   probe: |
-    grep -E '^(server-bridge|push "dhcp-option)' /etc/openvpn/server/puppet_infrastructure.conf
+    grep -E '^(server-bridge|push "dhcp-option)' /etc/openvpn/server/infra_populi.conf
   expect:
     rc: 0
     stdout: \Aserver-bridge 198\.51\.100\.1 255\.255\.255\.0 198\.51\.100\.101 198\.51\.100\.200\npush "dhcp-option DNS 198\.51\.100\.1"\n\Z
@@ -315,7 +315,7 @@ checks:
     lines: '172'
     text: '"dhcp-option DNS ${push_dns_server}"]'
   probe: |
-    grep -E '^push "dhcp-option DNS ' /etc/openvpn/server/puppet_infrastructure.conf
+    grep -E '^push "dhcp-option DNS ' /etc/openvpn/server/infra_populi.conf
   expect:
     rc: 0
     stdout: \Apush "dhcp-option DNS 9\.9\.9\.9"\n\Z

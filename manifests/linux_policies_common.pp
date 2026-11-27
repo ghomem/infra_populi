@@ -9,7 +9,7 @@
 # - a file to execute the linux policies on user login in
 # /etc/xdg/autostart/linux_policies_user.desktop
 
-class puppet_infrastructure::linux_policies_common {
+class infra_populi::linux_policies_common {
 
   #Find out the linux policies installation directory
   $localdir = lookup('filesystem::localdir')
@@ -22,7 +22,7 @@ class puppet_infrastructure::linux_policies_common {
     group   => 'root',
     ensure  => directory,
     recurse => true,
-    source  => "puppet:///modules/puppet_infrastructure/linux-policies/",
+    source  => "puppet:///modules/infra_populi/linux-policies/",
   }
 
   # Files needed to execute the policies on user login
@@ -30,13 +30,13 @@ class puppet_infrastructure::linux_policies_common {
     mode      => '0644',
     owner     => 'root',
     group     => 'root',
-    content   => template('puppet_infrastructure/linux-policies/autostart.desktop.erb'),
+    content   => template('infra_populi/linux-policies/autostart.desktop.erb'),
   }
   file { "${linux_policies_dir}/COMMON/execute_linux_policies_user.sh":
     mode      => '0755',
     owner     => 'root',
     group     => 'root',
-    content   => template('puppet_infrastructure/linux-policies/execute_linux_policies_user.sh.erb'),
+    content   => template('infra_populi/linux-policies/execute_linux_policies_user.sh.erb'),
   }
 
 }

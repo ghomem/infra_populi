@@ -8,5 +8,5 @@ exec { 'p8test stand-in primary interface p8test0 with a DHCP server in netns p8
   unless  => '/usr/sbin/ip link show p8test0',
   path    => ['/usr/sbin', '/usr/bin', '/sbin', '/bin'],
   require => Package['dnsmasq-base'],
-  before  => Class['puppet_infrastructure::network_dhcp'],
+  before  => Class['infra_populi::network_dhcp'],
 }

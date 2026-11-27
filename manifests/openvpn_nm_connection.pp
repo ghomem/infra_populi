@@ -8,7 +8,7 @@
 # This configuration does not include setup of passwords
 
 # nm stands for Network Manager
-define puppet_infrastructure::openvpn_nm_connection(
+define infra_populi::openvpn_nm_connection(
 
     $connection_name = $title,
     $vpn_username,
@@ -35,7 +35,7 @@ define puppet_infrastructure::openvpn_nm_connection(
         mode    => '0600',
         owner   => 'root',
         group   => 'root',
-        content => template('puppet_infrastructure/openvpn/connection_file.erb'),
+        content => template('infra_populi/openvpn/connection_file.erb'),
         notify  => Exec["Reload Network Manager Connections: ${title}" ],
         require => File[$ca_crt],
     }

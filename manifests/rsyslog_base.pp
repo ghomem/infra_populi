@@ -3,7 +3,7 @@
 # Shared rsyslog setup for both server and client nodes.
 # Installs rsyslog + GnuTLS and copies Puppet TLS material so rsyslog can use it.
 
-class puppet_infrastructure::rsyslog_base (
+class infra_populi::rsyslog_base (
   Optional[String] $ssldir_override = undef,
 ) {
 

@@ -1,6 +1,6 @@
 # Puppet 8 migration: release-0.9.10 manifest validated unchanged.
 # Module dependency: puppet-letsencrypt 13.4.0 (letsencrypt::certonly; split/join/empty are Puppet core functions).
-define puppet_infrastructure::letsencrypt_certificate (
+define infra_populi::letsencrypt_certificate (
   String  $domain,
   String  $credentials_path = "${lookup('filesystem::etcdir')}/dns-creds.ini",
   String  $certificate_path = '',

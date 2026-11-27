@@ -1,5 +1,5 @@
 # Puppet 8 migration: release-0.9.10 manifest validated unchanged.
-# Module dependencies: none (declares puppet_infrastructure classes only).
+# Module dependencies: none (declares infra_populi classes only).
 ### Purpose ########
 # This class configures an OpenVPN server with user auth and
 # and an internal caching nameserver for DNS resolution to be
@@ -12,7 +12,7 @@
 #   puppet://extra_files/openvpn/keys/ca.crt
 #   puppet://extra_files/openvpn/keys/dh2048.pem
 
-class puppet_infrastructure::network_vpn (
+class infra_populi::network_vpn (
   Boolean $client_isolation = true,
   $wan_iface                = 'eth0',
   $openvpn_lan_iface        = 'lo:0',
@@ -30,23 +30,23 @@ class puppet_infrastructure::network_vpn (
 
     # Caching nameserver for the VPN
 
-    class { 'puppet_infrastructure::caching_nameserver':
+    class { 'infra_populi::caching_nameserver':
         allowed_networks => ["${openvpn_network}/24"]
     }
 
-    class { 'puppet_infrastructure::firewall_addon_caching_nameserver':
+    class { 'infra_populi::firewall_addon_caching_nameserver':
         lan_iface => $openvpn_bridge_iface
     }
 
     # OpenVPN specific internal firewall rules
 
-    class { 'puppet_infrastructure::firewall_addon_openvpn_server':
+    class { 'infra_populi::firewall_addon_openvpn_server':
         wan_iface        => $wan_iface,
         lan_bridge_iface => $openvpn_bridge_iface,
     }
 
     # expects OpenVPN SSL files at: puppet://extra_files/openvpn/keys
-    class { 'puppet_infrastructure::openvpn_server':
+    class { 'infra_populi::openvpn_server':
         lan_static_ip    => $openvpn_static_ip,
         lan_netmask      => $openvpn_netmask,
         lan_network      => $openvpn_network,

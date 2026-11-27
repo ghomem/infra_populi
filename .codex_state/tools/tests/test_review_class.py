@@ -45,7 +45,7 @@ def test_module_claims_find_author_name_and_version(inv):
 
 
 def test_module_claims_skip_filesystem_path_segments(inv):
-    tmp = "/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp"
+    tmp = "/opt/infra-populi/linux-policies/TMP/p8testuser.sh.tmp"
     header = [f"# Expected run-2 events: File[{tmp}]; File_line[{tmp}_0] — upstream design",
               "# Module dependencies: puppetlabs-stdlib 9.7.0 (file_line); puppet-network 2.2.1."]
     assert rc.module_claims(header, inv) == [("puppetlabs-stdlib", "9.7.0"), ("puppet-network", "2.2.1")]
@@ -56,9 +56,9 @@ def test_modules_used_counts_env_modules_only(inv):
 
 
 def test_header_block_stops_at_class_or_define():
-    text = "# h1\n### Purpose\n# p\nclass puppet_infrastructure::x (\n# not header\n"
+    text = "# h1\n### Purpose\n# p\nclass infra_populi::x (\n# not header\n"
     assert rc.header_block(text) == ["# h1", "### Purpose", "# p"]
-    assert rc.header_block("define puppet_infrastructure::y {}\n") == []
+    assert rc.header_block("define infra_populi::y {}\n") == []
 
 
 def test_diff_lines_detects_deleted_comments():
@@ -188,11 +188,11 @@ def test_a_migrate_commit_that_changes_no_class_file_fails_either_way():
 
 
 def test_migrate_commits_lists_newest_first(monkeypatch):
-    log = "c3\tP8: migrate puppet_infrastructure::x\nc2\tP8: record x: header\nc1\tP8: migrate puppet_infrastructure::x\n" \
-          "c0\tP8: migrate puppet_infrastructure::xy\n"
+    log = "c3\tP8: migrate infra_populi::x\nc2\tP8: record x: header\nc1\tP8: migrate infra_populi::x\n" \
+          "c0\tP8: migrate infra_populi::xy\n"
     monkeypatch.setattr(rc, "git", lambda *a, **k: log)
-    assert rc.migrate_commits("x") == [("c3", "P8: migrate puppet_infrastructure::x"),
-                                       ("c1", "P8: migrate puppet_infrastructure::x")]
+    assert rc.migrate_commits("x") == [("c3", "P8: migrate infra_populi::x"),
+                                       ("c1", "P8: migrate infra_populi::x")]
     assert rc.migrate_commit("x")[0] == "c3"
 
 
@@ -231,7 +231,7 @@ def test_repo_registry_has_the_ruled_fixes():
 
 def test_run2_justification_rules():
     header = "# Puppet 8 migration: release-0.9.10 manifest validated unchanged.\n# Module dependency: puppetlabs-apt 11.3.2.\n"
-    body = "class puppet_infrastructure::packages_base {\n}\n"
+    body = "class infra_populi::packages_base {\n}\n"
     ok = header + ("# Expected run-2 events: Exec[apt_update] — apt update frequency 'always' is upstream's choice. "
                    "Exec[dnf-makecache] — the RedHat branch runs dnf makecache on every run\n") + body
     assert rc.run2_justification_problems("packages_base", ok) == []
@@ -244,7 +244,7 @@ def test_run2_justification_rules():
 # HQ 2026-11-16: --fresh on a class whose migrate commit is not HEAD (bar record_green's own record commits) is a usage
 # error — refused before any check or harness run, no draft, and no verdict can be recorded from an older draft.
 def fake_history(monkeypatch, later):
-    monkeypatch.setattr(rc, "migrate_commit", lambda cls: ("c0ffee" * 6 + "abcd", f"P8: migrate puppet_infrastructure::{cls}"))
+    monkeypatch.setattr(rc, "migrate_commit", lambda cls: ("c0ffee" * 6 + "abcd", f"P8: migrate infra_populi::{cls}"))
     monkeypatch.setattr(rc, "git", lambda *a, **k: "".join(f"{s}\n" for s in later))
 
 

@@ -61,8 +61,8 @@ def test_compile_failure_means_syntax_work(world):
 
 
 @pytest.mark.parametrize("line", ["Error: Function lookup() did not find a value for the name 'sysmon::basedir'",
-                                  "Error: Puppet_infrastructure::Sync[sync]: expects a value for parameter 'src'",
-                                  "Error: Could not find resource 'File[/opt/puppet-infrastructure/bin]' in parameter "
+                                  "Error: Infra_populi::Sync[sync]: expects a value for parameter 'src'",
+                                  "Error: Could not find resource 'File[/opt/infra-populi/bin]' in parameter "
                                   "'require' (file: sysmon_base.pp, line: 20)"])
 def test_missing_hiera_key_param_or_required_base_is_a_context_gap(world, line):
     world["compile"] = ("fail", line)
@@ -121,6 +121,6 @@ def test_a_define_without_its_params_file_is_a_context_gap(tmp_path, monkeypatch
     import classify_path as cp
     monkeypatch.setenv("P8_PARAMS_DIR", str(tmp_path))
     assert "define params fixture missing" in cp.missing_define_params("user_kde_lock_screen")
-    (tmp_path / "puppet_infrastructure::user_kde_lock_screen.json").write_text("{}\n")
+    (tmp_path / "infra_populi::user_kde_lock_screen.json").write_text("{}\n")
     assert cp.missing_define_params("user_kde_lock_screen") is None
     assert cp.missing_define_params("gnome_lock_screen") is None  # a class needs no params file

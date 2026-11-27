@@ -3,7 +3,7 @@
 ### Purpose ########
 # This class provides the screen locker settings script
 
-class puppet_infrastructure::user_kde_lock_screen_common {
+class infra_populi::user_kde_lock_screen_common {
 
   $bindir = lookup('filesystem::bindir')
 
@@ -11,7 +11,7 @@ class puppet_infrastructure::user_kde_lock_screen_common {
     owner  => root,
     group  => root,
     mode   => '0755',
-    source => 'puppet:///modules/puppet_infrastructure/user_kde_lock_screen/configure_lock_screen.sh',
+    source => 'puppet:///modules/infra_populi/user_kde_lock_screen/configure_lock_screen.sh',
   }
 
 }

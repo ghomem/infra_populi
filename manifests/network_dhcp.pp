@@ -8,7 +8,7 @@
 # once puppet starts managing one interface it has to manage
 # all of them.
 
-class puppet_infrastructure::network_dhcp ( $iface ) {
+class infra_populi::network_dhcp ( $iface ) {
 
     # ifupdown reads the stanza below at boot; Ubuntu 24.04 ships netplan only, and ifupdown-extra does not pull it in
     # (production has it from openvpn_server on the same servers). ensure_packages, as openvpn_server, so both classes

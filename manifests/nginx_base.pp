@@ -6,9 +6,9 @@
 
 ### Usage ########
 # For default behavior:
-# include puppet_infrastructure::nginx_base
+# include infra_populi::nginx_base
 # Example for custom behavior:
-# class {'puppet_infrastructure::nginx_base':
+# class {'infra_populi::nginx_base':
 #   my_configs => {
 #     names_hash_bucket_size => 128,
 #     proxy_connect_timeout  => '50s',
@@ -29,7 +29,7 @@
 ## proxy_buffers
 ## proxy_buffer_size
 
-class puppet_infrastructure::nginx_base (
+class infra_populi::nginx_base (
   # Using a non-standard DH group with greater bits protects against state actors and leaks from them.
   # As mentioned in https://weakdh.org/sysadmin.html:
   # "We further estimate that an academic team can break a 768-bit prime and that a nation-state can break a 1024-bit prime."
@@ -122,7 +122,7 @@ class puppet_infrastructure::nginx_base (
   }
 
   #file in conf.d for adhoc configs
-  file {'/etc/nginx/conf.d/puppet_infrastructure.conf':
+  file {'/etc/nginx/conf.d/infra_populi.conf':
     ensure  => $config_ensure,
     mode    => '0644',
     owner   => 'root',

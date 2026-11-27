@@ -4,7 +4,7 @@
 # Receives local and remote logs over TLS, stores them under a host-based tree,
 # and manages rotation and retention for those files.
 
-class puppet_infrastructure::rsyslog_server (
+class infra_populi::rsyslog_server (
   Integer $port                       = 6514,
   String  $log_root                   = '/var/log',
   Integer $active_days                = 7,
@@ -18,14 +18,14 @@ class puppet_infrastructure::rsyslog_server (
 ) {
 
   # Reuse the shared rsyslog setup for package install, TLS material and service management.
-  include puppet_infrastructure::rsyslog_base
+  include infra_populi::rsyslog_base
 
   $certname = $trusted['certname']
   $bindir   = lookup('filesystem::bindir')
 
   # Render the TLS listener config and restart rsyslog if it changes.
   file { '/etc/rsyslog.d/30-listener.conf':
-    content => epp('puppet_infrastructure/rsyslog/listener_simple.conf.epp', {
+    content => epp('infra_populi/rsyslog/listener_simple.conf.epp', {
       port                       => $port,
       certname                   => $certname,
       log_root                   => $log_root,
@@ -58,7 +58,7 @@ class puppet_infrastructure::rsyslog_server (
     owner   => 'root',
     group   => 'root',
     mode    => '0644',
-    content => epp('puppet_infrastructure/rsyslog/logrotate.timer.override.epp', {
+    content => epp('infra_populi/rsyslog/logrotate.timer.override.epp', {
       rotation_hour   => $rotation_hour,
       rotation_minute => $rotation_minute,
     }),
@@ -83,7 +83,7 @@ class puppet_infrastructure::rsyslog_server (
     owner   => 'root',
     group   => 'root',
     mode    => '0644',
-    content => epp('puppet_infrastructure/rsyslog/rsyslog-hosts.logrotate.epp', {
+    content => epp('infra_populi/rsyslog/rsyslog-hosts.logrotate.epp', {
       log_root => $log_root,
     }),
   }
@@ -95,7 +95,7 @@ class puppet_infrastructure::rsyslog_server (
     owner   => 'root',
     group   => 'root',
     mode    => '0755',
-    content => epp('puppet_infrastructure/rsyslog/rsyslog-hosts-retention.sh.epp', {
+    content => epp('infra_populi/rsyslog/rsyslog-hosts-retention.sh.epp', {
       log_root       => $log_root,
       active_days    => $active_days,
       retention_days => $retention_days,

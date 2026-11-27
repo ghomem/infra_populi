@@ -1,6 +1,6 @@
 # Puppet 8 migration: release-0.9.10 manifest validated unchanged.
 # Module dependencies: puppet-nginx 8.4.0 (nginx::resource::*), puppetlabs-host_core 1.3.0 (vendored with Puppet 8.24.2; host).
-# Expected run-2 events: Notify[Generated Upstream members for *] — declared by the puppet_infrastructure::nginx_frontend_domain this class declares (baseline `notify { ...: loglevel => 'debug' }`); a notify reports its message on every run.
+# Expected run-2 events: Notify[Generated Upstream members for *] — declared by the infra_populi::nginx_frontend_domain this class declares (baseline `notify { ...: loglevel => 'debug' }`); a notify reports its message on every run.
 ### Purpose ########
 # Our nginx frontend class does three things:
 # - it installs nginx servers for the given domain (using our defined type
@@ -18,7 +18,7 @@
 # - nginx must be installed (you can use our nginx_base class for this)
 # - you will need a certificate and key for the needed domains (e.g. www.domain)
 
-class puppet_infrastructure::nginx_frontend (
+class infra_populi::nginx_frontend (
   # These are the same parameters as those of our defined type
   # nginx_frontend_domain, so their explanation is given there.
   # When we started the defaults here and in the default type
@@ -83,7 +83,7 @@ class puppet_infrastructure::nginx_frontend (
 ) {
 
   # includes the nginx_base class, can get overriden
-  require Class[ 'puppet_infrastructure::nginx_base' ]
+  require Class[ 'infra_populi::nginx_base' ]
 
   # Different OS families (can) require different locations for cert and/or
   # private directories
@@ -128,13 +128,13 @@ class puppet_infrastructure::nginx_frontend (
   $base_ssl_ciphers = "${base_ssl_ciphers_prefix}:${additional_ssl_ciphers_string}:${base_ssl_ciphers_suffix}"
 
   # This removes the default nginx config file from the package
-  include puppet_infrastructure::nginx_default_removal
+  include infra_populi::nginx_default_removal
 
   # Issue #163 SSL can be managed from the class or from the defined type
   # This is managed by this class without help from the nginx_frontend_domain defined type,
   # because we have an HTTPS server in this class, the default server
   if ( $enable_ssl and $manage_ssl ) {
-    puppet_infrastructure::ssl_nginx_domain { $frontend_sslprefix:
+    infra_populi::ssl_nginx_domain { $frontend_sslprefix:
       sslprefix               => $frontend_sslprefix,
       letsencrypt_certificate => $letsencrypt_certificate,
     }
@@ -173,7 +173,7 @@ class puppet_infrastructure::nginx_frontend (
   # it has a "" server name (which will match any Host not matched elsewhere and
   # an absent Host), it returns a redirect to https www server
   if $enable_ssl {
-    $default_server_require = Puppet_infrastructure::Ssl_nginx_domain[$frontend_sslprefix]
+    $default_server_require = Infra_populi::Ssl_nginx_domain[$frontend_sslprefix]
   } else {
     $default_server_require = []
   }
@@ -274,13 +274,13 @@ class puppet_infrastructure::nginx_frontend (
       mode    => '0755',
       owner   => 'root',
       group   => 'root',
-      content => template('puppet_infrastructure/sysmon/check_nginx_status.py.erb'),
+      content => template('infra_populi/sysmon/check_nginx_status.py.erb'),
       require => File[ "${localdir}/bin" ],
     }
   }
 
   # issue#16 The remaining work is now done using the defined type
-  puppet_infrastructure::nginx_frontend_domain {$domain:
+  infra_populi::nginx_frontend_domain {$domain:
     domain                         => $domain,
     frontend_sslprefix             => $frontend_sslprefix,
     backend_hosts_and_ports        => $backend_hosts_and_ports,

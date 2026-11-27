@@ -6,7 +6,7 @@
 ### Warnings
 # client isolation feature is still to be correctly implemented: since its not a need right now, it defaults to isolation
 
-class puppet_infrastructure::firewall_addon_openvpn_server (
+class infra_populi::firewall_addon_openvpn_server (
 
     $lan_bridge_iface ='br0',
     $wan_iface,

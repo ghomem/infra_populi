@@ -3,7 +3,7 @@
 # Expected run-2 events: Exec[apt_update]; Exec[dnf-makecache]. Exec[apt_update] — upstream's `class { 'apt': update => { frequency => 'always' } }` (this file, comment above it) makes the apt module run apt update on every agent run (its update.pp turns 'always' into refreshonly => false). Exec[dnf-makecache] — on RedHat, packages_base's `exec { 'dnf-makecache': refreshonly => false }` ("this line is needed to make sure apt-get update or dnf-makecache runs on each puppet run") runs on every agent run by upstream design.
 ### Purpose ########
 # This class provides the minimum set of packages for a generic Ubuntu node
-class puppet_infrastructure::packages_base (
+class infra_populi::packages_base (
   Boolean $unattended_upgrades = false,
 ) {
   
@@ -29,7 +29,7 @@ class puppet_infrastructure::packages_base (
     $nagios_package_name = 'monitoring-plugins-standard'
     $package_list = ['iptables-persistent', $nagios_package_name, 'ecryptfs-utils', 'vim', 'wget', 'aptitude', 'acl']
   } elsif $os_family == 'RedHat' {
-    include puppet_infrastructure::extra_packages_el
+    include infra_populi::extra_packages_el
     $package_manager = 'dnf'
     $nagios_package_name = 'nagios-plugins-all'
     $package_list = ['iptables-services', $nagios_package_name, 'vim', 'wget', 'yum-utils', 'acl']

@@ -4,7 +4,7 @@ class passwd_base {
   # all fields but username will be dummy if the info is not on the database
 
   # be sure that default AWS user (not managed via hashman) is not usable - will get an ssh dummy key
-  puppet_infrastructure::user_sudoer { 'ubuntu': myname => 'Ubuntu user locked' }
+  infra_populi::user_sudoer { 'ubuntu': myname => 'Ubuntu user locked' }
 
 }
 
@@ -20,7 +20,7 @@ class passwd_devops (
     # 'testuser'   => { myname => $::testuser_cname,   myhash => $::testuser_pwd_hash,   mykey => $::testuser_ssh_key,   myhomemode => $homemode, },
   }
 
-  puppet_infrastructure::users_sudoers {'devops':
+  infra_populi::users_sudoers {'devops':
     configs         => $users_sudoers_devops,
     unmanaged_users => $unmanaged_users,
   }

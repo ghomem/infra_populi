@@ -1,12 +1,12 @@
 node 'backups01' {
 
   # Basic declarations
-  class { 'puppet_infrastructure::node_base':
+  class { 'infra_populi::node_base':
     filesystem_security => false, # the unprivileged user 'backups' needs to execute the ssh command
   }
   include passwd_common
   include passwd_backups_srv
-  include puppet_infrastructure::backup_rsnapshot_pre
+  include infra_populi::backup_rsnapshot_pre
 
   $bindir = lookup('filesystem::bindir')
 
@@ -26,7 +26,7 @@ node 'backups01' {
   }
 
   # fetches data from a remote directory
-  puppet_infrastructure::sync { "${mynode01}_folders":
+  infra_populi::sync { "${mynode01}_folders":
     localdir       => $mydir,
     localuser      => $myuser,
     remotedir      => '/directory/to/backup',
@@ -38,7 +38,7 @@ node 'backups01' {
   }
 
   # performs backups of a local directory keeping 7 days of tarball copies
-  puppet_infrastructure::backup { "${mynode01}_backups" :
+  infra_populi::backup { "${mynode01}_backups" :
     basedir  => "${mydir}/${mynode01}",
     prefix   => '',
     backdir  => "${tarballdir}/${mynode01}",
@@ -47,7 +47,7 @@ node 'backups01' {
   }
 
   # performs backups of a local directory, keeping 30 days of rsnapshots copies
-  puppet_infrastructure::backup_rsnapshot { "${mynode1}":
+  infra_populi::backup_rsnapshot { "${mynode1}":
     basedir => "${mydir}/${mynode01}",
     prefix  => '',
     backdir => "${snapdir}/${mynode01}",

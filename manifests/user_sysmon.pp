@@ -5,7 +5,7 @@
 
 ### Dependencies ###
 # modules: leinaddm-htpasswd
-define puppet_infrastructure::user_sysmon( $myname = 'Dummy Dummier', $myhash = '', $myemail = 'dummy@localhost', $mygrouplist = [ ] ) {
+define infra_populi::user_sysmon( $myname = 'Dummy Dummier', $myhash = '', $myemail = 'dummy@localhost', $mygrouplist = [ ] ) {
 
   $myusername = $title
 
@@ -17,7 +17,7 @@ define puppet_infrastructure::user_sysmon( $myname = 'Dummy Dummier', $myhash = 
   mode    => '0664',
   owner   => 'naemon',
   group   => 'naemon',
-  content => template('puppet_infrastructure/users/sysmon_contact.erb'),
+  content => template('infra_populi/users/sysmon_contact.erb'),
   }
 
 }

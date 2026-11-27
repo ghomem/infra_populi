@@ -88,7 +88,7 @@ def stub_codex(lab, script):
 def test_wrapper_audit_reports_a_plan_commit_made_with_no_verify(wrapper_clone, lab):
     stub_codex(lab, '[ "$CODEX_RUN" = 1 ] || exit 9\necho x >> .codex_state/migration_plan.md\n'
                     'git commit -q -a -m "plan(x): sneaky" --no-verify')
-    proc = lab.run([str(wrapper_clone / ".codex_state/tools/codex_migrate_class"), "puppet_infrastructure::dns_client"],
+    proc = lab.run([str(wrapper_clone / ".codex_state/tools/codex_migrate_class"), "infra_populi::dns_client"],
                    cwd=wrapper_clone)
     assert proc.returncode == 5
     assert "AUTHORITY_VIOLATION" in proc.stderr and ".codex_state/migration_plan.md" in proc.stderr
@@ -97,7 +97,7 @@ def test_wrapper_audit_reports_a_plan_commit_made_with_no_verify(wrapper_clone, 
 def test_wrapper_audit_is_quiet_for_record_files_and_reports_uncommitted_edits(wrapper_clone, lab):
     stub_codex(lab, 'echo x >> .codex_state/migration_order.md\ngit commit -q -a -m "P8: regenerate" --no-verify\n'
                     'echo y >> .codex_state/blocked.txt')
-    proc = lab.run([str(wrapper_clone / ".codex_state/tools/codex_migrate_class"), "puppet_infrastructure::dns_client"],
+    proc = lab.run([str(wrapper_clone / ".codex_state/tools/codex_migrate_class"), "infra_populi::dns_client"],
                    cwd=wrapper_clone)
     assert proc.returncode == 5 and "uncommitted: .codex_state/blocked.txt" in proc.stderr
     assert "migration_order" not in proc.stderr.split("AUTHORITY_VIOLATION", 1)[1]
@@ -107,7 +107,7 @@ def test_wrapper_audit_ignores_advisor_edits_that_predate_the_run(wrapper_clone,
     plan = wrapper_clone / ".codex_state/migration_plan.md"
     plan.write_text(plan.read_text() + "\nadvisor's work in progress\n")  # an uncommitted edit; the plan still parses
     stub_codex(lab, "exit 0")
-    proc = lab.run([str(wrapper_clone / ".codex_state/tools/codex_migrate_class"), "puppet_infrastructure::dns_client"],
+    proc = lab.run([str(wrapper_clone / ".codex_state/tools/codex_migrate_class"), "infra_populi::dns_client"],
                    cwd=wrapper_clone)
     assert proc.returncode == 0, proc.stderr
     assert "AUTHORITY_VIOLATION" not in proc.stderr

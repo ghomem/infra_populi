@@ -3,21 +3,21 @@
 # Expected run-2 events: Exec[apt_update] — node_base_domain_desktop declares packages_base, whose `class { 'apt': update => { frequency => 'always' } }` runs apt update on every agent run by upstream design (justified on packages_base).
 ### Purpose ########
 # This class provides basic desirable properties of a domain based desktop node
-class puppet_infrastructure::node_base_domain_desktop (
+class infra_populi::node_base_domain_desktop (
   Boolean $customize_syslog_mode = false,
   String $syslog_mode            = 'u=rw,g=r,o=',
   $apt_surface_list = [], # if empty it will default to a builtin list
 ) {
 
-  class { 'puppet_infrastructure::packages_base': unattended_upgrades => true }
-  class { 'puppet_infrastructure::ssh_secure': password_authentication => true }
-  include puppet_infrastructure::firewall_secure
-  include puppet_infrastructure::firewall_ipv6_drop
-  class { 'puppet_infrastructure::filesystem_base_desktop':
+  class { 'infra_populi::packages_base': unattended_upgrades => true }
+  class { 'infra_populi::ssh_secure': password_authentication => true }
+  include infra_populi::firewall_secure
+  include infra_populi::firewall_ipv6_drop
+  class { 'infra_populi::filesystem_base_desktop':
     customize_syslog_mode => $customize_syslog_mode,
     syslog_mode           => $syslog_mode,
   }
-  class { 'puppet_infrastructure::filesystem_apt':
+  class { 'infra_populi::filesystem_apt':
     apt_surface_list  => $apt_surface_list,
     server_mode       => false,
   }

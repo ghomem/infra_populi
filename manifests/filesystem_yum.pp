@@ -3,7 +3,7 @@
 ### Purpose ########
 # This class provides helper scripts for yum based system updates
 
-class puppet_infrastructure::filesystem_yum {
+class infra_populi::filesystem_yum {
 
   $localdir = lookup('filesystem::localdir')
 
@@ -12,7 +12,7 @@ class puppet_infrastructure::filesystem_yum {
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/yum/yum-update-surface.sh',
+  source  => 'puppet:///modules/infra_populi/yum/yum-update-surface.sh',
   require => File[ "${localdir}/bin" ],
   }
 
@@ -21,7 +21,7 @@ class puppet_infrastructure::filesystem_yum {
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/yum/yum-update-dist.sh',
+  source  => 'puppet:///modules/infra_populi/yum/yum-update-dist.sh',
   require => File[ "${localdir}/bin" ],
   }
 

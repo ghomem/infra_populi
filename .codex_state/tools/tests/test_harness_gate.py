@@ -123,7 +123,7 @@ def test_failed_revert_stops_before_deploy(lab):
 
 
 def test_revert_first_rejects_render_only(lab):
-    proc = lab.run([SCRIPT, "--revert-first", "--render-only", "puppet_infrastructure::dns_client"])
+    proc = lab.run([SCRIPT, "--revert-first", "--render-only", "infra_populi::dns_client"])
     assert proc.returncode == 1
 
 
@@ -135,7 +135,7 @@ def test_pluginsync_is_not_counted_as_class_events(lab):
     assert "applied nothing" in proc.stderr
 
 
-COVERAGE_CALL = r"sudo -n python3 - puppet8node puppet_infrastructure::puppet_backup$"
+COVERAGE_CALL = r"sudo -n python3 - puppet8node infra_populi::puppet_backup$"
 CLEAN = [{"rc": 2, "stdout": APPLIED}, {"rc": 0, "stdout": APPLIED}]
 
 
@@ -144,11 +144,11 @@ def test_coverage_lists_target_resources_and_is_green(lab):
     before = real.stat().st_mtime_ns if real.exists() else None
     agent_runs(lab, *CLEAN)
     lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "stdout":
-        "COVERAGE puppet_infrastructure::puppet_backup: 2 concrete resources (+1 defined-type instances)\n"
+        "COVERAGE infra_populi::puppet_backup: 2 concrete resources (+1 defined-type instances)\n"
         "  Cron[cron_puppet_backup]\n"})
-    proc = lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"])
+    proc = lab.run([SCRIPT, "infra_populi::puppet_backup"])
     assert proc.returncode == 0, proc.stderr
-    assert "COVERAGE puppet_infrastructure::puppet_backup: 2 concrete" in proc.stdout
+    assert "COVERAGE infra_populi::puppet_backup: 2 concrete" in proc.stdout
     coverage_calls = [c for c in lab.calls("ssh") if "python3 -" in " ".join(c)]
     assert len(coverage_calls) == 1
     assert "filesystem_base" not in " ".join(coverage_calls[0])  # required base is not a target
@@ -160,8 +160,8 @@ def test_coverage_lists_target_resources_and_is_green(lab):
 def test_zero_coverage_is_red(lab):
     agent_runs(lab, *CLEAN)
     lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "rc": 3, "stdout":
-        "COVERAGE puppet_infrastructure::puppet_backup: 0 concrete resources (+0 defined-type instances)\n"})
-    proc = lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"])
+        "COVERAGE infra_populi::puppet_backup: 0 concrete resources (+0 defined-type instances)\n"})
+    proc = lab.run([SCRIPT, "infra_populi::puppet_backup"])
     assert proc.returncode == 1
     assert "no concrete resources" in proc.stderr and "GREEN" not in proc.stdout
 
@@ -169,11 +169,11 @@ def test_zero_coverage_is_red(lab):
 def test_unreadable_catalog_is_red(lab):
     agent_runs(lab, *CLEAN)
     lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "rc": 1})
-    proc = lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"])
+    proc = lab.run([SCRIPT, "infra_populi::puppet_backup"])
     assert proc.returncode == 1 and "could not read" in proc.stderr
 
 
-RESOURCE_API_CREATE = ("Notice: /Stage[main]/Puppet_infrastructure::Firewall_addon_caching_nameserver/"
+RESOURCE_API_CREATE = ("Notice: /Stage[main]/Infra_populi::Firewall_addon_caching_nameserver/"
                        "Firewall[1301 accept nameserver]/ensure: defined 'ensure' as 'present'\n")
 
 
@@ -194,10 +194,10 @@ def test_harness_writes_revert_and_harness_metrics_events_on_green_and_red(lab):
     import json
     agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 0, "stdout": APPLIED})
     lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "stdout":
-        "COVERAGE puppet_infrastructure::puppet_backup: 2 concrete resources (+1 defined-type instances)\n"})
+        "COVERAGE infra_populi::puppet_backup: 2 concrete resources (+1 defined-type instances)\n"})
     lab.world["ssh"].insert(0, {"match": "cat /opt/puppetlabs/puppet/public/last_run_summary.yaml", "stdout":
         "resources:\n  changed: 9\n  total: 26\ntime:\n  total: 10.4\ntransaction_uuid: u-1\n"})
-    assert lab.run([SCRIPT, "--revert-first", "puppet_infrastructure::puppet_backup"]).returncode == 0
+    assert lab.run([SCRIPT, "--revert-first", "infra_populi::puppet_backup"]).returncode == 0
     events = [json.loads(l) for l in (lab.root / "metrics" / "events.jsonl").read_text().splitlines()]
     assert [e["kind"] for e in events] == ["revert", "harness"]
     assert events[0]["data"]["snapshot"] == "P8NODE_BASELINE_GREEN_v5"
@@ -206,7 +206,7 @@ def test_harness_writes_revert_and_harness_metrics_events_on_green_and_red(lab):
     assert [r["transaction_uuid"] for r in h["agent_runs"]] == ["u-1", "u-1"] and h["agent_runs"][0]["res_changed"] == 9
 
     agent_runs(lab, {"rc": 4, "stdout": "Error: boom\n"})
-    assert lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"]).returncode == 1
+    assert lab.run([SCRIPT, "infra_populi::puppet_backup"]).returncode == 1
     last = json.loads((lab.root / "metrics" / "events.jsonl").read_text().splitlines()[-1])
     assert last["kind"] == "harness" and last["data"]["rc"] == 1 and "Agent run 1 failed" in last["data"]["reason"]
 
@@ -218,16 +218,16 @@ def test_revert_and_harness_events_carry_nic1_bytes(lab):
     import json
     agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 0, "stdout": APPLIED})
     lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "stdout":
-        "COVERAGE puppet_infrastructure::puppet_backup: 2 concrete resources (+1 defined-type instances)\n"})
+        "COVERAGE infra_populi::puppet_backup: 2 concrete resources (+1 defined-type instances)\n"})
     lab.world["ssh"].insert(0, {"match": r"statistics/rx_bytes", "outputs": [
         {"stdout": "50000000\n"}, {"stdout": "50000000\n"}, {"stdout": "80000000\n"}]})  # revert, harness start, end
-    assert lab.run([SCRIPT, "--revert-first", "puppet_infrastructure::puppet_backup"]).returncode == 0
+    assert lab.run([SCRIPT, "--revert-first", "infra_populi::puppet_backup"]).returncode == 0
     events = [json.loads(l) for l in (lab.root / "metrics" / "events.jsonl").read_text().splitlines()]
     assert events[0]["kind"] == "revert" and events[0]["data"]["nic1_rx_bytes"] == 50_000_000
     assert events[1]["kind"] == "harness" and events[1]["data"]["nic1_rx_bytes"] == 30_000_000
     agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 0, "stdout": APPLIED})
     lab.world["ssh"][0] = {"match": r"statistics/rx_bytes", "outputs": [{"stdout": "90000000\n"}, {"stdout": "1000\n"}]}
-    lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"])  # the counter went down between start and end
+    lab.run([SCRIPT, "infra_populi::puppet_backup"])  # the counter went down between start and end
     last = json.loads((lab.root / "metrics" / "events.jsonl").read_text().splitlines()[-1])
     assert last["kind"] == "harness" and last["data"]["nic1_rx_bytes"] is None
 
@@ -239,39 +239,39 @@ def test_fixture_runs_write_no_metrics(lab):
 
 # --- HQ 2026-11-10 ruling 1: plan expected_run2_events (packages_base: Exec[apt_update])
 APT_EVENT = "Notice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\n"
-PKG_COVERAGE = {"match": r"python3 - puppet8node puppet_infrastructure::packages_base$", "stdout":
-                "COVERAGE puppet_infrastructure::packages_base: 7 concrete resources (+0 defined-type instances)\n"}
+PKG_COVERAGE = {"match": r"python3 - puppet8node infra_populi::packages_base$", "stdout":
+                "COVERAGE infra_populi::packages_base: 7 concrete resources (+0 defined-type instances)\n"}
 
 
 def test_expected_run2_event_only_is_green(lab):
     agent_runs(lab, {"rc": 2, "stdout": APT_EVENT + APPLIED}, {"rc": 2, "stdout": APT_EVENT + APPLIED})
     lab.world["ssh"].insert(0, PKG_COVERAGE)
-    proc = lab.run([SCRIPT, "puppet_infrastructure::packages_base"])
+    proc = lab.run([SCRIPT, "infra_populi::packages_base"])
     assert proc.returncode == 0, proc.stderr
     assert "RUN2_EXPECTED_EVENTS: 1 from Exec[apt_update]" in proc.stdout
     assert "GREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache])" in proc.stdout
 
 
 def test_an_unexpected_event_beside_an_expected_one_is_red(lab):
-    other = "Notice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[vim]/ensure: created\n"
+    other = "Notice: /Stage[main]/Infra_populi::Packages_base/Package[vim]/ensure: created\n"
     agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 2, "stdout": APT_EVENT + other + APPLIED})
     lab.world["ssh"].insert(0, PKG_COVERAGE)
-    proc = lab.run([SCRIPT, "puppet_infrastructure::packages_base"])
+    proc = lab.run([SCRIPT, "infra_populi::packages_base"])
     assert proc.returncode == 1 and "Package[vim]" in proc.stderr and "not idempotent" in proc.stderr
 
 
 def test_expected_events_do_not_excuse_a_failed_run2(lab):
     agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 6, "stdout": APT_EVENT + "Error: boom\n"})
     lab.world["ssh"].insert(0, PKG_COVERAGE)
-    proc = lab.run([SCRIPT, "puppet_infrastructure::packages_base"])
+    proc = lab.run([SCRIPT, "infra_populi::packages_base"])
     assert proc.returncode == 1
 
 
 def test_class_without_expected_events_still_fails_on_the_same_event(lab):
     agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 2, "stdout": APT_EVENT + APPLIED})
     lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "stdout":
-        "COVERAGE puppet_infrastructure::puppet_backup: 2 concrete resources (+1 defined-type instances)\n"})
-    proc = lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"])
+        "COVERAGE infra_populi::puppet_backup: 2 concrete resources (+1 defined-type instances)\n"})
+    proc = lab.run([SCRIPT, "infra_populi::puppet_backup"])
     assert proc.returncode == 1 and "Exec[apt_update]" in proc.stderr
 
 
@@ -279,9 +279,9 @@ def test_inherited_expected_run2_is_named_in_output_and_metrics(lab):
     import json
     # sysmon_base's required_base includes packages_base, whose plan entry is Exec[apt_update]
     agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 2, "stdout": APT_EVENT + APPLIED})
-    lab.world["ssh"].insert(0, {"match": r"python3 - puppet8node puppet_infrastructure::sysmon_base$", "stdout":
-                                "COVERAGE puppet_infrastructure::sysmon_base: 13 concrete resources (+0 defined-type instances)\n"})
-    proc = lab.run([SCRIPT, "puppet_infrastructure::sysmon_base"])
+    lab.world["ssh"].insert(0, {"match": r"python3 - puppet8node infra_populi::sysmon_base$", "stdout":
+                                "COVERAGE infra_populi::sysmon_base: 13 concrete resources (+0 defined-type instances)\n"})
+    proc = lab.run([SCRIPT, "infra_populi::sysmon_base"])
     assert proc.returncode == 0, proc.stderr
     assert "[own: none; inherited: Exec[apt_update] via packages_base, Exec[dnf-makecache] via packages_base]" in proc.stdout
     h = [json.loads(l) for l in (lab.root / "metrics" / "events.jsonl").read_text().splitlines()][-1]["data"]
@@ -317,12 +317,12 @@ def test_unreadable_run2_report_fails_closed(lab):
 def test_expected_silent_event_with_a_glob_title_is_green(lab):
     params = lab.root / "home" / ".config" / "infra_populi" / "params"
     params.mkdir(parents=True)
-    (params / "puppet_infrastructure::nginx_frontend_domain.json").write_text('{"domain": "p8test.example.com"}')
+    (params / "infra_populi::nginx_frontend_domain.json").write_text('{"domain": "p8test.example.com"}')
     agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 2, "stdout": APPLIED})
     report(lab, DEBUG_NOTIFY + "\n")
-    lab.world["ssh"].insert(0, {"match": r"python3 - puppet8node puppet_infrastructure::nginx_frontend_domain$", "stdout":
-                                "COVERAGE puppet_infrastructure::nginx_frontend_domain: 9 concrete resources (+3 defined-type instances)\n"})
-    proc = lab.run([SCRIPT, "puppet_infrastructure::nginx_frontend_domain"], env={"HOME": str(lab.root / "home")})
+    lab.world["ssh"].insert(0, {"match": r"python3 - puppet8node infra_populi::nginx_frontend_domain$", "stdout":
+                                "COVERAGE infra_populi::nginx_frontend_domain: 9 concrete resources (+3 defined-type instances)\n"})
+    proc = lab.run([SCRIPT, "infra_populi::nginx_frontend_domain"], env={"HOME": str(lab.root / "home")})
     assert proc.returncode == 0, proc.stderr
     assert "RUN2_EXPECTED_EVENTS: 1 from Notify[Generated Upstream members for *]" in proc.stdout
     assert "GREEN: run 2 events limited to the plan's expected_run2_events" in proc.stdout
@@ -336,7 +336,7 @@ def test_an_event_on_console_and_in_the_report_counts_once(lab):
     agent_runs(lab, {"rc": 2, "stdout": APPLIED}, {"rc": 2, "stdout": APT_EVENT + APPLIED})
     report(lab, "Exec[apt_update]\n")
     lab.world["ssh"].insert(0, PKG_COVERAGE)
-    proc = lab.run([SCRIPT, "puppet_infrastructure::packages_base"])
+    proc = lab.run([SCRIPT, "infra_populi::packages_base"])
     assert proc.returncode == 0, proc.stderr
     assert "RUN2_EXPECTED_EVENTS: 1 from Exec[apt_update]" in proc.stdout
 
@@ -348,10 +348,10 @@ def test_a_puppet_server_node_gets_the_module_in_its_own_code_tree(lab):
                                 "outputs": [{"rc": 2, "stdout": EXEC_EVENT + APPLIED}, {"rc": 0, "stdout": APPLIED}]})
     proc = lab.run([SCRIPT, "--node", "puppetserver", "--fixture", "guarded_exec"])
     assert proc.returncode == 0, proc.stderr
-    assert any(c[0] == "rsync" and c[-1] == "p8lab-puppetserver:/var/tmp/infra_populi_stage/puppet_infrastructure/"
+    assert any(c[0] == "rsync" and c[-1] == "p8lab-puppetserver:/var/tmp/infra_populi_stage/infra_populi/"
                for c in lab.calls())
-    module = "/etc/puppetlabs/code/environments/production/modules/puppet_infrastructure"
-    assert any("p8lab-puppetserver" in c and f'sudo -n mv "/var/tmp/infra_populi_stage/puppet_infrastructure" "{module}"' in " ".join(c)
+    module = "/etc/puppetlabs/code/environments/production/modules/infra_populi"
+    assert any("p8lab-puppetserver" in c and f'sudo -n mv "/var/tmp/infra_populi_stage/infra_populi" "{module}"' in " ".join(c)
                for c in lab.calls("ssh"))
 
 
@@ -414,16 +414,16 @@ def test_zero_coverage_is_green_only_for_a_params_variant_that_declares_nothing(
     home = tmp_path / "home"
     variant = home / ".config" / "infra_populi" / "params" / "variants" / "none"
     variant.mkdir(parents=True)
-    (variant / "puppet_infrastructure::puppet_backup.json").write_text("{}\n")
+    (variant / "infra_populi::puppet_backup.json").write_text("{}\n")
     agent_runs(lab, *CLEAN)
     lab.world["ssh"].insert(0, {"match": COVERAGE_CALL, "rc": 3, "stdout":
-        "COVERAGE puppet_infrastructure::puppet_backup: 0 concrete resources (+0 defined-type instances)\n"})
+        "COVERAGE infra_populi::puppet_backup: 0 concrete resources (+0 defined-type instances)\n"})
     env = {"HOME": str(home), "P8_PARAMS_VARIANT": "none"}
-    proc = lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"], env={**env, "P8_VARIANT_NO_RESOURCES": "1"})
+    proc = lab.run([SCRIPT, "infra_populi::puppet_backup"], env={**env, "P8_VARIANT_NO_RESOURCES": "1"})
     assert proc.returncode == 0, proc.stderr
     assert "COVERAGE: no concrete resources, as the params variant none declares (no_resources)" in proc.stdout
     assert "GREEN_STAMP: none (a Phase 3 variant run" in proc.stdout
     lab.world["ssh"][0]["_i"] = 0
     agent_runs(lab, *CLEAN)
-    proc = lab.run([SCRIPT, "puppet_infrastructure::puppet_backup"], env=env)  # no opt-in: still RED
+    proc = lab.run([SCRIPT, "infra_populi::puppet_backup"], env=env)  # no opt-in: still RED
     assert proc.returncode == 1 and "no concrete resources" in proc.stderr

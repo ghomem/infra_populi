@@ -2,7 +2,7 @@
 # Module dependencies: none.
 ### Purpose ########
 # Parametrized class for postfix to allow email sending from any non specialized node, by mean of a relayhost.
-class puppet_infrastructure::postfix_smtp_node (
+class infra_populi::postfix_smtp_node (
   ) {
 
   $hostname = $facts['networking']['hostname']
@@ -46,7 +46,7 @@ class puppet_infrastructure::postfix_smtp_node (
     mode      => '0644',
     owner     => 'root',
     group     => 'root',
-    content   => template('puppet_infrastructure/postfix_smtp_node/main.cf'),
+    content   => template('infra_populi/postfix_smtp_node/main.cf'),
     subscribe => Package['postfix'],
     notify    => Service['postfix'],
   }
@@ -55,7 +55,7 @@ class puppet_infrastructure::postfix_smtp_node (
     mode      => '0640',
     owner     => 'root',
     group     => 'root',
-    content   => template('puppet_infrastructure/postfix_smtp_node/sasl_passwd'),
+    content   => template('infra_populi/postfix_smtp_node/sasl_passwd'),
     subscribe => Package['postfix'],
     notify    => Exec['postmap_sasl'],
   }
@@ -82,7 +82,7 @@ class puppet_infrastructure::postfix_smtp_node (
     mode      => '0644',
     owner     => 'root',
     group     => 'root',
-    content   => template('puppet_infrastructure/postfix_smtp_node/aliases'),
+    content   => template('infra_populi/postfix_smtp_node/aliases'),
     subscribe => Package['postfix'],
     notify    => Exec['newaliases'],
   }

@@ -2,7 +2,7 @@
 # Module dependencies: none.
 # Configure a node to forward its local logs to a remote rsyslog server over TLS.
 
-class puppet_infrastructure::rsyslog_client (
+class infra_populi::rsyslog_client (
   String            $target,
   Optional[String]  $target_ip        = undef,
   Integer           $port             = 6514,
@@ -15,7 +15,7 @@ class puppet_infrastructure::rsyslog_client (
 
   # Reuse the shared rsyslog setup; allow the SSL dir to be overridden when needed.
 
-  class { 'puppet_infrastructure::rsyslog_base':
+  class { 'infra_populi::rsyslog_base':
     ssldir_override => $ssldir_override,
   }
 
@@ -42,7 +42,7 @@ class puppet_infrastructure::rsyslog_client (
   # Render the forwarding rule and restart rsyslog if it changes.
 
   file { '/etc/rsyslog.d/40-forward.conf':
-    content => epp('puppet_infrastructure/rsyslog/forward_simple.conf.epp', {
+    content => epp('infra_populi/rsyslog/forward_simple.conf.epp', {
       target           => $target,
       port             => $port,
       certname         => $certname,

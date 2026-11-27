@@ -48,8 +48,8 @@ def test_release_by_another_owner_does_nothing(lab, held):
     assert lock(lab, "holder").stdout.startswith(f"{held.pid} ")
 
 
-@pytest.mark.parametrize("argv", [["--compile-only", "puppet_infrastructure::dns_client"],
-                                  ["--revert-first", "puppet_infrastructure::dns_client"]])
+@pytest.mark.parametrize("argv", [["--compile-only", "infra_populi::dns_client"],
+                                  ["--revert-first", "infra_populi::dns_client"]])
 def test_the_harness_refuses_while_another_run_holds_the_lock(lab, held, argv):
     proc = lab.run([str(TOOLS / "test_class.sh"), *argv])
     assert proc.returncode == 1 and "another lab run holds the lab lock" in proc.stderr
@@ -71,7 +71,7 @@ def test_a_revert_first_harness_holds_one_lock_for_its_revert_and_releases_it(la
 
 
 def test_render_only_needs_no_lock(lab, held):
-    proc = lab.run([str(TOOLS / "test_class.sh"), "--render-only", "puppet_infrastructure::dns_client"])
+    proc = lab.run([str(TOOLS / "test_class.sh"), "--render-only", "infra_populi::dns_client"])
     assert "another lab run holds" not in proc.stderr
 
 

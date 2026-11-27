@@ -1,6 +1,6 @@
 # Puppet 8 migration: release-0.9.10 manifest; local change #19: the check reads the certificates' expiry directly (check_puppet_cert_health.py).
 # Module dependencies: saz-sudo 9.0.2 (sudo::conf), puppetlabs-apt 11.3.2 (Exec['apt_update']).
-class puppet_infrastructure::sysmon_puppet_cert_status {
+class infra_populi::sysmon_puppet_cert_status {
 
   $check_puppet_cert_health_deps = [ 'python3-yaml' ]
   package { $check_puppet_cert_health_deps:
@@ -15,7 +15,7 @@ class puppet_infrastructure::sysmon_puppet_cert_status {
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    source  => 'puppet:///modules/puppet_infrastructure/sysmon/check_puppet_cert_health.py',
+    source  => 'puppet:///modules/infra_populi/sysmon/check_puppet_cert_health.py',
     require => [ File[ "${localdir}/bin" ], Package[$check_puppet_cert_health_deps] ],
   }
 

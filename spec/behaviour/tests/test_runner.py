@@ -106,9 +106,9 @@ def test_the_manifest_follows_the_catalog_with_params_fixtures(tmp_path):
     text = mf.build(data, "ubuntu", setfile.kinds(), [tmp_path], tmp_path,
                     render=lambda t: t.replace("{{PEER_ADDR}}", "203.0.113.5"))
     assert text.splitlines() == [
-        "include stdlib", "include puppet_infrastructure::a",
-        "class { 'puppet_infrastructure::b':", "  peer => '203.0.113.5',", "}",
-        "class { 'puppet_infrastructure::x':", "  names => ['a\\'b'],", "  on => true,", "}"]
+        "include stdlib", "include infra_populi::a",
+        "class { 'infra_populi::b':", "  peer => '203.0.113.5',", "}",
+        "class { 'infra_populi::x':", "  names => ['a\\'b'],", "  on => true,", "}"]
 
 
 def test_a_define_without_params_fixture_cannot_be_built(tmp_path):
@@ -136,7 +136,7 @@ def test_a_base_define_is_declared_with_its_title(tmp_path):
     data = {"class": "x", "apply": {"resource_type": "class", "node": "ubuntu", "catalog": {
         "Debian": [{"class": "user_base", "define": "p8testuser"}, {"class": "x"}]}}}
     text = mf.build(data, "ubuntu", setfile.kinds(), [tmp_path], tmp_path)
-    assert text.splitlines()[:3] == ["puppet_infrastructure::user_base { 'p8testuser':", "  uid => 2001,", "}"]
+    assert text.splitlines()[:3] == ["infra_populi::user_base { 'p8testuser':", "  uid => 2001,", "}"]
 
 
 def test_a_node_fixture_is_rendered_with_the_run(tmp_path):

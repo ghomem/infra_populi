@@ -2,7 +2,7 @@
 # Module dependencies: none (uses Puppet built-in file resources and lookup()).
 ### Purpose ########
 # This class provides basic filesystem definitions for all non-desktop machines
-class puppet_infrastructure::filesystem_base (
+class infra_populi::filesystem_base (
   # Notice rsyslog may set different permissions when creating the syslog file
   # but then they will be changed by puppet
   Boolean $customize_syslog_mode = false,
@@ -27,7 +27,7 @@ class puppet_infrastructure::filesystem_base (
 
   # fix locale errors with ssh sessions
   file { '/etc/default/locale':
-  source => 'puppet:///modules/puppet_infrastructure/locale/locale',
+  source => 'puppet:///modules/infra_populi/locale/locale',
   owner  => root,
   group  => root,
   mode   => '0644'

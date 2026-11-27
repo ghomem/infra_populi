@@ -1,5 +1,5 @@
 # Puppet 8 migration: release-0.9.10 manifest validated unchanged.
-# Module dependencies: none of its own (core package/file/service/exec); through puppet_infrastructure::ssl_postfix and ssl_base: puppetlabs-concat 9.1.0.
+# Module dependencies: none of its own (core package/file/service/exec); through infra_populi::ssl_postfix and ssl_base: puppetlabs-concat 9.1.0.
 ### Purpose ########
 # Setup a SMTP server with SSL and configurable restrictions
 # - only certain IPs can use it
@@ -18,7 +18,7 @@
 #  mjhas/postfix
 # But community ratings are not high (respectively 3.1 and 3.6) and they do not support puppet 5.
 # So we roll our own class for this.
-class puppet_infrastructure::postfix_smtp_base (
+class infra_populi::postfix_smtp_base (
   $smtp_hostname,
   $smtp_sslprefix,
   $postfix_port,
@@ -46,7 +46,7 @@ class puppet_infrastructure::postfix_smtp_base (
 
   ## Certificates
   # Install certificates
-  class { 'puppet_infrastructure::ssl_postfix':
+  class { 'infra_populi::ssl_postfix':
     sslprefix               => $smtp_sslprefix,
     letsencrypt_certificate => $letsencrypt_certificate,
   }
@@ -93,7 +93,7 @@ class puppet_infrastructure::postfix_smtp_base (
     ensure    => present,
     subscribe => Package['dovecot-core'],
     notify    => Service['dovecot'],
-    source    => 'puppet:///modules/puppet_infrastructure/postfix_smtp_base/10-master.conf',
+    source    => 'puppet:///modules/infra_populi/postfix_smtp_base/10-master.conf',
   }
   # Declare Dovecot authorization config file
   # The original file is kept in files as '10-auth.conf.original'.
@@ -112,7 +112,7 @@ class puppet_infrastructure::postfix_smtp_base (
     ensure    => present,
     subscribe => Package['dovecot-core'],
     notify    => Service['dovecot'],
-    source    => 'puppet:///modules/puppet_infrastructure/postfix_smtp_base/10-auth.conf',
+    source    => 'puppet:///modules/infra_populi/postfix_smtp_base/10-auth.conf',
   }
 
   # Declare Dovecot users file (usernames and password hashes).
@@ -120,7 +120,7 @@ class puppet_infrastructure::postfix_smtp_base (
     ensure    => present,
     subscribe => Package['dovecot-core'],
     notify    => Service['dovecot'],
-    content   => template('puppet_infrastructure/postfix_smtp_base/sasl_users.erb'),
+    content   => template('infra_populi/postfix_smtp_base/sasl_users.erb'),
   }
 
   # Ensure dovecot service is running
@@ -130,15 +130,15 @@ class puppet_infrastructure::postfix_smtp_base (
   }
 
   # Configure data source with the IPs allowed for SMTP clients
-  puppet_infrastructure::postfix_smtp_base_config_file {'/etc/postfix/client_access':
+  infra_populi::postfix_smtp_base_config_file {'/etc/postfix/client_access':
   }
 
   # Configure data source with MAIL FROM addresses that are globally allowed
-  puppet_infrastructure::postfix_smtp_base_config_file {'/etc/postfix/sender_access':
+  infra_populi::postfix_smtp_base_config_file {'/etc/postfix/sender_access':
   }
 
   # Configure data source that sets which users can use which MAIL FROM addresses
-  puppet_infrastructure::postfix_smtp_base_config_file {'/etc/postfix/controlled_envelope_senders':
+  infra_populi::postfix_smtp_base_config_file {'/etc/postfix/controlled_envelope_senders':
   }
 
   # Configure postfix
@@ -147,7 +147,7 @@ class puppet_infrastructure::postfix_smtp_base (
     ensure    => present,
     subscribe => Package['postfix'],
     notify    => Service['postfix'],
-    content   => template('puppet_infrastructure/postfix_smtp_base/main.cf.erb'),
+    content   => template('infra_populi/postfix_smtp_base/main.cf.erb'),
     owner     => 'root',
     group     => 'root',
     mode      => 'u=rw,g=r,o=r',
@@ -158,7 +158,7 @@ class puppet_infrastructure::postfix_smtp_base (
     ensure    => present,
     subscribe => Package['postfix'],
     notify    => Service['postfix'],
-    content   => template('puppet_infrastructure/postfix_smtp_base/master.cf.erb'),
+    content   => template('infra_populi/postfix_smtp_base/master.cf.erb'),
     owner     => 'root',
     group     => 'root',
     mode      => 'u=rw,g=r,o=r',
@@ -169,7 +169,7 @@ class puppet_infrastructure::postfix_smtp_base (
     ensure    => present,
     subscribe => Package['postfix'],
     notify    => Service['postfix'],
-    content   => template('puppet_infrastructure/postfix_smtp_base/smtp_header_checks.regexp.erb'),
+    content   => template('infra_populi/postfix_smtp_base/smtp_header_checks.regexp.erb'),
     # Ensure it's owned by root:root
     owner     => 'root',
     group     => 'root',

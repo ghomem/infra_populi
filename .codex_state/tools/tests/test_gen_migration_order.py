@@ -132,7 +132,7 @@ def test_render_counts_and_lists_retired_classes(gen):
     tracker = {"old_ppa": gen.TrackerEntry("old_ppa", False, "", "", retired="PPA for focal only")}
     text = gen.render(rows, set(), {}, set(), [], set(), set(), tracker)
     assert f"/ 1 retired / {len(rows) + 1} total." in text
-    assert "## RETIRED" in text and "`puppet_infrastructure::old_ppa` — PPA for focal only" in text
+    assert "## RETIRED" in text and "`infra_populi::old_ppa` — PPA for focal only" in text
 
 @pytest.mark.repo_state  # inconsistent by design while record_green's own commit is being made
 def test_repo_tracker_parses_and_matches_git(gen):
@@ -148,7 +148,7 @@ def test_render_lists_upstream_defect_markers(gen):
     tracker = {"puppet_boot_run": gen.TrackerEntry("puppet_boot_run", True, "release-0.9.10", "ensure dropped")}
     text = gen.render(rows, set(), {}, set(), [], set(), set(), tracker)
     assert "## UPSTREAM DEFECTS FIXED LOCALLY" in text
-    assert "`puppet_infrastructure::puppet_boot_run` [from: release-0.9.10] — ensure dropped" in text
+    assert "`infra_populi::puppet_boot_run` [from: release-0.9.10] — ensure dropped" in text
 
 
 # --- step 4.3: fleet-weighted order and the HQ re-migration queue
@@ -199,9 +199,9 @@ def test_remigration_queue_drops_verified_classes_and_orders_next_class(gen, tmp
     migrations = {n: gen.MigrationCommit(c * 40, "d") for n, c in (("a", "a"), ("b", "b"), ("z", "c"))}
     queue = gen.remigration_queue(migrations, set(), reviews, order)
     assert queue == [("b", "first"), ("z", "sink")]
-    assert gen.next_class_name([row(gen, "p")], queue) == "puppet_infrastructure::b (re-migration)"
-    assert gen.next_class_name([row(gen, "p")], [("z", "sink")]) == "puppet_infrastructure::p"
-    assert gen.next_class_name([], [("z", "sink")]) == "puppet_infrastructure::z (re-migration)"
+    assert gen.next_class_name([row(gen, "p")], queue) == "infra_populi::b (re-migration)"
+    assert gen.next_class_name([row(gen, "p")], [("z", "sink")]) == "infra_populi::p"
+    assert gen.next_class_name([], [("z", "sink")]) == "infra_populi::z (re-migration)"
 
 
 def test_bad_remigration_line_fails(gen, tmp_path):
@@ -254,7 +254,7 @@ def test_expected_run2_events_parse(gen):
                                                                       "node_base_desktop", "nginx_frontend_mail"}
     assert rows["node_base"].expected_run2_events == ("Exec[apt_update]", "Exec[dnf-makecache]")
     # HQ batch-7 ruling 1: each resource named exactly (the p8testuser fixture's titles), no glob
-    tmp = "/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp"
+    tmp = "/opt/infra-populi/linux-policies/TMP/p8testuser.sh.tmp"
     assert rows["linux_policies_user"].expected_run2_events == (f"File[{tmp}]", f"File_line[{tmp}_0]",
                                                                 f"File_line[{tmp}_1]",
                                                                 # with a desktop session: the policies run every agent run
@@ -281,7 +281,7 @@ def test_plan_node_column_names_a_lab_node_kind(gen, tmp_path, monkeypatch):
     assert all(r.node in ("",) or r.node in gen.lab_node_kinds() for r in rows.values())
     text = gen.PLAN_PATH.read_text()
     lines = text.splitlines(keepends=True)
-    i = next(i for i, l in enumerate(lines) if l.startswith("| `puppet_infrastructure::gnome_lock_screen` |"))
+    i = next(i for i, l in enumerate(lines) if l.startswith("| `infra_populi::gnome_lock_screen` |"))
     lines[i] = lines[i].rstrip("\n")[:-1] + "kubuntu|\n"
     plan = tmp_path / "plan.md"
     plan.write_text("".join(lines))

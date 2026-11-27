@@ -1,6 +1,6 @@
 # Puppet 8 migration: release-0.9.10 manifest; local change #16: the daemon-reload is ordered before the restart.
-# Module dependencies: none (core file, service and exec resources; packages through puppet_infrastructure::hello_world_flask_common).
-define puppet_infrastructure::hello_world_flask (
+# Module dependencies: none (core file, service and exec resources; packages through infra_populi::hello_world_flask_common).
+define infra_populi::hello_world_flask (
   # The IP adress where the application is listening to incoming connections
   $ip_address = '0.0.0.0',
   # The port where the application is listening to incoming connections
@@ -14,7 +14,7 @@ define puppet_infrastructure::hello_world_flask (
 
   $localdir            = lookup('filesystem::localdir')
 
-  include puppet_infrastructure::hello_world_flask_common
+  include infra_populi::hello_world_flask_common
 
   if ($uninstall) {
      $directory_ensure = 'absent'
@@ -48,7 +48,7 @@ define puppet_infrastructure::hello_world_flask (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hello_world_flask/hello_world_flask.py.erb'),
+    content => template('infra_populi/hello_world_flask/hello_world_flask.py.erb'),
     require => File[ "${app_dir}" ],
     notify  => $files_notify
   }
@@ -59,7 +59,7 @@ define puppet_infrastructure::hello_world_flask (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    source  => 'puppet:///modules/puppet_infrastructure/hello_world_flask/wsgi.py',
+    source  => 'puppet:///modules/infra_populi/hello_world_flask/wsgi.py',
     require => File[ "${app_dir}/hello_world_flask.py" ],
     notify  => $files_notify
   }
@@ -70,7 +70,7 @@ define puppet_infrastructure::hello_world_flask (
     mode    => '0644',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hello_world_flask/hello-world-flask.service.erb'),
+    content => template('infra_populi/hello_world_flask/hello-world-flask.service.erb'),
     notify  => $systemd_file_notify
   }
 

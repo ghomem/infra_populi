@@ -3,12 +3,12 @@ node 'nginx-frontend04' {
   # NGINX Frontend and Static Server with same SSL
 
   # Basic includes
-  include puppet_infrastructure::node_base
+  include infra_populi::node_base
   include passwd_common
-  include puppet_infrastructure::nginx_base
+  include infra_populi::nginx_base
 
   # Backend - flask application listening on 127.0.0.1:8000
-  puppet_infrastructure::hello_world_flask {'main':
+  infra_populi::hello_world_flask {'main':
     ip_address  => '127.0.0.1',
     port        => 8000,
     uninstall   => false,
@@ -21,16 +21,16 @@ node 'nginx-frontend04' {
     owner   => 'root',
     group   => 'root',
     content => "<html><head></head><body><h1>Hello World - ${trusted['certname']}<h1></body></html>",
-    require => Class[ 'puppet_infrastructure::nginx_base' ],
+    require => Class[ 'infra_populi::nginx_base' ],
   }
 
   # SSL certificate
-  puppet_infrastructure::ssl_nginx_domain { 'star.puppetdemo.lan':
+  infra_populi::ssl_nginx_domain { 'star.puppetdemo.lan':
     sslprefix => 'star.puppetdemo.lan',
   }
 
   # Provide the files subdomain with static content
-  puppet_infrastructure::nginx_static_domain { 'puppetdemo.lan':
+  infra_populi::nginx_static_domain { 'puppetdemo.lan':
     domain            => 'files.nginx-frontend04.puppetdemo.lan',
     www_root          => '/var/www/html',
     ssl               => true,
@@ -38,7 +38,7 @@ node 'nginx-frontend04' {
     manage_ssl        => false,
   }
 
-  class {'puppet_infrastructure::nginx_frontend':
+  class {'infra_populi::nginx_frontend':
     domain                  => 'puppetdemo.lan',
     frontend_sslprefix      => 'star.puppetdemo.lan',
     backend_hosts_and_ports => ['127.0.0.1:8000', ],
@@ -47,6 +47,6 @@ node 'nginx-frontend04' {
   }
 
   # Allow HTTP/HTTPS connections
-  include puppet_infrastructure::firewall_addon_web
+  include infra_populi::firewall_addon_web
 
 }

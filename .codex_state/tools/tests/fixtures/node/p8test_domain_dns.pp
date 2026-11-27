@@ -14,5 +14,5 @@ file { '/etc/resolv.conf':
   group   => 'root',
   mode    => '0644',
   content => "domain lan\nnameserver 192.168.56.25\nnameserver 1.1.1.1\nnameserver 8.8.8.8\n",
-  before  => Class['puppet_infrastructure::openvpn_domain'],
+  before  => Class['infra_populi::openvpn_domain'],
 }

@@ -13,7 +13,7 @@
 # and three stream servers (that will, effectively, pass the authentication to the backend,
 # for that we used the nginx::resource::streamhost)
 
-class puppet_infrastructure::nginx_frontend_mail (
+class infra_populi::nginx_frontend_mail (
   String $domain,
   String $mail_backend,
   $frontend_sslprefix,
@@ -26,7 +26,7 @@ class puppet_infrastructure::nginx_frontend_mail (
   Integer $smtp_port = 25,
 ){
 
-  puppet_infrastructure::ssl_nginx_domain { $frontend_sslprefix:
+  infra_populi::ssl_nginx_domain { $frontend_sslprefix:
     sslprefix               => $frontend_sslprefix,
     letsencrypt_certificate => $letsencrypt_certificate,
   }
@@ -45,7 +45,7 @@ class puppet_infrastructure::nginx_frontend_mail (
     $ssl_verify = 'off'
   }
 
-  puppet_infrastructure::nginx_frontend_domain { $domain:
+  infra_populi::nginx_frontend_domain { $domain:
     domain                  => $domain,
     frontend_sslprefix      => $frontend_sslprefix,
     backend_hosts_and_ports => ["${mail_backend}:${https_port}", ],

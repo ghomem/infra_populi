@@ -6,7 +6,7 @@
 
 ### Dependencies ###
 #  modules: puppetlabs-firewall
-class puppet_infrastructure::firewall_secure ( 
+class infra_populi::firewall_secure ( 
   $acl                           = [],
   $ssh_port                      = 22,
   Boolean $strict                = false,
@@ -24,7 +24,7 @@ class puppet_infrastructure::firewall_secure (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    source  => 'puppet:///modules/puppet_infrastructure/iptables/iptables-flush.sh',
+    source  => 'puppet:///modules/infra_populi/iptables/iptables-flush.sh',
     require => File[ "${localdir}/bin" ],
   }
 

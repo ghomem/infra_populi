@@ -21,7 +21,7 @@
 # Issue#16 We don't setup a default server in this defined type (currently you
 # can use nginx_frontend class for that)
 
-define puppet_infrastructure::nginx_frontend_domain (
+define infra_populi::nginx_frontend_domain (
   # To remove a frontend, set the servers_create parameter to false
   # so that all servers are removed, which right now can be up to 4 servers:
   # http naked domain, https naked domain, http www domain, https www domain.
@@ -266,10 +266,10 @@ define puppet_infrastructure::nginx_frontend_domain (
   }
 
   # includes the nginx_base class, can get overriden
-  require Class[ 'puppet_infrastructure::nginx_base' ]
+  require Class[ 'infra_populi::nginx_base' ]
 
   # This removes the default nginx config file from the package
-  include puppet_infrastructure::nginx_default_removal
+  include infra_populi::nginx_default_removal
 
   # Different OS families (can) require different locations for cert and/or
   # private directories
@@ -332,7 +332,7 @@ define puppet_infrastructure::nginx_frontend_domain (
   }
 
   if ( $manage_ssl ) {
-    puppet_infrastructure::ssl_nginx_domain { $frontend_sslprefix:
+    infra_populi::ssl_nginx_domain { $frontend_sslprefix:
       sslprefix               => $frontend_sslprefix,
       letsencrypt_certificate => $letsencrypt_certificate,
     }
@@ -499,7 +499,7 @@ define puppet_infrastructure::nginx_frontend_domain (
       # separate ssl server just for redirection of naked ssl requests
       nginx::resource::server { "https_${domain}":
         ensure                    => $servers_ensure,
-        require                   => Puppet_infrastructure::Ssl_nginx_domain[$frontend_sslprefix],
+        require                   => Infra_populi::Ssl_nginx_domain[$frontend_sslprefix],
         server_name               => [ $domain ],
         listen_port               => 443,
         location_allow            => $allow,
@@ -678,7 +678,7 @@ define puppet_infrastructure::nginx_frontend_domain (
     $http_protocol = 'https'
     $listen_port = 443
     $ssl = true
-    $server_require = Puppet_infrastructure::Ssl_nginx_domain[$frontend_sslprefix]
+    $server_require = Infra_populi::Ssl_nginx_domain[$frontend_sslprefix]
   } else {
     $http_protocol = 'http'
     $listen_port = 80

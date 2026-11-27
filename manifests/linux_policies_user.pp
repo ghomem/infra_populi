@@ -1,6 +1,6 @@
 # Puppet 8 migration: per-user Linux policies; exec uses the policy script's existing login check (HQ ruling).
 # Module dependencies: puppetlabs-stdlib 9.7.0 (file_line).
-# Expected run-2 events: File[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp]; File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_0]; File_line[/opt/puppet-infrastructure/linux-policies/TMP/p8testuser.sh.tmp_1] — upstream resets the temporary script to its header and re-appends policy lines on every run; tidy skips the managed file. Exec[Execute linux policies for: p8testuser] — while the user is logged in, upstream runs the policies on every agent run.
+# Expected run-2 events: File[/opt/infra-populi/linux-policies/TMP/p8testuser.sh.tmp]; File_line[/opt/infra-populi/linux-policies/TMP/p8testuser.sh.tmp_0]; File_line[/opt/infra-populi/linux-policies/TMP/p8testuser.sh.tmp_1] — upstream resets the temporary script to its header and re-appends policy lines on every run; tidy skips the managed file. Exec[Execute linux policies for: p8testuser] — while the user is logged in, upstream runs the policies on every agent run.
 ### Purpose ########
 # This defined type composes the <USERNAME>.sh script to execute the policies of a specific user
 
@@ -13,9 +13,9 @@
 # /usr/local/AS/linux-policies/USER/<USERNAME>.sh
 
 ### Dependencies ###
-# classes: puppet_infrastructure::linux_policies_common
+# classes: infra_populi::linux_policies_common
 
-define puppet_infrastructure::linux_policies_user (
+define infra_populi::linux_policies_user (
   # the user name
   $username,
   # an array of strings providing the policies to be executed by this user
@@ -42,7 +42,7 @@ define puppet_infrastructure::linux_policies_user (
                         # couple of lines of noise in the agent run, this setting should
                         # do no harm for this particular file, because it's just a
                         # temporary file.
-    content   => template('puppet_infrastructure/linux-policies/puppet_header.sh.erb')
+    content   => template('infra_populi/linux-policies/puppet_header.sh.erb')
   }
 
   #Add the policies to <username>.sh.tmp for this particular user

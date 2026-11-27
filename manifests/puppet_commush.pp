@@ -3,7 +3,7 @@
 ### Purpose ########
 # This class provides helpers for pushing node declarations
 # from the deployment user directories
-class puppet_infrastructure::puppet_commush {
+class infra_populi::puppet_commush {
 
   $localdir = lookup('filesystem::localdir')
 
@@ -11,7 +11,7 @@ class puppet_infrastructure::puppet_commush {
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/puppet/commush.sh',
+  source  => 'puppet:///modules/infra_populi/puppet/commush.sh',
   require => File[ "${localdir}/bin" ],
   }
 

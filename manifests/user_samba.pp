@@ -1,6 +1,6 @@
 # Puppet 8 migration: manage Zentyal/Samba users and password hashes.
 # Module dependencies: none (uses Puppet built-in exec resources and core functions).
-define puppet_infrastructure::user_samba( $myname = 'Dummy Dummier',
+define infra_populi::user_samba( $myname = 'Dummy Dummier',
                                    $mysmbhash = '',
 ){
   $username = $title

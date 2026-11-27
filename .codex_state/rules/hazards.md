@@ -52,5 +52,5 @@ the rest are read from the manifest, its templates and the plan.
 
 Also known (each cost a cycle):
 - `internal_deps` in migration_plan.md is an Ubuntu-node projection, not universal (see the plan header).
-- `r10k --force` purges the `puppet_infrastructure` module (r10k owns the moduledir the harness deploys into).
+- `r10k --force` purges the `infra_populi` module (r10k owns the moduledir the harness deploys into).
   The next harness run redeploys it; anything needing a catalog before that fails with the module missing.

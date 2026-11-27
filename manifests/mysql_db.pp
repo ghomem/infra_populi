@@ -4,7 +4,7 @@
 # a read-only user. Remote accounts require TLS; network access is
 # restricted separately by the node firewall.
 #
-define puppet_infrastructure::mysql_db (
+define infra_populi::mysql_db (
   String $db_name,
   String $rw_user,
   String $rw_pass,
@@ -25,7 +25,7 @@ define puppet_infrastructure::mysql_db (
     host        => '%',
     grant       => ['ALL'],
     tls_options => ['SSL'],
-    require     => Class['puppet_infrastructure::mysql_server'],
+    require     => Class['infra_populi::mysql_server'],
   }
 
   if $ro_user and $ro_pass {

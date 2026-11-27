@@ -2,7 +2,7 @@
 # Module dependencies: puppetlabs-cron_core 1.3.0 (vendored with Puppet 8.24.2); puppetlabs-stdlib 9.7.0 (ensure_resource).
 ### Purpose ########
 # This class implements simple tar based generic backups
-define puppet_infrastructure::backup (
+define infra_populi::backup (
   $basedir, $prefix, $backdir, $ndays, $bindir,
   $user = 'root',
   $hour = '23',
@@ -21,7 +21,7 @@ define puppet_infrastructure::backup (
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  content => template('puppet_infrastructure/backup/backup.sh.erb'),
+  content => template('infra_populi/backup/backup.sh.erb'),
   }
 
   cron { "cron_${title}_backup":

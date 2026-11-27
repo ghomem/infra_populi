@@ -2,7 +2,7 @@
 # Module dependency: saz-sudo 9.0.2 (sudo::conf).
 ### Purpose ########
 # This class provides a nagios plugin that can be used trigger and monitor puppet runs, cpu, memory and zimbra
-define puppet_infrastructure::sysmon_fs_health ( $basedir, $size_threshold, $nfiles ) {
+define infra_populi::sysmon_fs_health ( $basedir, $size_threshold, $nfiles ) {
 
   $bindir   = lookup('filesystem::bindir')
   $volname = $title # name of the volume to be checked
@@ -15,7 +15,7 @@ define puppet_infrastructure::sysmon_fs_health ( $basedir, $size_threshold, $nfi
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  content => template("puppet_infrastructure/sysmon/${prefix}.sh.erb"),
+  content => template("infra_populi/sysmon/${prefix}.sh.erb"),
   require => File[ $bindir ],
   }
 

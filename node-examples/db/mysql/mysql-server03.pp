@@ -1,7 +1,7 @@
 node 'mysql_server03' {
 
   # Basic declarations
-  include puppet_infrastructure::node_base
+  include infra_populi::node_base
   include passwd_common
 
   # To make the variable below works, add this line to
@@ -33,7 +33,7 @@ node 'mysql_server03' {
 
   # the users created here are MySQL server users not pre-assgined to any db
   # they are for the team to administer the server
-  class { 'puppet_infrastructure::mysql_server':
+  class { 'infra_populi::mysql_server':
     root_pw               => $rootpw,
     rw_user               => 'userrw',
     rw_hash               => $my_rw_hash,

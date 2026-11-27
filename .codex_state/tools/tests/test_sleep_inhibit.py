@@ -24,7 +24,7 @@ def test_a_harness_run_holds_one_sleep_inhibitor_for_its_lifetime(lab):
     assert "test_class.sh --revert-first --fixture guarded_exec" in held[0]
 
 
-@pytest.mark.parametrize("argv, env", [(["--render-only", "puppet_infrastructure::dns_client"], {}),
+@pytest.mark.parametrize("argv, env", [(["--render-only", "infra_populi::dns_client"], {}),
                                        (["--fixture", "guarded_exec"], {"P8_NO_SLEEP_INHIBIT": "1"})])
 def test_no_inhibitor_for_render_only_or_when_disabled(lab, argv, env):
     lab.run([str(TOOLS / "test_class.sh"), *argv], env=env)

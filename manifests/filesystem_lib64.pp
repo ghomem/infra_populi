@@ -2,7 +2,7 @@
 # Module dependencies: none.
 ### Purpose ########
 # This class provides a ubuntu only filesystem compatibility measure related to nagios plugins invocation
-class puppet_infrastructure::filesystem_lib64 {
+class infra_populi::filesystem_lib64 {
 
   file { '/usr/lib64/':
     ensure => 'directory',

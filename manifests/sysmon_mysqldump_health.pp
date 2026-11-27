@@ -2,7 +2,7 @@
 # Module dependencies: none (core file resource only).
 ### Purpose ########
 # This class provides a nagios plugin that can be used trigger and monitor MYSQL db test restores
-define puppet_infrastructure::sysmon_mysqldump_health ( $mysqluser, $mysqlpassword, $dirs) {
+define infra_populi::sysmon_mysqldump_health ( $mysqluser, $mysqlpassword, $dirs) {
 
   $bindir   = lookup('filesystem::bindir')
   $script_prefix = 'check-mysqldump-health'
@@ -12,7 +12,7 @@ define puppet_infrastructure::sysmon_mysqldump_health ( $mysqluser, $mysqlpasswo
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template("puppet_infrastructure/sysmon/${script_prefix}.sh.erb"),
+    content => template("infra_populi/sysmon/${script_prefix}.sh.erb"),
     require => File[ $bindir ],
   }
 

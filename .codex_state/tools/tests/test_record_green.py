@@ -102,7 +102,7 @@ def test_happy_path_records_commits_regenerates_and_pushes(clone):
     assert proc.returncode == 0, proc.stderr + proc.stdout
     assert tracker_line(clone.root) == f"{CLS} Done [from: release-0.9.10]"
     subjects = git(clone.root, "log", "--format=%s", "-2").splitlines()
-    assert subjects == [f"P8: regenerate migration order after {CLS}", f"P8: migrate puppet_infrastructure::{CLS}"]
+    assert subjects == [f"P8: regenerate migration order after {CLS}", f"P8: migrate infra_populi::{CLS}"]
     files = git(clone.root, "show", "--name-only", "--format=", "HEAD~1").split()
     assert sorted(files) == [".codex_state/migrated_classes.txt", f"manifests/{CLS}.pp"]
     assert git(clone.bare, "rev-parse", "main") == git(clone.root, "rev-parse", "HEAD")
@@ -174,14 +174,14 @@ def test_header_modules_feed_necessary_modules(clone):
 def test_harness_green_writes_the_stamp(lab, tmp_path):
     lab.world["ssh"].insert(0, {"match": r"agent -t", "outputs": [
         {"rc": 2, "stdout": "Notice: /Stage[main]/X/File[/a]/ensure: created\n"}, {"rc": 0, "stdout": ""}]})
-    lab.world["ssh"].insert(0, {"match": r"python3 - puppet8node puppet_infrastructure::dns_client",
-                                "stdout": "COVERAGE puppet_infrastructure::dns_client: 1 concrete resources (+0 defined-type instances)\n"})
+    lab.world["ssh"].insert(0, {"match": r"python3 - puppet8node infra_populi::dns_client",
+                                "stdout": "COVERAGE infra_populi::dns_client: 1 concrete resources (+0 defined-type instances)\n"})
     green = tmp_path / "green"
     proc = lab.run([str(TOOLS / "test_class.sh"), "--revert-first", "dns_client"], env={"P8_GREEN_DIR": str(green)})
     assert proc.returncode == 0, proc.stderr
     stamp = json.loads((green / "dns_client.json").read_text())
     assert stamp["revert_first"] is True and stamp["run1_events"] == 1
-    assert stamp["coverage"][0].startswith("COVERAGE puppet_infrastructure::dns_client: 1 concrete")
+    assert stamp["coverage"][0].startswith("COVERAGE infra_populi::dns_client: 1 concrete")
     check = lab.run(["python3", str(TOOLS / "records.py"), "verify-stamp", "dns_client"], env={"P8_GREEN_DIR": str(green)})
     assert check.returncode == 0, check.stderr
 
@@ -271,9 +271,9 @@ def test_orientation_reads_the_params_file_the_harness_reads(tmp_path):
     orientation = importlib.util.module_from_spec(spec)
     sys.modules["orientation_under_test"] = orientation
     spec.loader.exec_module(orientation)
-    (tmp_path / "puppet_infrastructure::dns_client.json").write_text('{"nameservers": ["192.0.2.53"]}')
+    (tmp_path / "infra_populi::dns_client.json").write_text('{"nameservers": ["192.0.2.53"]}')
     line = orientation.params_line("dns_client", tmp_path)
-    assert line.endswith("puppet_infrastructure::dns_client.json keys: nameservers")
+    assert line.endswith("infra_populi::dns_client.json keys: nameservers")
     assert "192.0.2.53" not in line  # keys only, never values
     assert orientation.params_line("backup", tmp_path).startswith("none")
 
@@ -338,10 +338,10 @@ def test_mock_apply_marker_is_required_exactly_with_a_node_fixture(clone):
 
 
 def test_harness_renders_the_node_fixture_before_the_class(lab):
-    proc = lab.run([str(TOOLS / "test_class.sh"), "--render-only", "puppet_infrastructure::user_sysmon"])
+    proc = lab.run([str(TOOLS / "test_class.sh"), "--render-only", "infra_populi::user_sysmon"])
     assert proc.returncode == 0, proc.stderr
     out = proc.stdout
-    assert out.index("# MOCK-APPLY node fixture: sysmon_server") < out.index("puppet_infrastructure::user_sysmon {")
+    assert out.index("# MOCK-APPLY node fixture: sysmon_server") < out.index("infra_populi::user_sysmon {")
     assert "user { 'naemon':" in out
 
 
@@ -377,8 +377,8 @@ def test_a_stamp_without_revert_state_is_refused(clone, lab, tmp_path):
 def harness_rules(lab):
     lab.world["ssh"].insert(0, {"match": r"agent -t", "outputs": [
         {"rc": 2, "stdout": "Notice: /Stage[main]/X/File[/a]/ensure: created\n"}, {"rc": 0, "stdout": ""}]})
-    lab.world["ssh"].insert(0, {"match": r"python3 - puppet8node puppet_infrastructure::dns_client",
-                                "stdout": "COVERAGE puppet_infrastructure::dns_client: 1 concrete resources (+0 defined-type instances)\n"})
+    lab.world["ssh"].insert(0, {"match": r"python3 - puppet8node infra_populi::dns_client",
+                                "stdout": "COVERAGE infra_populi::dns_client: 1 concrete resources (+0 defined-type instances)\n"})
 
 
 def test_harness_revert_first_stamps_the_revert_boot_as_fresh(lab, tmp_path):

@@ -340,8 +340,8 @@ def mk_info( username, company ):
     print('Information for role assignement:')
 
     # for regular linux users
-    str_base    = '  puppet_infrastructure::user        { \''
-    str_sudoer  = '  puppet_infrastructure::user_sudoer { \''
+    str_base    = '  infra_populi::user        { \''
+    str_sudoer  = '  infra_populi::user_sudoer { \''
 
     str_extra  = username + '\': '
     str_extra += 'myname => $::' + username + SUFFIX_CNAME + ', '
@@ -360,8 +360,8 @@ def mk_info( username, company ):
     print('')
 
     # for linux desktop users with encrypted home directories
-    str_base    = '  puppet_infrastructure::user_desktop        { \''
-    str_sudoer  = '  puppet_infrastructure::user_desktop_sudoer { \''
+    str_base    = '  infra_populi::user_desktop        { \''
+    str_sudoer  = '  infra_populi::user_desktop_sudoer { \''
 
     str_extra  = username + '\': '
     str_extra += 'myname => $::' + username + SUFFIX_CNAME + ', '

@@ -174,7 +174,7 @@ checks:
     rc: 0
     stdout: '\AServer: nginx\n\Z'
 - id: no-ad-hoc-file-by-default
-  what: with no ad-hoc configuration given, /etc/nginx/conf.d/puppet_infrastructure.conf does not exist
+  what: with no ad-hoc configuration given, /etc/nginx/conf.d/infra_populi.conf does not exist
   control: invariant
   why_invariant: the clean node has no nginx and so no such file, and with ad_hoc_configs empty the class keeps it absent
   derived_from:
@@ -182,7 +182,7 @@ checks:
     lines: 112-114
     text: $config_ensure = 'absent'
   probe: |
-    test -e /etc/nginx/conf.d/puppet_infrastructure.conf && echo present || echo absent
+    test -e /etc/nginx/conf.d/infra_populi.conf && echo present || echo absent
   expect:
     rc: 0
     stdout: \Aabsent\n\Z
@@ -206,7 +206,7 @@ checks:
 - id: my-configs-and-ad-hoc-lines-reach-nginx
   variant: custom
   what: a my_configs entry (worker_connections 2048) reaches the nginx class's configuration, and the ad-hoc line (client_max_body_size
-    21m) is written to conf.d/puppet_infrastructure.conf; the running configuration holds both
+    21m) is written to conf.d/infra_populi.conf; the running configuration holds both
   control: negative
   derived_from:
   - path: manifests/nginx_base.pp
@@ -216,7 +216,7 @@ checks:
     lines: 112-127
     text: $ad_hoc_content = join($ad_hoc_configs,
   probe: |
-    cat /etc/nginx/conf.d/puppet_infrastructure.conf
+    cat /etc/nginx/conf.d/infra_populi.conf
     nginx -T 2>/dev/null | grep -E '^\s*(worker_connections|client_max_body_size) ' | sed 's/^\s*//' | sort -u
   expect:
     rc: 0

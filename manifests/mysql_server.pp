@@ -4,7 +4,7 @@
 #
 # Firewall access to TCP/3306 is intentionally managed by the node declaration.
 #
-class puppet_infrastructure::mysql_server (
+class infra_populi::mysql_server (
   $root_pw,
   $ssl_chain,
   $ssl_key,
@@ -18,7 +18,7 @@ class puppet_infrastructure::mysql_server (
   $ssl_key_file   = "${ssl_dir}/${ssl_key}"
   $ssl_cert_file  = "${ssl_dir}/${ssl_cert}"
   $data_dir       = "${base_dir}/mysql"
-  $config_file    = '/etc/mysql/mysql.conf.d/zz-puppet-infrastructure.cnf'
+  $config_file    = '/etc/mysql/mysql.conf.d/zz-infra-populi.cnf'
 
   # Ubuntu confines mysqld with AppArmor. Put the exception in place before
   # the package is installed so its post-installation profile reload includes it.
@@ -34,7 +34,7 @@ class puppet_infrastructure::mysql_server (
     owner   => 'root',
     group   => 'root',
     mode    => '0644',
-    content => epp('puppet_infrastructure/mysql/apparmor-local.epp', {
+    content => epp('infra_populi/mysql/apparmor-local.epp', {
       'data_dir'       => $data_dir,
       'ssl_chain_file' => $ssl_chain_file,
       'ssl_key_file'   => $ssl_key_file,
@@ -116,7 +116,7 @@ class puppet_infrastructure::mysql_server (
     owner   => 'root',
     group   => 'root',
     mode    => '0644',
-    content => epp('puppet_infrastructure/mysql/server.cnf.epp', {
+    content => epp('infra_populi/mysql/server.cnf.epp', {
       'data_dir'       => $data_dir,
       'ssl_chain_file' => $ssl_chain_file,
       'ssl_key_file'   => $ssl_key_file,

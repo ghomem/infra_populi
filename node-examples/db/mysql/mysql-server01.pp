@@ -3,7 +3,7 @@ node 'mysql-server01' {
   # This is an initial node declaration to get started with a MySQL dabase server
 
   # Basic declarations
-  include puppet_infrastructure::node_base
+  include infra_populi::node_base
   include passwd_common
 
   # To make the variable below works, add this line to 
@@ -16,7 +16,7 @@ node 'mysql-server01' {
   $root_pw = lookup('db::mysql::root_pw')
 
   # The MySQL database server
-  class { 'puppet_infrastructure::mysql_server':
+  class { 'infra_populi::mysql_server':
     root_pw => $root_pw,
   }
 

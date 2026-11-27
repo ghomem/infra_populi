@@ -61,7 +61,7 @@ def p3(tmp_path, lab):
     home = tmp_path / "home"
     params = home / ".config" / "infra_populi" / "params"
     params.mkdir(parents=True)
-    (params / f"puppet_infrastructure::{CLS}.json").write_text("{}\n")
+    (params / f"infra_populi::{CLS}.json").write_text("{}\n")
     checks = tmp_path / "checks"
     checks.mkdir()
     revert = tmp_path / "revert.sh"
@@ -202,7 +202,7 @@ def test_all_pass_writes_json_and_junit_and_probes_only_the_node(p3, lab):
     assert [r["ok"] for r in record["clean"]] == [True, True, True] and record["apply"]["node_fresh"]
     assert [s.get("name") for s in xml.iter("testsuite")] == [f"phase3.{CLS}.clean", f"phase3.{CLS}.applied"]
     assert all(s.get("failures") == "0" for s in xml.iter("testsuite"))
-    assert p3.log.read_text().splitlines() == ["reverted", f"harness puppet_infrastructure::{CLS}"]
+    assert p3.log.read_text().splitlines() == ["reverted", f"harness infra_populi::{CLS}"]
     ssh = lab.calls("ssh")
     # 3 probes on the clean node, 3 after the apply, and the public runner's 3 reads of the node's own values (its host
     # name, the address it sees the controller at, its primary address): every call to the node, none elsewhere
@@ -680,7 +680,7 @@ def test_a_peer_run_reverts_both_nodes_hands_the_files_over_and_powers_the_peer_
     assert record["outcome"] == "ALL_PASS" and record["peer"] == "ubuntu2"
     assert [r.get("host") for r in record["applied"]] == [None, "peer"]
     assert p3.log.read_text().splitlines() == ["reverted --node ubuntu", "reverted --node ubuntu2",
-                                               f"harness puppet_infrastructure::{CLS}", "labvm stop p8lab-ubuntu2"]
+                                               f"harness infra_populi::{CLS}", "labvm stop p8lab-ubuntu2"]
     peer_calls = [c for c in lab.calls("ssh") if c[-2] == "p8lab-ubuntu2"]
     assert len(peer_calls) == 2 + 1  # clean + applied, and the runner's read of the peer's host name
     # both nodes fresh, both recorded (HQ 2026-11-17 batch-8 ruling 3)
@@ -823,7 +823,7 @@ def test_the_peer_agent_run_follows_its_anchor_against_the_class_node_from_its_o
     p3.probe_rule("eff-change", FAIL, OK)
     p3.probe_rule("eff-login", FAIL, OK)
     lab.world["ssh"].insert(0, {"match": r"/etc/p8test-agent/p8test-hashman-client", "stdout":
-                                "Notice: /Stage[main]/Main/Node[p8test-hashman-client]/Puppet_infrastructure::User"
+                                "Notice: /Stage[main]/Main/Node[p8test-hashman-client]/Infra_populi::User"
                                 "[p8hashuser]/User[p8hashuser]/password: changed [redacted] to [redacted]\nAGENT_RC=2\n"})
     proc = p3.run("run", CLS, P8_PHASE3_LABVM=str(labvm), **MASTER_ROLE)
     assert proc.returncode == 0, proc.stdout + proc.stderr
@@ -1202,7 +1202,7 @@ def variant_set(*extra_checks):
 def p3v(p3, tmp_path):
     params = tmp_path / "home" / ".config" / "infra_populi" / "params"
     (params / "variants" / "strict").mkdir(parents=True)
-    (params / "variants" / "strict" / f"puppet_infrastructure::{CLS}.json").write_text('{"strict": true}\n')
+    (params / "variants" / "strict" / f"infra_populi::{CLS}.json").write_text('{"strict": true}\n')
     harness = tmp_path / "harness.sh"
     harness.rename(tmp_path / "harness_render.py")  # p3's stand-in, kept for --render-only
     harness.write_text("#!/bin/sh\ncase \"$*\" in *--render-only*) exec \"$(dirname \"$0\")/harness_render.py\" \"$@\" ;; esac\n"
@@ -1249,9 +1249,9 @@ def test_variants_run_on_their_node_with_their_params_in_one_result(p3v, lab):
         {"on-rhel": ["conf-rhel"], "strict": ["conf-strict"]}
     assert record["variants"]["on-rhel"]["node"] == "rhel9" and record["variants"]["strict"]["params"] == "strict"
     assert p3v.log.read_text().splitlines() == [
-        "reverted", f"harness puppet_infrastructure::{CLS} params=",
-        "reverted", f"harness --node rhel9 puppet_infrastructure::{CLS} params=", "labvm stop p8lab-rhel9",
-        "reverted", f"harness --node ubuntu puppet_infrastructure::{CLS} params=strict"]
+        "reverted", f"harness infra_populi::{CLS} params=",
+        "reverted", f"harness --node rhel9 infra_populi::{CLS} params=", "labvm stop p8lab-rhel9",
+        "reverted", f"harness --node ubuntu infra_populi::{CLS} params=strict"]
     hosts = {c[-2] for c in lab.calls("ssh") if c[-1] == "sudo -n bash -s"}
     assert hosts == {"puppet8node", "p8lab-rhel9"}
     assert [s.get("name") for s in xml.iter("testsuite")] == [
@@ -1310,7 +1310,7 @@ def test_a_no_resources_variant_tells_the_harness(p3v):
     for marker in ("probe-conf", "probe-rhel", "probe-strict"):
         p3v.probe_rule(marker, FAIL, OK)
     assert p3v.run("run", CLS, P8_PHASE3_LABVM=str(p3v.labvm)).returncode == 0
-    assert f"harness --node ubuntu puppet_infrastructure::{CLS} params=strict nores" in p3v.log.read_text().splitlines()
+    assert f"harness --node ubuntu infra_populi::{CLS} params=strict nores" in p3v.log.read_text().splitlines()
 
 
 def test_a_node_agent_anchor_in_a_variant_runs_the_agent_in_that_variant_run(p3v, lab):

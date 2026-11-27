@@ -2,7 +2,7 @@
 # Module dependencies: none.
 ### Purpose ########
 # This class implements prerequisites for the backup_base_rsync defined type
-class puppet_infrastructure::backup_rsnapshot_pre {
+class infra_populi::backup_rsnapshot_pre {
 
   $bindir  = lookup('filesystem::bindir')
 
@@ -19,7 +19,7 @@ class puppet_infrastructure::backup_rsnapshot_pre {
     mode   => '0755',
     owner  => 'root',
     group  => 'root',
-    source => 'puppet:///modules/puppet_infrastructure/backups/rdiff.sh',
+    source => 'puppet:///modules/infra_populi/backups/rdiff.sh',
   }
 
 }

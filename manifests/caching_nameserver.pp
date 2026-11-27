@@ -4,7 +4,7 @@
 # This class provides a caching nameserver server using bind
 
 # allowed_networks is an array of networks with bitmask. Example ['192.168.1.0/24', '192.168.5.0/24']
-class puppet_infrastructure::caching_nameserver ( Array $allowed_networks = [] ){
+class infra_populi::caching_nameserver ( Array $allowed_networks = [] ){
 
     if ( $facts['os']['family'] == 'RedHat' ){
 
@@ -36,7 +36,7 @@ class puppet_infrastructure::caching_nameserver ( Array $allowed_networks = [] )
         owner   => root,
         group   => root,
         mode    => '0644',
-        content => template('puppet_infrastructure/bind/named.conf.options.erb'),
+        content => template('infra_populi/bind/named.conf.options.erb'),
         notify  => Service[ $service_name ],
     }
 

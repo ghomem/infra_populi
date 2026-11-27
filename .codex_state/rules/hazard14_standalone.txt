@@ -2,6 +2,6 @@
 # broader: the class uses the module's resources without the module's base class, and production evidence shows no
 # node declares that base class. pregate then reports the hazard as INFO, not a FINDING. Advisor-only.
 # Format: <class> <module> — <evidence reference>
-openvpn_server network — fleet data puppet-nodes 0941beb: the 3 network_vpn servers declare network_dhcp on the primary interface and no node, meaningful_puppet or puppet_infrastructure manifest declares class network (escalations/openvpn_server.md "HQ ruling 5" item 1; plan 30c1ea7)
+openvpn_server network — fleet data puppet-nodes 0941beb: the 3 network_vpn servers declare network_dhcp on the primary interface and no node, meaningful_puppet or infra_populi manifest declares class network (escalations/openvpn_server.md "HQ ruling 5" item 1; plan 30c1ea7)
 network_dhcp network — same evidence: production's network_dhcp is declared without class network, and it installs ifupdown-extra itself (escalations/openvpn_server.md "HQ ruling 5" items 1 and 5)
-network_static network — same evidence as network_dhcp (fleet data puppet-nodes 0941beb: no node, meaningful_puppet or puppet_infrastructure manifest declares class network anywhere); network_static itself has 0 production statements and uses the same network_config/network_route types standalone (harness GREEN 2026-11-20, local change #11)
+network_static network — same evidence as network_dhcp (fleet data puppet-nodes 0941beb: no node, meaningful_puppet or infra_populi manifest declares class network anywhere); network_static itself has 0 production statements and uses the same network_config/network_route types standalone (harness GREEN 2026-11-20, local change #11)

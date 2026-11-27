@@ -3,7 +3,7 @@
 # Enforce GNOME screen lock policy using system dconf settings.
 #
 # This is intended for Ubuntu/GNOME desktops.
-class puppet_infrastructure::gnome_lock_screen (
+class infra_populi::gnome_lock_screen (
   Integer $screenlock_timeout_minutes = 5,
   Integer $screenlock_grace_seconds   = 0,
 ) {

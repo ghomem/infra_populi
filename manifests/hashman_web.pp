@@ -1,6 +1,6 @@
 # Puppet 8 migration: release-0.9.10 manifest, plus one local change (policy B, HQ batch-10 ruling 6; rules/local_changes.md #2): the backend binds 127.0.0.1:8080, nginx's only upstream, and the unit file notifies the service so a running master is rebound.
-# Module dependencies: none of its own; through puppet_infrastructure::nginx_frontend: puppet-nginx 8.4.0 (nginx::resource::*), puppetlabs-host_core 1.3.0 (vendored with Puppet 8.24.2; host).
-# Expected run-2 events: Notify[Generated Upstream members for *] — declared by the puppet_infrastructure::nginx_frontend_domain that the puppet_infrastructure::nginx_frontend this class declares declares (baseline `notify { ...: loglevel => 'debug' }`); a notify reports its message on every run.
+# Module dependencies: none of its own; through infra_populi::nginx_frontend: puppet-nginx 8.4.0 (nginx::resource::*), puppetlabs-host_core 1.3.0 (vendored with Puppet 8.24.2; host).
+# Expected run-2 events: Notify[Generated Upstream members for *] — declared by the infra_populi::nginx_frontend_domain that the infra_populi::nginx_frontend this class declares declares (baseline `notify { ...: loglevel => 'debug' }`); a notify reports its message on every run.
 ### Purpose ########
 # This class provides the web interface to Hashman
 
@@ -15,12 +15,12 @@
 #  packages: nginx, python, python3-flask, gunicorn
 #
 #  classes:
-#    puppet_infrastructure::nginx_frontend
-#    puppet_infrastructure::ssl_nginx
-#    puppet_infrastructure::hashman
+#    infra_populi::nginx_frontend
+#    infra_populi::ssl_nginx
+#    infra_populi::hashman
 #
 #  hiera: see below
-class puppet_infrastructure::hashman_web (
+class infra_populi::hashman_web (
   $letsencrypt_certificate = false,
 ) {
 
@@ -60,13 +60,13 @@ class puppet_infrastructure::hashman_web (
   # hashman web facing code, recursive copy
   file { "${hashmandir}/httpserver/":
     ensure  => directory,
-    source  => 'puppet:///modules/puppet_infrastructure/hashman/httpserver',
+    source  => 'puppet:///modules/infra_populi/hashman/httpserver',
     recurse => true,
     mode    => '0644',
     owner   => 'root',
     group   => 'root',
     notify  => Service[ 'hashman' ],
-    require =>  Class[ 'puppet_infrastructure::hashman_base' ],
+    require =>  Class[ 'infra_populi::hashman_base' ],
   }
 
   # this file is outside the tree because it has configurable parameters
@@ -74,7 +74,7 @@ class puppet_infrastructure::hashman_web (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hashman/httpserver/httpserver.py.erb'),
+    content => template('infra_populi/hashman/httpserver/httpserver.py.erb'),
     require => File[ "${hashmandir}/httpserver" ],
     notify  => Service[ 'hashman' ],
   }
@@ -84,7 +84,7 @@ class puppet_infrastructure::hashman_web (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hashman/httpserver/static/js/customvalidation.js.erb'),
+    content => template('infra_populi/hashman/httpserver/static/js/customvalidation.js.erb'),
     require => File[ "${hashmandir}/httpserver" ],
     notify  => Service[ 'hashman' ],
   }
@@ -94,7 +94,7 @@ class puppet_infrastructure::hashman_web (
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hashman/httpserver/templates/next.html.erb'),
+    content => template('infra_populi/hashman/httpserver/templates/next.html.erb'),
     require => File[ "${hashmandir}/httpserver" ],
     notify  => Service[ 'hashman' ],
   }
@@ -114,7 +114,7 @@ class puppet_infrastructure::hashman_web (
       owner   => 'root',
       group   => 'root',
       replace => 'yes',
-      source  => 'puppet:///modules/puppet_infrastructure/hashman/extra/logo.png',
+      source  => 'puppet:///modules/infra_populi/hashman/extra/logo.png',
       require => File[ "${hashmandir}/httpserver", "${hashmandir}/httpserver/static/img/" ],
     }
   } else {
@@ -135,7 +135,7 @@ class puppet_infrastructure::hashman_web (
       owner   => 'root',
       group   => 'root',
       replace => 'yes',
-      source  => 'puppet:///modules/puppet_infrastructure/hashman/extra/logo-email.png',
+      source  => 'puppet:///modules/infra_populi/hashman/extra/logo-email.png',
       require => File[ "${hashmandir}/httpserver", "${hashmandir}/httpserver/static/img/" ],
     }
   } else {
@@ -154,7 +154,7 @@ class puppet_infrastructure::hashman_web (
     owner   => 'root',
     group   => 'root',
     replace => 'no',
-    source  => 'puppet:///modules/puppet_infrastructure/hashman/extra/valid.png',
+    source  => 'puppet:///modules/infra_populi/hashman/extra/valid.png',
     require => File[ "${hashmandir}/httpserver", "${hashmandir}/httpserver/static/img/" ],
   }
 
@@ -171,7 +171,7 @@ class puppet_infrastructure::hashman_web (
     mode    => '0644',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/hashman/hashman.service.erb'),
+    content => template('infra_populi/hashman/hashman.service.erb'),
     notify  => Service['hashman'],
   }
 
@@ -186,7 +186,7 @@ class puppet_infrastructure::hashman_web (
 
   # nginx - we use our own nginx configuration class
 
-  class {'puppet_infrastructure::nginx_frontend':
+  class {'infra_populi::nginx_frontend':
     domain                     => $address,
     frontend_sslprefix         => $sslprefix,
     backend_hosts_and_ports    => ['127.0.0.1:8080', ],

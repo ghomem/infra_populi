@@ -40,4 +40,4 @@ exec { 'p8test first desktop login of p8testuser':
   timeout => 300,
   require => [User['p8testuser'], File['/usr/local/sbin/p8test-first-desktop-login']],
 }
-Exec['p8test first desktop login of p8testuser'] -> Puppet_infrastructure::Mount_shares_desktop <| |>
+Exec['p8test first desktop login of p8testuser'] -> Infra_populi::Mount_shares_desktop <| |>

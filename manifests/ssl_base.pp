@@ -22,7 +22,7 @@
 #     puppet:///extra_files/ssl/${myprefix}.intermediate.crt
 ### Environment ####
 # OS: ubuntu 16.04 (nginx and postfix), CentOS 7 (nginx)
-define puppet_infrastructure::ssl_base (
+define infra_populi::ssl_base (
   # For each parameter we set the Data Type (so that we get and error if there is an unexpected data type as input)
   # We also avoid setting a default such as "" (so that we avoid doing anything if the mandatory inputs are not given)
 
@@ -95,7 +95,7 @@ define puppet_infrastructure::ssl_base (
 
   # If the service is not one of the “known” ones, log a warning rather than fail.
     unless $myservice in ['nginx','postfix'] {
-    notify { "WARNING: puppet_infrastructure::ssl_base ${myprefix}: Externally managed service ${myservice} will be notified.": withpath => false }
+    notify { "WARNING: infra_populi::ssl_base ${myprefix}: Externally managed service ${myservice} will be notified.": withpath => false }
   }
 
   # Always do the bundling

@@ -1,4 +1,4 @@
-# Puppet 8 migration: the module owns openvpn-server@puppet_infrastructure (duplicate service dropped, notifies retargeted); local change #7: the class's cipher in data-ciphers; ifupdown and bridge-utils through ensure_packages (shared with network_dhcp).
+# Puppet 8 migration: the module owns openvpn-server@infra_populi (duplicate service dropped, notifies retargeted); local change #7: the class's cipher in data-ciphers; ifupdown and bridge-utils through ensure_packages (shared with network_dhcp).
 # Module dependencies: puppet-network 2.2.1; puppet-openvpn 12.0.0; thias-sysctl 1.0.8; puppetlabs-stdlib 9.7.0 (ensure_packages).
 ### Purpose ########
 # Configure a server running ubuntu as a OpenVPN server
@@ -7,7 +7,7 @@
 ## Warnings ##
 # This class as only been tested on Ubuntu 16.04
 
-class puppet_infrastructure::openvpn_server (
+class infra_populi::openvpn_server (
 
     $lan_static_ip,
     $lan_netmask,
@@ -122,7 +122,7 @@ class puppet_infrastructure::openvpn_server (
         owner  => 'root',
         group  => 'root',
         source => "puppet:///extra_files/${openvpn_keys_subdir}/ca.crt",
-        notify => Service['openvpn-server@puppet_infrastructure'],
+        notify => Service['openvpn-server@infra_populi'],
     }
 
     file {"${openvpn_keys_dir}/dh2048.pem":
@@ -130,7 +130,7 @@ class puppet_infrastructure::openvpn_server (
         owner  => 'root',
         group  => 'root',
         source => "puppet:///extra_files/${openvpn_keys_subdir}/dh2048.pem",
-        notify => Service['openvpn-server@puppet_infrastructure'],
+        notify => Service['openvpn-server@infra_populi'],
     }
 
     file {"${openvpn_keys_dir}/server.crt":
@@ -138,7 +138,7 @@ class puppet_infrastructure::openvpn_server (
         owner  => 'root',
         group  => 'root',
         source => "puppet:///extra_files/${openvpn_keys_subdir}/server.crt",
-        notify => Service['openvpn-server@puppet_infrastructure'],
+        notify => Service['openvpn-server@infra_populi'],
     }
 
     file {"${openvpn_keys_dir}/server.key":
@@ -146,7 +146,7 @@ class puppet_infrastructure::openvpn_server (
         owner  => 'root',
         group  => 'root',
         source => "puppet:///extra_files/${openvpn_keys_subdir}/server.key",
-        notify => Service['openvpn-server@puppet_infrastructure'],
+        notify => Service['openvpn-server@infra_populi'],
     }
 
     #Set the default path of the config file
@@ -159,7 +159,7 @@ class puppet_infrastructure::openvpn_server (
     $data_ciphers = join(unique(['AES-256-GCM', 'AES-128-GCM', 'CHACHA20-POLY1305', $cipher]), ':')
 
     # configuration of the openvpn server itself
-    openvpn::server { 'puppet_infrastructure':
+    openvpn::server { 'infra_populi':
         verb                     => '3',
         user                     => 'nobody',
         proto                    => 'udp',
@@ -202,9 +202,9 @@ class puppet_infrastructure::openvpn_server (
         mode    => '0755',
         owner   => 'root',
         group   => 'root',
-        source  => 'puppet:///modules/puppet_infrastructure/openvpn/openvpn-up.sh',
+        source  => 'puppet:///modules/infra_populi/openvpn/openvpn-up.sh',
         require => Package[ 'openvpn' ],
-        notify  => Service['openvpn-server@puppet_infrastructure'],
+        notify  => Service['openvpn-server@infra_populi'],
     }
 
     sysctl  { 'net.ipv4.conf.br0.proxy_arp_pvlan': value => $proxy_arp  }

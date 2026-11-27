@@ -1,11 +1,11 @@
 node 'nginx-static02' {
 
-  # Static HTTP server with defined type puppet_infrastructure::nginx_static_domain
+  # Static HTTP server with defined type infra_populi::nginx_static_domain
   # Acess by IP configurable, see 'redirect_default' below
 
-  include puppet_infrastructure::node_base
+  include infra_populi::node_base
   include passwd_common
-  include puppet_infrastructure::nginx_base
+  include infra_populi::nginx_base
 
   file { '/var/www':
     ensure => directory,
@@ -21,10 +21,10 @@ node 'nginx-static02' {
     owner   => 'root',
     group   => 'root',
     content => "<html><head></head><body><h1>Hello World - ${trusted['certname']}<h1></body></html>",
-    require => Class[ 'puppet_infrastructure::nginx_base' ],
+    require => Class[ 'infra_populi::nginx_base' ],
   }
  
-  puppet_infrastructure::nginx_static_domain { 'nginx-static02.puppetdemo.lan':
+  infra_populi::nginx_static_domain { 'nginx-static02.puppetdemo.lan':
     domain                 => 'nginx-static02.puppetdemo.lan',
     www_root               => '/var/www/html',
     server_default_create  => true,
@@ -36,6 +36,6 @@ node 'nginx-static02' {
   }
 
   # open HTTP ports to the Internet
-  include puppet_infrastructure::firewall_addon_web
+  include infra_populi::firewall_addon_web
 
 }

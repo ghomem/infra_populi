@@ -1,14 +1,14 @@
 node 'backups02' {
 
   # Basic declarations
-  class { 'puppet_infrastructure::node_base':
+  class { 'infra_populi::node_base':
     filesystem_security => false, # the unprivileged user 'backups' needs to execute the ssh command
   }
   include passwd_common
   include passwd_backups_srv
 
   # fetches data from the same directory in different remote machines
-  puppet_infrastructure::sync { 'remote-machine':
+  infra_populi::sync { 'remote-machine':
     localdir       => '/home/backups/rsynctest',
     localuser      => 'backups',
     remotedir      => '/directory/to/backup',

@@ -3,7 +3,7 @@
 # Expected run-2 events: Exec[apt_update]; Exec[dnf-makecache]. Exec[apt_update] — node_base declares packages_base, whose `class { 'apt': update => { frequency => 'always' } }` runs apt update on every agent run by upstream design (justified on packages_base). Exec[dnf-makecache] — the same packages_base declaration runs dnf makecache on every agent run on RedHat (justified on packages_base).
 ### Purpose ########
 # This class provides basic desirable properties of a generic Ubuntu node
-class puppet_infrastructure::node_base ( Boolean $password_authentication                  = false,
+class infra_populi::node_base ( Boolean $password_authentication                  = false,
                                   Boolean $ssh_strict                               = false,
                                   Array $ssh_acl                                    = [],
                                   Boolean $customize_syslog_mode                    = false,
@@ -52,14 +52,14 @@ class puppet_infrastructure::node_base ( Boolean $password_authentication       
 
   $os_family = $facts['os']['family']
 
-  class { 'puppet_infrastructure::packages_base':
+  class { 'infra_populi::packages_base':
     unattended_upgrades => false,
   }
-  class { 'puppet_infrastructure::sysmon_base':
-    require => Class['puppet_infrastructure::packages_base']
+  class { 'infra_populi::sysmon_base':
+    require => Class['infra_populi::packages_base']
   }
 
-  class { 'puppet_infrastructure::ssh_secure': password_authentication => $password_authentication, root_login => $ssh_allow_root_login, port => $ssh_port, host_keys => $host_keys, kex_algorithm => $kex_algorithm, ciphers => $ciphers, macs => $macs}
+  class { 'infra_populi::ssh_secure': password_authentication => $password_authentication, root_login => $ssh_allow_root_login, port => $ssh_port, host_keys => $host_keys, kex_algorithm => $kex_algorithm, ciphers => $ciphers, macs => $macs}
 
   if $os_family == 'RedHat' {
 
@@ -80,7 +80,7 @@ class puppet_infrastructure::node_base ( Boolean $password_authentication       
 
 
   if ($firewall_secure_extra){
-    class { 'puppet_infrastructure::firewall_secure_extra':
+    class { 'infra_populi::firewall_secure_extra':
       strict                   => $ssh_strict,
       acl                      => $ssh_acl,
       anti_ddos                => $anti_ddos,
@@ -101,20 +101,20 @@ class puppet_infrastructure::node_base ( Boolean $password_authentication       
     }
   }
   else {
-    class { 'puppet_infrastructure::firewall_secure': strict => $ssh_strict, acl => $ssh_acl, strict_purge => $firewall_strict_purge, ignore_patterns => $firewall_ignore_patterns, ssh_port => $ssh_port }
+    class { 'infra_populi::firewall_secure': strict => $ssh_strict, acl => $ssh_acl, strict_purge => $firewall_strict_purge, ignore_patterns => $firewall_ignore_patterns, ssh_port => $ssh_port }
   }
   
-  include puppet_infrastructure::firewall_ipv6_drop
-  class { 'puppet_infrastructure::filesystem_base':
+  include infra_populi::firewall_ipv6_drop
+  class { 'infra_populi::filesystem_base':
     customize_syslog_mode => $customize_syslog_mode,
     syslog_mode           => $syslog_mode,
   }
 
   if $os_family == 'RedHat' {
-    include puppet_infrastructure::filesystem_yum
+    include infra_populi::filesystem_yum
   } else {
-    include puppet_infrastructure::filesystem_lib64
-    class { 'puppet_infrastructure::filesystem_apt':
+    include infra_populi::filesystem_lib64
+    class { 'infra_populi::filesystem_apt':
       apt_surface_list           => $apt_surface_list,
       server_mode                => true,
       relevant_updates_method    => $relevant_updates_method,
@@ -132,7 +132,7 @@ class puppet_infrastructure::node_base ( Boolean $password_authentication       
   }
 
   if $filesystem_security {
-    puppet_infrastructure::filesystem_sec { 'filesystem_sec': restricted_cmds => $restricted_cmds, restricted_group => $restricted_group , restricted_mode => $restricted_mode }
+    infra_populi::filesystem_sec { 'filesystem_sec': restricted_cmds => $restricted_cmds, restricted_group => $restricted_group , restricted_mode => $restricted_mode }
   }
 
   if $facts['os']['family'] == 'RedHat' {
@@ -164,10 +164,10 @@ class puppet_infrastructure::node_base ( Boolean $password_authentication       
   }
 
   if ($run_puppet_on_boot){
-    include puppet_infrastructure::puppet_boot_run
+    include infra_populi::puppet_boot_run
   }
 
-  class { 'puppet_infrastructure::dns_client':
+  class { 'infra_populi::dns_client':
     nameservers => $nameservers,
   }
 

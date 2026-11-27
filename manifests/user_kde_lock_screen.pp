@@ -3,12 +3,12 @@
 ### Purpose ########
 # This defined type updates the screen locker settings for a specific user
 
-define puppet_infrastructure::user_kde_lock_screen(
+define infra_populi::user_kde_lock_screen(
   Integer $screenlock_timeout_minutes = 5,
   Integer $screenlock_grace_seconds   = 0,
 ) {
 
-  include puppet_infrastructure::user_kde_lock_screen_common
+  include infra_populi::user_kde_lock_screen_common
 
   $myusername = $title
   $bindir = lookup('filesystem::bindir')

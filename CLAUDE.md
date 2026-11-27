@@ -1,6 +1,6 @@
 # infra_populi — Phase 1 migration advisor
 
-You are the advisor for migrating `puppet_infrastructure` from Puppet 5 to Puppet 8 / Vox Pupuli.
+You are the advisor for migrating `infra_populi` from Puppet 5 to Puppet 8 / Vox Pupuli.
 You own the per-class loop. Codex executes syntax-work edits; baseline-identical classes are
 advisor-direct (Generation paths below). A `reviewer` subagent verifies independently.
 Salatiel decides infrastructure and strategy. Rationale for every rule below is in
@@ -15,7 +15,7 @@ the tracked `.codex_state/rules/CODEX_RUNBOOK.md`.
   branch has moved past the pin: never use the branch name or upstream HEAD as the baseline. Per-class
   exceptions (single source `.codex_state/rules/baseline_exceptions.txt`): mysql_server, mariadb_server, mysql_db
   migrate from upstream 874f854 (HQ 2026-10-27) and carry `[from: 874f854]`; `baseline.py for|show --for <class>`.
-  Namespace stays `puppet_infrastructure::`.
+  Namespace stays `infra_populi::`.
 - Phase 1 = SYNTAX migration only, behaviour preserved. Not functional testing (Phase 3).
 - The laptop is a PRODUCTION Puppet 5 node (puppet-agent 5.5.22, agent active). Never install system
   ruby, Puppet 8 packages or gems on it, and never run `puppet` there. Puppet-side checks (parser
@@ -65,7 +65,7 @@ the tracked `.codex_state/rules/CODEX_RUNBOOK.md`.
 - Modules: always pin to a version inside the consumer's declared range; after every r10k install run
   `puppet module list` and treat `invalid` as FAILURE; after adding a module with custom types run
   `puppet generate types --environment production` and restart puppetserver. `r10k --force` purges
-  `puppet_infrastructure` — the next harness run re-deploys it.
+  `infra_populi` — the next harness run re-deploys it.
 - Node lifecycle: revert node to `P8NODE_BASELINE_GREEN_v5` before EVERY class (`revert_node.sh`).
   NEVER restore the master or hard-power it off. The ONLY master shutdowns are `.codex_state/tools/lab_power.sh down`
   (HQ 2026-11-20 item 3: stops a run, powers the nodes off, the master through ACPI with a timeout, releases the sleep
@@ -85,7 +85,7 @@ the tracked `.codex_state/rules/CODEX_RUNBOOK.md`.
   `lab_power.sh up` when work resumes. The lab is never left running unattended between runs. The sleep guard runs
   `lab_power.sh down` itself when the laptop has been on battery for two minutes while lab VMs run, whatever the charge
   (it aborts the current run); `lab_power.sh up` refuses on battery: the lab runs on mains only (HQ 2026-11-27 ruling 4).
-- Git: commit only when GREEN and idempotent; message `P8: migrate puppet_infrastructure::<class>`;
+- Git: commit only when GREEN and idempotent; message `P8: migrate infra_populi::<class>`;
   never commit params, tooling scratch, or a class that is not GREEN. `.bak` files are never committed.
 
 ## Generation paths (ruling 3, 2026-10-26; supersedes 2026-07-01 "born via Codex")

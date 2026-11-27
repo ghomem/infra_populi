@@ -3,7 +3,7 @@
 ### Purpose ########
 # This class provides necessary firewall configurations for caching nameservers
 
-class puppet_infrastructure::firewall_addon_caching_nameserver (
+class infra_populi::firewall_addon_caching_nameserver (
 
     $lan_iface,
     $port = '53',

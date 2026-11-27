@@ -7,7 +7,7 @@
 ## 1
 ##   We do not manage the user here, neither the directory, and neither the parent (root jail) directories.
 ## 2
-##   Notice that puppet_infrastructure restricts ssh access to certain groups so to allow SFTP access the user
+##   Notice that infra_populi restricts ssh access to certain groups so to allow SFTP access the user
 ##   needs to belong to a group that allows for that. Set the corresponding hiera key e.g. to
 ##   examplehostname::ssh::othergroups: 'sftp_in sftp_out'
 ## 3
@@ -20,7 +20,7 @@
 ### Dependencies ###
 # The given directory exists (notice read&write permission are those given to the user/group as per linux permissions)
 # and only root has write access to parent folders and others have execution permissions (ssh-server sftp-server requirement)
-define puppet_infrastructure::sftp_only(
+define infra_populi::sftp_only(
   # Mandatory arguments
   String $user_name,
   # if the array is empty conections from any IP are allowed

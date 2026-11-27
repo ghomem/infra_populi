@@ -33,7 +33,7 @@ stops for HQ review; the open questions at the end need rulings before the first
   `rules/test_asset_fixtures.txt` lists which node fixtures are test assets and which are stand-ins.
 - **Lab-specific text inside the sets:** host-only addresses `192.168.56.*` in 17 sets (52 lines); the lab's host names
   `puppet8node`/`puppet8master` in 10 sets (14 lines); `p8lab-*` names in 8 sets (16 lines); runner variables `P8_*`
-  in 5 sets (21 lines). The site path `/opt/puppet-infrastructure` appears in 38 sets (284 lines); the Phase 2 rename
+  in 5 sets (21 lines). The site path `/opt/infra-populi` appears in 38 sets (284 lines); the Phase 2 rename
   changes it.
 
 ## The design

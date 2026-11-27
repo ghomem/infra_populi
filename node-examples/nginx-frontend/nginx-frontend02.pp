@@ -7,12 +7,12 @@ node 'nginx-frontend02' {
   # <IP_of_this_machine>  secondary.nginx-frontend02.puppetdemo.lan
 
   # Basic includes
-  include puppet_infrastructure::node_base
+  include infra_populi::node_base
   include passwd_common
-  include puppet_infrastructure::nginx_base
+  include infra_populi::nginx_base
 
   # Backend - flask application listening on 127.0.0.1:8000
-  puppet_infrastructure::hello_world_flask {'main':
+  infra_populi::hello_world_flask {'main':
     ip_address  => '127.0.0.1',
     port        => 8000,
     uninstall   => false,
@@ -20,7 +20,7 @@ node 'nginx-frontend02' {
   }
 
   # Backend - flask application listening on 127.0.0.1:8001
-  puppet_infrastructure::hello_world_flask {'primary':
+  infra_populi::hello_world_flask {'primary':
     ip_address  => '127.0.0.1',
     port        => 8001,
     uninstall   => false,
@@ -28,7 +28,7 @@ node 'nginx-frontend02' {
   }
 
   # Backend - flask another application listening on 127.0.0.1:8002
-  puppet_infrastructure::hello_world_flask {'secondary':
+  infra_populi::hello_world_flask {'secondary':
     ip_address  => '127.0.0.1',
     port        => 8002,
     uninstall   => false,
@@ -36,7 +36,7 @@ node 'nginx-frontend02' {
   }
 
   # Frontend for https://nginx-frontend02.puppetdemo.lan
-  class { 'puppet_infrastructure::nginx_frontend':
+  class { 'infra_populi::nginx_frontend':
     domain                  => 'nginx-frontend02.puppetdemo.lan',
     frontend_sslprefix      => 'star.puppetdemo.lan',
     backend_hosts_and_ports => ['127.0.0.1:8000', ],
@@ -44,7 +44,7 @@ node 'nginx-frontend02' {
   }
 
   # Frontend for https://primary.nginx-frontend02.puppetdemo.lan
-  puppet_infrastructure::nginx_frontend_domain { 'primary.nginx-frontend02.puppetdemo.lan':
+  infra_populi::nginx_frontend_domain { 'primary.nginx-frontend02.puppetdemo.lan':
     domain                                => 'primary.nginx-frontend02.puppetdemo.lan',
     frontend_sslprefix                    => 'star.puppetdemo.lan',
     backend_hosts_and_ports               => ['127.0.0.1:8001', ],
@@ -55,7 +55,7 @@ node 'nginx-frontend02' {
   }
 
   # Frontend for https://secondary.nginx-frontend02.puppetdemo.lan
-  puppet_infrastructure::nginx_frontend_domain { 'secondary.nginx-frontend02.puppetdemo.lan':
+  infra_populi::nginx_frontend_domain { 'secondary.nginx-frontend02.puppetdemo.lan':
     domain                                => 'secondary.nginx-frontend02.puppetdemo.lan',
     frontend_sslprefix                    => 'star.puppetdemo.lan',
     backend_hosts_and_ports               => ['127.0.0.1:8002', ],
@@ -66,6 +66,6 @@ node 'nginx-frontend02' {
   }
 
   # Allow HTTP/HTTPS connections
-  include puppet_infrastructure::firewall_addon_web
+  include infra_populi::firewall_addon_web
 
 }

@@ -1,7 +1,7 @@
 # Puppet 8 migration: release-0.9.10 manifest validated unchanged.
 # Module dependency: puppetlabs-stdlib 9.7.0 (the Stdlib::Absolutepath data type).
 # Adds an AppArmor local exception for rsyslog to write to a custom log path.
-class puppet_infrastructure::rsyslog_apparmor_exception (
+class infra_populi::rsyslog_apparmor_exception (
   Stdlib::Absolutepath $logs_dir,
 ) {
 

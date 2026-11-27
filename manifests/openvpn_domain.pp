@@ -1,6 +1,6 @@
 # Puppet 8 migration: preserve Samba domain integration for OpenVPN using the structured hostname fact; local change #17: the Kerberos default realm is upper-cased (krb5.conf.erb).
 # Module dependencies: none.
-class puppet_infrastructure::openvpn_domain (
+class infra_populi::openvpn_domain (
   String $join_user,
   String $join_password,
   String $domain_hostname,
@@ -27,7 +27,7 @@ class puppet_infrastructure::openvpn_domain (
     mode    => '0644',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/openvpn/smb.conf.erb'),
+    content => template('infra_populi/openvpn/smb.conf.erb'),
     require => Package[$dependencies],
   }
 
@@ -36,7 +36,7 @@ class puppet_infrastructure::openvpn_domain (
     mode    => '0644',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/openvpn/pam_winbind.conf.erb'),
+    content => template('infra_populi/openvpn/pam_winbind.conf.erb'),
     require => Package[$dependencies],
   }
 
@@ -45,7 +45,7 @@ class puppet_infrastructure::openvpn_domain (
     mode    => '0644',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/openvpn/krb5.conf.erb'),
+    content => template('infra_populi/openvpn/krb5.conf.erb'),
     require => Package[$dependencies],
   }
 
@@ -54,7 +54,7 @@ class puppet_infrastructure::openvpn_domain (
     mode    => '0644',
     owner   => 'root',
     group   => 'root',
-    source  => 'puppet:///modules/puppet_infrastructure/openvpn/nsswitch.conf',
+    source  => 'puppet:///modules/infra_populi/openvpn/nsswitch.conf',
     require => Package[$dependencies],
   }
 
@@ -63,7 +63,7 @@ class puppet_infrastructure::openvpn_domain (
     mode    => '0644',
     owner   => 'root',
     group   => 'root',
-    source  => 'puppet:///modules/puppet_infrastructure/openvpn/openvpn_pam',
+    source  => 'puppet:///modules/infra_populi/openvpn/openvpn_pam',
     require => Package[$dependencies],
   }
 
@@ -80,7 +80,7 @@ class puppet_infrastructure::openvpn_domain (
     mode    => '0774',
     owner   => 'root',
     group   => 'root',
-    content => template('puppet_infrastructure/openvpn/join-domain.sh.erb'),
+    content => template('infra_populi/openvpn/join-domain.sh.erb'),
     require => Package[$dependencies],
   }
 

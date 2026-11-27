@@ -2,7 +2,7 @@
 # Module dependencies: none.
 ### Purpose ########
 # This class provides a nagios plugin that can be used trigger and monitor puppet runs, cpu, memory and zimbra
-class puppet_infrastructure::sysmon_base {
+class infra_populi::sysmon_base {
 
   $os_family = $facts['os']['family']
     
@@ -29,7 +29,7 @@ class puppet_infrastructure::sysmon_base {
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/sysmon/nagios-puppet.sh',
+  source  => 'puppet:///modules/infra_populi/sysmon/nagios-puppet.sh',
   require => File[ "${localdir}/bin" ],
   }
 
@@ -38,7 +38,7 @@ class puppet_infrastructure::sysmon_base {
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/sysmon/check_reboot_required.sh',
+  source  => 'puppet:///modules/infra_populi/sysmon/check_reboot_required.sh',
   require => File[ "${localdir}/bin" ],
   }
 
@@ -47,7 +47,7 @@ class puppet_infrastructure::sysmon_base {
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/sysmon/check_file_handles.sh',
+  source  => 'puppet:///modules/infra_populi/sysmon/check_file_handles.sh',
   require => File[ "${localdir}/bin" ],
   }
 
@@ -56,7 +56,7 @@ class puppet_infrastructure::sysmon_base {
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/sysmon/check_netstat_conns.sh',
+  source  => 'puppet:///modules/infra_populi/sysmon/check_netstat_conns.sh',
   require => File[ "${localdir}/bin" ],
   }
 
@@ -65,7 +65,7 @@ class puppet_infrastructure::sysmon_base {
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/sysmon/check_netstat_cip.sh',
+  source  => 'puppet:///modules/infra_populi/sysmon/check_netstat_cip.sh',
   require => File[ "${localdir}/bin" ],
   }
 
@@ -74,7 +74,7 @@ class puppet_infrastructure::sysmon_base {
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/sysmon/check_package_count.sh',
+  source  => 'puppet:///modules/infra_populi/sysmon/check_package_count.sh',
   require => File[ "${localdir}/bin" ],
   }
 
@@ -83,7 +83,7 @@ class puppet_infrastructure::sysmon_base {
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/sysmon/check_bandwidth.sh',
+  source  => 'puppet:///modules/infra_populi/sysmon/check_bandwidth.sh',
   require => File[ "${localdir}/bin" ],
   }
 
@@ -92,7 +92,7 @@ class puppet_infrastructure::sysmon_base {
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/sysmon/check_dd_latency.sh',
+  source  => 'puppet:///modules/infra_populi/sysmon/check_dd_latency.sh',
   require => File[ "${localdir}/bin" ],
   }
 
@@ -101,8 +101,8 @@ class puppet_infrastructure::sysmon_base {
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  content => template('puppet_infrastructure/sysmon/check_cpu.py.erb'),
-  require => Class['puppet_infrastructure::packages_base'],
+  content => template('infra_populi/sysmon/check_cpu.py.erb'),
+  require => Class['infra_populi::packages_base'],
   }
 
 # memory
@@ -110,8 +110,8 @@ class puppet_infrastructure::sysmon_base {
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/sysmon/check_mem.pl',
-  require => Class['puppet_infrastructure::packages_base'],
+  source  => 'puppet:///modules/infra_populi/sysmon/check_mem.pl',
+  require => Class['infra_populi::packages_base'],
   }
 
 # operating system version
@@ -119,7 +119,7 @@ class puppet_infrastructure::sysmon_base {
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/sysmon/check_os_version.sh',
+  source  => 'puppet:///modules/infra_populi/sysmon/check_os_version.sh',
   require => File[ "${localdir}/bin" ],
   }
 
@@ -128,7 +128,7 @@ class puppet_infrastructure::sysmon_base {
   mode    => '0755',
   owner   => 'root',
   group   => 'root',
-  source  => 'puppet:///modules/puppet_infrastructure/sysmon/check_http_ssl_cert.sh',
+  source  => 'puppet:///modules/infra_populi/sysmon/check_http_ssl_cert.sh',
   require => File[ "${localdir}/bin" ],
   }
 
@@ -136,7 +136,7 @@ class puppet_infrastructure::sysmon_base {
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-    source  => 'puppet:///modules/puppet_infrastructure/sysmon/elastic_query_check.py',
+    source  => 'puppet:///modules/infra_populi/sysmon/elastic_query_check.py',
     require => File[ "${localdir}/bin" ],
   }
 

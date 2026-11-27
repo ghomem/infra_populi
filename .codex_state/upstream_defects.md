@@ -76,19 +76,19 @@ the entry's `Ruled change` (plus ordinary Puppet 8 translations); anything else 
 ## openvpn_server
 - Short: module owns the unit (duplicate service dropped, notifies retargeted)
 - Defect: on systemd hosts with puppet-openvpn (8.3.0 in production; 11.0.1 and 12.0.0 in the lab):
-  (1) the class declares `service { 'openvpn-server@puppet_infrastructure' }` (openvpn_server.pp:117-121), which the
+  (1) the class declares `service { 'openvpn-server@infra_populi' }` (openvpn_server.pp:117-121), which the
   module declares itself → `Duplicate declaration` (REAL compile 2026-10-27);
   (2) `notify => Service['openvpn']` (:208, File['/etc/openvpn/openvpn-up.sh']) — the module declares Service['openvpn']
   only when `service_provider != systemd` (init.pp:67-73) → "Could not find resource 'Service[openvpn]'" (harness
   2026-11-17, escalations/openvpn_server.md "HQ ruling 5").
 - Ruled change (option A extended; escalations/openvpn_server-upstream-defects.md option A, production-facts ruling 2;
   HQ 2026-11-17 ruling 1): the module owns the unit.
-  (a) remove the class's `service { 'openvpn-server@puppet_infrastructure': ... }` (:117-121); the notifies that named
+  (a) remove the class's `service { 'openvpn-server@infra_populi': ... }` (:117-121); the notifies that named
   it (:129, :137, :145, :153) keep their text and now reach the module's unit of the same title;
-  (b) remove the `notify => Service['openvpn-server@puppet_infrastructure']` attribute of
-  `openvpn::server { 'puppet_infrastructure': ... }` (:186): the define contains that unit (server.pp:518-526), so the
+  (b) remove the `notify => Service['openvpn-server@infra_populi']` attribute of
+  `openvpn::server { 'infra_populi': ... }` (:186): the define contains that unit (server.pp:518-526), so the
   notify is a dependency cycle, and the module already notifies the unit for its own configuration (`$lnotify`);
-  (c) retarget :208 `notify => Service['openvpn']` to `Service['openvpn-server@puppet_infrastructure']`.
+  (c) retarget :208 `notify => Service['openvpn']` to `Service['openvpn-server@infra_populi']`.
   Nothing else changes.
 - Required evidence (HQ 2026-11-17 ruling 1): a server-config change restarts the unit exactly once; an up-script
   change restarts it; run 2 is clean. Behaviour (Phase 3) with ubuntu2 as the client: it connects, gets a pool address,
@@ -118,7 +118,7 @@ the entry's `Ruled change` (plus ordinary Puppet 8 translations); anything else 
   ("Failed to resolve hostname"), never silently.
 - Idempotency proof (2026-11-16, lab-network-nat.md step 6, NIC1 NAT on both VMs): the class with the `action` →
   `jump` translation and this rule, in the worktree only (not committed or recorded; the class waits for its
-  re-migration), `test_class.sh --revert-first puppet_infrastructure::firewall_addon_hosting` → GREEN (stamp code
+  re-migration), `test_class.sh --revert-first infra_populi::firewall_addon_hosting` → GREEN (stamp code
   b7cc55a8e16a at d31e872, node fresh). Run 2 reached the master through the class's own `OUTPUT` DROP policy with no
   change events. The node's `iptables -S OUTPUT` shows
   `-A OUTPUT -d 192.168.56.10/32 -p tcp -m tcp --dport 8140 -m comment --comment "152 OUTPUT PUPPET MASTER" -j ACCEPT`;
