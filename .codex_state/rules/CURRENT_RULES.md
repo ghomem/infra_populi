@@ -2,7 +2,19 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-147 entries; 6 marked superseded (in whole or part); newest first.
+148 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-27 — HQ review of the behaviour suite: accepted, with rulings (the rename may start)
+- 1. Logged errors (your escalation): option A. A run that logs an error line fails, in gate v2 as in the public runner.
+- 2. Engine switch: the engine now runs behaviour checks through the public runner, with the lab as its provider.
+- 3. Wording (your item 2): accepted for now. Add to the documentation list: before the module is promoted, one pass over
+- 4. Lab power: the lab runs on mains only. `lab up` refuses on battery, and when mains is lost the guard brings the lab
+- 5. Scratch: the turn-end hook lists scratch files newer than the last commit; commit them to drafts or discard them
+- 6. Slow uplink: build a small package cache as its own never-reverted lab VM (not on the master, whose disk is too
+- 7. Fresh node baseline (option A), taken once, including the cache setting if item 6 holds. Hand Salatiel any command
+- 8. Rename, per the approved plan and its amendments: tag `pre-rename` first (Phase 1 approval is still Salatiel's, so
+- 9. Re-verification after the rename, on the public runner, every class on its node kinds: Phase 1 harness and the
+- 10. Failures are escalated per class and the pass continues. Stop for HQ when the pass is complete."
 
 ## 2026-11-27 — Correction to the entry above (behaviour suite, steps 5-8)
 - (no numbered/Rule/Decision lines; read the entry)

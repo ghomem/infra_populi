@@ -2783,3 +2783,33 @@ Verbatim:
   8 depend on the agent or the server otherwise (not 7: dns_client, firewall_addon_hosting, hashman_base,
   node_base_desktop, node_base_domain_desktop, packages_base, rsyslog_base, sysmon_base). Counted from the sets'
   requires_why; the totals (89 measured, 65 identical, 23 declared, 1 unmeasured) stand.
+
+## 2026-11-27 — HQ review of the behaviour suite: accepted, with rulings (the rename may start)
+Verbatim:
+"HQ review of the behaviour suite: accepted. Both proofs hold (90 of 90 sets neutral; the sample identical on the new
+runner). The rename may start. Rulings:
+1. Logged errors (your escalation): option A. A run that logs an error line fails, in gate v2 as in the public runner.
+   Gate v2 also counts changes from Puppet's last-run report. The two gates must never differ; after the switch below
+   they are one code path.
+2. Engine switch: the engine now runs behaviour checks through the public runner, with the lab as its provider.
+3. Wording (your item 2): accepted for now. Add to the documentation list: before the module is promoted, one pass over
+   spec/behaviour replaces internal terms such as "HQ ruling" with neutral ones.
+4. Lab power: the lab runs on mains only. `lab up` refuses on battery, and when mains is lost the guard brings the lab
+   down after a two-minute grace, whatever the charge. Tests. (Salatiel may veto this line.)
+5. Scratch: the turn-end hook lists scratch files newer than the last commit; commit them to drafts or discard them
+   before you stop.
+6. Slow uplink: build a small package cache as its own never-reverted lab VM (not on the master, whose disk is too
+   small), and point the Ubuntu nodes' apt at it with a direct fallback. Verify on three package-heavy classes that
+   results are unchanged. If any class behaves differently because of the proxy, drop it and report.
+7. Fresh node baseline (option A), taken once, including the cache setting if item 6 holds. Hand Salatiel any command
+   your settings do not allow.
+8. Rename, per the approved plan and its amendments: tag `pre-rename` first (Phase 1 approval is still Salatiel's, so
+   not phase1-complete); every variant, including paths and unit and instance names; rename_check over the whole tree;
+   the inventory of node-visible names for the cutover; consumer conversion scripts tested on synthetic fixtures only.
+9. Re-verification after the rename, on the public runner, every class on its node kinds: Phase 1 harness and the
+   behaviour set. The reviewer confirms for every class that its diff is rename-only and its runs are green, and
+   independently re-runs every class whose node-visible names changed plus a random 15% of the rest.
+10. Failures are escalated per class and the pass continues. Stop for HQ when the pass is complete."
+- Item 3's documentation-list entry: before the module is promoted, one pass over spec/behaviour replaces internal
+  terms ("HQ ruling", "the plan", batch references) with neutral ones.
+- Salatiel passed the rulings on without vetoing item 4.
