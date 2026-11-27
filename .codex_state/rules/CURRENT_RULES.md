@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-146 entries; 6 marked superseded (in whole or part); newest first.
+147 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-27 — Correction to the entry above (behaviour suite, steps 5-8)
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-27 — Behaviour suite, steps 5-8: fixtures, the public runner, the engine's switch sample, local apply measured (HQ review of design note F)
 - (no numbered/Rule/Decision lines; read the entry)

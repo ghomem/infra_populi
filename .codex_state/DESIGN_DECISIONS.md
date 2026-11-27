@@ -2777,3 +2777,9 @@ Verbatim:
   repair. Salatiel ran the manual fsck; no restore. The damaged directory was /tmp/snap-private-tmp; five orphans in
   /lost+found; packages, CA and modules verified. The laptop's /tmp went with the reboot: anything a run needs after a
   reboot belongs in the repo or the state directory, not in /tmp.
+
+## 2026-11-27 — Correction to the entry above (behaviour suite, steps 5-8)
+- The split of the 23 sets that declare a server was miscounted: 15 take files from puppet:///extra_files (not 16) and
+  8 depend on the agent or the server otherwise (not 7: dns_client, firewall_addon_hosting, hashman_base,
+  node_base_desktop, node_base_domain_desktop, packages_base, rsyslog_base, sysmon_base). Counted from the sets'
+  requires_why; the totals (89 measured, 65 identical, 23 declared, 1 unmeasured) stand.
