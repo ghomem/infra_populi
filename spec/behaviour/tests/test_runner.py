@@ -176,3 +176,20 @@ def test_a_change_no_log_line_shows_is_still_an_event():
     logged = runner.agent_result(0, "Notice: /Stage[main]/X/Exec[e]/returns: executed successfully\nAGENT_RC=2\n"
                                     "CHANGED Exec[e]\n", "")
     assert len(logged["events"]) == 1
+
+
+def test_every_root_script_starts_with_the_helpers_and_node_scripts_get_the_peer_address_only_with_a_peer(monkeypatch):
+    seen = []
+
+    class Done:
+        returncode, stdout, stderr = 0, "", ""
+    monkeypatch.setattr(runner.subprocess, "run", lambda *a, **k: (seen.append(k["input"]), Done())[1])
+    shell = runner.Shell(["ssh"])
+    node = runner.Machine("ubuntu", "p8test@node", "203.0.113.20")
+    run = runner.Run(SET, runner.Provider(shell, None, {}), runner.Applier("agent", shell), shell,
+                     {"name": "puppet.example.invalid", "addr": "203.0.113.10"}, "/opt/site")
+    run.on({"id": "x"}, "echo a", node, None, {"PEER_ADDR": "198.51.100.1"})
+    run.data = {**run.data, "peer": {"kind": "ubuntu2"}}
+    run.on({"id": "x"}, "echo b", node, None, {"PEER_ADDR": "203.0.113.24"})
+    shell.run(node, "echo c", root=False)
+    assert seen == [runner.HELPERS + "echo a", runner.HELPERS + "PEER_ADDR=203.0.113.24\necho b", "echo c"]

@@ -23,6 +23,7 @@ Values and output:
   --variant <name>              run only this variant (repeatable; default all)
   --no-variants                 the base run only
   --out <dir>                   records (default ./behaviour-results): <dir>/<class>/<UTC>.json and .xml
+  --checks <dir>                the sets (default: this suite's checks/)
   --ssh "<ssh command>"         default "ssh -o BatchMode=yes"
 Exit: 0 all pass, 1 findings, 2 invalid set, 3 apply or environment failure, 4 skipped (the worst over all classes).
 """
@@ -69,12 +70,13 @@ def main() -> int:
     ap.add_argument("--variant", action="append")
     ap.add_argument("--no-variants", action="store_true")
     ap.add_argument("--out", default="behaviour-results")
+    ap.add_argument("--checks")
     ap.add_argument("--ssh", default="ssh -o BatchMode=yes")
     a = ap.parse_args()
     if a.help:
         print(__doc__)
         return 0
-    checks = SUITE / "checks"
+    checks = Path(a.checks) if a.checks else SUITE / "checks"
     classes = a.classes or ([p.stem for p in sorted(checks.glob("*.yml"))] if a.validate else [])
     if not classes:
         print(__doc__)

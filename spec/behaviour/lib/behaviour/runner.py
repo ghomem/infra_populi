@@ -82,6 +82,7 @@ class Machine:
     addr: str           # the address the other machines reach it at
     boot: str | None = None
     name: str | None = None
+    info: dict = dataclasses.field(default_factory=dict)  # what a provider reports about the machine, recorded as is
 
 
 class Shell:
@@ -103,7 +104,8 @@ class Shell:
 
 class Provider:
     """Fresh machines. With a provider command: `<cmd> fresh <kind>` prints {"dest", "addr"[, "boot"]} as JSON,
-    `<cmd> boot <dest>` prints the machine's boot id, `<cmd> release <dest>` lets it go. Without one, the machines
+    `<cmd> boot <dest>` prints the machine's boot id, `<cmd> release <dest>` lets it go; any other key of the JSON
+    (the machine's baseline, the mirror it used) is recorded with the machine as the provider gave it. Without one, the machines
     given on the command line, each used once: the runner marks a machine it used and refuses a marked one."""
 
     def __init__(self, shell: Shell, command: list[str] | None = None, given: dict | None = None):
@@ -115,7 +117,8 @@ class Provider:
             if p.returncode != 0:
                 raise RuntimeError(f"the provider gave no fresh {kind} node: {(p.stderr or p.stdout).strip()[-300:]}")
             got = json.loads(p.stdout.strip().splitlines()[-1])
-            m = Machine(kind, got["dest"], got["addr"], got.get("boot"))
+            m = Machine(kind, got["dest"], got["addr"], got.get("boot"),
+                        info={k: v for k, v in got.items() if k not in ("dest", "addr", "boot")})
         else:
             if not self.given.get(kind):
                 raise RuntimeError(f"no {kind} node: give one with --node {kind}=<ssh destination>@<address>")
@@ -297,11 +300,11 @@ class Run:
         """Returns the peer it used (so a variant can name its address)."""
         expected = (self.data.get("apply") or {}).get("expected_run2_events") or []
         node = self.provider.fresh(kind)
-        record["nodes"] = {"node": {"kind": kind, "dest": node.dest, "boot_id": node.boot}}
+        record["nodes"] = {"node": {"kind": kind, "dest": node.dest, "boot_id": node.boot, **node.info}}
         peer = None
         if with_peer and self.data.get("peer"):
             peer = self.provider.fresh(self.data["peer"]["kind"])
-            record["nodes"]["peer"] = {"kind": peer.kind, "dest": peer.dest, "boot_id": peer.boot}
+            record["nodes"]["peer"] = {"kind": peer.kind, "dest": peer.dest, "boot_id": peer.boot, **peer.info}
         try:
             values = self.values(node, peer, base_peer)
             record["values"] = values

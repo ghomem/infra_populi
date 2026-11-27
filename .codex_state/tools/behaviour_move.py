@@ -118,10 +118,12 @@ def contexts(cls: str, data: dict) -> dict:
     kinds = nodes_data()["nodes"]
     mine = base_kind(cls)
     peer_kind = (data.get("peer") or {}).get("kind")
+    peer_kind = peer_kind if peer_kind in kinds else None  # an unknown kind is the validator's to refuse, not a crash
     out = {"base": context(kinds, mine, peer_kind)}
     for v in data.get("variants") or []:
         if isinstance(v, dict) and "name" in v:
-            out[v["name"]] = context(kinds, v.get("node", mine), peer_kind)
+            kind = v.get("node", mine)
+            out[v["name"]] = context(kinds, kind if kind in kinds else mine, peer_kind)
     return out
 
 

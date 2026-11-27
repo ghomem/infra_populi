@@ -2,6 +2,7 @@
 negative controls that must fail on the clean node, JSON + JUnit output, reviewer spot-check and verdict."""
 
 import copy
+import sys
 import json
 import xml.etree.ElementTree as ET
 
@@ -29,9 +30,13 @@ PURPOSE = "keeps daily rsnapshot backups of a directory, restorable from the sna
 COVERED = ("--purpose", "covered", "--purpose-evidence", "the checks back up and restore a file")
 
 
-def check_set(*checks, **top):
+def check_set(*checks, on="ubuntu", **top):
+    """A set for CLS; `on` is the node kind of its apply block, which must be the plan's (or P8_NODE's) kind."""
     data = {"class": CLS, "baseline": "release-0.9.10 (cf477c6)", "fixture": "params",
-            "purpose": PURPOSE, "checks": list(checks)}
+            "purpose": PURPOSE, "checks": list(checks),
+            # the catalog the public runner applies (HQ review of the behaviour suite, ruling 2: runs go through it)
+            "apply": {"resource_type": "class", "node": on,
+                      "catalog": {"Debian": [{"class": CLS}], "RedHat": [{"class": CLS}]}}}
     ids = [c["id"] for c in checks if isinstance(c, dict) and "id" in c]
     if ids:  # HQ 2026-11-18 ruling 2: the default table maps the purpose to every check of the set
         data["outcomes"] = [{"outcome": "a daily snapshot of the directory exists", "from": "manifests/backup_rsnapshot.pp:5-19",
@@ -62,8 +67,7 @@ def p3(tmp_path, lab):
     revert = tmp_path / "revert.sh"
     revert.write_text(REVERT_STUB.format(log="reverted"))
     harness = tmp_path / "harness.sh"
-    harness.write_text("#!/bin/sh\necho \"harness $*\" >> \"$(dirname \"$0\")/log\"\n"
-                       "echo 'NODE_FRESH: yes (boot x)'\necho 'GREEN: run 2 exited 0 with no change events (gate v2).'\n")
+    harness.write_text(HARNESS_STUB.format(python=sys.executable, lib=SUITE_LIB, checks=checks, params=params))
     for f in (revert, harness):
         f.chmod(0o755)
     lab.world["read_stdin"] = True
@@ -90,6 +94,35 @@ def p3(tmp_path, lab):
 
     return P3()
 
+
+# The gate-v2 harness stand-in: logs each apply; with --render-only it prints the manifest the suite's own builder makes
+# for the set (the lab's apply hook refuses to apply unless the harness renders exactly the runner's manifest).
+SUITE_LIB = TOOLS.parents[1] / "spec" / "behaviour" / "lib"
+HARNESS_STUB = """#!{python}
+import os, sys
+from pathlib import Path
+args = sys.argv[1:]
+if "--render-only" not in args:
+    with open(Path(__file__).parent / "log", "a") as f:
+        f.write("harness " + " ".join(args) + "\\n")
+    print("NODE_FRESH: yes (boot x)")
+    print("GREEN: run 2 exited 0 with no change events (gate v2).")
+    sys.exit(0)
+sys.path.insert(0, "{lib}")
+from behaviour import manifest, setfile
+cls = args[-1].split("::")[-1]
+data, _ = setfile.load(Path("{checks}") / f"{{cls}}.yml")
+kind = args[args.index("--node") + 1] if "--node" in args else data["apply"]["node"]
+text = manifest.build(data, kind, setfile.kinds(), [Path("{params}"), setfile.SUITE / "fixtures" / "params"],
+                      setfile.SUITE / "fixtures", variant=os.environ.get("P8_PARAMS_VARIANT"), render=lambda t: t)
+print("# BEGIN CODEX MANAGED")
+print(text, end="")
+print("# END CODEX MANAGED")
+"""
+
+# The public runner reads three of the node's own values over ssh before the clean phase (its host name, the address it
+# sees the controller at, its primary address); the probe counts below add them.
+VALUE_READS = 3
 
 FAIL = {"rc": 1, "stdout": ""}
 OK = {"rc": 0, "stdout": "ok\n"}
@@ -171,7 +204,10 @@ def test_all_pass_writes_json_and_junit_and_probes_only_the_node(p3, lab):
     assert all(s.get("failures") == "0" for s in xml.iter("testsuite"))
     assert p3.log.read_text().splitlines() == ["reverted", f"harness puppet_infrastructure::{CLS}"]
     ssh = lab.calls("ssh")
-    assert len(ssh) == 6 and all(c[-2:] == ["puppet8node", "sudo -n bash -s"] for c in ssh)
+    # 3 probes on the clean node, 3 after the apply, and the public runner's 3 reads of the node's own values (its host
+    # name, the address it sees the controller at, its primary address): every call to the node, none elsewhere
+    assert len(ssh) == 9 and {c[-2] for c in ssh} == {"puppet8node"}
+    assert all(c[-1] in ("sudo -n bash -s", "bash -s") for c in ssh)
 
 
 def test_a_negative_control_that_passes_on_the_clean_node_invalidates_the_set(p3):
@@ -219,7 +255,7 @@ def test_a_red_harness_is_apply_failed_and_runs_no_applied_probes(p3, lab, tmp_p
     proc = p3.run("run", CLS, P8_PHASE3_HARNESS=str(red))
     assert proc.returncode == 3
     record, xml = p3.result()
-    assert record["outcome"] == "APPLY_FAILED" and record["applied"] == [] and len(lab.calls("ssh")) == 1
+    assert record["outcome"] == "APPLY_FAILED" and record["applied"] == [] and len(lab.calls("ssh")) == 1 + VALUE_READS
     assert next(xml.iter("skipped")).get("message") == "APPLY_FAILED"
 
 
@@ -340,7 +376,7 @@ def test_the_action_runs_only_after_apply_after_every_read_only_check_and_is_jud
     assert applied["passed"] and applied["action"]["rc"] == 3  # evidence is the effect, the action's rc is recorded
     assert applied["action"]["mutates"].startswith("runs one rsnapshot")
     ssh = lab.calls("ssh")
-    assert len(ssh) == 5 and all(c[-2:] == ["puppet8node", "sudo -n bash -s"] for c in ssh)  # 2 clean + 3 applied
+    assert len(ssh) == 5 + VALUE_READS and {c[-2] for c in ssh} == {"puppet8node"}  # 2 clean + 3 applied
     out = proc.stdout
     assert out.index("pass conf") < out.index("pass backup-runs (mutating")
 
@@ -354,7 +390,7 @@ def test_a_failed_read_only_check_skips_every_mutating_action(p3, lab):
     assert proc.returncode == 1 and "SKIP backup-runs (mutating; not run: read-only checks failed (conf))" in proc.stdout
     record, xml = p3.result()
     assert record["findings"] == ["conf"] and record["not_run"] == ["backup-runs"]
-    assert len(lab.calls("ssh")) == 3  # 2 clean (probe + effect) + 1 applied read-only; the action never sent
+    assert len(lab.calls("ssh")) == 3 + VALUE_READS  # 2 clean (probe + effect) + 1 applied read-only; no action
     assert any(s.get("message", "").startswith("not run: read-only checks failed") for s in xml.iter("skipped"))
 
 
@@ -410,7 +446,7 @@ def test_a_mismatch_that_fails_as_required_keeps_the_set_valid(p3, lab):
     assert record["applied"][0]["mismatch"]["passed"] is False and "mismatch failed as required" in proc.stdout
     assert any(c.get("name") == "conf.mismatch" for c in xml.iter("testcase"))
     # probes travel on stdin, so count calls: clean 2 (probe, effect) + applied 4 (probe, mismatch, action, effect)
-    assert len(lab.calls("ssh")) == 6
+    assert len(lab.calls("ssh")) == 6 + VALUE_READS
 
 
 def test_a_mismatch_that_passes_invalidates_the_set_and_skips_mutating_actions(p3, lab):
@@ -424,7 +460,7 @@ def test_a_mismatch_that_passes_invalidates_the_set_and_skips_mutating_actions(p
     record, xml = p3.result()
     assert record["valid"] is False and "do not discriminate): conf" in record["problems"][-1]
     assert record["applied"][1]["not_run"] == "not run: the set is invalid"
-    assert len(lab.calls("ssh")) == 4  # clean 2 + applied probe and mismatch; the action and its effect never ran
+    assert len(lab.calls("ssh")) == 4 + VALUE_READS  # clean 2 + applied probe and mismatch; no action, no effect
     assert any("does not discriminate" in f.get("message", "") for f in xml.iter("failure"))
 
 
@@ -435,7 +471,7 @@ def test_no_mismatch_run_when_the_check_itself_fails(p3, lab):
     assert proc.returncode == 1
     record, _ = p3.result()
     assert record["applied"][0]["mismatch"] == {"varies": MM["varies"], "not_run": "the check itself failed"}
-    assert len(lab.calls("ssh")) == 2  # clean + applied probe; no mismatch call
+    assert len(lab.calls("ssh")) == 2 + VALUE_READS  # clean + applied probe; no mismatch call
 
 
 # HQ 2026-11-16 item 2: behaviour state (derived) and deferrals.
@@ -538,7 +574,8 @@ def test_a_failed_revert_records_its_reason(p3, tmp_path):
     proc = p3.run("run", CLS, P8_PHASE3_REVERT=str(bad))
     assert proc.returncode == 3
     record, _ = p3.result()
-    assert record["problems"] == ["node revert failed: ERROR: The node has no IPv4 default route after 60s"]
+    assert record["problems"] == ["the provider gave no fresh ubuntu node: "
+                                  "node revert failed: ERROR: The node has no IPv4 default route after 60s"]
 
 
 def test_probes_may_not_name_any_lab_node():
@@ -645,7 +682,7 @@ def test_a_peer_run_reverts_both_nodes_hands_the_files_over_and_powers_the_peer_
     assert p3.log.read_text().splitlines() == ["reverted --node ubuntu", "reverted --node ubuntu2",
                                                f"harness puppet_infrastructure::{CLS}", "labvm stop p8lab-ubuntu2"]
     peer_calls = [c for c in lab.calls("ssh") if c[-2] == "p8lab-ubuntu2"]
-    assert len(peer_calls) == 2  # clean + applied
+    assert len(peer_calls) == 2 + 1  # clean + applied, and the runner's read of the peer's host name
     # both nodes fresh, both recorded (HQ 2026-11-17 batch-8 ruling 3)
     assert {k: (v["kind"], v["boot_id"], v["fresh"]) for k, v in record["nodes"].items()} == \
         {"node": ("ubuntu", "boot-ubuntu", True), "peer": ("ubuntu2", "boot-ubuntu2", True)}
@@ -671,7 +708,7 @@ KDE = {"P8_NODE": "kubuntu"}  # the real inventory: kubuntu is active with the k
 
 def session_lab(p3, lab, login="SESSION_UP\n", runs=("Notice: /Stage[main]/X/Exec[configure p8testuser]/returns: "
                                                      "executed successfully\nAGENT_RC=2\n", "AGENT_RC=0\n")):
-    p3.write(check_set(check("conf", "probe-conf"), session=SESSION))
+    p3.write(check_set(check("conf", "probe-conf"), session=SESSION, on="kubuntu"))
     p3.probe_rule("probe-conf", FAIL, OK)
     lab.world["ssh"].insert(0, {"match": "zz-p8test-autologin", "stdout": login})
     lab.world["ssh"].insert(0, {"match": r"puppet agent -t --detailed-exitcodes",
@@ -679,14 +716,14 @@ def session_lab(p3, lab, login="SESSION_UP\n", runs=("Notice: /Stage[main]/X/Exe
 
 
 def test_a_session_set_needs_a_kde_node_and_a_fixture_user(p3):
-    p3.write(check_set(check("conf", "probe-conf"), session=SESSION))
+    p3.write(check_set(check("conf", "probe-conf"), session=SESSION, on="kubuntu"))
     assert p3.run("validate", CLS, **KDE).returncode == 0
     proc = p3.run("validate", CLS)  # the default node, ubuntu, has no kde
     assert proc.returncode == 2 and "lacks the capability 'kde'" in proc.stderr
     for bad, message in [({**SESSION, "user": "salatiel"}, "p8test* fixture account"),
                          ({**SESSION, "desktop": "gnome"}, "must be plasma"),
                          ({"user": "p8testuser"}, "session takes user, desktop and why")]:
-        p3.write(check_set(check("conf", "probe-conf"), session=bad))
+        p3.write(check_set(check("conf", "probe-conf"), session=bad, on="kubuntu"))
         proc = p3.run("validate", CLS, **KDE)
         assert proc.returncode == 2 and message in proc.stderr, proc.stderr
 
@@ -723,7 +760,7 @@ def test_a_second_run_with_changes_fails_the_apply(p3, lab):
     proc = p3.run("run", CLS, **KDE)
     record, _ = p3.result()
     assert proc.returncode == 3 and record["outcome"] == "APPLY_FAILED"
-    assert "not applied cleanly and idempotently" in record["problems"][-1]
+    assert "did not apply cleanly and idempotently: run 2 still applied changes" in record["problems"][-1]
 
 
 def test_the_login_and_agent_runs_stay_out_of_probes():
@@ -747,7 +784,7 @@ def peer_agent_set(**over):
                      mutating("new-password-accepted", action="act-login", effect="eff-login",
                               mutates="authenticates the fixture user with PAM", host="peer"),
                      peer={"kind": "ubuntu2", "why": "the browser and the agent of another machine run there"},
-                     peer_agent={**PEER_AGENT, **over})
+                     peer_agent={**PEER_AGENT, **over}, on="puppetserver")
 
 
 def test_a_peer_agent_set_needs_a_puppet_server_node_a_fixture_identity_and_a_mutating_anchor(p3):
@@ -777,6 +814,10 @@ def test_the_peer_agent_run_follows_its_anchor_against_the_class_node_from_its_o
     p3.write(peer_agent_set())
     p3.probe_rule("probe-page", FAIL, OK)
     lab.world["read_stdin"] = True
+    # the peer's agent asks the class node by its host name, which the runner reads from the node (the lab's host names
+    # are its aliases)
+    lab.world["ssh"].insert(0, {"match": r"p8lab-puppetserver sudo -n bash -s\n.*\nhostname -s\s*$",
+                                "stdout": "p8lab-puppetserver\n"})
     for marker in ("act-change", "act-login"):
         lab.world["ssh"].insert(0, {"match": marker, "stdout": "", "rc": 0})
     p3.probe_rule("eff-change", FAIL, OK)
@@ -991,39 +1032,12 @@ def test_mutating_helpers_only_in_an_action():
     assert phase3.probe_problems("p8_count x /etc/hosts; p8_established 127.0.0.1 22; p8_http http://127.0.0.1/") == []
 
 
-def test_every_node_and_peer_script_starts_with_the_helpers(monkeypatch):
-    import subprocess
+def test_the_engine_view_of_a_peer_address_passes_the_probe_rules():
+    # the public runner hands node scripts $PEER_ADDR (spec/behaviour tests); the engine validates the lab view, in
+    # which the set's $PEER_ADDR reads as P8_PEER_ADDR
     import sys
     sys.path.insert(0, str(TOOLS))
     import phase3
-    seen = []
-
-    class Done:
-        returncode, stdout, stderr = 0, "", ""
-    monkeypatch.setattr(subprocess, "run", lambda *a, **k: (seen.append(k["input"]), Done())[1])
-    monkeypatch.setattr(phase3, "PEER_FILES", {})
-    phase3.on_node("echo node")
-    phase3.on_peer("echo peer")
-    helpers = (TOOLS.parents[1] / "spec" / "behaviour" / "probe_helpers.sh").read_text(encoding="utf-8")
-    assert seen == [helpers + "echo node", helpers + "echo peer"]
-
-
-def test_node_scripts_get_the_peer_address_only_when_a_peer_is_declared(monkeypatch):
-    import subprocess
-    import sys
-    sys.path.insert(0, str(TOOLS))
-    import phase3
-    seen = []
-
-    class Done:
-        returncode, stdout, stderr = 0, "", ""
-    monkeypatch.setattr(subprocess, "run", lambda *a, **k: (seen.append(k["input"]), Done())[1])
-    helpers = (TOOLS.parents[1] / "spec" / "behaviour" / "probe_helpers.sh").read_text(encoding="utf-8")
-    monkeypatch.setattr(phase3, "PEER_ADDR", "")
-    phase3.on_node("echo a")
-    monkeypatch.setattr(phase3, "PEER_ADDR", "192.0.2.24")
-    phase3.on_node("echo b")
-    assert seen == [helpers + "echo a", helpers + "P8_PEER_ADDR=192.0.2.24\necho b"]
     assert phase3.probe_problems('echo "$P8_PEER_ADDR mailserver.p8test.invalid" >> /etc/hosts', mutating=True) == []
 
 
@@ -1049,10 +1063,10 @@ def test_the_run_record_carries_each_reverts_apt_mirror(p3, lab, tmp_path):
 def test_a_revert_without_the_field_records_no_mirror():
     import sys
     sys.path.insert(0, str(TOOLS))
-    import phase3
-    assert phase3.revert_mirror("SUCCESS\nREVERT_METRICS {\"node\":\"ubuntu\"}\n") is None
-    assert phase3.revert_mirror("no metrics\n") is None
-    assert phase3.revert_mirror('REVERT_METRICS {"apt_mirror":"primary"}') == "primary"
+    import behaviour_lab
+    assert behaviour_lab.revert_mirror("SUCCESS\nREVERT_METRICS {\"node\":\"ubuntu\"}\n") is None
+    assert behaviour_lab.revert_mirror("no metrics\n") is None
+    assert behaviour_lab.revert_mirror('REVERT_METRICS {"apt_mirror":"primary"}') == "primary"
 
 
 # HQ batch-15 ruling 3 (applied capability-based): an uncovered row carries evidence, and is lifted by a node kind that
@@ -1190,9 +1204,12 @@ def p3v(p3, tmp_path):
     (params / "variants" / "strict").mkdir(parents=True)
     (params / "variants" / "strict" / f"puppet_infrastructure::{CLS}.json").write_text('{"strict": true}\n')
     harness = tmp_path / "harness.sh"
-    harness.write_text("#!/bin/sh\necho \"harness $* params=${P8_PARAMS_VARIANT:-}${P8_VARIANT_NO_RESOURCES:+ nores}\" "
+    harness.rename(tmp_path / "harness_render.py")  # p3's stand-in, kept for --render-only
+    harness.write_text("#!/bin/sh\ncase \"$*\" in *--render-only*) exec \"$(dirname \"$0\")/harness_render.py\" \"$@\" ;; esac\n"
+                       "echo \"harness $* params=${P8_PARAMS_VARIANT:-}${P8_VARIANT_NO_RESOURCES:+ nores}\" "
                        ">> \"$(dirname \"$0\")/log\"\n"
                        "echo 'NODE_FRESH: yes (boot x)'\necho 'GREEN: run 2 exited 0 with no change events (gate v2).'\n")
+    harness.chmod(0o755)
     labvm = tmp_path / "labvm.sh"
     labvm.write_text("#!/bin/sh\necho \"labvm $*\" >> \"$(dirname \"$0\")/log\"\n")
     labvm.chmod(0o755)

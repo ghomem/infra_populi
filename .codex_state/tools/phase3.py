@@ -5,11 +5,14 @@ derived from the pinned baseline, probed on the node only, with negative control
   phase3.py validate <class>     the check file alone (no node): schema, derived_from against the class's baseline,
                                  probe rules. Exit 0 valid, 2 invalid.
   phase3.py run <class> [--role author|reviewer]
-                                 validate; revert the node; CLEAN phase (every probe on the reverted node: each
-                                 `negative` control must FAIL, each `invariant` must PASS, else the set is INVALID);
-                                 apply the class with the gate-v2 harness on that fresh node; APPLIED phase (every
-                                 check must PASS; a failure is a FINDING). Writes JSON + JUnit XML to
-                                 .codex_state/checks/results/<class>/<UTC>-<role>.{json,xml}.
+                                 validate; then, under the lab lock, the run itself through the public runner
+                                 (spec/behaviour/run) with the lab as its provider (behaviour_lab.py; HQ review of the
+                                 behaviour suite, ruling 2): revert the node; CLEAN phase (every probe on the reverted
+                                 node: each `negative` control must FAIL, each `invariant` must PASS, else the set is
+                                 INVALID); apply the class with the gate-v2 harness on that fresh node, after checking
+                                 it renders exactly the runner's manifest; APPLIED phase (every check must PASS; a
+                                 failure is a FINDING). The runner's record becomes the engine's result (envelope,
+                                 outcomes table): JSON + JUnit XML in .codex_state/checks/results/<class>/<UTC>-<role>.
                                  Exit 0 all pass, 1 findings, 2 invalid set, 3 apply/environment failure.
   phase3.py spot <class> [--n N] [--seed S]
                                  reviewer: N random derived_from references (default 3), each printed with the
@@ -126,8 +129,8 @@ change) + a read-only `effect`; the action may change node state (host rules and
 negative controls whose EFFECT must be absent on the clean node (the action never runs there); after apply they run
 only once every read-only check has passed, in file order, and pass on the effect. Never on the master: the runner's
 only execution path is the node.
-P8_PHASE3_DIR redirects checks/results/reviews; P8_PHASE3_HARNESS / P8_PHASE3_REVERT replace the harness and the
-revert tool, P8_PARAMS_DIR the params directory (tests). Harness metrics events go to .codex_state/logs/phase3-metrics, never into Phase 1 records.
+P8_PHASE3_DIR redirects checks/results/reviews; P8_PHASE3_HARNESS / P8_PHASE3_REVERT / P8_PHASE3_LABVM replace the
+harness, the revert tool and lab_vm.sh in the lab's hooks, P8_PARAMS_DIR the params directory (tests). Harness metrics events go to .codex_state/logs/phase3-metrics, never into Phase 1 records.
 """
 
 from __future__ import annotations
@@ -151,16 +154,8 @@ sys.dont_write_bytecode = True
 TOOLS = Path(__file__).resolve().parent
 REPO = TOOLS.parents[1]
 sys.path.insert(0, str(TOOLS))
-sys.path.insert(1, str(TOOLS.parent))  # gen_migration_order (the plan) for the session run-2 gate
 import baseline  # noqa: E402
 
-NODE = "puppet8node"  # set per run to the class's lab node alias (nodes.yml; HQ 2026-11-16 item 2)
-PEER = None  # set per run to the peer node's alias when the set declares one (HQ 2026-11-17 ruling 1)
-# The declared peer's host-only address, handed to node scripts as P8_PEER_ADDR so a node action can aim at the peer by
-# reference (e.g. pin a name to it); node probes still may not name a lab address literally.
-PEER_ADDR = ""
-PEER_FILES: dict[str, str] = {}  # node path -> base64 content, handed to peer probes
-PROBE_TIMEOUT = 120
 PARAMS_DIR = Path(os.environ.get("P8_PARAMS_DIR") or Path.home() / ".config" / "infra_populi" / "params")
 SLUG = re.compile(r"[a-z0-9][a-z0-9-]{1,62}")
 FORBIDDEN = [
@@ -302,8 +297,8 @@ def lifting_problems(kind, need: str | None, where: str) -> list[str]:
         return [f"{where}: node {kind} lacks the capability {NEED_CAPABILITY[need]!r} that `{need}` needs"]
     return []
 HOST_RULES = 3  # FORBIDDEN[:3] keep probes on the node and away from Puppet; the rest keep them read-only
-# Probe helpers (HQ batch-12 ruling 6): prepended to every node and peer script; the mutating ones only in an action.
-HELPERS = (REPO / "spec" / "behaviour" / "probe_helpers.sh").read_text(encoding="utf-8")  # the public suite's
+# Probe helpers (HQ batch-12 ruling 6): the public runner prepends them to every node and peer script; the mutating ones
+# only in an action.
 MUTATING_HELPER = re.compile(r"\bp8_hold\b")
 
 
@@ -590,6 +585,15 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
         problems.append(f"class {data.get('class')!r} != file name {cls!r}")
     if data.get("baseline") != label(base):
         problems.append(f"baseline {data.get('baseline')!r} != the class's baseline {label(base)!r}")
+    if "deferred" not in data:  # the public runner applies the set's own catalog, on the set's node kind (ruling 2)
+        applied_on = ((yaml.safe_load(raw) or {}).get("apply") or {}).get("node")
+        if not applied_on:
+            problems.append("apply: the catalog the public runner applies (resource_type, node, catalog) is missing")
+        else:
+            import nodes  # noqa: PLC0415
+            planned = nodes.select(nodes.load(), cls=cls)["kind"]
+            if applied_on != planned:
+                problems.append(f"apply.node {applied_on!r} != the plan's node kind for the class {planned!r}")
     if "authoring" in data:  # HQ 2026-11-20 item 2: computed by the tool or not recorded
         problems.append("authoring is not entered by hand (HQ 2026-11-20 item 2): remove the block")
     for i, u in enumerate(data.get("uncovered") or []):
@@ -823,62 +827,8 @@ def cmd_validate(cls: str) -> int:
 
 # ------------------------------------------------------------------ run
 
-def node_env() -> dict:
-    env = dict(os.environ)
-    env["PATH"] = f"{TOOLS / 'sshmux'}:{env['PATH']}"  # one multiplexed connection, like the harness
-    return env
-
-
-def revert_mirror(stdout: str) -> str | None:
-    """The apt mirror a revert used, from its REVERT_METRICS line: "primary", or "fallback <url>" when the primary
-    archive failed (HQ batch-14 ruling 7: recorded in the run record); None when the line or the field is absent."""
-    for line in reversed(stdout.splitlines()):
-        if line.startswith("REVERT_METRICS "):
-            try:
-                return json.loads(line.split(" ", 1)[1]).get("apt_mirror")
-            except ValueError:
-                return None
-    return None
-
-
-def node_boot(kind: str) -> str | None:
-    """The node's kernel boot ID (revert_node.sh --node-state, first line), or None when it cannot be read."""
-    revert = os.environ.get("P8_PHASE3_REVERT") or str(TOOLS / "revert_node.sh")
-    proc = subprocess.run([revert, "--node", kind, "--node-state"], env=node_env(), capture_output=True, text=True)
-    lines = proc.stdout.split()
-    return lines[0] if proc.returncode == 0 and lines else None
-
-
-def on_node(script: str, timeout: int = 0) -> tuple[int, str, str]:
-    timeout = timeout or PROBE_TIMEOUT
-    try:
-        peer_var = f"P8_PEER_ADDR={PEER_ADDR}\n" if PEER_ADDR else ""
-        proc = subprocess.run(["ssh", "-o", "BatchMode=yes", NODE, "sudo -n bash -s"], input=HELPERS + peer_var + script,
-                              capture_output=True, text=True, timeout=timeout, env=node_env())
-        return proc.returncode, proc.stdout, proc.stderr
-    except subprocess.TimeoutExpired:
-        return 124, "", f"probe timed out after {timeout}s"
-
-
 SESSION_USER = re.compile(r"p8test[a-z0-9]*")
 SESSION_KEYS = {"user", "desktop", "why"}
-# Runner steps for a `session` set (never probes): the login, then one agent run as the harness makes it.
-SESSION_LOGIN = """set -e
-u={user}
-id "$u" >/dev/null
-install -d -m 0755 /etc/sddm.conf.d
-printf '[Autologin]\\nUser=%s\\nSession=plasma\\nRelogin=false\\n' "$u" > /etc/sddm.conf.d/zz-p8test-autologin.conf
-systemctl restart sddm
-for i in $(seq 120); do
-  if who | awk '{{print $1}}' | grep -qx "$u" && pgrep -u "$u" -x plasmashell >/dev/null; then echo SESSION_UP; exit 0; fi
-  sleep 1
-done
-echo SESSION_DOWN
-"""
-SESSION_AGENT = "timeout 900 /opt/puppetlabs/bin/puppet agent -t --detailed-exitcodes 2>&1; echo \"AGENT_RC=$?\"\n"
-AGENT_TIMEOUT = 960
-
-
 def session_problems(cls: str, session) -> list[str]:
     import nodes  # noqa: PLC0415
     if not isinstance(session, dict) or set(session) != SESSION_KEYS or len(str(session.get("why", ""))) < 20:
@@ -896,20 +846,6 @@ def session_problems(cls: str, session) -> list[str]:
 
 PEER_AGENT_KEYS = {"after", "certname", "why"}
 PEER_AGENT_CERT = re.compile(r"p8test[a-z0-9-]{0,40}")
-# {ip_re} is the address as an ERE (dots escaped), {ip} as written
-PEER_AGENT = """set -e
-d=/etc/p8test-agent/{certname}
-install -d -m 0755 "$d" /var/lib/p8test-agent/{certname} /run/p8test-agent/{certname} /var/log/p8test-agent/{certname}
-printf '[main]\\ncertname = %s\\nserver = %s\\nssldir = %s/ssl\\nvardir = %s\\nrundir = %s\\nlogdir = %s\\n' \\
-  {certname} {server} "$d" /var/lib/p8test-agent/{certname} /run/p8test-agent/{certname} /var/log/p8test-agent/{certname} \\
-  > "$d/puppet.conf"
-grep -qE '^{ip_re}[[:space:]]+{server}$' /etc/hosts || echo '{ip} {server}' >> /etc/hosts
-set +e
-timeout 900 /opt/puppetlabs/bin/puppet agent -t --confdir "$d" --detailed-exitcodes --waitforcert 0 2>&1
-echo "AGENT_RC=$?"
-"""
-
-
 def peer_agent_problems(cls: str, block, data: dict) -> list[str]:
     import nodes  # noqa: PLC0415
     if not isinstance(block, dict) or set(block) != PEER_AGENT_KEYS or len(str(block.get("why", ""))) < 20:
@@ -939,106 +875,6 @@ def node_agent_problems(block, data: dict) -> list[str]:
     if not anchors or any(a not in mutating for a in anchors):
         return ["node_agent.after must name a mutating check of the set, or a list of them (a run follows each action)"]
     return []
-
-
-def peer_agent_run(cls: str, certname: str) -> dict:
-    """The peer's agent run against the class's node (a Puppet server), as `certname`."""
-    import nodes  # noqa: PLC0415
-    node = nodes.select(nodes.load(), cls=cls)
-    script = PEER_AGENT.format(certname=certname, server=node["certname"], ip=node["hostonly_ip"],
-                               ip_re=node["hostonly_ip"].replace(".", "\\."))
-    rc, out, err = on_peer(script, timeout=AGENT_TIMEOUT)
-    m = re.search(r"AGENT_RC=(\d+)", out)
-    events = [line.strip() for line in out.splitlines() if "Notice: /Stage[main]/" in line]
-    return {"certname": certname, "server": node["certname"], "rc": int(m.group(1)) if m else rc, "events": events,
-            "tail": (out + err)[-1500:]}
-
-
-def agent_run() -> dict:
-    """One agent run on the node: its exit code and the resources that reported changes."""
-    rc, out, err = on_node(SESSION_AGENT, timeout=AGENT_TIMEOUT)
-    m = re.search(r"AGENT_RC=(\d+)", out)
-    # catalog events only, as the harness counts them (pluginsync writes outside Stage[main])
-    events = [line.strip() for line in out.splitlines() if "Notice: /Stage[main]/" in line]
-    return {"rc": int(m.group(1)) if m else rc, "events": events, "tail": (out + err)[-1500:]}
-
-
-def session_run2_clean(cls: str, run: dict) -> bool:
-    """Run 2 with the session up passes the harness's gate: exit 0, or exit 2 whose every event is one of the class's
-    plan expected_run2_events (HQ 2026-11-10 ruling 1)."""
-    if run["rc"] == 0 and not run["events"]:
-        return True
-    import gen_migration_order as gen  # noqa: PLC0415
-    row = gen.parse_plan().get(cls)
-    expected = list(getattr(row, "expected_run2_events", None) or [])
-    return run["rc"] == 2 and bool(run["events"]) and bool(expected) and \
-        all(any(ref in line for ref in expected) for line in run["events"])
-
-
-def on_peer(script: str, timeout: int = PROBE_TIMEOUT) -> tuple[int, str, str]:
-    """A peer probe: the node files are written under /run/p8test-from-node first (declared by peer.files)."""
-    pre = "".join(f"mkdir -p /run/p8test-from-node && printf '%s' '{b64}' | base64 -d "
-                  f"> /run/p8test-from-node/{Path(path).name}\n" for path, b64 in PEER_FILES.items())
-    try:
-        proc = subprocess.run(["ssh", "-o", "BatchMode=yes", PEER, "sudo -n bash -s"], input=pre + HELPERS + script,
-                              capture_output=True, text=True, timeout=timeout, env=node_env())
-        return proc.returncode, proc.stdout, proc.stderr
-    except subprocess.TimeoutExpired:
-        return 124, "", f"probe timed out after {timeout}s"
-
-
-def on_host(check: dict, script: str, timeout: int = 0) -> tuple[int, str, str]:
-    t = timeout or PROBE_TIMEOUT
-    return on_peer(script, timeout=t) if check.get("host") == "peer" else on_node(script, timeout=t)
-
-
-def fetch_node_files(paths: list[str]) -> None:
-    """Read the peer's files from the node (base64; empty when absent, as on the clean node)."""
-    PEER_FILES.clear()
-    for path in paths:
-        rc, out, _ = on_node(f"base64 -w0 {path} 2>/dev/null; true")
-        PEER_FILES[path] = out.strip() if rc == 0 else ""
-
-
-def meets(check: dict, rc: int, out: str) -> bool:
-    exp = check.get("expect") or {}
-    passed = rc == exp.get("rc", 0)
-    if passed and "stdout" in exp:
-        passed = re.search(exp["stdout"], out, re.M) is not None
-    if passed and "stdout_not" in exp:
-        passed = re.search(exp["stdout_not"], out, re.M) is None
-    return passed
-
-
-def run_mismatch(check: dict, row: dict) -> None:
-    """After a passing check: the deliberately wrong variant must NOT meet the same expectation."""
-    mm = check.get("mismatch")
-    if not mm:
-        return
-    if not row["passed"]:
-        row["mismatch"] = {"varies": mm["varies"], "not_run": "the check itself failed"}
-        return
-    rc, out, err = on_host(check, mm["probe"])
-    row["mismatch"] = {"varies": mm["varies"], "rc": rc, "passed": meets(check, rc, out),
-                       "stdout": out[-1000:], "stderr": err[-500:]}
-
-
-def run_probe(check: dict, act: bool = False) -> dict:
-    """Read-only checks run `probe`. A mutating check runs its `effect` only — preceded by the action when `act`."""
-    action = None
-    if "mutates" in check and act:
-        arc, aout, aerr = on_host(check, check["probe"], timeout=check.get("timeout", 0))
-        action = {"mutates": check["mutates"], "rc": arc, "stdout": aout[-1000:], "stderr": aerr[-500:]}
-    rc, out, err = on_host(check, check["effect"] if "mutates" in check else check["probe"])
-    passed = meets(check, rc, out)
-    row = {"id": check["id"], "control": check["control"], "rc": rc, "passed": passed,
-           "stdout": out[-2000:], "stderr": err[-1000:]}
-    if check.get("host") == "peer":
-        row["host"] = "peer"
-    if "mutates" in check:
-        row["mutating"] = True
-        row["action"] = action  # None in the clean phase: the action never runs before the class is applied
-    return row
 
 
 def git_head() -> str:
@@ -1096,6 +932,34 @@ def write_outputs(cls: str, record: dict) -> Path:
     return stem
 
 
+def public_run(cls: str) -> tuple[dict | None, str]:
+    """The run itself, through the public runner with the lab as its provider (HQ review of the behaviour suite,
+    ruling 2): behaviour_lab.py's command mode, the gate-v2 harness applying after checking it renders exactly the
+    runner's manifest. The caller holds the lab lock. Returns the runner's record (None if it wrote none) and its
+    output's tail."""
+    import tempfile  # noqa: PLC0415
+    import behaviour_lab  # noqa: PLC0415
+    with tempfile.TemporaryDirectory(prefix="phase3-") as out:
+        cmd, env = behaviour_lab.runner_command(Path(out), checks=sets_dir())
+        env["P8_LAB_LOCKED"] = "1"
+        env["BEHAVIOUR_LAB_CHECKS"] = str(sets_dir())
+        proc = subprocess.Popen(cmd + [cls], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        tail: list[str] = []
+        for line in proc.stdout:
+            if not line.startswith(f"{cls}: "):  # the runner's own record path is a temporary one
+                print(line, end="")
+            tail = (tail + [line])[-40:]
+        proc.wait()
+        files = sorted((Path(out) / cls).glob("*.json"))
+        return (json.loads(files[-1].read_text()) if files else None), "".join(tail)
+
+
+# The runner's record keys the engine's result takes over as they are (the envelope, the outcomes table and the
+# freshness judgement stay the engine's).
+TAKEN = ("clean", "apply", "applied", "findings", "not_run", "session", "node_agent", "peer_agent", "variants",
+         "manifest_sha256")
+
+
 def cmd_run(cls: str, role: str) -> int:
     started = now()
     problems, data, raw = validate(cls)
@@ -1107,7 +971,6 @@ def cmd_run(cls: str, role: str) -> int:
     t0 = time.monotonic()
 
     def finish(outcome: str, rc: int) -> int:
-        mark_fresh(record)
         record["outcome"] = outcome
         applied = record["applied"] + [r for v in (record.get("variants") or {}).values() for r in v["applied"]]
         record["outcomes"] = outcome_results(data, applied)
@@ -1124,235 +987,45 @@ def cmd_run(cls: str, role: str) -> int:
     if "deferred" in data:
         print(f"DEFERRED {cls}: needs {data['deferred']['needs']}; nothing to run", file=sys.stderr)
         return 2
-    # One lab run at a time (lab_lock.sh), held across the revert, both probe phases and the apply.
+    # One lab run at a time (lab_lock.sh), held across the whole run: every revert, both probe phases and the apply.
     lock = subprocess.run([str(TOOLS / "lab_lock.sh"), "take", str(os.getpid()), f"phase3.py run {cls} {role}"],
                           capture_output=True, text=True)
     if lock.returncode != 0:
         record["problems"].append(f"another lab run holds the lab lock: {lock.stderr.strip()}")
         print(f"REFUSED: another lab run holds the lab lock ({lock.stderr.strip()})", file=sys.stderr)
         return finish("ENVIRONMENT_FAILED", 3)
-    os.environ["P8_LAB_LOCKED"] = "1"
-    global NODE
     import nodes  # noqa: PLC0415
+    inventory = nodes.load()["nodes"]
     node = nodes.select(nodes.load(), cls=cls)
-    NODE, record["node"] = node["alias"], node["kind"]
+    record["node"] = node["kind"]
     record["nodes"] = {"node": {"kind": node["kind"], "snapshot": node.get("baseline_snapshot")}}
-    global PEER, PEER_ADDR
-    peer = None
-    PEER_ADDR = ""
-    if "peer" in data:
-        peer = {**nodes.load()["nodes"][data["peer"]["kind"]], "kind": data["peer"]["kind"]}
-        PEER, record["peer"] = peer["alias"], peer["kind"]
-        PEER_ADDR = peer["hostonly_ip"]
-        record["nodes"]["peer"] = {"kind": peer["kind"], "snapshot": peer.get("baseline_snapshot")}
     try:
-        if peer and peer["status"] != "active":
-            record["problems"].append(f"peer node {peer['kind']} is {peer['status']}")
+        if "peer" in data:
+            peer = {**inventory[data["peer"]["kind"]], "kind": data["peer"]["kind"]}
+            record["peer"] = peer["kind"]
+            record["nodes"]["peer"] = {"kind": peer["kind"], "snapshot": peer.get("baseline_snapshot")}
+            if peer["status"] != "active":
+                record["problems"].append(f"peer node {peer['kind']} is {peer['status']}")
+                return finish("ENVIRONMENT_FAILED", 3)
+        pub, tail = public_run(cls)
+        if pub is None:
+            record["problems"].append(f"the public runner wrote no record: {tail.strip()[-300:]}")
             return finish("ENVIRONMENT_FAILED", 3)
-        base = {**data, "checks": [c for c in data["checks"] if "variant" not in c]}
-        run_locked(cls, base, record, settle(record))
-        mark_fresh(record)  # before a variant run may revert the same node
-        if data.get("variants") and record["outcome"] != "ENVIRONMENT_FAILED":
-            run_variants(cls, data, record)
-        outcome = combined_outcome([record["outcome"]] + [v["outcome"] for v in (record.get("variants") or {}).values()])
+        for key in TAKEN:
+            if key in pub:
+                record[key] = pub[key]
+        record["valid"] = record["valid"] and pub.get("valid", True)
+        record["problems"] += pub.get("problems") or []
+        record["nodes"] = pub.get("nodes") or record["nodes"]
+        record["node"] = record["nodes"].get("node", {}).get("kind", record["node"])
+        outcome = pub.get("outcome") or "ENVIRONMENT_FAILED"
         return finish(outcome, OUTCOME_RC[outcome])
     finally:
-        if peer:  # only the nodes a run needs stay powered on (HQ 2026-11-17 ruling 5)
-            labvm = os.environ.get("P8_PHASE3_LABVM") or str(TOOLS / "lab_vm.sh")
-            subprocess.run([labvm, "stop", peer["vm"]], capture_output=True, text=True)
         subprocess.run([str(TOOLS / "lab_lock.sh"), "release", str(os.getpid())], capture_output=True)
 
 
 OUTCOME_RC = {"ALL_PASS": 0, "FINDINGS": 1, "INVALID_SET": 2, "APPLY_FAILED": 3, "ENVIRONMENT_FAILED": 3}
 OUTCOME_ORDER = ["INVALID_SET", "ENVIRONMENT_FAILED", "APPLY_FAILED", "FINDINGS", "ALL_PASS"]
-HARNESS_ARGS: list[str] = []      # a variant run: the harness's --node (HQ 2026-11-23 ruling 1a)
-HARNESS_ENV: dict[str, str] = {}  # a variant run: P8_PARAMS_VARIANT
-
-
-def combined_outcome(outcomes: list[str | None]) -> str:
-    """The worst of the base run's and the variant runs' outcomes."""
-    return min((o or "ENVIRONMENT_FAILED" for o in outcomes), key=OUTCOME_ORDER.index)
-
-
-def settle(rec: dict):
-    """A run's `finish` that records its outcome only (the whole result is written once, after every run)."""
-    def done(outcome: str, rc: int) -> int:
-        rec["outcome"] = outcome
-        return rc
-    return done
-
-
-def mark_fresh(rec: dict) -> None:
-    """HQ 2026-11-17 batch-8 ruling 3: each node reverted for a run is fresh if it kept the boot of that revert through
-    the run (the class node also needs the harness's NODE_FRESH). Read while still under the lab lock."""
-    for role_name, entry in (rec.get("nodes") or {}).items():
-        if entry.get("boot_id") and "fresh" not in entry:
-            entry["boot_id_at_end"] = node_boot(entry["kind"])
-            entry["fresh"] = entry["boot_id_at_end"] == entry["boot_id"] and \
-                (role_name != "node" or bool((rec.get("apply") or {}).get("node_fresh")))
-    for v in (rec.get("variants") or {}).values():
-        mark_fresh(v)
-
-
-def run_variants(cls: str, data: dict, record: dict) -> None:
-    """HQ 2026-11-23 ruling 1a: each variant is a full run (revert, clean phase, apply, applied phase) of its own checks
-    on its node with its params fixture, recorded under record["variants"][name]."""
-    global NODE, HARNESS_ARGS, HARNESS_ENV
-    import nodes  # noqa: PLC0415
-    base_alias = NODE
-    record["variants"] = {}
-    try:
-        for v in data["variants"]:
-            node = nodes.select(nodes.load(), kind=v["node"]) if "node" in v else nodes.select(nodes.load(), cls=cls)
-            sub = {"name": v["name"], "node": node["kind"], "params": v.get("params"),
-                   "nodes": {"node": {"kind": node["kind"], "snapshot": node.get("baseline_snapshot")}},
-                   "clean": [], "apply": None, "applied": [], "findings": [], "not_run": [], "problems": [],
-                   "valid": True, "outcome": None}
-            NODE = node["alias"]
-            HARNESS_ARGS = ["--node", node["kind"]]
-            HARNESS_ENV = {"P8_PARAMS_VARIANT": v["params"]} if "params" in v else {}
-            if v.get("no_resources"):
-                HARNESS_ENV["P8_VARIANT_NO_RESOURCES"] = "1"
-            print(f"==> VARIANT {v['name']}: node {node['kind']}" + (f", params {v['params']}" if "params" in v else ""))
-            # node_agent anchors are check ids: an anchor among the variant's checks runs the agent on the variant's node
-            vdata = {k: val for k, val in data.items() if k not in ("peer", "session", "peer_agent")}
-            vdata["checks"] = [c for c in data["checks"] if c.get("variant") == v["name"]]
-            run_locked(cls, vdata, sub, settle(sub))
-            mark_fresh(sub)
-            record["variants"][v["name"]] = sub
-            print(f"==> VARIANT {v['name']}: {sub['outcome']}")
-            if node["kind"] != record["node"] and str(node.get("vm", "")).startswith("p8lab-"):
-                labvm = os.environ.get("P8_PHASE3_LABVM") or str(TOOLS / "lab_vm.sh")
-                subprocess.run([labvm, "stop", node["vm"]], capture_output=True, text=True)
-    finally:
-        NODE, HARNESS_ARGS, HARNESS_ENV = base_alias, [], {}
-
-
-def run_locked(cls: str, data: dict, record: dict, finish) -> int:
-    revert = os.environ.get("P8_PHASE3_REVERT") or str(TOOLS / "revert_node.sh")
-    print("==> Reverting the node (clean phase runs on the baseline)")
-    rv = subprocess.run([revert, "--node", record["node"]], env=node_env(), capture_output=True, text=True)
-    print(rv.stdout, end="")
-    print(rv.stderr, end="", file=sys.stderr)
-    if rv.returncode != 0:
-        err = [l for l in (rv.stderr or rv.stdout).splitlines() if l.strip()][-1:] or ["(no output)"]
-        record["problems"].append(f"node revert failed: {err[0]}")
-        return finish("ENVIRONMENT_FAILED", 3)
-    record["nodes"]["node"]["boot_id"] = node_boot(record["node"])
-    record["nodes"]["node"]["apt_mirror"] = revert_mirror(rv.stdout)
-    if record.get("peer"):
-        print(f"==> Reverting the peer node {record['peer']}")
-        rv = subprocess.run([revert, "--node", record["peer"]], env=node_env(), capture_output=True, text=True)
-        print(rv.stdout, end="")
-        if rv.returncode != 0:
-            err = [l for l in (rv.stderr or rv.stdout).splitlines() if l.strip()][-1:] or ["(no output)"]
-            record["problems"].append(f"peer revert failed: {err[0]}")
-            return finish("ENVIRONMENT_FAILED", 3)
-        record["nodes"]["peer"]["boot_id"] = node_boot(record["peer"])
-        record["nodes"]["peer"]["apt_mirror"] = revert_mirror(rv.stdout)
-        fetch_node_files(data["peer"].get("files") or [])
-    print("==> CLEAN phase: negative controls must fail, invariants must pass (mutating checks: effect only)")
-    for check in data["checks"]:
-        r = run_probe(check)
-        r["ok"] = (not r["passed"]) if check["control"] == "negative" else r["passed"]
-        record["clean"].append(r)
-        print(f"  {'ok ' if r['ok'] else 'BAD'} {check['id']} ({check['control']}: "
-              f"{'passed' if r['passed'] else 'failed'} on the clean node)")
-    bad = [r["id"] for r in record["clean"] if not r["ok"]]
-    if bad:
-        record["valid"] = False
-        record["problems"].append(f"controls did not hold on the clean node: {', '.join(bad)}")
-        return finish("INVALID_SET", 2)
-    harness = os.environ.get("P8_PHASE3_HARNESS") or str(TOOLS / "test_class.sh")
-    print(f"==> Applying {cls} with the gate-v2 harness on the fresh node")
-    env = node_env()
-    env["P8_METRICS_DIR"] = str(REPO / ".codex_state" / "logs" / "phase3-metrics")
-    env.update(HARNESS_ENV)
-    proc = subprocess.run([harness, *HARNESS_ARGS, f"puppet_infrastructure::{cls}"], capture_output=True, text=True,
-                          env=env)
-    green = proc.returncode == 0 and "GREEN:" in proc.stdout
-    record["apply"] = {"rc": proc.returncode, "green": green,
-                       "node_fresh": "NODE_FRESH: yes" in proc.stdout,
-                       "tail": (proc.stdout + proc.stderr)[-1500:]}
-    if not green:
-        return finish("APPLY_FAILED", 3)
-    if "session" in data:
-        user = data["session"]["user"]
-        print(f"==> Logging {user} in to Plasma, then two agent runs with the session up")
-        rc, out, err = on_node(SESSION_LOGIN.format(user=user), timeout=180)
-        record["session"] = {"user": user, "up": "SESSION_UP" in out, "runs": []}
-        if not record["session"]["up"]:
-            record["problems"].append(f"the {user} session did not come up: {(out + err).strip()[-300:]}")
-            return finish("ENVIRONMENT_FAILED", 3)
-        for n in (1, 2):
-            run = agent_run()
-            record["session"]["runs"].append(run)
-            print(f"  session agent run {n}: rc {run['rc']}, {len(run['events'])} changed")
-        first, second = record["session"]["runs"]
-        if first["rc"] not in (0, 2) or not session_run2_clean(cls, second):
-            record["problems"].append(f"with {user} logged in, agent run 1 rc {first['rc']}, run 2 rc {second['rc']} "
-                                      f"with {len(second['events'])} changes: not applied cleanly and idempotently")
-            return finish("APPLY_FAILED", 3)
-    if record.get("peer"):
-        fetch_node_files(data["peer"].get("files") or [])
-    print("==> APPLIED phase: every check must pass (read-only first; mutating only if all of those pass)")
-    readonly = [c for c in data["checks"] if "mutates" not in c]
-    mutating = [c for c in data["checks"] if "mutates" in c]
-    for check in readonly:
-        r = run_probe(check)
-        run_mismatch(check, r)
-        record["applied"].append(r)
-        mm = r.get("mismatch") or {}
-        note = ""
-        if mm:
-            state = "not run" if mm.get("not_run") else "PASSED: does not discriminate" if mm["passed"] \
-                else "failed as required"
-            note = f"; mismatch {state}"
-        print(f"  {'pass' if r['passed'] else 'FAIL'} {check['id']}{note}")
-    weak = [r["id"] for r in record["applied"] if (r.get("mismatch") or {}).get("passed")]
-    if weak:
-        record["valid"] = False
-        record["problems"].append(f"mismatch controls passed (checks do not discriminate): {', '.join(weak)}")
-        for check in mutating:
-            record["applied"].append({"id": check["id"], "control": check["control"], "mutating": True,
-                                      "passed": False, "not_run": "not run: the set is invalid", "rc": None,
-                                      "stdout": "", "stderr": ""})
-        return finish("INVALID_SET", 2)
-    gate = [r["id"] for r in record["applied"] if not r["passed"]]
-    for check in mutating:
-        if gate:
-            reason = f"not run: read-only checks failed ({', '.join(gate)})"
-            record["applied"].append({"id": check["id"], "control": check["control"], "mutating": True,
-                                      "passed": False, "not_run": reason, "rc": None, "stdout": "", "stderr": ""})
-            print(f"  SKIP {check['id']} (mutating; {reason})")
-            continue
-        if check.get("host") == "peer" and record.get("peer"):
-            # a node action may have just written a handed-over file (2026-11-18: hashman's initial password)
-            fetch_node_files(data["peer"].get("files") or [])
-        r = run_probe(check, act=True)
-        record["applied"].append(r)
-        print(f"  {'pass' if r['passed'] else 'FAIL'} {check['id']} (mutating: {check['mutates']}; "
-              f"action rc {r['action']['rc']}, judged on the effect)")
-        anchors = data.get("node_agent", {}).get("after")
-        if check["id"] in (anchors if isinstance(anchors, list) else [anchors]):
-            run = agent_run()
-            if isinstance(anchors, list):  # one run per anchor, recorded by anchor
-                record.setdefault("node_agent", {})[check["id"]] = run
-            else:
-                record["node_agent"] = run
-            print(f"  node agent run: rc {run['rc']}, {len(run['events'])} changed")
-        if data.get("peer_agent", {}).get("after") == check["id"]:
-            run = peer_agent_run(cls, data["peer_agent"]["certname"])
-            record["peer_agent"] = run
-            print(f"  peer agent run as {run['certname']} against {run['server']}: rc {run['rc']}, "
-                  f"{len(run['events'])} changed")
-    record["not_run"] = [r["id"] for r in record["applied"] if r.get("not_run")]
-    record["findings"] = [r["id"] for r in record["applied"] if not r["passed"] and not r.get("not_run")]
-    if record["findings"] or record["not_run"]:
-        return finish("FINDINGS", 1)
-    return finish("ALL_PASS", 0)
-
-
 # ------------------------------------------------------------------ reviewer: spot + verdict
 
 def cmd_spot(cls: str, n: int, seed: int | None) -> int:
