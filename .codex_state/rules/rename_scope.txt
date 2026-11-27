@@ -1,0 +1,46 @@
+# The rename's scope (HQ rulings on round 9, 2026-11-18, "E. Phase 2 rename", and HQ review of the behaviour suite ruling 8): every live
+# reference in every form becomes the new name; history and references to the old repository as a source stay as
+# written. Read by rename_module.py (which applies it) and rename_check.py (which proves the result), each on its own.
+#
+#   exclude <path glob>      a file left exactly as written (`**` any depth)
+#   protect <regex>          a span kept as written wherever it appears in a renamed file
+#   keep-yaml <key>          in YAML check sets, everything under this key is kept as written
+#   also <path> | <old line> | <new line>   one declared change beside the rename (the approved plan's): that exact
+#                            line (stripped) becomes the other
+# Each entry's reason follows `--`.
+
+exclude .codex_state/checks/results/**                  -- history: run records
+exclude .codex_state/checks/reviews/**                  -- history: phase-3 verdicts
+exclude .codex_state/checks/public/**                   -- history: public-runner records
+exclude .codex_state/checks/notes/**                    -- history: authoring notes of the moved sets
+exclude .codex_state/checks/moved.json                  -- history: the move's identities (hashes)
+exclude .codex_state/checks/fixtures_moved.json         -- history: the fixtures move's identities (hashes)
+exclude .codex_state/reviews/**                         -- history: Phase 1 verdicts
+exclude .codex_state/runs/**                            -- history: metrics (append-only)
+exclude .codex_state/escalations/**                     -- history: escalations and reports as they were written
+exclude .codex_state/diagnosis/**                       -- history: production diagnoses as read
+exclude .codex_state/sprint/**                          -- history
+exclude .codex_state/candidates/**                      -- history: preserved candidate manifests
+exclude .codex_state/DESIGN_DECISIONS.md                -- append-only history
+exclude .codex_state/rules/CURRENT_RULES.md             -- generated from DESIGN_DECISIONS.md
+exclude .codex_state/migration_order.md                 -- derived: regenerated after the rename
+exclude .codex_state/UPSTREAM_BASELINE.md               -- the old repository as a source
+exclude .codex_state/baseline.env                       -- the old repository as a source (the pin)
+exclude .codex_state/rules/documentation_list.md        -- describes production before the cutover, under the old name
+exclude .codex_state/drafts/rename_work.md              -- names the old forms on purpose
+exclude .codex_state/rules/rename_scope.txt             -- names the old forms on purpose
+exclude .codex_state/tools/module_name.py               -- the old name is its OLD constant
+exclude .codex_state/tools/rename_module.py             -- names the old forms on purpose
+exclude .codex_state/tools/rename_check.py              -- names the old forms on purpose
+exclude .codex_state/tools/tests/test_module_name.py    -- tests the old name's handling
+exclude .codex_state/tools/tests/test_rename_module.py  -- tests the rename itself
+
+protect ~/work/puppet_infrastructure                   -- the upstream checkout (a source)
+protect github\.com/ghomem/puppet_infrastructure        -- the old repository's URLs (the new ones are Salatiel's call)
+protect bitbucket\.org/asolidodev/puppet_infrastructure -- the old wiki (a source)
+protect OLD_MODULE="puppet_infrastructure"              -- the harness's name for the baseline's module
+protect rescue 'puppet_infrastructure'                  -- the compile filter's fallback before the name file existed
+
+keep-yaml derived_from                                  -- the sets' quotations of the baseline (a source)
+
+also metadata.json | "version": "0.9.4", | "version": "0.9.10",   -- the approved plan: the stale version becomes the baseline's
