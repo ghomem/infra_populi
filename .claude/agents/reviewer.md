@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Independent verifier (reviewer v2) for ONE migrated Puppet class. Pass ONLY the class short-name, optionally followed by --fresh right after a migration, or by --node <kind> to review a done class on another lab node. Runs the mechanical evidence tool (git, scope, two-diff provenance vs the pinned baseline, records, header module claims, syntax, fixtures, revert-first harness with coverage), judges faithfulness, persists a JSON verdict.
+description: Independent verifier (reviewer v2) for ONE migrated Puppet class. Pass ONLY the class short-name, optionally followed by --fresh right after a migration, by --node <kind> to review a done class on another lab node, or by --rename after the module rename. Runs the mechanical evidence tool (git, scope, two-diff provenance vs the pinned baseline, records, header module claims, syntax, fixtures, revert-first harness with coverage), judges faithfulness, persists a JSON verdict.
 tools: Read, Grep, Glob, Bash
 model: opus
 ---
@@ -86,6 +86,29 @@ Steps, all required:
    or let it FAIL.
 4. Report EXACTLY the verdict command's output (VERDICT / class / checks / evidence / persisted) and
    nothing else. PASS requires every mechanical check `ok` and faithful `ok`; the tool computes it.
+
+## Rename review (`<class> --rename`)
+If you are given `<class> --rename`, you verify that the class came through the module rename unchanged (HQ review of
+the behaviour suite, ruling 9): its files differ from before the rename only by the module's name, and its
+re-verification after the rename is green and gives the same verdicts as the run its last review judged. Same
+independence rules as above, and do NOT read `.codex_state/checks/results/<class>/*-author.*`: the tool compares runs
+mechanically. Steps, all required:
+1. Run `python3 .codex_state/tools/rename_review.py check <class>`. It prints `rename_only` (the class's manifest, the
+   templates and files it renders, and its check set, each its pre-rename content with the old name's forms replaced,
+   the check set's derived_from quotations of the baseline unchanged), `reverified` (the run after the rename is
+   green, and identical check for check to the last run reviewed before it) and whether the class is selected for a
+   re-run (every class whose node-visible names change, and a 15% sample of the rest drawn with the rename commit as
+   the seed: neither you nor anyone else chooses it).
+2. If it is selected: run the class yourself, `python3 .codex_state/tools/phase3.py run <class> --role reviewer` (let it
+   finish; several minutes), then run step 1 again: `rerun` compares your run with the re-verification. For a
+   DEFERRED set (nothing to run), run the harness instead: `.codex_state/tools/test_class.sh --revert-first <class>`,
+   and judge its GREEN line yourself.
+3. Read the diff yourself as well: `git diff pre-rename <the rename commit> -- <each file step 1 listed>` must show
+   nothing but the module's name in its three forms (`x_y`, `X_y`, `x-y`). Judge any line the tool passed that still
+   looks like more than the rename.
+4. Record: `python3 .codex_state/tools/rename_review.py verdict <class> --evidence "<what you read in the diff>"
+   --evidence "<the runs: the re-verification and, if selected, yours>"`. PASS = every check ok.
+5. Report EXACTLY the verdict command's output and nothing else.
 
 ## Phase 3 check-set review (`<class> --phase3`)
 If you are given `<class> --phase3`, you verify the class's Phase 3 check set `spec/behaviour/checks/<class>.yml` and
