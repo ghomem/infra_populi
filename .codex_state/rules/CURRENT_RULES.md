@@ -2,7 +2,20 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-150 entries; 6 marked superseded (in whole or part); newest first.
+151 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-27 — HQ: rename accepted; changes before the re-verification; after it (Salatiel reviewed the approval report)
+- 1. Stale open rows: about 27 rows give as their reason a capability the runner now has (more than one params fixture
+- 2. docker_container: registry login is used by 5 production node statements. Serve a private registry with
+- 3. openvpn_server: test the variant with compression off; production is heading there.
+- 4. user_base, ecryptfs branch: company laptops use encrypted homes. Build a fixture user with an ecryptfs home on a
+- 5. Key login: a clearly labelled throwaway test keypair may live in the suite's fixtures. Use it to prove that the
+- 6. Report accuracy: production counts follow the corrected rule (a conditional include counts only where it is turned
+- 7. Record Salatiel's decisions in the report (2026-11-27): the three findings accepted as known; all listed accepted
+- 8. A change that does not pass within its correction rounds is recorded as an open row, and you move on.
+- 9. Reboot capability: a runner step that reboots the class's node and continues. Use it for network_dhcp,
+- 10. letsencrypt_certificate: prepare the class side for a Let's Encrypt staging test (staging server through a
+- 11. Regenerate the approval report and stop for Salatiel's Phase 1 approval."
 
 ## 2026-11-27 — The rename applied; the package cache holds; the fresh node baseline waits for its snapshot
 - (no numbered/Rule/Decision lines; read the entry)

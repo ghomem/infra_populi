@@ -66,7 +66,7 @@ the tracked `.codex_state/rules/CODEX_RUNBOOK.md`.
   `puppet module list` and treat `invalid` as FAILURE; after adding a module with custom types run
   `puppet generate types --environment production` and restart puppetserver. `r10k --force` purges
   `infra_populi` — the next harness run re-deploys it.
-- Node lifecycle: revert node to `P8NODE_BASELINE_GREEN_v5` before EVERY class (`revert_node.sh`).
+- Node lifecycle: revert node to `P8NODE_BASELINE_GREEN_v6` before EVERY class (`revert_node.sh`).
   NEVER restore the master or hard-power it off. The ONLY master shutdowns are `.codex_state/tools/lab_power.sh down`
   (HQ 2026-11-20 item 3: stops a run, powers the nodes off, the master through ACPI with a timeout, releases the sleep
   guard; `lab_power.sh up` starts the master, waits for health, reverts the node) and `.codex_state/tools/snapshot_master.sh

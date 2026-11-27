@@ -147,7 +147,7 @@ class FakeLab:
         inhibit.chmod(0o755)
         self.world = {
             "vms": {
-                "ubuntu24-puppet8-Node": {"state": "running", "snapshot": "P8NODE_BASELINE_GREEN_v5"},
+                "ubuntu24-puppet8-Node": {"state": "running", "snapshot": "P8NODE_BASELINE_GREEN_v6"},
                 "Ubuntu24-puppet8-Master": {"state": "running", "snapshot": "P8MASTER_BASELINE_GREEN"},
             },
             "ssh": [

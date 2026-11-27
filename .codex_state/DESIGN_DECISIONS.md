@@ -2878,3 +2878,36 @@ runner). The rename may start. Rulings:
 - **First contact, a lesson:** generate a clone's new host keys beside the old ones, read them over the verified
   session, and move them into place only in the next one (sshd reads its keys per connection). p8lab-cache, whose
   keys changed before they were read, is powered off for Salatiel to delete.
+
+## 2026-11-27 — HQ: rename accepted; changes before the re-verification; after it (Salatiel reviewed the approval report)
+Verbatim:
+"HQ: rename accepted (a2c25ee; rename_check and the full suite pass). Salatiel has taken P8NODE_BASELINE_GREEN_v6. Take
+the master snapshot now with snapshot_master.sh, since the rename changed the master's fixtures.
+Salatiel reviewed the approval report with HQ. Before the re-verification starts, make these changes, so every class
+is verified once:
+1. Stale open rows: about 27 rows give as their reason a capability the runner now has (more than one params fixture
+   per set, a second node kind, a desktop session). For each: a RedHat branch becomes a check on rhel9; a variant
+   production uses becomes a check; any other variant becomes an accepted gap. The validator rejects a row that names a
+   capability the runner has; keep the list of capabilities in one place.
+2. docker_container: registry login is used by 5 production node statements. Serve a private registry with
+   credentials from the peer, and check a login and a pull of a private image.
+3. openvpn_server: test the variant with compression off; production is heading there.
+4. user_base, ecryptfs branch: company laptops use encrypted homes. Build a fixture user with an ecryptfs home on a
+   desktop node and test the wrapped-passphrase branch with its ruled guard. Use the same fixture for hashman_base's
+   ecryptfs row if it fits.
+5. Key login: a clearly labelled throwaway test keypair may live in the suite's fixtures. Use it to prove that the
+   pushed key logs in, for user and user_base.
+6. Report accuracy: production counts follow the corrected rule (a conditional include counts only where it is turned
+   on; RedHat-only classes say so). Name the class behind "89 verified of 90" and why.
+7. Record Salatiel's decisions in the report (2026-11-27): the three findings accepted as known; all listed accepted
+   gaps accepted, except compression off (item 3); stand-ins accepted for openvpn_server, network_vpn, openvpn_domain,
+   openvpn_nm_connection, user_sysmon (to be tested on the monitoring server at cutover) and user_samba (to be tested
+   against the client's Zentyal server when that client is migrated). Add both notes to the cutover list.
+8. A change that does not pass within its correction rounds is recorded as an open row, and you move on.
+Then item 9, the re-verification, as ruled. After it:
+9. Reboot capability: a runner step that reboots the class's node and continues. Use it for network_dhcp,
+   network_static, openvpn_server, network_vpn, puppet_boot_run and firewall_secure (rules back after boot).
+10. letsencrypt_certificate: prepare the class side for a Let's Encrypt staging test (staging server through a
+    fixture; the DNS token read from outside git). Salatiel will supply a delegated test zone and a token; wait for
+    them.
+11. Regenerate the approval report and stop for Salatiel's Phase 1 approval."

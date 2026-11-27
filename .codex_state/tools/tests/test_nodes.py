@@ -100,7 +100,7 @@ def test_env_is_shell_safe_and_complete(tmp_path):
                         "NODE_SNAPSHOT", "NODE_OS_FAMILY", "NODE_PARAVIRT"}
     out = subprocess.run(["bash", "-c", proc.stdout + 'echo "$NODE_VM|$NODE_SNAPSHOT|$NODE_OS_FAMILY"'],
                          capture_output=True, text=True).stdout
-    assert out.strip() == "ubuntu24-puppet8-Node|P8NODE_BASELINE_GREEN_v5|Debian"
+    assert out.strip() == "ubuntu24-puppet8-Node|P8NODE_BASELINE_GREEN_v6|Debian"
 
 
 def test_the_lab_paravirt_provider_is_hyperv(tmp_path):

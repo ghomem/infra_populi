@@ -66,7 +66,7 @@ def test_a_revert_first_harness_holds_one_lock_for_its_revert_and_releases_it(la
     lab.world["ssh"].insert(0, {"match": r"agent -t", "outputs": [{"rc": 2, "stdout": ""}, {"rc": 0, "stdout": ""}]})
     proc = lab.run([str(TOOLS / "test_class.sh"), "--revert-first", "--fixture", "guarded_exec"])
     assert "another lab run holds" not in proc.stderr  # the nested revert did not deadlock on its parent's lock
-    assert ["VBoxManage", "snapshot", "ubuntu24-puppet8-Node", "restore", "P8NODE_BASELINE_GREEN_v5"] in lab.calls()
+    assert ["VBoxManage", "snapshot", "ubuntu24-puppet8-Node", "restore", "P8NODE_BASELINE_GREEN_v6"] in lab.calls()
     assert lock(lab, "holder").stdout == ""  # released at exit
 
 

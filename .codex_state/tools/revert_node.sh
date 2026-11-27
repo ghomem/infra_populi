@@ -10,7 +10,9 @@
 # The NODE comes from the lab node inventory (.codex_state/lab/nodes.yml via nodes.py, HQ 2026-11-16 item 2):
 #   revert_node.sh [--node KIND] [--node-state]    (else P8_NODE, else the inventory default `ubuntu`)
 # Its VM must be ubuntu24-puppet8-Node or a p8lab-* VM, never the master. Default node: ubuntu24-puppet8-Node,
-# snapshot P8NODE_BASELINE_GREEN_v5 (v4 + paravirt provider hyperv, 2026-11-24; v4 = v3 — GRUB_RECORDFAIL_TIMEOUT=2, apt timers off, NIC2 host-only vboxnet0,
+# snapshot P8NODE_BASELINE_GREEN_v6 (v5 + every package upgraded through the lab's package cache, openvox-agent held at
+# 8.24.2, kernel 6.8.0-151, apt Proxy-Auto-Detect to the cache; HQ review of the behaviour suite rulings 6-7,
+# 2026-11-27, taken by Salatiel), v5 (v4 + paravirt provider hyperv, 2026-11-24; v4 = v3 — GRUB_RECORDFAIL_TIMEOUT=2, apt timers off, NIC2 host-only vboxnet0,
 # enp0s8 192.168.56.20/24, hosts master -> 192.168.56.10 — plus NIC1 VirtualBox NAT with natdnshostresolver1 on).
 # After every restore: Debian refreshes apt lists; RedHat must show a valid subscription (HQ 2026-11-16 item 5), has
 # its content overrides cleared (they live on the subscription server and survive a restore) and refreshes the dnf

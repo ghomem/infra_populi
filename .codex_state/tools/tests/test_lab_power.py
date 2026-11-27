@@ -117,7 +117,7 @@ def test_up_starts_the_master_waits_for_health_and_reverts_the_node(lab):
     assert "LAB UP: master healthy" in proc.stdout
     assert ["startvm", MASTER] in vbox(lab, MASTER)
     assert ["snapshot", NODE] in vbox(lab, NODE)
-    assert lab.state()["vms"][NODE]["snapshot"] == "P8NODE_BASELINE_GREEN_v5"
+    assert lab.state()["vms"][NODE]["snapshot"] == "P8NODE_BASELINE_GREEN_v6"
     assert not (lab.root / "lab.lock").exists()
 
 
