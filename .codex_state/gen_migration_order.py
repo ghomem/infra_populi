@@ -479,7 +479,9 @@ def find_flagged_migrations(migrations: dict[str, MigrationCommit]) -> set[str]:
     for name, migration in migrations.items():
         manifest = f"manifests/{name}.pp"
         output = run_git(["log", "--format=%s", f"{migration.commit}..HEAD", "--", manifest])
-        if any(not subject.startswith("P8: record") for subject in output.splitlines()):
+        # records touch only comments and the tracker; the module rename (HQ review of the behaviour suite, ruling 8)
+        # is proved by rename_check.py and judged per class by the reviewer's rename mode, not by a re-migration
+        if any(not subject.startswith(("P8: record", "P2: rename module")) for subject in output.splitlines()):
             flagged.add(name)
     return flagged
 

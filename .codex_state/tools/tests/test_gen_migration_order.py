@@ -353,3 +353,11 @@ def test_local_changes_marker_lists_row_numbers(gen):
     assert (e.defect_fixed, e.local_change, e.mock_apply) == ("d", "#5", "m")
     assert gen.local_change_numbers("restarts on TLS file changes") is None
     assert gen.local_change_numbers("") is None
+
+
+def test_the_module_rename_and_records_do_not_flag_a_migration_but_a_code_change_does(gen, monkeypatch):
+    migrations = {"x": gen.MigrationCommit(commit="abc", date="2026-11-01")}
+    for subjects, flagged in [("P2: rename module to infra_populi\nP8: record x: header\n", set()),
+                              ("P2: rename module to infra_populi\nP8: fix x by hand\n", {"x"})]:
+        monkeypatch.setattr(gen, "run_git", lambda args, s=subjects: s)
+        assert gen.find_flagged_migrations(migrations) == flagged
