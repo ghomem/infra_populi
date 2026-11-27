@@ -2813,3 +2813,40 @@ runner). The rename may start. Rulings:
 - Item 3's documentation-list entry: before the module is promoted, one pass over spec/behaviour replaces internal
   terms ("HQ ruling", "the plan", batch references) with neutral ones.
 - Salatiel passed the rulings on without vetoing item 4.
+
+## 2026-11-27 — HQ review of the behaviour suite, items 1-5 done; the rename's tooling built and tested before it is applied
+- **One gate (ruling 1):** spec/behaviour/lib/behaviour/gate.py is the only apply gate; the public runner imports it and
+  test_class.sh calls it (`python3 -m behaviour.gate`). An `Error:` line in either run fails; run 2's changes are read
+  from the last-run report on every run (the harness fails closed when it cannot read it); an event is any change line
+  either gate counted before (their union: nothing loosens); only the plan's expected_run2_events may remain. 6ceb826.
+- **The engine through the public runner (ruling 2):** phase3.py run keeps what is the engine's (derived_from against
+  the pinned baseline, the plan, the lab lock, the result envelope) and hands the run to spec/behaviour/run in command
+  mode with the lab as its provider (behaviour_lab.py). The engine's own run code is gone. Validation refuses a set
+  whose apply.node is not the plan's kind (all 90 agree). 2bd0899.
+- **Mains only (ruling 4):** lab_power.sh up refuses on battery; the guard brings the lab down after 120 s on battery
+  in a row, whatever the charge. e99ca26. **Scratch (ruling 5):** a Stop hook blocks a turn's end once while scratch
+  files newer than the last commit exist. dcd1366. **Documentation list (ruling 3):** a pre-promotion section. 529cba7.
+- **The module's name has one source (rename piece A):** metadata.json, through module_name.py, for every engine tool
+  and the public suite. History keeps the old name, so searches of commit subjects accept either. Comparisons with the
+  pinned baseline read it under the current name (baseline.git_show_current: drift, DIFF A, pregate's verbatim and
+  identical checks); derived_from keeps the raw baseline, which it quotes. The lab's local directory is
+  `/opt/<the name, hyphenated>`, so it follows the name. 305685e.
+- **The rename's tooling (pieces B, C, E):** rename_module.py applies rules/rename_scope.txt (history, sources and the
+  sets' derived_from kept as written; one declared extra change, metadata.json's stale version to the baseline's
+  0.9.10, as the approved plan says); rename_check.py proves the result on its own (each changed line is its old line
+  renamed; the sets' YAML renamed outside derived_from, identical inside; excluded files byte-identical; no old form
+  left). A trial on a clone: 198 files, 851 lines, PASS, and FAIL for each tampering tried. convert_consumers.py
+  converts and checks a consumer tree at the cutover (synthetic fixtures only). f83ff7a.
+- **The node-visible inventory (piece D):** documentation_list.md, "The rename at the cutover": class names in
+  catalogs and reports; the OpenVPN server instance named after the module (the old one keeps running on the port);
+  nginx's conf.d file and MySQL's zz- file (the old file stays and is still read); the local directory and its data;
+  Hashman's generated declarations; the Hiera keys (a missed key silently falls back to the default); the node
+  definitions.
+- **The reviewer's rename mode (ruling 9):** a fifth reviewer form, `<class> --rename`, which ruling 9 calls for.
+  rename_review.py: rename_only, reverified (green and identical check for check to the last reviewed run), and a
+  re-run by the reviewer for every class whose node-visible names change plus 15% of the rest, drawn with the rename
+  commit as the seed (a trial: 24 + 10 classes).
+- **Item 6 (the package cache):** p8lab-cache cloned and apt-cacher-ng installed; its host keys were regenerated before
+  the new key was read over the verified session (sshd reads them per connection), so the key it now presents waits
+  for Salatiel's console comparison (first_contact's documented fallback) before anything trusts it. Lesson: generate
+  new host keys beside the old ones, read them, then move them into place, in one session.

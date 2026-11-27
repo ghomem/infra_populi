@@ -28,3 +28,21 @@ Add an item only with its HQ source and the evidence (the Phase 3 result that sh
 | # | where | before promotion | why | source |
 |---|---|---|---|---|
 | 1 | spec/behaviour (sets' prose, README.md, fixtures' comments) | One pass replaces internal terms ("HQ ruling …", "the plan", batch and round references, approval-report vocabulary) with neutral ones that an outside contributor can read without the engine. | The suite is written for an outside contributor (HQ review of design note F, ruling 8); the sets' prose kept the engine's references to rulings as words, accepted for now (escalations/behaviour-suite-built.md, item 2). | HQ review of the behaviour suite, ruling 3 |
+
+## The rename at the cutover: node-visible names (HQ review of the behaviour suite, 2026-11-27, ruling 8)
+What the module rename (`puppet_infrastructure` -> `infra_populi`, every form) changes on a machine, and what a node
+re-pointed to the new master is left with. From the rename's own replacement list over manifests, templates and
+files (rename_module.py; the trial of 2026-11-27: 324 replaced lines in the module, all listed there); the module
+writes no other name of its own onto a node. Production reads (which nodes have which) are Salatiel's.
+
+| # | name (old -> new) | where | what a re-pointed node keeps | at the cutover |
+|---|---|---|---|---|
+| 1 | class and define names `puppet_infrastructure::*` -> `infra_populi::*` (references `Puppet_infrastructure::*`) | every node's catalog, its class tags, `classes.txt`/`resources.txt`, reports, PuppetDB | nothing on the node (Puppet rewrites its state files each run) | report parsers, PuppetDB queries and monitoring that match class names change with it (rename plan hazard 5: the monitoring side is read by Salatiel) |
+| 2 | the OpenVPN server instance `openvpn::server { 'puppet_infrastructure': }` -> `'infra_populi'`: unit `openvpn-server@puppet_infrastructure` and every path the define names after its title | VPN gateways (openvpn_server, network_vpn) | the old instance stays enabled and running on the same port, so the new one cannot bind | stop and disable the old instance and remove its configuration before the gateway's first run under the new master (cutover row 9: the first gateway is a recreated test gateway) |
+| 3 | `/etc/nginx/conf.d/puppet_infrastructure.conf` -> `infra_populi.conf` (nginx_base) | nginx nodes | the old file stays, and nginx includes both | remove the old file at the first run under the new master |
+| 4 | `/etc/mysql/mysql.conf.d/zz-puppet-infrastructure.cnf` -> `zz-infra-populi.cnf` (mysql_server) | MySQL servers | the old file stays and sorts after the new one, so its values win | remove the old file at the first run under the new master |
+| 5 | the local directory `/opt/puppet-infrastructure` -> `/opt/infra-populi` (Hiera `filesystem::localdir`; the module itself names no path) | every node with filesystem_base and the classes using its tree (bin, etc, backup, pkgsdir, linux-policies) | if the site's Hiera moves it: the old tree with its data (backups) stays, and the new tree starts empty | move the data with the Hiera change (consumer conversion), or keep the site's value |
+| 6 | Hashman's generated user declarations `puppet_infrastructure::user {...}` (and `user_sudoer`, `user_desktop`, `user_desktop_sudoer`) -> `infra_populi::*` | the master's code tree (files Hashman wrote) | an old-name declaration no longer compiles once the old module is gone | convert them with the code (consumer conversion), then check that no old name is left |
+| 7 | the automatic parameter keys `puppet_infrastructure::<class>::<param>` -> `infra_populi::<class>::<param>` | the site's Hiera | a key left under the old name is silently ignored: the class falls back to its default | convert the keys (consumer conversion) and check that no old key is left |
+| 8 | node definitions naming the classes (puppet-nodes, meaningful_puppet) | the consumer repositories | an old-name declaration no longer compiles | convert (consumer conversion) |
+| 9 | the notify text `WARNING: puppet_infrastructure::ssl_base ...` (ssl_base) | reports | nothing | none (report text only) |

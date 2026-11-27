@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-148 entries; 6 marked superseded (in whole or part); newest first.
+149 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-27 — HQ review of the behaviour suite, items 1-5 done; the rename's tooling built and tested before it is applied
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-27 — HQ review of the behaviour suite: accepted, with rulings (the rename may start)
 - 1. Logged errors (your escalation): option A. A run that logs an error line fails, in gate v2 as in the public runner.
