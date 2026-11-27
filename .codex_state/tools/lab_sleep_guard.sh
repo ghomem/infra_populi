@@ -7,6 +7,7 @@
 #   lab_sleep_guard.sh ensure   start the guard unless one is alive (idempotent; the VM-starting tools call it)
 #   lab_sleep_guard.sh status   print `held <pid>` or `none`; exit 0 either way
 #   lab_sleep_guard.sh release  stop the guard now, if one runs (lab_power.sh down, after the last VM stopped)
+#   lab_sleep_guard.sh on-battery   exit 0 and print why when the laptop is on battery, 1 on mains (lab_power.sh up)
 #   lab_sleep_guard.sh hold     (internal) the guard itself, run under systemd-inhibit: polls the running VMs and exits
 #                               when no lab VM runs, which releases the inhibitor
 #
@@ -15,18 +16,21 @@
 # says none). P8_SLEEP_GUARD_PID overrides the pid file, P8_SLEEP_GUARD_POLL the poll interval in seconds, and a
 # non-empty P8_NO_SLEEP_GUARD makes `ensure` start nothing (the stub lab of the tests). The guard sleeps with the
 # system's sleep (`command -p`), never a stub found on PATH: a stub that returns at once would make it spin.
-# Battery guard (HQ 2026-11-20 travel addition 2): while it holds, a battery whose kernel status is `Discharging` below
-# P8_BATTERY_MIN percent (default 25; the lowest discharging battery counts) makes the guard start `lab_power.sh down`
-# once, detached: it aborts the run holding the lab (TERM), powers the VMs off, the master through ACPI. The trigger and
-# down's output go to P8_BATTERY_LOG (default ~/.cache/infra_populi/battery_down.log). P8_POWER_SUPPLY overrides
-# /sys/class/power_supply (tests). Plugged in but not charging (`Not charging`, `Full`) is not on battery.
+# Mains guard (HQ review of the behaviour suite, 2026-11-27, ruling 4, replacing the 25% battery threshold of HQ
+# 2026-11-20 travel addition 2): the lab runs on mains only. While the guard holds, a laptop on battery for
+# P8_MAINS_GRACE seconds in a row (default 120), whatever the charge, makes it start `lab_power.sh down` once,
+# detached: it aborts the run holding the lab (TERM), powers the VMs off, the master through ACPI. Mains back within the
+# grace resets it. On battery: a battery whose kernel status is `Discharging`, or mains-type supplies (Mains, USB) none
+# of which is online; plugged in but not charging (`Not charging`, `Full`) is mains. The trigger and down's output go to
+# P8_BATTERY_LOG (default ~/.cache/infra_populi/battery_down.log). P8_POWER_SUPPLY overrides /sys/class/power_supply
+# (tests).
 set -euo pipefail
 
 TOOLS_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 PIDFILE="${P8_SLEEP_GUARD_PID:-${HOME}/.cache/infra_populi/sleep_guard.pid}"
 POLL="${P8_SLEEP_GUARD_POLL:-30}"
 POWER_SUPPLY="${P8_POWER_SUPPLY:-/sys/class/power_supply}"
-BATTERY_MIN="${P8_BATTERY_MIN:-25}"
+MAINS_GRACE="${P8_MAINS_GRACE:-120}"
 BATTERY_LOG="${P8_BATTERY_LOG:-${HOME}/.cache/infra_populi/battery_down.log}"
 MASTER_VM="Ubuntu24-puppet8-Master"
 mkdir -p "$(dirname "$PIDFILE")"
@@ -44,16 +48,22 @@ lab_vms_running() {
   grep -qxF -f <(printf '%s\n' "$vms") <<<"$running"
 }
 
-# The lowest capacity among discharging batteries, or nothing when no battery discharges (on mains power).
-battery_low_level() {
-  local d level="" cap
+# On battery: print why and succeed; on mains: fail silently.
+on_battery() {
+  local d type mains=0 online=0 why=""
   for d in "$POWER_SUPPLY"/*; do
-    [[ "$(cat "$d/type" 2>/dev/null)" == Battery && "$(cat "$d/status" 2>/dev/null)" == Discharging ]] || continue
-    cap="$(cat "$d/capacity" 2>/dev/null || true)"
-    [[ "$cap" =~ ^[0-9]+$ ]] || continue
-    if [[ -z "$level" ]] || ((cap < level)); then level="$cap"; fi
+    type="$(cat "$d/type" 2>/dev/null || true)"
+    case "$type" in
+      Battery)
+        [[ "$(cat "$d/status" 2>/dev/null)" == Discharging ]] &&
+          why="${why:-battery $(basename "$d") discharging at $(cat "$d/capacity" 2>/dev/null || echo '?')%}" ;;
+      Mains|USB)
+        mains=1
+        [[ "$(cat "$d/online" 2>/dev/null)" == 1 ]] && online=1 ;;
+    esac
   done
-  [[ -n "$level" ]] && ((level < BATTERY_MIN)) && printf '%s\n' "$level"
+  if [[ -z "$why" ]] && ((mains && !online)); then why="no mains supply online"; fi
+  [[ -n "$why" ]] && printf '%s\n' "$why"
 }
 
 case "${1:-}" in
@@ -77,17 +87,26 @@ case "${1:-}" in
     echo "$$" >"$PIDFILE"
     trap 'rm -f "$PIDFILE"' EXIT
     downed=""
+    since=""
     while lab_vms_running; do
-      if [[ -z "$downed" ]] && level="$(battery_low_level)"; then
+      if why="$(on_battery)"; then
+        [[ -n "$since" ]] || since="$SECONDS"
+      else
+        since=""
+      fi
+      if [[ -z "$downed" && -n "$since" ]] && ((SECONDS - since >= MAINS_GRACE)); then
         downed=1
         mkdir -p "$(dirname "$BATTERY_LOG")"
-        echo "$(date -u +%FT%TZ) on battery at ${level}% (< ${BATTERY_MIN}%) with lab VMs running: lab_power.sh down" \
+        echo "$(date -u +%FT%TZ) on battery for $((SECONDS - since))s (grace ${MAINS_GRACE}s; ${why}) with lab VMs running: lab_power.sh down" \
           >>"$BATTERY_LOG"
         # Detached: down releases this guard (kills it) as its last step and must outlive it.
         setsid "${TOOLS_DIR}/lab_power.sh" down </dev/null >>"$BATTERY_LOG" 2>&1 8>&- 9>&- &
       fi
       command -p sleep "$POLL"
     done
+    ;;
+  on-battery)
+    on_battery
     ;;
   status)
     if pid="$(guard_pid)"; then echo "held $pid"; else echo "none"; fi
@@ -96,7 +115,7 @@ case "${1:-}" in
     if pid="$(guard_pid)"; then kill "$pid" 2>/dev/null || true; rm -f "$PIDFILE"; fi
     ;;
   *)
-    echo "usage: $0 ensure|status|release|hold" >&2
+    echo "usage: $0 ensure|status|release|on-battery|hold" >&2
     exit 2
     ;;
 esac

@@ -6,7 +6,7 @@
 #                       lock, power off every running lab VM but the master (nodes are reverted before use), shut the
 #                       master down through ACPI with a timeout (NEVER a hard power-off: on timeout it refuses and
 #                       leaves the master running), release the sleep guard, release the lock
-#   lab_power.sh up     take the lock, start the master, wait until it is healthy (SSH, puppetserver active, 8140
+#   lab_power.sh up     refuse on battery (mains only), take the lock, start the master, wait until it is healthy (SSH, puppetserver active, 8140
 #                       /status/v1/simple running, its clock within the limit), revert the node (which starts the sleep
 #                       guard), release the lock
 #
@@ -80,6 +80,10 @@ case "$MODE" in
     echo "LAB DOWN: master ${master}; ${stopped} other VM(s) powered off; sleep guard released"
     ;;
   up)
+    # HQ review of the behaviour suite (2026-11-27) ruling 4: the lab runs on mains only
+    if why="$("${TOOLS}/lab_sleep_guard.sh" on-battery)"; then
+      refuse "the laptop is on battery (${why}); the lab runs on mains only"
+    fi
     take_lock
     # HQ 2026-11-24: the master runs on the lab's paravirt provider too (nodes.yml); under the default one its clock
     # drifted beyond what timesyncd corrects. Its setting is Salatiel's (raw VBoxManage), so a mismatch only refuses.

@@ -83,38 +83,61 @@ def test_the_stub_lab_default_starts_no_guard(lab):
 
 
 
-# HQ 2026-11-20 travel addition 2: on battery below 25 % with lab VMs running, the guard brings the lab down.
-def power_supply(lab, status, capacity):
+# HQ review of the behaviour suite (2026-11-27) ruling 4: the lab runs on mains only. On battery for the grace period,
+# whatever the charge, the guard brings the lab down; mains back within the grace resets it.
+def power_supply(lab, status, capacity, mains_online=None, grace="1"):
     root = lab.root / "power_supply"
-    for name, files in {"ADP1": {"type": "Mains", "online": "0" if status == "Discharging" else "1"},
+    online = mains_online if mains_online is not None else status != "Discharging"
+    for name, files in {"ADP1": {"type": "Mains", "online": "1" if online else "0"},
                         "BAT0": {"type": "Battery", "status": status, "capacity": str(capacity)}}.items():
         (root / name).mkdir(parents=True, exist_ok=True)
         for key, value in files.items():
             (root / name / key).write_text(value + "\n")
     return {**ON, "P8_POWER_SUPPLY": str(root), "P8_BATTERY_LOG": str(lab.root / "battery.log"),
-            "P8_LAB_POWER_POLL": "0.1", "ACPI_TIMEOUT_SECONDS": "5"}
+            "P8_LAB_POWER_POLL": "0.1", "ACPI_TIMEOUT_SECONDS": "5", "P8_MAINS_GRACE": grace}
 
 
 def vm_states(lab):
     return {vm: lab.state()["vms"][vm]["state"] for vm in (MASTER, NODE)}
 
 
-def test_on_battery_below_the_minimum_the_guard_brings_the_lab_down(lab, stopped_at_the_end):
-    env = power_supply(lab, "Discharging", 20)
+@pytest.mark.parametrize("capacity", [20, 95])
+def test_on_battery_past_the_grace_the_guard_brings_the_lab_down_whatever_the_charge(lab, stopped_at_the_end,
+                                                                                       capacity):
+    env = power_supply(lab, "Discharging", capacity)
     assert lab.run([GUARD, "ensure"], env=env).returncode == 0
     assert wait_until(lambda: vm_states(lab) == {MASTER: "poweroff", NODE: "poweroff"}, seconds=15)
     assert wait_until(lambda: "LAB DOWN" in (lab.root / "battery.log").read_text(), seconds=10)
     log = (lab.root / "battery.log").read_text()
-    assert "on battery at 20% (< 25%) with lab VMs running: lab_power.sh down" in log
+    assert f"(grace 1s; battery BAT0 discharging at {capacity}%) with lab VMs running: lab_power.sh down" in log
     master_calls = [c[1:] for c in lab.calls("VBoxManage") if MASTER in c and c[1] == "controlvm"]
     assert master_calls == [["controlvm", MASTER, "acpipowerbutton"]]
     assert wait_until(lambda: status(lab) == "none")
 
 
-@pytest.mark.parametrize("state, capacity", [("Not charging", 10), ("Full", 10), ("Discharging", 25),
-                                             ("Discharging", 60)])
-def test_the_guard_leaves_the_lab_up_on_mains_or_above_the_minimum(lab, stopped_at_the_end, state, capacity):
-    env = power_supply(lab, state, capacity)
+def test_mains_supplies_all_offline_is_on_battery(lab, stopped_at_the_end):
+    env = power_supply(lab, "Unknown", 80, mains_online=False)
+    assert lab.run([GUARD, "on-battery"], env=env).stdout.strip() == "no mains supply online"
+    assert lab.run([GUARD, "ensure"], env=env).returncode == 0
+    assert wait_until(lambda: vm_states(lab) == {MASTER: "poweroff", NODE: "poweroff"}, seconds=15)
+
+
+def test_within_the_grace_the_lab_stays_up_and_mains_back_resets_it(lab, stopped_at_the_end):
+    env = power_supply(lab, "Discharging", 90, grace="3")
+    assert lab.run([GUARD, "ensure"], env=env).returncode == 0
+    time.sleep(1.5)
+    power_supply(lab, "Charging", 90, grace="3")  # mains back before the grace ran out
+    time.sleep(2.5)
+    power_supply(lab, "Discharging", 90, grace="3")  # lost again: the grace starts over
+    time.sleep(1.5)
+    assert vm_states(lab) == {MASTER: "running", NODE: "running"}
+    assert not (lab.root / "battery.log").exists()
+
+
+@pytest.mark.parametrize("state, capacity", [("Not charging", 10), ("Full", 10), ("Charging", 5)])
+def test_the_guard_leaves_the_lab_up_on_mains_whatever_the_charge(lab, stopped_at_the_end, state, capacity):
+    env = power_supply(lab, state, capacity, grace="0")
+    assert lab.run([GUARD, "on-battery"], env=env).returncode == 1
     assert lab.run([GUARD, "ensure"], env=env).returncode == 0
     time.sleep(1.0)  # five guard polls at 0.2 s
     assert vm_states(lab) == {MASTER: "running", NODE: "running"}

@@ -121,6 +121,23 @@ def test_up_starts_the_master_waits_for_health_and_reverts_the_node(lab):
     assert not (lab.root / "lab.lock").exists()
 
 
+def test_up_refuses_on_battery_and_starts_nothing(lab):
+    # HQ review of the behaviour suite (2026-11-27) ruling 4: the lab runs on mains only
+    supply = lab.root / "on_battery"
+    for name, files in {"ADP1": {"type": "Mains", "online": "0"},
+                        "BAT0": {"type": "Battery", "status": "Discharging", "capacity": "97"}}.items():
+        (supply / name).mkdir(parents=True)
+        for key, value in files.items():
+            (supply / name / key).write_text(value + "\n")
+    lab.world["vms"][MASTER]["state"] = "poweroff"
+    healthy_master(lab)
+    proc = power(lab, "up", P8_POWER_SUPPLY=str(supply))
+    assert proc.returncode == 1
+    assert "on battery (battery BAT0 discharging at 97%); the lab runs on mains only" in proc.stderr
+    assert vbox(lab, MASTER) == [] and vbox(lab, NODE) == []
+    assert not (lab.root / "lab.lock").exists()
+
+
 def test_up_refuses_a_master_off_the_lab_paravirt_provider(lab):
     # HQ 2026-11-24: the master's provider is Salatiel's to set; lab up only refuses, starting and reverting nothing
     lab.world["vms"][MASTER].update(state="poweroff", config={"effparavirtprovider": "kvm"})

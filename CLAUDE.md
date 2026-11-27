@@ -83,7 +83,8 @@ the tracked `.codex_state/rules/CODEX_RUNBOOK.md`.
   ssh/scp/sftp/rsync to a lab host.
 - Lab power (HQ 2026-11-20 travel additions): when a run stops to wait for Salatiel or HQ, `lab_power.sh down`;
   `lab_power.sh up` when work resumes. The lab is never left running unattended between runs. The sleep guard runs
-  `lab_power.sh down` itself when the laptop is on battery below 25% while lab VMs run (it aborts the current run).
+  `lab_power.sh down` itself when the laptop has been on battery for two minutes while lab VMs run, whatever the charge
+  (it aborts the current run); `lab_power.sh up` refuses on battery: the lab runs on mains only (HQ 2026-11-27 ruling 4).
 - Git: commit only when GREEN and idempotent; message `P8: migrate puppet_infrastructure::<class>`;
   never commit params, tooling scratch, or a class that is not GREEN. `.bak` files are never committed.
 
