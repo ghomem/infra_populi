@@ -713,13 +713,23 @@ RB
 # expected_run2_events may remain. $1/$2 = run 1's exit code and output, $3/$4 = run 2's (with report_changed's lines).
 # Prints the verdict as JSON.
 apply_gate() {
-  P8_GATE_RC1="$1" P8_GATE_OUT1="$2" P8_GATE_RC2="$3" P8_GATE_OUT2="$4" \
-    P8_GATE_EXPECTED="$(printf '%s\n' "${EXPECTED_RUN2_REFS[@]-}")" python3 -c '
-import json, os
-print(json.dumps({"runs": [{"rc": int(os.environ["P8_GATE_RC1"]), "out": os.environ["P8_GATE_OUT1"]},
-                           {"rc": int(os.environ["P8_GATE_RC2"]), "out": os.environ["P8_GATE_OUT2"]}],
-                  "expected": [r for r in os.environ["P8_GATE_EXPECTED"].splitlines() if r]}))' |
-    PYTHONPATH="${LOCAL_REPO}/spec/behaviour/lib" python3 -m behaviour.gate
+  # The runs' outputs go through files: an agent run's output can exceed what one environment variable or argument
+  # may hold (128 KiB on Linux; node_base's run 1 does), and the gate would then get no input at all.
+  local gate_dir rc=0
+  gate_dir="$(mktemp -d)"
+  printf '%s' "$2" >"${gate_dir}/out1"
+  printf '%s' "$4" >"${gate_dir}/out2"
+  printf '%s\n' "${EXPECTED_RUN2_REFS[@]-}" >"${gate_dir}/expected"
+  python3 - "$1" "$3" "$gate_dir" <<'PY' | PYTHONPATH="${LOCAL_REPO}/spec/behaviour/lib" python3 -m behaviour.gate || rc=$?
+import json, sys
+from pathlib import Path
+rc1, rc2, d = int(sys.argv[1]), int(sys.argv[2]), Path(sys.argv[3])
+print(json.dumps({"runs": [{"rc": rc1, "out": (d / "out1").read_text(errors="replace")},
+                           {"rc": rc2, "out": (d / "out2").read_text(errors="replace")}],
+                  "expected": [r for r in (d / "expected").read_text().splitlines() if r]}))
+PY
+  rm -r "$gate_dir"
+  return "$rc"
 }
 
 render_fixture_block() {

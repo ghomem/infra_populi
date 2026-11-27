@@ -57,6 +57,17 @@ def test_a_logged_error_in_either_run_is_red_even_with_exit_0(lab, which):
     assert "exceeded timeout" in proc.stderr and "GREEN" not in proc.stdout
 
 
+def test_a_run_larger_than_an_environment_variable_still_reaches_the_gate(lab):
+    # 2026-11-27: node_base's run 1 is larger than one environment variable may be (128 KiB); the gate then got no
+    # input and the harness failed closed. The outputs now go through files.
+    big = "".join(f"Notice: /Stage[main]/X/File[/etc/p8test/{i}]/ensure: created\n" for i in range(4000))
+    assert len(big) > 200_000
+    agent_runs(lab, {"rc": 2, "stdout": big + APPLIED}, {"rc": 0, "stdout": APPLIED})
+    proc = harness(lab)
+    assert proc.returncode == 0, proc.stderr[-500:]
+    assert "GREEN: run 2 exited 0 with no change events (gate v2)." in proc.stdout
+
+
 def test_the_harness_and_the_public_runner_share_one_gate():
     import re
     text = (TOOLS / "test_class.sh").read_text()
