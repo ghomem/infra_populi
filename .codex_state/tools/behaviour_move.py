@@ -59,7 +59,9 @@ LAB = {
     "CONTROLLER_ADDR": "192.168.56.1",
     "NODE_NETWORK": "192.168.56.0",
     "NODE_PRIMARY_ADDR": "10.0.2.15",
-    "LOCALDIR": f"/opt/{module_name.forms(module_name.MODULE)[2]}",  # the lab Hiera's filesystem::localdir
+    # the lab Hiera's filesystem::localdir AT THE MOVE (2026-11-26): the neutrality proof's frame, kept as it was when
+    # the module is renamed (the public runner's own value follows the module's name, behaviour_lab.LOCALDIR)
+    "LOCALDIR": "/opt/puppet-infrastructure",
 }
 # The engine's records and tools that the prose cites, each a placeholder of its own (rendered back exactly).
 SITE = {

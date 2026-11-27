@@ -4,6 +4,10 @@
   rename_module.py plan  <new name>    every tracked file it would change, with its count per form; changes nothing
   rename_module.py apply <new name>    rewrites those files and metadata.json's name; prints every replaced line as
                                        `<path>:<line>: <old>  =>  <new>`
+  rename_module.py snapshot            before the tag: writes .codex_state/checks/renamed.json, for every class whose
+                                       behaviour review holds (pass, finding, deferred), that review's time and the
+                                       set's sha256; after the rename the review still holds for the renamed set once
+                                       the class's rename review passed (phase3.reviewed_as_is)
 
 Every live reference in every form becomes the new name's: `puppet_infrastructure` -> `<new>`, `Puppet_infrastructure`
 -> `<New>`, `puppet-infrastructure` -> `<new, hyphenated>` (paths such as /opt/puppet-infrastructure, unit and instance
@@ -123,7 +127,27 @@ def changes(new: str) -> list[tuple[str, str, str]]:
     return out
 
 
+def snapshot() -> int:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import hashlib  # noqa: PLC0415
+    import json  # noqa: PLC0415
+    import phase3  # noqa: PLC0415
+    out = {}
+    for p in sorted((REPO / "spec" / "behaviour" / "checks").glob("*.yml")):
+        row = phase3.behaviour_state(p.stem)
+        review = phase3.latest_review(p.stem)
+        if row["state"] in ("pass", "finding", "deferred") and review:
+            out[p.stem] = {"state": row["state"], "review_at": review["at"],
+                           "set_sha256": hashlib.sha256(p.read_bytes()).hexdigest()}
+    path = phase3.RENAMED
+    path.write_text(json.dumps(out, indent=1, sort_keys=True) + "\n")
+    print(f"renamed.json: {len(out)} classes whose behaviour review holds before the rename")
+    return 0
+
+
 def main(argv: list[str]) -> int:
+    if argv == ["snapshot"]:
+        return snapshot()
     if len(argv) != 2 or argv[0] not in ("plan", "apply") or not NAME.fullmatch(argv[1]) or argv[1] == OLD:
         print(__doc__)
         return 2

@@ -194,7 +194,10 @@ def evidence(cls: str) -> dict:
             checks["rerun"] = "ok" if green(mine[-1]) and not diff else "fail"
             notes.append(f"re-run {mine[-1]['at']}-reviewer: " + ("agrees with the author's run" if not diff
                                                                   else "; ".join(diff)))
+    set_now = show(sha, f"spec/behaviour/checks/{cls}.yml")
     return {"class": cls, "rename_commit": sha, "checks": checks, "notes": notes,
+            "set_sha256": __import__("hashlib").sha256(set_now.encode() if isinstance(set_now, str)
+                                                       else set_now or b"").hexdigest(),
             "selected": "node-visible" if cls in visible else "random" if cls in sample else None,
             "node_visible": node_visible(cls)}
 

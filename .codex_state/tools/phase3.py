@@ -174,6 +174,10 @@ LOCAL_SSH = re.compile(r"(^|[\s;&|(])ssh\s")  # ssh as a command, not a path lik
 LOCAL_TARGET = re.compile(r"(\S+@)?(127\.0\.0\.1|localhost|::1)\b")
 
 
+RENAMED = Path(os.environ.get("P8_RENAMED") or REPO / ".codex_state" / "checks" / "renamed.json")
+RENAME_REVIEWS = Path(os.environ.get("P8_RENAME_REVIEWS") or REPO / ".codex_state" / "reviews" / "rename")
+
+
 def phase3_dir() -> Path:
     """Where the engine keeps its records of the sets: results/ and reviews/ (and, before the move, the sets)."""
     return Path(os.environ.get("P8_PHASE3_DIR") or REPO / ".codex_state" / "checks")
@@ -524,8 +528,22 @@ def reviewed_as_is(cls: str, record: dict | None, raw: bytes, repo: Path | None 
     else:
         mine, path = content_sha(raw), set_path(cls)
     if record.get("content_sha256"):
-        return record["content_sha256"] == mine
-    return _content_shas_by_full_sha(str(path), str(repo or REPO)).get(record.get("check_file_sha256")) == mine
+        if record["content_sha256"] == mine:
+            return True
+    elif _content_shas_by_full_sha(str(path), str(repo or REPO)).get(record.get("check_file_sha256")) == mine:
+        return True
+    return renamed_as_reviewed(cls, record, sha)
+
+
+def renamed_as_reviewed(cls: str, record: dict, sha: str) -> bool:
+    """HQ review of the behaviour suite, ruling 9: the review that held before the module rename (checks/renamed.json)
+    still judges the set as the rename left it, once the class's rename review passed for exactly this set."""
+    held = (json.loads(RENAMED.read_text()) if RENAMED.is_file() else {}).get(cls)
+    if not held or record.get("at") != held["review_at"]:
+        return False
+    reviews = sorted((RENAME_REVIEWS / cls).glob("*.json"))
+    last = json.loads(reviews[-1].read_text()) if reviews else {}
+    return last.get("verdict") == "PASS" and last.get("set_sha256") == sha
 
 
 def approved_unchanged(cls: str, raw: bytes) -> bool:
