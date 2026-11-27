@@ -44,3 +44,21 @@ Not applied by any tool. Moves out of drafts when the rename's stop report is wr
 5. Item 9: re-verification on the public runner, every class on its node kinds (harness + behaviour set); reviewer
    confirms rename-only diff + green for every class (a rename mode), and re-runs every class whose node-visible names
    changed plus a random 15% of the rest. Item 10: failures escalated per class, pass continues; stop for HQ.
+
+## State, 2026-11-27 evening
+- Items 1-5 done; rename pieces A-E done; the reviewer's rename mode (2db2a71); review transfer (0129290, snapshot
+  516c28f: 86 pass, 3 finding, 1 deferred hold).
+- Tag pre-rename = 8c351e9 (pushed). Two tooling-only commits followed (scope + proofs: f21b9b6). The rename:
+  a2c25ee "P2: rename module to infra_populi" (176 files; rename_check f21b9b6 PASS over 696 files; full suite
+  passed); order regenerated aa1c187 (the generator counts the rename like a record commit). The operator params
+  converted (backup ~/.config/infra_populi/params.pre-rename). A stash holds the first application (not needed).
+- Lab switched: master common.yaml filesystem::localdir -> /opt/infra-populi (backup common.yaml.pre-rename-20261127),
+  master_fixtures hiera keys rewritten (CHANGED: HQ's rule asks for a new master snapshot), module dir infra_populi
+  only (old removed by the harness deploy); filesystem_lib64 GREEN under the new name.
+- Item 6: p8lab-cache2 (.27) up and wired (f62b378); verification: packages_base, node_base, mariadb_server through
+  the cache: 0 differences from their reviewed runs. p8lab-cache (keys never verified) is off, for Salatiel to delete.
+- Found on the way: the harness's gate input exceeded the 128 KiB environment limit on large runs (fixed 6b93b55).
+- Item 7: node upgraded through the cache (openvox-agent held at 8.24.2); next: clean shutdown, then Salatiel takes
+  the snapshot P8NODE_BASELINE_GREEN_v6 (a command these settings deny), then nodes.yml + node_inventory --refresh.
+- Item 9 after that: phase3.py run for every class (author), then reviewer `<class> --rename` for every class.
+

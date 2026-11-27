@@ -2850,3 +2850,31 @@ runner). The rename may start. Rulings:
   the new key was read over the verified session (sshd reads them per connection), so the key it now presents waits
   for Salatiel's console comparison (first_contact's documented fallback) before anything trusts it. Lesson: generate
   new host keys beside the old ones, read them, then move them into place, in one session.
+
+## 2026-11-27 — The rename applied; the package cache holds; the fresh node baseline waits for its snapshot
+- **The rename (ruling 8):** tag `pre-rename` = 8c351e9 (pushed; not phase1-complete). Running the suite on the
+  renamed tree first found what the scope had missed (the move proofs' tests, the consumer conversion) and two tools
+  that had to read their records under either name (the fixtures' proof, the record tests' clone); fixed in two
+  tooling-only commits after the tag (f21b9b6), no class file or set changed. The tag was not moved: the rename commit
+  is proved against its parent instead. `P2: rename module to infra_populi` (a2c25ee): 176 files, rename_check PASS
+  over 696, full suite passed before and in the hook; order regenerated (aa1c187), the generator counting the rename
+  like a record commit (it is proved by rename_check and judged per class by the reviewer's rename mode).
+- **The lab under the new name:** the master's Hiera local directory /opt/infra-populi (backup of common.yaml kept on
+  the master), the fixture keys rewritten by master_fixtures.sh (it reported CHANGED: HQ's rule asks for a new master
+  snapshot), the module directory infra_populi only; the operator's params converted (backup params.pre-rename).
+  filesystem_lib64 GREEN under the new name.
+- **The package cache (ruling 6) holds:** p8lab-cache2, nodes.yml `services`. packages_base (4 variants), node_base (3)
+  and mariadb_server through it: identical to their reviewed runs check for check. A revert with a warm cache took
+  24.6 s instead of 45-53 s.
+- **A defect found by that check:** the harness handed the runs' outputs to the shared gate in environment variables;
+  node_base's run 1 exceeds the 128 KiB a variable may hold, so the gate got no input and the harness failed closed.
+  Outputs now go through files (6b93b55, test with a 200 kB run). No recorded GREEN was affected (the gate was new).
+- **The fresh node baseline (ruling 7, option A):** the node reverted to v5, every package upgraded through the cache
+  (openvox-agent held at 8.24.2, the master's agent version; kernel 6.8.0-151), the cache setting in place, timers and
+  agent still disabled, GRUB_RECORDFAIL_TIMEOUT=2 kept, rebooted once on the new kernel, cleaned, powered off. Taking
+  the snapshot P8NODE_BASELINE_GREEN_v6 is a command these settings deny: handed to Salatiel. Until it is taken
+  nothing may revert the node. Then nodes.yml names v6, the clean-node inventory is refreshed, and the re-verification
+  (ruling 9) starts.
+- **First contact, a lesson:** generate a clone's new host keys beside the old ones, read them over the verified
+  session, and move them into place only in the next one (sshd reads its keys per connection). p8lab-cache, whose
+  keys changed before they were read, is powered off for Salatiel to delete.
