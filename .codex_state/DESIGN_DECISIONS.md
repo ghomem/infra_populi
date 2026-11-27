@@ -2742,3 +2742,38 @@ Verbatim:
 - **Caught on the way:** a lab name or address written escaped (`\Apuppet8node`, `192\.168\.56\.20` inside a probe's
   grep pattern) first escaped the converter; the leftover check and suite_check.py found both, and the converter now
   handles escaped forms in every executed string.
+
+## 2026-11-27 — Behaviour suite, steps 5-8: fixtures, the public runner, the engine's switch sample, local apply measured (HQ review of design note F)
+- **Fixtures (rulings 2, 6):** the lab's params directory stays the harness's source of record; the suite's copies in
+  spec/behaviour/fixtures are derived from it (fixtures_move.py) and proven neutral like the sets: each template,
+  rendered with the lab's values of every run that uses it, equals the local file. A lab value becomes a role
+  placeholder only where the role names the same machine in every such run. Files that are not plainly fake stay
+  operator-supplied (`--params`). Node fixtures move with their Puppet code neutral; their comments (the engine's
+  history) stay with the engine's copy.
+- **The public runner (rulings 3, 7, 8):** spec/behaviour/run. Fresh nodes from a provider command, or given once and
+  marked; agent, local (`puppet apply`) or command apply modes; JSON and JUnit. Its gate is gate v2's plus two rules:
+  a run that logged an `Error:` line fails (Puppet exits 0 when an exec's check times out: escalation
+  harness-gate-run2-errors.md), and changed resources are read from Puppet's last-run report, so a change no log line
+  shows still counts (seen: run 2 exiting 2 with no change line under local apply).
+- **The manifest is the harness's:** manifest_compare.py builds both, offline, for every run; 146 of 146 equal. It found
+  three converter faults first (a base define's title, the plan's per-OS-family bases, params lookup precedence), and the
+  measurement found a fourth (the expected run-2 events of the whole catalog, as the harness allows them).
+- **The engine's switch (ruling 7):** behaviour_lab.py gives the public runner the lab: a fresh node is a reverted one
+  under the lab lock; the apply hook runs the gate-v2 harness only after checking it renders exactly the runner's
+  manifest, so the engine's gate of record is unchanged. Sample: 7 sets, 9 runs, identical to the engine check for check.
+- **Local apply (ruling 3):** measured on every set (behaviour_sample.py measure). A set local apply cannot run declares
+  `apply.requires: [server]` with `requires_why` (the validator requires the reason). Its engine view is unchanged, and a
+  moved set's identity is also its engine view (phase3.view_sha, recorded in moved.json), so such a declaration keeps the
+  set's reviews. Result: 89 sets measured, 65 identical to the engine check for check; 23 declare a server, each one
+  differing under local apply for the reason it gives (16 take files from puppet:///extra_files, 7 depend on the agent:
+  its cached catalog, its state files, its daemon, $server_facts, or another machine using the node as its server);
+  filesystem_yum is unmeasured (its full dnf update exceeds the check's 600 s on the slow uplink). A set is declared
+  only on a measured difference with its cause read from the run, never on a guess.
+- **Lab uplink:** from about 09:30 the laptop's uplink fell to 9.5 kB/s (later 100-180 kB/s). Reverts refresh apt and
+  dnf, so at the low point every run failed in its revert; at 100-180 kB/s they work. A degraded uplink is an
+  environment failure: the run is repeated, never judged.
+- **Master outage (2026-11-26/27):** the sleep guard powered the master off cleanly at 19:47 (battery at the power
+  cut); a later boot was cut when the laptop's battery died, which left an ext4 error the initramfs fsck would not
+  repair. Salatiel ran the manual fsck; no restore. The damaged directory was /tmp/snap-private-tmp; five orphans in
+  /lost+found; packages, CA and modules verified. The laptop's /tmp went with the reboot: anything a run needs after a
+  reboot belongs in the repo or the state directory, not in /tmp.
