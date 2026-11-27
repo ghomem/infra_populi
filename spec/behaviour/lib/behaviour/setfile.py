@@ -6,6 +6,7 @@ them. `validate` checks the set alone, without a node. Its rules are in README.m
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -14,6 +15,8 @@ import yaml
 from . import probes, render
 
 SUITE = Path(__file__).resolve().parents[2]
+# The module the suite belongs to: its name is metadata.json's (the suite lives in the module's tree).
+MODULE = json.loads((SUITE.parents[1] / "metadata.json").read_text(encoding="utf-8"))["name"]
 SLUG = re.compile(r"[a-z0-9][a-z0-9-]{1,62}")
 CLASS = re.compile(r"[a-z][a-z0-9_]*")
 # The values a run supplies (README.md, "Placeholders"); NODE:<kind> and ADDR:<kind> name a machine of another kind.

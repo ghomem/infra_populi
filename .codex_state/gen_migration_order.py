@@ -15,6 +15,8 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
+sys.path.insert(0, str(SCRIPT_DIR / "tools"))
+import module_name  # noqa: E402  (the module's name, metadata.json)
 PLAN_PATH = SCRIPT_DIR / "migration_plan.md"
 ORDER_PATH = SCRIPT_DIR / "migration_order.md"
 BLOCKED_PATH = SCRIPT_DIR / "blocked.txt"
@@ -25,7 +27,7 @@ REMIGRATION_PATH = SCRIPT_DIR / "rules" / "remigration_order.txt"
 VERIFIED = "verified (gate v2)"
 PENDING_RECONCILIATION = "done (gate v1, reconciliation pending)"
 BASELINE_ENV = SCRIPT_DIR / "baseline.env"
-PREFIX = "puppet_infrastructure::"
+PREFIX = module_name.PREFIX
 REQUIRED_COLUMNS = {
     "class",
     "complexity",
@@ -453,7 +455,8 @@ def run_git(args: list[str]) -> str:
 
 def git_migrations() -> dict[str, MigrationCommit]:
     output = run_git(["log", "--format=%H%x09%cI%x09%s"])
-    pattern = re.compile(rf"\bP8: migrate\s+{re.escape(PREFIX)}([A-Za-z0-9_]+)\b")
+    # history keeps the old name: a migrate commit under either name counts
+    pattern = re.compile(rf"\bP8: migrate\s+(?:{module_name.either()})::([A-Za-z0-9_]+)\b")
     migrations: dict[str, MigrationCommit] = {}
 
     for line in output.splitlines():

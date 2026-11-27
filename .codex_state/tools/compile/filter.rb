@@ -21,8 +21,10 @@ unless catalog.is_a?(Hash) && catalog['resources'].is_a?(Array)
 end
 skip = %w[Class Stage Node]
 res = catalog['resources']
-pi = Array(catalog['classes']).select { |c| c.start_with?('puppet_infrastructure::') }
-puts "CATALOG: #{res.size} resources; puppet_infrastructure classes: #{pi.join(' ')}"
+# the module's name, written beside this script by test_class.sh (metadata.json is not on the master)
+mod = (File.read(File.join(__dir__, 'module')).strip rescue 'puppet_infrastructure')
+pi = Array(catalog['classes']).select { |c| c.start_with?("#{mod}::") }
+puts "CATALOG: #{res.size} resources; #{mod} classes: #{pi.join(' ')}"
 empty = 0
 ARGV.each do |target|
   tag = target.downcase

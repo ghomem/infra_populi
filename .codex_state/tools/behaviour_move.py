@@ -40,6 +40,7 @@ REPO = TOOLS.parents[1]
 STATE = REPO / ".codex_state"
 SUITE = REPO / "spec" / "behaviour"
 sys.path.insert(0, str(TOOLS))
+import module_name  # noqa: E402
 sys.path.insert(1, str(STATE))
 sys.path.insert(2, str(SUITE / "lib"))
 from behaviour import render as rn  # noqa: E402
@@ -48,7 +49,7 @@ OLD_DIR = STATE / "checks"
 NEW_DIR = SUITE / "checks"
 NOTES_DIR = STATE / "checks" / "notes"
 MOVED = STATE / "checks" / "moved.json"
-MODULE = "puppet_infrastructure"
+MODULE = module_name.MODULE
 
 # The lab's fixed values (nodes.yml holds the nodes).
 LAB = {
@@ -58,7 +59,7 @@ LAB = {
     "CONTROLLER_ADDR": "192.168.56.1",
     "NODE_NETWORK": "192.168.56.0",
     "NODE_PRIMARY_ADDR": "10.0.2.15",
-    "LOCALDIR": "/opt/puppet-infrastructure",
+    "LOCALDIR": f"/opt/{module_name.forms(module_name.MODULE)[2]}",  # the lab Hiera's filesystem::localdir
 }
 # The engine's records and tools that the prose cites, each a placeholder of its own (rendered back exactly).
 SITE = {
@@ -280,7 +281,7 @@ def expand(cls: str, rows: dict, family: str) -> list[dict]:
             return [b.removeprefix(f"{MODULE}::") for b in row.bases_for(family)]
         found = []
         for b in getattr(row, "required_base", None) or []:
-            m = re.fullmatch(r"(?:\[(Debian|RedHat)\])?(?:puppet_infrastructure::)?(\w+)", str(b).strip())
+            m = re.fullmatch(rf"(?:\[(Debian|RedHat)\])?(?:(?:{module_name.either()})::)?(\w+)", str(b).strip())
             if m and (not m.group(1) or m.group(1) == family):
                 found.append(m.group(2))
         return found

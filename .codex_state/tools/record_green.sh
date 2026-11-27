@@ -34,7 +34,8 @@ PUPPETFILE_CMD="${P8_PUPPETFILE_CMD:-python3 $TOOLS/export_puppetfile.py --verif
 refuse() { echo "RECORD REFUSED: $*" >&2; exit 1; }
 
 [[ $# -ge 1 ]] || { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
-CLS="${1#puppet_infrastructure::}"
+MODULE="$(python3 "$TOOLS/module_name.py")" || { echo "RECORD REFUSED: no module name" >&2; exit 1; }
+CLS="${1#"${MODULE}::"}"
 shift
 [[ "$CLS" =~ ^[a-z][a-z0-9_]*$ ]] || refuse "invalid class name '${CLS}'"
 DEFECT="" MOCK="" FIX="" SHRINK=0 PUSH=1
@@ -111,7 +112,7 @@ for path in "${allowed[@]}"; do
   if [[ -n "$(git status --porcelain -- "$path")" ]]; then git add -- "$path"; fi
 done
 git diff --cached --quiet && refuse "nothing to commit for ${CLS}"
-SUBJECT="P8: migrate puppet_infrastructure::${CLS}"
+SUBJECT="P8: migrate ${MODULE}::${CLS}"
 [[ -z "$FIX" ]] || SUBJECT="P8: record ${CLS}: ${FIX}"
 git commit -q -m "$SUBJECT"
 echo "RECORDED $(git rev-parse --short HEAD) ${SUBJECT}"

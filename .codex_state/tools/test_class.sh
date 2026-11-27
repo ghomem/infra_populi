@@ -35,7 +35,11 @@ NODE_KIND=""
 NODE_CERTNAME=""
 NODE_OS_FAMILY=""
 
-MASTER_MODULE_DIR="/etc/puppetlabs/code/environments/production/modules/puppet_infrastructure"
+# The module's name, single source (metadata.json, module_name.py); OLD_MODULE is the name the baseline carries.
+MODULE="$(python3 "${LOCAL_REPO}/.codex_state/tools/module_name.py")" || { echo "ERROR: no module name" >&2; exit 1; }
+PREFIX="${MODULE}::"
+OLD_MODULE="puppet_infrastructure"
+MASTER_MODULE_DIR="/etc/puppetlabs/code/environments/production/modules/${MODULE}"
 MASTER_NODES_DIR="/etc/puppetlabs/code/environments/production/manifests/nodes"
 MASTER_NODE_FILE=""
 
@@ -67,14 +71,14 @@ json_params_path_for_class() {
   # kind's own fixture (params/<kind>/<class>.json); else the shared one (params/<class>.json).
   local cls="$1" target
   for target in "${PARAMS_TARGETS[@]}"; do
-    target="puppet_infrastructure::${target#puppet_infrastructure::}"  # the command line may give the short name
+    target="${PREFIX}${target#"$PREFIX"}"  # the command line may give the short name
     if [[ "$target" != "$cls" && -f "${PARAMS_DIR}/for/${target}/${cls}.json" ]]; then
       echo "${PARAMS_DIR}/for/${target}/${cls}.json"
       return
     fi
   done
   # HQ 2026-11-23 ruling 1a: a Phase 3 variant run's own params fixture for the target class (P8_PARAMS_VARIANT).
-  local first="puppet_infrastructure::${PARAMS_TARGETS[0]#puppet_infrastructure::}"
+  local first="${PREFIX}${PARAMS_TARGETS[0]#"$PREFIX"}"
   if [[ -n "${P8_PARAMS_VARIANT:-}" && "$cls" == "$first" ]]; then
     [[ -f "${PARAMS_DIR}/variants/${P8_PARAMS_VARIANT}/${cls}.json" ]] ||
       die "params variant ${P8_PARAMS_VARIANT}: ${PARAMS_DIR}/variants/${P8_PARAMS_VARIANT}/${cls}.json is missing"
@@ -94,11 +98,11 @@ select_node() {
   if [[ -n "$NODE_KIND_REQUEST" ]]; then
     env="$(python3 "$NODES_TOOL" env --node "$NODE_KIND_REQUEST")" || die "No usable lab node '${NODE_KIND_REQUEST}' (nodes.yml)."
   else
-    if [[ $# -ge 1 && "$1" != fixture:* ]]; then first="${1#puppet_infrastructure::}"; fi
+    if [[ $# -ge 1 && "$1" != fixture:* ]]; then first="${1#"$PREFIX"}"; fi
     env="$(python3 "$NODES_TOOL" env ${first:+--class "$first"})" || die "No usable lab node for ${first:-the default} (nodes.yml)."
     for cls in "$@"; do
       [[ "$cls" != fixture:* ]] || continue
-      kind="$(python3 "$NODES_TOOL" get --class "${cls#puppet_infrastructure::}" kind)" || die "No usable lab node for ${cls}."
+      kind="$(python3 "$NODES_TOOL" get --class "${cls#"$PREFIX"}" kind)" || die "No usable lab node for ${cls}."
       [[ "$kind" == "$(sed -n 's/^NODE_KIND=//p' <<<"$env")" ]] ||
         die "The targets are tested on different lab nodes (${cls} on ${kind}); run them separately."
     done
@@ -111,7 +115,7 @@ select_node() {
 
 classify_target() {
   local requested="$1"
-  local short="${requested#puppet_infrastructure::}"
+  local short="${requested#"$PREFIX"}"
   local raw parsed rc line
   local -a records=()
 
@@ -244,7 +248,7 @@ guard_owner_validated_targets() {
     classify_target "$requested"
     owner="$CLASSIFY_OWNER_VALIDATED"
     if [[ -n "$owner" ]]; then
-      die "Target 'puppet_infrastructure::${CLASSIFY_SHORT}' is owner_validated by 'puppet_infrastructure::${owner}'; it must be validated via that owner's migration."
+      die "Target '${PREFIX}${CLASSIFY_SHORT}' is owner_validated by '${PREFIX}${owner}'; it must be validated via that owner's migration."
     fi
   done
 }
@@ -263,8 +267,8 @@ expand_one_class() {
   if [[ "$kind" == "external" ]]; then
     cls="$requested"
   else
-    short="${requested#puppet_infrastructure::}"
-    cls="puppet_infrastructure::${short}"
+    short="${requested#"$PREFIX"}"
+    cls="${PREFIX}${short}"
   fi
   state_key="${kind}:${cls}"
   state="${EXPANSION_STATE[$state_key]-}"
@@ -410,11 +414,18 @@ render_node_fixtures() {
   done
 }
 
+# The remote command prefix that removes the module's directory under its old name once the module is renamed (empty
+# while the names agree).
+old_module_cleanup() {
+  [[ "$MODULE" != "$OLD_MODULE" ]] || return 0
+  printf 'sudo -n rm -rf "%s/%s" && ' "$(dirname "$MASTER_MODULE_DIR")" "$OLD_MODULE"
+}
+
 deploy_repo_to_master() {
   [[ -d "$LOCAL_REPO" ]] || die "Local repo not found: $LOCAL_REPO"
   echo "==> Deploying local repo to master module dir (root-owned via staging)"
 
-  local stage_dir="/var/tmp/infra_populi_stage/puppet_infrastructure"
+  local stage_dir="/var/tmp/infra_populi_stage/${MODULE}"
   # 1) rsync to a writable staging location
   rsync -a --delete \
     --no-owner --no-group --no-perms --no-acls --no-xattrs \
@@ -424,7 +435,8 @@ deploy_repo_to_master() {
     "${MASTER_RSYNC_HOST}:${stage_dir}/"
 
   # 2) atomically replace the module dir as root
-  ssh -T "$MASTER_HOST" "sudo -n rm -rf \"$MASTER_MODULE_DIR\" && sudo -n mkdir -p \"$(dirname "$MASTER_MODULE_DIR")\" && sudo -n mv \"$stage_dir\" \"$MASTER_MODULE_DIR\" && sudo -n chown -R root:root \"$MASTER_MODULE_DIR\"" 
+  # after the rename, the module's old directory goes with the deploy (one module under one name in the environment)
+  ssh -T "$MASTER_HOST" "$(old_module_cleanup)sudo -n rm -rf \"$MASTER_MODULE_DIR\" && sudo -n mkdir -p \"$(dirname "$MASTER_MODULE_DIR")\" && sudo -n mv \"$stage_dir\" \"$MASTER_MODULE_DIR\" && sudo -n chown -R root:root \"$MASTER_MODULE_DIR\"" 
 
 }
 
@@ -432,7 +444,7 @@ deploy_repo_to_master() {
 # node) serves the module under test from its own code tree, as a production master does: the same tree the master
 # gets, deployed after the revert. The node's own environment holds nothing else of this repository.
 deploy_repo_to_node_server() {
-  local caps stage_dir="/var/tmp/infra_populi_stage/puppet_infrastructure"
+  local caps stage_dir="/var/tmp/infra_populi_stage/${MODULE}"
   caps="$(python3 "$NODES_TOOL" get --node "$NODE_KIND" capabilities)" || die "Could not read the capabilities of node ${NODE_KIND}"
   [[ " ${caps} " == *" puppet-server "* ]] || return 0
   echo "==> Deploying local repo to the node's own Puppet server code tree (${NODE_HOST}:${MASTER_MODULE_DIR})"
@@ -443,7 +455,7 @@ deploy_repo_to_node_server() {
     -e "ssh -T" \
     "${LOCAL_REPO}/" \
     "${NODE_HOST}:${stage_dir}/" || die "Could not copy the module to ${NODE_HOST}"
-  ssh -T "$NODE_HOST" "sudo -n rm -rf \"$MASTER_MODULE_DIR\" && sudo -n mkdir -p \"$(dirname "$MASTER_MODULE_DIR")\" && sudo -n mv \"$stage_dir\" \"$MASTER_MODULE_DIR\" && sudo -n chown -R root:root \"$MASTER_MODULE_DIR\"" ||
+  ssh -T "$NODE_HOST" "$(old_module_cleanup)sudo -n rm -rf \"$MASTER_MODULE_DIR\" && sudo -n mkdir -p \"$(dirname "$MASTER_MODULE_DIR")\" && sudo -n mv \"$stage_dir\" \"$MASTER_MODULE_DIR\" && sudo -n chown -R root:root \"$MASTER_MODULE_DIR\"" ||
     die "Could not install the module in ${NODE_HOST}'s code tree"
 }
 
@@ -535,7 +547,7 @@ coverage_check() {
   # resources (defined-type instances are listed but not counted).
   local -a targets=()
   local cls report rc
-  for cls in "$@"; do targets+=("puppet_infrastructure::${cls#puppet_infrastructure::}"); done
+  for cls in "$@"; do targets+=("${PREFIX}${cls#"$PREFIX"}"); done
   report="$(timeout 60 ssh "$NODE_HOST" "sudo -n python3 - ${NODE_CERTNAME} ${targets[*]}" <<'PY'
 import json, sys
 catalog = "/opt/puppetlabs/puppet/cache/client_data/catalog/%s.json" % sys.argv[1]
@@ -571,7 +583,7 @@ compile_on_master() {
   local variant="$1"; shift
   local -a targets=()
   local cls work facts_json rc
-  for cls in "$@"; do targets+=("puppet_infrastructure::${cls#puppet_infrastructure::}"); done
+  for cls in "$@"; do targets+=("${PREFIX}${cls#"$PREFIX"}"); done
   work="$(mktemp -d)"
   mkdir "$work/facts"
   facts_json="$(timeout 60 ssh "$NODE_HOST" "sudo -n /opt/puppetlabs/bin/puppet facts show --render-as json" 2>/dev/null)" ||
@@ -579,6 +591,7 @@ compile_on_master() {
   python3 "$COMPILE_DIR/facts.py" "$variant" "$NODE_CERTNAME" <<<"$facts_json" >"$work/facts/${NODE_CERTNAME}.yaml" ||
     { rm -r "$work"; die "Could not build ${variant} facts"; }
   cp "$COMPILE_DIR/run.sh" "$COMPILE_DIR/filter.rb" "$work/"
+  printf '%s\n' "$MODULE" >"$work/module"
   # HQ 2026-11-18 ruling A1: a rendered file's sha256 (never its content) for a before/after comparison.
   [[ ${#COMPILE_DIGEST_PATHS[@]} -eq 0 ]] || printf '%s\n' "${COMPILE_DIGEST_PATHS[@]}" >"$work/digest_paths"
   rc=0
@@ -655,16 +668,16 @@ collect_expected_run2() {
   EXPECTED_RUN2_REFS=()
   EXPECTED_RUN2_SOURCES=()
   [[ -z "${FIXTURE_NAME:-}" ]] || return 0
-  for target in "$@"; do targets+=("puppet_infrastructure::${target#puppet_infrastructure::}"); done
+  for target in "$@"; do targets+=("${PREFIX}${target#"$PREFIX"}"); done
   expand_target_classes "$@"
   for cls in "${EXPANDED_CLASSES[@]}"; do
-    [[ "$cls" == puppet_infrastructure::* ]] || continue
+    [[ "$cls" == "$PREFIX"* ]] || continue
     classify_target "$cls"
     is_target=0
     for target in "${targets[@]}"; do [[ "$target" == "$cls" ]] && is_target=1; done
     for ref in "${CLASSIFY_EXPECTED_RUN2[@]}"; do
       EXPECTED_RUN2_REFS+=("$ref")
-      if [[ $is_target -eq 1 ]]; then EXPECTED_RUN2_SOURCES+=("own:${ref}"); else EXPECTED_RUN2_SOURCES+=("inherited:${ref}@${cls#puppet_infrastructure::}"); fi
+      if [[ $is_target -eq 1 ]]; then EXPECTED_RUN2_SOURCES+=("own:${ref}"); else EXPECTED_RUN2_SOURCES+=("inherited:${ref}@${cls#"$PREFIX"}"); fi
     done
   done
 }

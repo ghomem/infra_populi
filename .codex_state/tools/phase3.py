@@ -66,7 +66,7 @@ placeholders with the lab's values, behaviour_move.lab_view, and runs exactly th
     - name: <slug>                #   (revert, clean phase, apply, applied phase) recorded under `variants` in the
       why: <why this run exists (>= 20 characters)>  #   one result file; the result's outcome combines them all
       node: <another active node kind>               # the run's lab node (default: the plan's node), and/or
-      params: <slug>              # the run's params fixture: params/variants/<slug>/puppet_infrastructure::<class>.json
+      params: <slug>              # the run's params fixture: params/variants/<slug>/<module>::<class>.json
       no_resources: true          # optional, with params: the variant's class declares nothing (the harness's coverage
                                   #   gate then reports the empty target instead of failing)
       # A check with `variant: <name>` runs only in that run (and needs >= 1 negative control there); a check without
@@ -155,6 +155,7 @@ TOOLS = Path(__file__).resolve().parent
 REPO = TOOLS.parents[1]
 sys.path.insert(0, str(TOOLS))
 import baseline  # noqa: E402
+import module_name  # noqa: E402
 
 PARAMS_DIR = Path(os.environ.get("P8_PARAMS_DIR") or Path.home() / ".config" / "infra_populi" / "params")
 SLUG = re.compile(r"[a-z0-9][a-z0-9-]{1,62}")
@@ -205,7 +206,7 @@ def now() -> str:
 
 
 def short(name: str) -> str:
-    m = re.fullmatch(r"(?:puppet_infrastructure::)?([a-z][a-z0-9_]*)", name)
+    m = re.fullmatch(rf"(?:(?:{module_name.either()})::)?([a-z][a-z0-9_]*)", name)
     if not m:
         raise SystemExit(f"ERROR: invalid class name {name!r}")
     return m.group(1)
@@ -617,7 +618,7 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
         return problems, data, raw
     if data.get("fixture") not in ("params", "defaults"):
         problems.append("fixture must be `params` or `defaults`")
-    params = PARAMS_DIR / f"puppet_infrastructure::{cls}.json"
+    params = PARAMS_DIR / f"{module_name.PREFIX}{cls}.json"
     if data.get("fixture") == "params" and not params.is_file():
         problems.append(f"fixture: params but {params} is missing")
     if data.get("fixture") == "defaults" and params.is_file():
@@ -727,7 +728,7 @@ VARIANT_KEYS = {"name", "why", "node", "params", "no_resources"}
 
 
 def variant_params(cls: str, name: str) -> Path:
-    return PARAMS_DIR / "variants" / name / f"puppet_infrastructure::{cls}.json"
+    return PARAMS_DIR / "variants" / name / f"{module_name.PREFIX}{cls}.json"
 
 
 def variant_problems(cls: str, data: dict, checks: list) -> list[str]:
@@ -1049,7 +1050,7 @@ def cmd_spot(cls: str, n: int, seed: int | None) -> int:
     seed = seed if seed is not None else random.SystemRandom().randrange(1 << 30)
     picked = random.Random(seed).sample(refs, min(n, len(refs)))
     print(f"SPOT {cls}: {len(picked)} of {len(refs)} references (seed {seed}), baseline {label(base)}")
-    params = PARAMS_DIR / f"puppet_infrastructure::{cls}.json"
+    params = PARAMS_DIR / f"{module_name.PREFIX}{cls}.json"
     print(f"fixture: {data['fixture']}" + (f" ({params})" if data["fixture"] == "params" else ""))
     for c, r in picked:
         _, text = resolve_ref(r, base)

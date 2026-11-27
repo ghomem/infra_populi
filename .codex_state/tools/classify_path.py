@@ -29,6 +29,7 @@ TOOLS = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS))
 sys.path.insert(1, str(TOOLS.parent))
 import baseline  # noqa: E402
+import module_name  # noqa: E402
 import pregate  # noqa: E402
 
 HARNESS = TOOLS / "test_class.sh"
@@ -64,7 +65,7 @@ def missing_define_params(cls: str) -> str | None:
     parameter has a default; compile-only renders it without one, so it passed here and the harness refused it."""
     import gen_migration_order as gen  # noqa: PLC0415
     row = gen.parse_plan().get(cls)
-    path = params_dir() / f"puppet_infrastructure::{cls}.json"
+    path = params_dir() / f"{module_name.PREFIX}{cls}.json"
     if row is not None and row.resource_type == "define" and not path.is_file():
         return f"hazard 10: define params fixture missing ({path}); the harness cannot render the define without it"
     return None
@@ -107,10 +108,10 @@ def decide(cls: str) -> tuple[int, str, list[str]]:
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 1 or not re.fullmatch(r"(puppet_infrastructure::)?[a-z][a-z0-9_]*", argv[0]):
+    if len(argv) != 1 or not re.fullmatch(rf"(?:(?:{module_name.either()})::)?[a-z][a-z0-9_]*", argv[0]):
         print(__doc__.strip(), file=sys.stderr)
         return 2
-    cls = argv[0].removeprefix("puppet_infrastructure::")
+    cls = module_name.short(argv[0])
     import time  # noqa: PLC0415
     started = time.monotonic()
     code, path, reasons = decide(cls)

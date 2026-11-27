@@ -29,6 +29,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(1, str(Path(__file__).resolve().parents[1]))
 import baseline  # noqa: E402
+import module_name  # noqa: E402
 
 REPO = baseline.REPO
 MASTER_HOST = "puppet8master"
@@ -86,7 +87,7 @@ if [ "$inventory" = 1 ]; then
     sudo -n cat "$h" 2>/dev/null | sed -n 's/^\([A-Za-z0-9_:]*\):[[:space:]]*\(.*\)$/@@HIERA \1 \2/p'
   done
   M=/etc/puppetlabs/code/environments/production/modules
-  for m in "$M"/*/; do m="$(basename "$m")"; [ "$m" = puppet_infrastructure ] || echo "@@MODULE $m"; done
+  for m in "$M"/*/; do m="$(basename "$m")"; [ "$m" = __MODULE__ ] || echo "@@MODULE $m"; done
   for t in "$M"/*/lib/puppet/type/*.rb; do
     [ -f "$t" ] && echo "@@TYPE $(basename "$t" .rb) $(basename "${t%/lib/puppet/type/*}") env"
   done
@@ -94,7 +95,7 @@ if [ "$inventory" = 1 ]; then
     [ -f "$t" ] && echo "@@TYPE $(basename "$t" .rb) $(basename "${t%/lib/puppet/type/*}") vendored"
   done
   for m in "$M"/*/; do
-    mod="$(basename "$m")"; [ "$mod" = puppet_infrastructure ] && continue
+    mod="$(basename "$m")"; [ "$mod" = __MODULE__ ] && continue
     (cd "$m" && find manifests -name '*.pp' 2>/dev/null) | while read -r p; do
       p="${p#manifests/}"; p="${p%.pp}"
       if [ "$p" = init ]; then echo "@@DEFINE $mod"; else echo "@@DEFINE $mod::${p//\//::}"; fi
@@ -232,7 +233,7 @@ def module_base_findings(manifest: str, inventory: dict, required_external: tupl
     for t in resource_types(manifest):
         if "::" in t:
             mod = t.split("::")[0]
-            if mod == "puppet_infrastructure" or mod not in inventory["modules"]:
+            if mod == module_name.MODULE or mod not in inventory["modules"]:
                 continue
         else:
             owner = inventory.get("type_modules", {}).get(t)
@@ -377,11 +378,11 @@ def base_closure(cls: str) -> list[str]:
     return seen
 
 
-INTERNAL = "puppet_infrastructure::"
+INTERNAL = module_name.PREFIX
 
 
 def declared_internal(cls: str, repo: Path = REPO) -> list[str]:
-    """`cls` and every puppet_infrastructure class or define it declares, transitively (HQ 2026-11-17 ruling 4: the
+    """`cls` and every class or define of this module it declares, transitively (HQ 2026-11-17 ruling 4: the
     user_desktop miss, batch 6 — its included user_kde_lock_screen_common needed bindir, which the probe never read)."""
     seen, todo = [], [cls]
     while todo:
@@ -520,12 +521,12 @@ def scan_hazards(manifest: str, inventory: dict | None, report: Report,
     if inventory is not None:
         known = CORE_TYPES | inventory["types"] | inventory["defines"]
         for t in sorted(resource_types(manifest)):
-            if t.startswith("puppet_infrastructure::") or t in known:
+            if t.startswith(module_name.PREFIX) or t in known:
                 continue
             report.add("FINDING", "hazard1-types", f"resource type `{t}` is not core and no installed module provides it")
         for c in sorted(declared_classes(manifest)):
             top = c.split("::")[0]
-            if top != "puppet_infrastructure" and c not in inventory["defines"]:
+            if top != module_name.MODULE and c not in inventory["defines"]:
                 report.add("FINDING", "hazard1-types", f"class `{c}` is declared but module `{top}` does not provide it on the master")
     # 2. node->master connectivity
     if re.search(r"chain\s*=>\s*['\"]OUTPUT|firewallchain\s*\{\s*['\"]OUTPUT", code):
@@ -613,7 +614,7 @@ def build_tar(local: dict[str, bytes], base: dict[str, bytes]) -> bytes:
                 info = tarfile.TarInfo(f"{side}/{rel}")
                 info.size = len(data)
                 tar.addfile(info, io.BytesIO(data))
-        script = REMOTE.encode()
+        script = REMOTE.replace("__MODULE__", module_name.MODULE).encode()
         info = tarfile.TarInfo("remote.sh")
         info.size = len(script)
         tar.addfile(info, io.BytesIO(script))
@@ -765,7 +766,7 @@ def pregate_class(cls: str) -> Report:
     local = {p: (REPO / p).read_bytes() for p in files if p.endswith(".pp") or p.startswith("templates/")}
     base_files = {}
     for p in local:
-        data = baseline.git_show(base.upstream, base.commit, p)
+        data = baseline.git_show_current(base.upstream, base.commit, p)
         if data is not None and p.endswith(".pp") and data != local[p]:
             base_files[p] = data  # identical baseline copies are not re-linted: inherited == local
     manifest = manifest_path.read_text(encoding="utf-8")
@@ -779,7 +780,7 @@ def pregate_class(cls: str) -> Report:
         for problem in incomplete_batch(local, versions, results):
             report.add("ERROR", "master", f"incomplete master batch: {problem}")
     identical = frozenset(p for p in local if p.endswith(".pp") and p not in base_files
-                          and baseline.git_show(base.upstream, base.commit, p) == local[p])
+                          and baseline.git_show_current(base.upstream, base.commit, p) == local[p])
     apply_remote(results, report, report_inherited=True, identical_to_baseline=identical)
     # hazard 14 is satisfied by a base class the required_base closure declares (nginx_base -> class nginx) too
     scan_hazards(manifest, inventory, report, tuple(sorted(closure_providers(cls))), routed_node(cls),
@@ -812,7 +813,7 @@ def pregate_staged() -> Report:
             continue
         staged = subprocess.run(["git", "-C", str(REPO), "show", f":{name}"], capture_output=True, check=True).stdout
         fb = baseline.for_path(name)  # per-class baseline exceptions (874f854 for the mysql classes)
-        upstream = baseline.git_show(fb.upstream, fb.commit, name)
+        upstream = baseline.git_show_current(fb.upstream, fb.commit, name)
         if staged == upstream:
             report.add("PASS", "baseline-verbatim", f"{name} identical to {fb.name}; not linted")
             continue
@@ -850,8 +851,8 @@ def main(argv: list[str]) -> int:
     argv = [a for a in argv if a != "--json"]
     if argv == ["--staged"]:
         report = pregate_staged()
-    elif len(argv) == 1 and re.fullmatch(r"(puppet_infrastructure::)?[a-z][a-z0-9_]*", argv[0]):
-        report = pregate_class(argv[0].removeprefix("puppet_infrastructure::"))
+    elif len(argv) == 1 and re.fullmatch(rf"(?:(?:{module_name.either()})::)?[a-z][a-z0-9_]*", argv[0]):
+        report = pregate_class(module_name.short(argv[0]))
     else:
         print(__doc__.strip(), file=sys.stderr)
         return 2

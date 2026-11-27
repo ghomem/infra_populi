@@ -35,12 +35,13 @@ SUITE = REPO / "spec" / "behaviour"
 sys.path.insert(0, str(TOOLS))
 
 import manifest_compare as mc  # noqa: E402
+import module_name  # noqa: E402
 import nodes  # noqa: E402
 
 HARNESS = mc.HARNESS
 MASTER = "puppet8master"
 SERVER = "puppet8master.example.com@192.168.56.10"
-LOCALDIR = "/opt/puppet-infrastructure"
+LOCALDIR = f"/opt/{module_name.forms(module_name.MODULE)[2]}"  # the lab Hiera's filesystem::localdir
 def params_dir() -> Path:
     return Path(os.environ.get("P8_PARAMS_DIR") or Path.home() / ".config" / "infra_populi" / "params")
 MODULES_ON_NODE = "/var/tmp/behaviour-modules"
@@ -115,9 +116,9 @@ def copy_modules(dest: str) -> None:
     files = subprocess.run(["git", "-C", str(REPO), "ls-files", "manifests", "templates", "files", "lib", "functions",
                             "types", "metadata.json"], capture_output=True, text=True, check=True).stdout.split()
     steps.append((["tar", "-C", str(REPO), "-cf", "-", *files],
-                  ["ssh", "-o", "BatchMode=yes", dest, f"sudo -n bash -c 'rm -rf {MODULES_ON_NODE}/puppet_infrastructure; "
-                   f"install -d {MODULES_ON_NODE}/puppet_infrastructure; "
-                   f"tar -C {MODULES_ON_NODE}/puppet_infrastructure -xf -'"]))
+                  ["ssh", "-o", "BatchMode=yes", dest, f"sudo -n bash -c 'rm -rf {MODULES_ON_NODE}/{module_name.MODULE}; "
+                   f"install -d {MODULES_ON_NODE}/{module_name.MODULE}; "
+                   f"tar -C {MODULES_ON_NODE}/{module_name.MODULE} -xf -'"]))
     for src, dst in steps:
         a = subprocess.Popen(src, stdout=subprocess.PIPE, env=env())
         b = subprocess.run(dst, stdin=a.stdout, capture_output=True, text=True, env=env())
@@ -188,7 +189,7 @@ def harness(argv: list[str]) -> int:
         e["P8_PARAMS_VARIANT"] = params
         if v.get("no_resources"):
             e["P8_VARIANT_NO_RESOURCES"] = "1"
-    p = subprocess.run([harness_tool(), *(["--node", kind] if variant else []), f"puppet_infrastructure::{cls}"],
+    p = subprocess.run([harness_tool(), *(["--node", kind] if variant else []), f"{module_name.PREFIX}{cls}"],
                        capture_output=True, text=True, env=e)
     print(p.stdout[-4000:])
     print("\n".join(l for l in p.stdout.splitlines() if l.startswith(("GREEN:", "NODE_FRESH:"))))

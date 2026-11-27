@@ -6,7 +6,8 @@
                                   the production node statements that set <param> on <class>, or `undeterminable`
 
 A parameter counts for a production node statement when the node file sets it on the class, or a `meaningful_puppet`
-class the node declares sets it, or a puppet_infrastructure composite the node (or such a class) declares forwards a
+class the node declares sets it, or a composite of this module (either name: the fleet keeps the old one until the
+cutover) the node (or such a class) declares forwards a
 parameter the node sets to it (`component_param => $composite_param`). Only parameter NAMES are read; values are
 never recorded. Production = every group of the fleet except deleted/ and tests/; the passwd/ layer is never read
 (off-limits), so a class whose production declarations live there (the diagnosis's list) is `undeterminable`, not 0.
@@ -24,14 +25,16 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import module_name  # noqa: E402
 OUT = REPO / ".codex_state" / "diagnosis" / "fleet_variant_usage.md"
 SKIP_GROUPS = {"deleted", "tests", "passwd"}
 # Declared mostly in the passwd/ layer, which the engine never reads (diagnosis 2026-10-26, fleet_class_usage.md).
 PASSWD_LAYER = {"user_base", "user", "user_sudoer", "users_sudoers", "user_lock", "user_samba", "user_sysmon",
                 "sftp_only", "backup", "backup_rsnapshot", "backup_rsnapshot_pre", "sync", "letsencrypt_certificate"}
-DECL = re.compile(r"(?:\bclass\s*\{\s*['\"](?:::)?(puppet_infrastructure|meaningful_puppet)::(\w+)['\"]\s*:"
-                  r"|(?<![\w:])(?:::)?(puppet_infrastructure)::(\w+)\s*\{\s*['\"\$])")
-INCLUDE = re.compile(r"\b(?:include|require|contain)\s+['\"]?(?:::)?(puppet_infrastructure|meaningful_puppet)::(\w+)")
+DECL = re.compile(rf"(?:\bclass\s*\{{\s*['\"](?:::)?({module_name.either()}|meaningful_puppet)::(\w+)['\"]\s*:"
+                  rf"|(?<![\w:])(?:::)?({module_name.either()})::(\w+)\s*\{{\s*['\"\$])")
+INCLUDE = re.compile(rf"\b(?:include|require|contain)\s+['\"]?(?:::)?({module_name.either()}|meaningful_puppet)::(\w+)")
 PARAM = re.compile(r"(?:^|[,;{\s])(\w+)\s*=>")
 
 
@@ -120,7 +123,7 @@ def forwards() -> dict[str, dict[str, set[tuple[str, str]]]]:
     for path in sorted((REPO / "manifests").glob("*.pp")):
         text = strip_comments(path.read_text(errors="replace"))
         for m in DECL.finditer(text):
-            if (m.group(1) or m.group(3)) != "puppet_infrastructure":
+            if (m.group(1) or m.group(3)) not in (module_name.OLD, module_name.MODULE):
                 continue
             comp = m.group(2) or m.group(4)
             body = body_at(text, m.start())
@@ -160,7 +163,7 @@ def usage() -> dict[str, dict[str, set[str]]]:
         layers = [params] + [company[c][0] for ns, c in declared if ns == "meaningful_puppet" and c in company]
         for layer in layers:
             for (ns, cls), names in layer.items():
-                if ns == "puppet_infrastructure":
+                if ns in (module_name.OLD, module_name.MODULE):
                     for name in names:
                         add(cls, name, node)
     return used

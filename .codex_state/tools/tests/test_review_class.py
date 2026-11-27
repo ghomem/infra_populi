@@ -299,7 +299,7 @@ def test_every_verdict_shows_revert_first_and_node_fresh():
         "node reverted first", "node NOT reverted first")
     assert rc.fresh_node_facts(stale) == {"revert_first": False, "node_fresh": False}
     src = (TOOLS / "review_class.py").read_text()
-    assert '"--revert-first", f"puppet_infrastructure::{cls}"' in src  # the reviewer always reverts first
+    assert '"--revert-first", f"{module_name.PREFIX}{cls}"' in src  # the reviewer always reverts first
     assert "GREEN, but not on a freshly reverted node" in src
 
 

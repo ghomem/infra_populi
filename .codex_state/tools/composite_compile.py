@@ -22,6 +22,7 @@ sys.dont_write_bytecode = True
 TOOLS = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS.parent))
 sys.path.insert(0, str(TOOLS))  # nodes.py (the default node for composites)
+import module_name  # noqa: E402
 HARNESS = TOOLS / "test_class.sh"
 COMPOSITES = TOOLS / "compile" / "composites.txt"
 
@@ -54,7 +55,7 @@ def compile_only(classes: list[str], facts: str = "debian", defaults: bool = Fal
     # default node, never each class's own (a composite may mix classes tested on different nodes, 2026-11-17).
     import nodes  # noqa: PLC0415
     argv = [str(HARNESS), "--node", nodes.load()["default"], "--compile-only", "--facts", facts] + \
-        (["--defaults"] if defaults else ["--no-expand"]) + [f"puppet_infrastructure::{c}" for c in classes]
+        (["--defaults"] if defaults else ["--no-expand"]) + [f"{module_name.PREFIX}{c}" for c in classes]
     env = dict(os.environ, SKIP_DEPLOY="0" if deploy else "1")
     proc = subprocess.run(argv, capture_output=True, text=True, env=env, stdin=subprocess.DEVNULL, timeout=600)
     return proc.returncode, proc.stdout + proc.stderr

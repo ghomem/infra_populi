@@ -31,6 +31,8 @@ import yaml
 sys.dont_write_bytecode = True
 TOOLS = Path(__file__).resolve().parent
 REPO = TOOLS.parents[1]
+sys.path.insert(0, str(TOOLS))
+import module_name  # noqa: E402
 FIELDS = ("status", "vm", "alias", "certname", "hostname", "hostonly_ip", "baseline_snapshot", "os_family", "os",
           "capabilities")
 CAPABILITIES = {"server", "desktop", "kde", "gnome", "rhel-subscription", "second-node", "ad-dc", "puppet-server"}
@@ -112,7 +114,7 @@ def problems(data: dict) -> list[str]:
 def plan_node(cls: str) -> str:
     sys.path.insert(0, str(TOOLS.parent))
     import gen_migration_order as gen  # noqa: PLC0415
-    row = gen.parse_plan().get(cls.removeprefix("puppet_infrastructure::"))
+    row = gen.parse_plan().get(module_name.short(cls))
     return (getattr(row, "node", "") or "") if row is not None else ""
 
 

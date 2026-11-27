@@ -36,6 +36,9 @@ readonly AGENT_GEM="/opt/puppetlabs/puppet/bin/gem"
 
 readonly EXTRA_DIR="/etc/puppetlabs/code/p8test_extra_files"
 readonly ENV_DIR="/etc/puppetlabs/code/environments/production"
+# the module's name (metadata.json): the Hiera keys of its automatic parameter lookup follow it
+MODULE="$(python3 "$(dirname "$(readlink -f "$0")")/module_name.py")"
+readonly MODULE
 
 usage() { echo "Usage: $0 [lint|extra_files|pki|hiera|clock|all]" >&2; exit 2; }
 
@@ -121,7 +124,7 @@ REMOTE
 }
 
 section_hiera() {
-  ssh -T "$MASTER_HOST" "sudo -n bash -s -- '$ENV_DIR'" <<'REMOTE'
+  ssh -T "$MASTER_HOST" "sudo -n bash -s -- '$ENV_DIR' '$MODULE'" <<'REMOTE'
 set -euo pipefail
 env="$1" data="$1/data/p8test_fixtures.yaml" hiera="$1/hiera.yaml" changed=""
 want="$(cat <<'YAML'
@@ -150,13 +153,14 @@ p8lab-puppetserver::postfix_smtp_node::relaypass: 'p8test-not-a-secret'
 # network_vpn declares openvpn_server without local/local_interface, so they come from here in the lab: the stand-in
 # DHCP primary interface of node fixture p8test_dhcp_primary (production: the primary interface and its address).
 # (The batch-7 db:: keys were removed 2026-11-17: common.yaml, first in the hierarchy, defines them; never effective.)
-puppet_infrastructure::openvpn_server::local_interface: 'p8test0'
-puppet_infrastructure::openvpn_server::local: '203.0.113.50'
+__MODULE__::openvpn_server::local_interface: 'p8test0'
+__MODULE__::openvpn_server::local: '203.0.113.50'
 # ssh_secure appends <certname>::ssh::othergroups to AllowGroups (issue 20); the lab node gets one fixture group so the
 # concatenation is exercised (HQ batch-12 backfill, review 20261119T020808Z).
 puppet8node::ssh::othergroups: 'p8testgroup'
 YAML
 )"
+want="${want//__MODULE__/$2}"  # the module's name (automatic parameter lookup keys follow it)
 if [[ "$(cat "$data" 2>/dev/null)" != "$want" ]]; then
   printf '%s\n' "$want" | install -o root -g puppet -m 0640 /dev/stdin "$data"; changed="data"
 fi

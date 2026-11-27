@@ -28,7 +28,7 @@ cd "$REPO"
 RUNBOOK=".codex_state/rules/CODEX_RUNBOOK.md"
 HAZARDS=".codex_state/rules/hazards.md"
 for f in "$RUNBOOK" "$HAZARDS"; do [[ -f "$f" ]] || { echo "Missing $f"; exit 2; }; done
-SHORT="${CLASS#puppet_infrastructure::}"
+SHORT="$(python3 .codex_state/tools/module_name.py short "$CLASS")"
 # The CLASS's baseline: the pin, or its per-class exception (.codex_state/rules/baseline_exceptions.txt).
 BASELINE_LABEL="$(python3 .codex_state/tools/baseline.py for "$SHORT")"
 BASELINE="${BASELINE_LABEL%% *}"

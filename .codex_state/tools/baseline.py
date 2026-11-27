@@ -25,15 +25,17 @@ from dataclasses import dataclass
 from pathlib import Path
 
 sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import module_name  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 ENV_FILE = REPO / ".codex_state" / "baseline.env"
 EXCEPTIONS_FILE = REPO / ".codex_state" / "rules" / "baseline_exceptions.txt"
 
-# template('puppet_infrastructure/x'), epp(...), file(...), puppet:///modules/puppet_infrastructure/x
+# template('<module>/x'), epp(...), file(...), puppet:///modules/<module>/x — the baseline's name or the current one
 REF_RE = re.compile(
-    r"""(?P<fn>template|epp|file)\(\s*['"]puppet_infrastructure/(?P<fpath>[^'"]+)['"]"""
-    r"""|puppet:///modules/puppet_infrastructure/(?P<spath>[^'"\s,)\]]+)"""
+    rf"""(?P<fn>template|epp|file)\(\s*['"](?:{module_name.either()})/(?P<fpath>[^'"]+)['"]"""
+    rf"""|puppet:///modules/(?:{module_name.either()})/(?P<spath>[^'"\s,)\]]+)"""
 )
 
 
@@ -99,6 +101,12 @@ def git_show(upstream: Path, ref: str, path: str) -> bytes | None:
     return proc.stdout if proc.returncode == 0 else None
 
 
+def git_show_current(upstream: Path, ref: str, path: str) -> bytes | None:
+    """The baseline file as it reads under the module's current name (module_name.to_current): what local content is
+    compared with. git_show stays raw for what quotes the baseline itself (derived_from text and sha256)."""
+    return module_name.to_current(git_show(upstream, ref, path))
+
+
 def git_tree_paths(upstream: Path, ref: str, prefix: str) -> list[str]:
     proc = subprocess.run(["git", "-C", str(upstream), "ls-tree", "-r", "--name-only", ref, "--", prefix],
                           capture_output=True, text=True, stdin=subprocess.DEVNULL, check=True)
@@ -154,7 +162,7 @@ def local_drift(cls: str, base: Baseline, repo: Path = REPO) -> list[str]:
     drift = []
     for path in class_paths(cls, base.commit, base.upstream):
         local = repo / path
-        if git_show(base.upstream, base.commit, path) != (local.read_bytes() if local.is_file() else None):
+        if git_show_current(base.upstream, base.commit, path) != (local.read_bytes() if local.is_file() else None):
             drift.append(path)
     return drift
 

@@ -32,7 +32,7 @@ from . import probes, render, results, setfile
 from .gate import ERROR, EVENT, agent_result, gate, verdict  # noqa: F401  (one gate for every caller)
 
 SUITE = setfile.SUITE
-MODULE = "puppet_infrastructure"
+MODULE = setfile.MODULE
 HELPERS = (SUITE / "probe_helpers.sh").read_text(encoding="utf-8") if (SUITE / "probe_helpers.sh").is_file() else ""
 PROBE_TIMEOUT = 120
 AGENT_TIMEOUT = 960

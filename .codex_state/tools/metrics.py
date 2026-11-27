@@ -43,6 +43,8 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 TOOLS = Path(__file__).resolve().parent
 REPO = TOOLS.parents[1]
+sys.path.insert(0, str(TOOLS))
+import module_name  # noqa: E402
 CODEX_SESSIONS = Path.home() / ".codex" / "sessions"
 OUTCOMES = ("GREEN", "PASS", "FAIL", "BLOCKED", "FAILED", "ESCALATED")
 ADVISOR = os.environ.get("P8_ADVISOR", "claude-opus-5-5")
@@ -61,7 +63,7 @@ def now() -> str:
 
 
 def short(name: str) -> str:
-    name = name.removeprefix("puppet_infrastructure::")
+    name = module_name.short(name)
     if not re.fullmatch(r"[a-z][a-z0-9_]*", name):
         raise SystemExit(f"ERROR: invalid class name {name!r}")
     return name

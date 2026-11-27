@@ -18,7 +18,8 @@ Applying the class:
   --hiera-config <path>         local mode: Hiera configuration on the node
   --server <name>@<addr>        the Puppet server the node uses ({{SERVER_NAME}}, {{SERVER_ADDR}})
 Values and output:
-  --localdir <path>             the site's local directory on the node ({{LOCALDIR}}; default /opt/puppet-infrastructure)
+  --localdir <path>             the site's local directory on the node ({{LOCALDIR}}; default /opt/<the module's name,
+                                hyphenated>)
   --params <dir>                more params fixtures, searched before the suite's own (repeatable)
   --variant <name>              run only this variant (repeatable; default all)
   --no-variants                 the base run only
@@ -65,7 +66,7 @@ def main() -> int:
     ap.add_argument("--modulepath", default="")
     ap.add_argument("--hiera-config", default="")
     ap.add_argument("--server", default="")
-    ap.add_argument("--localdir", default="/opt/puppet-infrastructure")
+    ap.add_argument("--localdir", default=f"/opt/{setfile.MODULE.replace('_', '-')}")
     ap.add_argument("--params", action="append", default=[])
     ap.add_argument("--variant", action="append")
     ap.add_argument("--no-variants", action="store_true")

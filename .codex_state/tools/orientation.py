@@ -20,6 +20,7 @@ TOOLS = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS))
 sys.path.insert(1, str(TOOLS.parent))
 import baseline  # noqa: E402
+import module_name  # noqa: E402
 import gen_migration_order as generator  # noqa: E402
 import pregate  # noqa: E402
 import review_class  # noqa: E402
@@ -42,7 +43,7 @@ def plan_line(row: generator.ClassRow) -> str:
 
 
 def params_line(cls: str, params_dir: Path = PARAMS_DIR) -> str:
-    path = params_dir / f"puppet_infrastructure::{cls}.json"  # same name test_class.sh reads
+    path = params_dir / f"{module_name.PREFIX}{cls}.json"  # same name test_class.sh reads
     if not path.is_file():
         return "none (class: rendered as `include`; define: the harness dies without one)"
     try:
@@ -79,11 +80,11 @@ def module_lines(manifest: str, inv: dict) -> list[str]:
 
 
 def first_migrate_commit(cls: str) -> str | None:
-    """The class's first `P8: migrate puppet_infrastructure::<cls>` commit, or None for a class never migrated."""
+    """The class's first `P8: migrate <module>::<cls>` commit (either name: history keeps the old one), or None for a class never migrated."""
     out = generator.run_git(["log", "--reverse", "--format=%H%x09%s"])
     for line in out.splitlines():
         commit, _, subject = line.partition("\t")
-        if re.fullmatch(rf"P8: migrate puppet_infrastructure::{cls}\b.*", subject):
+        if re.fullmatch(rf"P8: migrate (?:{module_name.either()})::{cls}\b.*", subject):
             return commit
     return None
 
@@ -106,7 +107,7 @@ def path_in(ref: str, path: str) -> bool:
 def packet(cls: str) -> str:
     base = baseline.for_class(cls)
     rows = generator.parse_plan()
-    lines = [f"ORIENTATION PACKET puppet_infrastructure::{cls} (facts gathered before you started)"]
+    lines = [f"ORIENTATION PACKET {module_name.PREFIX}{cls} (facts gathered before you started)"]
     row = rows.get(cls)
     lines.append(f"plan: {plan_line(row)}" if row else "plan: CLASS NOT IN migration_plan.md")
     first = first_migrate_commit(cls)
@@ -150,7 +151,7 @@ def main(argv: list[str]) -> int:
     if len(argv) != 1:
         print(__doc__.strip(), file=sys.stderr)
         return 2
-    print(packet(re.sub(r"^puppet_infrastructure::", "", argv[0])))
+    print(packet(module_name.short(argv[0])))
     return 0
 
 

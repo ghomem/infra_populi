@@ -40,6 +40,7 @@ sys.path.insert(0, str(TOOLS))
 sys.path.insert(1, str(TOOLS.parent))
 import baseline  # noqa: E402
 import gen_migration_order as generator  # noqa: E402
+import module_name  # noqa: E402
 import pregate  # noqa: E402
 
 REPO = baseline.REPO
@@ -58,7 +59,7 @@ CHECKS = ("git", "scope", "provenance", "records", "header_modules", "comments_p
 
 INVENTORY_REMOTE = r'''
 for dir in /etc/puppetlabs/code/environments/production/modules/*/ /opt/puppetlabs/puppet/vendor_modules/*/; do
-  m="$(basename "$dir")"; [ "$m" = puppet_infrastructure ] && continue
+  m="$(basename "$dir")"; [ "$m" = __MODULE__ ] && continue
   case "$dir" in /opt/*) kind=vendored ;; *) kind=env ;; esac
   meta="$(/opt/puppetlabs/puppet/bin/ruby -rjson -e 'j=JSON.parse(File.read(ARGV[0])); print j["name"], " ", j["version"]' "$dir/metadata.json" 2>/dev/null)"
   echo "MODULE $m $kind $meta"
@@ -111,7 +112,8 @@ def result(status: str, detail: str | list) -> dict:
 # ----------------------------------------------------------------------------- inventory
 
 def master_inventory() -> dict:
-    proc = subprocess.run(["timeout", "60", "ssh", "-T", "puppet8master", "bash -s"], input=INVENTORY_REMOTE,
+    proc = subprocess.run(["timeout", "60", "ssh", "-T", "puppet8master", "bash -s"],
+                          input=INVENTORY_REMOTE.replace("__MODULE__", module_name.MODULE),
                           capture_output=True, text=True)
     if proc.returncode != 0:
         raise RuntimeError(f"master inventory failed: {proc.stderr.strip()}")
@@ -136,8 +138,8 @@ def parse_inventory(text: str) -> dict:
 # ----------------------------------------------------------------------------- pieces
 
 def migrate_commits(cls: str) -> list[tuple[str, str]]:
-    """Every `P8: migrate puppet_infrastructure::<cls>` commit, newest first."""
-    pattern = re.compile(rf"^P8: migrate puppet_infrastructure::{re.escape(cls)}$")
+    """Every `P8: migrate <module>::<cls>` commit, newest first (history keeps the old name: either one)."""
+    pattern = re.compile(rf"^P8: migrate (?:{module_name.either()})::{re.escape(cls)}$")
     found = []
     for line in git("log", "--format=%H%x09%s").splitlines():
         commit, _, subject = line.partition("\t")
@@ -485,7 +487,7 @@ def expanded_classes(cls: str) -> list[str]:
 def fresh_usage_error(cls: str) -> str | None:
     found = migrate_commit(cls)
     if not found:
-        return f"--fresh on {cls}: no `P8: migrate puppet_infrastructure::{cls}` commit"
+        return f"--fresh on {cls}: no `P8: migrate {module_name.PREFIX}{cls}` commit"
     later = git("log", "--format=%s", f"{found[0]}..HEAD").splitlines()
     if len(later) > 3 or any(not s.startswith(RECORD_SUBJECTS) for s in later):
         return (f"--fresh on {cls}: its migrate commit {found[0][:12]} is not HEAD ({len(later)} later commits, "
@@ -507,7 +509,7 @@ def run_checks(cls: str, harness: bool) -> dict:
     c = out["checks"]
     commits = migrate_commits(cls)
     if not commits:
-        c["git"] = result("fail", f"no `P8: migrate puppet_infrastructure::{cls}` commit")
+        c["git"] = result("fail", f"no `P8: migrate {module_name.PREFIX}{cls}` commit")
         return out
     paths = class_paths(cls, base)
     found, ignored = effective_migrate_commit(
@@ -548,7 +550,7 @@ def run_checks(cls: str, harness: bool) -> dict:
     final_lines: set[str] = set()
     for path in paths:
         # byte comparisons: a binary class file (an image) is compared exactly, never through a lossy decode
-        up = baseline.git_show(base.upstream, base.commit, path)
+        up = baseline.git_show_current(base.upstream, base.commit, path)
         pre, mig, now = show_bytes(parent, path), show_bytes(commit, path), show_bytes("HEAD", path)
         if pre != up:
             pre_drift.append(path)
@@ -639,10 +641,11 @@ def run_checks(cls: str, harness: bool) -> dict:
         rec.append("class is listed in blocked.txt")
     order = (STATE / "migration_order.md").read_text()
     done_section = order.split("## DONE", 1)[1].split("\n## ", 1)[0] if "## DONE" in order else ""
-    if f"`puppet_infrastructure::{cls}`" not in done_section:
+    if f"`{module_name.PREFIX}{cls}`" not in done_section:
         rec.append("migration_order.md DONE section does not list the class")
     manifest_now = show("HEAD", f"manifests/{cls}.pp") or ""
-    up_manifest = (baseline.git_show(base.upstream, base.commit, f"manifests/{cls}.pp") or b"").decode("utf-8", "replace")
+    up_manifest = (baseline.git_show_current(base.upstream, base.commit, f"manifests/{cls}.pp") or b"").decode(
+        "utf-8", "replace")
     header_added = [l for l in diff_lines("\n".join(header_block(up_manifest)), "\n".join(header_block(manifest_now)))[0]
                     if is_comment(l)]
     if not header_added:
@@ -688,10 +691,10 @@ def run_checks(cls: str, harness: bool) -> dict:
                 fx.append(f"{name}: plan title {data['title']!r} is a real node identity")
             # as in the harness: a per-target fixture for a base (params/for/<target>/), then the node's own
             # (params/<kind>/), else the shared one
-            target_file = PARAMS_DIR / "for" / f"puppet_infrastructure::{cls}" / f"puppet_infrastructure::{name}.json"
-            kind_file = PARAMS_DIR / node_kind(cls) / f"puppet_infrastructure::{name}.json"
+            target_file = PARAMS_DIR / "for" / f"{module_name.PREFIX}{cls}" / f"{module_name.PREFIX}{name}.json"
+            kind_file = PARAMS_DIR / node_kind(cls) / f"{module_name.PREFIX}{name}.json"
             pfile = (target_file if name != cls and target_file.is_file() else
-                     kind_file if kind_file.is_file() else PARAMS_DIR / f"puppet_infrastructure::{name}.json")
+                     kind_file if kind_file.is_file() else PARAMS_DIR / f"{module_name.PREFIX}{name}.json")
             if pfile.is_file():
                 for key, val in json_strings(json.loads(pfile.read_text())):
                     if val in nics | users:
@@ -704,7 +707,7 @@ def run_checks(cls: str, harness: bool) -> dict:
     if harness:
         DRAFTS.mkdir(parents=True, exist_ok=True)
         log = DRAFTS / f"{cls}.{dt.datetime.now(dt.timezone.utc):%Y%m%dT%H%M%SZ}.harness.log"
-        proc = subprocess.run([str(HARNESS), "--revert-first", f"puppet_infrastructure::{cls}"],
+        proc = subprocess.run([str(HARNESS), "--revert-first", f"{module_name.PREFIX}{cls}"],
                               capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=1800)
         text = re.sub(r"\x1b\[[0-9;]*m", "", proc.stdout + proc.stderr)
         log.write_text(text)

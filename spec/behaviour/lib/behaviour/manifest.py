@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-MODULE = "puppet_infrastructure"
+from .setfile import MODULE  # noqa: E402  (the module's name, metadata.json)
 
 
 def literal(v) -> str:

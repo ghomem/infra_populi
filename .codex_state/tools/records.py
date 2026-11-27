@@ -42,6 +42,7 @@ sys.dont_write_bytecode = True
 TOOLS = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS))
 sys.path.insert(1, str(TOOLS.parent))
+import module_name  # noqa: E402
 import baseline  # noqa: E402
 import gen_migration_order as generator  # noqa: E402
 import pregate  # noqa: E402
@@ -49,7 +50,7 @@ import review_class  # noqa: E402
 
 REPO = baseline.REPO
 TRACKER = REPO / ".codex_state" / "migrated_classes.txt"
-SHORT = re.compile(r"(?:puppet_infrastructure::)?([a-z][a-z0-9_]*)")
+SHORT = re.compile(rf"(?:(?:{module_name.either()})::)?([a-z][a-z0-9_]*)")
 
 
 def short_name(name: str) -> str:
