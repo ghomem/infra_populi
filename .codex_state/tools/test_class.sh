@@ -680,38 +680,10 @@ describe_expected_run2() {
   echo "own: ${own:-none}; inherited: ${inherited:-none}"
 }
 
-# Splits run-2 lines (stdin) into unexpected ones (stdout) and adds the expected ones to EXPECTED_RUN2_HITS.
-# $1 = console (agent output lines: the ref appears as /<ref>/ or /<ref>:) | report (bare resource refs).
-# A ref matches literally; `*` in it matches any text (a dynamic title, e.g. a Notify naming its define's title).
-filter_expected_run2() {
-  local result lines
-  lines="$(cat)"  # the heredoc below is python's stdin (its script): the lines travel in the environment
-  result="$(P8_RUN2_REFS="$(printf '%s\n' "${EXPECTED_RUN2_REFS[@]-}")" P8_RUN2_LINES="$lines" python3 - "${1:-console}" <<'PY'
-import os, re, sys
-pats = [re.escape(r).replace(r"\*", ".*") for r in os.environ.get("P8_RUN2_REFS", "").splitlines() if r]
-hits, out = 0, []
-for line in os.environ.get("P8_RUN2_LINES", "").splitlines():
-    if not line.strip():
-        continue
-    if sys.argv[1] == "console":
-        hit = any(re.search("/" + p + "[/:]", line) for p in pats)
-    else:
-        hit = any(re.fullmatch(p, line) for p in pats)
-    hits += hit
-    if not hit:
-        out.append(line)
-print(hits)
-print("\n".join(out))
-PY
-)"
-  EXPECTED_RUN2_HITS=$(( ${EXPECTED_RUN2_HITS:-0} + $(head -1 <<<"$result") ))
-  tail -n +2 <<<"$result" | sed '/^$/d'
-}
-
-# Resources the run-2 REPORT marks changed that have no event line on the console: a change logged below notice
-# (e.g. `notify { ...: loglevel => 'debug' }`) still makes run 2 exit 2. Read with the node's own Puppet ruby.
-# $1 = run-2 console output. Prints one resource ref per line; fails when the report cannot be read.
-run2_silent_changes() {
+# The resources run 2's REPORT marks changed (Puppet's last-run report, read with the node's own Puppet ruby), one
+# `CHANGED <ref>` line each: a change logged below notice (e.g. `notify { ...: loglevel => 'debug' }`) has no console
+# line but still counts. Fails when the report cannot be read.
+report_changed() {
   local changed
   changed="$(timeout 60 ssh "$NODE_HOST" 'sudo -n /opt/puppetlabs/puppet/bin/ruby - /opt/puppetlabs/puppet/cache/state/last_run_report.yaml' <<'RB'
 require "puppet"
@@ -719,13 +691,22 @@ report = YAML.unsafe_load_file(ARGV[0])
 report.resource_statuses.each { |ref, status| puts ref if status.changed }
 RB
 )" || return 1
-  python3 - "$1" "$changed" <<'PY'
-import sys
-console, changed = sys.argv[1], sys.argv[2]
-for ref in filter(None, changed.splitlines()):
-    if f"/{ref}/" not in console and f"/{ref}:" not in console:
-        print(ref)
-PY
+  sed '/^$/d; s/^/CHANGED /' <<<"$changed"
+}
+
+# HQ review of the behaviour suite (2026-11-27) ruling 1: the gate is the behaviour suite's own
+# (spec/behaviour/lib/behaviour/gate.py), one code path for this harness and the public runner. Either run's logged
+# `Error:` line fails it, run 2's changes come from its console and its last-run report, and only the plan's
+# expected_run2_events may remain. $1/$2 = run 1's exit code and output, $3/$4 = run 2's (with report_changed's lines).
+# Prints the verdict as JSON.
+apply_gate() {
+  P8_GATE_RC1="$1" P8_GATE_OUT1="$2" P8_GATE_RC2="$3" P8_GATE_OUT2="$4" \
+    P8_GATE_EXPECTED="$(printf '%s\n' "${EXPECTED_RUN2_REFS[@]-}")" python3 -c '
+import json, os
+print(json.dumps({"runs": [{"rc": int(os.environ["P8_GATE_RC1"]), "out": os.environ["P8_GATE_OUT1"]},
+                           {"rc": int(os.environ["P8_GATE_RC2"]), "out": os.environ["P8_GATE_OUT2"]}],
+                  "expected": [r for r in os.environ["P8_GATE_EXPECTED"].splitlines() if r]}))' |
+    PYTHONPATH="${LOCAL_REPO}/spec/behaviour/lib" python3 -m behaviour.gate
 }
 
 render_fixture_block() {
@@ -897,7 +878,7 @@ main() {
   "${LOCAL_REPO}/.codex_state/tools/clock_check.py" "$NODE_HOST" || die "the node's clock is off the laptop's; not running the agent"
   HARNESS_RX_START="$(node_nic1_rx)"
   echo "==> Running puppet agent (run 1 may change; run 2 must exit 0 with no events; timeout ${AGENT_TIMEOUT_SECONDS}s each)"
-  local out1 out2 rc1 rc2 offending run1_events
+  local out1 out2 rc1 rc2 reason run1_events
 
   out1="$(run_agent)" && rc1=0 || rc1=$?
   echo "$out1"
@@ -921,35 +902,25 @@ main() {
   agent_run_summary
   [[ $rc2 -eq 0 || $rc2 -eq 2 ]] || die_agent_rc 2 "$rc2"
 
-  offending="$(grep -E "$RUN2_FORBIDDEN_RE" <<<"$out2" || true)"
   collect_expected_run2 "${classes[@]}"
-  EXPECTED_RUN2_HITS=0
-  local unexpected_file silent
-  unexpected_file="$(mktemp)"
-  if [[ ${#EXPECTED_RUN2_REFS[@]} -gt 0 ]]; then
-    filter_expected_run2 console <<<"$offending" >"$unexpected_file"
-    offending="$(cat "$unexpected_file")"
-  fi
-  if [[ $rc2 -eq 2 && -z "$offending" ]]; then
-    silent="$(run2_silent_changes "$out2")" || { rm -f "$unexpected_file"; die "Run 2 exited 2 and its report could not be read from the node (the gate fails closed)."; }
-    if [[ -n "$silent" ]]; then
-      filter_expected_run2 report <<<"$silent" >"$unexpected_file"
-      offending="$(sed 's/^/Run-2 report, changed with no console event (log level below notice): /' "$unexpected_file")"
-    fi
-  fi
-  rm -f "$unexpected_file"
+  local changed2 verdict gate_rc=0
+  changed2="$(report_changed)" || die "Run 2's report could not be read from the node (the gate fails closed)."
+  verdict="$(apply_gate "$rc1" "$out1" "$rc2" "${out2}"$'\n'"${changed2}")" || gate_rc=$?
+  [[ $gate_rc -le 1 ]] || die "The gate could not judge the runs: ${verdict}"
+  EXPECTED_RUN2_HITS="$(python3 -c 'import json, sys; print(json.load(sys.stdin)["expected_hits"])' <<<"$verdict")"
   if [[ ${#EXPECTED_RUN2_REFS[@]} -gt 0 ]]; then
     echo "RUN2_EXPECTED_EVENTS: ${EXPECTED_RUN2_HITS} from ${EXPECTED_RUN2_REFS[*]} [$(describe_expected_run2)] (plan expected_run2_events)"
   fi
-  if [[ -n "$offending" ]]; then
-    printf 'Run 2 events:\n%s\n' "$offending" >&2
-    die "Run 2 still applied changes (not idempotent). Fix and re-run."
-  fi
-  if [[ $rc2 -ne 0 && ${EXPECTED_RUN2_HITS:-0} -eq 0 ]]; then
-    die "Run 2 exited ${rc2}; GREEN requires exit 0 (no changes, no failures)."
-  fi
-  if [[ $rc2 -ne 0 && $rc2 -ne 2 ]]; then
-    die "Run 2 exited ${rc2}; only exit 2 caused solely by expected run-2 events is accepted."
+  if [[ $gate_rc -ne 0 ]]; then
+    python3 -c '
+import json, sys
+v = json.load(sys.stdin)
+if v["errors"]:
+    print("Errors logged:\n" + "\n".join(v["errors"]), file=sys.stderr)
+if v["unexpected"]:
+    print("Run 2 events:\n" + "\n".join(v["unexpected"]), file=sys.stderr)' <<<"$verdict"
+    reason="$(python3 -c 'import json, sys; print(json.load(sys.stdin)["reason"])' <<<"$verdict")"
+    die "${reason^}."
   fi
 
   # Between-runs gate (HQ after batch 20, item 6): an agent run the harness did not make (the agent daemon a class

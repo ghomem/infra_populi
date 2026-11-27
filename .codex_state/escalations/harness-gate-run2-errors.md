@@ -38,3 +38,9 @@ C. Leave the gate; document that the behaviour sets catch what it misses.
 
 The public runner (spec/behaviour) already does A for its own agent and local modes (gate(): an `Error:` line in either
 run fails it; test_runner.py). Its command mode keeps the harness's verdict, so the sample compares like with like.
+
+## Resolved (HQ review of the behaviour suite, 2026-11-27, ruling 1: option A)
+Gate v2 refuses an `Error:` line in either run and counts run 2's changes from Puppet's last-run report on every run,
+not only when run 2 exits 2 with no console line. The harness no longer has a gate of its own: it calls the behaviour
+suite's (`spec/behaviour/lib/behaviour/gate.py`, `python3 -m behaviour.gate`), which the public runner uses too, so
+the two cannot differ. Tests: test_harness_gate.py (an error in run 1 or in run 2 with exit 0 is red), test_gate.py.

@@ -41,6 +41,29 @@ def test_removed_on_run2_is_red_even_with_exit_0(lab):
     assert harness(lab).returncode == 1
 
 
+# HQ review of the behaviour suite (2026-11-27) ruling 1: a run that logs an error fails, even when Puppet exits 0 (an
+# exec check that times out is logged as an error and the exec taken as in sync); one gate with the public runner.
+CHECK_TIMEOUT = ("\x1b[1;31mError: /Stage[main]/Main/Node[puppet8node]/Exec[p8test unguarded exec]/unless: Check "
+                 "\"sleep 400\" exceeded timeout\x1b[0m\n")
+
+
+@pytest.mark.parametrize("which", ["run 1", "run 2"])
+def test_a_logged_error_in_either_run_is_red_even_with_exit_0(lab, which):
+    first = {"rc": 2, "stdout": (CHECK_TIMEOUT if which == "run 1" else "") + EXEC_EVENT + APPLIED}
+    second = {"rc": 0, "stdout": (CHECK_TIMEOUT if which == "run 2" else "") + APPLIED}
+    agent_runs(lab, first, second)
+    proc = harness(lab)
+    assert proc.returncode == 1 and "A run logged an error." in proc.stderr
+    assert "exceeded timeout" in proc.stderr and "GREEN" not in proc.stdout
+
+
+def test_the_harness_and_the_public_runner_share_one_gate():
+    import re
+    text = (TOOLS / "test_class.sh").read_text()
+    assert "python3 -m behaviour.gate" in text and "RUN2_FORBIDDEN_RE\" <<<\"$out2\"" not in text
+    assert not re.search(r"^filter_expected_run2\(\)|^run2_silent_changes\(\)", text, re.M)
+
+
 def test_clean_run2_is_green(lab):
     agent_runs(lab, {"rc": 2, "stdout": EXEC_EVENT + APPLIED}, {"rc": 0, "stdout": APPLIED})
     proc = harness(lab)

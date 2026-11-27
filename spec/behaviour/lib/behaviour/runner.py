@@ -29,6 +29,7 @@ import yaml
 
 from . import manifest as mf
 from . import probes, render, results, setfile
+from .gate import ERROR, EVENT, agent_result, gate, verdict  # noqa: F401  (one gate for every caller)
 
 SUITE = setfile.SUITE
 MODULE = "puppet_infrastructure"
@@ -37,11 +38,6 @@ PROBE_TIMEOUT = 120
 AGENT_TIMEOUT = 960
 MARKER = "/var/lib/behaviour-suite/used"
 EXECUTED = setfile.EXECUTED
-# A run-2 line that reports a change (the gate: run 2 changes nothing but the set's expected_run2_events).
-EVENT = re.compile(r"Notice: /Stage\[main\]/")
-# An error Puppet logs without failing the run: an exec's `unless`/`onlyif` check that times out is logged as an error
-# and the exec is taken as in sync, and the run exits 0. Either run with one is not clean.
-ERROR = re.compile(r"^(?:\x1b\[[0-9;]*m)?Error: ", re.M)
 SESSION_LOGIN = """set -e
 u={user}
 id "$u" >/dev/null
@@ -147,29 +143,6 @@ class Provider:
 
 # ------------------------------------------------------------------ applying the class
 
-def gate(first: dict, second: dict, expected: list[str]) -> bool:
-    """Run 1 applied (exit 0 or 2); run 2 changed nothing, or only the set's expected_run2_events; neither run logged
-    an error."""
-    if first["rc"] not in (0, 2) or first.get("errors") or second.get("errors"):
-        return False
-    if second["rc"] == 0 and not second["events"]:
-        return True
-    refs = [re.compile(".*".join(re.escape(part) for part in ref.split("*"))) for ref in expected]  # `*`: any text
-    return second["rc"] == 2 and bool(second["events"]) and bool(refs) and \
-        all(any(r.search(line) for r in refs) for line in second["events"])
-
-
-def agent_result(rc: int, out: str, err: str) -> dict:
-    m = re.search(r"AGENT_RC=(\d+)", out)
-    logged = [l.strip() for l in out.splitlines() if EVENT.search(l)]
-    changed = [l.strip() for l in out.splitlines() if l.startswith("CHANGED ")]
-    # a changed resource whose change no log line shows is an event of its own
-    silent = [c for c in changed if not any(c[len("CHANGED "):] in l for l in logged)]
-    return {"rc": int(m.group(1)) if m else rc, "events": logged + silent,
-            "errors": [line.strip()[:300] for line in out.splitlines() if ERROR.match(line)],
-            "tail": (out + err)[-1500:]}
-
-
 LOCAL = """set +e
 d=/var/tmp/behaviour-suite
 install -d -m 0700 "$d"
@@ -232,7 +205,8 @@ class Applier:
                 return {"rc": p.returncode, "green": False, "node_fresh": True,
                         "tail": f"classify hook failed: {(p.stdout + p.stderr)[-1400:]}"}
         first, second = self.once(node), self.once(node)
-        return {"rc": second["rc"], "green": gate(first, second, expected), "node_fresh": True,
+        v = verdict(first, second, expected)
+        return {"rc": second["rc"], "green": v["green"], "gate": v["reason"], "node_fresh": True,
                 "runs": [first, second], "tail": second["tail"]}
 
 
@@ -385,8 +359,10 @@ class Run:
             return False
         runs = [self.applier.again(node), self.applier.again(node)]
         record["session"]["runs"] = runs
-        if not gate(runs[0], runs[1], expected):
-            record["problems"].append(f"with {user} logged in the class did not apply cleanly and idempotently")
+        v = verdict(runs[0], runs[1], expected)
+        if not v["green"]:
+            record["problems"].append(f"with {user} logged in the class did not apply cleanly and idempotently: "
+                                      f"{v['reason']}")
             record["outcome"] = "APPLY_FAILED"
             return False
         return True
