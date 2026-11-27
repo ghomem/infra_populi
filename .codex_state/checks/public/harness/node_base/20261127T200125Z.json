@@ -1,0 +1,438 @@
+{
+ "class": "node_base",
+ "role": "command",
+ "at": "20261127T194343Z",
+ "set_sha256": "fce9ba2b5201adf19c5c019065b8ac5218795bd3eb9127fe0cfa2b4ef12accde",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-base-components-are-all-applied",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "aptitude unknown ok not-installed\n0\n",
+   "stderr": "dpkg-query: no packages found matching monitoring-plugins-standard\n",
+   "ok": true
+  },
+  {
+   "id": "ssh-negotiates-only-the-node-base-algorithms-and-keys",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "Permission denied (publickey,password)\npermitrootlogin without-password\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-firewall-is-firewall-secure-with-the-acl",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n0\n0\nno-side-chain\n",
+   "stderr": "iptables: No chain/target/match by that name.\n",
+   "ok": true
+  },
+  {
+   "id": "unattended-upgrades-are-not-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "installed\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-apt-scripts-are-in-server-mode",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "nginx-core not listed\npostfix not listed\nrsyslog-gnutls not listed\nfirefox not listed\nno-desktop-link\n",
+   "stderr": "grep: /opt/infra-populi/bin/apt-update-surface.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-tools-are-restricted-to-the-hiera-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "/usr/bin/wget root:root 755\n/usr/bin/curl root:root 755\n/usr/bin/ssh root:root 755\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "ntp-keeps-the-time",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "inactive\n0\nyes\n",
+   "stderr": "grep: /etc/ntpsec/ntp.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "dns-is-left-alone",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nameserver 1.1.1.1\nnameserver 8.8.8.8\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "no-boot-run-by-default",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "no-unit\nno-script\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "uli/etc]\n  File[/opt/infra-populi/backup]\n  File[/opt/infra-populi/pkgsdir]\n  File[/etc/default/locale]\n  File[/opt/infra-populi/bin/mypython]\n  File[/usr/lib64/]\n  File[/usr/lib64/nagios/]\n  File[/opt/infra-populi/bin/apt-update-pkg.sh]\n  File[/opt/infra-populi/bin/apt-update-surface.sh]\n  File[/opt/infra-populi/bin/apt-update-kernel.sh]\n  File[/opt/infra-populi/bin/apt-update-dist.sh]\n  Package[openscap-scanner]\n  File[/opt/infra-populi/bin/get-relevant-updates-list]\n  File[/opt/infra-populi/bin/apt-check-updates.sh]\n  Cron[apt_check_updates]\n  File[/var/lib/apt-check-updates]\n  File[/opt/infra-populi/bin/apt-update-relevant.sh]\n  Infra_populi::Filesystem_sec[filesystem_sec]\n  Package[ntpsec]\n  File[/etc/ntpsec/ntp.conf]\n  Service[ntp]\n  File[/etc/apt/apt.conf.d/15update-stamp]\n  Concat_file[/etc/ssh/sshd_config]\n  Concat_fragment[global config]\n  File[/bin/nc]\n  File[/bin/netstat]\n  File[/usr/bin/wget]\n  File[/usr/bin/curl]\n  File[/usr/bin/lynx]\n  File[/usr/bin/traceroute]\n  File[/usr/bin/telnet]\n  File[/usr/bin/ftp]\n  File[/usr/bin/sftp]\n  File[/usr/bin/scp]\n  File[/usr/bin/make]\n  File[/usr/bin/pip]\n  File[/usr/bin/ssh]\n  File[/usr/bin/gcc]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\nGREEN_STAMP node_base efb307928761\n\nNODE_FRESH: yes (boot 4a536e28 of the latest revert, no agent run since)\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "the-base-components-are-all-applied",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "aptitude install ok installed\nmonitoring-plugins-standard install ok installed\nsysmon-scripts\n1\n/usr/lib/nagios\napt-scripts\n",
+   "stderr": ""
+  },
+  {
+   "id": "ssh-negotiates-only-the-node-base-algorithms-and-keys",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Permission denied (publickey)\nno matching key exchange method found\npermitrootlogin no\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the cipher (aes128-cbc, which node_base's list does not hold) in the first connection",
+    "rc": 0,
+    "passed": false,
+    "stdout": "no matching key exchange method found\npermitrootlogin no\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-firewall-is-firewall-secure-with-the-acl",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P INPUT DROP\n2\n1\nno-side-chain\n",
+   "stderr": ""
+  },
+  {
+   "id": "unattended-upgrades-are-not-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "not-installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-apt-scripts-are-in-server-mode",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nginx-core listed\npostfix listed\nrsyslog-gnutls listed\nfirefox not listed\nno-desktop-link\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-tools-are-restricted-to-the-hiera-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/usr/bin/wget root:sudo 750\n/usr/bin/curl root:sudo 750\n/usr/bin/ssh root:sudo 750\n",
+   "stderr": ""
+  },
+  {
+   "id": "ntp-keeps-the-time",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\nserver pt.pool.ntp.org iburst\n1\nyes\n",
+   "stderr": ""
+  },
+  {
+   "id": "dns-is-left-alone",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nameserver 1.1.1.1\nnameserver 8.8.8.8\n",
+   "stderr": ""
+  },
+  {
+   "id": "no-boot-run-by-default",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "no-unit\nno-script\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "4a536e28-ae90-49b2-87d8-e79c4b0fbe7e",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "4a536e28-ae90-49b2-87d8-e79c4b0fbe7e",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/infra-populi",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "65892112f03695b10ab4e05b88937643fc699eea2d34a875ede9ada3d9e9f7ab",
+ "variants": {
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "clean": [
+    {
+     "id": "on-redhat-firewalld-masked-chrony-and-the-yum-scripts",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "enabled\nactive\nactive\n0\n0\n",
+     "stderr": "ls: cannot access '/opt/infra-populi/bin': No such file or directory\nls: cannot access '/opt/infra-populi/bin': No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "]\n  Firewall[600 Drop ALL IPv6 - INPUT]\n  Firewall[601 Drop ALL IPv6 - FORWARD]\n  File[/opt/infra-populi]\n  File[/opt/infra-populi/bin]\n  File[/opt/infra-populi/etc]\n  File[/opt/infra-populi/backup]\n  File[/opt/infra-populi/pkgsdir]\n  File[/etc/default/locale]\n  File[/opt/infra-populi/bin/mypython]\n  File[/opt/infra-populi/bin/yum-update-surface.sh]\n  File[/opt/infra-populi/bin/yum-update-dist.sh]\n  Infra_populi::Filesystem_sec[filesystem_sec]\n  Package[chrony]\n  File[/etc/chrony.conf]\n  File[/etc/chrony.keys]\n  File[/etc/sysconfig/chronyd]\n  Service[chronyd]\n  Service[chrony-wait.service]\n  Concat_file[/etc/ssh/sshd_config]\n  Concat_fragment[global config]\n  Concat[/etc/ssh/sshd_config.d/50-redhat.conf]\n  Concat::Fragment[sshd_config_file 50-redhat]\n  File[/bin/nc]\n  File[/bin/netstat]\n  File[/usr/bin/wget]\n  File[/usr/bin/curl]\n  File[/usr/bin/lynx]\n  File[/usr/bin/traceroute]\n  File[/usr/bin/telnet]\n  File[/usr/bin/ftp]\n  File[/usr/bin/sftp]\n  File[/usr/bin/scp]\n  File[/usr/bin/make]\n  File[/usr/bin/pip]\n  File[/usr/bin/ssh]\n  File[/usr/bin/gcc]\n  Concat_file[/etc/ssh/sshd_config.d/50-redhat.conf]\n  Concat_fragment[sshd_config_file 50-redhat]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\nGREEN_STAMP node_base efb307928761\n\nNODE_FRESH: yes (boot 0c752cd9 of the latest revert, no agent run since)\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\n\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-firewalld-masked-chrony-and-the-yum-scripts",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "masked\ninactive\nactive\nyum scripts present\n0\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "0c752cd9-9846-4aed-a406-f0668bd5cfca",
+     "snapshot": "P8LAB_RHEL9_BASELINE_v3",
+     "apt_mirror": null,
+     "boot_id_at_end": "0c752cd9-9846-4aed-a406-f0668bd5cfca",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "65892112f03695b10ab4e05b88937643fc699eea2d34a875ede9ada3d9e9f7ab"
+  },
+  "prod": {
+   "name": "prod",
+   "node": "ubuntu",
+   "params": "prod",
+   "clean": [
+    {
+     "id": "production-parameters-strict-keep-and-boot-run",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "-P INPUT ACCEPT\nrate-limit rules: 0\nnot-found\n",
+     "stderr": "stat: cannot statx '/opt/infra-populi/bin/puppet_boot_run.sh': No such file or directory\n",
+     "ok": true
+    },
+    {
+     "id": "prod-two-unmanaged-rules-are-planted",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "0\n",
+     "stderr": "",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    },
+    {
+     "id": "prod-the-agent-run-keeps-the-matching-rule",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "kept: 0\nother: 0\n",
+     "stderr": "",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "-populi/bin/apt-update-pkg.sh]\n  File[/opt/infra-populi/bin/apt-update-surface.sh]\n  File[/opt/infra-populi/bin/apt-update-kernel.sh]\n  File[/opt/infra-populi/bin/apt-update-dist.sh]\n  Package[openscap-scanner]\n  File[/opt/infra-populi/bin/get-relevant-updates-list]\n  File[/opt/infra-populi/bin/apt-check-updates.sh]\n  Cron[apt_check_updates]\n  File[/var/lib/apt-check-updates]\n  File[/opt/infra-populi/bin/apt-update-relevant.sh]\n  Infra_populi::Filesystem_sec[filesystem_sec]\n  Package[ntpsec]\n  File[/etc/ntpsec/ntp.conf]\n  Service[ntp]\n  File[/opt/infra-populi/bin/puppet_boot_run.sh]\n  File[/etc/systemd/system/puppet_boot_run.service]\n  Exec[Reload systemd]\n  Service[puppet_boot_run]\n  File[/etc/apt/apt.conf.d/15update-stamp]\n  Concat_file[/etc/ssh/sshd_config]\n  Concat_fragment[global config]\n  File[/bin/nc]\n  File[/bin/netstat]\n  File[/usr/bin/wget]\n  File[/usr/bin/curl]\n  File[/usr/bin/lynx]\n  File[/usr/bin/traceroute]\n  File[/usr/bin/telnet]\n  File[/usr/bin/ftp]\n  File[/usr/bin/sftp]\n  File[/usr/bin/scp]\n  File[/usr/bin/make]\n  File[/usr/bin/pip]\n  File[/usr/bin/ssh]\n  File[/usr/bin/gcc]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant prod; never a Phase 1 record)\n\nNODE_FRESH: yes (boot 5f315469 of the latest revert, no agent run since)\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\n\n"
+   },
+   "applied": [
+    {
+     "id": "production-parameters-strict-keep-and-boot-run",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "-P INPUT DROP\nrate-limit rules: 0\nenabled\nroot:root 750\n",
+     "stderr": ""
+    },
+    {
+     "id": "prod-two-unmanaged-rules-are-planted",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "2\n",
+     "stderr": "",
+     "mutating": true,
+     "action": {
+      "mutates": "appends two ACCEPT rules to INPUT on the node, commented p8test-keep-me (source 10.255.255.2) and p8test-other (source 10.255.255.3)",
+      "rc": 0,
+      "stdout": "",
+      "stderr": ""
+     }
+    },
+    {
+     "id": "prod-the-agent-run-keeps-the-matching-rule",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "kept: 1\nother: 0\n",
+     "stderr": "",
+     "mutating": true,
+     "action": {
+      "mutates": "none beyond reading the rules (declared mutating so it runs after the node's agent run)",
+      "rc": 0,
+      "stdout": "",
+      "stderr": ""
+     }
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "5f315469-7563-41cf-8978-5722ad1ff480",
+     "snapshot": "P8NODE_BASELINE_GREEN_v5",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "5f315469-7563-41cf-8978-5722ad1ff480",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "68c71b4b5763a1c9ce95a7edf30b9c0fad731687425cbbcca98ffe9d72db156c",
+   "node_agent": {
+    "prod-two-unmanaged-rules-are-planted": {
+     "rc": 2,
+     "events": [
+      "\u001b[mNotice: /Stage[main]/Infra_populi::Firewall_secure/Firewall[9008 p8test-other]/ensure: undefined 'ensure' from 'present'\u001b[0m",
+      "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully (corrective)\u001b[0m"
+     ],
+     "errors": [],
+     "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795809673'\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Firewall_secure/Firewall[9008 p8test-other]/ensure: undefined 'ensure' from 'present'\u001b[0m\n\u001b[mNotice: firewall[9008 p8test-other]: Deleting: Deleting Rule '9008 p8test-other'\u001b[0m\n\u001b[mNotice: firewall[9008 p8test-other]: Deleting: Ensuring changes to '9008 p8test-other' persist\u001b[0m\n\u001b[mNotice: firewall[9008 p8test-other]: Deleting: Finished in 0.061334 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 9.79 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Firewall[9008 p8test-other]\nCHANGED Exec[apt_update]\n"
+    }
+   }
+  }
+ },
+ "duration_s": 1062.6
+}

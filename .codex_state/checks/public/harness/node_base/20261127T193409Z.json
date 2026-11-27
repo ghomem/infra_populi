@@ -1,0 +1,299 @@
+{
+ "class": "node_base",
+ "role": "command",
+ "at": "20261127T191602Z",
+ "set_sha256": "fce9ba2b5201adf19c5c019065b8ac5218795bd3eb9127fe0cfa2b4ef12accde",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-base-components-are-all-applied",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "aptitude unknown ok not-installed\n0\n",
+   "stderr": "dpkg-query: no packages found matching monitoring-plugins-standard\n",
+   "ok": true
+  },
+  {
+   "id": "ssh-negotiates-only-the-node-base-algorithms-and-keys",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "Permission denied (publickey,password)\npermitrootlogin without-password\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-firewall-is-firewall-secure-with-the-acl",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n0\n0\nno-side-chain\n",
+   "stderr": "iptables: No chain/target/match by that name.\n",
+   "ok": true
+  },
+  {
+   "id": "unattended-upgrades-are-not-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "installed\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-apt-scripts-are-in-server-mode",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "nginx-core not listed\npostfix not listed\nrsyslog-gnutls not listed\nfirefox not listed\nno-desktop-link\n",
+   "stderr": "grep: /opt/infra-populi/bin/apt-update-surface.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-tools-are-restricted-to-the-hiera-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "/usr/bin/wget root:root 755\n/usr/bin/curl root:root 755\n/usr/bin/ssh root:root 755\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "ntp-keeps-the-time",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "inactive\n0\nyes\n",
+   "stderr": "grep: /etc/ntpsec/ntp.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "dns-is-left-alone",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nameserver 1.1.1.1\nnameserver 8.8.8.8\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "no-boot-run-by-default",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "no-unit\nno-script\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 1,
+  "green": false,
+  "node_fresh": true,
+  "tail": "ystem_sec]/File[/usr/bin/ssh]/group: group changed 'root' to 'sudo'\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Node_base/Infra_populi::Filesystem_sec[filesystem_sec]/File[/usr/bin/ssh]/mode: mode changed '0755' to '0750'\u001b[0m\n\u001b[mNotice: Applied catalog in 92.79 seconds\u001b[0m\nRUN1_EVENTS: 88 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795807175'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 6.77 seconds\u001b[0m\n\nNODE_FRESH: yes (boot d23b2b9b of the latest revert, no agent run since)\n/home/salatiel/.local/bin/infra_populi_tools/test_class.sh: line 716: /usr/bin/python3: Argument list too long\nERROR: The gate could not judge the runs: {\"green\": false, \"reason\": \"bad gate input: Expecting value: line 1 column 1 (char 0)\"}\n/home/salatiel/.local/bin/infra_populi_tools/test_class.sh failed with exit status 1.\n\n"
+ },
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "d23b2b9b-167b-4770-a00b-b5bcec1cc8ca",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "d23b2b9b-167b-4770-a00b-b5bcec1cc8ca",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/infra-populi",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "65892112f03695b10ab4e05b88937643fc699eea2d34a875ede9ada3d9e9f7ab",
+ "variants": {
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "clean": [
+    {
+     "id": "on-redhat-firewalld-masked-chrony-and-the-yum-scripts",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "enabled\nactive\nactive\n0\n0\n",
+     "stderr": "ls: cannot access '/opt/infra-populi/bin': No such file or directory\nls: cannot access '/opt/infra-populi/bin': No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 1,
+    "green": false,
+    "node_fresh": true,
+    "tail": " of Service[sshd]\u001b[0m\n\u001b[mNotice: /Stage[main]/Ssh::Server::Service/Service[sshd]: Triggered 'refresh' from 4 events\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 277.81 seconds\u001b[0m\nRUN1_EVENTS: 73 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795807857'\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Packages_base/Exec[dnf-makecache]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 24.66 seconds\u001b[0m\n\nNODE_FRESH: yes (boot dab6b001 of the latest revert, no agent run since)\n/home/salatiel/.local/bin/infra_populi_tools/test_class.sh: line 716: /usr/bin/python3: Argument list too long\nERROR: The gate could not judge the runs: {\"green\": false, \"reason\": \"bad gate input: Expecting value: line 1 column 1 (char 0)\"}\n/home/salatiel/.local/bin/infra_populi_tools/test_class.sh failed with exit status 1.\n\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "dab6b001-e2b5-46b7-8a84-ef5006b780ff",
+     "snapshot": "P8LAB_RHEL9_BASELINE_v3",
+     "apt_mirror": null,
+     "boot_id_at_end": "dab6b001-e2b5-46b7-8a84-ef5006b780ff",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "65892112f03695b10ab4e05b88937643fc699eea2d34a875ede9ada3d9e9f7ab"
+  },
+  "prod": {
+   "name": "prod",
+   "node": "ubuntu",
+   "params": "prod",
+   "clean": [
+    {
+     "id": "production-parameters-strict-keep-and-boot-run",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "-P INPUT ACCEPT\nrate-limit rules: 0\nnot-found\n",
+     "stderr": "stat: cannot statx '/opt/infra-populi/bin/puppet_boot_run.sh': No such file or directory\n",
+     "ok": true
+    },
+    {
+     "id": "prod-two-unmanaged-rules-are-planted",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "0\n",
+     "stderr": "",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    },
+    {
+     "id": "prod-the-agent-run-keeps-the-matching-rule",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "kept: 0\nother: 0\n",
+     "stderr": "",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 1,
+    "green": false,
+    "node_fresh": true,
+    "tail": "ystem_sec]/File[/usr/bin/ssh]/group: group changed 'root' to 'sudo'\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Node_base/Infra_populi::Filesystem_sec[filesystem_sec]/File[/usr/bin/ssh]/mode: mode changed '0755' to '0750'\u001b[0m\n\u001b[mNotice: Applied catalog in 86.64 seconds\u001b[0m\nRUN1_EVENTS: 83 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795808036'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 9.52 seconds\u001b[0m\n\nNODE_FRESH: yes (boot 1b21cabd of the latest revert, no agent run since)\n/home/salatiel/.local/bin/infra_populi_tools/test_class.sh: line 716: /usr/bin/python3: Argument list too long\nERROR: The gate could not judge the runs: {\"green\": false, \"reason\": \"bad gate input: Expecting value: line 1 column 1 (char 0)\"}\n/home/salatiel/.local/bin/infra_populi_tools/test_class.sh failed with exit status 1.\n\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "1b21cabd-1dfb-4202-ad21-6387415ca8fd",
+     "snapshot": "P8NODE_BASELINE_GREEN_v5",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "1b21cabd-1dfb-4202-ad21-6387415ca8fd",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "68c71b4b5763a1c9ce95a7edf30b9c0fad731687425cbbcca98ffe9d72db156c"
+  }
+ },
+ "duration_s": 1087.1
+}

@@ -1,0 +1,376 @@
+{
+ "class": "packages_base",
+ "role": "command",
+ "at": "20261127T184754Z",
+ "set_sha256": "67fa03006eaab63b81c66a74cc188ce01950c8acdcc771cb80af873cd00afe5a",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-package-list-is-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "acl unknown ok not-installed\naptitude unknown ok not-installed\necryptfs-utils unknown ok not-installed\niptables-persistent unknown ok not-installed\nvim install ok installed\nwget install ok installed\n",
+   "stderr": "dpkg-query: no packages found matching monitoring-plugins-standard\n",
+   "ok": true
+  },
+  {
+   "id": "the-tools-work",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 96: /usr/lib/nagios/plugins/check_disk: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "supervisor-cloud-init-and-unattended-upgrades-are-removed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "supervisor absent\ncloud-init installed\nunattended-upgrades installed\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "package-lists-refresh-on-every-agent-run",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-update-package-lists-exec-never-runs",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "alog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795805509'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 7.43 seconds\u001b[0m\nRUN2_EXPECTED_EVENTS: 1 from Exec[apt_update] Exec[dnf-makecache] [own: Exec[apt_update], Exec[dnf-makecache]; inherited: none] (plan expected_run2_events)\nCOVERAGE infra_populi::packages_base: 22 concrete resources (+1 defined-type instances)\n  Exec[apt_update]\n  Apt::Setting[conf-update-stamp]\n  File[sources.list]\n  File[sources.list.d]\n  File[preferences]\n  File[preferences.d]\n  File[apt.conf.d]\n  File[auth.conf.d]\n  File[keyrings]\n  File[/etc/apt/auth.conf]\n  Package[gnupg]\n  Exec[update-package-lists]\n  Package[iptables-persistent]\n  Package[monitoring-plugins-standard]\n  Package[ecryptfs-utils]\n  Package[vim]\n  Package[wget]\n  Package[aptitude]\n  Package[acl]\n  Package[supervisor]\n  Package[cloud-init]\n  Package[unattended-upgrades]\n  File[/etc/apt/apt.conf.d/15update-stamp]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\nGREEN_STAMP packages_base 97d5835b93d9\n\nNODE_FRESH: yes (boot 5d01d859 of the latest revert, no agent run since)\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "the-package-list-is-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "acl install ok installed\naptitude install ok installed\necryptfs-utils install ok installed\niptables-persistent install ok installed\nmonitoring-plugins-standard install ok installed\nvim install ok installed\nwget install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-tools-work",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "DISK OK\n# file: /etc/hostname\n/usr/bin/ecryptfs-setup-private\n/usr/bin/aptitude\n",
+   "stderr": ""
+  },
+  {
+   "id": "supervisor-cloud-init-and-unattended-upgrades-are-removed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "supervisor absent\ncloud-init absent\nunattended-upgrades absent\n",
+   "stderr": ""
+  },
+  {
+   "id": "package-lists-refresh-on-every-agent-run",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-update-package-lists-exec-never-runs",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n0\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "5d01d859-1b3e-4dcb-a161-f212722da28b",
+   "snapshot": "P8NODE_BASELINE_GREEN_v5",
+   "apt_mirror": "fallback http://mirrors.edge.kernel.org/ubuntu/",
+   "boot_id_at_end": "5d01d859-1b3e-4dcb-a161-f212722da28b",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/infra-populi",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "39e8168f391ca1881f0e47d06dc3bc174387fc393f76cb103afeed853389f11f",
+ "variants": {
+  "unattended": {
+   "name": "unattended",
+   "node": "ubuntu",
+   "params": "unattended",
+   "clean": [
+    {
+     "id": "unattended-upgrades-installed-when-asked",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "iptables-persistent unknown ok not-installed\nunattended-upgrades install ok installed\nsupervisor installed: 0\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795805685'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 7.55 seconds\u001b[0m\nRUN2_EXPECTED_EVENTS: 1 from Exec[apt_update] Exec[dnf-makecache] [own: Exec[apt_update], Exec[dnf-makecache]; inherited: none] (plan expected_run2_events)\nCOVERAGE infra_populi::packages_base: 22 concrete resources (+1 defined-type instances)\n  Exec[apt_update]\n  Apt::Setting[conf-update-stamp]\n  File[sources.list]\n  File[sources.list.d]\n  File[preferences]\n  File[preferences.d]\n  File[apt.conf.d]\n  File[auth.conf.d]\n  File[keyrings]\n  File[/etc/apt/auth.conf]\n  Package[gnupg]\n  Exec[update-package-lists]\n  Package[iptables-persistent]\n  Package[monitoring-plugins-standard]\n  Package[ecryptfs-utils]\n  Package[vim]\n  Package[wget]\n  Package[aptitude]\n  Package[acl]\n  Package[supervisor]\n  Package[cloud-init]\n  Package[unattended-upgrades]\n  File[/etc/apt/apt.conf.d/15update-stamp]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant unattended; never a Phase 1 record)\n\nNODE_FRESH: yes (boot 13d1cc74 of the latest revert, no agent run since)\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\n\n"
+   },
+   "applied": [
+    {
+     "id": "unattended-upgrades-installed-when-asked",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "iptables-persistent install ok installed\nunattended-upgrades install ok installed\nsupervisor installed: 0\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "13d1cc74-14fc-4982-9b99-36537e349afb",
+     "snapshot": "P8NODE_BASELINE_GREEN_v5",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "13d1cc74-14fc-4982-9b99-36537e349afb",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "e6d4c9c64514c62a65bc63b9f877591f9c6665892df31385533c0247b67f88c4"
+  },
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "clean": [
+    {
+     "id": "on-redhat-the-package-list-and-dnf-automatic-absent",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "package iptables-services is not installed\npackage nagios-plugins-all is not installed\npackage yum-utils is not installed\npackage wget is not installed\nacl\nno package provides vim\ndnf-automatic absent\ncloud-init absent\n",
+     "stderr": "awk: fatal: cannot open file `/opt/puppetlabs/puppet/cache/state/last_run_report.yaml' for reading: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": " unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795806308'\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Packages_base/Exec[dnf-makecache]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 19.43 seconds\u001b[0m\nRUN2_EXPECTED_EVENTS: 1 from Exec[apt_update] Exec[dnf-makecache] [own: Exec[apt_update], Exec[dnf-makecache]; inherited: none] (plan expected_run2_events)\nCOVERAGE infra_populi::packages_base: 13 concrete resources (+0 defined-type instances)\n  Exec[dnf-makecache]\n  Exec[install-epel-release]\n  Exec[enable-codeready-builder-repo]\n  Exec[update-package-lists]\n  Package[iptables-services]\n  Package[nagios-plugins-all]\n  Package[vim]\n  Package[wget]\n  Package[yum-utils]\n  Package[acl]\n  Package[supervisor]\n  Package[cloud-init]\n  Package[dnf-automatic]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\nGREEN_STAMP packages_base 97d5835b93d9\n\nNODE_FRESH: yes (boot 7f7d201c of the latest revert, no agent run since)\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\n\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-the-package-list-and-dnf-automatic-absent",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "iptables-services\nnagios-plugins-all\nyum-utils\nwget\nacl\nvim-enhanced\ndnf-makecache ran: 1\ndnf-automatic absent\ncloud-init absent\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "7f7d201c-fb10-46d9-a36f-038ac7b449b4",
+     "snapshot": "P8LAB_RHEL9_BASELINE_v3",
+     "apt_mirror": null,
+     "boot_id_at_end": "7f7d201c-fb10-46d9-a36f-038ac7b449b4",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "39e8168f391ca1881f0e47d06dc3bc174387fc393f76cb103afeed853389f11f"
+  },
+  "rhel-unattended": {
+   "name": "rhel-unattended",
+   "node": "rhel9",
+   "params": "unattended",
+   "clean": [
+    {
+     "id": "on-redhat-dnf-automatic-installed-when-asked",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "package dnf-automatic is not installed\npackage iptables-services is not installed\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "ironment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795806935'\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Packages_base/Exec[dnf-makecache]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 20.18 seconds\u001b[0m\nRUN2_EXPECTED_EVENTS: 1 from Exec[apt_update] Exec[dnf-makecache] [own: Exec[apt_update], Exec[dnf-makecache]; inherited: none] (plan expected_run2_events)\nCOVERAGE infra_populi::packages_base: 13 concrete resources (+0 defined-type instances)\n  Exec[dnf-makecache]\n  Exec[install-epel-release]\n  Exec[enable-codeready-builder-repo]\n  Exec[update-package-lists]\n  Package[iptables-services]\n  Package[nagios-plugins-all]\n  Package[vim]\n  Package[wget]\n  Package[yum-utils]\n  Package[acl]\n  Package[supervisor]\n  Package[cloud-init]\n  Package[dnf-automatic]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant unattended; never a Phase 1 record)\n\nNODE_FRESH: yes (boot 6324657a of the latest revert, no agent run since)\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update] Exec[dnf-makecache]) (gate v2).\n\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-dnf-automatic-installed-when-asked",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "dnf-automatic\niptables-services\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "6324657a-e357-4c51-be63-2ea27eb8e0ab",
+     "snapshot": "P8LAB_RHEL9_BASELINE_v3",
+     "apt_mirror": null,
+     "boot_id_at_end": "6324657a-e357-4c51-be63-2ea27eb8e0ab",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "e6d4c9c64514c62a65bc63b9f877591f9c6665892df31385533c0247b67f88c4"
+  }
+ },
+ "duration_s": 1688.5
+}
