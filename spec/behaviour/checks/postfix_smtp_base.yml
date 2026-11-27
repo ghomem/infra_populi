@@ -438,3 +438,6 @@ apply:
   catalog:
     Debian:
     - class: postfix_smtp_base
+  requires:
+  - server
+  requires_why: ssl_base takes the key and certificates from the server's file mount puppet:///extra_files

@@ -610,3 +610,6 @@ apply:
   expected_run2_events:
   - Exec[apt_update]
   - Exec[dnf-makecache]
+  requires:
+  - server
+  requires_why: a check runs the class's Puppet check, which runs puppet agent --test against the server

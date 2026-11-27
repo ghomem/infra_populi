@@ -320,3 +320,6 @@ apply:
     RedHat:
     - class: nginx_base
     - class: ssl_nginx_domain
+  requires:
+  - server
+  requires_why: ssl_base takes the key and certificates from the server's file mount puppet:///extra_files

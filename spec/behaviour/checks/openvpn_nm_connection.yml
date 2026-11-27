@@ -281,3 +281,6 @@ apply:
     Debian:
     - class: openvpn_nm_connection
   node_fixture: p8test_vpn_ca
+  requires:
+  - server
+  requires_why: the OpenVPN CA certificate comes from the server's file mount puppet:///extra_files

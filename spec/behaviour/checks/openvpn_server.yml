@@ -387,3 +387,6 @@ apply:
     - class: network_dhcp
     - class: openvpn_server
   node_fixture: p8test_dhcp_primary
+  requires:
+  - server
+  requires_why: the OpenVPN keys, certificates and DH parameters come from the server's file mount puppet:///extra_files

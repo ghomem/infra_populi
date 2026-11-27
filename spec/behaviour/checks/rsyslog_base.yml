@@ -323,3 +323,6 @@ apply:
     - class: rsyslog_base
     RedHat:
     - class: rsyslog_base
+  requires:
+  - server
+  requires_why: its checks read the catalog the agent cached (client_data/catalog) and depend on the node's own agent runs

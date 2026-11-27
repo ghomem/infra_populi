@@ -368,3 +368,6 @@ apply:
     - class: nginx_frontend
   expected_run2_events:
   - Notify[Generated Upstream members for *]
+  requires:
+  - server
+  requires_why: ssl_base takes the key and certificates from the server's file mount puppet:///extra_files

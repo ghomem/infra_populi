@@ -192,3 +192,7 @@ apply:
   expected_run2_events:
   - Exec[apt_update]
   - Exec[dnf-makecache]
+  requires:
+  - server
+  requires_why: a check reads the agent's resource list (state/resources.txt); after puppet apply it did not list the catalog's
+    exec

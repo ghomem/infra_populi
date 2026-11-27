@@ -244,3 +244,6 @@ apply:
     - class: node_base_desktop
   expected_run2_events:
   - Exec[apt_update]
+  requires:
+  - server
+  requires_why: a check restarts the agent daemon, whose own run asks the server for the node's catalog

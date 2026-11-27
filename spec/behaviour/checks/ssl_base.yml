@@ -219,3 +219,6 @@ apply:
     RedHat:
     - external: nginx
     - class: ssl_base
+  requires:
+  - server
+  requires_why: ssl_base takes the key and certificates from the server's file mount puppet:///extra_files
