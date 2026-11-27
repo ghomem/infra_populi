@@ -1,0 +1,268 @@
+{
+ "class": "dns_client",
+ "role": "local",
+ "at": "20261126T154701Z",
+ "set_sha256": "c572d7566675207903e6505ea921c410748bf8880debbf4b2a7d19886bbada57",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "resolv-conf-names-exactly-the-given-servers",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "nameserver 1.1.1.1\nnameserver 8.8.8.8\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "names-resolve-through-the-given-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "status: NOERROR\nSERVER: 1.1.1.1\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "a-nameserver-is-added-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "nameserver 1.1.1.1\nnameserver 8.8.8.8\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-keeps-only-the-given-servers",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "nameserver 1.1.1.1\nnameserver 8.8.8.8\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Resolv_conf/File[/etc/resolv.conf]/content: content changed '{sha256}700c436ea6b6d122738e66e7bd171403ed494774ada030096f899eb4db0153ef' to '{sha256}37c9048fc8e3c26a3c45ae401f4a7256f8b54e0bff6c53a25f4262366eeff660'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.07 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Resolv_conf/File[/etc/resolv.conf]/content: content changed '{sha256}700c436ea6b6d122738e66e7bd171403ed494774ada030096f899eb4db0153ef' to '{sha256}37c9048fc8e3c26a3c45ae401f4a7256f8b54e0bff6c53a25f4262366eeff660'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.43 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.42 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.42 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "resolv-conf-names-exactly-the-given-servers",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nameserver 10.0.2.3\nnameserver 1.1.1.1\n",
+   "stderr": ""
+  },
+  {
+   "id": "names-resolve-through-the-given-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "status: NOERROR\nSERVER: 10.0.2.3\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the name (p8test.invalid, a reserved name that never exists), so the server must answer NXDOMAIN",
+    "rc": 0,
+    "passed": false,
+    "stdout": "status: NXDOMAIN\nSERVER: 10.0.2.3\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-nameserver-is-added-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nameserver 10.0.2.3\nnameserver 1.1.1.1\nnameserver 9.9.9.9\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "appends `nameserver 9.9.9.9` to /etc/resolv.conf on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-agent-run-keeps-only-the-given-servers",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nameserver 10.0.2.3\nnameserver 1.1.1.1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the file (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "FINDINGS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "898dff46-4d62-4291-88dd-8768be74f540",
+   "boot_id_at_end": "898dff46-4d62-4291-88dd-8768be74f540",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "90046e27a34bff109194d93a8187e0c5d03dc858646fe184267d7837e4b5530c",
+ "node_agent": {
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Resolv_conf/File[/etc/resolv.conf]/content: content changed '{sha256}ab801eaf0181a40403f89d141fd2f56417d1d1f31eb1c29e6a2170da4c1806fe' to '{sha256}37c9048fc8e3c26a3c45ae401f4a7256f8b54e0bff6c53a25f4262366eeff660'\u001b[0m"
+  ],
+  "errors": [],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Resolv_conf/File[/etc/resolv.conf]/content: content changed '{sha256}ab801eaf0181a40403f89d141fd2f56417d1d1f31eb1c29e6a2170da4c1806fe' to '{sha256}37c9048fc8e3c26a3c45ae401f4a7256f8b54e0bff6c53a25f4262366eeff660'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.55 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "variants": {
+  "empty": {
+   "name": "empty",
+   "node": "ubuntu",
+   "params": "empty",
+   "clean": [
+    {
+     "id": "an-empty-list-leaves-the-resolver-alone",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "dns_client applied: True\nresolv_conf resources: 1\nresolv.conf last written before the applied catalog\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nAGENT_RC=0\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "an-empty-list-leaves-the-resolver-alone",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "dns_client applied: True\nresolv_conf resources: 1\nresolv.conf last written before the applied catalog\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [
+    "an-empty-list-leaves-the-resolver-alone"
+   ],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "FINDINGS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "bc72cd95-02ed-40a3-a34f-3c0a61538556",
+     "boot_id_at_end": "bc72cd95-02ed-40a3-a34f-3c0a61538556",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "df340966b1c6d8892d4b58c212a3e38177c2077b1072df4727089c3a795fab04"
+  }
+ },
+ "duration_s": 159.0
+}

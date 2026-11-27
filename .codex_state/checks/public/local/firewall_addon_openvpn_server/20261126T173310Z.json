@@ -1,0 +1,297 @@
+{
+ "class": "firewall_addon_openvpn_server",
+ "role": "local",
+ "at": "20261126T173137Z",
+ "set_sha256": "1a0a3cb4f33bf43acaae0f83aeee82dee81c03340ea1e5c4a04e7ed4b90a6cbf",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "forward-bridge-to-wan",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "forward-wan-to-bridge-established-only",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "forward-bridge-loopback",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "nat-masquerade-on-wan",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "ipv4-forwarding-on-and-persistent",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /etc/sysctl.d/net.ipv4.ip_forward.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "a-lan-and-a-wan-behind-the-node",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "inactive\ninactive\ninactive\n0\n0\n",
+   "stderr": "Error: argument \"p8test1\" is wrong: Device does not exist\n\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-lan-host-reaches-the-wan-masqueraded",
+   "control": "negative",
+   "rc": 255,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Cannot open network namespace \"p8testlan\": No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-wan-host-cannot-open-a-connection-into-the-lan",
+   "control": "negative",
+   "rc": 255,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Cannot open network namespace \"p8testwan\": No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-lan-host-reaches-another-subnet-on-the-bridge",
+   "control": "negative",
+   "rc": 255,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Cannot open network namespace \"p8testlan\": No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-forward-rules-counted-the-flows",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "202: zero\n203: zero\n204: zero\nstand-in drop: zero\n205: zero\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Firewall::Linux::Debian/Package[iptables-persistent]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Firewall[202 allow flow from br0 exterior]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Firewall[203 allow flow from exterior into br0]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Firewall[204 allow flow loopback on br0]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Firewall[205 performing nat]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Sysctl[net.ipv4.ip_forward]/File[/etc/sysctl.d/net.ipv4.ip_forward.conf]/ensure: defined content as '{sha256}e2c2ac17097616ee184af9965776f83ad87dcf9e82ada5c8a3ea0f8371813fe8'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Sysctl[net.ipv4.ip_forward]/Exec[sysctl-net.ipv4.ip_forward]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Sysctl[net.ipv4.ip_forward]/Exec[update-sysctl.conf-net.ipv4.ip_forward]: Triggered 'refresh' from 1 event\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\n\u001b[mNotice: firewall[204 allow flow loopback on br0]: Creating: Ensuring changes to '204 allow flow loopback on br0' persist\u001b[0m\n\u001b[mNotice: firewall[204 allow flow loopback on br0]: Creating: Finished in 0.072632 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Firewall[205 performing nat]/ensure: defined 'ensure' as 'present'\u001b[0m\n\u001b[mNotice: firewall[205 performing nat]: Creating: Creating Rule '205 performing nat' with {:name=>\"205 performing nat\", :table=>\"nat\", :chain=>\"POSTROUTING\", :outiface=>\"p8test0\", :proto=>\"all\", :jump=>\"MASQUERADE\", :ensure=>\"present\", :protocol=>\"IPv4\"}\u001b[0m\n\u001b[mNotice: firewall[205 performing nat]: Creating: Ensuring changes to '205 performing nat' persist\u001b[0m\n\u001b[mNotice: firewall[205 performing nat]: Creating: Finished in 0.117896 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Sysctl[net.ipv4.ip_forward]/File[/etc/sysctl.d/net.ipv4.ip_forward.conf]/ensure: defined content as '{sha256}e2c2ac17097616ee184af9965776f83ad87dcf9e82ada5c8a3ea0f8371813fe8'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Sysctl[net.ipv4.ip_forward]/Exec[sysctl-net.ipv4.ip_forward]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Sysctl[net.ipv4.ip_forward]/Exec[update-sysctl.conf-net.ipv4.ip_forward]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 12.51 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.20 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.54 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.20 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.54 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "forward-bridge-to-wan",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A FORWARD -i p8test1 -o p8test0 -m comment --comment \"202 allow flow from br0 exterior\" -j ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "forward-wan-to-bridge-established-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A FORWARD -i p8test0 -o p8test1 -m state --state RELATED,ESTABLISHED -m comment --comment \"203 allow flow from exterior into br0\" -j ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "forward-bridge-loopback",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A FORWARD -i p8test1 -o p8test1 -m comment --comment \"204 allow flow loopback on br0\" -j ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "nat-masquerade-on-wan",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A POSTROUTING -o p8test0 -m comment --comment \"205 performing nat\" -j MASQUERADE\n",
+   "stderr": ""
+  },
+  {
+   "id": "ipv4-forwarding-on-and-persistent",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nnet.ipv4.ip_forward = 1\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-lan-and-a-wan-behind-the-node",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\nactive\nactive\n2\n2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates bridge p8test1 (10.252.1.1/24 and 10.252.2.1/24 on the node) with ports p8testlanA and p8testlanB, namespaces p8testlan (veth p8testlanif 10.252.1.2/24, default route via 10.252.1.1) and p8testlan2 (veth p8testlan2if 10.252.2.2/24, default route via 10.252.2.1), both with accept_redirects 0 inside the namespace; namespace p8testwan with veth pair p8test0/p8testwanif (10.252.0.1/24 node, 10.252.0.2/24 WAN, a route to 10.252.1.0/24 via the node); starts transient units p8test-wansrv (TCP 10.252.0.2:8080, answers with the client address it sees), p8test-lansrv (TCP 10.252.1.2:8081) and p8test-lan2srv (TCP 10.252.2.2:8082); appends `-A FORWARD -i p8test0 -m comment --comment p8test-default-drop -j DROP` and the same for -i p8test1",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-lan-host-reaches-the-wan-masqueraded",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "WAN server saw 10.252.0.1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond one TCP connection from the LAN namespace to the WAN server (declared mutating so it runs after the setup)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-wan-host-cannot-open-a-connection-into-the-lan",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "wan-present\nno connection\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond one TCP connection attempt from the WAN namespace to the LAN server (declared mutating so it runs after the setup)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-lan-host-reaches-another-subnet-on-the-bridge",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "connected\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond one TCP connection from p8testlan to p8testlan2 (declared mutating so it runs after the setup)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-forward-rules-counted-the-flows",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "202: counted\n203: counted\n204: counted\nstand-in drop: counted\n205: counted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rule counters (declared mutating so it runs after the flows)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "35acd28d-43ef-45cd-974a-076b8a180598",
+   "boot_id_at_end": "35acd28d-43ef-45cd-974a-076b8a180598",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "32bd6681c7e15dc61eee7e54deaf797d238f6428dce128fe01497ba86a35faed",
+ "duration_s": 92.2
+}

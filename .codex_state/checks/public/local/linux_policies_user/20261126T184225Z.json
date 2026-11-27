@@ -1,0 +1,129 @@
+{
+ "class": "linux_policies_user",
+ "role": "local",
+ "at": "20261126T184026Z",
+ "set_sha256": "d84b480c44458f34d95dcace2cc6df168c1fe20464e3a22f3f4daf40e1054601",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "user-policy-script-composed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh': No such file or directory\nhead: cannot open '/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh' for reading: No such file or directory\ngrep: /opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh: No such file or directory\ntail: cannot open '/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh' for reading: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "policies-run-on-an-agent-run-while-logged-in",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "autostart-runs-the-policies-at-login",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\nno session or no agent run\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "no-policy-runs-before-the-session",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "no session\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 2,
+  "green": false,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Linux_policies_common/File[/opt/puppet-infrastructure/linux-policies]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Linux_policies_common/File[/opt/puppet-infrastructure/linux-policies/COMMON]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Linux_policies_common/File[/opt/puppet-infrastructure/linux-policies/COMMON/common]/ensure: defined content as '{sha256}96142acfd235e555756e309dfbd98e45a71024a675f6d1a47ae923d3334f147a'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Linux_policies_common/File[/opt/puppet-infrastructure/linux-policies/TMP]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Linux_policies_common/File[/opt/puppet-infrastructure/linux-policies/TMP/.placeholder]/ensure: defined content as '{sha256}9c97a990d2a22ab8e887b4c52ad5194b6075e3cd0eba85f4ecaea557abec06e8'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Linux_policies_common/File[/opt/puppet-infrastructure/linux-policies/USER]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Linux_policies_common/File[/opt/puppet-infrastructure/linux-policies/USER/.placeholder]/ensure: defined content as '{sha256}6a3986200607dffb3f07543ad5f6ebb0ea1f9bfa6e8e290df79d530c74334bc7'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Linux_policies_common/File[/etc/xdg/autostart/linux-policies-user.desktop]/ensure: defined content as '{sha256}e564845d93668d757ba4a7e1eb7006334993520d0b05ecd05d1aee04933bb0f5'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Linux_policies_common/File[/opt/puppet-infrastructure/linux-policies/COMMON/execute_linux_policies_user.sh]/ensure: defined content as '{sha256}98607fb1cd703745efd4c0183ea028f5b375f79a52076f266ca0701a927aec33'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Group[p8testuser]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Linux_policies_user[linux_policies_user]/File[/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh]/ensure: defined content as '{sha256}af95efe80c668dc0abc231853c9e006cfeec6cd6403985f52d1e540f31d7943f'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "x_policies_common/File[/opt/puppet-infrastructure/linux-policies/USER]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Linux_policies_common/File[/opt/puppet-infrastructure/linux-policies/USER/.placeholder]/ensure: defined content as '{sha256}6a3986200607dffb3f07543ad5f6ebb0ea1f9bfa6e8e290df79d530c74334bc7'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Linux_policies_common/File[/etc/xdg/autostart/linux-policies-user.desktop]/ensure: defined content as '{sha256}e564845d93668d757ba4a7e1eb7006334993520d0b05ecd05d1aee04933bb0f5'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Linux_policies_common/File[/opt/puppet-infrastructure/linux-policies/COMMON/execute_linux_policies_user.sh]/ensure: defined content as '{sha256}98607fb1cd703745efd4c0183ea028f5b375f79a52076f266ca0701a927aec33'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Group[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Linux_policies_user[linux_policies_user]/File[/opt/puppet-infrastructure/linux-policies/USER/p8testuser.sh]/ensure: defined content as '{sha256}af95efe80c668dc0abc231853c9e006cfeec6cd6403985f52d1e540f31d7943f'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.49 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 2,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for p8lab-kubuntu in environment production in 0.18 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.14 seconds\u001b[0m\nAGENT_RC=2\n"
+   }
+  ],
+  "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for p8lab-kubuntu in environment production in 0.18 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.14 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "dest": "p8lab-kubuntu",
+   "boot_id": "dec01105-9e2c-4c2c-b6ee-6631c5935a16",
+   "boot_id_at_end": "dec01105-9e2c-4c2c-b6ee-6631c5935a16",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "p8lab-kubuntu",
+  "NODE_ADDR": "192.168.56.22",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "6d2612f38b1607de470c6720a954d7cbfbe61cf8b182c02907c8d9fa5f255cd9",
+ "duration_s": 118.4
+}

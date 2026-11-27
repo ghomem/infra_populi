@@ -1,0 +1,284 @@
+{
+ "class": "hello_world_flask",
+ "role": "local",
+ "at": "20261126T183505Z",
+ "set_sha256": "fb3d85443678339f97391e9bfe2a8ddcaeda4f503dd9ab9cecbe6ca7274a6a21",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "service-running-and-enabled",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "inactive\nnot-found\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "unit-runs-gunicorn-in-the-app-dir",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /lib/systemd/system/hello-world-flask-hello_world_flask.service: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "app-serves-the-welcome-message",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "not-served-on-another-address",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "curl-rc=7\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-app-is-changed-by-hand",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-and-restarts",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-unit-is-changed-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "8081: 000\n8080: curl-rc=7\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-unit-in-effect",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "8080: 000\n8081: curl-rc=7\n",
+   "stderr": "grep: /lib/systemd/system/hello-world-flask-hello_world_flask.service: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hello_world_flask_common/Package[python3-gunicorn]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hello_world_flask_common/Package[python3-flask]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hello_world_flask_common/File[/opt/puppet-infrastructure/hello_world_flask]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/opt/puppet-infrastructure/hello_world_flask/hello_world_flask]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/opt/puppet-infrastructure/hello_world_flask/hello_world_flask/hello_world_flask.py]/ensure: defined content as '{sha256}65867763937442a4455352738754f03957ed455dc584ce7e900936247996e803'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/opt/puppet-infrastructure/hello_world_flask/hello_world_flask/wsgi.py]/ensure: defined content as '{sha256}576799276d153a90b24faf7e22bc221f03abdd1856afbaf0174abdcbfc00675c'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/lib/systemd/system/hello-world-flask-hello_world_flask.service]/ensure: defined content as '{sha256}8ceb119e332a074f7346e8e89c54ce8690c759e7bbe903d0e5af8f3487a4159f'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/Service[hello-world-flask-hello_world_flask]/ensure: ensure changed 'stopped' to 'running'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-reload]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-restart]: Triggered 'refresh' from 3 events\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "t/puppet-infrastructure/hello_world_flask/hello_world_flask]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/opt/puppet-infrastructure/hello_world_flask/hello_world_flask/hello_world_flask.py]/ensure: defined content as '{sha256}65867763937442a4455352738754f03957ed455dc584ce7e900936247996e803'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/opt/puppet-infrastructure/hello_world_flask/hello_world_flask/wsgi.py]/ensure: defined content as '{sha256}576799276d153a90b24faf7e22bc221f03abdd1856afbaf0174abdcbfc00675c'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/lib/systemd/system/hello-world-flask-hello_world_flask.service]/ensure: defined content as '{sha256}8ceb119e332a074f7346e8e89c54ce8690c759e7bbe903d0e5af8f3487a4159f'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/Service[hello-world-flask-hello_world_flask]/ensure: ensure changed 'stopped' to 'running'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-reload]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-restart]: Triggered 'refresh' from 3 events\u001b[0m\n\u001b[mNotice: Applied catalog in 24.12 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.08 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.43 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.08 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.43 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "service-running-and-enabled",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\nenabled\n",
+   "stderr": ""
+  },
+  {
+   "id": "unit-runs-gunicorn-in-the-app-dir",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ExecStart=python3 -m gunicorn --bind 127.0.0.1:8080 wsgi:app\nWorkingDirectory=/opt/puppet-infrastructure/hello_world_flask/hello_world_flask\n",
+   "stderr": ""
+  },
+  {
+   "id": "app-serves-the-welcome-message",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "<h1 style='color:blue'>P8 test flask hello</h1\n",
+   "stderr": ""
+  },
+  {
+   "id": "not-served-on-another-address",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "curl-rc=7\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-app-is-changed-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "<h1 style='color:blue'>p8test drifted</h1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "replaces the welcome message in {{LOCALDIR}}/hello_world_flask/hello_world_flask/hello_world_flask.py with \"p8test drifted\" (sed -i) and restarts hello-world-flask-hello_world_flask",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-and-restarts",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "<h1 style='color:blue'>P8 test flask hello</h1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond one HTTP request to the app (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-unit-is-changed-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "8081: 200\n8080: curl-rc=7\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "replaces 127.0.0.1:8080 with 127.0.0.1:8081 in /lib/systemd/system/hello-world-flask-hello_world_flask.service (sed -i), runs systemctl daemon-reload and restarts hello-world-flask-hello_world_flask",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-the-unit-in-effect",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n8080: 200\n8081: curl-rc=7\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond two HTTP requests to the node's own ports (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "cd0dde90-ce44-40f8-a1d3-d76a15baa238",
+   "boot_id_at_end": "cd0dde90-ce44-40f8-a1d3-d76a15baa238",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "6cfad11d5b0eb8e8e199bc957ad3bef8e4f917ea600cfc29573a59141ec66487",
+ "node_agent": {
+  "the-app-is-changed-by-hand": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/opt/puppet-infrastructure/hello_world_flask/hello_world_flask/hello_world_flask.py]/content: content changed '{sha256}61943f9cd3685b59758266d48d2376c5354d334d705d648f906055f259ae2363' to '{sha256}65867763937442a4455352738754f03957ed455dc584ce7e900936247996e803'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-restart]: Triggered 'refresh' from 1 event\u001b[0m"
+   ],
+   "errors": [],
+   "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.13 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/opt/puppet-infrastructure/hello_world_flask/hello_world_flask/hello_world_flask.py]/content: content changed '{sha256}61943f9cd3685b59758266d48d2376c5354d334d705d648f906055f259ae2363' to '{sha256}65867763937442a4455352738754f03957ed455dc584ce7e900936247996e803'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-restart]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.78 seconds\u001b[0m\nAGENT_RC=2\n"
+  },
+  "the-unit-is-changed-by-hand": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/lib/systemd/system/hello-world-flask-hello_world_flask.service]/content: content changed '{sha256}7a9a2a19b061af02a4ca493a94695fce4dbdebcb27846ffa0ec1d182dba98bfd' to '{sha256}8ceb119e332a074f7346e8e89c54ce8690c759e7bbe903d0e5af8f3487a4159f'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-reload]: Triggered 'refresh' from 1 event\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-restart]: Triggered 'refresh' from 1 event\u001b[0m"
+   ],
+   "errors": [],
+   "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.08 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/File[/lib/systemd/system/hello-world-flask-hello_world_flask.service]/content: content changed '{sha256}7a9a2a19b061af02a4ca493a94695fce4dbdebcb27846ffa0ec1d182dba98bfd' to '{sha256}8ceb119e332a074f7346e8e89c54ce8690c759e7bbe903d0e5af8f3487a4159f'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-reload]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-restart]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.92 seconds\u001b[0m\nAGENT_RC=2\n"
+  }
+ },
+ "duration_s": 146.3
+}

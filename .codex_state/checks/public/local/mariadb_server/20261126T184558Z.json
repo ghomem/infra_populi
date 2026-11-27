@@ -1,0 +1,221 @@
+{
+ "class": "mariadb_server",
+ "role": "local",
+ "at": "20261126T184225Z",
+ "set_sha256": "e08a3ad7d385628c95f79f07dcaca2155294b312aa18ca058ccfacaf4e8dc1e3",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "mariadb-server-installed-and-running",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "dpkg-query: no packages found matching mariadb-server\nbash: line 98: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "server-runs-the-override-options",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "ed25519-plugin-active",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "insecure-transport-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "tls=refused plain=refused\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "root-is-local-only-and-no-anonymous-user",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "server-key-matches-certificate",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Could not open file or uri for loading certificate from /etc/mysql/certificates/server-cert.pem\n405787826A7D0000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n405787826A7D0000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/mysql/certificates/server-cert.pem)\nUnable to load certificate\nCould not open file or uri for loading key from /etc/mysql/certificates/server-key.pem\n4047DDCCC6760000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n4047DDCCC6760000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/mysql/certificates/server-key.pem)\n",
+   "ok": true
+  },
+  {
+   "id": "certificate-subject-from-hiera",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Could not open file or uri for loading certificate from /etc/mysql/certificates/server-cert.pem\n40975583C37C0000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n40975583C37C0000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/mysql/certificates/server-cert.pem)\nUnable to load certificate\n",
+   "ok": true
+  },
+  {
+   "id": "certificate-files-owner-and-mode",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/mysql/certificates/ca.pem': No such file or directory\nstat: cannot statx '/etc/mysql/certificates/server-cert.pem': No such file or directory\nstat: cannot statx '/etc/mysql/certificates/server-key.pem': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "log-directory-attributes",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/var/log/mysql': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-users-are-ed25519-and-require-tls",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "the-users-log-in-with-their-grants",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-mariadb/answers.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "another-host-logs-in-over-tls",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-mariadb-peer/answers.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 2,
+  "green": false,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Client::Install/Package[mysql_client]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Mariadb_server/File[/etc/mysql/certificates/]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Mariadb_server/File[/opt/puppet-infrastructure/bin/deploy_self_signed_certificates.sh]/ensure: defined content as '{sha256}5ca6d71e860dc761cb731241aa2588fdaec4a964e4c5662cf94f1979a62947fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Mariadb_server/Exec[generate the ssl certificates, sign them and deploy them at /etc/mysql/certificates/]/returns: executed successfully\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Config/Exec[datadir-managed_dir-mkdir]/returns: executed successfully\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Config/Exec[datadir-managed_dir-chmod]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Config/File[mysql-config-file]/ensure: defined content as '{sha256}e6aba7b83c1b3b9ad95a7967f5f1b731c2550c10e1df128943dc03580647583d'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Install/Package[mysql-server]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Managed_dirs/File[datadir-managed_dir]/mode: mode changed '0777' to '0700'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Installdb/File[/var/log/mysql]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Installdb/File[/var/log/mysql/error.log]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Service/Service[mysqld]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Service/Exec[wait_for_mysql_socket_to_open]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Root_password/Mysql_user[root@localhost]/password_hash: changed password\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Root_password/File[/root/.my.cnf]/ensure: changed [redacted] to [redacted]\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_user[p8test_mrw@%]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_user[p8test_mro@%]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_grant[p8test_mrw@%/*.*]/privileges: privileges changed ['USAGE'] to ['ALL']\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_grant[p8test_mrw@%/*.*]/options: options changed ['NONE'] to ['GRANT']\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_grant[p8test_mro@%/*.*]/privileges: privileges changed ['USAGE'] to ['SELECT', 'SHOW VIEW']\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_grant[p8test_mro@%/*.*]/options: options changed ['NONE'] to ['GRANT']\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "datadir-managed_dir]/mode: mode changed '0777' to '0700'\u001b[0m\n\u001b[mNotice: /Stage[main]/Mysql::Server::Installdb/File[/var/log/mysql]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Mysql::Server::Installdb/File[/var/log/mysql/error.log]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Mysql::Server::Service/Service[mysqld]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Mysql::Server::Service/Exec[wait_for_mysql_socket_to_open]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Mysql::Server::Root_password/Mysql_user[root@localhost]/password_hash: changed password\u001b[0m\n\u001b[mNotice: /Stage[main]/Mysql::Server::Root_password/File[/root/.my.cnf]/ensure: changed [redacted] to [redacted]\u001b[0m\n\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_user[p8test_mrw@%]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_user[p8test_mro@%]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_grant[p8test_mrw@%/*.*]/privileges: privileges changed ['USAGE'] to ['ALL']\u001b[0m\n\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_grant[p8test_mrw@%/*.*]/options: options changed ['NONE'] to ['GRANT']\u001b[0m\n\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_grant[p8test_mro@%/*.*]/privileges: privileges changed ['USAGE'] to ['SELECT', 'SHOW VIEW']\u001b[0m\n\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_grant[p8test_mro@%/*.*]/options: options changed ['NONE'] to ['GRANT']\u001b[0m\n\u001b[mNotice: Applied catalog in 79.75 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 2,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.28 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.96 seconds\u001b[0m\nAGENT_RC=2\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.28 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.96 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "713c6e96-a2c9-45c4-bf62-0181411a1dc6",
+   "boot_id_at_end": "713c6e96-a2c9-45c4-bf62-0181411a1dc6",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "c96395c7-de1f-4b72-a1f3-e8291965dca1",
+   "boot_id_at_end": "c96395c7-de1f-4b72-a1f3-e8291965dca1",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "cc5ac8a414a569d14a5c12702c1409f43bbbd6fc40205f446ce0805c6f5c6a20",
+ "duration_s": 212.9
+}

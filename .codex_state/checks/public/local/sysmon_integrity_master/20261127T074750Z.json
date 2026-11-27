@@ -1,0 +1,125 @@
+{
+ "class": "sysmon_integrity_master",
+ "role": "local",
+ "at": "20261127T074645Z",
+ "set_sha256": "a42056d0c1287e6bba0e12063c94e2b992cf8ebe6cca13e14b832957e8db3b06",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "checklist-script-rendered",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/checklist-integrity.sh': No such file or directory\nbash: /opt/puppet-infrastructure/bin/checklist-integrity.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "checklist-written-as-puppet-variable",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /etc/puppetlabs/code/environments/production/manifests/97_integrity.pp: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_integrity_master/File[/opt/puppet-infrastructure/bin/checklist-integrity.sh]/ensure: defined content as '{sha256}8264e49a87038f1f08af721a16256b4aea9409e84dee7d8f829072ca44642f32'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "eated\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_integrity_master/File[/opt/puppet-infrastructure/bin/checklist-integrity.sh]/ensure: defined content as '{sha256}8264e49a87038f1f08af721a16256b4aea9409e84dee7d8f829072ca44642f32'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.11 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/opt/puppet-infrastructure]\nCHANGED File[/opt/puppet-infrastructure/bin]\nCHANGED File[/opt/puppet-infrastructure/etc]\nCHANGED File[/opt/puppet-infrastructure/backup]\nCHANGED File[/opt/puppet-infrastructure/pkgsdir]\nCHANGED File[/etc/default/locale]\nCHANGED File[/opt/puppet-infrastructure/bin/mypython]\nCHANGED File[/opt/puppet-infrastructure/bin/checklist-integrity.sh]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.08 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.08 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "checklist-script-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\nOUTDIR=\"/etc/puppetlabs//code/environments/production/manifests\"\nOUTFILE=\"97_integrity.pp\"\nFILELIST=\"/etc/hostname /etc/os-release\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "checklist-written-as-puppet-variable",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "checklist-matches\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the master-side manifests directory /etc/puppetlabs/code/environments/production/manifests (absent on an agent node) and runs the checklist script once, which writes 97_integrity.pp there",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "dfec4a30-a21e-4202-a272-32e5d7cbd85f",
+   "boot_id_at_end": "dfec4a30-a21e-4202-a272-32e5d7cbd85f",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "bdc7cad6b7a341866922f77a4cef4b95bb796991821c6c88b0b953a5f4fc99b9",
+ "duration_s": 65.6
+}

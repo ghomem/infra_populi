@@ -1,0 +1,259 @@
+{
+ "class": "nginx_frontend_mail",
+ "role": "local",
+ "at": "20261127T040728Z",
+ "set_sha256": "b1d83e7e7de84acc6148ebbe874cd809f991d80a0cec9b455ab36ec8972cec25",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "nginx-config-valid-and-running",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "0\ninactive\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "mail-ports-listen",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n0\n0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "auth-servers-point-each-protocol-at-its-stream",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n\n\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "streams-listen-and-stream-access-log-off",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n0\n",
+   "stderr": "sed: can't read /etc/nginx/nginx.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "smtps-and-imaps-serve-the-frontend-certificate",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "465 differs\n993 differs\n",
+   "stderr": "Could not open file or uri for loading certificate from /etc/ssl/certs/p8test.nginx.bundle.pem\n4067CB1A86700000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n4067CB1A86700000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/ssl/certs/p8test.nginx.bundle.pem)\nUnable to load certificate\nCould not read certificate from <stdin>\nUnable to load certificate\nCould not read certificate from <stdin>\nUnable to load certificate\n",
+   "ok": true
+  },
+  {
+   "id": "the-peer-serves-the-mail-backend",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n0\n0\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "smtp-25-delivers-through-the-proxy",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-mail/smtp25.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "smtps-465-relays-the-client-login-to-the-backend",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-mail/smtps465.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "imaps-993-logs-in-at-the-backend-and-sees-the-mail",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-mail/imaps993.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "smtps-465-wrong-password-is-refused-by-the-backend",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-mail/smtps465-wrong.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "imaps-993-wrong-password-is-refused-by-the-backend",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-mail/imaps993-wrong.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "https-443-proxies-to-the-backend-web-interface",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-mail/https443.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-backend-received-the-sessions-from-the-proxy",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n0\n0\n",
+   "stderr": "grep: /var/mail/p8testuser: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 6,
+  "green": false,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 6,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Package[nginx]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}48c6a4ec1e1fd28ccf968490f07e34a1d7f755793b2108a3ed8670b1ee2a0aa2' to '{sha256}728f63bdbf957f72fd78c2c951113441ee2405236f41dfdb27b73e6c4afb20da'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}36c77daa2d85803e87c91ba723dd2bc6aaa6543ae4bd4a569034a7bf8bce464d' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/Exec[Generate a new 2048-bit Diffie-Hellman group]/returns: executed successfully\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_default_removal/File[/etc/nginx/sites-enabled/default]/ensure: removed\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Nginx::Resource::Mailhost[imaps_p8test.example.com]/Concat[/etc/nginx/conf.mail.d/imaps_p8test.example.com.conf]/File[/etc/nginx/conf.mail.d/imaps_p8test.example.com.conf]/ensure: defined content as '{sha256}8e3233939cd6e1741a0d53e25b31995852bfe3d6d9744bbd259cec63ee510d00'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Nginx::Resource::Mailhost[smtps_p8test.example.com]/Concat[/etc/nginx/conf.mail.d/smtps_p8test.example.com.conf]/File[/etc/nginx/conf.mail.d/smtps_p8test.example.com.conf]/ensure: defined content as '{sha256}833e600999df15217507f1bedc918a78aa0fad228d062d547ad0fd7d47787e9c'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Nginx::Resource::Mailhost[p8test.example.com]/Concat[/etc/nginx/conf.mail.d/p8test.example.com.conf]/File[/etc/nginx/conf.mail.d/p8test.example.com.conf]/ensure: defined content as '{sha256}11a656b2b6ad0be2f64506b589653819c1254911d0daac1b8677b5f4fac96705'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Nginx::Resource::Streamhost[imap_auth_stream]/Concat[/etc/nginx/streams-available/imap_auth_stream.conf]/File[/etc/nginx/streams-available/imap_auth_stream.conf]/ensure: defined content as '{sha256}3078c6a55e067b240f35c525a739f24cfd76f618849e856f5e5bb44a24e4d9d1'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Nginx::Resource::Streamhost[imap_auth_stream]/File[imap_auth_stream.conf symlink]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Nginx::Resource::Streamhost[smtps_auth_stream]/Concat[/etc/nginx/streams-available/smtps_auth_stream.conf]/File[/etc/nginx/streams-available/smtps_auth_stream.conf]/ensure: defined content as '{sha256}290f41dda28135c9d5582575ba4cba6c43989c2e210f9fc237a2386ec8232175'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Nginx::Resource::Streamhost[smtps_auth_stream]/File[smtps_auth_stream.conf symlink]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Nginx::Resource::Streamhost[smtp_auth_stream]/Concat[/etc/nginx/streams-available/smtp_auth_stream.conf]/File[/etc/nginx/streams-available/smtp_auth_stream.conf]/ensure: defined content as '{sha256}8e065dd2f40fcd6a382dd639f9b0cd45a951f264557dab6320d79b4211c9471d'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Nginx::Resource::Streamhost[smtp_auth_stream]/File[smtp_auth_stream.conf symlink]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Nginx::Resource::Server[imap_auth_server]/Concat[/etc/nginx/sites-available/imap_auth_server.conf]/File[/etc/nginx/sites-available/imap_auth_server.conf]/ensure: defined content as '{sha256}ee5dacfca9600682ac9c0b02aa2ea095f72e4c70962760e1411974c8f2e1bce3'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Nginx::Resource::Server[imap_auth_server]/File[imap_auth_server.conf symlink]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Nginx::Resource::Server[smtps_auth_server]/Concat[/etc/nginx/sites-available/smtps_auth_server.conf]/File[/etc/nginx/sites-available/smtps_auth_server.conf]/ensure: defined content as '{sha256}164c3589c84aa7015a0264310a549cf1e8d9d3c156ef8633d835d70ad2762ab4'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Nginx::Resource::Server[smtps_auth_server]/File[smtps_auth_server.conf symlink]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Nginx::Resource::Server[smtp_auth_server]/Concat[/etc/nginx/sites-available/smtp_auth_server.conf]/File[/etc/nginx/sites-available/smtp_auth_server.conf]/ensure: defined content as '{sha256}fcd0e83efbb8c4258f5a546caca253d9637b8d4704d543cd7d863e1411d0490e'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Nginx::Resource::Server[smtp_auth_server]/File[smtp_auth_server.conf symlink]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.pem]/File[/etc/ssl/certs/p8test.nginx.bundle.pem]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Upstream[backend_p8test.example.com]/Concat[/etc/nginx/conf.d/backend_p8test.example.com-upstream.conf]/File[/etc/nginx/conf.d/backend_p8test.example.com-upstream.conf]/ensure: defined content as '{sha256}4dc39fb2b51a87f4d0be4cc2197197a81b14dd26067773c2b2942063b782e3c0'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[http_p8test.example.com]/Concat[/etc/nginx/sites-available/http_p8test.example.com.conf]/File[/etc/nginx/sites-available/http_p8test.example.com.conf]/ensure: defined content as '{sha256}a88001fc368dc1bbc662330c7dd2b71a1309461a97cd1f6b4d54d23bcfe98c39'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[http_p8test.example.com]/File[http_p8test.example.com.conf symlink]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[http_www.p8test.example.com]/Concat[/etc/nginx/sites-available/http_www.p8test.example.com.conf]/File[/etc/nginx/sites-available/http_www.p8test.example.com.conf]/ensure: defined content as '{sha256}23d5e68db24aa492938385159fd43cf88ec60d8a615f0a6102c363a572e2ee9c'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[http_www.p8test.example.com]/File[http_www.p8test.example.com.conf symlink]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat[/etc/nginx/sites-available/https_www.p8test.example.com.conf]/Concat_file[/etc/nginx/sites-available/https_www.p8test.example.com.conf]: Dependency File[/etc/ssl/private/p8test-key.pem] has failures: true\u001b[0m",
+     "CHANGED Notify[Generated Upstream members for p8test.example.com are: {192.168.56.24:443 in p8test.example.com => {server => 192.168.56.24, port => 443}}]"
+    ],
+    "errors": [
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/File[/etc/ssl/private/p8test-key.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///",
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.pem]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.pem]: Failed to generate additional resource"
+    ],
+    "tail": "inx/mime.types]\nCHANGED Exec[Generate a new 2048-bit Diffie-Hellman group]\nCHANGED Notify[Generated Upstream members for p8test.example.com are: {192.168.56.24:443 in p8test.example.com => {server => 192.168.56.24, port => 443}}]\nCHANGED File[/etc/nginx/sites-enabled/default]\nCHANGED File[/etc/nginx/conf.mail.d/imaps_p8test.example.com.conf]\nCHANGED File[/etc/nginx/conf.mail.d/smtps_p8test.example.com.conf]\nCHANGED File[/etc/nginx/conf.mail.d/p8test.example.com.conf]\nCHANGED File[/etc/nginx/streams-available/imap_auth_stream.conf]\nCHANGED File[imap_auth_stream.conf symlink]\nCHANGED File[/etc/nginx/streams-available/smtps_auth_stream.conf]\nCHANGED File[smtps_auth_stream.conf symlink]\nCHANGED File[/etc/nginx/streams-available/smtp_auth_stream.conf]\nCHANGED File[smtp_auth_stream.conf symlink]\nCHANGED File[/etc/nginx/sites-available/imap_auth_server.conf]\nCHANGED File[imap_auth_server.conf symlink]\nCHANGED File[/etc/nginx/sites-available/smtps_auth_server.conf]\nCHANGED File[smtps_auth_server.conf symlink]\nCHANGED File[/etc/nginx/sites-available/smtp_auth_server.conf]\nCHANGED File[smtp_auth_server.conf symlink]\nCHANGED File[/etc/ssl/certs/p8test.nginx.bundle.pem]\nCHANGED File[/etc/nginx/conf.d/backend_p8test.example.com-upstream.conf]\nCHANGED File[/etc/nginx/sites-available/http_p8test.example.com.conf]\nCHANGED File[http_p8test.example.com.conf symlink]\nCHANGED File[/etc/nginx/sites-available/http_www.p8test.example.com.conf]\nCHANGED File[http_www.p8test.example.com.conf symlink]\n"
+   },
+   {
+    "rc": 6,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat[/etc/nginx/sites-available/https_www.p8test.example.com.conf]/Concat_file[/etc/nginx/sites-available/https_www.p8test.example.com.conf]: Dependency File[/etc/ssl/private/p8test-key.pem] has failures: true\u001b[0m",
+     "CHANGED Notify[Generated Upstream members for p8test.example.com are: {192.168.56.24:443 in p8test.example.com => {server => 192.168.56.24, port => 443}}]"
+    ],
+    "errors": [
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/File[/etc/ssl/private/p8test-key.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///",
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.pem]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.pem]: Failed to generate additional resource"
+    ],
+    "tail": "cies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-header]/Concat_fragment[https_www.p8test.example.com-ssl-header]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-footer]/Concat_fragment[https_www.p8test.example.com-ssl-footer]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.45 seconds\u001b[0m\nAGENT_RC=6\nCHANGED Notify[Generated Upstream members for p8test.example.com are: {192.168.56.24:443 in p8test.example.com => {server => 192.168.56.24, port => 443}}]\n"
+   }
+  ],
+  "tail": "cies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-header]/Concat_fragment[https_www.p8test.example.com-ssl-header]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-footer]/Concat_fragment[https_www.p8test.example.com-ssl-footer]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend_mail/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.45 seconds\u001b[0m\nAGENT_RC=6\nCHANGED Notify[Generated Upstream members for p8test.example.com are: {192.168.56.24:443 in p8test.example.com => {server => 192.168.56.24, port => 443}}]\n"
+ },
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "64f853d1-17e2-4116-a39d-f24e540b2cde",
+   "boot_id_at_end": "64f853d1-17e2-4116-a39d-f24e540b2cde",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "cac6a8fd-5f93-4a5d-8973-0f6a7efd92c3",
+   "boot_id_at_end": "cac6a8fd-5f93-4a5d-8973-0f6a7efd92c3",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "47346264d7ebf57d03a838c2da2ac901edd9ed20219e46a382fba640c2beabdf",
+ "duration_s": 212.6
+}

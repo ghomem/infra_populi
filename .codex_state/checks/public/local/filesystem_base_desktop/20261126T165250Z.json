@@ -1,0 +1,386 @@
+{
+ "class": "filesystem_base_desktop",
+ "role": "local",
+ "at": "20261126T164844Z",
+ "set_sha256": "bbecefef69e44cab7ab29dd508fd090bf6bf0889181e701d4c85d6e230eb8a77",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "base-directories",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure': No such file or directory\nstat: cannot statx '/opt/puppet-infrastructure/bin': No such file or directory\nstat: cannot statx '/opt/puppet-infrastructure/etc': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "syslog-file-owner-and-mode",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "syslog adm 640\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "a-script-in-bindir-runs-for-an-unprivileged-user",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-fsd/hello.out: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-syslog-file-drifts",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "syslog adm 640\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-syslog-file",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "syslog adm 640\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "base-directories",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/opt/puppet-infrastructure directory root root 755\n/opt/puppet-infrastructure/bin directory root root 755\n/opt/puppet-infrastructure/etc directory root root 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "syslog-file-owner-and-mode",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "syslog adm 640\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-script-in-bindir-runs-for-an-unprivileged-user",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test-hello\np8test-conf\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes {{LOCALDIR}}/bin/p8test-hello.sh (0755, prints p8test-hello) and {{LOCALDIR}}/etc/p8test.conf (0644), runs the script and reads the file as nobody; the output goes to /run/p8test-fsd/hello.out",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-syslog-file-drifts",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 644\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "chown root:root and chmod 0644 on /var/log/syslog; writes the marker /run/p8test-fsd/drifted",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-the-syslog-file",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "changed by hand earlier\nsyslog adm 640\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the marker and the file (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "6c889e35-66d2-4cef-8de8-0960ff1ef22e",
+   "boot_id_at_end": "6c889e35-66d2-4cef-8de8-0960ff1ef22e",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "be1916897dd7647154d2d708c422f8e173de953ce857111a2ed02252420f80cf",
+ "node_agent": {
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/var/log/syslog]/owner: owner changed 'root' to 'syslog'\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/var/log/syslog]/group: group changed 'root' to 'adm'\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/var/log/syslog]/mode: mode changed '0644' to '0640' (u=rw,g=r,o=)\u001b[0m"
+  ],
+  "errors": [],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/var/log/syslog]/owner: owner changed 'root' to 'syslog'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/var/log/syslog]/group: group changed 'root' to 'adm'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/var/log/syslog]/mode: mode changed '0644' to '0640' (u=rw,g=r,o=)\u001b[0m\n\u001b[mNotice: Applied catalog in 0.02 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "variants": {
+  "default": {
+   "name": "default",
+   "node": "ubuntu",
+   "params": "default",
+   "clean": [
+    {
+     "id": "the-syslog-file-is-left-alone-by-default",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "syslog file resources: 0\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.02 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "the-syslog-file-is-left-alone-by-default",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "base directories\nsyslog file resources: 0\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "b2dc0162-6342-4648-8f1d-1ae4b29c6736",
+     "boot_id_at_end": "b2dc0162-6342-4648-8f1d-1ae4b29c6736",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "971fa4346e57b7201e54630ac59dc644613a6b28bf30084d114668a31fac05fb"
+  },
+  "mode": {
+   "name": "mode",
+   "node": "ubuntu",
+   "params": "mode",
+   "clean": [
+    {
+     "id": "another-syslog-mode-is-applied",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "syslog:adm 640\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/var/log/syslog]/mode: mode changed '0640' to '0600' (u=rw,g=,o=)\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.06 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/var/log/syslog]/mode: mode changed '0640' to '0600' (u=rw,g=,o=)\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.05 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.05 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "another-syslog-mode-is-applied",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "syslog:adm 600\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "6ccca46a-5763-4d48-8aa8-f1955d40d300",
+     "boot_id_at_end": "6ccca46a-5763-4d48-8aa8-f1955d40d300",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "be3e8bb9e29fff8b1a434b6bc64ab4ad3d3f57a7ed23f56ed18122cf05cdf6e7"
+  }
+ },
+ "duration_s": 245.7
+}

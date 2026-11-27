@@ -1,0 +1,460 @@
+{
+ "class": "ssl_base",
+ "role": "local",
+ "at": "20261127T064550Z",
+ "set_sha256": "d221943f8d1d5d7a6d9d8291f6fe0a1a09c8d1bdaeb7d63a94007e77c0d4b484",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-key-is-private-and-matches-the-certificate",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "key-matches-certificate\n",
+   "stderr": "stat: cannot statx '/etc/ssl/private/p8test.key': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-bundle-is-the-leaf-then-its-issuer",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "Error loading file /dev/fd/63\n40974656357E0000:error:05800088:x509 certificate routines:X509_load_cert_crl_file_ex:no certificate or crl found:../crypto/x509/by_file.c:251:\n",
+   "stderr": "stat: cannot statx '/etc/ssl/certs/p8test.nginx.bundle.crt': No such file or directory\ngrep: /etc/ssl/certs/p8test.nginx.bundle.crt: No such file or directory\nawk: fatal: cannot open file `/etc/ssl/certs/p8test.nginx.bundle.crt' for reading: No such file or directory\nCould not read certificate from <stdin>\nUnable to load certificate\nawk: fatal: cannot open file `/etc/ssl/certs/p8test.nginx.bundle.crt' for reading: No such file or directory\nCould not read certificate from <stdin>\nUnable to load certificate\nawk: fatal: cannot open file `/etc/ssl/certs/p8test.nginx.bundle.crt' for reading: No such file or directory\nawk: fatal: cannot open file `/etc/ssl/certs/p8test.nginx.bundle.crt' for reading: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-key-and-bundle-drift",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "grep: /etc/ssl/private/p8test.key: No such file or directory\ngrep: /etc/ssl/certs/p8test.nginx.bundle.crt: No such file or directory\ngrep: /run/p8test-ssl/before: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-both-and-restarts-the-service-once",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "\n0\n",
+   "stderr": "grep: /etc/ssl/private/p8test.key: No such file or directory\ngrep: /etc/ssl/certs/p8test.nginx.bundle.crt: No such file or directory\nbash: line 97: /run/p8test-ssl/before: No such file or directory\nFailed to seek to cursor: Invalid argument\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 4,
+  "green": false,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 6,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Apt::Source[nginx]/Apt::Keyring[nginx.asc]/File[/etc/apt/keyrings/nginx.asc]/ensure: defined content as '{mtime}2026-11-25 22:44:42 UTC'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Apt::Source[nginx]/Apt::Setting[list-nginx]/File[/etc/apt/sources.list.d/nginx.list]/ensure: defined content as '{sha256}1cd68d04fc2e9871f21fe67f6d1bf191bdabc866e806221f1280a472a74ec3eb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Package[nginx]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/snippets]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/modules-enabled]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/var/log/nginx]/group: group changed 'root' to 'adm'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/sites-available]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/sites-enabled]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}4dee6b0c7c8278f6a9b827261c25d3215c9ea8955e41ff7fe3eabdd5297edce7' to '{sha256}6886baea591de4a6c3b30d71b06d894d5f69c001548f9284ab1916361f074c13'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}6f95d1d7d75e3c072907d845622a69d23110d1266c16ff122b3109b8b21f3ae9' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m"
+    ],
+    "errors": [
+     "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m",
+     "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.c"
+    ],
+    "tail": "c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.crt\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 28.98 seconds\u001b[0m\nAGENT_RC=6\nCHANGED File[preferences]\nCHANGED File[/etc/apt/apt.conf.d/15update-stamp]\nCHANGED File[/etc/apt/keyrings/nginx.asc]\nCHANGED File[/etc/apt/sources.list.d/nginx.list]\nCHANGED Exec[apt_update]\nCHANGED Package[nginx]\nCHANGED File[/etc/nginx/conf.stream.d]\nCHANGED File[/etc/nginx/conf.mail.d]\nCHANGED File[/etc/nginx/snippets]\nCHANGED File[/etc/nginx/modules-enabled]\nCHANGED File[/var/log/nginx]\nCHANGED File[/etc/nginx/sites-available]\nCHANGED File[/etc/nginx/sites-enabled]\nCHANGED File[/etc/nginx/streams-enabled]\nCHANGED File[/etc/nginx/streams-available]\nCHANGED File[/etc/nginx/nginx.conf]\nCHANGED File[/etc/nginx/mime.types]\nCHANGED File[/etc/ssl/certs/p8test.nginx.bundle.crt]\n"
+   },
+   {
+    "rc": 4,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m"
+    ],
+    "errors": [
+     "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m",
+     "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.c"
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.18 seconds\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.crt\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 6.88 seconds\u001b[0m\nAGENT_RC=4\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.18 seconds\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.crt\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 6.88 seconds\u001b[0m\nAGENT_RC=4\n"
+ },
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "56c6baf2-ff12-4dbb-8cc2-2ca83d0072fa",
+   "boot_id_at_end": "56c6baf2-ff12-4dbb-8cc2-2ca83d0072fa",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "d6f0bc787ce795ed317893088830696d533ef88343423254ea61a91367472753",
+ "variants": {
+  "letsencrypt": {
+   "name": "letsencrypt",
+   "node": "ubuntu",
+   "params": "letsencrypt",
+   "clean": [
+    {
+     "id": "letsencrypt-key-and-bundle",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "key-matches-certificate\n",
+     "stderr": "stat: cannot statx '/etc/ssl/private/p8test-key.pem': No such file or directory\ngrep: /etc/ssl/certs/p8test.nginx.bundle.pem: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 4,
+    "green": false,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 6,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Apt::Source[nginx]/Apt::Keyring[nginx.asc]/File[/etc/apt/keyrings/nginx.asc]/ensure: defined content as '{mtime}2026-11-25 22:44:42 UTC'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Apt::Source[nginx]/Apt::Setting[list-nginx]/File[/etc/apt/sources.list.d/nginx.list]/ensure: defined content as '{sha256}1cd68d04fc2e9871f21fe67f6d1bf191bdabc866e806221f1280a472a74ec3eb'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Package[nginx]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/snippets]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/modules-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/var/log/nginx]/group: group changed 'root' to 'adm'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/sites-available]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/sites-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}4dee6b0c7c8278f6a9b827261c25d3215c9ea8955e41ff7fe3eabdd5297edce7' to '{sha256}6886baea591de4a6c3b30d71b06d894d5f69c001548f9284ab1916361f074c13'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}6f95d1d7d75e3c072907d845622a69d23110d1266c16ff122b3109b8b21f3ae9' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.pem]/File[/etc/ssl/certs/p8test.nginx.bundle.pem]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/ssl/private/p8test-key.pem] has failures: true\u001b[0m"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/ssl/private/p8test-key.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test-key.pem\u001b[0m",
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.pem]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.pem]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.p"
+      ],
+      "tail": "205ca6f078099a6aebf9cccfb082256'\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.pem]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.pem]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.pem\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.pem]/File[/etc/ssl/certs/p8test.nginx.bundle.pem]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/ssl/private/p8test-key.pem] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 28.91 seconds\u001b[0m\nAGENT_RC=6\nCHANGED File[preferences]\nCHANGED File[/etc/apt/apt.conf.d/15update-stamp]\nCHANGED File[/etc/apt/keyrings/nginx.asc]\nCHANGED File[/etc/apt/sources.list.d/nginx.list]\nCHANGED Exec[apt_update]\nCHANGED Package[nginx]\nCHANGED File[/etc/nginx/conf.stream.d]\nCHANGED File[/etc/nginx/conf.mail.d]\nCHANGED File[/etc/nginx/snippets]\nCHANGED File[/etc/nginx/modules-enabled]\nCHANGED File[/var/log/nginx]\nCHANGED File[/etc/nginx/sites-available]\nCHANGED File[/etc/nginx/sites-enabled]\nCHANGED File[/etc/nginx/streams-enabled]\nCHANGED File[/etc/nginx/streams-available]\nCHANGED File[/etc/nginx/nginx.conf]\nCHANGED File[/etc/nginx/mime.types]\nCHANGED File[/etc/ssl/certs/p8test.nginx.bundle.pem]\n"
+     },
+     {
+      "rc": 4,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/ssl/private/p8test-key.pem] has failures: true\u001b[0m"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/ssl/private/p8test-key.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test-key.pem\u001b[0m",
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.pem]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.pem]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.p"
+      ],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.18 seconds\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/ssl/private/p8test-key.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test-key.pem\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.pem]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.pem]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.pem\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/ssl/private/p8test-key.pem] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 6.93 seconds\u001b[0m\nAGENT_RC=4\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.18 seconds\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/ssl/private/p8test-key.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test-key.pem\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.pem]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.pem]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.pem\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/ssl/private/p8test-key.pem] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 6.93 seconds\u001b[0m\nAGENT_RC=4\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "ff4fb7f4-a3b8-481a-805a-e85ad0bbb775",
+     "boot_id_at_end": "ff4fb7f4-a3b8-481a-805a-e85ad0bbb775",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "f21b75c13193f0826fbdf38bd378ecb337b45bac23b2914f79bb984bea6820e6"
+  },
+  "owners": {
+   "name": "owners",
+   "node": "ubuntu",
+   "params": "owners",
+   "clean": [
+    {
+     "id": "other-owners-and-groups",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "",
+     "stderr": "stat: cannot statx '/etc/ssl/private/p8test.key': No such file or directory\nstat: cannot statx '/etc/ssl/certs/p8test.nginx.bundle.crt': No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 4,
+    "green": false,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 6,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Apt::Source[nginx]/Apt::Keyring[nginx.asc]/File[/etc/apt/keyrings/nginx.asc]/ensure: defined content as '{mtime}2026-11-25 22:44:42 UTC'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Apt::Source[nginx]/Apt::Setting[list-nginx]/File[/etc/apt/sources.list.d/nginx.list]/ensure: defined content as '{sha256}1cd68d04fc2e9871f21fe67f6d1bf191bdabc866e806221f1280a472a74ec3eb'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Package[nginx]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/snippets]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/modules-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/var/log/nginx]/group: group changed 'root' to 'adm'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/sites-available]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/sites-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}4dee6b0c7c8278f6a9b827261c25d3215c9ea8955e41ff7fe3eabdd5297edce7' to '{sha256}6886baea591de4a6c3b30d71b06d894d5f69c001548f9284ab1916361f074c13'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}6f95d1d7d75e3c072907d845622a69d23110d1266c16ff122b3109b8b21f3ae9' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m",
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.c"
+      ],
+      "tail": "c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.crt\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 29.13 seconds\u001b[0m\nAGENT_RC=6\nCHANGED File[preferences]\nCHANGED File[/etc/apt/apt.conf.d/15update-stamp]\nCHANGED File[/etc/apt/keyrings/nginx.asc]\nCHANGED File[/etc/apt/sources.list.d/nginx.list]\nCHANGED Exec[apt_update]\nCHANGED Package[nginx]\nCHANGED File[/etc/nginx/conf.stream.d]\nCHANGED File[/etc/nginx/conf.mail.d]\nCHANGED File[/etc/nginx/snippets]\nCHANGED File[/etc/nginx/modules-enabled]\nCHANGED File[/var/log/nginx]\nCHANGED File[/etc/nginx/sites-available]\nCHANGED File[/etc/nginx/sites-enabled]\nCHANGED File[/etc/nginx/streams-enabled]\nCHANGED File[/etc/nginx/streams-available]\nCHANGED File[/etc/nginx/nginx.conf]\nCHANGED File[/etc/nginx/mime.types]\nCHANGED File[/etc/ssl/certs/p8test.nginx.bundle.crt]\n"
+     },
+     {
+      "rc": 4,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m",
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.c"
+      ],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.18 seconds\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.crt\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 6.87 seconds\u001b[0m\nAGENT_RC=4\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.18 seconds\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.crt\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 6.87 seconds\u001b[0m\nAGENT_RC=4\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "57280ffe-cb46-4efc-95ba-f79c80588fc6",
+     "boot_id_at_end": "57280ffe-cb46-4efc-95ba-f79c80588fc6",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "7121b4e460a5d943f5ee99fbeaec6fa16353d68293c00ddc60324b2b2fb94777"
+  },
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "clean": [
+    {
+     "id": "on-redhat-the-key-is-in-pki-tls-private",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "",
+     "stderr": "stat: cannot statx '/etc/pki/tls/private/p8test.key': No such file or directory\nstat: cannot statx '/etc/ssl/certs/p8test.nginx.bundle.crt': No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 4,
+    "green": false,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 6,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Nginx::Package::Redhat/Yumrepo[nginx-release]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Package::Redhat/Package[nginx]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/snippets]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/var/log/nginx]/owner: owner changed 'root' to 'nginx'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/var/log/nginx]/group: group changed 'root' to 'nginx'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/var/log/nginx]/mode: mode changed '0755' to '0750'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/sites-available]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/sites-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}4dee6b0c7c8278f6a9b827261c25d3215c9ea8955e41ff7fe3eabdd5297edce7' to '{sha256}b67ea3d94e0a7641d9ff889e1fb39280fa99fa005c0a0584f30132a1bb46867d'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}6f95d1d7d75e3c072907d845622a69d23110d1266c16ff122b3109b8b21f3ae9' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/pki/tls/private/p8test.key] has failures: true\u001b[0m"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/pki/tls/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m",
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.c"
+      ],
+      "tail": "1mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/pki/tls/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.crt\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/pki/tls/private/p8test.key] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 17.60 seconds\u001b[0m\nAGENT_RC=6\nCHANGED Yumrepo[nginx-release]\nCHANGED Package[nginx]\nCHANGED File[/etc/nginx/conf.stream.d]\nCHANGED File[/etc/nginx/conf.mail.d]\nCHANGED File[/etc/nginx/snippets]\nCHANGED File[/var/log/nginx]\nCHANGED File[/etc/nginx/sites-available]\nCHANGED File[/etc/nginx/sites-enabled]\nCHANGED File[/etc/nginx/streams-enabled]\nCHANGED File[/etc/nginx/streams-available]\nCHANGED File[/etc/nginx/nginx.conf]\nCHANGED File[/etc/nginx/mime.types]\nCHANGED File[/etc/ssl/certs/p8test.nginx.bundle.crt]\n"
+     },
+     {
+      "rc": 4,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/pki/tls/private/p8test.key] has failures: true\u001b[0m"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/pki/tls/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m",
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.c"
+      ],
+      "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.14 seconds\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/pki/tls/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.crt\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/pki/tls/private/p8test.key] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.23 seconds\u001b[0m\nAGENT_RC=4\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.14 seconds\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/File[/etc/pki/tls/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Ssl_base[ssl_base]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.crt\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Dependency File[/etc/pki/tls/private/p8test.key] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.23 seconds\u001b[0m\nAGENT_RC=4\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "e3d31b85-13e2-4770-b2cf-304162f834c5",
+     "boot_id_at_end": "e3d31b85-13e2-4770-b2cf-304162f834c5",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "d6f0bc787ce795ed317893088830696d533ef88343423254ea61a91367472753"
+  }
+ },
+ "duration_s": 701.2
+}

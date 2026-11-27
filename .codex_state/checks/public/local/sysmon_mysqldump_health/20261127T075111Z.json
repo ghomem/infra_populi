@@ -1,0 +1,307 @@
+{
+ "class": "sysmon_mysqldump_health",
+ "role": "local",
+ "at": "20261127T074850Z",
+ "set_sha256": "1d5fc26ef7bd3da23c852424d9481dfe80692730eecd48b9955e178dae3ec3d0",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "check-script-rendered",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/check-mysqldump-health.sh': No such file or directory\nbash: /opt/puppet-infrastructure/bin/check-mysqldump-health.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "a-mysql-server-with-a-dump",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "head: cannot open '/var/tmp/p8test-dumps/good.sql' for reading: No such file or directory\ngrep: /var/tmp/p8test-dumps/good.sql: No such file or directory\nbash: line 98: mysql: command not found\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "restores-are-checked",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-dumps/out.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-file-that-is-not-a-dump-is-critical",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-dumps/empty.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-live-database-of-the-dump-name-is-left-intact",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-dumps/live.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "an-incomplete-dump-of-an-existing-database-is-critical",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-dumps/incomplete.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-databases-dump-is-restored-and-removed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-dumps/multi.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-failed-create-is-critical-and-drops-nothing",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-dumps/create.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-failed-drop-is-critical",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-dumps/drop.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Sysmon_mysqldump_health[sysmon_mysqldump_health]/File[/opt/puppet-infrastructure/bin/check-mysqldump-health.sh]/ensure: defined content as '{sha256}53c2670ecf1839bfb957d6ba8db251df2035d9ed28ce4827c11830aea1843464'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "ppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Sysmon_mysqldump_health[sysmon_mysqldump_health]/File[/opt/puppet-infrastructure/bin/check-mysqldump-health.sh]/ensure: defined content as '{sha256}53c2670ecf1839bfb957d6ba8db251df2035d9ed28ce4827c11830aea1843464'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.10 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/opt/puppet-infrastructure]\nCHANGED File[/opt/puppet-infrastructure/bin]\nCHANGED File[/opt/puppet-infrastructure/etc]\nCHANGED File[/opt/puppet-infrastructure/backup]\nCHANGED File[/opt/puppet-infrastructure/pkgsdir]\nCHANGED File[/etc/default/locale]\nCHANGED File[/opt/puppet-infrastructure/bin/mypython]\nCHANGED File[/opt/puppet-infrastructure/bin/check-mysqldump-health.sh]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "check-script-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\nMYSQLUSER=\"p8test_check\"\nMYSQLPWD=\"p8test-not-a-secret\"\nDIRS=\"/var/tmp/p8test-dumps /var/tmp/p8test-dumps2\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-mysql-server-with-a-dump",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-- MySQL dump\nDatabase: p8testsrc\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs mysql-server (Ubuntu's MySQL 8.0) and starts it; creates the MySQL user p8test_check@localhost with the fixture password and all privileges; creates the database p8testsrc with one table, writes its mysqldump to /var/tmp/p8test-dumps/good.sql (that directory and /var/tmp/p8test-dumps2 created) and drops p8testsrc again",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "restores-are-checked",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK: exit code 0\ngood rc=0\nleft: 0\nCRITICAL: Load database dump ./2026-11-21/broken.sql\nbroken rc=2\nleft: 0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs the check twice as root (it creates and drops the scratch databases p8testsrc and p8testbroken); writes /var/tmp/p8test-dumps2/2026-11-21/broken.sql between the runs and removes that directory after; the outputs go to /run/p8test-dumps/out.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-file-that-is-not-a-dump-is-critical",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "CRITICAL: SQL File ./empty.sql is not a MySQLDump\nrc=2\nCRITICAL: SQL File ./nocomments.sql is not a MySQLDump\nrc=2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes the empty file /var/tmp/p8test-dumps/empty.sql and runs the check once as root (it restores and drops p8testsrc), then removes it; creates the database p8testnc, writes its dump without comments to /var/tmp/p8test-dumps/nocomments.sql, drops p8testnc, runs the check again and removes the file; the outputs go to /run/p8test-dumps/empty.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-live-database-of-the-dump-name-is-left-intact",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK: exit code 0; restore test skipped for ./good.sql because database p8testsrc exists (file validated)\nrc=0\nrows: 3\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the database p8testsrc with a table of 3 rows, runs the check once as root, then drops p8testsrc if it is still there; the outputs go to /run/p8test-dumps/live.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "an-incomplete-dump-of-an-existing-database-is-critical",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "CRITICAL: Dump ./good.sql is incomplete (no '-- Dump completed' line)\nrc=2\nrows: 2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates p8testsrc (2 rows), replaces /var/tmp/p8test-dumps/good.sql with a copy missing its last 3 lines, runs the check once, then restores the full dump and drops p8testsrc; the outputs go to /run/p8test-dumps/incomplete.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-databases-dump-is-restored-and-removed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "create and use lines: 2\nOK: exit code 0\nrc=0\nleft: 0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates p8testmulti, writes its dump made with --databases to /var/tmp/p8test-dumps2/multi.sql and drops p8testmulti; runs the check once (it restores and drops p8testsrc and p8testmulti), then removes multi.sql; the outputs go to /run/p8test-dumps/multi.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-failed-create-is-critical-and-drops-nothing",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "CRITICAL: Create database p8testsrc\nrc=2\np8test databases unchanged: p8testkeep \nwitness rows: 1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the database p8testkeep (1 row) as a witness, revokes CREATE from p8test_check, runs the check once as root, then grants ALL again and drops p8testkeep; the outputs go to /run/p8test-dumps/create.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-failed-drop-is-critical",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "CRITICAL: Drop database p8testsrc\nrc=2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "replaces /var/tmp/p8test-dumps/good.sql with a dump of a fresh p8testsrc written with --skip-add-drop-table (source dropped), revokes DROP from p8test_check, runs the check once as root, then grants ALL again, drops the scratch p8testsrc and restores the plain dump; the output goes to /run/p8test-dumps/drop.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "0a350bc1-f8a2-4837-be9a-44d4b3dd5aeb",
+   "boot_id_at_end": "0a350bc1-f8a2-4837-be9a-44d4b3dd5aeb",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "5ff1bf65fde56ba74104da872b8a6d4b88a87d862525258eecff7678d6373fbf",
+ "duration_s": 141.3
+}

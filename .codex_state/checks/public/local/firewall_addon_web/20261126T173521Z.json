@@ -1,0 +1,206 @@
+{
+ "class": "firewall_addon_web",
+ "role": "local",
+ "at": "20261126T173310Z",
+ "set_sha256": "d8046f0bcb7a51b08f3ed0c8ee6229ad44fa20cdae99368063216b1601b2c8ed",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-two-accept-rules",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "web-ports-and-another-listen",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-default-drop-stands-in-for-the-base-firewall",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "another-host-reaches-http-and-https-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "80 closed\n443 closed\n8888 closed\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-class-rules-accepted-them",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "200: zero\n201: zero\nstand-in drop: zero\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_web/Firewall[200 accept http]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_web/Firewall[201 accept https]/ensure: defined 'ensure' as 'present'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "e in environment production in 0.15 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_web/Firewall[200 accept http]/ensure: defined 'ensure' as 'present'\u001b[0m\n\u001b[mNotice: firewall[200 accept http]: Creating: Creating Rule '200 accept http' with {:name=>\"200 accept http\", :proto=>\"tcp\", :dport=>80, :jump=>\"ACCEPT\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\", :chain=>\"INPUT\"}\u001b[0m\n\u001b[mNotice: firewall[200 accept http]: Creating: Ensuring changes to '200 accept http' persist\u001b[0m\nUnable to persist firewall rules: Execution of '/usr/sbin/service iptables-persistent save' returned 1: iptables-persistent: unrecognized service\n\u001b[mNotice: firewall[200 accept http]: Creating: Finished in 0.086921 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_web/Firewall[201 accept https]/ensure: defined 'ensure' as 'present'\u001b[0m\n\u001b[mNotice: firewall[201 accept https]: Creating: Creating Rule '201 accept https' with {:name=>\"201 accept https\", :proto=>\"tcp\", :dport=>443, :jump=>\"ACCEPT\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\", :chain=>\"INPUT\"}\u001b[0m\n\u001b[mNotice: firewall[201 accept https]: Creating: Ensuring changes to '201 accept https' persist\u001b[0m\nUnable to persist firewall rules: Execution of '/usr/sbin/service iptables-persistent save' returned 1: iptables-persistent: unrecognized service\n\u001b[mNotice: firewall[201 accept https]: Creating: Finished in 0.025191 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.19 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.12 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.08 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.12 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.08 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "the-two-accept-rules",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "200 accept http: tcp 80 ACCEPT\n201 accept https: tcp 443 ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "web-ports-and-another-listen",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0.0.0.0:80\n0.0.0.0:443\n0.0.0.0:8888\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "starts three transient units p8test-web-80, p8test-web-443 and p8test-web-8888 (python3 -m http.server on 0.0.0.0) on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-default-drop-stands-in-for-the-base-firewall",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "200 accept http\n201 accept https\np8test-default-drop\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "appends `-A INPUT -i enp0s8 -p tcp -m multiport --dports 80,443,8888 -m comment --comment p8test-default-drop -j DROP` on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "another-host-reaches-http-and-https-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "80 open\n443 open\n8888 closed\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "three TCP connection attempts from the peer to the class node (80, 443, 8888)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-class-rules-accepted-them",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "200: counted\n201: counted\nstand-in drop: counted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rule counters (declared mutating so it runs after the peer's attempts)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "b8251bbe-7eb7-4c7d-a902-0fcc450ffabd",
+   "boot_id_at_end": "b8251bbe-7eb7-4c7d-a902-0fcc450ffabd",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "88105db0-3434-4416-84c9-afd4cb8d9481",
+   "boot_id_at_end": "88105db0-3434-4416-84c9-afd4cb8d9481",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "8f3f2f9baa53f500c28fcb40c8fd17b3b4bf9748ebbd50386570fab05a518c0e",
+ "duration_s": 131.1
+}

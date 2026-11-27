@@ -1,0 +1,239 @@
+{
+ "class": "backup",
+ "role": "local",
+ "at": "20261126T153458Z",
+ "set_sha256": "c2925be6886494c7d3cdbdbb1e1d58501d06eb4ba3a7aeb56730cd73b5a34ec3",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "script-installed-with-the-parameters",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/backup-backup.sh': No such file or directory\ngrep: /opt/puppet-infrastructure/bin/backup-backup.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "cron-runs-it-at-2300",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-backup-directory-is-declared",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/backup/p8test': No such file or directory\nstat: cannot statx '/opt/puppet-infrastructure/backup': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "aged-archives-are-planted",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 96: cd: /opt/puppet-infrastructure/backup/p8test: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-run-writes-a-restorable-gzip-tar",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "rc \n\n",
+   "stderr": "cat: /run/p8test-backup/run.rc: No such file or directory\ncat: /run/p8test-backup/archive: No such file or directory\ngzip: .gz: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-run-deletes-only-its-own-old-archives",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 96: cd: /opt/puppet-infrastructure/backup/p8test: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-failed-run-is-loud",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "cat: /run/p8test-backup-fail/rc: No such file or directory\nbash: line 96: [: : integer expression expected\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Backup[backup]/File[/opt/puppet-infrastructure/backup/p8test]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Backup[backup]/File[/opt/puppet-infrastructure/bin/backup-backup.sh]/ensure: defined content as '{sha256}87da7e6102764cf699cd3a58cd8502d1a1d0d0a5c4166939e105bc512c913ff1'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Backup[backup]/Cron[cron_backup_backup]/ensure: created\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "nvironment production in 0.15 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Backup[backup]/File[/opt/puppet-infrastructure/backup/p8test]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Backup[backup]/File[/opt/puppet-infrastructure/bin/backup-backup.sh]/ensure: defined content as '{sha256}87da7e6102764cf699cd3a58cd8502d1a1d0d0a5c4166939e105bc512c913ff1'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Backup[backup]/Cron[cron_backup_backup]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.17 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.08 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.07 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.08 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.07 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "script-installed-with-the-parameters",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\nFILETARGETDIRS=/etc/default\nFILEPREFIX=p8test-backup\nBACKDIR=/opt/puppet-infrastructure/backup/p8test\nNC=7\nCOMPRESSION=true\n",
+   "stderr": ""
+  },
+  {
+   "id": "cron-runs-it-at-2300",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "# Puppet Name: cron_backup_backup\n0 23 * * * /opt/puppet-infrastructure/bin/backup-backup.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-backup-directory-is-declared",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\nroot root 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "aged-archives-are-planted",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "./p8test-backup-old.tar.gz ./p8test-other-old.tar.gz \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates in {{LOCALDIR}}/backup/p8test: p8test-backup-old.tar.gz dated 8 days ago, p8test-backup-recent.tar.gz dated 3 days ago, and p8test-other-old.tar.gz (another prefix) dated 30 days ago",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-run-writes-a-restorable-gzip-tar",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0\np8test-backup-DATE.tar.gz\ngzip-ok\nrestores-byte-for-byte\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs {{LOCALDIR}}/bin/backup-backup.sh once as root (a new archive in the backup directory; the planted 8-day-old file of its prefix is deleted); restores etc/default/cron from the archive into /run/p8test-backup",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-run-deletes-only-its-own-old-archives",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test-backup-DATE.tar.gz p8test-backup-recent.tar.gz p8test-other-old.tar.gz \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond listing the backup directory (declared mutating so it runs after the run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-failed-run-is-loud",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "exit non-zero\n1\n1\nthe 8-day-old archive is kept\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "mounts a 4 KiB tmpfs over {{LOCALDIR}}/backup/p8test (left mounted: the node is reverted after the run) and writes p8test-backup-ancient.tar.gz into it, dated 8 days ago; runs backup-backup.sh once as root; its exit code and stderr go to /run/p8test-backup-fail (rc, stderr); the script logs its ERROR line to syslog (the journal, /var/log/syslog)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "928860dc-dc5d-4fed-8e53-7b185324b1f4",
+   "boot_id_at_end": "928860dc-dc5d-4fed-8e53-7b185324b1f4",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "120d4b91e8d9ad8420eab03d9e14ad8428f0aeac69d3bedccc7b38a5ec451e6f",
+ "duration_s": 93.7
+}

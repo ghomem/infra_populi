@@ -1,0 +1,223 @@
+{
+ "class": "sysmon_fs_health",
+ "role": "local",
+ "at": "20261127T074544Z",
+ "set_sha256": "5e63ee9bd405c0d31cb5ee4fe78931a938914cb276b6bc855624c24380da2b74",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "check-script-rendered",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh': No such file or directory\nbash: /opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "nagios-may-run-it-through-sudo",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "sudoers-valid\n",
+   "stderr": "grep: /etc/sudoers.d/10_nagios_fs_health_sysmon_fs_health: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "check-reports-critical-on-an-empty-tree",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 96: /opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "check-reports-ok-on-a-healthy-tree",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 96: /opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "nagios-runs-the-check-through-sudo",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-fs-health/sudo.out: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "check-reports-critical-on-read-errors",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-fsh/out.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Sudo/File[/etc/sudoers.d]/mode: mode changed '0755' to '0550'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Sysmon_fs_health[sysmon_fs_health]/File[/opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh]/ensure: defined content as '{sha256}4df31e3ad366bcb6a9d4a3082ba8ca996f084c00b54023e84b32524905fb6a9d'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Sysmon_fs_health[sysmon_fs_health]/Sudo::Conf[nagios_fs_health_sysmon_fs_health]/File[10_nagios_fs_health_sysmon_fs_health]/ensure: defined content as '{sha256}1fdf4d4c6263a568bfc41bb59ea34438bf58b910a07db769977a0a0661a6469d'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Sysmon_fs_health[sysmon_fs_health]/Sudo::Conf[nagios_fs_health_sysmon_fs_health]/Exec[sudo-syntax-check for file /etc/sudoers.d/10_nagios_fs_health_sysmon_fs_health]: Triggered 'refresh' from 1 event\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "]/Sudo/File[/etc/sudoers.d]/mode: mode changed '0755' to '0550'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Sysmon_fs_health[sysmon_fs_health]/File[/opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh]/ensure: defined content as '{sha256}4df31e3ad366bcb6a9d4a3082ba8ca996f084c00b54023e84b32524905fb6a9d'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Sysmon_fs_health[sysmon_fs_health]/Sudo::Conf[nagios_fs_health_sysmon_fs_health]/File[10_nagios_fs_health_sysmon_fs_health]/ensure: defined content as '{sha256}1fdf4d4c6263a568bfc41bb59ea34438bf58b910a07db769977a0a0661a6469d'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Sysmon_fs_health[sysmon_fs_health]/Sudo::Conf[nagios_fs_health_sysmon_fs_health]/Exec[sudo-syntax-check for file /etc/sudoers.d/10_nagios_fs_health_sysmon_fs_health]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.42 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/opt/puppet-infrastructure]\nCHANGED File[/opt/puppet-infrastructure/bin]\nCHANGED File[/opt/puppet-infrastructure/etc]\nCHANGED File[/opt/puppet-infrastructure/backup]\nCHANGED File[/opt/puppet-infrastructure/pkgsdir]\nCHANGED File[/etc/default/locale]\nCHANGED File[/opt/puppet-infrastructure/bin/mypython]\nCHANGED File[/etc/sudoers.d]\nCHANGED File[/opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh]\nCHANGED File[10_nagios_fs_health_sysmon_fs_health]\nCHANGED Exec[sudo-syntax-check for file /etc/sudoers.d/10_nagios_fs_health_sysmon_fs_health]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.09 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.42 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.09 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.42 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "check-script-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\nBASEDIR=\"/var/tmp/p8test-fs-health\"\nSIZE_THRESHOLD=\"8\"\nNFILES=\"3\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "nagios-may-run-it-through-sudo",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nagios ALL=NOPASSWD:/opt/puppet-infrastructure/bin/check-fs-health-sysmon_fs_health.sh\nsudoers-valid\n",
+   "stderr": ""
+  },
+  {
+   "id": "check-reports-critical-on-an-empty-tree",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "CRITICAL: storage space is empty\nrc=2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the empty directory /var/tmp/p8test-fs-health (the check itself only reads)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "check-reports-ok-on-a-healthy-tree",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK: exit code 0 \nrc=0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates /var/tmp/p8test-fs-health with five 4 KB files of random data (20 KB, above the 8 KB threshold); the read-only effect runs the check script, which only reads the tree",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "nagios-runs-the-check-through-sudo",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK: exit code 0 \nrc=0\nnobody rc=1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the system account nagios if absent (production's monitoring base provides it), then runs the check once as nagios through sudo -n and tries it once as nobody (refused; sudo logs both to the journal and /var/log/auth.log); the outputs go to /run/p8test-fs-health/sudo.out",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "check-reports-critical-on-read-errors",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "CRITICAL: error checking md5sum for /var/tmp/p8test-fs-health/f1\nfile error rc=2\nCRITICAL: error listing files on the storage space\ndir error rc=2\nOK: exit code 0 \nintact rc=0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "replaces /var/tmp/p8test-fs-health with the mount point of a 16 MB ext4 image (/run/p8test-fsh/img on a loop device) holding f1, f2 and sub/f3 (8 KB each, NFILES 3 so every file is read); mounts it read-only three times: through a device-mapper device p8test-fsh whose table maps f1's blocks to the error target, then the subdirectory's block, then the plain loop device; the kernel logs the I/O errors; everything is unmounted and removed afterwards; the outputs go to /run/p8test-fsh/out.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "e8a020e5-cbce-4ec4-9176-c454c62192d8",
+   "boot_id_at_end": "e8a020e5-cbce-4ec4-9176-c454c62192d8",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "8dc1f3a30912ca2e95b72041f965951ca648564814538695e70502d7938a6857",
+ "duration_s": 60.5
+}

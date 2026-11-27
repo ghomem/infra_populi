@@ -1,0 +1,170 @@
+{
+ "class": "firewall_addon_caching_nameserver",
+ "role": "local",
+ "at": "20261126T172339Z",
+ "set_sha256": "56aa23bdc8dafdf84f527ad9fdb89baafa1e03d19d7e13f56cb8dd9611d6100a",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-nameserver-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "a-lan-client-a-responder-and-a-default-drop",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "inactive\ninactive\n0\n",
+   "stderr": "Cannot open network namespace \"p8testns\": No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-lan-client-reaches-port-53-only",
+   "control": "negative",
+   "rc": 255,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Cannot open network namespace \"p8testns\": No such file or directory\nCannot open network namespace \"p8testns\": No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "rule-1301-accepted-the-lan-client",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "1301: zero\nstand-in drop: zero\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_caching_nameserver/Firewall[1301 accept nameserver]/ensure: defined 'ensure' as 'present'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.24 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_caching_nameserver/Firewall[1301 accept nameserver]/ensure: defined 'ensure' as 'present'\u001b[0m\n\u001b[mNotice: firewall[1301 accept nameserver]: Creating: Creating Rule '1301 accept nameserver' with {:name=>\"1301 accept nameserver\", :iniface=>\"p8test0\", :proto=>\"udp\", :dport=>\"53\", :jump=>\"ACCEPT\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\", :chain=>\"INPUT\"}\u001b[0m\n\u001b[mNotice: firewall[1301 accept nameserver]: Creating: Ensuring changes to '1301 accept nameserver' persist\u001b[0m\nUnable to persist firewall rules: Execution of '/usr/sbin/service iptables-persistent save' returned 1: iptables-persistent: unrecognized service\n\u001b[mNotice: firewall[1301 accept nameserver]: Creating: Finished in 0.093853 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.18 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.13 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.13 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "the-nameserver-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test0 udp 53 ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-lan-client-a-responder-and-a-default-drop",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "10.250.0.2/30\nactive\nactive\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates network namespace p8testns and veth pair p8test0 (10.250.0.1/30, node) / p8testpeer (10.250.0.2/30, namespace); starts transient units p8test-udp-53 and p8test-udp-5353 (python UDP responders on 10.250.0.1); appends `-A INPUT -i p8test0 -p udp -m multiport --dports 53,5353 -m comment --comment p8test-default-drop -j DROP`",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-lan-client-reaches-port-53-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "53 answered\n5353 no answer\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond two UDP datagrams from the namespace to the node (declared mutating so it runs after the setup)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "rule-1301-accepted-the-lan-client",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1301: counted\nstand-in drop: counted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rule counters (declared mutating so it runs after the client's datagrams)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "6458c35f-fa42-46ec-b211-8ad24c8e1085",
+   "boot_id_at_end": "6458c35f-fa42-46ec-b211-8ad24c8e1085",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "8696853869801bcf050ddf62446506661799fec54cb4eff779c9dffc0f4ff691",
+ "duration_s": 72.3
+}

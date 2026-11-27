@@ -1,0 +1,454 @@
+{
+ "class": "nginx_frontend",
+ "role": "local",
+ "at": "20261126T193435Z",
+ "set_sha256": "8da97364d66ab111096481545f6bf1e95c7260510c278afc69acaf6f6cc9d6f7",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "a-backend-answers",
+   "control": "negative",
+   "rc": 7,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "http-redirects-to-https",
+   "control": "negative",
+   "rc": 7,
+   "passed": false,
+   "stdout": "000 \n000 \n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "https-proxies-to-the-backend",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "www.p8test.example.com: \np8test.example.com: \nother.example.com: \n",
+   "stderr": "awk: fatal: cannot open file `/etc/ssl/certs/p8test.nginx.bundle.crt' for reading: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "only-tls-1-3-is-accepted",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "tls1_3 refused\ntls1_2 refused\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-default-server-answers-404",
+   "control": "negative",
+   "rc": 7,
+   "passed": false,
+   "stdout": "http 000\nhttps 000\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-monitoring-server-answers",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n000 \n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-nginx-status-check-reports",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "defaults rc=127\nwarning at 0 rc=127\ncritical at 0 rc=127\n",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/check_nginx_status.py': No such file or directory\nbash: line 98: /opt/puppet-infrastructure/bin/check_nginx_status.py: No such file or directory\nbash: line 99: /opt/puppet-infrastructure/bin/check_nginx_status.py: No such file or directory\nbash: line 100: /opt/puppet-infrastructure/bin/check_nginx_status.py: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-status-page-is-refused-off-loopback",
+   "control": "negative",
+   "rc": 7,
+   "passed": false,
+   "stdout": "000\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 6,
+  "green": false,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 6,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Package[nginx]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}48c6a4ec1e1fd28ccf968490f07e34a1d7f755793b2108a3ed8670b1ee2a0aa2' to '{sha256}d86ca9397952b7b6b19a8c46f6235e901b5ffe6dbfd7b5afba862ebb25a9ad7f'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}36c77daa2d85803e87c91ba723dd2bc6aaa6543ae4bd4a569034a7bf8bce464d' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/Exec[Generate a new 2048-bit Diffie-Hellman group]/returns: executed successfully\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_default_removal/File[/etc/nginx/sites-enabled/default]/ensure: removed\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Host[puppet8node.monitoring.p8test.example.com]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/File[/opt/puppet-infrastructure/bin/check_nginx_status.py]/ensure: defined content as '{sha256}9393a21b65d1acd3809e35431fedcf46ea45ed4baf1514d0333819edecb8d065'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Nginx::Resource::Server[puppet8node.monitoring.p8test.example.com]/Concat[/etc/nginx/sites-available/puppet8node.monitoring.p8test.example.com.conf]/File[/etc/nginx/sites-available/puppet8node.monitoring.p8test.example.com.conf]/ensure: defined content as '{sha256}f2872b00c74387539d112b0c8747f63940baf751eafbfc74cd88f2d5fdd55f42'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Nginx::Resource::Server[puppet8node.monitoring.p8test.example.com]/File[puppet8node.monitoring.p8test.example.com.conf symlink]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Nginx::Resource::Server[default]/Concat[/etc/nginx/sites-available/default.conf]/Concat_file[/etc/nginx/sites-available/default.conf]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Upstream[backend_p8test.example.com]/Concat[/etc/nginx/conf.d/backend_p8test.example.com-upstream.conf]/File[/etc/nginx/conf.d/backend_p8test.example.com-upstream.conf]/ensure: defined content as '{sha256}b624a3dac815f44e376576138e83ebe172cad0fb218bd3fa2b3d25021263453e'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[http_p8test.example.com]/Concat[/etc/nginx/sites-available/http_p8test.example.com.conf]/File[/etc/nginx/sites-available/http_p8test.example.com.conf]/ensure: defined content as '{sha256}a88001fc368dc1bbc662330c7dd2b71a1309461a97cd1f6b4d54d23bcfe98c39'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[http_p8test.example.com]/File[http_p8test.example.com.conf symlink]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[http_www.p8test.example.com]/Concat[/etc/nginx/sites-available/http_www.p8test.example.com.conf]/File[/etc/nginx/sites-available/http_www.p8test.example.com.conf]/ensure: defined content as '{sha256}23d5e68db24aa492938385159fd43cf88ec60d8a615f0a6102c363a572e2ee9c'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[http_www.p8test.example.com]/File[http_www.p8test.example.com.conf symlink]/ensure: created\u001b[0m"
+    ],
+    "errors": [
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_fil",
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources usi"
+    ],
+    "tail": "end_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/File[https_www.p8test.example.com.conf symlink]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-header]/Concat_fragment[https_www.p8test.example.com-ssl-header]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-footer]/Concat_fragment[https_www.p8test.example.com-ssl-footer]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 28.26 seconds\u001b[0m\nAGENT_RC=6\n"
+   },
+   {
+    "rc": 6,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Nginx::Resource::Server[default]/Concat[/etc/nginx/sites-available/default.conf]/Concat_file[/etc/nginx/sites-available/default.conf]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m"
+    ],
+    "errors": [
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_fil",
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources usi"
+    ],
+    "tail": "tend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/File[https_www.p8test.example.com.conf symlink]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-header]/Concat_fragment[https_www.p8test.example.com-ssl-header]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-footer]/Concat_fragment[https_www.p8test.example.com-ssl-footer]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.69 seconds\u001b[0m\nAGENT_RC=6\n"
+   }
+  ],
+  "tail": "tend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/File[https_www.p8test.example.com.conf symlink]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-header]/Concat_fragment[https_www.p8test.example.com-ssl-header]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-footer]/Concat_fragment[https_www.p8test.example.com-ssl-footer]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.69 seconds\u001b[0m\nAGENT_RC=6\n"
+ },
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ENVIRONMENT_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "132f5440-cf77-47ac-a3a2-7404f7d308bf",
+   "boot_id_at_end": "132f5440-cf77-47ac-a3a2-7404f7d308bf",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "598114e7f1f77ea98dae6b9ea8f4c6ffe8d4b109a3c8642f9a874211551e2b1b",
+ "variants": {
+  "prod": {
+   "name": "prod",
+   "node": "ubuntu",
+   "params": "prod",
+   "clean": [
+    {
+     "id": "production-parameters-render",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "Let's Encrypt bundle: missing\nread timeout: missing\nconnect timeout: missing\nsend timeout: missing\nad-hoc location config: missing\nbackend header: missing\nprotocols: missing\npass suffix: missing\nother location config: missing\nother location line: missing\nwww fix redirect: missing\n",
+     "stderr": "",
+     "ok": true
+    },
+    {
+     "id": "unknown-names-and-the-naked-domain-redirect-to-www",
+     "control": "negative",
+     "rc": 7,
+     "passed": false,
+     "stdout": "unknown http 000 \nunknown https 000 \nnaked http 000 \nnaked https 000 \n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 6,
+    "green": false,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 6,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Package[nginx]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}48c6a4ec1e1fd28ccf968490f07e34a1d7f755793b2108a3ed8670b1ee2a0aa2' to '{sha256}d86ca9397952b7b6b19a8c46f6235e901b5ffe6dbfd7b5afba862ebb25a9ad7f'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}36c77daa2d85803e87c91ba723dd2bc6aaa6543ae4bd4a569034a7bf8bce464d' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/Exec[Generate a new 2048-bit Diffie-Hellman group]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_default_removal/File[/etc/nginx/sites-enabled/default]/ensure: removed\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Host[puppet8node.monitoring.p8test.example.com]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/File[/opt/puppet-infrastructure/bin/check_nginx_status.py]/ensure: defined content as '{sha256}9393a21b65d1acd3809e35431fedcf46ea45ed4baf1514d0333819edecb8d065'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Nginx::Resource::Server[puppet8node.monitoring.p8test.example.com]/Concat[/etc/nginx/sites-available/puppet8node.monitoring.p8test.example.com.conf]/File[/etc/nginx/sites-available/puppet8node.monitoring.p8test.example.com.conf]/ensure: defined content as '{sha256}f2872b00c74387539d112b0c8747f63940baf751eafbfc74cd88f2d5fdd55f42'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Nginx::Resource::Server[puppet8node.monitoring.p8test.example.com]/File[puppet8node.monitoring.p8test.example.com.conf symlink]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.pem]/File[/etc/ssl/certs/p8test.nginx.bundle.pem]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Nginx::Resource::Server[default]/Concat[/etc/nginx/sites-available/default.conf]/Concat_file[/etc/nginx/sites-available/default.conf]: Dependency File[/etc/ssl/private/p8test-key.pem] has failures: true\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Upstream[backend_p8test.example.com]/Concat[/etc/nginx/conf.d/backend_p8test.example.com-upstream.conf]/File[/etc/nginx/conf.d/backend_p8test.example.com-upstream.conf]/ensure: defined content as '{sha256}b624a3dac815f44e376576138e83ebe172cad0fb218bd3fa2b3d25021263453e'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[http_p8test.example.com]/Concat[/etc/nginx/sites-available/http_p8test.example.com.conf]/File[/etc/nginx/sites-available/http_p8test.example.com.conf]/ensure: defined content as '{sha256}8b07873ca5a1b20065739a661b820c13eced100b920abd47b6bcff798263748d'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[http_p8test.example.com]/File[http_p8test.example.com.conf symlink]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[http_www.p8test.example.com]/Concat[/etc/nginx/sites-available/http_www.p8test.example.com.conf]/File[/etc/nginx/sites-available/http_www.p8test.example.com.conf]/ensure: defined content as '{sha256}23d5e68db24aa492938385159fd43cf88ec60d8a615f0a6102c363a572e2ee9c'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[http_www.p8test.example.com]/File[http_www.p8test.example.com.conf symlink]/ensure: created\u001b[0m"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/File[/etc/ssl/private/p8test-key.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra",
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.pem]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.pem]: Failed to generate additional resources usi"
+      ],
+      "tail": "tend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_p8test.example.com]/Nginx::Resource::Location[https_p8test.example.com-default]/Concat::Fragment[https_p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_/p8test-other/]/Concat::Fragment[https_www.p8test.example.com-800-7572b9c0e48d310e3b49983439d9279a-ssl]/Concat_fragment[https_www.p8test.example.com-800-7572b9c0e48d310e3b49983439d9279a-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 122.13 seconds\u001b[0m\nAGENT_RC=6\n"
+     },
+     {
+      "rc": 6,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Nginx::Resource::Server[default]/Concat[/etc/nginx/sites-available/default.conf]/Concat_file[/etc/nginx/sites-available/default.conf]: Dependency File[/etc/ssl/private/p8test-key.pem] has failures: true\u001b[0m"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/File[/etc/ssl/private/p8test-key.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra",
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.pem]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.pem]: Failed to generate additional resources usi"
+      ],
+      "tail": "ontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_p8test.example.com]/Nginx::Resource::Location[https_p8test.example.com-default]/Concat::Fragment[https_p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_/p8test-other/]/Concat::Fragment[https_www.p8test.example.com-800-7572b9c0e48d310e3b49983439d9279a-ssl]/Concat_fragment[https_www.p8test.example.com-800-7572b9c0e48d310e3b49983439d9279a-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.72 seconds\u001b[0m\nAGENT_RC=6\n"
+     }
+    ],
+    "tail": "ontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_p8test.example.com]/Nginx::Resource::Location[https_p8test.example.com-default]/Concat::Fragment[https_p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_/p8test-other/]/Concat::Fragment[https_www.p8test.example.com-800-7572b9c0e48d310e3b49983439d9279a-ssl]/Concat_fragment[https_www.p8test.example.com-800-7572b9c0e48d310e3b49983439d9279a-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.72 seconds\u001b[0m\nAGENT_RC=6\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "58ced45b-609d-42aa-bc6c-89db39866639",
+     "boot_id_at_end": "58ced45b-609d-42aa-bc6c-89db39866639",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "80e7533c6af6e6fc66edebf470639b94bd3e5fc435fc6714bb97e0a2b6c75aac"
+  },
+  "dyn": {
+   "name": "dyn",
+   "node": "ubuntu",
+   "params": "dyn",
+   "clean": [
+    {
+     "id": "dynamic-dns-proxies-through-the-variable",
+     "control": "negative",
+     "rc": 7,
+     "passed": false,
+     "stdout": "0\n0\nno-resolver\n0\n",
+     "stderr": "awk: fatal: cannot open file `/etc/ssl/certs/p8test.nginx.bundle.crt' for reading: No such file or directory\n",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 6,
+    "green": false,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 6,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Package[nginx]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}48c6a4ec1e1fd28ccf968490f07e34a1d7f755793b2108a3ed8670b1ee2a0aa2' to '{sha256}d86ca9397952b7b6b19a8c46f6235e901b5ffe6dbfd7b5afba862ebb25a9ad7f'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}36c77daa2d85803e87c91ba723dd2bc6aaa6543ae4bd4a569034a7bf8bce464d' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/Exec[Generate a new 2048-bit Diffie-Hellman group]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_default_removal/File[/etc/nginx/sites-enabled/default]/ensure: removed\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Host[puppet8node.monitoring.p8test.example.com]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/File[/opt/puppet-infrastructure/bin/check_nginx_status.py]/ensure: defined content as '{sha256}9393a21b65d1acd3809e35431fedcf46ea45ed4baf1514d0333819edecb8d065'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Nginx::Resource::Server[puppet8node.monitoring.p8test.example.com]/Concat[/etc/nginx/sites-available/puppet8node.monitoring.p8test.example.com.conf]/File[/etc/nginx/sites-available/puppet8node.monitoring.p8test.example.com.conf]/ensure: defined content as '{sha256}f2872b00c74387539d112b0c8747f63940baf751eafbfc74cd88f2d5fdd55f42'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Nginx::Resource::Server[puppet8node.monitoring.p8test.example.com]/File[puppet8node.monitoring.p8test.example.com.conf symlink]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Nginx::Resource::Server[default]/Concat[/etc/nginx/sites-available/default.conf]/Concat_file[/etc/nginx/sites-available/default.conf]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[http_p8test.example.com]/Concat[/etc/nginx/sites-available/http_p8test.example.com.conf]/File[/etc/nginx/sites-available/http_p8test.example.com.conf]/ensure: defined content as '{sha256}a88001fc368dc1bbc662330c7dd2b71a1309461a97cd1f6b4d54d23bcfe98c39'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[http_p8test.example.com]/File[http_p8test.example.com.conf symlink]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[http_www.p8test.example.com]/Concat[/etc/nginx/sites-available/http_www.p8test.example.com.conf]/File[/etc/nginx/sites-available/http_www.p8test.example.com.conf]/ensure: defined content as '{sha256}23d5e68db24aa492938385159fd43cf88ec60d8a615f0a6102c363a572e2ee9c'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[http_www.p8test.example.com]/File[http_www.p8test.example.com.conf symlink]/ensure: created\u001b[0m"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_fil",
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources usi"
+      ],
+      "tail": "end_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/File[https_www.p8test.example.com.conf symlink]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-header]/Concat_fragment[https_www.p8test.example.com-ssl-header]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-footer]/Concat_fragment[https_www.p8test.example.com-ssl-footer]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 67.64 seconds\u001b[0m\nAGENT_RC=6\n"
+     },
+     {
+      "rc": 6,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Nginx::Resource::Server[default]/Concat[/etc/nginx/sites-available/default.conf]/Concat_file[/etc/nginx/sites-available/default.conf]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_fil",
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed to generate additional resources usi"
+      ],
+      "tail": "tend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/File[https_www.p8test.example.com.conf symlink]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-header]/Concat_fragment[https_www.p8test.example.com-ssl-header]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-footer]/Concat_fragment[https_www.p8test.example.com-ssl-footer]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.67 seconds\u001b[0m\nAGENT_RC=6\n"
+     }
+    ],
+    "tail": "tend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/File[https_www.p8test.example.com.conf symlink]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-header]/Concat_fragment[https_www.p8test.example.com-ssl-header]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-footer]/Concat_fragment[https_www.p8test.example.com-ssl-footer]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Nginx_frontend/Puppet_infrastructure::Nginx_frontend_domain[p8test.example.com]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.67 seconds\u001b[0m\nAGENT_RC=6\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "4dc1d4f8-c9f3-47df-9d3d-f0fbed30ce39",
+     "boot_id_at_end": "4dc1d4f8-c9f3-47df-9d3d-f0fbed30ce39",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "ad65d0fe32ec258a79a82d838d1a91f41eebb544a51e542c3e7cacb49b783368"
+  },
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "clean": [],
+   "apply": null,
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [
+    "the provider gave no fresh rhel9 node:  has been successfully started.\nWaiting up to 120s for SSH over the host-only network...\nRefreshing dnf metadata on the node...\n0%...10%...20%...30%...40%...50%...60%...70%...80%...90%...100%\nERROR: dnf makecache failed on node 'p8lab-rhel9' (no internet, DNS or repositories).\nrevert of rhel9 failed"
+   ],
+   "valid": true,
+   "outcome": "ENVIRONMENT_FAILED"
+  }
+ },
+ "duration_s": 1714.5
+}

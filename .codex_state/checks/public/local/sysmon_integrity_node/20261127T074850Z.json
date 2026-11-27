@@ -1,0 +1,177 @@
+{
+ "class": "sysmon_integrity_node",
+ "role": "local",
+ "at": "20261127T074750Z",
+ "set_sha256": "4e387ed21e2725cc701829b2f34e5c47f7b2b9b0586233c27181d9c9a0ec5152",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "check-script-carries-the-checklist",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/nagios-integrity.sh': No such file or directory\nbash: /opt/puppet-infrastructure/bin/nagios-integrity.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "check-ok-when-the-file-matches",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 96: /opt/puppet-infrastructure/bin/nagios-integrity.sh: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "check-critical-when-a-listed-file-changed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 96: /opt/puppet-infrastructure/bin/nagios-integrity.sh: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "check-skips-a-listed-file-that-is-absent",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc=127\n",
+   "stderr": "bash: line 97: /opt/puppet-infrastructure/bin/nagios-integrity.sh: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_integrity_node/File[/opt/puppet-infrastructure/bin/nagios-integrity.sh]/ensure: defined content as '{sha256}ca9269d987af1a18cf319c6f5d0667b186c1b285fbd2c5dea126740a5e50dfff'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "sure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_integrity_node/File[/opt/puppet-infrastructure/bin/nagios-integrity.sh]/ensure: defined content as '{sha256}ca9269d987af1a18cf319c6f5d0667b186c1b285fbd2c5dea126740a5e50dfff'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.09 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/opt/puppet-infrastructure]\nCHANGED File[/opt/puppet-infrastructure/bin]\nCHANGED File[/opt/puppet-infrastructure/etc]\nCHANGED File[/opt/puppet-infrastructure/backup]\nCHANGED File[/opt/puppet-infrastructure/pkgsdir]\nCHANGED File[/etc/default/locale]\nCHANGED File[/opt/puppet-infrastructure/bin/mypython]\nCHANGED File[/opt/puppet-infrastructure/bin/nagios-integrity.sh]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.07 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.12 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.07 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.12 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "check-script-carries-the-checklist",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "check-ok-when-the-file-matches",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK: exit code 0\nrc=0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates /var/tmp/p8test-integrity.txt and /var/tmp/p8test-integrity2.txt with the contents the two checklist lines were computed from",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "check-critical-when-a-listed-file-changed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "CRITICAL: checksum error for 9b8d32458025f609b05711678efbb7c0  /var/tmp/p8test-integrity2.txt\n\nrc=2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "rewrites /var/tmp/p8test-integrity2.txt with different content (p8test integrity tampered); the effect runs the check, which only reads",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "check-skips-a-listed-file-that-is-absent",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "file absent\nOK: exit code 0\nrc=0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "removes /var/tmp/p8test-integrity2.txt and writes /run/p8test-integrity-absent as the marker that the file was removed by this action",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "6066400f-3f34-4f36-8366-59433a244fd0",
+   "boot_id_at_end": "6066400f-3f34-4f36-8366-59433a244fd0",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "99caeb69cb724f088c0121e1964d3ed5959f6dddaf2a730d1724643215c83d92",
+ "duration_s": 59.5
+}

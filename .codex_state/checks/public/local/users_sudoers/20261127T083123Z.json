@@ -1,0 +1,195 @@
+{
+ "class": "users_sudoers",
+ "role": "local",
+ "at": "20261127T083012Z",
+ "set_sha256": "6ad72369194bd38095e346c8ec2a05b2cc23c574c09ca86160a7dfe8bb52ef0e",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "managed-user-is-a-sudoer",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "id: 'p8testuser': no such user\n",
+   "ok": true
+  },
+  {
+   "id": "unmanaged-user-is-left-alone",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "no-p8testuser2\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-managed-user-becomes-root-with-sudo",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-sudoers/sudo.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "an-unmanaged-account-made-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-leaves-the-unmanaged-account-alone",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\nno key\n",
+   "stderr": "id: 'p8testuser2': no such user\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Users_sudoers[users_sudoers]/Puppet_infrastructure::User_sudoer[p8testuser]/Puppet_infrastructure::User_base[p8testuser]/Group[p8testuser]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Users_sudoers[users_sudoers]/Puppet_infrastructure::User_sudoer[p8testuser]/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Users_sudoers[users_sudoers]/Puppet_infrastructure::User_sudoer[p8testuser]/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.09 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Users_sudoers[users_sudoers]/Puppet_infrastructure::User_sudoer[p8testuser]/Puppet_infrastructure::User_base[p8testuser]/Group[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Users_sudoers[users_sudoers]/Puppet_infrastructure::User_sudoer[p8testuser]/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Users_sudoers[users_sudoers]/Puppet_infrastructure::User_sudoer[p8testuser]/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.44 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Group[p8testuser]\nCHANGED User[p8testuser]\nCHANGED Ssh_authorized_key[p8testuser@puppet]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.05 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.05 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "managed-user-is-a-sudoer",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser:P8 Test User\np8testuser sudo ",
+   "stderr": ""
+  },
+  {
+   "id": "unmanaged-user-is-left-alone",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "no-p8testuser2\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-managed-user-becomes-root-with-sudo",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "user, test password: 0\nuser, wrong password: refused\nnobody, test password: refused\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "three sudo attempts (p8testuser with the test password and with a wrong one, nobody with the test password); sudo logs them to the journal and /var/log/auth.log, and the successful one creates Ubuntu's marker /home/p8testuser/.sudo_as_admin_successful (-k keeps no credential timestamp); the answers go to /run/p8test-sudoers/sudo.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "an-unmanaged-account-made-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser2:/bin/sh\n3\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the account p8testuser2 (useradd -m, shell /bin/sh, password p8test-user2-by-hand) and writes its passwd line, shadow hash digest and groups to /run/p8test-sudoers/before.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-leaves-the-unmanaged-account-alone",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "unchanged\n0\nno key\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the account (declared mutating so it runs after the agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "a11691cb-bb15-44d5-ae0e-f16078813526",
+   "boot_id_at_end": "a11691cb-bb15-44d5-ae0e-f16078813526",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "06d23b0d232fdd548abcf1d502b2e6499b0f8489da1c5faea6cf66648e4e528f",
+ "node_agent": {
+  "rc": 0,
+  "events": [],
+  "errors": [],
+  "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.04 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "duration_s": 71.4
+}

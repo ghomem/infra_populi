@@ -1,0 +1,125 @@
+{
+ "class": "user_kde_lock_screen_common",
+ "role": "local",
+ "at": "20261127T082145Z",
+ "set_sha256": "267cfb1a15f28748917aefa69c8856b09d92c0d3cd06b6048fe30765075b915e",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-script-is-the-modules-file",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "absent\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "a-logged-out-user-runs-it",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\nno settings\n",
+   "stderr": "cat: /run/p8test-kde/rc: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::User_kde_lock_screen_common/File[/opt/puppet-infrastructure/bin/configure_lock_screen.sh]/ensure: defined content as '{sha256}8bc3f286c0ea1b4142e10e2cf14bffa38ab099bc7e71265248d49ebe402d5e9d'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::User_kde_lock_screen_common/File[/opt/puppet-infrastructure/bin/configure_lock_screen.sh]/ensure: defined content as '{sha256}8bc3f286c0ea1b4142e10e2cf14bffa38ab099bc7e71265248d49ebe402d5e9d'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.12 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/opt/puppet-infrastructure]\nCHANGED File[/opt/puppet-infrastructure/bin]\nCHANGED File[/opt/puppet-infrastructure/etc]\nCHANGED File[/opt/puppet-infrastructure/backup]\nCHANGED File[/opt/puppet-infrastructure/pkgsdir]\nCHANGED File[/etc/default/locale]\nCHANGED File[/opt/puppet-infrastructure/bin/mypython]\nCHANGED File[/opt/puppet-infrastructure/bin/configure_lock_screen.sh]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.05 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.05 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "the-script-is-the-modules-file",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root:root 755 8bc3f286c0ea1b4142e10e2cf14bffa38ab099bc7e71265248d49ebe402d5e9d\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-logged-out-user-runs-it",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc=0\n1\nno settings\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the account p8testkde (useradd -m), runs the script once as it (one syslog note); the exit code goes to /run/p8test-kde/rc",
+    "rc": 0,
+    "stdout": "rc=0\n",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "a20bf3ea-d126-4fdf-b1fd-f336780e3d92",
+   "boot_id_at_end": "a20bf3ea-d126-4fdf-b1fd-f336780e3d92",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "b9d81298fc38617f53f3198cf61797e62f2aa33ca81632af513202c0204c7124",
+ "duration_s": 177.0
+}

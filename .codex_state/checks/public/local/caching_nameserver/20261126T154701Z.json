@@ -1,0 +1,315 @@
+{
+ "class": "caching_nameserver",
+ "role": "local",
+ "at": "20261126T154341Z",
+ "set_sha256": "94288b09bbb953c42afce1425573f8c292bdf511cce7729eca13ba885da5b06e",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "named-runs-with-a-valid-configuration",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "inactive\n0\n",
+   "stderr": "dpkg-query: no packages found matching bind9\nbash: line 99: named-checkconf: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "named-runs-ipv4-only-without-global-ipv6",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "bash: line 98: /proc/0/cmdline: No such file or directory\ngrep: /etc/default/named: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-lab-nat-ipv6-route-is-removed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "1\ninactive\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-names-that-failed-resolve-cold",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-bind/cold.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-node-resolves-through-it-and-the-cache-answers-again",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-peer-adds-an-allowed-and-an-outside-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "1\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "an-allowed-client-is-answered-and-an-outside-one-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "+100: \n+150: \n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-options-drift",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /run/p8test-bind/before: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-options-and-restarts-named-once",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "bash: line 98: /run/p8test-bind/before: No such file or directory\nFailed to seek to cursor: Invalid argument\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/Package[bind]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]/content: content changed '{sha256}5b22f8bff7d5e45bc49dc82b0901d363368d0dae527b094990fc69e28397ecf7' to '{sha256}262ba67c0707c87cb61010624d2407bb94fe6882a76e9cf5e0fe65d78feab02d'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]/group: group changed 'bind' to 'root'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File_line[named IPv4 only]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/Service[named]: Triggered 'refresh' from 3 events\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.12 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/Package[bind]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]/content: content changed '{sha256}5b22f8bff7d5e45bc49dc82b0901d363368d0dae527b094990fc69e28397ecf7' to '{sha256}262ba67c0707c87cb61010624d2407bb94fe6882a76e9cf5e0fe65d78feab02d'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]/group: group changed 'bind' to 'root'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File_line[named IPv4 only]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/Service[named]: Triggered 'refresh' from 3 events\u001b[0m\n\u001b[mNotice: Applied catalog in 22.09 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.38 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.38 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "named-runs-with-a-valid-configuration",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "bind9 install ok installed\nactive\nconfig-valid\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "named-runs-ipv4-only-without-global-ipv6",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\n1\nOPTIONS=\"-u bind -4\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-lab-nat-ipv6-route-is-removed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\nactive\nstatus: NOERROR\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "sets net.ipv6.conf.enp0s3.accept_ra to 0, deletes the IPv6 default route on enp0s3 (the VirtualBox NAT interface), restarts named and waits up to 90 s until it resolves example.com (a name the checks do not ask; named takes 20-40 s after a restart to give up on its IPv6 servers, measured 2026-11-19)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-names-that-failed-resolve-cold",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "www.debian.org NOERROR\nwww.kernel.org NOERROR\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "flushes named's cache (rndc flush) and asks each name once; the statuses go to /run/p8test-bind/cold.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-node-resolves-through-it-and-the-cache-answers-again",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "status: NOERROR\nanswered again from the cache\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond two DNS questions to 127.0.0.1 (declared mutating so it runs after the reach setup)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-peer-adds-an-allowed-and-an-outside-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "3\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "adds the peer's host-only address + 100 and + 150 (/24) to its host-only NIC",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "an-allowed-client-is-answered-and-an-outside-one-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "+100: status: NOERROR\n+150: status: REFUSED\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond two DNS questions from the peer to the class node (declared mutating so it runs after the addresses are added)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-options-drift",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nnoted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "notes named's main PID and journal cursor in /run/p8test-bind/before, then appends a comment line to /etc/bind/named.conf.options on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-the-options-and-restarts-named-once",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\nrestarted\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the file, named's state and its journal (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "e0996464-9e1e-476e-be2e-c6fc545035bf",
+   "boot_id_at_end": "e0996464-9e1e-476e-be2e-c6fc545035bf",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "e7985a53-ea4b-4c93-9171-67f292d1d4f0",
+   "boot_id_at_end": "e7985a53-ea4b-4c93-9171-67f292d1d4f0",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "fc1c4028d9ecce5c1081cd2139a5e04ed2c5c21c18b5070bc64f66a05e92f776",
+ "node_agent": {
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]/content: content changed '{sha256}259acae31ec4ad1901fea1aebbe7d5d1eaef45922c34d52110328fd678907089' to '{sha256}262ba67c0707c87cb61010624d2407bb94fe6882a76e9cf5e0fe65d78feab02d'\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/Service[named]: Triggered 'refresh' from 1 event\u001b[0m"
+  ],
+  "errors": [],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.06 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]/content: content changed '{sha256}259acae31ec4ad1901fea1aebbe7d5d1eaef45922c34d52110328fd678907089' to '{sha256}262ba67c0707c87cb61010624d2407bb94fe6882a76e9cf5e0fe65d78feab02d'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/Service[named]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.64 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "duration_s": 199.7
+}

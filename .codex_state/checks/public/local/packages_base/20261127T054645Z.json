@@ -1,0 +1,473 @@
+{
+ "class": "packages_base",
+ "role": "local",
+ "at": "20261127T050816Z",
+ "set_sha256": "4b231374f4cb0d6f013f84bb21ca79cd96fcf146074f34528935e8c7230c9d46",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-package-list-is-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "acl unknown ok not-installed\naptitude unknown ok not-installed\necryptfs-utils unknown ok not-installed\niptables-persistent unknown ok not-installed\nvim install ok installed\nwget install ok installed\n",
+   "stderr": "dpkg-query: no packages found matching monitoring-plugins-standard\n",
+   "ok": true
+  },
+  {
+   "id": "the-tools-work",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 96: /usr/lib/nagios/plugins/check_disk: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "supervisor-cloud-init-and-unattended-upgrades-are-removed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "supervisor absent\ncloud-init installed\nunattended-upgrades installed\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "package-lists-refresh-on-every-agent-run",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-update-package-lists-exec-never-runs",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 2,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[iptables-persistent]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[monitoring-plugins-standard]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[ecryptfs-utils]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[aptitude]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[acl]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[cloud-init]/ensure: removed\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[unattended-upgrades]/ensure: removed\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "ent]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[monitoring-plugins-standard]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[ecryptfs-utils]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[aptitude]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[acl]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[cloud-init]/ensure: removed\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[unattended-upgrades]/ensure: removed\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 116.92 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[preferences]\nCHANGED Package[iptables-persistent]\nCHANGED Package[monitoring-plugins-standard]\nCHANGED Package[ecryptfs-utils]\nCHANGED Package[aptitude]\nCHANGED Package[acl]\nCHANGED Package[cloud-init]\nCHANGED Package[unattended-upgrades]\nCHANGED File[/etc/apt/apt.conf.d/15update-stamp]\nCHANGED Exec[apt_update]\n"
+   },
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.11 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 7.76 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Exec[apt_update]\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.11 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 7.76 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Exec[apt_update]\n"
+ },
+ "applied": [
+  {
+   "id": "the-package-list-is-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "acl install ok installed\naptitude install ok installed\necryptfs-utils install ok installed\niptables-persistent install ok installed\nmonitoring-plugins-standard install ok installed\nvim install ok installed\nwget install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-tools-work",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "DISK OK\n# file: /etc/hostname\n/usr/bin/ecryptfs-setup-private\n/usr/bin/aptitude\n",
+   "stderr": ""
+  },
+  {
+   "id": "supervisor-cloud-init-and-unattended-upgrades-are-removed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "supervisor absent\ncloud-init absent\nunattended-upgrades absent\n",
+   "stderr": ""
+  },
+  {
+   "id": "package-lists-refresh-on-every-agent-run",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-update-package-lists-exec-never-runs",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [
+  "the-update-package-lists-exec-never-runs"
+ ],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "bcd8b2c4-4ceb-45af-935c-3c6450bd362a",
+   "boot_id_at_end": "bcd8b2c4-4ceb-45af-935c-3c6450bd362a",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "03cf2846225f57634c06d383d6cca734d475d46f06ab9184e53a4f3c11d560ec",
+ "variants": {
+  "unattended": {
+   "name": "unattended",
+   "node": "ubuntu",
+   "params": "unattended",
+   "clean": [
+    {
+     "id": "unattended-upgrades-installed-when-asked",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "iptables-persistent unknown ok not-installed\nunattended-upgrades install ok installed\nsupervisor installed: 0\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 2,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[iptables-persistent]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[monitoring-plugins-standard]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[ecryptfs-utils]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[aptitude]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[acl]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[cloud-init]/ensure: removed\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "otice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[iptables-persistent]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[monitoring-plugins-standard]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[ecryptfs-utils]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[aptitude]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[acl]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[cloud-init]/ensure: removed\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 122.75 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[preferences]\nCHANGED Package[iptables-persistent]\nCHANGED Package[monitoring-plugins-standard]\nCHANGED Package[ecryptfs-utils]\nCHANGED Package[aptitude]\nCHANGED Package[acl]\nCHANGED Package[cloud-init]\nCHANGED File[/etc/apt/apt.conf.d/15update-stamp]\nCHANGED Exec[apt_update]\n"
+     },
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.11 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 7.29 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Exec[apt_update]\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.11 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 7.29 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Exec[apt_update]\n"
+   },
+   "applied": [
+    {
+     "id": "unattended-upgrades-installed-when-asked",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "iptables-persistent install ok installed\nunattended-upgrades install ok installed\nsupervisor installed: 0\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "46ea9ea2-8224-4575-bf92-d42c0854d8d8",
+     "boot_id_at_end": "46ea9ea2-8224-4575-bf92-d42c0854d8d8",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "97c1e7f055aa8c530ad0ef6bee3d7f63fd5a277ed75258f640753b75fff1c44c"
+  },
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "clean": [
+    {
+     "id": "on-redhat-the-package-list-and-dnf-automatic-absent",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "package iptables-services is not installed\npackage nagios-plugins-all is not installed\npackage yum-utils is not installed\npackage wget is not installed\nacl\nno package provides vim\ndnf-automatic absent\ncloud-init absent\n",
+     "stderr": "awk: fatal: cannot open file `/opt/puppetlabs/puppet/cache/state/last_run_report.yaml' for reading: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 2,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Exec[dnf-makecache]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Extra_packages_el/Exec[install-epel-release]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Extra_packages_el/Exec[enable-codeready-builder-repo]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[iptables-services]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[nagios-plugins-all]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[vim]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[wget]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[yum-utils]/ensure: created\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Exec[dnf-makecache]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Extra_packages_el/Exec[install-epel-release]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Extra_packages_el/Exec[enable-codeready-builder-repo]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[iptables-services]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[nagios-plugins-all]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[vim]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[wget]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[yum-utils]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 365.46 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Exec[dnf-makecache]\nCHANGED Exec[install-epel-release]\nCHANGED Exec[enable-codeready-builder-repo]\nCHANGED Package[iptables-services]\nCHANGED Package[nagios-plugins-all]\nCHANGED Package[vim]\nCHANGED Package[wget]\nCHANGED Package[yum-utils]\n"
+     },
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Exec[dnf-makecache]/returns: executed successfully\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Exec[dnf-makecache]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 19.10 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Exec[dnf-makecache]\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Exec[dnf-makecache]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 19.10 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Exec[dnf-makecache]\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-the-package-list-and-dnf-automatic-absent",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "iptables-services\nnagios-plugins-all\nyum-utils\nwget\nacl\nvim-enhanced\ndnf-makecache ran: 1\ndnf-automatic absent\ncloud-init absent\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "bf93cce2-bc95-4e58-8f67-f63bf0639082",
+     "boot_id_at_end": "bf93cce2-bc95-4e58-8f67-f63bf0639082",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "03cf2846225f57634c06d383d6cca734d475d46f06ab9184e53a4f3c11d560ec"
+  },
+  "rhel-unattended": {
+   "name": "rhel-unattended",
+   "node": "rhel9",
+   "params": "unattended",
+   "clean": [
+    {
+     "id": "on-redhat-dnf-automatic-installed-when-asked",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "package dnf-automatic is not installed\npackage iptables-services is not installed\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 2,
+    "green": false,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 6,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Exec[dnf-makecache]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Extra_packages_el/Exec[install-epel-release]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[iptables-services]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[vim]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[wget]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[yum-utils]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[dnf-automatic]/ensure: created\u001b[0m"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Extra_packages_el/Exec[enable-codeready-builder-repo]/unless: Check \"subscription-manager repos --list-enabled | grep -q 'codeready-builder-for-rhel-9-x86_64-rpms'\" exceeded timeout\u001b[0m",
+       "\u001b[1;31mError: Execution of '/bin/dnf -y install nagios-plugins-all' returned 1: Updating Subscription Management repositories.",
+       "Error:",
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Packages_base/Package[nagios-plugins-all]/ensure: change from 'purged' to 'present' failed: Execution of '/bin/dnf -y install nagios-plugins-all' returned 1: Updating Subscription Management repositories.",
+       "Error:"
+      ],
+      "tail": " change from 'purged' to 'present' failed: Execution of '/bin/dnf -y install nagios-plugins-all' returned 1: Updating Subscription Management repositories.\nLast metadata expiration check: 0:00:11 ago on Fri Nov 27 05:43:11 2026.\nError: \n Problem: package nagios-plugins-all-2.5-2.el9.x86_64 from epel requires nagios-plugins-disk_smb, but none of the providers can be installed\n  - package nagios-plugins-disk_smb-2.5-2.el9.x86_64 from epel requires perl(utf8::all), but none of the providers can be installed\n  - conflicting requests\n  - nothing provides perl(PerlIO::utf8_strict) needed by perl-utf8-all-0.024-14.el9.noarch from epel\n  - nothing provides perl(Import::Into) needed by perl-utf8-all-0.024-14.el9.noarch from epel\n(try to add '--skip-broken' to skip uninstallable packages or '--nobest' to use not only best candidate packages)\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[vim]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[wget]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[yum-utils]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[dnf-automatic]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 505.20 seconds\u001b[0m\nAGENT_RC=6\nCHANGED Exec[dnf-makecache]\nCHANGED Exec[install-epel-release]\nCHANGED Package[iptables-services]\nCHANGED Package[vim]\nCHANGED Package[wget]\nCHANGED Package[yum-utils]\nCHANGED Package[dnf-automatic]\n"
+     },
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Exec[dnf-makecache]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Extra_packages_el/Exec[enable-codeready-builder-repo]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[nagios-plugins-all]/ensure: created\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Exec[dnf-makecache]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Extra_packages_el/Exec[enable-codeready-builder-repo]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[nagios-plugins-all]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 152.91 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Exec[dnf-makecache]\nCHANGED Exec[enable-codeready-builder-repo]\nCHANGED Package[nagios-plugins-all]\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Exec[dnf-makecache]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Extra_packages_el/Exec[enable-codeready-builder-repo]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[nagios-plugins-all]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 152.91 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Exec[dnf-makecache]\nCHANGED Exec[enable-codeready-builder-repo]\nCHANGED Package[nagios-plugins-all]\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "95867c22-74fe-4c2c-a8ca-2ccc4b780d7b",
+     "boot_id_at_end": "95867c22-74fe-4c2c-a8ca-2ccc4b780d7b",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "97c1e7f055aa8c530ad0ef6bee3d7f63fd5a277ed75258f640753b75fff1c44c"
+  }
+ },
+ "duration_s": 2309.6
+}

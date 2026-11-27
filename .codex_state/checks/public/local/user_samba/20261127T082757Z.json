@@ -1,0 +1,115 @@
+{
+ "class": "user_samba",
+ "role": "local",
+ "at": "20261127T082651Z",
+ "set_sha256": "43fcd51f4f98a3dbc6ed12197db15cb4777ebccbb5d50c0233c9a381bba47593",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "user-created-with-split-name",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /var/tmp/p8test_samba_standin/users: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "samba-hash-set-for-the-user",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /var/tmp/p8test_samba_standin/hash.p8testuser: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/File[/var/tmp/p8test_samba_standin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/File[/usr/bin/pdbedit]/ensure: defined content as '{sha256}11067de963d6c116859acc998dc1cfe7bab9b1736698edac192f1cfc97d89283'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/File[/usr/bin/ldbsearch]/ensure: defined content as '{sha256}722738db1bf855fcbf1edbe182271c6c79054c184e7379b4a0d3f3aeb395fb0c'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/File[/usr/bin/create-user.pl]/ensure: defined content as '{sha256}9551c86582bc798b8a1965b18937ea4978da04740a323ea4cdf887cd1788a29c'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/File[/usr/bin/set-user-samba-hash.sh]/ensure: defined content as '{sha256}15e943ecfe5a73caeb6a6fd7837b504ea16a0e737b5cd3aba9930f08f94b71b0'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_samba[p8testuser]/Exec[create zentyal user: p8testuser]/returns: executed successfully\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_samba[p8testuser]/Exec[set p8testuser samba hash]/returns: executed successfully\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.06 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/File[/var/tmp/p8test_samba_standin]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/File[/usr/bin/pdbedit]/ensure: defined content as '{sha256}11067de963d6c116859acc998dc1cfe7bab9b1736698edac192f1cfc97d89283'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/File[/usr/bin/ldbsearch]/ensure: defined content as '{sha256}722738db1bf855fcbf1edbe182271c6c79054c184e7379b4a0d3f3aeb395fb0c'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/File[/usr/bin/create-user.pl]/ensure: defined content as '{sha256}9551c86582bc798b8a1965b18937ea4978da04740a323ea4cdf887cd1788a29c'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/File[/usr/bin/set-user-samba-hash.sh]/ensure: defined content as '{sha256}15e943ecfe5a73caeb6a6fd7837b504ea16a0e737b5cd3aba9930f08f94b71b0'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_samba[p8testuser]/Exec[create zentyal user: p8testuser]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_samba[p8testuser]/Exec[set p8testuser samba hash]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 0.20 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/var/tmp/p8test_samba_standin]\nCHANGED File[/usr/bin/pdbedit]\nCHANGED File[/usr/bin/ldbsearch]\nCHANGED File[/usr/bin/create-user.pl]\nCHANGED File[/usr/bin/set-user-samba-hash.sh]\nCHANGED Exec[create zentyal user: p8testuser]\nCHANGED Exec[set p8testuser samba hash]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.12 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.12 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "user-created-with-split-name",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser P8 Testuser\n",
+   "stderr": ""
+  },
+  {
+   "id": "samba-hash-set-for-the-user",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "IgBQADgAdABlAHMAdAB1AHMAZQByACEAMgAwADIANgAiAA==\n",
+   "stderr": ""
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "d0a0987a-ad64-47b1-88f4-c9ba10d7c898",
+   "boot_id_at_end": "d0a0987a-ad64-47b1-88f4-c9ba10d7c898",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "fd5d8c58717a57d1b8fd4c7e1f3229e3462154f55c713f4e73a4673e84b03199",
+ "duration_s": 66.9
+}

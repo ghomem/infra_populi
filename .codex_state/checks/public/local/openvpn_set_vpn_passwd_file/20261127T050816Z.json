@@ -1,0 +1,311 @@
+{
+ "class": "openvpn_set_vpn_passwd_file",
+ "role": "local",
+ "at": "20261127T050538Z",
+ "set_sha256": "81646f6b022249a960ac128d5fde378c1a42d7f199a350f26878d0bd05e9a61d",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "script-installed-with-the-list",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/usr/local/bin/set_vpn_passwd.sh': No such file or directory\ngrep: /usr/local/bin/set_vpn_passwd.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "a-test-vpn-pki-and-route",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "network-manager-openvpn unknown ok not-installed\n",
+   "stderr": "Error loading file /run/p8test-vpnpw/ca.crt\n40974E1808770000:error:80000002:system library:BIO_new_file:No such file or directory:../crypto/bio/bss_file.c:67:calling fopen(/run/p8test-vpnpw/ca.crt, r)\n40974E1808770000:error:10000080:BIO routines:BIO_new_file:no such file:../crypto/bio/bss_file.c:75:\n40974E1808770000:error:05880002:x509 certificate routines:X509_load_cert_crl_file_ex:system lib:../crypto/x509/by_file.c:228:\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "vpn-profiles-and-a-dialog-stub",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-peer-serves-openvpn-accepting-pass-a",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /etc/p8test-vpnpw/accepted: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "matching-answers-set-the-listed-connection",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /var/tmp/p8test-kd/run1.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "cancelling-changes-nothing",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /var/tmp/p8test-kd/cancel.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-mismatch-is-asked-again",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /var/tmp/p8test-kd/mismatch.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-peer-now-accepts-pass-c",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "accepted logins: 0\n",
+   "stderr": "cat: /etc/p8test-vpnpw/accepted: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-second-run-changes-the-password",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /var/tmp/p8test-kd/run2.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Openvpn_set_vpn_passwd_file[/usr/local/bin/set_vpn_passwd.sh]/File[/usr/local/bin/set_vpn_passwd.sh]/ensure: defined content as '{sha256}dc196161de72e891a9008ea4225cacd35a10c89ae32e4896a471cc651938754f'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for p8lab-kubuntu in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Openvpn_set_vpn_passwd_file[/usr/local/bin/set_vpn_passwd.sh]/File[/usr/local/bin/set_vpn_passwd.sh]/ensure: defined content as '{sha256}dc196161de72e891a9008ea4225cacd35a10c89ae32e4896a471cc651938754f'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.02 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/usr/local/bin/set_vpn_passwd.sh]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for p8lab-kubuntu in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.01 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for p8lab-kubuntu in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.01 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "script-installed-with-the-list",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root:root 755\nVPN_LIST=\" VPN1 VPN2 VPN4\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-test-vpn-pki-and-route",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "network-manager-openvpn install ok installed\n/run/p8test-vpnpw/server.crt: OK\ndev enp0s8\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs network-manager-openvpn if absent; creates /run/p8test-vpnpw (0700) with a throwaway CA (CN p8test-vpnpw-ca, 2 days) and a server key and certificate it signs (CN p8test-vpnpw-server); adds the route 203.0.113.50/32 dev enp0s8",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "vpn-profiles-and-a-dialog-stub",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "VPN1\nVPN3\nVPN4\nstub ready\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes the NetworkManager profiles /etc/NetworkManager/system-connections/VPN1 and VPN3 (OpenVPN, password auth, password-flags=0; VPN1 to the peer's server 203.0.113.50 with the throwaway CA, VPN3 to 203.0.113.9) and VPN4 (password-flags=1, permissions=user:p8testuser:;) and reloads NetworkManager; writes the stub /var/tmp/p8test-kd/kdialog (replays /var/tmp/p8test-kd/answers, logs to /var/tmp/p8test-kd/calls)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-peer-serves-openvpn-accepting-pass-a",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "203.0.113.50:1194\np8test-pass-a\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "installs openvpn on the peer if absent; adds 203.0.113.50/32 to its enp0s8; writes /etc/p8test-vpnpw (the handed-over CA, server certificate and key, the accepted password p8test-pass-a, a check script comparing the user and password with it, server.conf: tun, UDP 1194, subnet 10.198.0.0/24, no client certificate); starts the server as a daemon logging to /run/p8test-vpnpw-server.log",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "matching-answers-set-the-listed-connection",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc=0\npassword prompts: 2\n--msgbox Configuration finished.\nVPN1: [password = p8test-pass-a]\nVPN3: []\nup rc=0\nserver answers through the tunnel\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs the script once with the stub first on PATH (answers p8test-pass-a twice); NetworkManager stores VPN1's password; brings VPN1 up (NetworkManager starts openvpn, creates a tun device) and down again; the outcomes go to /var/tmp/p8test-kd/run1.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "cancelling-changes-nothing",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc=0 prompts=1 last=--msgbox You canceled this operation.\nrc=0 prompts=2 last=--msgbox You canceled this operation.\nVPN1: [password = p8test-pass-a]\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs the script twice with the stub (cancel at the first dialog; a password, then cancel at the second); the outcomes go to /var/tmp/p8test-kd/cancel.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-mismatch-is-asked-again",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc=0\npassword prompts: 6\n--msgbox One of the passwords was blank.\n--msgbox Passwords didn't match.\n--msgbox Configuration finished.\nVPN2: [password = p8test-pass-b]\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes the profile VPN2 (as VPN1) and reloads NetworkManager; runs the script once with the stub answering two blanks, x, y, then p8test-pass-b twice; NetworkManager stores VPN2's password; the outcomes go to /var/tmp/p8test-kd/mismatch.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-peer-now-accepts-pass-c",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test-pass-c\naccepted logins: 1\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "replaces the accepted password in /etc/p8test-vpnpw/accepted with p8test-pass-c (the check script reads it at each login)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-second-run-changes-the-password",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc=0\nVPN1: [password = p8test-pass-c]\nup rc=0\nserver answers through the tunnel\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs the script once more with the stub answering p8test-pass-c twice; brings VPN1 up and down again; the outcomes go to /var/tmp/p8test-kd/run2.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "dest": "p8lab-kubuntu",
+   "boot_id": "59e7ee9b-2d42-4eeb-9b3f-f9ae79c5e891",
+   "boot_id_at_end": "59e7ee9b-2d42-4eeb-9b3f-f9ae79c5e891",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "78f9677b-3f60-49fc-a9f3-60ec88918f70",
+   "boot_id_at_end": "78f9677b-3f60-49fc-a9f3-60ec88918f70",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "p8lab-kubuntu",
+  "NODE_ADDR": "192.168.56.22",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "61f67a7ae273192e35560cf70e7b680406fff18f90ad5bf51436b39c9e980068",
+ "duration_s": 157.9
+}

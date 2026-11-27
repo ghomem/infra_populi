@@ -1,0 +1,197 @@
+{
+ "class": "puppet_boot_run",
+ "role": "local",
+ "at": "20261127T060117Z",
+ "set_sha256": "23bf5d589f82d69f65f9ace6c0220755018f73d315b3cb418833dea5447912f4",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "script-and-unit-installed",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "absent\n",
+   "stderr": "stat: cannot statx '/etc/systemd/system/puppet_boot_run.service': No such file or directory\ngrep: /etc/systemd/system/puppet_boot_run.service: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "unit-enabled-for-boot",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "not-found\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-unit-skips-while-another-run-is-active",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "cat: /run/p8test-bootrun/skip.rc: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-unit-makes-an-agent-run",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "cat: /run/p8test-bootrun/run.rc: No such file or directory\nsed: can't read /run/p8test-bootrun/run.log: No such file or directory\ncat: /run/p8test-bootrun/released: No such file or directory\nbash: line 98: [: : integer expression expected\ncat: /run/p8test-bootrun/start: No such file or directory\nbash: line 102: [: : integer expression expected\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-lock-wait-is-bounded",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "sed: can't read /run/p8test-bootrun/bounded.log: No such file or directory\ncat: /run/p8test-bootrun/bounded-start: No such file or directory\ncat: /run/p8test-bootrun/bounded-released: No such file or directory\nbash: line 100: [: : integer expression expected\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Puppet_boot_run/File[/opt/puppet-infrastructure/bin/puppet_boot_run.sh]/ensure: defined content as '{sha256}99b6e01a29dff0d52bd10a4ae26ef896c939cb564e16020255b087c607d1a66b'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Puppet_boot_run/File[/etc/systemd/system/puppet_boot_run.service]/ensure: defined content as '{sha256}6f01258637a91001d5be3e5d3f31d855edfc4c9b704bdf828251ca0551abb091'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Puppet_boot_run/Exec[Reload systemd]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Puppet_boot_run/Service[puppet_boot_run]/enable: enable changed 'false' to 'true'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Puppet_boot_run/File[/opt/puppet-infrastructure/bin/puppet_boot_run.sh]/ensure: defined content as '{sha256}99b6e01a29dff0d52bd10a4ae26ef896c939cb564e16020255b087c607d1a66b'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Puppet_boot_run/File[/etc/systemd/system/puppet_boot_run.service]/ensure: defined content as '{sha256}6f01258637a91001d5be3e5d3f31d855edfc4c9b704bdf828251ca0551abb091'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Puppet_boot_run/Exec[Reload systemd]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Puppet_boot_run/Service[puppet_boot_run]/enable: enable changed 'false' to 'true'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.67 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/opt/puppet-infrastructure]\nCHANGED File[/opt/puppet-infrastructure/bin]\nCHANGED File[/opt/puppet-infrastructure/etc]\nCHANGED File[/opt/puppet-infrastructure/backup]\nCHANGED File[/opt/puppet-infrastructure/pkgsdir]\nCHANGED File[/etc/default/locale]\nCHANGED File[/opt/puppet-infrastructure/bin/mypython]\nCHANGED File[/opt/puppet-infrastructure/bin/puppet_boot_run.sh]\nCHANGED File[/etc/systemd/system/puppet_boot_run.service]\nCHANGED Exec[Reload systemd]\nCHANGED Service[puppet_boot_run]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "script-and-unit-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root:root 750 99b6e01a29dff0d52bd10a4ae26ef896c939cb564e16020255b087c607d1a66b\nroot root 644\nType=oneshot\nExecStart=/opt/puppet-infrastructure/bin/puppet_boot_run.sh\nWantedBy=multi-user.target\n",
+   "stderr": ""
+  },
+  {
+   "id": "unit-enabled-for-boot",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "enabled\npuppet_boot_run.service\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-unit-skips-while-another-run-is-active",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "start rc=0\nsuccess\n1\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the agent's catalog-run lockfile (/opt/puppetlabs/puppet/cache/state/agent_catalog_run.lock) with a dead pid, starts puppet_boot_run.service (the script skips; it writes its log /tmp/puppet_boot_run.log), removes the lockfile; copies the unit's log and result to /run/p8test-bootrun (skip.log, skip.rc)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-unit-makes-an-agent-run",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "start rc=0\nsuccess\nthe agent run started after the dpkg lock was released\n1\n1\nlast run is the unit's\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "holds /var/lib/dpkg/lock-frontend open (flock) for 15 s in a background shell, which writes the release time to /run/p8test-bootrun/released; starts puppet_boot_run.service, whose script makes one agent run against the lab master (the node's catalog, which the harness applied with a clean second run; the run writes the agent's state, reports and last run summary under /opt/puppetlabs/puppet/cache) and its log /tmp/puppet_boot_run.log; records the start time and copies the unit's log and result to /run/p8test-bootrun (start, run.log, run.rc)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-lock-wait-is-bounded",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nthe agent run started after the 120 s bound, before the lock was released\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "holds /var/lib/dpkg/lock-frontend open (flock) for 150 s in a background shell, which then writes its release time to /run/p8test-bootrun/bounded-released; records the start time in /run/p8test-bootrun/bounded-start and starts puppet_boot_run.service (one agent run against the lab master, writing the agent's state under /opt/puppetlabs/puppet/cache and the script's log /tmp/puppet_boot_run.log), copied to /run/p8test-bootrun/bounded.log",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "ab166da7-d387-4e08-afaf-917574c2251d",
+   "boot_id_at_end": "ab166da7-d387-4e08-afaf-917574c2251d",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "3b70ed4a3458e527fa67bbbb0a3f987742d9753db1fbf59c46f9bf7be793be86",
+ "duration_s": 561.8
+}

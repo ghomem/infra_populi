@@ -1,0 +1,228 @@
+{
+ "class": "letsencrypt_base",
+ "role": "local",
+ "at": "20261126T183731Z",
+ "set_sha256": "e850ee786655432e1ad2fd92f84c60af29399ec77a9130e75866e7fa700879a7",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "dns-plugin-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "dpkg-query: no packages found matching python3-certbot-dns-digitalocean\ndpkg-query: no packages found matching certbot\n",
+   "ok": true
+  },
+  {
+   "id": "certbot-finds-the-dns-plugin",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /run/p8test-le/plugins.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "dns-credentials-file-private",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/etc/dns-creds.ini': No such file or directory\ncat: /opt/puppet-infrastructure/etc/dns-creds.ini: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "renew-cron-with-nginx-reload-hook",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "no crontab for root\ngrep: : No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "deploy-script-rendered",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/deploy_maintained_certificates.sh': No such file or directory\nbash: /opt/puppet-infrastructure/bin/deploy_maintained_certificates.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "deploy-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-deploy-script-copies-renewed-certificates",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 97: cd: /etc/puppetlabs/puppet/extra_files/ssl: No such file or directory\nstat: cannot statx 'p8test.example.com-key.pem': No such file or directory\nstat: cannot statx 'p8test.example.com.pem': No such file or directory\nstat: cannot statx 'p8test.example.com-chain.pem': No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Letsencrypt_base/Package[letsencrypt plugin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Letsencrypt_base/File[/opt/puppet-infrastructure/etc/dns-creds.ini]/ensure: defined content as '{sha256}5487871ff437cb49f3ec30affaa075e8a03f94d9be52bd0e667371298b2d42a0'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Letsencrypt::Config/File[/opt/puppetlabs/puppet/cache/letsencrypt]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Letsencrypt::Config/Ini_setting[/etc/letsencrypt/cli.ini server https://acme-v02.api.letsencrypt.org/directory]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Letsencrypt::Config/Ini_setting[/etc/letsencrypt/cli.ini email p8test@p8test.example.com]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Letsencrypt::Renew/File[letsencrypt-renewal-hooks-puppet]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Letsencrypt::Renew/Cron[letsencrypt-renew]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Letsencrypt_base/File[/opt/puppet-infrastructure/bin/deploy_maintained_certificates.sh]/ensure: defined content as '{sha256}eb78ef9793d0a855d3f39c4ea74617f5158a2f54e51beac75c7a0506b7c50421'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Letsencrypt_base/Cron[deploy_maintained_certificates]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Letsencrypt::Renew/Letsencrypt::Hook[renew-post]/File[/etc/letsencrypt/renewal-hooks-puppet/renew-post.sh]/ensure: defined content as '{sha256}040b36d8f5c01b1757262a2db666bd3603045bc21287bad04c4ed8cb6a2a8d89'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "pt plugin]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Letsencrypt_base/File[/opt/puppet-infrastructure/etc/dns-creds.ini]/ensure: defined content as '{sha256}5487871ff437cb49f3ec30affaa075e8a03f94d9be52bd0e667371298b2d42a0'\u001b[0m\n\u001b[mNotice: /Stage[main]/Letsencrypt::Config/File[/opt/puppetlabs/puppet/cache/letsencrypt]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Letsencrypt::Config/Ini_setting[/etc/letsencrypt/cli.ini server https://acme-v02.api.letsencrypt.org/directory]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Letsencrypt::Config/Ini_setting[/etc/letsencrypt/cli.ini email p8test@p8test.example.com]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Letsencrypt::Renew/File[letsencrypt-renewal-hooks-puppet]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Letsencrypt::Renew/Cron[letsencrypt-renew]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Letsencrypt_base/File[/opt/puppet-infrastructure/bin/deploy_maintained_certificates.sh]/ensure: defined content as '{sha256}eb78ef9793d0a855d3f39c4ea74617f5158a2f54e51beac75c7a0506b7c50421'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Letsencrypt_base/Cron[deploy_maintained_certificates]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Letsencrypt::Renew/Letsencrypt::Hook[renew-post]/File[/etc/letsencrypt/renewal-hooks-puppet/renew-post.sh]/ensure: defined content as '{sha256}040b36d8f5c01b1757262a2db666bd3603045bc21287bad04c4ed8cb6a2a8d89'\u001b[0m\n\u001b[mNotice: Applied catalog in 21.88 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for p8lab-puppetserver in environment production in 0.18 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.44 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for p8lab-puppetserver in environment production in 0.18 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.44 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "dns-plugin-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "certbot install ok installed\npython3-certbot-dns-digitalocean install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "dns-credentials-file-private",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 600\ndns_digitalocean_token = p8test-not-a-secret\n",
+   "stderr": ""
+  },
+  {
+   "id": "renew-cron-with-nginx-reload-hook",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0 4 5,10,15,20,25 * * certbot renew -q --post-hook \"/etc/letsencrypt/renewal-hooks-puppet/renew-post.sh\"\nservice nginx reload\n",
+   "stderr": ""
+  },
+  {
+   "id": "deploy-script-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 700\nCERT_DIR=/etc/letsencrypt/live\nSSL_DIR=/etc/puppetlabs/puppet/extra_files/ssl\nDOMAINS=\"p8test.example.com\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "deploy-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0 5 5,10,15,20,25 * * /opt/puppet-infrastructure/bin/deploy_maintained_certificates.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "certbot-finds-the-dns-plugin",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "dns-digitalocean\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs `certbot plugins` once, which creates its log /var/log/letsencrypt/letsencrypt.log, its work directory /var/lib/letsencrypt and its empty hook directories /etc/letsencrypt/renewal-hooks/{pre,deploy,post}; writes the plugin list to /run/p8test-le/plugins.txt (/run/p8test-le created 0700)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-deploy-script-copies-renewed-certificates",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test.example.com-chain.pem p8test.example.com-key.pem p8test.example.com.pem \npuppet:puppet\nbyte-for-byte\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates /etc/puppetlabs/puppet/extra_files/ssl (root 0755, the master's directory, hand-built in production) and, as certbot leaves a renewal, /etc/letsencrypt/live/p8test.example.com and /etc/letsencrypt/live/p8test-other.example.org with privkey.pem, cert.pem and chain.pem of p8test text; runs the deploy script once as root",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "dest": "p8lab-puppetserver",
+   "boot_id": "a8a775f5-4022-4696-8b6a-109aebda9a0a",
+   "boot_id_at_end": "a8a775f5-4022-4696-8b6a-109aebda9a0a",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "p8lab-puppetserver",
+  "NODE_ADDR": "192.168.56.26",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "08a54508c9aa3f98d8a7a7567a10724be3d6821607947a9aa620d0f174184984",
+ "duration_s": 101.1
+}

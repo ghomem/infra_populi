@@ -1,0 +1,493 @@
+{
+ "class": "rsyslog_base",
+ "role": "local",
+ "at": "20261127T061421Z",
+ "set_sha256": "4cc67c183282dcfd5aa52d82e4c5e59d3c566f34565783653f864f6037b805d8",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "rsyslog-and-its-tls-driver-are-installed-and-running",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rsyslog install ok installed\nrsyslog-gnutls unknown ok not-installed\n0\nactive\nenabled\n",
+   "stderr": "ls: cannot access '/usr/lib/*/rsyslog/lmnsd_gtls.so': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-tls-files-are-the-nodes-puppet-identity",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/rsyslog.d/tls': No such file or directory\nstat: cannot statx '/etc/rsyslog.d/tls/ca.pem': No such file or directory\nstat: cannot statx '/etc/rsyslog.d/tls/puppet8node.pem': No such file or directory\nstat: cannot statx '/etc/rsyslog.d/tls/puppet8node.key': No such file or directory\nError loading file /etc/rsyslog.d/tls/ca.pem\n4017FB045B770000:error:80000002:system library:BIO_new_file:No such file or directory:../crypto/bio/bss_file.c:67:calling fopen(/etc/rsyslog.d/tls/ca.pem, r)\n4017FB045B770000:error:10000080:BIO routines:BIO_new_file:no such file:../crypto/bio/bss_file.c:75:\n4017FB045B770000:error:05880002:x509 certificate routines:X509_load_cert_crl_file_ex:system lib:../crypto/x509/by_file.c:228:\n",
+   "ok": true
+  },
+  {
+   "id": "the-catalog-copies-from-the-agents-ssldir",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "rsyslog-can-read-the-key-as-the-user-it-runs-as",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "$PrivDropToUser syslog\nsyslog\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "rsyslog-is-stopped",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "active\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-starts-rsyslog-again",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "active\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-tls-directory-drifts",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/rsyslog.d/tls': No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-directory-and-restarts-rsyslog",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "restarted\nactive\n",
+   "stderr": "stat: cannot statx '/etc/rsyslog.d/tls': No such file or directory\ncat: /run/p8test-rsyslog/pid: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-tls-file-changes",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/rsyslog.d/tls/ca.pem: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-file-and-restarts-rsyslog-once",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "restarted\n0\n",
+   "stderr": "bash: line 97: /run/p8test-rsyslog/before: No such file or directory\nFailed to seek to cursor: Invalid argument\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Package[rsyslog-gnutls]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/ensure: defined content as '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.pem]/ensure: defined content as '{sha256}c4ccab2b7949dcc773e68400194dcaf43dcced6068dc027da46d8eef36feeb68'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.key]/ensure: defined content as '{sha256}9ebaed588557ad124b7fcccc0abe4616c90306eb68dd5eb64bcedf3460c0ab71'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 4 events\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Package[rsyslog-gnutls]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/ensure: defined content as '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.pem]/ensure: defined content as '{sha256}c4ccab2b7949dcc773e68400194dcaf43dcced6068dc027da46d8eef36feeb68'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.key]/ensure: defined content as '{sha256}9ebaed588557ad124b7fcccc0abe4616c90306eb68dd5eb64bcedf3460c0ab71'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 4 events\u001b[0m\n\u001b[mNotice: Applied catalog in 14.68 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Package[rsyslog-gnutls]\nCHANGED File[/etc/rsyslog.d/tls]\nCHANGED File[/etc/rsyslog.d/tls/ca.pem]\nCHANGED File[/etc/rsyslog.d/tls/puppet8node.pem]\nCHANGED File[/etc/rsyslog.d/tls/puppet8node.key]\nCHANGED Service[rsyslog]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.50 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.50 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "rsyslog-and-its-tls-driver-are-installed-and-running",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rsyslog install ok installed\nrsyslog-gnutls install ok installed\n1\nactive\nenabled\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-tls-files-are-the-nodes-puppet-identity",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "same-as-puppet\nsyslog:syslog 755\nsyslog:syslog 644\nsyslog:syslog 644\nsyslog:syslog 600\nOK\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the CA (the system bundle instead of the copied Puppet CA), which did not sign the node's certificate",
+    "rc": 0,
+    "passed": false,
+    "stdout": "same-as-puppet\nsyslog:syslog 755\nsyslog:syslog 644\nsyslog:syslog 644\nsyslog:syslog 600\nverification failed\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-catalog-copies-from-the-agents-ssldir",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "rsyslog-can-read-the-key-as-the-user-it-runs-as",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "$PrivDropToUser syslog\nsyslog\nkey-readable-by-syslog\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the user (nobody instead of syslog), whom the key's 0600 syslog ownership must keep out",
+    "rc": 1,
+    "passed": false,
+    "stdout": "$PrivDropToUser syslog\nsyslog\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "rsyslog-is-stopped",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (the-catalog-copies-from-the-agents-ssldir)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "the-next-agent-run-starts-rsyslog-again",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (the-catalog-copies-from-the-agents-ssldir)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "the-tls-directory-drifts",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (the-catalog-copies-from-the-agents-ssldir)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "the-agent-run-restores-the-directory-and-restarts-rsyslog",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (the-catalog-copies-from-the-agents-ssldir)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "a-tls-file-changes",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (the-catalog-copies-from-the-agents-ssldir)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "the-agent-run-restores-the-file-and-restarts-rsyslog-once",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (the-catalog-copies-from-the-agents-ssldir)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  }
+ ],
+ "findings": [
+  "the-catalog-copies-from-the-agents-ssldir"
+ ],
+ "not_run": [
+  "rsyslog-is-stopped",
+  "the-next-agent-run-starts-rsyslog-again",
+  "the-tls-directory-drifts",
+  "the-agent-run-restores-the-directory-and-restarts-rsyslog",
+  "a-tls-file-changes",
+  "the-agent-run-restores-the-file-and-restarts-rsyslog-once"
+ ],
+ "outcome": "FINDINGS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "de9d33f9-6d0e-4ebd-8610-0e7867b4ec11",
+   "boot_id_at_end": "de9d33f9-6d0e-4ebd-8610-0e7867b4ec11",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "28ff10b5f281cc4b39897ab17cc5481a729d46d3f408e8a598de1fa57eeb512d",
+ "variants": {
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "clean": [
+    {
+     "id": "on-redhat-a-syslog-account-with-ids-0-exists",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "active\nroot\n",
+     "stderr": "stat: cannot statx '/etc/rsyslog.d/tls': No such file or directory\nstat: cannot statx '/etc/rsyslog.d/tls/ca.pem': No such file or directory\nstat: cannot statx '/etc/rsyslog.d/tls/p8lab-rhel9.pem': No such file or directory\nstat: cannot statx '/etc/rsyslog.d/tls/p8lab-rhel9.key': No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Package[rsyslog-gnutls]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Group[syslog]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/User[syslog]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/ensure: defined content as '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/p8lab-rhel9.pem]/ensure: defined content as '{sha256}8f768fa88c44d43bcd5dc04074d883e580c659351a8cdcac6615fd85a9f44af7'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/p8lab-rhel9.key]/ensure: defined content as '{sha256}2c61cff8abdb17d5ce25eb8f39b998ac4f0bc6545c45fc4b8c03a110596615e4'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 4 events\u001b[0m"
+      ],
+      "errors": [],
+      "tail": " in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Package[rsyslog-gnutls]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Group[syslog]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/User[syslog]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/ensure: defined content as '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/p8lab-rhel9.pem]/ensure: defined content as '{sha256}8f768fa88c44d43bcd5dc04074d883e580c659351a8cdcac6615fd85a9f44af7'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/p8lab-rhel9.key]/ensure: defined content as '{sha256}2c61cff8abdb17d5ce25eb8f39b998ac4f0bc6545c45fc4b8c03a110596615e4'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 4 events\u001b[0m\n\u001b[mNotice: Applied catalog in 7.71 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Package[rsyslog-gnutls]\nCHANGED Group[syslog]\nCHANGED User[syslog]\nCHANGED File[/etc/rsyslog.d/tls]\nCHANGED File[/etc/rsyslog.d/tls/ca.pem]\nCHANGED File[/etc/rsyslog.d/tls/p8lab-rhel9.pem]\nCHANGED File[/etc/rsyslog.d/tls/p8lab-rhel9.key]\nCHANGED Service[rsyslog]\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.13 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.13 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-a-syslog-account-with-ids-0-exists",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "syslog:0\nsyslog:0\nsame-as-puppet\n0:0 755\n0:0 644\n0:0 644\n0:0 600\nactive\nroot\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "23740197-06f2-4cdf-8f9c-ae203112d481",
+     "boot_id_at_end": "23740197-06f2-4cdf-8f9c-ae203112d481",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "28ff10b5f281cc4b39897ab17cc5481a729d46d3f408e8a598de1fa57eeb512d"
+  },
+  "override": {
+   "name": "override",
+   "node": "ubuntu",
+   "params": "override",
+   "clean": [
+    {
+     "id": "the-catalog-copies-from-the-override",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Package[rsyslog-gnutls]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/ensure: defined content as '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.pem]/ensure: defined content as '{sha256}c4ccab2b7949dcc773e68400194dcaf43dcced6068dc027da46d8eef36feeb68'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.key]/ensure: defined content as '{sha256}9ebaed588557ad124b7fcccc0abe4616c90306eb68dd5eb64bcedf3460c0ab71'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 4 events\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Package[rsyslog-gnutls]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/ensure: defined content as '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.pem]/ensure: defined content as '{sha256}c4ccab2b7949dcc773e68400194dcaf43dcced6068dc027da46d8eef36feeb68'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.key]/ensure: defined content as '{sha256}9ebaed588557ad124b7fcccc0abe4616c90306eb68dd5eb64bcedf3460c0ab71'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 4 events\u001b[0m\n\u001b[mNotice: Applied catalog in 14.74 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Package[rsyslog-gnutls]\nCHANGED File[/etc/rsyslog.d/tls]\nCHANGED File[/etc/rsyslog.d/tls/ca.pem]\nCHANGED File[/etc/rsyslog.d/tls/puppet8node.pem]\nCHANGED File[/etc/rsyslog.d/tls/puppet8node.key]\nCHANGED Service[rsyslog]\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.01 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.49 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.01 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.49 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "the-catalog-copies-from-the-override",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "same-as-puppet\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [
+    "the-catalog-copies-from-the-override"
+   ],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "FINDINGS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "f2f8ca06-4eae-43d3-9098-8b80c1515f36",
+     "boot_id_at_end": "f2f8ca06-4eae-43d3-9098-8b80c1515f36",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "85d40b75efe8b096b8352a285f4c54adb5135468aadc279daca293410415b51b"
+  }
+ },
+ "duration_s": 502.1
+}

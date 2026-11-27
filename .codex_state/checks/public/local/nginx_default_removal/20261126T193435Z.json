@@ -1,0 +1,133 @@
+{
+ "class": "nginx_default_removal",
+ "role": "local",
+ "at": "20261126T193245Z",
+ "set_sha256": "9416ec3124c60ec7a4f68aa6ae29f504531e0666182a31e7b70ddca9e28cccf0",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-nginx-package-enables-its-default-site",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-removes-the-default-site",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "default-site-removed\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.05 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.05 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "the-nginx-package-enables-its-default-site",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "default-site-enabled\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs the nginx package on the node (apt), which enables /etc/nginx/sites-enabled/default and starts nginx",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-agent-run-removes-the-default-site",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nginx-installed\ndefault-site-removed\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading files and nginx's configuration (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "294adaf8-3be1-4391-9ed6-d1deb1b538e9",
+   "boot_id_at_end": "294adaf8-3be1-4391-9ed6-d1deb1b538e9",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "b5948b5658d68d3cdf038cafb49d3eb87636e8e0aae6d8615a3113aa14264247",
+ "node_agent": {
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_default_removal/File[/etc/nginx/sites-enabled/default]/ensure: removed\u001b[0m"
+  ],
+  "errors": [],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_default_removal/File[/etc/nginx/sites-enabled/default]/ensure: removed\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "duration_s": 109.9
+}

@@ -1,0 +1,747 @@
+{
+ "class": "docker_container",
+ "role": "local",
+ "at": "20261126T154940Z",
+ "set_sha256": "13d2261fd9ee77885bb000477ef1d46ff6ee39907f68d870c38b93863e9aac12",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-container-runs-the-image-under-systemd",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "inactive\n",
+   "stderr": "bash: line 98: docker: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "the-app-answers-on-loopback-only",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "bash: line 96: docker: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "the-container-is-killed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-service-starts-it-again",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /run/p8test-docker/before: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-image-tag-is-removed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "tag removed\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-pulls-the-image-and-restarts-the-container",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /run/p8test-docker/before-image: No such file or directory\ncat: /run/p8test-docker/before-image-id: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "stopping-the-service-keeps-the-container",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "inactive\n",
+   "stderr": "bash: line 97: docker: command not found\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Docker::Repos/Apt::Keyring[docker.asc]/File[/usr/share/keyrings/docker.asc]/ensure: defined content as '{mtime}2026-11-26 03:36:59 UTC'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Docker::Repos/Apt::Source[docker]/Apt::Setting[list-docker]/File[/etc/apt/sources.list.d/docker.list]/ensure: defined content as '{sha256}8a8eb78e03c48d6d0c70b130d7281841f5e5f1901d556a46f0236189503d13c7'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Docker::Repos/Package[cgroup-lite]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Docker::Repos/Apt::Pin[docker]/Apt::Setting[pref-docker]/File[/etc/apt/preferences.d/docker.pref]/ensure: defined content as '{sha256}12cae9612e6a952ae692f1aefcb0990e030f5ffe5c8dbd53c6b13accd57feaff'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Docker::Install/Package[docker]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Docker::Service/File[/etc/systemd/system/docker.service.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Docker::Service/File[/etc/systemd/system/docker.service.d/service-overrides.conf]/ensure: defined content as '{sha256}06c187898ec3d1d803c12b2656c041e63587acaf2a55bbbeb6d2a87291d0a0e1'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Docker::Service/Exec[docker-systemd-reload-before-service]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Docker::Service/File[/etc/default/docker-storage]/ensure: defined content as '{sha256}1a0bfc5c866936867a3519a80104980d85c5ba5c91a5575f0fc0c5266cc98571'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Docker::Service/File[/etc/default/docker]/content: content changed '{sha256}3177ea62729e9f63474e41b5a740aeacd5c73eecd9c7b6cc499266adbc09d21b' to '{sha256}f601c95aa6bb7f9f490ec066780a4c44a2e8d8837aa94ece46d0a1d544839479'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Docker::Service/Service[docker]: Triggered 'refresh' from 3 events\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/File[/usr/local/bin/update_docker_image.sh]/ensure: defined content as '{sha256}2b56373ae6802fb9b8d4a1a1235795571ba5228921d4ba3784f0b399875d77ff'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: alpine: Pulling from library/nginx\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e5f8fe67c1e1: Pulling fs layer\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 96001c9779a1: Pulling fs layer\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 881fc932939e: Pulling fs layer\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 272cbe758287: Pulling fs layer\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 85b05bfd25bc: Pulling fs layer\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e9820988621b: Pulling fs layer\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 3623869d224d: Pulling fs layer\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: fbbe454312b9: Pulling fs layer\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 96001c9779a1: Download complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 881fc932939e: Download complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 3623869d224d: Download complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 881fc932939e: Pull complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e9820988621b: Download complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 85b05bfd25bc: Download complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: fbbe454312b9: Download complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 3872ed807ade: Download complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: d970fb760bb2: Download complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 272cbe758287: Download complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: fbbe454312b9: Pull complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 272cbe758287: Pull complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 96001c9779a1: Pull complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 85b05bfd25bc: Pull complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 3623869d224d: Pull complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e9820988621b: Pull complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e5f8fe67c1e1: Download complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e5f8fe67c1e1: Pull complete\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: Digest: sha256:7fc0fb4af7bf006aeb31aea88069976060f8f0a0a86b667126742cc17f4e31ae\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: Status: Downloaded newer image for nginx:alpine\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: docker.io/library/nginx:alpine\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: nginx:alpine updated. Changed from  to sha256:7fc0fb4af7bf006aeb31aea88069976060f8f0a0a86b667126742cc17f4e31ae.\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: executed successfully\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/usr/local/bin/docker-run-docker_container-start.sh]/ensure: defined content as '{sha256}3c05749e23f94c5d4bb1743cd961fd583f81145d045c25c69e68ec2a9b5e66a9'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/usr/local/bin/docker-run-docker_container-stop.sh]/ensure: defined content as '{sha256}7e6368f4b338ca1cdbbd7989364a54ea5612a9a82bec5f44b313f1234c98614d'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/etc/systemd/system/docker-docker_container.service]/ensure: defined content as '{sha256}6b425b41ef1a470330ea03597c2e97ad0663d54af4bd3bd4d0d101f94b327e60'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Exec[docker-docker_container-systemd-reload]: Triggered 'refresh' from 4 events\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Service[docker-docker_container]/ensure: ensure changed 'stopped' to 'running'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "Notice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/usr/local/bin/docker-run-docker_container-start.sh]/ensure: defined content as '{sha256}3c05749e23f94c5d4bb1743cd961fd583f81145d045c25c69e68ec2a9b5e66a9'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/usr/local/bin/docker-run-docker_container-stop.sh]/ensure: defined content as '{sha256}7e6368f4b338ca1cdbbd7989364a54ea5612a9a82bec5f44b313f1234c98614d'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/etc/systemd/system/docker-docker_container.service]/ensure: defined content as '{sha256}6b425b41ef1a470330ea03597c2e97ad0663d54af4bd3bd4d0d101f94b327e60'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Exec[docker-docker_container-systemd-reload]: Triggered 'refresh' from 4 events\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Service[docker-docker_container]/ensure: ensure changed 'stopped' to 'running'\u001b[0m\n\u001b[mNotice: Applied catalog in 159.35 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[1;33mWarning: tag is a metaparam; this value will inherit to all contained resources in the puppet_infrastructure::docker_container definition\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.39 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 6.10 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[1;33mWarning: tag is a metaparam; this value will inherit to all contained resources in the puppet_infrastructure::docker_container definition\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.39 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 6.10 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "the-container-runs-the-image-under-systemd",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nginx:alpine\nactive\ndocker_container nginx:alpine\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-app-answers-on-loopback-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "127.0.0.1:18080\n127.0.0.1:18080\n1\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the address asked (the node's host-only address instead of 127.0.0.1), where nothing may listen",
+    "rc": 1,
+    "passed": false,
+    "stdout": "127.0.0.1:18080\n127.0.0.1:18080\n0\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-container-is-killed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "noted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "notes the container's start time in /run/p8test-docker/before, then kills the container docker_container on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-service-starts-it-again",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "started-again\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond waiting up to 60 s and reading the container's state (declared mutating so it runs after the kill)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-image-tag-is-removed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "tag removed\nnoted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "notes the container's start time and ID in /run/p8test-docker/before-image and before-image-id, then removes the tag nginx:alpine (docker rmi -f) on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-pulls-the-image-and-restarts-the-container",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "image pulled\nrestarted\nrecreated\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond waiting up to 60 s and reading the image and the container's state (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "stopping-the-service-keeps-the-container",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "inactive\nexited\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "stops the unit docker-docker_container on the node (last of the base run's checks)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "ffdd18db-57ad-44df-b4ad-25cc87ca745a",
+   "boot_id_at_end": "ffdd18db-57ad-44df-b4ad-25cc87ca745a",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "9f5db6fadae824a7676b74db1e60f8d53e9dd579f8384801d6066cbcf13afffe",
+ "node_agent": {
+  "the-image-tag-is-removed": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: alpine: Pulling from library/nginx\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: Digest: sha256:7fc0fb4af7bf006aeb31aea88069976060f8f0a0a86b667126742cc17f4e31ae\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: Status: Downloaded newer image for nginx:alpine\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: docker.io/library/nginx:alpine\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: nginx:alpine updated. Changed from  to sha256:7fc0fb4af7bf006aeb31aea88069976060f8f0a0a86b667126742cc17f4e31ae.\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: executed successfully\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Exec[docker-docker_container-systemd-reload]: Triggered 'refresh' from 1 event\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Service[docker-docker_container]: Triggered 'refresh' from 1 event\u001b[0m"
+   ],
+   "errors": [],
+   "tail": "date_docker_image.sh nginx:alpine]/returns: Digest: sha256:7fc0fb4af7bf006aeb31aea88069976060f8f0a0a86b667126742cc17f4e31ae\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: Status: Downloaded newer image for nginx:alpine\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: docker.io/library/nginx:alpine\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: nginx:alpine updated. Changed from  to sha256:7fc0fb4af7bf006aeb31aea88069976060f8f0a0a86b667126742cc17f4e31ae.\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Exec[docker-docker_container-systemd-reload]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Service[docker-docker_container]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 10.16 seconds\u001b[0m\nAGENT_RC=2\n"
+  }
+ },
+ "variants": {
+  "appport": {
+   "name": "appport",
+   "node": "ubuntu",
+   "params": "appport",
+   "clean": [
+    {
+     "id": "without-host-port-the-app-port-is-published-on-loopback",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "0\n",
+     "stderr": "bash: line 96: docker: command not found\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Repos/Apt::Keyring[docker.asc]/File[/usr/share/keyrings/docker.asc]/ensure: defined content as '{mtime}2026-11-26 03:36:59 UTC'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Repos/Apt::Source[docker]/Apt::Setting[list-docker]/File[/etc/apt/sources.list.d/docker.list]/ensure: defined content as '{sha256}8a8eb78e03c48d6d0c70b130d7281841f5e5f1901d556a46f0236189503d13c7'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Repos/Package[cgroup-lite]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Repos/Apt::Pin[docker]/Apt::Setting[pref-docker]/File[/etc/apt/preferences.d/docker.pref]/ensure: defined content as '{sha256}12cae9612e6a952ae692f1aefcb0990e030f5ffe5c8dbd53c6b13accd57feaff'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Install/Package[docker]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/File[/etc/systemd/system/docker.service.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/File[/etc/systemd/system/docker.service.d/service-overrides.conf]/ensure: defined content as '{sha256}06c187898ec3d1d803c12b2656c041e63587acaf2a55bbbeb6d2a87291d0a0e1'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/Exec[docker-systemd-reload-before-service]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/File[/etc/default/docker-storage]/ensure: defined content as '{sha256}1a0bfc5c866936867a3519a80104980d85c5ba5c91a5575f0fc0c5266cc98571'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/File[/etc/default/docker]/content: content changed '{sha256}3177ea62729e9f63474e41b5a740aeacd5c73eecd9c7b6cc499266adbc09d21b' to '{sha256}f601c95aa6bb7f9f490ec066780a4c44a2e8d8837aa94ece46d0a1d544839479'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/Service[docker]: Triggered 'refresh' from 3 events\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/File[/usr/local/bin/update_docker_image.sh]/ensure: defined content as '{sha256}2b56373ae6802fb9b8d4a1a1235795571ba5228921d4ba3784f0b399875d77ff'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: alpine: Pulling from library/nginx\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e5f8fe67c1e1: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 96001c9779a1: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 881fc932939e: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 272cbe758287: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: fbbe454312b9: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e9820988621b: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 85b05bfd25bc: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 3623869d224d: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e9820988621b: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 3623869d224d: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 85b05bfd25bc: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 96001c9779a1: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 272cbe758287: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: fbbe454312b9: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 881fc932939e: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 881fc932939e: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: d970fb760bb2: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 272cbe758287: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 96001c9779a1: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: fbbe454312b9: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 85b05bfd25bc: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e9820988621b: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e5f8fe67c1e1: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 3623869d224d: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e5f8fe67c1e1: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 3872ed807ade: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: Digest: sha256:7fc0fb4af7bf006aeb31aea88069976060f8f0a0a86b667126742cc17f4e31ae\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: Status: Downloaded newer image for nginx:alpine\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: docker.io/library/nginx:alpine\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: nginx:alpine updated. Changed from  to sha256:7fc0fb4af7bf006aeb31aea88069976060f8f0a0a86b667126742cc17f4e31ae.\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/usr/local/bin/docker-run-docker_container-start.sh]/ensure: defined content as '{sha256}557d8f293ec78dc8fa3bc0fc52e571e9821ccf516fca65b07363d902ae3cb250'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/usr/local/bin/docker-run-docker_container-stop.sh]/ensure: defined content as '{sha256}7e6368f4b338ca1cdbbd7989364a54ea5612a9a82bec5f44b313f1234c98614d'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/etc/systemd/system/docker-docker_container.service]/ensure: defined content as '{sha256}6b425b41ef1a470330ea03597c2e97ad0663d54af4bd3bd4d0d101f94b327e60'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Exec[docker-docker_container-systemd-reload]: Triggered 'refresh' from 4 events\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Service[docker-docker_container]/ensure: ensure changed 'stopped' to 'running'\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "Notice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/usr/local/bin/docker-run-docker_container-start.sh]/ensure: defined content as '{sha256}557d8f293ec78dc8fa3bc0fc52e571e9821ccf516fca65b07363d902ae3cb250'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/usr/local/bin/docker-run-docker_container-stop.sh]/ensure: defined content as '{sha256}7e6368f4b338ca1cdbbd7989364a54ea5612a9a82bec5f44b313f1234c98614d'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/etc/systemd/system/docker-docker_container.service]/ensure: defined content as '{sha256}6b425b41ef1a470330ea03597c2e97ad0663d54af4bd3bd4d0d101f94b327e60'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Exec[docker-docker_container-systemd-reload]: Triggered 'refresh' from 4 events\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Service[docker-docker_container]/ensure: ensure changed 'stopped' to 'running'\u001b[0m\n\u001b[mNotice: Applied catalog in 159.83 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[1;33mWarning: tag is a metaparam; this value will inherit to all contained resources in the puppet_infrastructure::docker_container definition\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.39 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 5.96 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[1;33mWarning: tag is a metaparam; this value will inherit to all contained resources in the puppet_infrastructure::docker_container definition\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.39 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 5.96 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "without-host-port-the-app-port-is-published-on-loopback",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "127.0.0.1:80\n1\n",
+     "stderr": "",
+     "mismatch": {
+      "varies": "the address asked (the node's host-only address instead of 127.0.0.1), where nothing may listen",
+      "rc": 1,
+      "passed": false,
+      "stdout": "127.0.0.1:80\n0\n",
+      "stderr": ""
+     }
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "03684693-6710-4d5f-b7ca-ebba208ed4b2",
+     "boot_id_at_end": "03684693-6710-4d5f-b7ca-ebba208ed4b2",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "7d2ada71304ebcf3b6c199fa2baf1ffaf7687ada01c93e900ef43fd8ff004a4a"
+  },
+  "runopts": {
+   "name": "runopts",
+   "node": "ubuntu",
+   "params": "runopts",
+   "clean": [
+    {
+     "id": "environment-volume-and-command-reach-the-container",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "other volumes: 0\n0\n0\n",
+     "stderr": "bash: line 96: docker: command not found\nbash: line 97: docker: command not found\nbash: line 98: docker: command not found\nbash: line 99: docker: command not found\nbash: line 100: docker: command not found\nbash: line 101: docker: command not found\nbash: line 102: docker: command not found\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Repos/Apt::Keyring[docker.asc]/File[/usr/share/keyrings/docker.asc]/ensure: defined content as '{mtime}2026-11-26 03:36:59 UTC'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Repos/Apt::Source[docker]/Apt::Setting[list-docker]/File[/etc/apt/sources.list.d/docker.list]/ensure: defined content as '{sha256}8a8eb78e03c48d6d0c70b130d7281841f5e5f1901d556a46f0236189503d13c7'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Repos/Package[cgroup-lite]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Repos/Apt::Pin[docker]/Apt::Setting[pref-docker]/File[/etc/apt/preferences.d/docker.pref]/ensure: defined content as '{sha256}12cae9612e6a952ae692f1aefcb0990e030f5ffe5c8dbd53c6b13accd57feaff'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Install/Package[docker]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/File[/etc/systemd/system/docker.service.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/File[/etc/systemd/system/docker.service.d/service-overrides.conf]/ensure: defined content as '{sha256}06c187898ec3d1d803c12b2656c041e63587acaf2a55bbbeb6d2a87291d0a0e1'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/Exec[docker-systemd-reload-before-service]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/File[/etc/default/docker-storage]/ensure: defined content as '{sha256}1a0bfc5c866936867a3519a80104980d85c5ba5c91a5575f0fc0c5266cc98571'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/File[/etc/default/docker]/content: content changed '{sha256}3177ea62729e9f63474e41b5a740aeacd5c73eecd9c7b6cc499266adbc09d21b' to '{sha256}f601c95aa6bb7f9f490ec066780a4c44a2e8d8837aa94ece46d0a1d544839479'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/Service[docker]: Triggered 'refresh' from 3 events\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Exec[mkvol-p8test-vol]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/File[/usr/local/bin/update_docker_image.sh]/ensure: defined content as '{sha256}2b56373ae6802fb9b8d4a1a1235795571ba5228921d4ba3784f0b399875d77ff'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: alpine: Pulling from library/nginx\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 96001c9779a1: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 881fc932939e: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e5f8fe67c1e1: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 272cbe758287: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 85b05bfd25bc: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e9820988621b: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 3623869d224d: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: fbbe454312b9: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e9820988621b: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 96001c9779a1: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 85b05bfd25bc: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 272cbe758287: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 3623869d224d: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: fbbe454312b9: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: d970fb760bb2: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 881fc932939e: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 3872ed807ade: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 881fc932939e: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 272cbe758287: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: fbbe454312b9: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 96001c9779a1: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 85b05bfd25bc: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e9820988621b: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 3623869d224d: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e5f8fe67c1e1: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e5f8fe67c1e1: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: Digest: sha256:7fc0fb4af7bf006aeb31aea88069976060f8f0a0a86b667126742cc17f4e31ae\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: Status: Downloaded newer image for nginx:alpine\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: docker.io/library/nginx:alpine\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: nginx:alpine updated. Changed from  to sha256:7fc0fb4af7bf006aeb31aea88069976060f8f0a0a86b667126742cc17f4e31ae.\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/usr/local/bin/docker-run-docker_container-start.sh]/ensure: defined content as '{sha256}748651401972a9eb630267e3ed60473b4066854ad4840764c0d94a2c3c88c31b'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/usr/local/bin/docker-run-docker_container-stop.sh]/ensure: defined content as '{sha256}7e6368f4b338ca1cdbbd7989364a54ea5612a9a82bec5f44b313f1234c98614d'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/etc/systemd/system/docker-docker_container.service]/ensure: defined content as '{sha256}6b425b41ef1a470330ea03597c2e97ad0663d54af4bd3bd4d0d101f94b327e60'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Exec[docker-docker_container-systemd-reload]: Triggered 'refresh' from 4 events\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Service[docker-docker_container]/ensure: ensure changed 'stopped' to 'running'\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "Notice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/usr/local/bin/docker-run-docker_container-start.sh]/ensure: defined content as '{sha256}748651401972a9eb630267e3ed60473b4066854ad4840764c0d94a2c3c88c31b'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/usr/local/bin/docker-run-docker_container-stop.sh]/ensure: defined content as '{sha256}7e6368f4b338ca1cdbbd7989364a54ea5612a9a82bec5f44b313f1234c98614d'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/etc/systemd/system/docker-docker_container.service]/ensure: defined content as '{sha256}6b425b41ef1a470330ea03597c2e97ad0663d54af4bd3bd4d0d101f94b327e60'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Exec[docker-docker_container-systemd-reload]: Triggered 'refresh' from 4 events\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Service[docker-docker_container]/ensure: ensure changed 'stopped' to 'running'\u001b[0m\n\u001b[mNotice: Applied catalog in 158.78 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[1;33mWarning: tag is a metaparam; this value will inherit to all contained resources in the puppet_infrastructure::docker_container definition\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.40 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 6.09 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[1;33mWarning: tag is a metaparam; this value will inherit to all contained resources in the puppet_infrastructure::docker_container definition\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.40 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 6.09 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "environment-volume-and-command-reach-the-container",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "true\nP8TEST_ENV=on\np8test-vol /p8test-data\nbind /srv/p8test-bind /p8test-bind\nother volumes: 0\n1\n1\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "4d1c8314-bc2a-4235-aeac-fbf51fb5f68a",
+     "boot_id_at_end": "4d1c8314-bc2a-4235-aeac-fbf51fb5f68a",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "3b132b5cf4cd65d35d57e7cd2795f4800ca35c0fb957fd4ca3ff4f858c528ebf"
+  },
+  "nonet": {
+   "name": "nonet",
+   "node": "ubuntu",
+   "params": "nonet",
+   "clean": [
+    {
+     "id": "another-network-is-used",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "0\n",
+     "stderr": "bash: line 96: docker: command not found\nbash: line 97: docker: command not found\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Repos/Apt::Keyring[docker.asc]/File[/usr/share/keyrings/docker.asc]/ensure: defined content as '{mtime}2026-11-26 03:36:59 UTC'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Repos/Apt::Source[docker]/Apt::Setting[list-docker]/File[/etc/apt/sources.list.d/docker.list]/ensure: defined content as '{sha256}8a8eb78e03c48d6d0c70b130d7281841f5e5f1901d556a46f0236189503d13c7'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Repos/Package[cgroup-lite]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Repos/Apt::Pin[docker]/Apt::Setting[pref-docker]/File[/etc/apt/preferences.d/docker.pref]/ensure: defined content as '{sha256}12cae9612e6a952ae692f1aefcb0990e030f5ffe5c8dbd53c6b13accd57feaff'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Install/Package[docker]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/File[/etc/systemd/system/docker.service.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/File[/etc/systemd/system/docker.service.d/service-overrides.conf]/ensure: defined content as '{sha256}06c187898ec3d1d803c12b2656c041e63587acaf2a55bbbeb6d2a87291d0a0e1'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/Exec[docker-systemd-reload-before-service]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/File[/etc/default/docker-storage]/ensure: defined content as '{sha256}1a0bfc5c866936867a3519a80104980d85c5ba5c91a5575f0fc0c5266cc98571'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/File[/etc/default/docker]/content: content changed '{sha256}3177ea62729e9f63474e41b5a740aeacd5c73eecd9c7b6cc499266adbc09d21b' to '{sha256}f601c95aa6bb7f9f490ec066780a4c44a2e8d8837aa94ece46d0a1d544839479'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Docker::Service/Service[docker]: Triggered 'refresh' from 3 events\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/File[/usr/local/bin/update_docker_image.sh]/ensure: defined content as '{sha256}2b56373ae6802fb9b8d4a1a1235795571ba5228921d4ba3784f0b399875d77ff'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: alpine: Pulling from library/nginx\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e5f8fe67c1e1: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e9820988621b: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 3623869d224d: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 85b05bfd25bc: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 272cbe758287: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 881fc932939e: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: fbbe454312b9: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 96001c9779a1: Pulling fs layer\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 3623869d224d: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e9820988621b: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 85b05bfd25bc: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 272cbe758287: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 96001c9779a1: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: fbbe454312b9: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 3872ed807ade: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: d970fb760bb2: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 881fc932939e: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 881fc932939e: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 272cbe758287: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 96001c9779a1: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: fbbe454312b9: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e9820988621b: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 85b05bfd25bc: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: 3623869d224d: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e5f8fe67c1e1: Download complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: e5f8fe67c1e1: Pull complete\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: Digest: sha256:7fc0fb4af7bf006aeb31aea88069976060f8f0a0a86b667126742cc17f4e31ae\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: Status: Downloaded newer image for nginx:alpine\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: docker.io/library/nginx:alpine\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: nginx:alpine updated. Changed from  to sha256:7fc0fb4af7bf006aeb31aea88069976060f8f0a0a86b667126742cc17f4e31ae.\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/usr/local/bin/docker-run-docker_container-start.sh]/ensure: defined content as '{sha256}c1d23fe55aa0fda12eb04d877c2605f4246cc9ef067120e18e88b1c1f767345f'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/usr/local/bin/docker-run-docker_container-stop.sh]/ensure: defined content as '{sha256}7e6368f4b338ca1cdbbd7989364a54ea5612a9a82bec5f44b313f1234c98614d'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/etc/systemd/system/docker-docker_container.service]/ensure: defined content as '{sha256}6b425b41ef1a470330ea03597c2e97ad0663d54af4bd3bd4d0d101f94b327e60'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Exec[docker-docker_container-systemd-reload]: Triggered 'refresh' from 4 events\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Service[docker-docker_container]/ensure: ensure changed 'stopped' to 'running'\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "Notice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Image[nginx]/Exec[/usr/local/bin/update_docker_image.sh nginx:alpine]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/usr/local/bin/docker-run-docker_container-start.sh]/ensure: defined content as '{sha256}c1d23fe55aa0fda12eb04d877c2605f4246cc9ef067120e18e88b1c1f767345f'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/usr/local/bin/docker-run-docker_container-stop.sh]/ensure: defined content as '{sha256}7e6368f4b338ca1cdbbd7989364a54ea5612a9a82bec5f44b313f1234c98614d'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/File[/etc/systemd/system/docker-docker_container.service]/ensure: defined content as '{sha256}6b425b41ef1a470330ea03597c2e97ad0663d54af4bd3bd4d0d101f94b327e60'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Exec[docker-docker_container-systemd-reload]: Triggered 'refresh' from 4 events\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Docker_container[docker_container]/Docker::Run[docker_container]/Service[docker-docker_container]/ensure: ensure changed 'stopped' to 'running'\u001b[0m\n\u001b[mNotice: Applied catalog in 162.07 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[1;33mWarning: tag is a metaparam; this value will inherit to all contained resources in the puppet_infrastructure::docker_container definition\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.40 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 6.10 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[1;33mWarning: tag is a metaparam; this value will inherit to all contained resources in the puppet_infrastructure::docker_container definition\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.40 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 6.10 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "another-network-is-used",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "true none\n0\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "7b859a6c-00ea-42d8-af0b-08714d34c6d5",
+     "boot_id_at_end": "7b859a6c-00ea-42d8-af0b-08714d34c6d5",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "bac67a175f1170280441030e22f0f565299d95437a67250390d393ff0af42a93"
+  }
+ },
+ "duration_s": 1153.4
+}

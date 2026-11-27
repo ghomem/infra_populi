@@ -1,0 +1,210 @@
+{
+ "class": "postfix_smtp_base",
+ "role": "local",
+ "at": "20261127T054645Z",
+ "set_sha256": "d9020279b155c01a31f6dfcac731a0d436e86b9d8ce80cc2d1dc56313daa72eb",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "smtpd-on-the-configured-port-with-the-hostname",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/usr/lib/python3.12/socket.py\", line 852, in create_connection\n    raise exceptions[0]\n  File \"/usr/lib/python3.12/socket.py\", line 837, in create_connection\n    sock.connect(sa)\nConnectionRefusedError: [Errno 111] Connection refused\n",
+   "ok": true
+  },
+  {
+   "id": "starttls-presents-the-sslprefix-bundle",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Could not read certificate from <stdin>\nUnable to load certificate\nCould not open file or uri for loading certificate from /etc/ssl/certs/p8test.postfix.bundle.crt\n40E77C779E7F0000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n40E77C779E7F0000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/ssl/certs/p8test.postfix.bundle.crt)\nUnable to load certificate\n",
+   "ok": true
+  },
+  {
+   "id": "sasl-user-authenticates-through-dovecot",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "client-access-map-allows-the-listed-ip",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: postmap: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "smtp-restrictions-exercised",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-smtp/attempts.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "tls-and-own-users-only",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-smtp/tls-own.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-submission-is-queued-and-delivered-locally",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /run/p8test-smtp/submission.txt: No such file or directory\nbash: line 99: mailq: command not found\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-mail-sink-on-the-peer",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "relayed-to-another-domain",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /run/p8test-smtp/relay.txt: No such file or directory\ncat: /run/p8test-smtp/t0: No such file or directory\nFailed to parse timestamp: @\nFailed to parse timestamp: @\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-sink-received-the-relayed-mail",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /run/p8test-sink/received.txt: No such file or directory\ngrep: /run/p8test-sink/received.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 4,
+  "green": false,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 6,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Package[postfix]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Package[mailutils]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Package[dovecot-core]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/File[/etc/dovecot/conf.d/10-master.conf]/content: content changed '{sha256}40e0d4780183ee46bebec388acdb6b74e49a6417c23f0faf17f38ab7b06824e7' to '{sha256}8a19c605ec50afbebd96a61e012f0538d348e65d7dbc415f53f08d10f17440dd'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/File[/etc/dovecot/conf.d/10-auth.conf]/content: content changed '{sha256}2b0a428629f3c39bbd1de1caa6829088be52d756f91de331d4d217b01ff9e6f2' to '{sha256}a73d0873ab1cc6410ac0fb02a93e1225526eafb7bbf8ce03a05efe09af7877fc'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/File[/etc/dovecot/users]/ensure: defined content as '{sha256}e5952591ad204280fec2b6da9e58cbcf0d8dc90c4ec952a0257106523b341a27'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Service[dovecot]: Triggered 'refresh' from 4 events\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/File[/etc/postfix/main.cf]/content: content changed '{sha256}2953c74ec77d2fc2d3961f5ffd287d4fe848ddf46dc2c3416ff43bb1875b4588' to '{sha256}c856e86166833759db852efa8f954b8bdef45360d7ba759ce5c9d562e61e930a'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/File[/etc/postfix/master.cf]/content: content changed '{sha256}0f7186e9b287c5425ccd360a75bf2e62ca696cb40ff92629b0241b1a90623929' to '{sha256}4bd6b82a69b0afa879dac89303f1830dcc9eba3d7cc2bba314c8a6effe7ecef3'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/File[/etc/postfix/smtp_header_checks.regexp]/ensure: defined content as '{sha256}483e76a620d6f22e9692f1593dd33f4730f91ef740b468bf720c835e4968927f'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Puppet_infrastructure::Postfix_smtp_base_config_file[/etc/postfix/client_access]/File[/etc/postfix/client_access]/ensure: defined content as '{sha256}ce9667bc1fd70eedecfb17a5f458ea3e94098c62e48a3cef4fd011068431e8b8'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Puppet_infrastructure::Postfix_smtp_base_config_file[/etc/postfix/client_access]/Exec[hash /etc/postfix/client_access]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Puppet_infrastructure::Postfix_smtp_base_config_file[/etc/postfix/sender_access]/File[/etc/postfix/sender_access]/ensure: defined content as '{sha256}b5c631a71f73732b066f83f97d05c4a63c8d975739a7cdfe9799efbb06b77f28'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Puppet_infrastructure::Postfix_smtp_base_config_file[/etc/postfix/sender_access]/Exec[hash /etc/postfix/sender_access]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Puppet_infrastructure::Postfix_smtp_base_config_file[/etc/postfix/controlled_envelope_senders]/File[/etc/postfix/controlled_envelope_senders]/ensure: defined content as '{sha256}8878b1511ad5b1364984c54e30b0ada86f751afc63ac5d45076a8d98e08f5599'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Puppet_infrastructure::Postfix_smtp_base_config_file[/etc/postfix/controlled_envelope_senders]/Exec[hash /etc/postfix/controlled_envelope_senders]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssl_postfix/Puppet_infrastructure::Ssl_base[postfix ssl config]/Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]/File[/etc/ssl/certs/p8test.postfix.bundle.crt]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Service[postfix]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m"
+    ],
+    "errors": [
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Ssl_postfix/Puppet_infrastructure::Ssl_base[postfix ssl config]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m",
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Ssl_postfix/Puppet_infrastructure::Ssl_base[postfix ssl config]/Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.postfix.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve "
+    ],
+    "tail": "/ssl/certs/p8test.postfix.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.postfix.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.crt\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssl_postfix/Puppet_infrastructure::Ssl_base[postfix ssl config]/Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]/File[/etc/ssl/certs/p8test.postfix.bundle.crt]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Service[postfix]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Service[postfix]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 72.64 seconds\u001b[0m\nAGENT_RC=6\nCHANGED Package[postfix]\nCHANGED Package[mailutils]\nCHANGED Package[dovecot-core]\nCHANGED File[/etc/dovecot/conf.d/10-master.conf]\nCHANGED File[/etc/dovecot/conf.d/10-auth.conf]\nCHANGED File[/etc/dovecot/users]\nCHANGED Service[dovecot]\nCHANGED File[/etc/postfix/main.cf]\nCHANGED File[/etc/postfix/master.cf]\nCHANGED File[/etc/postfix/smtp_header_checks.regexp]\nCHANGED File[/etc/postfix/client_access]\nCHANGED Exec[hash /etc/postfix/client_access]\nCHANGED File[/etc/postfix/sender_access]\nCHANGED Exec[hash /etc/postfix/sender_access]\nCHANGED File[/etc/postfix/controlled_envelope_senders]\nCHANGED Exec[hash /etc/postfix/controlled_envelope_senders]\nCHANGED File[/etc/ssl/certs/p8test.postfix.bundle.crt]\n"
+   },
+   {
+    "rc": 4,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Service[postfix]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m"
+    ],
+    "errors": [
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Ssl_postfix/Puppet_infrastructure::Ssl_base[postfix ssl config]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m",
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Ssl_postfix/Puppet_infrastructure::Ssl_base[postfix ssl config]/Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.postfix.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve "
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.10 seconds\u001b[0m\n\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Ssl_postfix/Puppet_infrastructure::Ssl_base[postfix ssl config]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m\n\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Ssl_postfix/Puppet_infrastructure::Ssl_base[postfix ssl config]/Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.postfix.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.crt\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Service[postfix]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Service[postfix]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.49 seconds\u001b[0m\nAGENT_RC=4\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.10 seconds\u001b[0m\n\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Ssl_postfix/Puppet_infrastructure::Ssl_base[postfix ssl config]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.key\u001b[0m\n\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Ssl_postfix/Puppet_infrastructure::Ssl_base[postfix ssl config]/Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.postfix.bundle.crt]: Failed to generate additional resources using 'eval_generate': Could not retrieve source(s) puppet:///extra_files/ssl/p8test.crt\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Service[postfix]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Postfix_smtp_base/Service[postfix]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.49 seconds\u001b[0m\nAGENT_RC=4\n"
+ },
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "6764949f-1eb3-48c2-9af1-ca769e5b9cd3",
+   "boot_id_at_end": "6764949f-1eb3-48c2-9af1-ca769e5b9cd3",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "c8dcd35f-063a-4a34-a3fa-92bd979e140c",
+   "boot_id_at_end": "c8dcd35f-063a-4a34-a3fa-92bd979e140c",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "c6a385d38cde5e9a5e928a0f5c5e40db8e871ffae9a388f7cc98d78862a565ed",
+ "duration_s": 171.7
+}

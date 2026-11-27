@@ -1,0 +1,276 @@
+{
+ "class": "sysmon_puppet_cert_status",
+ "role": "local",
+ "at": "20261127T075111Z",
+ "set_sha256": "ac48704048b4bd0f35907c76601d107b8f9c961c41aa7fc3969fed78b3ffe1e0",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "script-and-dependency-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "absent\npython3-yaml install ok installed\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "naemon-may-run-it-through-sudo",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "sudoers-valid\n",
+   "stderr": "grep: /etc/sudoers.d/20_check_puppet_cert_health: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "refuses-to-run-unprivileged",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "runuser: failed to execute /opt/puppet-infrastructure/bin/check_puppet_cert_health.py: No such file or directory rc=1\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "a-fixture-ca-with-a-long-lived-certificate",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "ls: cannot access '/etc/puppetlabs/puppetserver/ca/signed': No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "ok-when-every-certificate-is-far-from-expiry",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-certhealth/ok.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "warns-under-30-days",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-certhealth/warning.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "critical-under-10-days",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-certhealth/critical.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "critical-when-a-certificate-has-expired",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-certhealth/expired.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Sudo/File[/etc/sudoers.d]/mode: mode changed '0755' to '0550'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_puppet_cert_status/File[/opt/puppet-infrastructure/bin/check_puppet_cert_health.py]/ensure: defined content as '{sha256}67a4d350a289f263a4a6325bd778c8843d2f4cc60d9a7fe59837d7c7dd32b0f3'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_puppet_cert_status/Sudo::Conf[check_puppet_cert_health]/File[20_check_puppet_cert_health]/ensure: defined content as '{sha256}1394aec5d693da910919b4fd1675cc83d825adc0c1666fdde5f9609213ae370d'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_puppet_cert_status/Sudo::Conf[check_puppet_cert_health]/Exec[sudo-syntax-check for file /etc/sudoers.d/20_check_puppet_cert_health]: Triggered 'refresh' from 1 event\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "/Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_puppet_cert_status/File[/opt/puppet-infrastructure/bin/check_puppet_cert_health.py]/ensure: defined content as '{sha256}67a4d350a289f263a4a6325bd778c8843d2f4cc60d9a7fe59837d7c7dd32b0f3'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_puppet_cert_status/Sudo::Conf[check_puppet_cert_health]/File[20_check_puppet_cert_health]/ensure: defined content as '{sha256}1394aec5d693da910919b4fd1675cc83d825adc0c1666fdde5f9609213ae370d'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_puppet_cert_status/Sudo::Conf[check_puppet_cert_health]/Exec[sudo-syntax-check for file /etc/sudoers.d/20_check_puppet_cert_health]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 7.92 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/opt/puppet-infrastructure]\nCHANGED File[/opt/puppet-infrastructure/bin]\nCHANGED File[/opt/puppet-infrastructure/etc]\nCHANGED File[/opt/puppet-infrastructure/backup]\nCHANGED File[/opt/puppet-infrastructure/pkgsdir]\nCHANGED File[/etc/default/locale]\nCHANGED File[/opt/puppet-infrastructure/bin/mypython]\nCHANGED File[preferences]\nCHANGED File[/etc/sudoers.d]\nCHANGED File[/etc/apt/apt.conf.d/15update-stamp]\nCHANGED Exec[apt_update]\nCHANGED File[/opt/puppet-infrastructure/bin/check_puppet_cert_health.py]\nCHANGED File[20_check_puppet_cert_health]\nCHANGED Exec[sudo-syntax-check for file /etc/sudoers.d/20_check_puppet_cert_health]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.13 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.35 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.13 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.35 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "script-and-dependency-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root:root 755 67a4d350a289f263a4a6325bd778c8843d2f4cc60d9a7fe59837d7c7dd32b0f3\npython3-yaml install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "naemon-may-run-it-through-sudo",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "naemon ALL=NOPASSWD:/opt/puppet-infrastructure/bin/check_puppet_cert_health.py\nsudoers-valid\n",
+   "stderr": ""
+  },
+  {
+   "id": "refuses-to-run-unprivileged",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "please run as root rc=1\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the account (root), for which the privilege test passes, so the \"please run as root\" verdict must not come",
+    "rc": 0,
+    "passed": false,
+    "stdout": "no signed certificates found in /etc/puppetlabs/puppetserver/ca/signed or /etc/puppetlabs/puppet/ssl/ca/signed rc=1\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-fixture-ca-with-a-long-lived-certificate",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test-long.pem\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates /etc/puppetlabs/puppetserver/ca/signed (absent on an agent node) with the self-signed fixture certificate p8test-long.pem (CN p8test-long, 400 days; its key discarded)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "ok-when-every-certificate-is-far-from-expiry",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "OK: The next certificate expiration will be from p8test-long, in 399 days\nrc=0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs the check once as root (it only reads the certificates); the output goes to /run/p8test-certhealth/ok.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "warns-under-30-days",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Warning: Certificate of p8test-soon will expire in 19 days\nrc=1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "adds the fixture certificate p8test-soon.pem (20 days) to the signed directory and runs the check once; the output goes to /run/p8test-certhealth/warning.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "critical-under-10-days",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Critical: certificate of p8test-imminent will expire in 4 days\nrc=2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "adds the fixture certificate p8test-imminent.pem (5 days) and runs the check once; the output goes to /run/p8test-certhealth/critical.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "critical-when-a-certificate-has-expired",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Critical: certificate of p8test-expired has expired on 2025-01-02 00:00:00+00:00.\nrc=2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "builds a throwaway CA in /run/p8test-certca (key, certificate, index, serial, config), signs p8test-expired with -startdate 2025-01-01 and -enddate 2025-01-02 into the signed directory, and runs the check once; the output goes to /run/p8test-certhealth/expired.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "fcebecc9-398a-4a23-8ec4-27207b59e48c",
+   "boot_id_at_end": "fcebecc9-398a-4a23-8ec4-27207b59e48c",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "bec302c7a49f132bcd58c1ab859e7517c463579b40c767848fcda3865c3d78d2",
+ "duration_s": 64.8
+}

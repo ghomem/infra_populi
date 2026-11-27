@@ -1,0 +1,246 @@
+{
+ "class": "firewall_addon_hosting",
+ "role": "local",
+ "at": "20261126T172451Z",
+ "set_sha256": "b5e2c4a51e0b18baea7605c593fe494d8d43b2eaac2d4e5b1c84b5ddbeaccdd3",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "output-policy-drop",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "-P OUTPUT ACCEPT\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "related-established-dns-ntp-accepted",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "master-rule-follows-the-nodes-resolution",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "new-outbound-tcp-dropped",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "open\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "new-outbound-tcp-to-the-internet-dropped",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "open\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "dns-still-resolves",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "resolves\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "ntp-still-answers",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "answers\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "an-agent-run-is-due",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-through-the-firewall-succeeded",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "failed: 0\n0\n",
+   "stderr": "cat: /run/p8test-fah/before: No such file or directory\nbash: line 97: [: : integer expression expected\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Firewall::Linux::Debian/Package[iptables-persistent]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_hosting/Firewallchain[OUTPUT:filter:IPv4]/policy: policy changed 'accept' to 'drop'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_hosting/Firewall[149 OUTPUT ACCEPT RELATED ESTABLISHED]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_hosting/Firewall[150 OUTPUT DNS]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_hosting/Firewall[151 OUTPUT NTP]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_hosting/Firewall[152 OUTPUT PUPPET MASTER]/ensure: defined 'ensure' as 'present'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "udp\", :dport=>\"53\", :jump=>\"ACCEPT\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\"}\u001b[0m\n\u001b[mNotice: firewall[150 OUTPUT DNS]: Creating: Ensuring changes to '150 OUTPUT DNS' persist\u001b[0m\n\u001b[mNotice: firewall[150 OUTPUT DNS]: Creating: Finished in 0.067003 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_hosting/Firewall[151 OUTPUT NTP]/ensure: defined 'ensure' as 'present'\u001b[0m\n\u001b[mNotice: firewall[151 OUTPUT NTP]: Creating: Creating Rule '151 OUTPUT NTP' with {:name=>\"151 OUTPUT NTP\", :chain=>\"OUTPUT\", :proto=>\"udp\", :dport=>\"123\", :jump=>\"ACCEPT\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\"}\u001b[0m\n\u001b[mNotice: firewall[151 OUTPUT NTP]: Creating: Ensuring changes to '151 OUTPUT NTP' persist\u001b[0m\n\u001b[mNotice: firewall[151 OUTPUT NTP]: Creating: Finished in 0.058567 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_hosting/Firewall[152 OUTPUT PUPPET MASTER]/ensure: defined 'ensure' as 'present'\u001b[0m\n\u001b[mNotice: firewall[152 OUTPUT PUPPET MASTER]: Creating: Creating Rule '152 OUTPUT PUPPET MASTER' with {:name=>\"152 OUTPUT PUPPET MASTER\", :chain=>\"OUTPUT\", :proto=>\"tcp\", :dport=>\"8140\", :jump=>\"ACCEPT\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\"}\u001b[0m\n\u001b[mNotice: firewall[152 OUTPUT PUPPET MASTER]: Creating: Ensuring changes to '152 OUTPUT PUPPET MASTER' persist\u001b[0m\n\u001b[mNotice: firewall[152 OUTPUT PUPPET MASTER]: Creating: Finished in 0.059927 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 17.68 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.18 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.63 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.18 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.63 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "output-policy-drop",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P OUTPUT DROP\n",
+   "stderr": ""
+  },
+  {
+   "id": "related-established-dns-ntp-accepted",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A OUTPUT -p tcp -m state --state RELATED,ESTABLISHED -j ACCEPT\n-A OUTPUT -p udp -m udp --dport 53 -j ACCEPT\n-A OUTPUT -p udp -m udp --dport 123 -j ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "master-rule-follows-the-nodes-resolution",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "new-outbound-tcp-dropped",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "blocked\n",
+   "stderr": ""
+  },
+  {
+   "id": "new-outbound-tcp-to-the-internet-dropped",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "blocked\n",
+   "stderr": ""
+  },
+  {
+   "id": "dns-still-resolves",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "resolves\n",
+   "stderr": ""
+  },
+  {
+   "id": "ntp-still-answers",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "answers\n",
+   "stderr": ""
+  },
+  {
+   "id": "an-agent-run-is-due",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (master-rule-follows-the-nodes-resolution)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "the-agent-run-through-the-firewall-succeeded",
+   "control": "negative",
+   "mutating": true,
+   "passed": false,
+   "not_run": "not run: read-only checks failed (master-rule-follows-the-nodes-resolution)",
+   "rc": null,
+   "stdout": "",
+   "stderr": ""
+  }
+ ],
+ "findings": [
+  "master-rule-follows-the-nodes-resolution"
+ ],
+ "not_run": [
+  "an-agent-run-is-due",
+  "the-agent-run-through-the-firewall-succeeded"
+ ],
+ "outcome": "FINDINGS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "6f5f51b3-123f-4367-8d84-fac750adc5ec",
+   "boot_id_at_end": "6f5f51b3-123f-4367-8d84-fac750adc5ec",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "2bb9a10febf8546751919f5cf7b705a1064d9ee5631fa65d3ebf345886ad5788",
+ "duration_s": 406.2
+}

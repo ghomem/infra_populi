@@ -1,0 +1,199 @@
+{
+ "class": "user_lock",
+ "role": "local",
+ "at": "20261127T082442Z",
+ "set_sha256": "734d9b994c44c9dc01d2192f3f43cb714b5960a8576d3dd3c2d1f465cea04361",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "user-entry-locked-by-hashman",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "exactly-one-entry",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-locked-user-is-refused-by-hashman",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-lock/auth.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-samba-hash-is-locked-too",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "sed: can't read /root/p8test-hashman-smb-before-lock: No such file or directory\ngrep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes_smb.pp: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/File[/usr/local/sbin/p8test-create-hashman-user]/ensure: defined content as '{sha256}4a62e81098a70d0b9555c47d0fabab9722845f0b88e47ef1fdfa3c99d4b0a3d4'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Package[postfix]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/File[/etc/postfix/main.cf]/content: content changed '{sha256}39e83dfceaad99f3b01c10acc75907ce25f4e3498eb539080b158eec3a7e5316' to '{sha256}19041968ab9fe380fceefb26d74e695d87c6a9039f4b4cafc428e5ec6da1b838'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/File[/etc/postfix/sasl_passwd]/ensure: defined content as '{sha256}bd30a098b53e8f6c0671e10b5c3b71f4261f9723ee99c8c3ca736c8f2506ce0b'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Exec[postmap_sasl]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/File[/etc/aliases]/content: content changed '{sha256}5acece4532eb1da22d175ea0d17baa34c137857cd6d778876a792c3677c23387' to '{sha256}af17cfc61e18164e310d2b2ba1043891bfe5b739985dfd8899a2b92191811936'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Exec[newaliases]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Service[postfix]: Triggered 'refresh' from 4 events\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/etc/puppetlabs//code/environments/production/manifests/01_hashman/]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/common]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/common/libhashman]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/plugins]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/plugins/1]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/plugins/2]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/plugins/3]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/common/hashman_utils.py]/ensure: defined content as '{sha256}f9f5b2d8fbf3582d4edc8ddeaf1ce187a63f9d43f8a8f4e3733804d0115b690b'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/common/pp_auth.py]/ensure: defined content as '{sha256}797cdad197d4f937b8bc1af270c20df8b62ec0a850e36207c959ab2b1718c249'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/common/libhashman/switch.py]/ensure: defined content as '{sha256}892a6810ee091f74f0d3fed5f91970dbbe6aeb4a2b95d7dbccee5bc70e9d77f5'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/common/libhashman/config.py]/ensure: defined content as '{sha256}a15346a75eb38b8b0d51d4698429c7947ed8fc048693583f661c36096d499055'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/common/libhashman/coding.py]/ensure: defined content as '{sha256}df6328d9e8e43e29594004e90bd08734699b7ef9c1859fc26e84abfd4e460a10'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/common/libhashman/typeutils.py]/ensure: defined content as '{sha256}4b3c203ab112a2e7829e29d94fb605d2a3f06d2c3fdef167a4bf64723915c04c'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/common/libhashman/dbutils.py]/ensure: defined content as '{sha256}61bced383b9ac12c899847cdefdf6f4e687e03f22e31f9c184150e3a686e9dcb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/common/libhashman/mailutils.py]/ensure: defined content as '{sha256}22994064edaf63cdc6b03c0601d5418efad71556b9f878fec69153693da54d70'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/common/libhashman/miscutils.py]/ensure: defined content as '{sha256}566086af605da30c95b5a457b6785d0b13e2087398f9b0cc03d155fabac98814'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/common/libhashman/interface.py]/ensure: defined content as '{sha256}1c8c46b10c9ab4d9df79a9562c1d0733628b3fc202d6c0a39dd166881f7642d9'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/hashman/common/libhashman/test.py]/ensure: defined content as '{sha256}27ab1cd534eb350209d6f19d705f031599d9b997d077f11c50e685788bb46261'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/opt/puppet-infrastructure/bin/pp_auth.sh]/ensure: defined content as '{sha256}88630a33c3bd633880e6b78c0925e8d60b81f0ede9989ff2b631dff234f6d856'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//cnames.pp]/ensure: defined content as '{sha256}e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//companies.pp]/ensure: defined content as '{sha256}e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//emails.pp]/ensure: defined content as '{sha256}e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//hashes.pp]/ensure: defined content as '{sha256}e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//keys.pp]/ensure: defined content as '{sha256}e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//ppsigs.pp]/ensure: defined content as '{sha256}e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//ppwrapped.pp]/ensure: defined content as '{sha256}e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/Package[python3-cracklib]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/Package[python3-setproctitle]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/Package[python3-rsa]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Hashman_base/Package[python3-prettytable]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Exec[p8test create p8testuser through hashman]/returns: executed successfully\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_lock[p8testuser]/Exec[user_lock_p8testuser]/returns: executed successfully\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "ashman/config.py]\nCHANGED File[/opt/puppet-infrastructure/hashman/common/libhashman/coding.py]\nCHANGED File[/opt/puppet-infrastructure/hashman/common/libhashman/typeutils.py]\nCHANGED File[/opt/puppet-infrastructure/hashman/common/libhashman/dbutils.py]\nCHANGED File[/opt/puppet-infrastructure/hashman/common/libhashman/mailutils.py]\nCHANGED File[/opt/puppet-infrastructure/hashman/common/libhashman/miscutils.py]\nCHANGED File[/opt/puppet-infrastructure/hashman/common/libhashman/interface.py]\nCHANGED File[/opt/puppet-infrastructure/hashman/common/libhashman/test.py]\nCHANGED File[/opt/puppet-infrastructure/bin/pp_auth.sh]\nCHANGED File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//cnames.pp]\nCHANGED File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//companies.pp]\nCHANGED File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//emails.pp]\nCHANGED File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//hashes.pp]\nCHANGED File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//keys.pp]\nCHANGED File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//ppsigs.pp]\nCHANGED File[/etc/puppetlabs//code/environments/production/manifests/01_hashman//ppwrapped.pp]\nCHANGED Package[python3-cracklib]\nCHANGED Package[python3-setproctitle]\nCHANGED Package[python3-rsa]\nCHANGED Package[python3-prettytable]\nCHANGED Exec[p8test create p8testuser through hashman]\nCHANGED Exec[user_lock_p8testuser]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for p8lab-puppetserver in environment production in 0.10 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.40 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for p8lab-puppetserver in environment production in 0.10 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.40 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "user-entry-locked-by-hashman",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "$p8testuser_pwd_hash = '!$6$qkcVMuaBmTegvhqM$nzcPKQ4MPrIXau0HzcTxwgoc6gHfaemuZmu3qLYuBuNpRNk5lOQwjVkrsL8pYyNLXSB8QlF8MrPg6dt6egl6/.'\n",
+   "stderr": ""
+  },
+  {
+   "id": "exactly-one-entry",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-samba-hash-is-locked-too",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "before the lock: valid\n$p8testuser_pwd_hash_smb = '!SS0CROIruNnSUUeYCbdfmw=='\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-locked-user-is-refused-by-hashman",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "hashman auth rc=1\nlocked\npassword matches the unlocked entry\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "one authentication attempt through hashman's CLI (it takes hashman's database lock briefly and logs to syslog); the outcomes go to /run/p8test-lock/auth.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "dest": "p8lab-puppetserver",
+   "boot_id": "98b0cba2-b44e-437f-adc9-68defaa6e54b",
+   "boot_id_at_end": "98b0cba2-b44e-437f-adc9-68defaa6e54b",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "p8lab-puppetserver",
+  "NODE_ADDR": "192.168.56.26",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "8db5e03a8cdde2fecb2c78c607a8bf8b2948a3b039ada0fad9f9b15f9181455b",
+ "duration_s": 128.4
+}

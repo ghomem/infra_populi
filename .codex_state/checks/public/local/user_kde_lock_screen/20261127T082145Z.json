@@ -1,0 +1,259 @@
+{
+ "class": "user_kde_lock_screen",
+ "role": "local",
+ "at": "20261127T081111Z",
+ "set_sha256": "131166579c089961cc163966640f3deb15bb482fe55204099c4027d947b177fa",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "script-installed-root-executable",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/configure_lock_screen.sh': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "a-run-while-logged-out-skips",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "lock-settings-in-the-users-kscreenlockerrc",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/home/p8testuser/.config/kscreenlockerrc': No such file or directory\nsed: can't read /home/p8testuser/.config/kscreenlockerrc: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "applied-in-the-session-and-reloaded-live",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-idle-session-locks-after-the-timeout",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "no session\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-user-turns-the-lock-off",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "locked no\n",
+   "stderr": "sed: can't read /home/p8testuser/.config/kscreenlockerrc: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-turns-the-lock-back-on",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\nlocked no\n",
+   "stderr": "sed: can't read /home/p8testuser/.config/kscreenlockerrc: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Group[p8testuser]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::User_kde_lock_screen_common/File[/opt/puppet-infrastructure/bin/configure_lock_screen.sh]/ensure: defined content as '{sha256}8bc3f286c0ea1b4142e10e2cf14bffa38ab099bc7e71265248d49ebe402d5e9d'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "ructure/pkgsdir]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Group[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::User_kde_lock_screen_common/File[/opt/puppet-infrastructure/bin/configure_lock_screen.sh]/ensure: defined content as '{sha256}8bc3f286c0ea1b4142e10e2cf14bffa38ab099bc7e71265248d49ebe402d5e9d'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.31 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/opt/puppet-infrastructure]\nCHANGED File[/opt/puppet-infrastructure/bin]\nCHANGED File[/opt/puppet-infrastructure/etc]\nCHANGED File[/opt/puppet-infrastructure/backup]\nCHANGED File[/opt/puppet-infrastructure/pkgsdir]\nCHANGED File[/etc/default/locale]\nCHANGED File[/opt/puppet-infrastructure/bin/mypython]\nCHANGED Group[p8testuser]\nCHANGED User[p8testuser]\nCHANGED Ssh_authorized_key[p8testuser@puppet]\nCHANGED File[/opt/puppet-infrastructure/bin/configure_lock_screen.sh]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for p8lab-kubuntu in environment production in 0.17 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.07 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for p8lab-kubuntu in environment production in 0.17 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.07 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "script-installed-root-executable",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-run-while-logged-out-skips",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "skipped-while-logged-out\n",
+   "stderr": ""
+  },
+  {
+   "id": "lock-settings-in-the-users-kscreenlockerrc",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser\nAutolock=true\nLockGrace=0\nLockOnResume=true\nTimeout=2\n",
+   "stderr": ""
+  },
+  {
+   "id": "applied-in-the-session-and-reloaded-live",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "logged-in-run\n0\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-idle-session-locks-after-the-timeout",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "locked yes\nlocked 120-290 s after the login\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond waiting up to 300 s for the lock (declared mutating so the wait may outlast a read-only probe's limit)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-user-turns-the-lock-off",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "locked no\nAutolock=false\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "unlocks p8testuser's session (loginctl unlock-session); as p8testuser, writes Autolock=false to its kscreenlockerrc (kwriteconfig5) and reloads the screenlocker over the session D-Bus (qdbus configure); then waits 150 s",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-turns-the-lock-back-on",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Autolock=true\n0\nlocked yes\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the user's file, the journal and the session (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "dest": "p8lab-kubuntu",
+   "boot_id": "2fd3b545-4f32-4e64-8f6e-28bfcef012ba",
+   "boot_id_at_end": "2fd3b545-4f32-4e64-8f6e-28bfcef012ba",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "p8lab-kubuntu",
+  "NODE_ADDR": "192.168.56.22",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "c6d2d1ffec5d483c023c5e8f8ae8aebae5aeb3b0ea4127a113b9a372e4d0e164",
+ "session": {
+  "user": "p8testuser",
+  "up": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_kde_lock_screen[p8testuser]/Exec[configure_lock_screen.sh p8testuser]/returns: executed successfully\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for p8lab-kubuntu in environment production in 0.15 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_kde_lock_screen[p8testuser]/Exec[configure_lock_screen.sh p8testuser]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 0.21 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Exec[configure_lock_screen.sh p8testuser]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for p8lab-kubuntu in environment production in 0.06 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.08 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ]
+ },
+ "node_agent": {
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_kde_lock_screen[p8testuser]/Exec[configure_lock_screen.sh p8testuser]/returns: executed successfully\u001b[0m"
+  ],
+  "errors": [],
+  "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for p8lab-kubuntu in environment production in 0.09 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_kde_lock_screen[p8testuser]/Exec[configure_lock_screen.sh p8testuser]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 0.20 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Exec[configure_lock_screen.sh p8testuser]\n"
+ },
+ "duration_s": 634.1
+}

@@ -1,0 +1,440 @@
+{
+ "class": "filesystem_sec",
+ "role": "local",
+ "at": "20261126T165415Z",
+ "set_sha256": "9cfd6e6da399473153d77ec6a9375d1c5361c7db8f1664c8845b37d6f3c04a18",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "restricted-commands-belong-to-the-sudo-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "/usr/bin/wget root:root 755\n/usr/bin/curl root:root 755\n/usr/bin/sftp root:root 755\n/usr/bin/scp root:root 755\n/usr/bin/ssh root:root 755\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "only-the-sudo-group-can-run-them",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-sec/run.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-linked-commands-are-restricted-too",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-sec/links.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "uninstalled-commands-are-left-alone",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "checked\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "a-restricted-command-is-opened-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "755\nruns\ncurl root 755\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-restricts-it-again",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "root:root 755\nruns\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/bin/nc]/group: group changed 'root' to 'sudo'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/bin/nc]/mode: mode changed '0755' to '0750'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/wget]/group: group changed 'root' to 'sudo'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/wget]/mode: mode changed '0755' to '0750'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/curl]/group: group changed 'root' to 'sudo'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/curl]/mode: mode changed '0755' to '0750'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/telnet]/group: group changed 'root' to 'sudo'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/telnet]/mode: mode changed '0755' to '0750'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ftp]/group: group changed 'root' to 'sudo'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ftp]/mode: mode changed '0755' to '0750'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/sftp]/group: group changed 'root' to 'sudo'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/sftp]/mode: mode changed '0755' to '0750'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/scp]/group: group changed 'root' to 'sudo'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/scp]/mode: mode changed '0755' to '0750'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ssh]/group: group changed 'root' to 'sudo'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ssh]/mode: mode changed '0755' to '0750'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/telnet]/group: group changed 'root' to 'sudo'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/telnet]/mode: mode changed '0755' to '0750'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ftp]/group: group changed 'root' to 'sudo'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ftp]/mode: mode changed '0755' to '0750'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/sftp]/group: group changed 'root' to 'sudo'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/sftp]/mode: mode changed '0755' to '0750'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/scp]/group: group changed 'root' to 'sudo'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/scp]/mode: mode changed '0755' to '0750'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ssh]/group: group changed 'root' to 'sudo'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ssh]/mode: mode changed '0755' to '0750'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "restricted-commands-belong-to-the-sudo-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/usr/bin/wget root:sudo 750\n/usr/bin/curl root:sudo 750\n/usr/bin/sftp root:sudo 750\n/usr/bin/scp root:sudo 750\n/usr/bin/ssh root:sudo 750\n",
+   "stderr": ""
+  },
+  {
+   "id": "uninstalled-commands-are-left-alone",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "checked\n",
+   "stderr": ""
+  },
+  {
+   "id": "only-the-sudo-group-can-run-them",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser wget denied\np8testuser curl denied\np8testuser sftp denied\np8testuser scp denied\np8testuser ssh denied\np8testsudo wget runs\np8testsudo curl runs\np8testsudo sftp runs\np8testsudo scp runs\np8testsudo ssh runs\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates two fixture accounts without a home: p8testuser (no extra group) and p8testsudo (in group sudo); the results of running the commands as each go to /run/p8test-sec/run.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-linked-commands-are-restricted-too",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser /bin/nc denied\np8testuser /usr/bin/telnet denied\np8testuser /usr/bin/ftp denied\np8testsudo /bin/nc runs\np8testsudo /usr/bin/telnet runs\np8testsudo /usr/bin/ftp runs\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond permission tests as the two fixture accounts (declared mutating so it runs after they exist); the results go to /run/p8test-sec/links.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-restricted-command-is-opened-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "755\nruns\ncurl sudo 750\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "chmod 0755 /usr/bin/wget on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-agent-run-restricts-it-again",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root:sudo 750\ndenied\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond running wget as the fixture account (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "8f8bcb22-bc7d-495d-a9e2-c2b26af00985",
+   "boot_id_at_end": "8f8bcb22-bc7d-495d-a9e2-c2b26af00985",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "595a623983cf4029ac55748e9d37e0bb69cb61425203dd43c7d56984f96c7260",
+ "node_agent": {
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/wget]/mode: mode changed '0755' to '0750'\u001b[0m"
+  ],
+  "errors": [],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/wget]/mode: mode changed '0755' to '0750'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "variants": {
+  "custom": {
+   "name": "custom",
+   "node": "ubuntu",
+   "params": "custom",
+   "clean": [
+    {
+     "id": "a-custom-group-and-mode-are-applied",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "/usr/bin/wget root:root 755\n/usr/bin/curl root:root 755\n/usr/bin/ssh root:root 755\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/bin/nc]/group: group changed 'root' to 'adm'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/bin/nc]/mode: mode changed '0755' to '0710'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/wget]/group: group changed 'root' to 'adm'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/wget]/mode: mode changed '0755' to '0710'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/curl]/group: group changed 'root' to 'adm'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/curl]/mode: mode changed '0755' to '0710'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/telnet]/group: group changed 'root' to 'adm'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/telnet]/mode: mode changed '0755' to '0710'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ftp]/group: group changed 'root' to 'adm'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ftp]/mode: mode changed '0755' to '0710'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/sftp]/group: group changed 'root' to 'adm'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/sftp]/mode: mode changed '0755' to '0710'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/scp]/group: group changed 'root' to 'adm'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/scp]/mode: mode changed '0755' to '0710'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ssh]/group: group changed 'root' to 'adm'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ssh]/mode: mode changed '0755' to '0710'\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "710'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/telnet]/group: group changed 'root' to 'adm'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/telnet]/mode: mode changed '0755' to '0710'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ftp]/group: group changed 'root' to 'adm'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ftp]/mode: mode changed '0755' to '0710'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/sftp]/group: group changed 'root' to 'adm'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/sftp]/mode: mode changed '0755' to '0710'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/scp]/group: group changed 'root' to 'adm'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/scp]/mode: mode changed '0755' to '0710'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ssh]/group: group changed 'root' to 'adm'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ssh]/mode: mode changed '0755' to '0710'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "a-custom-group-and-mode-are-applied",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "/usr/bin/wget root:adm 710\n/usr/bin/curl root:adm 710\n/usr/bin/ssh root:adm 710\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "67a3c3c8-c584-427d-8bff-d8a59a4f308c",
+     "boot_id_at_end": "67a3c3c8-c584-427d-8bff-d8a59a4f308c",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "d6b5e8820eacc486fb1284c2ad2991436aa505e73a2ea9e7bc93681e39f3e10a"
+  },
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "clean": [
+    {
+     "id": "on-redhat-the-commands-belong-to-wheel",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "/usr/bin/curl root:root 755\n/usr/bin/ssh root:root 755\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/curl]/group: group changed 'root' to 'wheel'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/curl]/mode: mode changed '0755' to '0750'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/sftp]/group: group changed 'root' to 'wheel'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/sftp]/mode: mode changed '0755' to '0750'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/scp]/group: group changed 'root' to 'wheel'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/scp]/mode: mode changed '0755' to '0750'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ssh]/group: group changed 'root' to 'wheel'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ssh]/mode: mode changed '0755' to '0750'\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/curl]/group: group changed 'root' to 'wheel'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/curl]/mode: mode changed '0755' to '0750'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/sftp]/group: group changed 'root' to 'wheel'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/sftp]/mode: mode changed '0755' to '0750'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/scp]/group: group changed 'root' to 'wheel'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/scp]/mode: mode changed '0755' to '0750'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ssh]/group: group changed 'root' to 'wheel'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Filesystem_sec[filesystem_sec]/File[/usr/bin/ssh]/mode: mode changed '0755' to '0750'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.07 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.07 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.07 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-the-commands-belong-to-wheel",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "/usr/bin/curl root:wheel 750\n/usr/bin/ssh root:wheel 750\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "3e6a90a9-957d-45a1-8881-6a5522a726b5",
+     "boot_id_at_end": "3e6a90a9-957d-45a1-8881-6a5522a726b5",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "595a623983cf4029ac55748e9d37e0bb69cb61425203dd43c7d56984f96c7260"
+  }
+ },
+ "duration_s": 561.1
+}

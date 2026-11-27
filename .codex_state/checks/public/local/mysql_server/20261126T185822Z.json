@@ -1,0 +1,166 @@
+{
+ "class": "mysql_server",
+ "role": "local",
+ "at": "20261126T185445Z",
+ "set_sha256": "0fdcd8aa897c8d508ccbc7030c04001dec0930a29ed6ad6f6645e0c7ffdc209c",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "mysql-not-mariadb-installed-and-running",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "0\ninactive\nnot-found\n",
+   "stderr": "dpkg-query: no packages found matching mysql-server-8.0\n",
+   "ok": true
+  },
+  {
+   "id": "server-reports-mysql-from-the-managed-config",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 96: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "managed-config-file-rendered",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/mysql/mysql.conf.d/zz-puppet-infrastructure.cnf': No such file or directory\ngrep: /etc/mysql/mysql.conf.d/zz-puppet-infrastructure.cnf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "apparmor-allows-datadir-and-tls",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/apparmor.d/local/usr.sbin.mysqld: No such file or directory\ncat: /proc/0/attr/current: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "root-needs-the-password-and-defaults-are-gone",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "a-client-needs-tls-and-verifies-the-server",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-mysql/tls.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-tls-key-is-readable-by-mysql-only",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/mysql/ssl': No such file or directory\nstat: cannot statx '/etc/mysql/ssl/p8test-key.pem': No such file or directory\nstat: cannot statx '/etc/mysql/ssl/p8test.pem': No such file or directory\nstat: cannot statx '/etc/mysql/ssl/p8test-chain.pem': No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 4,
+  "green": false,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 6,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Mysql_server/File[/etc/apparmor.d/local/usr.sbin.mysqld]/ensure: defined content as '{sha256}b8385b4ce905e470f8a1ceebd8597c7110b60b95f4df2c61a6cdc5f1ab4c8619'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Config/File[/etc/mysql]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Config/File[/etc/mysql/conf.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Config/Exec[datadir-managed_dir-mkdir]/returns: executed successfully\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Config/Exec[datadir-managed_dir-chmod]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Install/Package[mysql-server]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Managed_dirs/File[datadir-managed_dir]/owner: owner changed 'root' to 'mysql'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Managed_dirs/File[datadir-managed_dir]/group: group changed 'root' to 'mysql'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Managed_dirs/File[datadir-managed_dir]/mode: mode changed '0777' to '0700'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Installdb/Mysql_datadir[/srv/mysql]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Client::Install/Package[mysql_client]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Mysql_server/File[/etc/mysql/ssl]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Mysql_server/Exec[reload mysql apparmor profile]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Mysql_server/File[/etc/mysql/mysql.conf.d/zz-puppet-infrastructure.cnf]: Dependency File[/etc/mysql/ssl/p8test-chain.pem] has failures: true\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Mysql_server/File[/etc/mysql/mysql.conf.d/zz-puppet-infrastructure.cnf]: Dependency File[/etc/mysql/ssl/p8test.pem] has failures: true\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Mysql_server/File[/etc/mysql/mysql.conf.d/zz-puppet-infrastructure.cnf]: Dependency File[/etc/mysql/ssl/p8test-key.pem] has failures: true\u001b[0m"
+    ],
+    "errors": [
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Mysql_server/File[/etc/mysql/ssl/p8test-chain.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test-chain.pem\u001b[0m",
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Mysql_server/File[/etc/mysql/ssl/p8test.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.pem\u001b[0m",
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Mysql_server/File[/etc/mysql/ssl/p8test-key.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test-key.pem\u001b[0m"
+    ],
+    "tail": "main]/Mysql::Server::Account_security/Mysql_user[root@127.0.0.1]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[root@::1]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[@localhost]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[@%]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[root@localhost.localdomain]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[@localhost.localdomain]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[root@puppet8node.lan]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[@puppet8node.lan]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[root@puppet8node]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[@puppet8node]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_database[test]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 132.90 seconds\u001b[0m\nAGENT_RC=6\n"
+   },
+   {
+    "rc": 4,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Mysql_server/File[/etc/mysql/mysql.conf.d/zz-puppet-infrastructure.cnf]: Dependency File[/etc/mysql/ssl/p8test-chain.pem] has failures: true\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Mysql_server/File[/etc/mysql/mysql.conf.d/zz-puppet-infrastructure.cnf]: Dependency File[/etc/mysql/ssl/p8test.pem] has failures: true\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Mysql_server/File[/etc/mysql/mysql.conf.d/zz-puppet-infrastructure.cnf]: Dependency File[/etc/mysql/ssl/p8test-key.pem] has failures: true\u001b[0m"
+    ],
+    "errors": [
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Mysql_server/File[/etc/mysql/ssl/p8test-chain.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test-chain.pem\u001b[0m",
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Mysql_server/File[/etc/mysql/ssl/p8test.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test.pem\u001b[0m",
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Mysql_server/File[/etc/mysql/ssl/p8test-key.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/ssl/p8test-key.pem\u001b[0m"
+    ],
+    "tail": "e[main]/Mysql::Server::Account_security/Mysql_user[root@127.0.0.1]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[root@::1]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[@localhost]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[@%]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[root@localhost.localdomain]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[@localhost.localdomain]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[root@puppet8node.lan]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[@puppet8node.lan]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[root@puppet8node]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[@puppet8node]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_database[test]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.56 seconds\u001b[0m\nAGENT_RC=4\n"
+   }
+  ],
+  "tail": "e[main]/Mysql::Server::Account_security/Mysql_user[root@127.0.0.1]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[root@::1]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[@localhost]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[@%]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[root@localhost.localdomain]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[@localhost.localdomain]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[root@puppet8node.lan]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[@puppet8node.lan]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[root@puppet8node]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_user[@puppet8node]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Mysql::Server::Account_security/Mysql_database[test]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.56 seconds\u001b[0m\nAGENT_RC=4\n"
+ },
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "630cc624-2b9d-441a-b262-71dab53f8e1e",
+   "boot_id_at_end": "630cc624-2b9d-441a-b262-71dab53f8e1e",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "e432dbcf097585cb3aaee0d1f6575166fbef6c26bef9a106ba53739b6c8d314c",
+ "duration_s": 216.2
+}

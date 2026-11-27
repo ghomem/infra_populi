@@ -1,0 +1,393 @@
+{
+ "class": "gnome_lock_screen",
+ "role": "local",
+ "at": "20261126T181802Z",
+ "set_sha256": "3fc2e40c0e63204824fc99ccfdac75a3cfc78d9fefd4057f57dd6aea9bfce825",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "dconf-cli-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "dpkg-query: no packages found matching dconf-cli\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "profile-uses-system-db-local",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/dconf/profile/user': No such file or directory\ncat: /etc/dconf/profile/user: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "keyfile-and-locks-rendered",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "---\n",
+   "stderr": "cat: /etc/dconf/db/local.d/00-screenlock: No such file or directory\ncat: /etc/dconf/db/local.d/locks/00-screenlock: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "compiled-db-serves-the-policy",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: /usr/bin/dconf: No such file or directory\nbash: line 97: /usr/bin/dconf: No such file or directory\nbash: line 97: /usr/bin/dconf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "a-user-cannot-override-the-locked-keys",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "user database session/idle-delay: \nuser database screensaver/lock-enabled: \nuser database screensaver/lock-delay: \nuser database interface/text-scaling-factor: \nserved session/idle-delay: \nserved screensaver/lock-enabled: \nserved screensaver/lock-delay: \n",
+   "stderr": "runuser: user p8testdesk does not exist or the user entry does not contain all the required fields\nrunuser: user p8testdesk does not exist or the user entry does not contain all the required fields\nrunuser: user p8testdesk does not exist or the user entry does not contain all the required fields\nrunuser: user p8testdesk does not exist or the user entry does not contain all the required fields\nrunuser: user p8testdesk does not exist or the user entry does not contain all the required fields\nrunuser: user p8testdesk does not exist or the user entry does not contain all the required fields\nrunuser: user p8testdesk does not exist or the user entry does not contain all the required fields\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/Package[dconf-cli]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/profile]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/profile/user]/ensure: defined content as '{sha256}51eec44d50e4f6ec4ba887f1420077e60170a936f71d1a677bbab90b5d4b4bcd'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/locks]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/00-screenlock]/ensure: defined content as '{sha256}b1a1beab78d81990d9028281c5411b9f1bc49ff6668e9e56d9fdaa7b642d0a7d'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/locks/00-screenlock]/ensure: defined content as '{sha256}a1ed860133c34d6e48c963801bfb25ccb446d45805c8c1445434941ea534dfd6'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/Exec[dconf_update_screenlock]: Triggered 'refresh' from 2 events\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.09 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/Package[dconf-cli]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/profile]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/profile/user]/ensure: defined content as '{sha256}51eec44d50e4f6ec4ba887f1420077e60170a936f71d1a677bbab90b5d4b4bcd'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/locks]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/00-screenlock]/ensure: defined content as '{sha256}b1a1beab78d81990d9028281c5411b9f1bc49ff6668e9e56d9fdaa7b642d0a7d'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/locks/00-screenlock]/ensure: defined content as '{sha256}a1ed860133c34d6e48c963801bfb25ccb446d45805c8c1445434941ea534dfd6'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/Exec[dconf_update_screenlock]: Triggered 'refresh' from 2 events\u001b[0m\n\u001b[mNotice: Applied catalog in 14.57 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.09 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.47 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.09 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.47 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "dconf-cli-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "profile-uses-system-db-local",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "644 root root\nuser-db:user\nsystem-db:local\n",
+   "stderr": ""
+  },
+  {
+   "id": "keyfile-and-locks-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "[org/gnome/desktop/session]\nidle-delay=uint32 300\n\n[org/gnome/desktop/screensaver]\nlock-enabled=true\nlock-delay=uint32 0\n---\n/org/gnome/desktop/session/idle-delay\n/org/gnome/desktop/screensaver/lock-enabled\n/org/gnome/desktop/screensaver/lock-delay\n",
+   "stderr": ""
+  },
+  {
+   "id": "compiled-db-serves-the-policy",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "uint32 300\ntrue\nuint32 0\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the dconf profile: a profile name that does not exist has no system-db:local line, so the values cannot come from the compiled system database and the three reads must not return the class's values",
+    "rc": 0,
+    "passed": false,
+    "stdout": "",
+    "stderr": "\n(/usr/bin/dconf:1871): dconf-WARNING **: 18:20:02.003: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n\n(/usr/bin/dconf:1872): dconf-WARNING **: 18:20:02.007: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n\n(/usr/bin/dconf:1873): dconf-WARNING **: 18:20:02.011: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n"
+   }
+  },
+  {
+   "id": "a-user-cannot-override-the-locked-keys",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "user database session/idle-delay: \nuser database screensaver/lock-enabled: \nuser database screensaver/lock-delay: \nuser database interface/text-scaling-factor: 1.25\nserved session/idle-delay: uint32 300\nserved screensaver/lock-enabled: true\nserved screensaver/lock-delay: uint32 0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs dconf-service if absent (the dconf writer a GNOME desktop has), creates the account p8testdesk, and as it runs four dconf writes (the three locked keys and one unlocked key) in a dbus-run-session (its own user database under ~/.config/dconf); the writer's own report goes to /run/p8test-dconf/user.txt, and a profile holding only the user database to /run/p8test-dconf/userdb-only",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "bae951d2-ff8b-48c0-a416-dd4bcba710d8",
+   "boot_id_at_end": "bae951d2-ff8b-48c0-a416-dd4bcba710d8",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "9892b37f7a68ab31d5a58c933f63b63a80551e0e098bc68de3921ad774276c29",
+ "variants": {
+  "timing": {
+   "name": "timing",
+   "node": "ubuntu",
+   "params": "timing",
+   "clean": [
+    {
+     "id": "another-timeout-and-grace-period-are-served",
+     "control": "negative",
+     "rc": 127,
+     "passed": false,
+     "stdout": "",
+     "stderr": "bash: line 97: /usr/bin/dconf: No such file or directory\nbash: line 97: /usr/bin/dconf: No such file or directory\nbash: line 97: /usr/bin/dconf: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/Package[dconf-cli]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/profile]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/profile/user]/ensure: defined content as '{sha256}51eec44d50e4f6ec4ba887f1420077e60170a936f71d1a677bbab90b5d4b4bcd'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/locks]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/00-screenlock]/ensure: defined content as '{sha256}d2646ae7b31eb865f5dbb95ac9193854093d6ac3d4e1f8336ab2d04c3d6ecedb'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/locks/00-screenlock]/ensure: defined content as '{sha256}a1ed860133c34d6e48c963801bfb25ccb446d45805c8c1445434941ea534dfd6'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/Exec[dconf_update_screenlock]: Triggered 'refresh' from 2 events\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.07 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/Package[dconf-cli]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/profile]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/profile/user]/ensure: defined content as '{sha256}51eec44d50e4f6ec4ba887f1420077e60170a936f71d1a677bbab90b5d4b4bcd'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/locks]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/00-screenlock]/ensure: defined content as '{sha256}d2646ae7b31eb865f5dbb95ac9193854093d6ac3d4e1f8336ab2d04c3d6ecedb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/locks/00-screenlock]/ensure: defined content as '{sha256}a1ed860133c34d6e48c963801bfb25ccb446d45805c8c1445434941ea534dfd6'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/Exec[dconf_update_screenlock]: Triggered 'refresh' from 2 events\u001b[0m\n\u001b[mNotice: Applied catalog in 15.58 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.06 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.58 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.06 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.58 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "another-timeout-and-grace-period-are-served",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "uint32 600\ntrue\nuint32 30\n",
+     "stderr": "",
+     "mismatch": {
+      "varies": "the dconf profile: a profile name that does not exist has no system-db:local line, so the values cannot come from the compiled system database and the three reads must not return the variant's values",
+      "rc": 0,
+      "passed": false,
+      "stdout": "",
+      "stderr": "\n(/usr/bin/dconf:1858): dconf-WARNING **: 18:21:38.246: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n\n(/usr/bin/dconf:1859): dconf-WARNING **: 18:21:38.250: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n\n(/usr/bin/dconf:1860): dconf-WARNING **: 18:21:38.254: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n"
+     }
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "c206be67-b05f-40b5-be26-1723acc33c05",
+     "boot_id_at_end": "c206be67-b05f-40b5-be26-1723acc33c05",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "65a873e52964d4fcb1a7f09063320b79ab5b5e67a3f2ba06637fca9d403cf572"
+  },
+  "gnome": {
+   "name": "gnome",
+   "node": "gnome",
+   "params": "gnome",
+   "clean": [
+    {
+     "id": "a-gnome-session-locks-after-the-idle-time",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "locked: \nsession under 300 s old: no\nidle-delay: , writable \nlock-enabled: , writable \nlock-delay: , writable \n",
+     "stderr": "",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/profile/user]/ensure: defined content as '{sha256}51eec44d50e4f6ec4ba887f1420077e60170a936f71d1a677bbab90b5d4b4bcd'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/locks]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/00-screenlock]/ensure: defined content as '{sha256}0bcbc7ffd1ab4b2997d176c883efb76623b681b0ba0f33562e7ed2131f783357'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/locks/00-screenlock]/ensure: defined content as '{sha256}a1ed860133c34d6e48c963801bfb25ccb446d45805c8c1445434941ea534dfd6'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/Exec[dconf_update_screenlock]: Triggered 'refresh' from 2 events\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for p8lab-gnome in environment production in 0.11 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/profile/user]/ensure: defined content as '{sha256}51eec44d50e4f6ec4ba887f1420077e60170a936f71d1a677bbab90b5d4b4bcd'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/locks]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/00-screenlock]/ensure: defined content as '{sha256}0bcbc7ffd1ab4b2997d176c883efb76623b681b0ba0f33562e7ed2131f783357'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/locks/00-screenlock]/ensure: defined content as '{sha256}a1ed860133c34d6e48c963801bfb25ccb446d45805c8c1445434941ea534dfd6'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/Exec[dconf_update_screenlock]: Triggered 'refresh' from 2 events\u001b[0m\n\u001b[mNotice: Applied catalog in 0.57 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for p8lab-gnome in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.56 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for p8lab-gnome in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.56 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "a-gnome-session-locks-after-the-idle-time",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "locked: yes\nsession under 300 s old: yes\nidle-delay: uint32 60, writable false\nlock-enabled: true, writable false\nlock-delay: uint32 10, writable false\n",
+     "stderr": "",
+     "mutating": true,
+     "action": {
+      "mutates": "creates the account p8testuser, turns on GDM's automatic login for it in /etc/gdm3/custom.conf (the original kept under /run/p8test-gnome and put back once the session runs), restarts gdm3 so the session starts, and waits for the session to lock (up to 120 s for the session, then up to 240 s)",
+      "rc": 0,
+      "stdout": "",
+      "stderr": ""
+     }
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "gnome",
+     "dest": "p8lab-gnome",
+     "boot_id": "5ec921ad-3f00-4377-be68-4b53bed3c94c",
+     "boot_id_at_end": "5ec921ad-3f00-4377-be68-4b53bed3c94c",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-gnome",
+    "NODE_ADDR": "192.168.56.23",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "42d172edbd8eac6285e01a146dff6d10eb4144346f884e9ceccb893f65f7737c"
+  }
+ },
+ "duration_s": 384.6
+}

@@ -1,0 +1,286 @@
+{
+ "class": "firewall_ipv6_drop_policy",
+ "role": "local",
+ "at": "20261126T174013Z",
+ "set_sha256": "d88b882cbbc1e80c1e7d6e0a50b2e3b081124ef12546286560ce84b48f3fbb07",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "ip6tables-policies-drop-input-and-forward",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n-P OUTPUT ACCEPT\n0\n0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-node-publishes-its-link-local-address",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /run/p8test-ipv6/linklocal: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "another-host-cannot-reach-the-node-over-ipv6-but-can-over-ipv4",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-ipv6/reach.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "another-host-routes-ipv6-through-the-node",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /run/p8test-ipv6/routed.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-forward-policy-counted-the-routed-packets",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "ipv6-loopback-is-dropped-too",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "open\nopen\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "an-unmanaged-ipv6-rule-is-added",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-purges-the-unmanaged-ipv6-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n-P INPUT ACCEPT\n-P FORWARD ACCEPT\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_ipv6_drop_policy/Firewallchain[FORWARD:filter:IPv6]/policy: policy changed 'accept' to 'drop'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_ipv6_drop_policy/Firewallchain[INPUT:filter:IPv6]/policy: policy changed 'accept' to 'drop'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "irewallchain[FORWARD:filter:IPv6]/policy: policy changed 'accept' to 'drop'\u001b[0m\n\u001b[mNotice: firewallchain[FORWARD:filter:IPv6]: Updating: Updating Chain 'FORWARD:filter:IPv6' with {:name=>\"FORWARD:filter:IPv6\", :ensure=>\"present\", :policy=>\"drop\", :purge=>true, :ignore_foreign=>false, :chain=>\"FORWARD\", :table=>\"filter\", :protocol=>\"IPv6\"}\u001b[0m\n\u001b[mNotice: firewallchain[FORWARD:filter:IPv6]: Updating: Ensuring changes to 'FORWARD:filter:IPv6' persist\u001b[0m\nUnable to persist firewall rules: Execution of '/usr/sbin/service iptables-persistent save' returned 1: iptables-persistent: unrecognized service\n\u001b[mNotice: firewallchain[FORWARD:filter:IPv6]: Updating: Finished in 0.095769 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_ipv6_drop_policy/Firewallchain[INPUT:filter:IPv6]/policy: policy changed 'accept' to 'drop'\u001b[0m\n\u001b[mNotice: firewallchain[INPUT:filter:IPv6]: Updating: Updating Chain 'INPUT:filter:IPv6' with {:name=>\"INPUT:filter:IPv6\", :ensure=>\"present\", :policy=>\"drop\", :purge=>true, :ignore_foreign=>false, :chain=>\"INPUT\", :table=>\"filter\", :protocol=>\"IPv6\"}\u001b[0m\n\u001b[mNotice: firewallchain[INPUT:filter:IPv6]: Updating: Ensuring changes to 'INPUT:filter:IPv6' persist\u001b[0m\nUnable to persist firewall rules: Execution of '/usr/sbin/service iptables-persistent save' returned 1: iptables-persistent: unrecognized service\n\u001b[mNotice: firewallchain[INPUT:filter:IPv6]: Updating: Finished in 0.024217 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.50 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.37 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.37 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "ip6tables-policies-drop-input-and-forward",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P INPUT DROP\n-P FORWARD DROP\n-P OUTPUT ACCEPT\n0\n0\n",
+   "stderr": ""
+  },
+  {
+   "id": "ipv6-loopback-is-dropped-too",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "closed\nopen\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-node-publishes-its-link-local-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes the host-only NIC's link-local address and MAC to /run/p8test-ipv6/linklocal and /run/p8test-ipv6/mac on the node, turns IPv6 forwarding on (net.ipv6.conf.all.forwarding=1) and adds an on-link route for the documentation prefix 2001:db8:99::/64 on the host-only NIC, until the next revert, so that packets for that prefix are routed through FORWARD (without a route the kernel drops them before FORWARD)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "another-host-cannot-reach-the-node-over-ipv6-but-can-over-ipv4",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "icmpv6 dropped\nssh over ipv6 dropped\nssh over ipv4 in\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "three connection attempts from the peer to the class node (ICMPv6, TCP 22 over IPv6, TCP 22 over IPv4); results in /run/p8test-ipv6/reach.txt on the peer",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "another-host-routes-ipv6-through-the-node",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "5 packets transmitted, 0 received\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: adds a static neighbour entry for the node's link-local address (its MAC handed over, as the class drops neighbour discovery), the unique-local source address fd8e:2b3c:4d5e::24/64 to its host-only NIC (the kernel does not forward packets from a link-local source), a route for 2001:db8:99::/64 via the node's link-local address, and sends 5 pings to 2001:db8:99::1 through it; the ping summary goes to /run/p8test-ipv6/routed.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-forward-policy-counted-the-routed-packets",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "forward policy counted the routed packets\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the chain's policy counters (declared mutating so it runs after the peer sent its packets)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "an-unmanaged-ipv6-rule-is-added",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "appends `-A INPUT -s fd8e:2b3c:4d5e::99/128 -m comment --comment p8test-rogue6 -j ACCEPT` and the same rule on FORWARD to ip6tables on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-agent-run-purges-the-unmanaged-ipv6-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\n0\n-P INPUT DROP\n-P FORWARD DROP\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rules (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "b8b6a2ac-b29e-4395-ad6f-7221ac73231c",
+   "boot_id_at_end": "b8b6a2ac-b29e-4395-ad6f-7221ac73231c",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "664cde40-ba60-44fd-8a23-0ab0f716cc02",
+   "boot_id_at_end": "664cde40-ba60-44fd-8a23-0ab0f716cc02",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "94242b8a8966699840742d356727d2e3657f5b0d721752ba8a1a9f033284e189",
+ "node_agent": {
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_ipv6_drop_policy/Firewall[9002 p8test-rogue6]/ensure: undefined 'ensure' from 'present'\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_ipv6_drop_policy/Firewall[9001 p8test-rogue6]/ensure: undefined 'ensure' from 'present'\u001b[0m"
+  ],
+  "errors": [],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_ipv6_drop_policy/Firewall[9002 p8test-rogue6]/ensure: undefined 'ensure' from 'present'\u001b[0m\n\u001b[mNotice: firewall[9002 p8test-rogue6]: Deleting: Deleting Rule '9002 p8test-rogue6'\u001b[0m\n\u001b[mNotice: firewall[9002 p8test-rogue6]: Deleting: Ensuring changes to '9002 p8test-rogue6' persist\u001b[0m\nUnable to persist firewall rules: Execution of '/usr/sbin/service iptables-persistent save' returned 1: iptables-persistent: unrecognized service\n\u001b[mNotice: firewall[9002 p8test-rogue6]: Deleting: Finished in 0.283444 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_ipv6_drop_policy/Firewall[9001 p8test-rogue6]/ensure: undefined 'ensure' from 'present'\u001b[0m\n\u001b[mNotice: firewall[9001 p8test-rogue6]: Deleting: Deleting Rule '9001 p8test-rogue6'\u001b[0m\n\u001b[mNotice: firewall[9001 p8test-rogue6]: Deleting: Ensuring changes to '9001 p8test-rogue6' persist\u001b[0m\nUnable to persist firewall rules: Execution of '/usr/sbin/service iptables-persistent save' returned 1: iptables-persistent: unrecognized service\n\u001b[mNotice: firewall[9001 p8test-rogue6]: Deleting: Finished in 0.033336 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.75 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "duration_s": 161.4
+}

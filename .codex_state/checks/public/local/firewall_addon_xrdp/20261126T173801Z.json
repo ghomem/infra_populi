@@ -1,0 +1,181 @@
+{
+ "class": "firewall_addon_xrdp",
+ "role": "local",
+ "at": "20261126T173521Z",
+ "set_sha256": "1c54bf43891e2196fc20c27e18cf92d24b1bdaed34aafef45b35c8df6e35f843",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-xrdp-rules-are-in-place",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "an-ipv4-drop-base-and-two-listeners",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "another-host-reaches-xrdp-but-not-another-port",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-xrdp/reach.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "xrdp-reaches-vnc-over-ipv6-loopback-under-a-drop",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-xrdp/vnc.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_xrdp/Firewall[3389 allow xrdp]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_xrdp/Firewall[3389 allow xrdp to vnc ipv6]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_xrdp/Firewall[003 Allow established ipv6]/ensure: defined 'ensure' as 'present'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "wall[3389 allow xrdp to vnc ipv6]: Creating: Creating Rule '3389 allow xrdp to vnc ipv6' with {:name=>\"3389 allow xrdp to vnc ipv6\", :protocol=>\"ip6tables\", :iniface=>\"lo\", :proto=>\"tcp\", :dport=>5900, :jump=>\"ACCEPT\", :ensure=>\"present\", :table=>\"filter\", :chain=>\"INPUT\"}\u001b[0m\n\u001b[mNotice: firewall[3389 allow xrdp to vnc ipv6]: Creating: Ensuring changes to '3389 allow xrdp to vnc ipv6' persist\u001b[0m\nUnable to persist firewall rules: Execution of '/usr/sbin/service iptables-persistent save' returned 1: iptables-persistent: unrecognized service\n\u001b[mNotice: firewall[3389 allow xrdp to vnc ipv6]: Creating: Finished in 0.020581 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_xrdp/Firewall[003 Allow established ipv6]/ensure: defined 'ensure' as 'present'\u001b[0m\n\u001b[mNotice: firewall[003 Allow established ipv6]: Creating: Creating Rule '003 Allow established ipv6' with {:name=>\"003 Allow established ipv6\", :protocol=>\"ip6tables\", :proto=>\"tcp\", :sport=>\"5900\", :state=>\"ESTABLISHED\", :jump=>\"ACCEPT\", :ensure=>\"present\", :table=>\"filter\", :chain=>\"INPUT\"}\u001b[0m\n\u001b[mNotice: firewall[003 Allow established ipv6]: Creating: Ensuring changes to '003 Allow established ipv6' persist\u001b[0m\nUnable to persist firewall rules: Execution of '/usr/sbin/service iptables-persistent save' returned 1: iptables-persistent: unrecognized service\n\u001b[mNotice: firewall[003 Allow established ipv6]: Creating: Finished in 0.048957 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.23 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.12 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.13 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.12 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.13 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "the-xrdp-rules-are-in-place",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A INPUT -p tcp -m tcp --dport 3389 -m comment --comment \"3389 allow xrdp\" -j ACCEPT\n-A INPUT -i lo -p tcp -m tcp --dport 5900 -m comment --comment \"3389 allow xrdp to vnc ipv6\" -j ACCEPT\n-A INPUT -p tcp -m tcp --sport 5900 -m state --state ESTABLISHED -m comment --comment \"003 Allow established ipv6\" -j ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "an-ipv4-drop-base-and-two-listeners",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0.0.0.0:3389\n0.0.0.0:3390\n-P INPUT DROP\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "starts transient units p8test-xrdp3389 and p8test-xrdp3390 (python3 -m http.server on 0.0.0.0); inserts at the top of INPUT an accept for related/established traffic and one for TCP 22 (as the base firewall has), then sets the IPv4 INPUT policy to DROP, until the next revert",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "another-host-reaches-xrdp-but-not-another-port",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "3389 in\n3390 dropped\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "two connection attempts from the peer to the class node (TCP 3389, TCP 3390); results in /run/p8test-xrdp/reach.txt on the peer",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "xrdp-reaches-vnc-over-ipv6-loopback-under-a-drop",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "::1:5900 open\n::1:5901 closed\nboth rules counted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "starts transient units p8test-vnc5900 and p8test-vnc5901 (python3 -m http.server on ::1), sets the IPv6 INPUT policy to DROP until the next revert, and makes one connection to each; the outcomes go to /run/p8test-xrdp/vnc.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "62dae48f-42d1-486c-b0ff-13b20512c348",
+   "boot_id_at_end": "62dae48f-42d1-486c-b0ff-13b20512c348",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "b1700674-b791-4c8f-948d-e683885362ba",
+   "boot_id_at_end": "b1700674-b791-4c8f-948d-e683885362ba",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "af28ff27356b2356cf90a7afa29a10af6419d2468d9110d46ffe835e25d18635",
+ "duration_s": 160.6
+}

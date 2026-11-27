@@ -1,0 +1,348 @@
+{
+ "class": "node_base_desktop",
+ "role": "local",
+ "at": "20261127T044021Z",
+ "set_sha256": "ab65c535bf7898b1a4751b8cc4c36449543df8157e9aecffd996055cdf151aa2",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "ssh-hardened-without-password-or-root-login",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "passwordauthentication yes\npermitrootlogin without-password\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "unattended-upgrades-removed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "1\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "ipv6-input-and-forward-dropped",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "nightly-relevant-updates-cron",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "gnome-lock-policy-served",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "\n(/usr/bin/dconf:2136): dconf-WARNING **: 04:40:49.330: unable to open named profile (user): using the null configuration.\n\n(/usr/bin/dconf:2137): dconf-WARNING **: 04:40:49.336: unable to open named profile (user): using the null configuration.\n\n(/usr/bin/dconf:2138): dconf-WARNING **: 04:40:49.341: unable to open named profile (user): using the null configuration.\n",
+   "ok": true
+  },
+  {
+   "id": "puppet-service-enabled-and-running",
+   "control": "negative",
+   "rc": 3,
+   "passed": false,
+   "stdout": "disabled\ninactive\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-agent-daemon-runs-the-catalog",
+   "control": "negative",
+   "rc": 124,
+   "passed": false,
+   "stdout": "",
+   "stderr": "probe timed out after 120s",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "logs-forwarded-to-the-log-target",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/rsyslog.d/40-forward.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-ipv4-firewall-is-firewall-secure",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n0\n0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-local-directories-are-in-place",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure': No such file or directory\nstat: cannot statx '/opt/puppet-infrastructure/bin': No such file or directory\nstat: cannot statx '/opt/puppet-infrastructure/etc': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-apt-helpers-are-in-desktop-mode",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "nginx-core not listed\npostfix not listed\nfirefox not listed\n",
+   "stderr": "grep: /opt/puppet-infrastructure/bin/apt-update-surface.sh: No such file or directory\nstat: cannot statx '/opt/puppet-infrastructure/bin/apt-update-relevant.sh': No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 2,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[iptables-persistent]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[monitoring-plugins-standard]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[ecryptfs-utils]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[vim]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[aptitude]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[cloud-init]/ensure: removed\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[unattended-upgrades]/ensure: removed\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssh_secure/File[/etc/ssh/moduli]/content: content changed '{sha256}49f3a4235aa69de2dc3ba4abab128d81d63f9bf90751b0600c7649d1a95892f0' to '{sha256}01f903391abe367b549ae37822983bd3d5a8dd3d6465523f3b5f14729573b8b0'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssh_secure/Group[ssh_in]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base_desktop/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/File[/opt/puppet-infrastructure/bin/iptables-flush.sh]/ensure: defined content as '{sha256}af2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[FORWARD:filter:IPv4]/policy: policy changed 'accept' to 'drop'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[INPUT:filter:IPv4]/policy: policy changed 'accept' to 'drop'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[000 accept all icmp]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[001 accept all to lo interface]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[002 reject local traffic not on loopback interface]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[003 accept related established rules]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[100 SSH whitelist 127.0.0.1]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[LIMIT_INDIVIDUAL:filter:IPv4]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[LIMIT_OVERALL:filter:IPv4]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[110 SSH LIMIT_INDIVIDUAL]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[111 SSH ACCEPT ESTABLISHED]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[112 SSH connlimit]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[113 SSH set recent]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[114 SSH set recent]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[115 SSH LIMIT_INDIVIDUAL]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[116 SSH LIMIT_OVERALL]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[117 SSH DROP]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_ipv6_drop_policy_desktop/Firewall[000 accept all IPv6 to lo interface]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_ipv6_drop_policy_desktop/Firewallchain[FORWARD:filter:IPv6]/policy: policy changed 'accept' to 'drop'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_ipv6_drop_policy_desktop/Firewallchain[INPUT:filter:IPv6]/policy: policy changed 'accept' to 'drop'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-pkg.sh]/ensure: defined content as '{sha256}b19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-surface.sh]/ensure: defined content as '{sha256}7d7ea0c257b2913082de32703fd0e0b52fa25ae065f4af7542d050fc5fc0304c'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-surface-desktop.sh]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-kernel.sh]/ensure: defined content as '{sha256}8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-dist.sh]/ensure: defined content as '{sha256}c240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/Package[openscap-scanner]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/get-relevant-updates-list]/ensure: defined content as '{sha256}077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-check-updates.sh]/ensure: defined content as '{sha256}d3aa0ff611099b6d65d02e8b05983544bffe90ef7add977471a976f805b06cc4'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/Cron[apt_check_updates]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/var/lib/apt-check-updates]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]/ensure: defined content as '{sha256}c00cfe9e5594ce3f42a36f53dbf11c47214230739b7d54ebd558630241ed4943'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Node_base_desktop/Cron[apt_update_relevant_daily]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Package[rsyslog-gnutls]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/ensure: defined content as '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/p8lab-gnome.pem]/ensure: defined content as '{sha256}9f40f739d46289fc8253733f1381dd77d8be841994b2bcc7d5b2583ab80bc919'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/p8lab-gnome.key]/ensure: defined content as '{sha256}eedc303dec7cc61fdcedd2c7468ce5f8dfa42a846de63a94d1c1cd959ced4e5a'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]/ensure: defined content as '{sha256}7c35519c2c747dada4d9f3366a0fb4aa67822120c18a54cb8ef94504433e7eba'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 5 events\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/profile/user]/ensure: defined content as '{sha256}51eec44d50e4f6ec4ba887f1420077e60170a936f71d1a677bbab90b5d4b4bcd'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/locks]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/00-screenlock]/ensure: defined content as '{sha256}b1a1beab78d81990d9028281c5411b9f1bc49ff6668e9e56d9fdaa7b642d0a7d'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/File[/etc/dconf/db/local.d/locks/00-screenlock]/ensure: defined content as '{sha256}a1ed860133c34d6e48c963801bfb25ccb446d45805c8c1445434941ea534dfd6'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Gnome_lock_screen/Exec[dconf_update_screenlock]: Triggered 'refresh' from 2 events\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Node_base_desktop/Service[puppet]/ensure: ensure changed 'stopped' to 'running'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Ssh::Server::Config/Concat[/etc/ssh/sshd_config]/File[/etc/ssh/sshd_config]/content: content changed '{sha256}e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' to '{sha256}9d81e2e92dfa9f92fa166654224cd977594e9fd919134076eeae9fe1f8f60c9f'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Ssh::Server::Config/Concat[/etc/ssh/sshd_config]/File[/etc/ssh/sshd_config]/mode: mode changed '0644' to '0600'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Ssh::Server::Service/Service[ssh]/enable: enable changed 'false' to 'true'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Ssh::Server::Service/Service[ssh]: Triggered 'refresh' from 3 events\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "wall[000 accept all IPv6 to lo interface]\nCHANGED Firewallchain[FORWARD:filter:IPv6]\nCHANGED Firewallchain[INPUT:filter:IPv6]\nCHANGED File[/opt/puppet-infrastructure/bin/apt-update-pkg.sh]\nCHANGED File[/opt/puppet-infrastructure/bin/apt-update-surface.sh]\nCHANGED File[/opt/puppet-infrastructure/bin/apt-update-surface-desktop.sh]\nCHANGED File[/opt/puppet-infrastructure/bin/apt-update-kernel.sh]\nCHANGED File[/opt/puppet-infrastructure/bin/apt-update-dist.sh]\nCHANGED Package[openscap-scanner]\nCHANGED File[/opt/puppet-infrastructure/bin/get-relevant-updates-list]\nCHANGED File[/opt/puppet-infrastructure/bin/apt-check-updates.sh]\nCHANGED Cron[apt_check_updates]\nCHANGED File[/var/lib/apt-check-updates]\nCHANGED File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]\nCHANGED Cron[apt_update_relevant_daily]\nCHANGED Package[rsyslog-gnutls]\nCHANGED File[/etc/rsyslog.d/tls]\nCHANGED File[/etc/rsyslog.d/tls/ca.pem]\nCHANGED File[/etc/rsyslog.d/tls/p8lab-gnome.pem]\nCHANGED File[/etc/rsyslog.d/tls/p8lab-gnome.key]\nCHANGED File[/etc/rsyslog.d/40-forward.conf]\nCHANGED Service[rsyslog]\nCHANGED File[/etc/dconf/profile/user]\nCHANGED File[/etc/dconf/db/local.d]\nCHANGED File[/etc/dconf/db/local.d/locks]\nCHANGED File[/etc/dconf/db/local.d/00-screenlock]\nCHANGED File[/etc/dconf/db/local.d/locks/00-screenlock]\nCHANGED Exec[dconf_update_screenlock]\nCHANGED Service[puppet]\nCHANGED File[/etc/apt/apt.conf.d/15update-stamp]\nCHANGED Exec[apt_update]\nCHANGED File[/etc/ssh/sshd_config]\nCHANGED Service[ssh]\n"
+   },
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the export is ignored (file: /var/tmp/behaviour-modules/ssh/manifests/hostkeys.pp, line: 83, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the export is ignored (file: /var/tmp/behaviour-modules/ssh/manifests/hostkeys.pp, line: 75, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the export is ignored (file: /var/tmp/behaviour-modules/ssh/manifests/hostkeys.pp, line: 75, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the export is ignored (file: /var/tmp/behaviour-modules/ssh/manifests/hostkeys.pp, line: 75, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the collection will be ignored (file: /var/tmp/behaviour-modules/ssh/manifests/knownhosts.pp, line: 18, column: 7)\u001b[0m\n\u001b[mNotice: Compiled catalog for p8lab-gnome in environment production in 0.52 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 4.40 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Exec[apt_update]\n"
+   }
+  ],
+  "tail": "\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the export is ignored (file: /var/tmp/behaviour-modules/ssh/manifests/hostkeys.pp, line: 83, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the export is ignored (file: /var/tmp/behaviour-modules/ssh/manifests/hostkeys.pp, line: 75, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the export is ignored (file: /var/tmp/behaviour-modules/ssh/manifests/hostkeys.pp, line: 75, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the export is ignored (file: /var/tmp/behaviour-modules/ssh/manifests/hostkeys.pp, line: 75, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the collection will be ignored (file: /var/tmp/behaviour-modules/ssh/manifests/knownhosts.pp, line: 18, column: 7)\u001b[0m\n\u001b[mNotice: Compiled catalog for p8lab-gnome in environment production in 0.52 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 4.40 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Exec[apt_update]\n"
+ },
+ "applied": [
+  {
+   "id": "ssh-hardened-without-password-or-root-login",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "passwordauthentication no\npermitrootlogin no\n",
+   "stderr": ""
+  },
+  {
+   "id": "unattended-upgrades-removed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\n",
+   "stderr": ""
+  },
+  {
+   "id": "ipv6-input-and-forward-dropped",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P INPUT DROP\n-P FORWARD DROP\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "nightly-relevant-updates-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "00 02 * * * /opt/puppet-infrastructure/bin/apt-update-relevant.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "gnome-lock-policy-served",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "uint32 300\ntrue\nuint32 0\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the dconf profile: a profile name that does not exist has no system-db:local line, so the three reads must not return the policy's values",
+    "rc": 0,
+    "passed": false,
+    "stdout": "",
+    "stderr": "\n(/usr/bin/dconf:11062): dconf-WARNING **: 04:45:29.914: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n\n(/usr/bin/dconf:11063): dconf-WARNING **: 04:45:29.916: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n\n(/usr/bin/dconf:11064): dconf-WARNING **: 04:45:29.917: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n"
+   }
+  },
+  {
+   "id": "puppet-service-enabled-and-running",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "enabled\nactive\n",
+   "stderr": ""
+  },
+  {
+   "id": "logs-forwarded-to-the-log-target",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "*.* @@puppet8master.example.com:6514\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-ipv4-firewall-is-firewall-secure",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P INPUT DROP\n-P FORWARD DROP\n1\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-local-directories-are-in-place",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755 /opt/puppet-infrastructure\nroot 755 /opt/puppet-infrastructure/bin\nroot 755 /opt/puppet-infrastructure/etc\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-apt-helpers-are-in-desktop-mode",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nginx-core not listed\npostfix not listed\nfirefox listed\n/opt/puppet-infrastructure/bin/apt-update-surface.sh\nroot 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-agent-daemon-runs-the-catalog",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "the daemon is the real agent\na daemon run applied the catalog\nresource events besides Exec[apt_update]: 5\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "restarts puppet.service (the daemon makes a catalog run at start, applying the node's catalog from the lab master); the restart time goes to /run/p8test-agentd.since",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [
+  "the-agent-daemon-runs-the-catalog"
+ ],
+ "not_run": [],
+ "outcome": "FINDINGS",
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "dest": "p8lab-gnome",
+   "boot_id": "d27ee3a9-71b7-4980-89df-643b109057d9",
+   "boot_id_at_end": "d27ee3a9-71b7-4980-89df-643b109057d9",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "p8lab-gnome",
+  "NODE_ADDR": "192.168.56.23",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "838dbb2a9539e223af1bcd3f8271180686d2f3c629887533ba7d230138160ced",
+ "duration_s": 329.3
+}

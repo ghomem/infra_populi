@@ -1,0 +1,155 @@
+{
+ "class": "filesystem_yum",
+ "role": "local",
+ "at": "20261127T093545Z",
+ "set_sha256": "fec02451eea70c093eccb36c2481a5a459b5b33b5a7c0a5597a7096dbe3c825a",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "update-scripts-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 96: cd: /opt/puppet-infrastructure/bin: No such file or directory\nstat: cannot statx 'yum-update-surface.sh': No such file or directory\nstat: cannot statx 'yum-update-dist.sh': No such file or directory\nsha256sum: yum-update-surface.sh: No such file or directory\nsha256sum: yum-update-dist.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-surface-script-brings-the-exposed-packages-up-to-date",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "errors for installed packages: 0\npending rc=100\n",
+   "stderr": "tail: cannot open '/run/p8test-yum/surface.txt' for reading: No such file or directory\nsed: can't read /run/p8test-yum/surface.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-full-update-script-leaves-nothing-to-update",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "pending rc=100\n",
+   "stderr": "cat: /run/p8test-yum/dist.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/var/log/messages]/mode: mode changed '0600' to '0640' (u=rw,g=r,o=)\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_yum/File[/opt/puppet-infrastructure/bin/yum-update-surface.sh]/ensure: defined content as '{sha256}bd37299aae40c6109f00a550093d5149266f1f5a4a3b3186a1f2fad514ea8c77'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_yum/File[/opt/puppet-infrastructure/bin/yum-update-dist.sh]/ensure: defined content as '{sha256}70fdcab7adbf19055578358a3b9d1d6b1baf27b7f179eb236175e629d9c60f6e'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "et-infrastructure/pkgsdir]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/var/log/messages]/mode: mode changed '0600' to '0640' (u=rw,g=r,o=)\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_yum/File[/opt/puppet-infrastructure/bin/yum-update-surface.sh]/ensure: defined content as '{sha256}bd37299aae40c6109f00a550093d5149266f1f5a4a3b3186a1f2fad514ea8c77'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_yum/File[/opt/puppet-infrastructure/bin/yum-update-dist.sh]/ensure: defined content as '{sha256}70fdcab7adbf19055578358a3b9d1d6b1baf27b7f179eb236175e629d9c60f6e'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.12 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/opt/puppet-infrastructure]\nCHANGED File[/opt/puppet-infrastructure/bin]\nCHANGED File[/opt/puppet-infrastructure/etc]\nCHANGED File[/opt/puppet-infrastructure/backup]\nCHANGED File[/opt/puppet-infrastructure/pkgsdir]\nCHANGED File[/etc/default/locale]\nCHANGED File[/opt/puppet-infrastructure/bin/mypython]\nCHANGED File[/var/log/messages]\nCHANGED File[/opt/puppet-infrastructure/bin/yum-update-surface.sh]\nCHANGED File[/opt/puppet-infrastructure/bin/yum-update-dist.sh]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "update-scripts-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "yum-update-surface.sh root 755\nyum-update-dist.sh root 755\nbd37299aae40c6109f00a550093d5149266f1f5a4a3b3186a1f2fad514ea8c77\n70fdcab7adbf19055578358a3b9d1d6b1baf27b7f179eb236175e629d9c60f6e\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-surface-script-brings-the-exposed-packages-up-to-date",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc=0\nerrors for installed packages: 0\npending rc=0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs {{LOCALDIR}}/bin/yum-update-surface.sh on the node (yum update -y of openssh-server, openssh, nginx, openssl, ca-certificates, httpd: installed ones are updated, the others are skipped by yum); its output goes to /run/p8test-yum/surface.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-full-update-script-leaves-nothing-to-update",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "pending rc=100\n",
+   "stderr": "cat: /run/p8test-yum/dist.txt: No such file or directory\n",
+   "mutating": true,
+   "action": {
+    "mutates": "runs {{LOCALDIR}}/bin/yum-update-dist.sh on the node (yum update -y of every package); the result goes to /run/p8test-yum/dist.txt",
+    "rc": 124,
+    "stdout": "",
+    "stderr": "probe timed out after 600s"
+   }
+  }
+ ],
+ "findings": [
+  "the-full-update-script-leaves-nothing-to-update"
+ ],
+ "not_run": [],
+ "outcome": "FINDINGS",
+ "nodes": {
+  "node": {
+   "kind": "rhel9",
+   "dest": "p8lab-rhel9",
+   "boot_id": "2d8e1ee0-dc74-4778-9ffc-b46cded46de3",
+   "boot_id_at_end": "2d8e1ee0-dc74-4778-9ffc-b46cded46de3",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "p8lab-rhel9",
+  "NODE_ADDR": "192.168.56.21",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "134a3b1bc9e0ae5f92e9f0399cb812024e565ec198dd73232a8f6430420bba9f",
+ "duration_s": 977.1
+}

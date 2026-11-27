@@ -1,0 +1,185 @@
+{
+ "class": "rsyslog_apparmor_exception",
+ "role": "local",
+ "at": "20261127T061256Z",
+ "set_sha256": "84446613d5a2ec075b0bddc3e4c4c76a98689b9fbeb1346fff9661d7b8fac06a",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "local-exception-file",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "root root 644\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "profile-compiles-with-the-exception",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "rsyslogd-confined-and-running",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\nrsyslogd (enforce)\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "confined-rsyslogd-writes-to-logs-dir",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /srv/p8test-logs/p8test.log: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-directory-outside-the-exception-stays-denied",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "not written\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Package[rsyslog-gnutls]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/ensure: defined content as '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.pem]/ensure: defined content as '{sha256}c4ccab2b7949dcc773e68400194dcaf43dcced6068dc027da46d8eef36feeb68'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.key]/ensure: defined content as '{sha256}9ebaed588557ad124b7fcccc0abe4616c90306eb68dd5eb64bcedf3460c0ab71'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_apparmor_exception/File[/etc/apparmor.d/local/usr.sbin.rsyslogd]/content: content changed '{sha256}e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' to '{sha256}97fd4e7cb0e945954b8f6b3ecf14164756cf0b571094bf76fe329810efa59a28'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_apparmor_exception/Exec[reload_rsyslog_apparmor]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 5 events\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "log_base/File[/etc/rsyslog.d/tls/ca.pem]/ensure: defined content as '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.pem]/ensure: defined content as '{sha256}c4ccab2b7949dcc773e68400194dcaf43dcced6068dc027da46d8eef36feeb68'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.key]/ensure: defined content as '{sha256}9ebaed588557ad124b7fcccc0abe4616c90306eb68dd5eb64bcedf3460c0ab71'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_apparmor_exception/File[/etc/apparmor.d/local/usr.sbin.rsyslogd]/content: content changed '{sha256}e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' to '{sha256}97fd4e7cb0e945954b8f6b3ecf14164756cf0b571094bf76fe329810efa59a28'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_apparmor_exception/Exec[reload_rsyslog_apparmor]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 5 events\u001b[0m\n\u001b[mNotice: Applied catalog in 14.17 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Package[rsyslog-gnutls]\nCHANGED File[/etc/rsyslog.d/tls]\nCHANGED File[/etc/rsyslog.d/tls/ca.pem]\nCHANGED File[/etc/rsyslog.d/tls/puppet8node.pem]\nCHANGED File[/etc/rsyslog.d/tls/puppet8node.key]\nCHANGED File[/etc/apparmor.d/local/usr.sbin.rsyslogd]\nCHANGED Exec[reload_rsyslog_apparmor]\nCHANGED Service[rsyslog]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.08 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.59 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.08 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.59 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "local-exception-file",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 644\n/srv/p8test-logs/ rw,\n/srv/p8test-logs/** rwk,\n",
+   "stderr": ""
+  },
+  {
+   "id": "profile-compiles-with-the-exception",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/srv/p8test-logs/ rw,\n/srv/p8test-logs/** rwk,\n",
+   "stderr": ""
+  },
+  {
+   "id": "rsyslogd-confined-and-running",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\nrsyslogd (enforce)\n",
+   "stderr": ""
+  },
+  {
+   "id": "confined-rsyslogd-writes-to-logs-dir",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates /srv/p8test-logs (owner syslog, rsyslogd's runtime user), adds /etc/rsyslog.d/99-p8test.conf routing the tag p8test to /srv/p8test-logs/p8test.log, restarts rsyslog, sends one message with logger -t p8test (rsyslog logs its restart to /var/log/syslog)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-directory-outside-the-exception-stays-denied",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "not written\n8\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates /srv/p8test-other (owner syslog), adds /etc/rsyslog.d/98-p8test-other.conf routing the tag p8testother to /srv/p8test-other/p8test.log, restarts rsyslog, sends one message with logger -t p8testother (the kernel logs the AppArmor denial to the journal and /var/log/kern.log; rsyslog logs its restart to /var/log/syslog)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "d06a2206-ffe5-42d0-a056-61ac68c19fdc",
+   "boot_id_at_end": "d06a2206-ffe5-42d0-a056-61ac68c19fdc",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "7981d31048c21469f00d1b2a602d0778960e528d4cc3aaae7148297d8f293c08",
+ "duration_s": 84.3
+}

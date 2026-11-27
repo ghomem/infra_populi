@@ -1,0 +1,142 @@
+{
+ "class": "user_sysmon",
+ "role": "local",
+ "at": "20261127T082902Z",
+ "set_sha256": "81c4a2057dccd48f5b1e9e177201b9732adf4c9ab504df1eaf0195fce76603ce",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "thruk-htpasswd-entry",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/thruk/htpasswd: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "naemon-contact-file",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/naemon/conf.d/contacts/p8testuser.cfg': No such file or directory\nsed: can't read /etc/naemon/conf.d/contacts/p8testuser.cfg: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-thruk-entry-accepts-the-password",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-sysmon/verify.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/Group[naemon]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/User[naemon]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/File[/etc/thruk]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/File[/etc/naemon]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/File[/etc/naemon/conf.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/File[/etc/naemon/conf.d/contacts]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_sysmon[p8testuser]/Htpasswd[p8testuser]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_sysmon[p8testuser]/File[/etc/naemon/conf.d/contacts/p8testuser.cfg]/ensure: defined content as '{sha256}e909aa2847e967771625849b59f9043eb37ef86d8249d145f86c1e129035cb3a'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Group[naemon]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/User[naemon]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/File[/etc/thruk]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/File[/etc/naemon]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/File[/etc/naemon/conf.d]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/File[/etc/naemon/conf.d/contacts]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_sysmon[p8testuser]/Htpasswd[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_sysmon[p8testuser]/File[/etc/naemon/conf.d/contacts/p8testuser.cfg]/ensure: defined content as '{sha256}e909aa2847e967771625849b59f9043eb37ef86d8249d145f86c1e129035cb3a'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.18 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Group[naemon]\nCHANGED User[naemon]\nCHANGED File[/etc/thruk]\nCHANGED File[/etc/naemon]\nCHANGED File[/etc/naemon/conf.d]\nCHANGED File[/etc/naemon/conf.d/contacts]\nCHANGED Htpasswd[p8testuser]\nCHANGED File[/etc/naemon/conf.d/contacts/p8testuser.cfg]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "thruk-htpasswd-entry",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser:$6$p8testsalt\n",
+   "stderr": ""
+  },
+  {
+   "id": "naemon-contact-file",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "naemon naemon 664\ndefine contact {\nuse generic-contact\ncontact_name p8testuser\nalias Puppet 8 Test User\nemail root@localhost\ncontactgroups [\"admins\"]\n}\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-thruk-entry-accepts-the-password",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Password for user p8testuser correct.\nright rc=0\npassword verification failed\nwrong rc=3\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs apache2-utils if absent (htpasswd); runs two read-only verifications of /etc/thruk/htpasswd; the answers go to /run/p8test-sysmon/verify.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "b112b698-e8a3-4de9-87e1-692a86904f3b",
+   "boot_id_at_end": "b112b698-e8a3-4de9-87e1-692a86904f3b",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "74ad4c73190183a21312a03bb6711e3cf24728f5cae19de996b224b640471aca",
+ "duration_s": 70.5
+}

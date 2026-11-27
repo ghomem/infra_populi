@@ -1,0 +1,360 @@
+{
+ "class": "rsyslog_server",
+ "role": "local",
+ "at": "20261127T063225Z",
+ "set_sha256": "9b8fcf35e9bb7754bf4a1a94ce0e11fc22482f0273fdcde995b04ad7d6e5ee94",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "listener-config-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/rsyslog.d/30-listener.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "tls-listener-presents-the-node-certificate",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "self-forward-config-absent",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "absent\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "logrotate-timer-override-active",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "AccuracyUSec=1h\nActiveState=active\nDropInPaths=\nOnCalendar=*-*-* 00:00:00\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "host-logs-rotation-rule",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "retention-script-and-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh': No such file or directory\nbash: /opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "remote-message-lands-in-the-host-tree",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /var/log/hosts/p8testremote/p8test.log: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-self-signed-client-is-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-message-without-a-program-lands-in-unknown",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-servers-own-logs-land-in-its-host-directory",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-rotation-reopens-the-host-log",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-retention-script-compresses-and-deletes",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 96: cd: /var/log/hosts/p8testold: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Package[rsyslog-gnutls]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/ensure: defined content as '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.pem]/ensure: defined content as '{sha256}c4ccab2b7949dcc773e68400194dcaf43dcced6068dc027da46d8eef36feeb68'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.key]/ensure: defined content as '{sha256}9ebaed588557ad124b7fcccc0abe4616c90306eb68dd5eb64bcedf3460c0ab71'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_server/File[/etc/rsyslog.d/30-listener.conf]/ensure: defined content as '{sha256}f1739de1c393ae1b869844efd888ddf199066b05d6d6042b9c8f74ee8ca7ec0e'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 5 events\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_server/File[/etc/systemd/system/logrotate.timer.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_server/File[/etc/systemd/system/logrotate.timer.d/override.conf]/ensure: defined content as '{sha256}f68e8e997a8805e5605ab479c32fc38be1f494c608cc8662ae7bc45402cde7bb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_server/Exec[reload systemd for logrotate timer]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_server/Exec[restart logrotate timer]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_server/File[/etc/logrotate.d/rsyslog-hosts]/ensure: defined content as '{sha256}6105cf2896064e403d40698d544b49fac57a4488e3d87fd7c4648a2cc942f9b9'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_server/File[/opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh]/ensure: defined content as '{sha256}15afb8c528e4c55d2c6d86840d77c6aaeead008d0130504d8058755f7131b537'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_server/Cron[rsyslog_hosts_retention_cleanup]/ensure: created\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "grotate.d/rsyslog-hosts]/ensure: defined content as '{sha256}6105cf2896064e403d40698d544b49fac57a4488e3d87fd7c4648a2cc942f9b9'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_server/File[/opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh]/ensure: defined content as '{sha256}15afb8c528e4c55d2c6d86840d77c6aaeead008d0130504d8058755f7131b537'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_server/Cron[rsyslog_hosts_retention_cleanup]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 10.57 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/opt/puppet-infrastructure]\nCHANGED File[/opt/puppet-infrastructure/bin]\nCHANGED File[/opt/puppet-infrastructure/etc]\nCHANGED File[/opt/puppet-infrastructure/backup]\nCHANGED File[/opt/puppet-infrastructure/pkgsdir]\nCHANGED File[/etc/default/locale]\nCHANGED File[/opt/puppet-infrastructure/bin/mypython]\nCHANGED Package[rsyslog-gnutls]\nCHANGED File[/etc/rsyslog.d/tls]\nCHANGED File[/etc/rsyslog.d/tls/ca.pem]\nCHANGED File[/etc/rsyslog.d/tls/puppet8node.pem]\nCHANGED File[/etc/rsyslog.d/tls/puppet8node.key]\nCHANGED File[/etc/rsyslog.d/30-listener.conf]\nCHANGED Service[rsyslog]\nCHANGED File[/etc/systemd/system/logrotate.timer.d]\nCHANGED File[/etc/systemd/system/logrotate.timer.d/override.conf]\nCHANGED Exec[reload systemd for logrotate timer]\nCHANGED Exec[restart logrotate timer]\nCHANGED File[/etc/logrotate.d/rsyslog-hosts]\nCHANGED File[/opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh]\nCHANGED Cron[rsyslog_hosts_retention_cleanup]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.12 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.49 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.12 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.49 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "listener-config-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "DefaultNetstreamDriverCertFile=\"/etc/rsyslog.d/tls/puppet8node.pem\"\nDefaultNetstreamDriverKeyFile=\"/etc/rsyslog.d/tls/puppet8node.key\"\nport=\"6514\"\nmaxSessions=\"2000\"\nnotifyOnConnectionClose=\"off\"\nconstant(value=\"/var/log/hosts/\")\nconstant(value=\"/var/log/hosts/\")\n",
+   "stderr": ""
+  },
+  {
+   "id": "tls-listener-presents-the-node-certificate",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Verify return code: 0 (ok)\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the name: the same handshake verified for p8test-wrong.invalid must fail, so the pass above is the certificate's name and chain, not a tool that always says ok",
+    "rc": 0,
+    "passed": false,
+    "stdout": "Verify return code: 62 (hostname mismatch)\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "self-forward-config-absent",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "absent\n",
+   "stderr": ""
+  },
+  {
+   "id": "logrotate-timer-override-active",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "AccuracyUSec=1min\nActiveState=active\nDropInPaths=/etc/systemd/system/logrotate.timer.d/override.conf\nOnCalendar=*-*-* 00:00:00\n",
+   "stderr": ""
+  },
+  {
+   "id": "host-logs-rotation-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/var/log/hosts/*/*.log /var/log/hosts/*/.log {\ndaily\nrotate -1\nnocompress\ndateext\ndateformat -%Y%m%d\n",
+   "stderr": ""
+  },
+  {
+   "id": "retention-script-and-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\nROOT_DIR=\"/var/log/hosts\"\nACTIVE_DAYS=7\nRETENTION_DAYS=7\n17 3 * * * /opt/puppet-infrastructure/bin/rsyslog-hosts-retention.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "remote-message-lands-in-the-host-tree",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "sends one RFC3164 line (host p8testremote, tag p8test) to 127.0.0.1:6514 over TLS with the node's own Puppet certificate as the client certificate; rsyslogd creates /var/log/hosts/p8testremote/p8test.log and, through the stock /etc/rsyslog.d/50-default.conf (the listener's rules do not stop the message), appends the same line to /var/log/syslog",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-self-signed-client-is-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n0\n2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates a throwaway RSA key and self-signed certificate (CN p8test-selfsigned) in /run/p8test-rsyslog; sends one RFC3164 line (host p8testremote, tag p8test) to 127.0.0.1:6514 over TLS with it; rsyslogd logs the refused session to syslog (the journal, /var/log/syslog, and through the listener's own rules the node's /var/log/hosts/<node>/rsyslogd.log)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-message-without-a-program-lands-in-unknown",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "sends one RFC3164 line with an empty tag (host p8testremote) to 127.0.0.1:6514 over TLS with the node's own certificate; rsyslogd creates /var/log/hosts/p8testremote/unknown.log and appends to /var/log/syslog",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-servers-own-logs-land-in-its-host-directory",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "logs one message with logger -t p8testlocal; rsyslogd creates /var/log/hosts/<hostname>/p8testlocal.log and appends to /var/log/syslog and the journal",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-rotation-reopens-the-host-log",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs `logrotate -f /etc/logrotate.d/rsyslog-hosts` once (it renames the per-host logs, HUPs rsyslog and updates logrotate's state file /var/lib/logrotate/status); sends one more RFC3164 line over TLS with the node's own certificate; rsyslogd creates a new /var/log/hosts/p8testremote/p8test.log and appends to /var/log/syslog",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-retention-script-compresses-and-deletes",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "newer.log-20200102.gz p8test.log-NEW p8test.log-OLD.gz \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates /var/log/hosts/p8testold with p8test.log-<10 days ago> and p8test.log-<2 days ago> (clear text) and older.log-20200101.gz (mtime 10 days ago) and newer.log-20200102.gz (mtime 2 days ago); runs the retention script once as root (it gzips, touches and deletes in /var/log/hosts)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "fe5400c8-0959-47f8-8f2d-5088a257f1b4",
+   "boot_id_at_end": "fe5400c8-0959-47f8-8f2d-5088a257f1b4",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "8c445693a4cf3c2d364d62297c871283f96bf2f2206029780ff5465a8387921a",
+ "duration_s": 142.6
+}

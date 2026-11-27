@@ -1,0 +1,326 @@
+{
+ "class": "backup_rsnapshot",
+ "role": "local",
+ "at": "20261126T153631Z",
+ "set_sha256": "633951304c98269e7ad14802b63b1b4371fa84fb607b98471aae553970414336",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "conf-file-mode",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "conf-rendered-values",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "conf-syntax",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "bash: line 96: /usr/bin/rsnapshot: No such file or directory\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "daily-plan",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "bash: line 96: /usr/bin/rsnapshot: No such file or directory\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "cron-daily-2300",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "no crontab for root\n",
+   "ok": true
+  },
+  {
+   "id": "daily-backup-executes",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "no snapshot of /etc/hostname under daily.0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "daily-retention-keeps-ndays",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "ls: cannot access '/opt/puppet-infrastructure/backup': No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/Package[rsnapshot]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/File[/etc/rsnapshot.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/File[/opt/puppet-infrastructure/bin/rdiff.sh]/ensure: defined content as '{sha256}b45b5e661456553d11699630d7b681f1081e225d345a118fb476ec731d5272d3'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Backup_rsnapshot[backup_rsnapshot]/File[/etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf]/ensure: defined content as '{sha256}bd176f1aad7bf4ab76b82dc614d3942ba59bd1fe654afa85f5a95ad7b65f8781'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Backup_rsnapshot[backup_rsnapshot]/Cron[cron_snapshot_backup_rsnapshot_backup]/ensure: created\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "ructure/etc]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/Package[rsnapshot]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/File[/etc/rsnapshot.d]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/File[/opt/puppet-infrastructure/bin/rdiff.sh]/ensure: defined content as '{sha256}b45b5e661456553d11699630d7b681f1081e225d345a118fb476ec731d5272d3'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Backup_rsnapshot[backup_rsnapshot]/File[/etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf]/ensure: defined content as '{sha256}bd176f1aad7bf4ab76b82dc614d3942ba59bd1fe654afa85f5a95ad7b65f8781'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Backup_rsnapshot[backup_rsnapshot]/Cron[cron_snapshot_backup_rsnapshot_backup]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 16.60 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.07 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.53 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.07 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.53 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "conf-file-mode",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "644 root root\n",
+   "stderr": ""
+  },
+  {
+   "id": "conf-rendered-values",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "snapshot_root /opt/puppet-infrastructure/backup\nretain daily 7\nbackup /etc ./etc\nlockfile /tmp/rsnapshot_backup_rsnapshot.pid\n",
+   "stderr": ""
+  },
+  {
+   "id": "conf-syntax",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Syntax OK\n",
+   "stderr": ""
+  },
+  {
+   "id": "daily-plan",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "echo 1888 > /tmp/rsnapshot_backup_rsnapshot.pid \nmkdir -m 0755 -p /opt/puppet-infrastructure/backup/daily.0/ \n/usr/bin/rsync -a --delete --numeric-ids --relative --delete-excluded /etc/ /opt/puppet-infrastructure/backup/daily.0//etc \ntouch /opt/puppet-infrastructure/backup/daily.0/ \n",
+   "stderr": ""
+  },
+  {
+   "id": "cron-daily-2300",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "# HEADER: This file was autogenerated at 2026-11-26 15:40:19 +0000 by puppet.\n# HEADER: While it can still be managed manually, it is definitely not recommended.\n# HEADER: Note particularly that the comments starting with 'Puppet Name' should\n# HEADER: not be deleted, as doing so could cause duplicate cron jobs.\n# Puppet Name: cron_snapshot_backup_rsnapshot_backup\n0 23 * * * /usr/bin/rsnapshot -c /etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf daily\n",
+   "stderr": ""
+  },
+  {
+   "id": "daily-backup-executes",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "daily.0 holds /etc (/opt/puppet-infrastructure/backup/daily.0/etc/etc/hostname)\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs `rsnapshot daily` once: creates {{LOCALDIR}}/backup/daily.0 (a copy of /etc), takes and releases the lockfile /tmp/rsnapshot_backup_rsnapshot.pid, logs through logger to syslog",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "daily-retention-keeps-ndays",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "daily.0 daily.1 daily.2 daily.3 daily.4 daily.5 daily.6 \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs `rsnapshot daily` eight more times (the snapshots rotate under {{LOCALDIR}}/backup)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "61c95920-220c-45f7-bdee-658a1cd65e74",
+   "boot_id_at_end": "61c95920-220c-45f7-bdee-658a1cd65e74",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "1baaa8248f57c2297f0925e2712c6caef96435b6097ce7dd7fc9cb496cb51cb7",
+ "variants": {
+  "other": {
+   "name": "other",
+   "node": "ubuntu",
+   "params": "other",
+   "clean": [
+    {
+     "id": "other-parameters-render-the-config-and-the-cron-entry",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "",
+     "stderr": "grep: /etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf: No such file or directory\nno crontab for nobody\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/Package[rsnapshot]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/File[/etc/rsnapshot.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/File[/opt/puppet-infrastructure/bin/rdiff.sh]/ensure: defined content as '{sha256}b45b5e661456553d11699630d7b681f1081e225d345a118fb476ec731d5272d3'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Backup_rsnapshot[backup_rsnapshot]/File[/etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf]/ensure: defined content as '{sha256}a810f80a40abc41b10b22570908be3f9c01183de31ac80853c38f58eff33f992'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Backup_rsnapshot[backup_rsnapshot]/Cron[cron_snapshot_backup_rsnapshot_backup]/ensure: created\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "ructure/etc]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/Package[rsnapshot]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/File[/etc/rsnapshot.d]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/File[/opt/puppet-infrastructure/bin/rdiff.sh]/ensure: defined content as '{sha256}b45b5e661456553d11699630d7b681f1081e225d345a118fb476ec731d5272d3'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Backup_rsnapshot[backup_rsnapshot]/File[/etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf]/ensure: defined content as '{sha256}a810f80a40abc41b10b22570908be3f9c01183de31ac80853c38f58eff33f992'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Backup_rsnapshot[backup_rsnapshot]/Cron[cron_snapshot_backup_rsnapshot_backup]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 16.14 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.07 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.45 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.07 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.45 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "other-parameters-render-the-config-and-the-cron-entry",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "snapshot_root /var/tmp/p8test-backups\nretain daily 3\nbackup /etc/default ./p8test-default\n17 4 * * * /usr/bin/rsnapshot -c /etc/rsnapshot.d/rsnapshot-backup_rsnapshot.conf daily\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "57f18245-0374-4c47-bdf2-446e36508168",
+     "boot_id_at_end": "57f18245-0374-4c47-bdf2-446e36508168",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "c844c3730fa18e98de7d94b61235663ec68883a4211e65385f5fef24aa13246f"
+  }
+ },
+ "duration_s": 335.4
+}

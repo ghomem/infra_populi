@@ -1,0 +1,239 @@
+{
+ "class": "backup_rsnapshot_pre",
+ "role": "local",
+ "at": "20261126T154207Z",
+ "set_sha256": "8c3b5ff8f6ecdf31140f4f11b52b6a82f1115b7c057020f2c1b41873a10be9d7",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "rsnapshot-installed-and-runs",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "dpkg-query: no packages found matching rsnapshot\n",
+   "ok": true
+  },
+  {
+   "id": "config-directory",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/rsnapshot.d': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "rdiff-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/rdiff.sh': No such file or directory\nsha256sum: /opt/puppet-infrastructure/bin/rdiff.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "two-snapshots-are-planted",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 96: cd: /run/p8test-rdiff/snap: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "rdiff-reports-what-changed-between-snapshots",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "rc \n",
+   "stderr": "cat: /run/p8test-rdiff/rc: No such file or directory\ngrep: /run/p8test-rdiff/report.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "rdiff-pages-the-pairs-in-interactive-mode",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "rc \n",
+   "stderr": "cat: /run/p8test-rdiff/interactive.rc: No such file or directory\ngrep: /run/p8test-rdiff/interactive.txt: No such file or directory\ntail: cannot open '/run/p8test-rdiff/interactive.txt' for reading: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-config-in-the-directory-drives-rsnapshot",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cmp: /var/tmp/p8test-pre-snap/daily.0/localhost/etc/hostname: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/Package[rsnapshot]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/File[/etc/rsnapshot.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/File[/opt/puppet-infrastructure/bin/rdiff.sh]/ensure: defined content as '{sha256}b45b5e661456553d11699630d7b681f1081e225d345a118fb476ec731d5272d3'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "piled catalog for puppet8node in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/Package[rsnapshot]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/File[/etc/rsnapshot.d]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Backup_rsnapshot_pre/File[/opt/puppet-infrastructure/bin/rdiff.sh]/ensure: defined content as '{sha256}b45b5e661456553d11699630d7b681f1081e225d345a118fb476ec731d5272d3'\u001b[0m\n\u001b[mNotice: Applied catalog in 17.17 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.48 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.48 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "rsnapshot-installed-and-runs",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rsnapshot install ok installed\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "config-directory",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "directory root root 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "rdiff-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\nb45b5e661456553d11699630d7b681f1081e225d345a118fb476ec731d5272d3\n",
+   "stderr": ""
+  },
+  {
+   "id": "two-snapshots-are-planted",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "./daily.0/added.txt ./daily.0/changed.txt ./daily.0/same.txt ./daily.1/changed.txt ./daily.1/same.txt ./daily.2/changed.txt ./daily.2/removed.txt ./daily.2/same.txt \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates /run/p8test-rdiff/snap/daily.2 (same.txt, changed.txt \"oldest\", removed.txt), daily.1 (same.txt, changed.txt \"old\") and daily.0 (same.txt, changed.txt \"new\", added.txt)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "rdiff-reports-what-changed-between-snapshots",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0\n-------------------- daily.1 -> daily.0 --------------------\nOnly in ./daily.0: added.txt\nFiles ./daily.1/changed.txt ./daily.0/changed.txt differ\n-------------------- daily.2 -> daily.1 --------------------\nFiles ./daily.2/changed.txt ./daily.1/changed.txt differ\nOnly in ./daily.2: removed.txt\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs {{LOCALDIR}}/bin/rdiff.sh /run/p8test-rdiff/snap once (it only reads); its report goes to /run/p8test-rdiff/report.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "rdiff-pages-the-pairs-in-interactive-mode",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0\n2\nDone!\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs rdiff.sh /run/p8test-rdiff/snap INTERACTIVE once with three ENTERs on stdin (it only reads); its output goes to /run/p8test-rdiff/interactive.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-config-in-the-directory-drives-rsnapshot",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "the snapshot holds /etc/hostname\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes /etc/rsnapshot.d/rsnapshot-p8testpre.conf (snapshot root /var/tmp/p8test-pre-snap, one backup point /etc/hostname) and runs rsnapshot daily with it once, which creates /var/tmp/p8test-pre-snap/daily.0",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "d7b8bbad-34ec-4f2e-80bf-abfb5c8dda14",
+   "boot_id_at_end": "d7b8bbad-34ec-4f2e-80bf-abfb5c8dda14",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "31397f9fe4bfe1c115eacbb86920534c78d3f21a931594b48b35a994ae4870d0",
+ "duration_s": 94.1
+}

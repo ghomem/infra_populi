@@ -1,0 +1,350 @@
+{
+ "class": "mariadb_server",
+ "role": "local",
+ "at": "20261127T093009Z",
+ "set_sha256": "e08a3ad7d385628c95f79f07dcaca2155294b312aa18ca058ccfacaf4e8dc1e3",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "mariadb-server-installed-and-running",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "dpkg-query: no packages found matching mariadb-server\nbash: line 98: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "server-runs-the-override-options",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "ed25519-plugin-active",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "insecure-transport-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "tls=refused plain=refused\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "root-is-local-only-and-no-anonymous-user",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "server-key-matches-certificate",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Could not open file or uri for loading certificate from /etc/mysql/certificates/server-cert.pem\n4067C8C8BE7B0000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n4067C8C8BE7B0000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/mysql/certificates/server-cert.pem)\nUnable to load certificate\nCould not open file or uri for loading key from /etc/mysql/certificates/server-key.pem\n40E7CE7BBB750000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n40E7CE7BBB750000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/mysql/certificates/server-key.pem)\n",
+   "ok": true
+  },
+  {
+   "id": "certificate-subject-from-hiera",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Could not open file or uri for loading certificate from /etc/mysql/certificates/server-cert.pem\n40D77E687D7A0000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n40D77E687D7A0000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/mysql/certificates/server-cert.pem)\nUnable to load certificate\n",
+   "ok": true
+  },
+  {
+   "id": "certificate-files-owner-and-mode",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/mysql/certificates/ca.pem': No such file or directory\nstat: cannot statx '/etc/mysql/certificates/server-cert.pem': No such file or directory\nstat: cannot statx '/etc/mysql/certificates/server-key.pem': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "log-directory-attributes",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/var/log/mysql': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-users-are-ed25519-and-require-tls",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "the-users-log-in-with-their-grants",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-mariadb/answers.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "another-host-logs-in-over-tls",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-mariadb-peer/answers.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 2,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Client::Install/Package[mysql_client]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Mariadb_server/File[/etc/mysql/certificates/]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Mariadb_server/File[/opt/puppet-infrastructure/bin/deploy_self_signed_certificates.sh]/ensure: defined content as '{sha256}5ca6d71e860dc761cb731241aa2588fdaec4a964e4c5662cf94f1979a62947fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Mariadb_server/Exec[generate the ssl certificates, sign them and deploy them at /etc/mysql/certificates/]/returns: executed successfully\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Config/Exec[datadir-managed_dir-mkdir]/returns: executed successfully\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Config/Exec[datadir-managed_dir-chmod]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Config/File[mysql-config-file]/ensure: defined content as '{sha256}e6aba7b83c1b3b9ad95a7967f5f1b731c2550c10e1df128943dc03580647583d'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Install/Package[mysql-server]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Managed_dirs/File[datadir-managed_dir]/mode: mode changed '0777' to '0700'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Installdb/File[/var/log/mysql]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Installdb/File[/var/log/mysql/error.log]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Service/Service[mysqld]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Service/Exec[wait_for_mysql_socket_to_open]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Root_password/Mysql_user[root@localhost]/password_hash: changed password\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Root_password/File[/root/.my.cnf]/ensure: changed [redacted] to [redacted]\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_user[p8test_mrw@%]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_user[p8test_mro@%]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_grant[p8test_mrw@%/*.*]/privileges: privileges changed ['USAGE'] to ['ALL']\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_grant[p8test_mrw@%/*.*]/options: options changed ['NONE'] to ['GRANT']\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_grant[p8test_mro@%/*.*]/privileges: privileges changed ['USAGE'] to ['SELECT', 'SHOW VIEW']\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Mysql::Server::Providers/Mysql_grant[p8test_mro@%/*.*]/options: options changed ['NONE'] to ['GRANT']\u001b[0m",
+     "CHANGED Notify[Produced configs: {mariadb => {plugin_load_add => auth_ed25519}, mysqld => {ssl => true, ssl-cert => /etc/mysql/certificates//server-cert.pem, ssl-key => /etc/mysql/certificates//server-key.pem, ssl-ca => /etc/mysql/certificates//ca.pem, require_secure_transport => ON, bind-address => 0.0.0.0}}]"
+    ],
+    "errors": [],
+    "tail": "ions: options changed ['NONE'] to ['GRANT']\u001b[0m\n\u001b[mNotice: Applied catalog in 71.86 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/opt/puppet-infrastructure]\nCHANGED File[/opt/puppet-infrastructure/bin]\nCHANGED File[/opt/puppet-infrastructure/etc]\nCHANGED File[/opt/puppet-infrastructure/backup]\nCHANGED File[/opt/puppet-infrastructure/pkgsdir]\nCHANGED File[/etc/default/locale]\nCHANGED File[/opt/puppet-infrastructure/bin/mypython]\nCHANGED Notify[Produced configs: {mariadb => {plugin_load_add => auth_ed25519}, mysqld => {ssl => true, ssl-cert => /etc/mysql/certificates//server-cert.pem, ssl-key => /etc/mysql/certificates//server-key.pem, ssl-ca => /etc/mysql/certificates//ca.pem, require_secure_transport => ON, bind-address => 0.0.0.0}}]\nCHANGED Package[mysql_client]\nCHANGED File[/etc/mysql/certificates/]\nCHANGED File[/opt/puppet-infrastructure/bin/deploy_self_signed_certificates.sh]\nCHANGED Exec[generate the ssl certificates, sign them and deploy them at /etc/mysql/certificates/]\nCHANGED Exec[datadir-managed_dir-mkdir]\nCHANGED Exec[datadir-managed_dir-chmod]\nCHANGED File[mysql-config-file]\nCHANGED Package[mysql-server]\nCHANGED File[datadir-managed_dir]\nCHANGED File[/var/log/mysql]\nCHANGED File[/var/log/mysql/error.log]\nCHANGED Service[mysqld]\nCHANGED Exec[wait_for_mysql_socket_to_open]\nCHANGED Mysql_user[root@localhost]\nCHANGED File[/root/.my.cnf]\nCHANGED Mysql_user[p8test_mrw@%]\nCHANGED Mysql_user[p8test_mro@%]\nCHANGED Mysql_grant[p8test_mrw@%/*.*]\nCHANGED Mysql_grant[p8test_mro@%/*.*]\n"
+   },
+   {
+    "rc": 2,
+    "events": [
+     "CHANGED Notify[Produced configs: {mariadb => {plugin_load_add => auth_ed25519}, mysqld => {ssl => true, ssl-cert => /etc/mysql/certificates//server-cert.pem, ssl-key => /etc/mysql/certificates//server-key.pem, ssl-ca => /etc/mysql/certificates//ca.pem, require_secure_transport => ON, bind-address => 0.0.0.0}}]"
+    ],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.17 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.80 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Notify[Produced configs: {mariadb => {plugin_load_add => auth_ed25519}, mysqld => {ssl => true, ssl-cert => /etc/mysql/certificates//server-cert.pem, ssl-key => /etc/mysql/certificates//server-key.pem, ssl-ca => /etc/mysql/certificates//ca.pem, require_secure_transport => ON, bind-address => 0.0.0.0}}]\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.17 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.80 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Notify[Produced configs: {mariadb => {plugin_load_add => auth_ed25519}, mysqld => {ssl => true, ssl-cert => /etc/mysql/certificates//server-cert.pem, ssl-key => /etc/mysql/certificates//server-key.pem, ssl-ca => /etc/mysql/certificates//ca.pem, require_secure_transport => ON, bind-address => 0.0.0.0}}]\n"
+ },
+ "applied": [
+  {
+   "id": "mariadb-server-installed-and-running",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "mariadb-server install ok installed\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "server-runs-the-override-options",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/etc/mysql/certificates//ca.pem\t/etc/mysql/certificates//server-cert.pem\t/etc/mysql/certificates//server-key.pem\t1\t0.0.0.0\n",
+   "stderr": ""
+  },
+  {
+   "id": "ed25519-plugin-active",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ACTIVE\n",
+   "stderr": ""
+  },
+  {
+   "id": "insecure-transport-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "tls=connected plain=refused\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "only the transport of the first login (--skip-ssl instead of --ssl): it must be refused too, so \"tls=connected\" must not come back",
+    "rc": 0,
+    "passed": false,
+    "stdout": "tls=refused plain=refused\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "root-is-local-only-and-no-anonymous-user",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root@localhost\n",
+   "stderr": ""
+  },
+  {
+   "id": "server-key-matches-certificate",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "key-matches-certificate\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "only the certificate compared (the generated ca.pem instead of server-cert.pem): the CA has its own key, so the public keys must differ",
+    "rc": 1,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "certificate-subject-from-hiera",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "subject=C = PT, ST = Lisbon, L = Lisbon, O = My Company, OU = IT, CN = example.com, emailAddress = user@example.com\n",
+   "stderr": ""
+  },
+  {
+   "id": "certificate-files-owner-and-mode",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/etc/mysql/certificates/ca.pem root root 644\n/etc/mysql/certificates/server-cert.pem root root 644\n/etc/mysql/certificates/server-key.pem root root 644\n",
+   "stderr": ""
+  },
+  {
+   "id": "log-directory-attributes",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "directory mysql adm 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-users-are-ed25519-and-require-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test_mro\t%\ted25519\t1\np8test_mrw\t%\ted25519\t1\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-users-log-in-with-their-grants",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test_mrw@%\np8test_mro@%\nwrong password: ERROR 1045\nro create: ERROR 1044\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "six TCP logins to 127.0.0.1:3306; as p8test_mrw creates and drops the database p8test_mrwdb, as p8test_mro one refused CREATE DATABASE; the server records them in its data directory (/var/lib/mysql: system tables, logs); the answers go to /run/p8test-mariadb/answers.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "another-host-logs-in-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test_mrw@%\tpuppet8node\nTLS\nERROR 1045\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "installs mariadb-client-core on the peer if absent; makes three TCP logins from the peer to the class node's port 3306; the answers go to /run/p8test-mariadb-peer/answers.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "65a30c09-6dbe-4f1c-989f-49c77eb93db4",
+   "boot_id_at_end": "65a30c09-6dbe-4f1c-989f-49c77eb93db4",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "c78f4331-3ed6-4fa5-b0df-f456c167d441",
+   "boot_id_at_end": "c78f4331-3ed6-4fa5-b0df-f456c167d441",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "cc5ac8a414a569d14a5c12702c1409f43bbbd6fc40205f446ce0805c6f5c6a20",
+ "duration_s": 230.5
+}

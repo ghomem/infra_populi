@@ -1,0 +1,409 @@
+{
+ "class": "sync",
+ "role": "local",
+ "at": "20261127T071059Z",
+ "set_sha256": "cf3a49991c9c4a9e215e363476457005c9bed57617335ee8f08398b68b9b190c",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "script-installed-root-0755",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/sync-sync.sh': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "script-carries-the-parameters",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /opt/puppet-infrastructure/bin/sync-sync.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "bandwidth-limit-converted",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /opt/puppet-infrastructure/bin/sync-sync.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "script-is-valid-bash",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: /opt/puppet-infrastructure/bin/sync-sync.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "daily-cron-for-the-local-user",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "root-key-and-the-remote-host-name",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-peer-serves-the-remote-dir",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "\n0\n0\n",
+   "stderr": "bash: line 97: cd: /srv/p8test: No such file or directory\nstat: cannot statx '/home/p8testuser/.ssh/authorized_keys': No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-script-mirrors-the-remote-dir",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "rc \n\n",
+   "stderr": "cat: /run/p8test-sync/run1.rc: No such file or directory\nls: cannot access '/var/tmp/p8test-sync': No such file or directory\nbash: line 100: cd: /var/tmp/p8test-sync/p8test.example.invalid-p8test: No such file or directory\nbash: line 100: cd: /var/tmp/p8test-sync/p8test2.example.invalid-p8test: No such file or directory\nawk: fatal: cannot open file `/run/p8test-sync/run1.seconds' for reading: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-file-is-removed-on-the-remote",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 97: cd: /srv/p8test: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-run-removes-it-locally-too",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "rc \n",
+   "stderr": "cat: /run/p8test-sync/run2.rc: No such file or directory\nbash: line 98: cd: /var/tmp/p8test-sync/p8test.example.invalid-p8test: No such file or directory\nbash: line 98: cd: /var/tmp/p8test-sync/p8test2.example.invalid-p8test: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Sync[sync]/File[/opt/puppet-infrastructure/bin/sync-sync.sh]/ensure: defined content as '{sha256}524ad813a12f51c579534098454104f1d9385afa19d13ce77d6de934b8a95016'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Sync[sync]/Cron[cron_sync_sync]/ensure: created\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "bin]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Sync[sync]/File[/opt/puppet-infrastructure/bin/sync-sync.sh]/ensure: defined content as '{sha256}524ad813a12f51c579534098454104f1d9385afa19d13ce77d6de934b8a95016'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Sync[sync]/Cron[cron_sync_sync]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.09 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/opt/puppet-infrastructure]\nCHANGED File[/opt/puppet-infrastructure/bin]\nCHANGED File[/opt/puppet-infrastructure/etc]\nCHANGED File[/opt/puppet-infrastructure/backup]\nCHANGED File[/opt/puppet-infrastructure/pkgsdir]\nCHANGED File[/etc/default/locale]\nCHANGED File[/opt/puppet-infrastructure/bin/mypython]\nCHANGED File[/opt/puppet-infrastructure/bin/sync-sync.sh]\nCHANGED Cron[cron_sync_sync]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "script-installed-root-0755",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "script-carries-the-parameters",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "HOSTS=\"p8test.example.invalid:22 p8test2.example.invalid:2222\"\nREMOTEUSER=\"p8testuser\"\nLOCALDIR=\"/var/tmp/p8test-sync\"\nREMOTEDIR=\"/srv/p8test\"\nSUFFIX=\"-p8test\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "bandwidth-limit-converted",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "BWLIMIT_OPT=\" --bwlimit=1.19m\"\nRSYNCOPTS=\"-av --partial --delete${BWLIMIT_OPT}\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "script-is-valid-bash",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "parses\n",
+   "stderr": ""
+  },
+  {
+   "id": "daily-cron-for-the-local-user",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "# Puppet Name: cron_sync_sync\n17 3 * * * /opt/puppet-infrastructure/bin/sync-sync.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "root-key-and-the-remote-host-name",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test.example.invalid pinned-to-the-peer\np8test2.example.invalid pinned-to-the-peer-alias\nkey-ready\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "on the node: creates /root/.ssh/id_ed25519 if root has none, copies its public half to /run/p8test-sync/root.pub (handed to the peer), and appends \"$PEER_ADDR p8test.example.invalid\" and \"<the peer's address + 100> p8test2.example.invalid\" to /etc/hosts",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-peer-serves-the-remote-dir",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "./a.txt ./big.bin ./gone.txt ./sub/b.txt \np8testuser 600\nsshd on 2222\n1\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: creates the account p8testuser with the node root's public key as its only authorized key, and /srv/p8test (owned by it) with a.txt, sub/b.txt, gone.txt and big.bin (6 MiB from /dev/urandom); adds its +100 alias address to enp0s8, inserts `-I INPUT -d <alias> -p tcp --dport 22 -m comment --comment p8test-sync-port -j REJECT`, and starts an extra sshd on port 2222 (/usr/sbin/sshd -p 2222, /run/sshd created if absent)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-script-mirrors-the-remote-dir",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0\np8test.example.invalid-p8test p8test2.example.invalid-p8test \np8test: ./a.txt ./big.bin ./gone.txt ./sub/b.txt p8test sync a|p8test sync b|6291456\np8test2: ./a.txt ./big.bin ./gone.txt ./sub/b.txt p8test sync a|p8test sync b|6291456\nlimited\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "on the node: runs {{LOCALDIR}}/bin/sync-sync.sh once as root (rsync over ssh to the peer), which creates /var/tmp/p8test-sync/p8test.example.invalid-p8test and p8test2.example.invalid-p8test; its exit status and duration go to /run/p8test-sync",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-file-is-removed-on-the-remote",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "./a.txt ./big.bin ./sub/b.txt \n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer, removes /srv/p8test/gone.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-run-removes-it-locally-too",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0\np8test: ./a.txt ./big.bin ./sub/b.txt \np8test2: ./a.txt ./big.bin ./sub/b.txt \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "on the node, runs {{LOCALDIR}}/bin/sync-sync.sh a second time as root; its exit status goes to /run/p8test-sync/run2.rc",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "e56169ad-ad33-4441-8f24-befeb0556ac4",
+   "boot_id_at_end": "e56169ad-ad33-4441-8f24-befeb0556ac4",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "942a638f-a679-4aff-9d25-addad56e1d4f",
+   "boot_id_at_end": "942a638f-a679-4aff-9d25-addad56e1d4f",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "58a9674ada23a87eb666006ec6efafe073adbb2f41ee262e053c00242c0af3a0",
+ "variants": {
+  "other": {
+   "name": "other",
+   "node": "ubuntu",
+   "params": "other",
+   "clean": [
+    {
+     "id": "no-limit-another-port-and-local-user",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "",
+     "stderr": "grep: /opt/puppet-infrastructure/bin/sync-sync.sh: No such file or directory\nno crontab for nobody\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Sync[sync]/File[/opt/puppet-infrastructure/bin/sync-sync.sh]/ensure: defined content as '{sha256}62a653c03e1e7238d5939ffc34320074c6dd330037a836e5f22292117781356e'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Sync[sync]/Cron[cron_sync_sync]/ensure: created\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "bin]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Sync[sync]/File[/opt/puppet-infrastructure/bin/sync-sync.sh]/ensure: defined content as '{sha256}62a653c03e1e7238d5939ffc34320074c6dd330037a836e5f22292117781356e'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Sync[sync]/Cron[cron_sync_sync]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.11 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/opt/puppet-infrastructure]\nCHANGED File[/opt/puppet-infrastructure/bin]\nCHANGED File[/opt/puppet-infrastructure/etc]\nCHANGED File[/opt/puppet-infrastructure/backup]\nCHANGED File[/opt/puppet-infrastructure/pkgsdir]\nCHANGED File[/etc/default/locale]\nCHANGED File[/opt/puppet-infrastructure/bin/mypython]\nCHANGED File[/opt/puppet-infrastructure/bin/sync-sync.sh]\nCHANGED Cron[cron_sync_sync]\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.06 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.05 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.06 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.05 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "no-limit-another-port-and-local-user",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "HOSTS=\"p8test.example.invalid:2222\"\nBWLIMIT_OPT=\"\"\n17 3 * * * /opt/puppet-infrastructure/bin/sync-sync.sh\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "2d76e8bc-3717-4220-a4d3-08d7bdc03916",
+     "boot_id_at_end": "2d76e8bc-3717-4220-a4d3-08d7bdc03916",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "p8lab-ubuntu2",
+    "PEER_ADDR": "192.168.56.24",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "281c9660c8468733982dd09b561f0d5ca90bae03b336d417d514b919071b0ce8"
+  }
+ },
+ "duration_s": 185.4
+}

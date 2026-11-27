@@ -1,0 +1,526 @@
+{
+ "class": "user_base",
+ "role": "local",
+ "at": "20261127T075530Z",
+ "set_sha256": "70e33a32dfc158b2d0d8b155ac9d6a7c1afd1eea6d0e73e9762ed8386fe309fd",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "user-and-own-primary-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "|||\nprimary group: \n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "no-supplementary-groups",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "id: 'p8testuser': no such user\n",
+   "ok": true
+  },
+  {
+   "id": "home-created-and-owned",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/home/p8testuser': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "password-hash-set",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-pushed-key-is-the-only-authorized-key",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /home/p8testuser/.ssh/authorized_keys: No such file or directory\nssh-keygen: /home/p8testuser/.ssh/authorized_keys: No such file or directory\nstat: cannot statx '/home/p8testuser/.ssh': No such file or directory\nstat: cannot statx '/home/p8testuser/.ssh/authorized_keys': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-password-logs-in-and-a-wrong-one-is-refused",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-user/pw.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "an-out-of-band-key-is-planted",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /home/p8testuser/.ssh/authorized_keys: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-purges-the-out-of-band-key",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /home/p8testuser/.ssh/authorized_keys: No such file or directory\nssh-keygen: /home/p8testuser/.ssh/authorized_keys: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Group[p8testuser]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Group[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.30 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Group[p8testuser]\nCHANGED User[p8testuser]\nCHANGED Ssh_authorized_key[p8testuser@puppet]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.05 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.05 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "user-and-own-primary-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser|P8 Test User|/home/p8testuser|/bin/bash\nprimary group: p8testuser\n",
+   "stderr": ""
+  },
+  {
+   "id": "no-supplementary-groups",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser\n",
+   "stderr": ""
+  },
+  {
+   "id": "home-created-and-owned",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser p8testuser directory\n",
+   "stderr": ""
+  },
+  {
+   "id": "password-hash-set",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "$6$p8testsalt\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-pushed-key-is-the-only-authorized-key",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n3072 SHA256:c3nO5XoVs1uB2+1IZ7smzFyWjvF8SXWkfav4BUMd4/E p8testuser@puppet (RSA)\np8testuser 700\np8testuser 600\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-password-logs-in-and-a-wrong-one-is-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "logged-in-as-p8testuser\nAuthentication failure\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "two su attempts as the account nobody (one with the test password, one with a wrong one); the outcomes go to /run/p8test-user/pw.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "an-out-of-band-key-is-planted",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "2\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "generates a throwaway ed25519 key pair under /run/p8test-user and appends its public key (comment p8test-out-of-band) to /home/p8testuser/.ssh/authorized_keys",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-purges-the-out-of-band-key",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n0\nSHA256:c3nO5XoVs1uB2+1IZ7smzFyWjvF8SXWkfav4BUMd4/E p8testuser@puppet\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the file (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "29e76c05-51c3-49d7-8528-95d9480de1da",
+   "boot_id_at_end": "29e76c05-51c3-49d7-8528-95d9480de1da",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "a16157955229c89fd7bdeaf1db7bf8e357946fed196a81d69b0e2ab0028031ad",
+ "node_agent": {
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8test-out-of-band]/ensure: removed\u001b[0m"
+  ],
+  "errors": [],
+  "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8test-out-of-band]/ensure: removed\u001b[0m\n\u001b[mNotice: Applied catalog in 0.08 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Ssh_authorized_key[p8test-out-of-band]\n"
+ },
+ "variants": {
+  "locked": {
+   "name": "locked",
+   "node": "ubuntu",
+   "params": "locked",
+   "clean": [
+    {
+     "id": "a-locked-hash-with-other-home-shell-and-groups",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "",
+     "stderr": "id: 'p8testuser': no such user\nstat: cannot statx '/srv/p8testhome': No such file or directory\npasswd: user 'p8testuser' does not exist\nawk: fatal: cannot open file `/srv/p8testhome/.ssh/authorized_keys' for reading: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Group[p8testuser]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/File[/srv/p8testhome]/mode: mode changed '0750' to '0700'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User is locked so sshkey will be empty\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Group[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/File[/srv/p8testhome]/mode: mode changed '0750' to '0700'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.46 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Group[p8testuser]\nCHANGED User[p8testuser]\nCHANGED File[/srv/p8testhome]\nCHANGED Ssh_authorized_key[p8testuser@puppet]\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User is locked so sshkey will be empty\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User is locked so sshkey will be empty\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "a-locked-hash-with-other-home-shell-and-groups",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "/srv/p8testhome:/bin/sh\nusers\n700\nL\nuserlocked\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "1f8e0ede-9297-437a-bcd1-2227fcd174a8",
+     "boot_id_at_end": "1f8e0ede-9297-437a-bcd1-2227fcd174a8",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "c471c3c2077d0304c6f254dd3ec9d5a8a43a5ba479ede8b2efa64ece17f59719"
+  },
+  "emptykey": {
+   "name": "emptykey",
+   "node": "ubuntu",
+   "params": "emptykey",
+   "clean": [
+    {
+     "id": "an-empty-key-pushes-an-unusable-key",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "",
+     "stderr": "awk: fatal: cannot open file `/home/p8testuser/.ssh/authorized_keys' for reading: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Group[p8testuser]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has no key so sshkey will be empty\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.05 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Group[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.35 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Group[p8testuser]\nCHANGED User[p8testuser]\nCHANGED Ssh_authorized_key[p8testuser@puppet]\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has no key so sshkey will be empty\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.02 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has no key so sshkey will be empty\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.03 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.02 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "an-empty-key-pushes-an-unusable-key",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "emptykey\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "e079adb1-a97a-4ca4-bc34-f551e763aae5",
+     "boot_id_at_end": "e079adb1-a97a-4ca4-bc34-f551e763aae5",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "14596c3b0e37cb97dcd44efcd4ca1f333e6584826467948bb97513ee3a0ae278"
+  },
+  "ignorekey": {
+   "name": "ignorekey",
+   "node": "ubuntu",
+   "params": "ignorekey",
+   "clean": [
+    {
+     "id": "with-ignorekey-no-key-is-pushed",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "0\n",
+     "stderr": "id: 'p8testuser': no such user\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Group[p8testuser]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/Group[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.30 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Group[p8testuser]\nCHANGED User[p8testuser]\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::fqdn_rand_string instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/user_base.pp\", 46]:\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Scope(Puppet_infrastructure::User_base[p8testuser]): user P8 Test User has a key and is not locked so sshkey will be pushed\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "with-ignorekey-no-key-is-pushed",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "p8testuser\n0\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "36e4e29a-ab68-4fe8-b40f-2eddcd81c066",
+     "boot_id_at_end": "36e4e29a-ab68-4fe8-b40f-2eddcd81c066",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "0d338d86ab0d08916e0ef1a821443b5e9c7cab1bf0c59619f98021899b348c72"
+  }
+ },
+ "duration_s": 281.5
+}

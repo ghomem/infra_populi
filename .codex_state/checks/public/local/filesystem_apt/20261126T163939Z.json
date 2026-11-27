@@ -1,0 +1,651 @@
+{
+ "class": "filesystem_apt",
+ "role": "local",
+ "at": "20261126T161928Z",
+ "set_sha256": "f1d282bbe67f6b44fc4deaf61912f366f13f016178ef56e86ca477a8526db2c5",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "helper-scripts-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 96: cd: /opt/puppet-infrastructure/bin: No such file or directory\nstat: cannot statx 'apt-update-pkg.sh': No such file or directory\nstat: cannot statx 'apt-update-surface.sh': No such file or directory\nstat: cannot statx 'apt-update-kernel.sh': No such file or directory\nstat: cannot statx 'apt-update-dist.sh': No such file or directory\nstat: cannot statx 'get-relevant-updates-list': No such file or directory\nstat: cannot statx 'apt-check-updates.sh': No such file or directory\nstat: cannot statx 'apt-update-relevant.sh': No such file or directory\nstat: cannot statx '/var/lib/apt-check-updates': No such file or directory\nsha256sum: apt-update-pkg.sh: No such file or directory\nsha256sum: apt-update-kernel.sh: No such file or directory\nsha256sum: apt-update-dist.sh: No such file or directory\nsha256sum: get-relevant-updates-list: No such file or directory\ndpkg-query: no packages found matching openscap-scanner\n",
+   "ok": true
+  },
+  {
+   "id": "surface-list-and-daily-job",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /opt/puppet-infrastructure/bin/apt-update-surface.sh: No such file or directory\nno crontab for root\n",
+   "ok": true
+  },
+  {
+   "id": "the-wrapper-never-installs-a-missing-package",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /run/p8test-apt/missing.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-wrapper-upgrades-an-installed-package-with-an-update",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "upgraded to the candidate\n",
+   "stderr": "bash: line 96: /run/p8test-apt/upgrade.vars: No such file or directory\ndpkg-query: no packages found matching \n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-daily-job-lists-relevant-updates",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "cat: /run/p8test-apt/check.txt: No such file or directory\nawk: fatal: cannot open file `/var/lib/apt-check-updates/list' for reading: No such file or directory\ncat: /var/lib/apt-check-updates/list: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-job-s-list-is-installed-by-the-relevant-updates-script",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /run/p8test-apt/job-list: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-relevant-updates-on-the-list-get-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "upgraded to the candidate\n",
+   "stderr": "bash: line 96: /run/p8test-apt/relevant.vars: No such file or directory\ndpkg-query: no packages found matching \n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-surface-script-updates-an-outdated-surface-package",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "upgraded to the candidate\n",
+   "stderr": "bash: line 96: /run/p8test-apt/surface.vars: No such file or directory\ndpkg-query: no packages found matching \n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-kernel-script-brings-the-kernel-metapackage-up-to-date",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-apt/kernel.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-full-update-script-leaves-nothing-to-upgrade",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "255 upgraded, 27 newly installed, 0 to remove and 0 not upgraded.\n",
+   "stderr": "cat: /run/p8test-apt/dist.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 2,
+  "green": false,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[iptables-persistent]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[monitoring-plugins-standard]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[ecryptfs-utils]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[aptitude]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[acl]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[cloud-init]/ensure: removed\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[unattended-upgrades]/ensure: removed\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-pkg.sh]/ensure: defined content as '{sha256}b19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-surface.sh]/ensure: defined content as '{sha256}368d51b2764e4ca14069a485a62132c1c46c687d7a93b69b4615041916019d72'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-kernel.sh]/ensure: defined content as '{sha256}8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-dist.sh]/ensure: defined content as '{sha256}c240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/Package[openscap-scanner]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/get-relevant-updates-list]/ensure: defined content as '{sha256}077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-check-updates.sh]/ensure: defined content as '{sha256}d3aa0ff611099b6d65d02e8b05983544bffe90ef7add977471a976f805b06cc4'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/Cron[apt_check_updates]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/var/lib/apt-check-updates]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]/ensure: defined content as '{sha256}c00cfe9e5594ce3f42a36f53dbf11c47214230739b7d54ebd558630241ed4943'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "structure::Filesystem_apt/Package[openscap-scanner]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/get-relevant-updates-list]/ensure: defined content as '{sha256}077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-check-updates.sh]/ensure: defined content as '{sha256}d3aa0ff611099b6d65d02e8b05983544bffe90ef7add977471a976f805b06cc4'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/Cron[apt_check_updates]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/var/lib/apt-check-updates]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]/ensure: defined content as '{sha256}c00cfe9e5594ce3f42a36f53dbf11c47214230739b7d54ebd558630241ed4943'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 156.30 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.22 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 7.90 seconds\u001b[0m\nAGENT_RC=2\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.22 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 7.90 seconds\u001b[0m\nAGENT_RC=2\n"
+ },
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "c4bfdca0-5784-498e-813d-58e3db6e355c",
+   "boot_id_at_end": "c4bfdca0-5784-498e-813d-58e3db6e355c",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "13891906341c8b1abab6427ee5fcb5463be0a3bf555cb9bd1f315a7b79cdf846",
+ "variants": {
+  "desktop": {
+   "name": "desktop",
+   "node": "ubuntu",
+   "params": "desktop",
+   "clean": [
+    {
+     "id": "the-desktop-surface-list-and-link",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "listed of firefox, nginx-core, postfix: 0\n",
+     "stderr": "sed: can't read /opt/puppet-infrastructure/bin/apt-update-surface.sh: No such file or directory\nsed: can't read /opt/puppet-infrastructure/bin/apt-update-surface.sh: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 2,
+    "green": false,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[iptables-persistent]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[monitoring-plugins-standard]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[ecryptfs-utils]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[aptitude]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[acl]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[cloud-init]/ensure: removed\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[unattended-upgrades]/ensure: removed\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-pkg.sh]/ensure: defined content as '{sha256}b19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-surface.sh]/ensure: defined content as '{sha256}7d7ea0c257b2913082de32703fd0e0b52fa25ae065f4af7542d050fc5fc0304c'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-surface-desktop.sh]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-kernel.sh]/ensure: defined content as '{sha256}8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-dist.sh]/ensure: defined content as '{sha256}c240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/Package[openscap-scanner]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/get-relevant-updates-list]/ensure: defined content as '{sha256}077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-check-updates.sh]/ensure: defined content as '{sha256}d3aa0ff611099b6d65d02e8b05983544bffe90ef7add977471a976f805b06cc4'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/Cron[apt_check_updates]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/var/lib/apt-check-updates]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]/ensure: defined content as '{sha256}c00cfe9e5594ce3f42a36f53dbf11c47214230739b7d54ebd558630241ed4943'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "structure::Filesystem_apt/Package[openscap-scanner]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/get-relevant-updates-list]/ensure: defined content as '{sha256}077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-check-updates.sh]/ensure: defined content as '{sha256}d3aa0ff611099b6d65d02e8b05983544bffe90ef7add977471a976f805b06cc4'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/Cron[apt_check_updates]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/var/lib/apt-check-updates]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]/ensure: defined content as '{sha256}c00cfe9e5594ce3f42a36f53dbf11c47214230739b7d54ebd558630241ed4943'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 140.67 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.22 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 10.18 seconds\u001b[0m\nAGENT_RC=2\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.22 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 10.18 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "2520401e-db99-46c4-98f9-38ecfd315c4b",
+     "boot_id_at_end": "2520401e-db99-46c4-98f9-38ecfd315c4b",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "423cda0c42239b2c9a5f553c43cbd210f6fe2f7c5fc3d2a9b6b5e177e3fe9df7"
+  },
+  "method0": {
+   "name": "method0",
+   "node": "ubuntu",
+   "params": "method0",
+   "clean": [
+    {
+     "id": "method-0-installs-no-relevant-updates-script",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "get-relevant-updates-list absent\napt-check-updates.sh absent\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 2,
+    "green": false,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[iptables-persistent]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[monitoring-plugins-standard]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[ecryptfs-utils]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[aptitude]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[acl]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[cloud-init]/ensure: removed\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[unattended-upgrades]/ensure: removed\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-pkg.sh]/ensure: defined content as '{sha256}b19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-surface.sh]/ensure: defined content as '{sha256}368d51b2764e4ca14069a485a62132c1c46c687d7a93b69b4615041916019d72'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-kernel.sh]/ensure: defined content as '{sha256}8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-dist.sh]/ensure: defined content as '{sha256}c240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/Cron[apt_check_updates]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/var/lib/apt-check-updates]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]/ensure: defined content as '{sha256}c00cfe9e5594ce3f42a36f53dbf11c47214230739b7d54ebd558630241ed4943'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "'{sha256}368d51b2764e4ca14069a485a62132c1c46c687d7a93b69b4615041916019d72'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-kernel.sh]/ensure: defined content as '{sha256}8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-dist.sh]/ensure: defined content as '{sha256}c240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/Cron[apt_check_updates]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/var/lib/apt-check-updates]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]/ensure: defined content as '{sha256}c00cfe9e5594ce3f42a36f53dbf11c47214230739b7d54ebd558630241ed4943'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 134.24 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.22 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 8.36 seconds\u001b[0m\nAGENT_RC=2\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.22 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 8.36 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "97e1625f-3e87-4d0c-8c0c-ef6830e424e3",
+     "boot_id_at_end": "97e1625f-3e87-4d0c-8c0c-ef6830e424e3",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "3fc01e3b852afbaf3cccc41f63c2eef9f009d761180c7e04a238a04357d6c0df"
+  },
+  "custom": {
+   "name": "custom",
+   "node": "ubuntu",
+   "params": "custom",
+   "clean": [
+    {
+     "id": "no-kernel-and-a-custom-surface-list",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "",
+     "stderr": "grep: /opt/puppet-infrastructure/bin/apt-check-updates.sh: No such file or directory\nsed: can't read /opt/puppet-infrastructure/bin/apt-update-surface.sh: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 2,
+    "green": false,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[iptables-persistent]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[monitoring-plugins-standard]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[ecryptfs-utils]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[aptitude]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[acl]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[cloud-init]/ensure: removed\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[unattended-upgrades]/ensure: removed\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-pkg.sh]/ensure: defined content as '{sha256}b19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-surface.sh]/ensure: defined content as '{sha256}e16fa81c9500fd1bcedf774f2a2e78ca966f2a2db3fe1545859ac9aff6faef3e'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-kernel.sh]/ensure: defined content as '{sha256}8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-dist.sh]/ensure: defined content as '{sha256}c240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/Package[openscap-scanner]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/get-relevant-updates-list]/ensure: defined content as '{sha256}077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-check-updates.sh]/ensure: defined content as '{sha256}cdaaf39afb4d3f3a109422d138034e85515db6a882d2719fa6b67f9be0a5090e'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/Cron[apt_check_updates]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/var/lib/apt-check-updates]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]/ensure: defined content as '{sha256}c00cfe9e5594ce3f42a36f53dbf11c47214230739b7d54ebd558630241ed4943'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "structure::Filesystem_apt/Package[openscap-scanner]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/get-relevant-updates-list]/ensure: defined content as '{sha256}077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-check-updates.sh]/ensure: defined content as '{sha256}cdaaf39afb4d3f3a109422d138034e85515db6a882d2719fa6b67f9be0a5090e'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/Cron[apt_check_updates]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/var/lib/apt-check-updates]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]/ensure: defined content as '{sha256}c00cfe9e5594ce3f42a36f53dbf11c47214230739b7d54ebd558630241ed4943'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 157.52 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.24 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 8.50 seconds\u001b[0m\nAGENT_RC=2\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.24 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 8.50 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "8ac43de0-8613-47b9-b8b6-db0b15ca2c8a",
+     "boot_id_at_end": "8ac43de0-8613-47b9-b8b6-db0b15ca2c8a",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "a59d34ec5f577d60844f780dfa90bc4b25d023b31fa42ecfd2105edcbcee1a8c"
+  },
+  "nokernel": {
+   "name": "nokernel",
+   "node": "ubuntu",
+   "params": "nokernel",
+   "clean": [
+    {
+     "id": "the-no-kernel-job-lists-no-kernel-package",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "the job passes --no-kernel: 0\nwithout --no-kernel: \nwith --no-kernel: \n",
+     "stderr": "cat: /run/p8test-apt/nk.txt: No such file or directory\nsort: cannot read: /run/p8test-apt/without.txt: No such file or directory\nsort: cannot read: /run/p8test-apt/with.txt: No such file or directory\n",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 2,
+    "green": false,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[iptables-persistent]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[monitoring-plugins-standard]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[ecryptfs-utils]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[aptitude]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[acl]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[cloud-init]/ensure: removed\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Packages_base/Package[unattended-upgrades]/ensure: removed\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-pkg.sh]/ensure: defined content as '{sha256}b19393a1aa921a1480f37a91186696d8c460b7f85a07d07d9523ec1006a947e5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-surface.sh]/ensure: defined content as '{sha256}368d51b2764e4ca14069a485a62132c1c46c687d7a93b69b4615041916019d72'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-kernel.sh]/ensure: defined content as '{sha256}8ea185cfd1e85d8d07a7eb071311cf8b8c4c2f3bbc89deee121a5fbb9cb3a1db'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-dist.sh]/ensure: defined content as '{sha256}c240c6764a5d2009dad22da00f2b6d432dcabb86e314372a9e4904ef79ec92a3'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/Package[openscap-scanner]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/get-relevant-updates-list]/ensure: defined content as '{sha256}077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-check-updates.sh]/ensure: defined content as '{sha256}cdaaf39afb4d3f3a109422d138034e85515db6a882d2719fa6b67f9be0a5090e'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/Cron[apt_check_updates]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/var/lib/apt-check-updates]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]/ensure: defined content as '{sha256}c00cfe9e5594ce3f42a36f53dbf11c47214230739b7d54ebd558630241ed4943'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "structure::Filesystem_apt/Package[openscap-scanner]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/get-relevant-updates-list]/ensure: defined content as '{sha256}077fa70554dde020c847d4260b4907cc2578facb81b18872c65c051c0c118bf6'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-check-updates.sh]/ensure: defined content as '{sha256}cdaaf39afb4d3f3a109422d138034e85515db6a882d2719fa6b67f9be0a5090e'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/Cron[apt_check_updates]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/var/lib/apt-check-updates]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_apt/File[/opt/puppet-infrastructure/bin/apt-update-relevant.sh]/ensure: defined content as '{sha256}c00cfe9e5594ce3f42a36f53dbf11c47214230739b7d54ebd558630241ed4943'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 176.16 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.23 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 7.86 seconds\u001b[0m\nAGENT_RC=2\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.23 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 7.86 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "408f5cd9-eae8-4813-ba96-2d06efa56897",
+     "boot_id_at_end": "408f5cd9-eae8-4813-ba96-2d06efa56897",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "0457ca43b1be4a1145cf5673d75c32535c88f8012ea4c508f125eec7f94937b3"
+  }
+ },
+ "duration_s": 1211.2
+}

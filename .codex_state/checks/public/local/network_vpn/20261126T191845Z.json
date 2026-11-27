@@ -1,0 +1,384 @@
+{
+ "class": "network_vpn",
+ "role": "local",
+ "at": "20261126T190306Z",
+ "set_sha256": "e860f862363b1bf002b4d81f1dab9a41a633c8a3b9417aa9c598af8af2c8cbe1",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "nameserver-serves-the-vpn-network",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /etc/bind/named.conf.options: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "firewall-accepts-dns-on-the-bridge",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "forwarding-and-nat-to-the-wan",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "vpn-server-on-the-vpn-network",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/openvpn/server/puppet_infrastructure.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "vpn-account-on-the-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-lab-nat-ipv6-route-is-removed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "1\n0\ninactive\n",
+   "stderr": "bash: line 98: /proc/0/cmdline: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-wan-host-and-default-drops",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "inactive\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "client-connects-and-resolves-through-the-vpn-nameserver",
+   "control": "negative",
+   "rc": 9,
+   "passed": false,
+   "stdout": ";; communications error to 198.51.100.1#53: timed out\n;; communications error to 198.51.100.1#53: timed out\n;; no servers could be reached\n",
+   "stderr": "Device \"\" does not exist.\ngrep: /run/p8vpn/client.log: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-client-resolves-and-reaches-the-wan-through-the-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "no connection\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-composed-rules-counted-the-flows",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "1301: zero\n202: zero\n203: zero\n205: zero\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-client-on-the-class-cipher-connects",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /run/p8vpncbc/client.log: No such file or directory\ngrep: /run/p8vpncbc/client.log: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 4,
+  "green": false,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 6,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/Package[dnsmasq-base]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Exec[p8test stand-in primary interface p8test0 with a DHCP server in netns p8testdhcp]/returns: executed successfully\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Network_dhcp/Package[ifupdown]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Network_dhcp/Package[ifupdown-extra]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Network_dhcp/Network_config[p8test0]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Firewall::Linux::Debian/Package[iptables-persistent]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/Package[bind]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]/content: content changed '{sha256}5b22f8bff7d5e45bc49dc82b0901d363368d0dae527b094990fc69e28397ecf7' to '{sha256}621cf1c23c881442e16243c28b721de16b00567202f670365b4bc6a43fd90779'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]/group: group changed 'bind' to 'root'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File_line[named IPv4 only]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/Service[named]: Triggered 'refresh' from 3 events\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_caching_nameserver/Firewall[1301 accept nameserver]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Firewall[202 allow flow from br0 exterior]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Firewall[203 allow flow from exterior into br0]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Firewall[204 allow flow loopback on br0]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Firewall[205 performing nat]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Package[bridge-utils]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Network_config[lo]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Network_config[lo:0]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Network_config[br0]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Exec[restart network]: Triggered 'refresh' from 4 events\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Openvpn::Install/Package[openvpn]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Openvpn::Install/Package[easy-rsa]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Openvpn::Install/Package[openvpn-auth-ldap]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Openvpn::Install/File[/etc/openvpn/keys]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/usr/lib/openvpn/openvpn-plugin-auth-pam.so]/target: target changed '../x86_64-linux-gnu/openvpn/plugins/openvpn-plugin-auth-pam.so' to '/usr/lib/x86_64-linux-gnu/openvpn/plugins/openvpn-plugin-auth-pam.so'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/openvpn-up.sh]/ensure: defined content as '{sha256}0983a725107d67c0fe1d5ed89047e1c8c090aec157dff8a4c491667fced9cffb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Sysctl[net.ipv4.ip_forward]/File[/etc/sysctl.d/net.ipv4.ip_forward.conf]/ensure: defined content as '{sha256}e2c2ac17097616ee184af9965776f83ad87dcf9e82ada5c8a3ea0f8371813fe8'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Sysctl[net.ipv4.ip_forward]/Exec[sysctl-net.ipv4.ip_forward]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Sysctl[net.ipv4.ip_forward]/Exec[update-sysctl.conf-net.ipv4.ip_forward]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Openvpn::Config/Concat[/etc/default/openvpn]/File[/etc/default/openvpn]/content: content changed '{sha256}140bdce27f2198e9a0bba3e01f6971a3af9903dce16100a1e350263149122dcd' to '{sha256}834c85f92f4167a77bb6ad4fc35f1543ad3e157e3aa67ec7b082523060658376'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure]: Dependency File[/etc/openvpn/keys/ca.crt] has failures: true\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure]: Dependency File[/etc/openvpn/keys/dh2048.pem] has failures: true\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure]: Dependency File[/etc/openvpn/keys/server.crt] has failures: true\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure]: Dependency File[/etc/openvpn/keys/server.key] has failures: true\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/File[/etc/sysctl.d/net.ipv4.conf.br0.proxy_arp_pvlan.conf]/ensure: defined content as '{sha256}49102ebf05c8ba20db17efe2e390acf6609540f68349e56e8b6fe67f92b81122'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/Exec[sysctl-net.ipv4.conf.br0.proxy_arp_pvlan]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/Exec[update-sysctl.conf-net.ipv4.conf.br0.proxy_arp_pvlan]: Triggered 'refresh' from 1 event\u001b[0m"
+    ],
+    "errors": [
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/keys/ca.crt]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/ca.crt\u001b[0m",
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/keys/dh2048.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/dh2048.pem\u001b[0m",
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/keys/server.crt]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/server.crt\u001b[0m",
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/keys/server.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/server.key\u001b[0m"
+    ],
+    "tail": "n_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/download-configs]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure.conf]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/keys/pre-shared.secret]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/Service[openvpn-server@puppet_infrastructure]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/File[/etc/sysctl.d/net.ipv4.conf.br0.proxy_arp_pvlan.conf]/ensure: defined content as '{sha256}49102ebf05c8ba20db17efe2e390acf6609540f68349e56e8b6fe67f92b81122'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/Exec[sysctl-net.ipv4.conf.br0.proxy_arp_pvlan]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/Exec[update-sysctl.conf-net.ipv4.conf.br0.proxy_arp_pvlan]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 146.08 seconds\u001b[0m\nAGENT_RC=6\n"
+   },
+   {
+    "rc": 4,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure]: Dependency File[/etc/openvpn/keys/ca.crt] has failures: true\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure]: Dependency File[/etc/openvpn/keys/dh2048.pem] has failures: true\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure]: Dependency File[/etc/openvpn/keys/server.crt] has failures: true\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure]: Dependency File[/etc/openvpn/keys/server.key] has failures: true\u001b[0m"
+    ],
+    "errors": [
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/keys/ca.crt]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/ca.crt\u001b[0m",
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/keys/dh2048.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/dh2048.pem\u001b[0m",
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/keys/server.crt]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/server.crt\u001b[0m",
+     "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/keys/server.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/server.key\u001b[0m"
+    ],
+    "tail": "[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/scripts]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/auth]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/client-configs]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/download-configs]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure.conf]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/keys/pre-shared.secret]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/Service[openvpn-server@puppet_infrastructure]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.85 seconds\u001b[0m\nAGENT_RC=4\n"
+   }
+  ],
+  "tail": "[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/scripts]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/auth]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/client-configs]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/download-configs]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure.conf]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/keys/pre-shared.secret]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/Service[openvpn-server@puppet_infrastructure]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.85 seconds\u001b[0m\nAGENT_RC=4\n"
+ },
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "da0cbfd6-5d5f-4c94-b406-d16240eeab26",
+   "boot_id_at_end": "da0cbfd6-5d5f-4c94-b406-d16240eeab26",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "4de31077-c904-4f2c-917f-5fcfcc3b55ac",
+   "boot_id_at_end": "4de31077-c904-4f2c-917f-5fcfcc3b55ac",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "2ee403ecba469816b1938da123c1366b25cbaaf8aa936f3d243972ef8f3adf50",
+ "variants": {
+  "clientdns": {
+   "name": "clientdns",
+   "node": "ubuntu",
+   "params": "clientdns",
+   "clean": [
+    {
+     "id": "another-client-dns-is-pushed",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "",
+     "stderr": "grep: /etc/openvpn/server/puppet_infrastructure.conf: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 4,
+    "green": false,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 6,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Main/Package[dnsmasq-base]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Exec[p8test stand-in primary interface p8test0 with a DHCP server in netns p8testdhcp]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Network_dhcp/Package[ifupdown]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Network_dhcp/Package[ifupdown-extra]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Network_dhcp/Network_config[p8test0]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Firewall::Linux::Debian/Package[iptables-persistent]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/Package[bind]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]/content: content changed '{sha256}5b22f8bff7d5e45bc49dc82b0901d363368d0dae527b094990fc69e28397ecf7' to '{sha256}621cf1c23c881442e16243c28b721de16b00567202f670365b4bc6a43fd90779'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File[/etc/bind/named.conf.options]/group: group changed 'bind' to 'root'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/File_line[named IPv4 only]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Caching_nameserver/Service[named]: Triggered 'refresh' from 3 events\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_caching_nameserver/Firewall[1301 accept nameserver]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Firewall[202 allow flow from br0 exterior]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Firewall[203 allow flow from exterior into br0]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Firewall[204 allow flow loopback on br0]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Firewall[205 performing nat]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Package[bridge-utils]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Network_config[lo]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Network_config[lo:0]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Network_config[br0]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Exec[restart network]: Triggered 'refresh' from 4 events\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Openvpn::Install/Package[openvpn]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Openvpn::Install/Package[easy-rsa]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Openvpn::Install/Package[openvpn-auth-ldap]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Openvpn::Install/File[/etc/openvpn/keys]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/usr/lib/openvpn/openvpn-plugin-auth-pam.so]/target: target changed '../x86_64-linux-gnu/openvpn/plugins/openvpn-plugin-auth-pam.so' to '/usr/lib/x86_64-linux-gnu/openvpn/plugins/openvpn-plugin-auth-pam.so'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/openvpn-up.sh]/ensure: defined content as '{sha256}0983a725107d67c0fe1d5ed89047e1c8c090aec157dff8a4c491667fced9cffb'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Sysctl[net.ipv4.ip_forward]/File[/etc/sysctl.d/net.ipv4.ip_forward.conf]/ensure: defined content as '{sha256}e2c2ac17097616ee184af9965776f83ad87dcf9e82ada5c8a3ea0f8371813fe8'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Sysctl[net.ipv4.ip_forward]/Exec[sysctl-net.ipv4.ip_forward]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_addon_openvpn_server/Sysctl[net.ipv4.ip_forward]/Exec[update-sysctl.conf-net.ipv4.ip_forward]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Openvpn::Config/Concat[/etc/default/openvpn]/File[/etc/default/openvpn]/content: content changed '{sha256}140bdce27f2198e9a0bba3e01f6971a3af9903dce16100a1e350263149122dcd' to '{sha256}834c85f92f4167a77bb6ad4fc35f1543ad3e157e3aa67ec7b082523060658376'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure]: Dependency File[/etc/openvpn/keys/ca.crt] has failures: true\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure]: Dependency File[/etc/openvpn/keys/dh2048.pem] has failures: true\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure]: Dependency File[/etc/openvpn/keys/server.crt] has failures: true\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure]: Dependency File[/etc/openvpn/keys/server.key] has failures: true\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/File[/etc/sysctl.d/net.ipv4.conf.br0.proxy_arp_pvlan.conf]/ensure: defined content as '{sha256}49102ebf05c8ba20db17efe2e390acf6609540f68349e56e8b6fe67f92b81122'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/Exec[sysctl-net.ipv4.conf.br0.proxy_arp_pvlan]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/Exec[update-sysctl.conf-net.ipv4.conf.br0.proxy_arp_pvlan]: Triggered 'refresh' from 1 event\u001b[0m"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/keys/ca.crt]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/ca.crt\u001b[0m",
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/keys/dh2048.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/dh2048.pem\u001b[0m",
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/keys/server.crt]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/server.crt\u001b[0m",
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/keys/server.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/server.key\u001b[0m"
+      ],
+      "tail": "n_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/download-configs]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure.conf]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/keys/pre-shared.secret]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/Service[openvpn-server@puppet_infrastructure]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/File[/etc/sysctl.d/net.ipv4.conf.br0.proxy_arp_pvlan.conf]/ensure: defined content as '{sha256}49102ebf05c8ba20db17efe2e390acf6609540f68349e56e8b6fe67f92b81122'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/Exec[sysctl-net.ipv4.conf.br0.proxy_arp_pvlan]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/Exec[update-sysctl.conf-net.ipv4.conf.br0.proxy_arp_pvlan]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 205.28 seconds\u001b[0m\nAGENT_RC=6\n"
+     },
+     {
+      "rc": 4,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure]: Dependency File[/etc/openvpn/keys/ca.crt] has failures: true\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure]: Dependency File[/etc/openvpn/keys/dh2048.pem] has failures: true\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure]: Dependency File[/etc/openvpn/keys/server.crt] has failures: true\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure]: Dependency File[/etc/openvpn/keys/server.key] has failures: true\u001b[0m"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/keys/ca.crt]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/ca.crt\u001b[0m",
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/keys/dh2048.pem]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/dh2048.pem\u001b[0m",
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/keys/server.crt]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/server.crt\u001b[0m",
+       "\u001b[1;31mError: /Stage[main]/Puppet_infrastructure::Openvpn_server/File[/etc/openvpn/keys/server.key]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/server.key\u001b[0m"
+      ],
+      "tail": "[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/scripts]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/auth]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/client-configs]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/download-configs]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure.conf]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/keys/pre-shared.secret]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/Service[openvpn-server@puppet_infrastructure]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.80 seconds\u001b[0m\nAGENT_RC=4\n"
+     }
+    ],
+    "tail": "[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/scripts]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/auth]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/client-configs]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/download-configs]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure.conf]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/File[/etc/openvpn/server/puppet_infrastructure/keys/pre-shared.secret]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Puppet_infrastructure::Openvpn_server/Openvpn::Server[puppet_infrastructure]/Service[openvpn-server@puppet_infrastructure]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.80 seconds\u001b[0m\nAGENT_RC=4\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "d66344f0-e1ea-4a7d-8cd6-392ded738275",
+     "boot_id_at_end": "d66344f0-e1ea-4a7d-8cd6-392ded738275",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "p8lab-ubuntu2",
+    "PEER_ADDR": "192.168.56.24",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "6bd887a240d08b58d0eb7a229491e3176dabf44082881d8bda780034093719cf"
+  }
+ },
+ "duration_s": 939.3
+}

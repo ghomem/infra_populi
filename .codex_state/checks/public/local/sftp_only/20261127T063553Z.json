@@ -1,0 +1,180 @@
+{
+ "class": "sftp_only",
+ "role": "local",
+ "at": "20261127T063448Z",
+ "set_sha256": "4ae67bab7ed2a8a32f303b49fb3644c66d1ef038bf312b4c1bc7c6cfc4a93c3c",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "allow-block-from-the-whitelist",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "allowtcpforwarding yes\nchrootdirectory none\nforcecommand none\npasswordauthentication yes\nx11forwarding yes\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "deny-block-from-other-addresses",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "chrootdirectory none\nforcecommand none\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "an-sftp-user-and-its-jail",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "stat: cannot statx '/srv/p8test-jail': No such file or directory\nstat: cannot statx '/srv/p8test-jail/upload': No such file or directory\nid: 'p8testuser': no such user\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "sftp-works-in-the-jail-and-nothing-else",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-jail/out.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssh_secure/File[/etc/ssh/moduli]/content: content changed '{sha256}49f3a4235aa69de2dc3ba4abab128d81d63f9bf90751b0600c7649d1a95892f0' to '{sha256}01f903391abe367b549ae37822983bd3d5a8dd3d6465523f3b5f14729573b8b0'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssh_secure/Group[ssh_in]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Ssh::Server::Config/Concat[/etc/ssh/sshd_config]/File[/etc/ssh/sshd_config]/content: content changed '{sha256}64325541513d33ea1d2ccd19c77750d458e67e7967fd2e7ef81d92f0aa2ffe21' to '{sha256}8541e6ba16300426c333246b99c75f494888b2a0c8343be8c75c830d4a407aff'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Ssh::Server::Config/Concat[/etc/ssh/sshd_config]/File[/etc/ssh/sshd_config]/mode: mode changed '0644' to '0600'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Ssh::Server::Service/Service[ssh]/enable: enable changed 'false' to 'true'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Ssh::Server::Service/Service[ssh]: Triggered 'refresh' from 3 events\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "ur-modules/ssh/manifests/hostkeys.pp, line: 75, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the collection will be ignored (file: /var/tmp/behaviour-modules/ssh/manifests/knownhosts.pp, line: 18, column: 7)\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.15 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssh_secure/File[/etc/ssh/moduli]/content: content changed '{sha256}49f3a4235aa69de2dc3ba4abab128d81d63f9bf90751b0600c7649d1a95892f0' to '{sha256}01f903391abe367b549ae37822983bd3d5a8dd3d6465523f3b5f14729573b8b0'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Ssh_secure/Group[ssh_in]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Ssh::Server::Config/Concat[/etc/ssh/sshd_config]/File[/etc/ssh/sshd_config]/content: content changed '{sha256}64325541513d33ea1d2ccd19c77750d458e67e7967fd2e7ef81d92f0aa2ffe21' to '{sha256}8541e6ba16300426c333246b99c75f494888b2a0c8343be8c75c830d4a407aff'\u001b[0m\n\u001b[mNotice: /Stage[main]/Ssh::Server::Config/Concat[/etc/ssh/sshd_config]/File[/etc/ssh/sshd_config]/mode: mode changed '0644' to '0600'\u001b[0m\n\u001b[mNotice: /Stage[main]/Ssh::Server::Service/Service[ssh]/enable: enable changed 'false' to 'true'\u001b[0m\n\u001b[mNotice: /Stage[main]/Ssh::Server::Service/Service[ssh]: Triggered 'refresh' from 3 events\u001b[0m\n\u001b[mNotice: Applied catalog in 1.52 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/etc/ssh/moduli]\nCHANGED Group[ssh_in]\nCHANGED File[/etc/ssh/sshd_config]\nCHANGED Service[ssh]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the export is ignored (file: /var/tmp/behaviour-modules/ssh/manifests/hostkeys.pp, line: 83, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the export is ignored (file: /var/tmp/behaviour-modules/ssh/manifests/hostkeys.pp, line: 75, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the export is ignored (file: /var/tmp/behaviour-modules/ssh/manifests/hostkeys.pp, line: 75, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the export is ignored (file: /var/tmp/behaviour-modules/ssh/manifests/hostkeys.pp, line: 75, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the collection will be ignored (file: /var/tmp/behaviour-modules/ssh/manifests/knownhosts.pp, line: 18, column: 7)\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.14 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.38 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the export is ignored (file: /var/tmp/behaviour-modules/ssh/manifests/hostkeys.pp, line: 83, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the export is ignored (file: /var/tmp/behaviour-modules/ssh/manifests/hostkeys.pp, line: 75, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the export is ignored (file: /var/tmp/behaviour-modules/ssh/manifests/hostkeys.pp, line: 75, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the export is ignored (file: /var/tmp/behaviour-modules/ssh/manifests/hostkeys.pp, line: 75, column: 7)\u001b[0m\n\u001b[1;33mWarning: You cannot collect exported resources without storeconfigs being set; the collection will be ignored (file: /var/tmp/behaviour-modules/ssh/manifests/knownhosts.pp, line: 18, column: 7)\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.14 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.38 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "allow-block-from-the-whitelist",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "allowtcpforwarding no\nchrootdirectory /srv/p8test-jail\nforcecommand internal-sftp -d upload -u 007\npasswordauthentication no\nx11forwarding no\n",
+   "stderr": "/etc/ssh/sshd_config line 33: Deprecated option UsePrivilegeSeparation\n",
+   "mismatch": {
+    "varies": "the user (p8testother, whom no block names), so the allow block must not apply",
+    "rc": 0,
+    "passed": false,
+    "stdout": "allowtcpforwarding yes\nchrootdirectory none\nforcecommand none\npasswordauthentication no\nx11forwarding yes\n",
+    "stderr": "/etc/ssh/sshd_config line 33: Deprecated option UsePrivilegeSeparation\n"
+   }
+  },
+  {
+   "id": "deny-block-from-other-addresses",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "chrootdirectory none\ndenyusers p8testuser\nforcecommand none\n",
+   "stderr": "/etc/ssh/sshd_config line 33: Deprecated option UsePrivilegeSeparation\n",
+   "mismatch": {
+    "varies": "the address (127.0.0.1, the whitelisted one), so the deny block must not apply",
+    "rc": 0,
+    "passed": false,
+    "stdout": "",
+    "stderr": "/etc/ssh/sshd_config line 33: Deprecated option UsePrivilegeSeparation\n"
+   }
+  },
+  {
+   "id": "an-sftp-user-and-its-jail",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755 /srv/p8test-jail\np8testuser 770 /srv/p8test-jail/upload\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the group p8testgroup if absent and the user p8testuser in it (home /home/p8testuser), an ed25519 key pair in /run/p8test-jail (the public half in the user's authorized_keys), /srv/p8test-jail (root 0755) and /srv/p8test-jail/upload (p8testuser:p8testuser 0770)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "sftp-works-in-the-jail-and-nothing-else",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "upload: done\nlisting: /upload\nuploaded: p8testuser 640 /srv/p8test-jail/upload/p8test.txt\ncommand: allows sftp connections only\nfrom ::1: refused\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "four SSH sessions to the node's own sshd as p8testuser with the throwaway key (from 127.0.0.1: curl's SFTP uploading /run/p8test-jail/p8test.txt and listing the jail's root, then a command; a login from ::1); sshd logs them; the uploaded file stays in /srv/p8test-jail/upload; the outcomes go to /run/p8test-jail/out.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "20cb9d53-84fb-4642-b219-779deb609d00",
+   "boot_id_at_end": "20cb9d53-84fb-4642-b219-779deb609d00",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "64348401611fca91cef1fd3aa10b60062b6d352972deb916735d907050a2f0ac",
+ "duration_s": 64.9
+}

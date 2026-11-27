@@ -1,0 +1,497 @@
+{
+ "class": "nginx_frontend_domain",
+ "role": "local",
+ "at": "20261127T035331Z",
+ "set_sha256": "a1c4caebfa65aa60caad082bc23fbbee058a574ee99017b87b3e26c4ac92c427",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "a-backend-answers",
+   "control": "negative",
+   "rc": 7,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "http-redirects-to-https",
+   "control": "negative",
+   "rc": 7,
+   "passed": false,
+   "stdout": "000 \n000 \n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "https-proxies-to-the-backend",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "www.p8test.example.com: \np8test.example.com: \nother.example.com: \n",
+   "stderr": "awk: fatal: cannot open file `/etc/ssl/certs/p8test.nginx.bundle.crt' for reading: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "only-tls-1-3-is-accepted",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "tls1_3 refused\ntls1_2 refused\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 6,
+  "green": false,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 6,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Package[nginx]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}48c6a4ec1e1fd28ccf968490f07e34a1d7f755793b2108a3ed8670b1ee2a0aa2' to '{sha256}d86ca9397952b7b6b19a8c46f6235e901b5ffe6dbfd7b5afba862ebb25a9ad7f'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}36c77daa2d85803e87c91ba723dd2bc6aaa6543ae4bd4a569034a7bf8bce464d' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/Exec[Generate a new 2048-bit Diffie-Hellman group]/returns: executed successfully\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_default_removal/File[/etc/nginx/sites-enabled/default]/ensure: removed\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Upstream[backend_p8test.example.com]/Concat[/etc/nginx/conf.d/backend_p8test.example.com-upstream.conf]/File[/etc/nginx/conf.d/backend_p8test.example.com-upstream.conf]/ensure: defined content as '{sha256}b624a3dac815f44e376576138e83ebe172cad0fb218bd3fa2b3d25021263453e'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[http_p8test.example.com]/Concat[/etc/nginx/sites-available/http_p8test.example.com.conf]/File[/etc/nginx/sites-available/http_p8test.example.com.conf]/ensure: defined content as '{sha256}a88001fc368dc1bbc662330c7dd2b71a1309461a97cd1f6b4d54d23bcfe98c39'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[http_p8test.example.com]/File[http_p8test.example.com.conf symlink]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[http_www.p8test.example.com]/Concat[/etc/nginx/sites-available/http_www.p8test.example.com.conf]/File[/etc/nginx/sites-available/http_www.p8test.example.com.conf]/ensure: defined content as '{sha256}23d5e68db24aa492938385159fd43cf88ec60d8a615f0a6102c363a572e2ee9c'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[http_www.p8test.example.com]/File[http_www.p8test.example.com.conf symlink]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat[/etc/nginx/sites-available/https_www.p8test.example.com.conf]/Concat_file[/etc/nginx/sites-available/https_www.p8test.example.com.conf]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m",
+     "CHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]"
+    ],
+    "errors": [
+     "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment produ",
+     "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed t"
+    ],
+    "tail": "dencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 54.13 seconds\u001b[0m\nAGENT_RC=6\nCHANGED File[preferences]\nCHANGED File[/etc/apt/apt.conf.d/15update-stamp]\nCHANGED Exec[apt_update]\nCHANGED Package[nginx]\nCHANGED File[/etc/nginx/conf.stream.d]\nCHANGED File[/etc/nginx/conf.mail.d]\nCHANGED File[/etc/nginx/streams-enabled]\nCHANGED File[/etc/nginx/streams-available]\nCHANGED File[/etc/nginx/nginx.conf]\nCHANGED File[/etc/nginx/mime.types]\nCHANGED Exec[Generate a new 2048-bit Diffie-Hellman group]\nCHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]\nCHANGED File[/etc/nginx/sites-enabled/default]\nCHANGED File[/etc/nginx/conf.d/backend_p8test.example.com-upstream.conf]\nCHANGED File[/etc/nginx/sites-available/http_p8test.example.com.conf]\nCHANGED File[http_p8test.example.com.conf symlink]\nCHANGED File[/etc/nginx/sites-available/http_www.p8test.example.com.conf]\nCHANGED File[http_www.p8test.example.com.conf symlink]\nCHANGED File[/etc/ssl/certs/p8test.nginx.bundle.crt]\n"
+   },
+   {
+    "rc": 6,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat[/etc/nginx/sites-available/https_www.p8test.example.com.conf]/Concat_file[/etc/nginx/sites-available/https_www.p8test.example.com.conf]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m",
+     "CHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]"
+    ],
+    "errors": [
+     "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment produ",
+     "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed t"
+    ],
+    "tail": ".p8test.example.com]/File[https_www.p8test.example.com.conf symlink]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-header]/Concat_fragment[https_www.p8test.example.com-ssl-header]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-footer]/Concat_fragment[https_www.p8test.example.com-ssl-footer]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.41 seconds\u001b[0m\nAGENT_RC=6\nCHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]\n"
+   }
+  ],
+  "tail": ".p8test.example.com]/File[https_www.p8test.example.com.conf symlink]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-header]/Concat_fragment[https_www.p8test.example.com-ssl-header]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-footer]/Concat_fragment[https_www.p8test.example.com-ssl-footer]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.41 seconds\u001b[0m\nAGENT_RC=6\nCHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]\n"
+ },
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "367fc596-8296-42c4-a434-bc5cc896f9a5",
+   "boot_id_at_end": "367fc596-8296-42c4-a434-bc5cc896f9a5",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "41eaa9af488486b1dc6f2ba6cd3648ef986a00db3ef9698bb222a5e5663f5955",
+ "variants": {
+  "prod": {
+   "name": "prod",
+   "node": "ubuntu",
+   "params": "prod",
+   "clean": [
+    {
+     "id": "production-parameters-render",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "Let's Encrypt bundle: missing\nread timeout: missing\nconnect timeout: missing\nsend timeout: missing\nad-hoc location config: missing\nbackend header: missing\nprotocols: missing\npass suffix: missing\nother location config: missing\nother location line: missing\nwww fix redirect: missing\nsecurity headers: missing\n",
+     "stderr": "",
+     "ok": true
+    },
+    {
+     "id": "the-naked-domain-redirects-to-www",
+     "control": "negative",
+     "rc": 7,
+     "passed": false,
+     "stdout": "naked http 000 \nnaked https 000 \n",
+     "stderr": "",
+     "ok": true
+    },
+    {
+     "id": "under-tls-1-2-only-the-class-ciphers-are-accepted",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "ECDHE-RSA-AES128-GCM-SHA256 refused\nAES128-SHA refused\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 6,
+    "green": false,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 6,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Package[nginx]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}48c6a4ec1e1fd28ccf968490f07e34a1d7f755793b2108a3ed8670b1ee2a0aa2' to '{sha256}d86ca9397952b7b6b19a8c46f6235e901b5ffe6dbfd7b5afba862ebb25a9ad7f'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}36c77daa2d85803e87c91ba723dd2bc6aaa6543ae4bd4a569034a7bf8bce464d' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/Exec[Generate a new 2048-bit Diffie-Hellman group]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_default_removal/File[/etc/nginx/sites-enabled/default]/ensure: removed\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Upstream[backend_p8test.example.com]/Concat[/etc/nginx/conf.d/backend_p8test.example.com-upstream.conf]/File[/etc/nginx/conf.d/backend_p8test.example.com-upstream.conf]/ensure: defined content as '{sha256}b624a3dac815f44e376576138e83ebe172cad0fb218bd3fa2b3d25021263453e'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[http_p8test.example.com]/Concat[/etc/nginx/sites-available/http_p8test.example.com.conf]/File[/etc/nginx/sites-available/http_p8test.example.com.conf]/ensure: defined content as '{sha256}8b07873ca5a1b20065739a661b820c13eced100b920abd47b6bcff798263748d'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[http_p8test.example.com]/File[http_p8test.example.com.conf symlink]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[http_www.p8test.example.com]/Concat[/etc/nginx/sites-available/http_www.p8test.example.com.conf]/File[/etc/nginx/sites-available/http_www.p8test.example.com.conf]/ensure: defined content as '{sha256}23d5e68db24aa492938385159fd43cf88ec60d8a615f0a6102c363a572e2ee9c'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[http_www.p8test.example.com]/File[http_www.p8test.example.com.conf symlink]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.pem]/File[/etc/ssl/certs/p8test.nginx.bundle.pem]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_p8test.example.com]/Concat[/etc/nginx/sites-available/https_p8test.example.com.conf]/Concat_file[/etc/nginx/sites-available/https_p8test.example.com.conf]: Dependency File[/etc/ssl/private/p8test-key.pem] has failures: true\u001b[0m",
+       "CHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/File[/etc/ssl/private/p8test-key.pem]: Could not evaluate: Could not retrieve information from environment p",
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.pem]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.pem]: Failed t"
+      ],
+      "tail": "encies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 109.40 seconds\u001b[0m\nAGENT_RC=6\nCHANGED File[preferences]\nCHANGED File[/etc/apt/apt.conf.d/15update-stamp]\nCHANGED Exec[apt_update]\nCHANGED Package[nginx]\nCHANGED File[/etc/nginx/conf.stream.d]\nCHANGED File[/etc/nginx/conf.mail.d]\nCHANGED File[/etc/nginx/streams-enabled]\nCHANGED File[/etc/nginx/streams-available]\nCHANGED File[/etc/nginx/nginx.conf]\nCHANGED File[/etc/nginx/mime.types]\nCHANGED Exec[Generate a new 2048-bit Diffie-Hellman group]\nCHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]\nCHANGED File[/etc/nginx/sites-enabled/default]\nCHANGED File[/etc/nginx/conf.d/backend_p8test.example.com-upstream.conf]\nCHANGED File[/etc/nginx/sites-available/http_p8test.example.com.conf]\nCHANGED File[http_p8test.example.com.conf symlink]\nCHANGED File[/etc/nginx/sites-available/http_www.p8test.example.com.conf]\nCHANGED File[http_www.p8test.example.com.conf symlink]\nCHANGED File[/etc/ssl/certs/p8test.nginx.bundle.pem]\n"
+     },
+     {
+      "rc": 6,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_p8test.example.com]/Concat[/etc/nginx/sites-available/https_p8test.example.com.conf]/Concat_file[/etc/nginx/sites-available/https_p8test.example.com.conf]: Dependency File[/etc/ssl/private/p8test-key.pem] has failures: true\u001b[0m",
+       "CHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/File[/etc/ssl/private/p8test-key.pem]: Could not evaluate: Could not retrieve information from environment p",
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.pem]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.pem]: Failed t"
+      ],
+      "tail": "[https_p8test.example.com]/Nginx::Resource::Location[https_p8test.example.com-default]/Concat::Fragment[https_p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_/p8test-other/]/Concat::Fragment[https_www.p8test.example.com-800-7572b9c0e48d310e3b49983439d9279a-ssl]/Concat_fragment[https_www.p8test.example.com-800-7572b9c0e48d310e3b49983439d9279a-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.42 seconds\u001b[0m\nAGENT_RC=6\nCHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]\n"
+     }
+    ],
+    "tail": "[https_p8test.example.com]/Nginx::Resource::Location[https_p8test.example.com-default]/Concat::Fragment[https_p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_/p8test-other/]/Concat::Fragment[https_www.p8test.example.com-800-7572b9c0e48d310e3b49983439d9279a-ssl]/Concat_fragment[https_www.p8test.example.com-800-7572b9c0e48d310e3b49983439d9279a-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.42 seconds\u001b[0m\nAGENT_RC=6\nCHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "ce40b679-dac7-4c50-a81d-24581bb8964f",
+     "boot_id_at_end": "ce40b679-dac7-4c50-a81d-24581bb8964f",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "8cc0a865064cad5a32f1028cc965e38e2295dde8fad272bb4fe66c9bbca3d99d"
+  },
+  "dyn": {
+   "name": "dyn",
+   "node": "ubuntu",
+   "params": "dyn",
+   "clean": [
+    {
+     "id": "dynamic-dns-proxies-through-the-variable",
+     "control": "negative",
+     "rc": 7,
+     "passed": false,
+     "stdout": "0\n0\nno-resolver\n0\n",
+     "stderr": "awk: fatal: cannot open file `/etc/ssl/certs/p8test.nginx.bundle.crt' for reading: No such file or directory\n",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 6,
+    "green": false,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 6,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Package[nginx]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}48c6a4ec1e1fd28ccf968490f07e34a1d7f755793b2108a3ed8670b1ee2a0aa2' to '{sha256}d86ca9397952b7b6b19a8c46f6235e901b5ffe6dbfd7b5afba862ebb25a9ad7f'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}36c77daa2d85803e87c91ba723dd2bc6aaa6543ae4bd4a569034a7bf8bce464d' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/Exec[Generate a new 2048-bit Diffie-Hellman group]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_default_removal/File[/etc/nginx/sites-enabled/default]/ensure: removed\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[http_p8test.example.com]/Concat[/etc/nginx/sites-available/http_p8test.example.com.conf]/File[/etc/nginx/sites-available/http_p8test.example.com.conf]/ensure: defined content as '{sha256}a88001fc368dc1bbc662330c7dd2b71a1309461a97cd1f6b4d54d23bcfe98c39'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[http_p8test.example.com]/File[http_p8test.example.com.conf symlink]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[http_www.p8test.example.com]/Concat[/etc/nginx/sites-available/http_www.p8test.example.com.conf]/File[/etc/nginx/sites-available/http_www.p8test.example.com.conf]/ensure: defined content as '{sha256}23d5e68db24aa492938385159fd43cf88ec60d8a615f0a6102c363a572e2ee9c'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[http_www.p8test.example.com]/File[http_www.p8test.example.com.conf symlink]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat[/etc/nginx/sites-available/https_www.p8test.example.com.conf]/Concat_file[/etc/nginx/sites-available/https_www.p8test.example.com.conf]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m",
+       "CHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment produ",
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed t"
+      ],
+      "tail": "age[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 49.69 seconds\u001b[0m\nAGENT_RC=6\nCHANGED File[preferences]\nCHANGED File[/etc/apt/apt.conf.d/15update-stamp]\nCHANGED Exec[apt_update]\nCHANGED Package[nginx]\nCHANGED File[/etc/nginx/conf.stream.d]\nCHANGED File[/etc/nginx/conf.mail.d]\nCHANGED File[/etc/nginx/streams-enabled]\nCHANGED File[/etc/nginx/streams-available]\nCHANGED File[/etc/nginx/nginx.conf]\nCHANGED File[/etc/nginx/mime.types]\nCHANGED Exec[Generate a new 2048-bit Diffie-Hellman group]\nCHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]\nCHANGED File[/etc/nginx/sites-enabled/default]\nCHANGED File[/etc/nginx/sites-available/http_p8test.example.com.conf]\nCHANGED File[http_p8test.example.com.conf symlink]\nCHANGED File[/etc/nginx/sites-available/http_www.p8test.example.com.conf]\nCHANGED File[http_www.p8test.example.com.conf symlink]\nCHANGED File[/etc/ssl/certs/p8test.nginx.bundle.crt]\n"
+     },
+     {
+      "rc": 6,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat[/etc/nginx/sites-available/https_www.p8test.example.com.conf]/Concat_file[/etc/nginx/sites-available/https_www.p8test.example.com.conf]: Dependency File[/etc/ssl/private/p8test.key] has failures: true\u001b[0m",
+       "CHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/File[/etc/ssl/private/p8test.key]: Could not evaluate: Could not retrieve information from environment produ",
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed t"
+      ],
+      "tail": ".p8test.example.com]/File[https_www.p8test.example.com.conf symlink]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-header]/Concat_fragment[https_www.p8test.example.com-ssl-header]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-footer]/Concat_fragment[https_www.p8test.example.com-ssl-footer]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.42 seconds\u001b[0m\nAGENT_RC=6\nCHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]\n"
+     }
+    ],
+    "tail": ".p8test.example.com]/File[https_www.p8test.example.com.conf symlink]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-header]/Concat_fragment[https_www.p8test.example.com-ssl-header]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-footer]/Concat_fragment[https_www.p8test.example.com-ssl-footer]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.42 seconds\u001b[0m\nAGENT_RC=6\nCHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "eb4ff914-17b1-4b4e-b8cb-4c6b91e46451",
+     "boot_id_at_end": "eb4ff914-17b1-4b4e-b8cb-4c6b91e46451",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "2b27b6275a8283acc5387e24bf633307136548d9cf3257b7c895a9c3a7ae03b4"
+  },
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "clean": [
+    {
+     "id": "on-redhat-the-key-is-read-from-pki-tls-private",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "0\n0\n",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 6,
+    "green": false,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 6,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Nginx::Package::Redhat/Package[nginx]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/snippets]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/modules-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/var/log/nginx]/owner: owner changed 'root' to 'nginx'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/var/log/nginx]/group: group changed 'root' to 'nginx'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/var/log/nginx]/mode: mode changed '0711' to '0750'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/sites-available]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/sites-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}b569b8330a307cd88795ca792d3d04ad1d9222a36ff8a908c3b43744c334d666' to '{sha256}6a65401c654637e8806a68f2a0d6052fbfc0a291f0436a4660c51b8293986586'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}7f0b9e0c2320db6882b6d0db1cb3d28c41dd4ff0d1c6e17798ff19668f412598' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/Exec[Generate a new 2048-bit Diffie-Hellman group]/returns: executed successfully\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Upstream[backend_p8test.example.com]/Concat[/etc/nginx/conf.d/backend_p8test.example.com-upstream.conf]/File[/etc/nginx/conf.d/backend_p8test.example.com-upstream.conf]/ensure: defined content as '{sha256}b624a3dac815f44e376576138e83ebe172cad0fb218bd3fa2b3d25021263453e'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[http_p8test.example.com]/Concat[/etc/nginx/sites-available/http_p8test.example.com.conf]/File[/etc/nginx/sites-available/http_p8test.example.com.conf]/ensure: defined content as '{sha256}a88001fc368dc1bbc662330c7dd2b71a1309461a97cd1f6b4d54d23bcfe98c39'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[http_p8test.example.com]/File[http_p8test.example.com.conf symlink]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[http_www.p8test.example.com]/Concat[/etc/nginx/sites-available/http_www.p8test.example.com.conf]/File[/etc/nginx/sites-available/http_www.p8test.example.com.conf]/ensure: defined content as '{sha256}23d5e68db24aa492938385159fd43cf88ec60d8a615f0a6102c363a572e2ee9c'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[http_www.p8test.example.com]/File[http_www.p8test.example.com.conf symlink]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat[/etc/nginx/sites-available/https_www.p8test.example.com.conf]/Concat_file[/etc/nginx/sites-available/https_www.p8test.example.com.conf]: Dependency File[/etc/pki/tls/private/p8test.key] has failures: true\u001b[0m",
+       "CHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/File[/etc/pki/tls/private/p8test.key]: Could not evaluate: Could not retrieve information from environment p",
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed t"
+      ],
+      "tail": "in]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 13.77 seconds\u001b[0m\nAGENT_RC=6\nCHANGED Package[nginx]\nCHANGED File[/etc/nginx/conf.stream.d]\nCHANGED File[/etc/nginx/conf.mail.d]\nCHANGED File[/etc/nginx/snippets]\nCHANGED File[/etc/nginx/modules-enabled]\nCHANGED File[/var/log/nginx]\nCHANGED File[/etc/nginx/sites-available]\nCHANGED File[/etc/nginx/sites-enabled]\nCHANGED File[/etc/nginx/streams-enabled]\nCHANGED File[/etc/nginx/streams-available]\nCHANGED File[/etc/nginx/nginx.conf]\nCHANGED File[/etc/nginx/mime.types]\nCHANGED Exec[Generate a new 2048-bit Diffie-Hellman group]\nCHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]\nCHANGED File[/etc/nginx/conf.d/backend_p8test.example.com-upstream.conf]\nCHANGED File[/etc/nginx/sites-available/http_p8test.example.com.conf]\nCHANGED File[http_p8test.example.com.conf symlink]\nCHANGED File[/etc/nginx/sites-available/http_www.p8test.example.com.conf]\nCHANGED File[http_www.p8test.example.com.conf symlink]\nCHANGED File[/etc/ssl/certs/p8test.nginx.bundle.crt]\n"
+     },
+     {
+      "rc": 6,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat[/etc/nginx/sites-available/https_www.p8test.example.com.conf]/Concat_file[/etc/nginx/sites-available/https_www.p8test.example.com.conf]: Dependency File[/etc/pki/tls/private/p8test.key] has failures: true\u001b[0m",
+       "CHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]"
+      ],
+      "errors": [
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/File[/etc/pki/tls/private/p8test.key]: Could not evaluate: Could not retrieve information from environment p",
+       "\u001b[1;31mError: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Puppet_infrastructure::Ssl_nginx_domain[p8test]/Puppet_infrastructure::Ssl_base[ssl_p8test]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]: Failed t"
+      ],
+      "tail": ".p8test.example.com]/File[https_www.p8test.example.com.conf symlink]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-header]/Concat_fragment[https_www.p8test.example.com-ssl-header]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-footer]/Concat_fragment[https_www.p8test.example.com-ssl-footer]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.15 seconds\u001b[0m\nAGENT_RC=6\nCHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]\n"
+     }
+    ],
+    "tail": ".p8test.example.com]/File[https_www.p8test.example.com.conf symlink]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-header]/Concat_fragment[https_www.p8test.example.com-ssl-header]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Concat::Fragment[https_www.p8test.example.com-ssl-footer]/Concat_fragment[https_www.p8test.example.com-ssl-footer]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Nginx::Service/Service[nginx]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Nginx_frontend_domain[nginx_frontend_domain]/Nginx::Resource::Server[https_www.p8test.example.com]/Nginx::Resource::Location[https_www.p8test.example.com_root]/Concat::Fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]/Concat_fragment[https_www.p8test.example.com-800-6666cd76f96956469e7be39d750cc7d9-ssl]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.15 seconds\u001b[0m\nAGENT_RC=6\nCHANGED Notify[Generated Upstream members for nginx_frontend_domain are: {127.0.0.1:8080 in nginx_frontend_domain => {server => 127.0.0.1, port => 8080}}]\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "1764434f-c6f5-4042-8841-88f77f64c8ee",
+     "boot_id_at_end": "1764434f-c6f5-4042-8841-88f77f64c8ee",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "ed87a98302af4200ea6b92d3a37ca98d8e55e3f1b431cbe149f0177f80947efa"
+  }
+ },
+ "duration_s": 837.1
+}

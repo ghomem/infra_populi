@@ -1,0 +1,256 @@
+{
+ "class": "sysmon_backup",
+ "role": "local",
+ "at": "20261127T071405Z",
+ "set_sha256": "d00a8549917e06a0fe83a54646e3a302514b7f3f387a55f2d86190057b8076fe",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "backup-script-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/backup-sysmon.sh': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "script-carries-the-sysmon-keys",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /opt/puppet-infrastructure/bin/backup-sysmon.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "nightly-cron",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-backup-directory-exists",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/backup/sysmon': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "aged-archives-are-planted",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 96: cd: /opt/puppet-infrastructure/backup/sysmon: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "backup-runs-and-archives-basedir",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "rc \n\n",
+   "stderr": "cat: /run/p8test-sysmon/rc: No such file or directory\ncat: /run/p8test-sysmon/archive: No such file or directory\ngzip: .gz: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-run-deletes-only-its-own-old-archives",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 96: cd: /opt/puppet-infrastructure/backup/sysmon: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-failed-run-is-loud",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "cat: /run/p8test-sysmon-fail/rc: No such file or directory\nbash: line 96: [: : integer expression expected\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_backup/Puppet_infrastructure::Backup[sysmon]/File[/opt/puppet-infrastructure/backup/sysmon]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_backup/Puppet_infrastructure::Backup[sysmon]/File[/opt/puppet-infrastructure/bin/backup-sysmon.sh]/ensure: defined content as '{sha256}9c5299511db26f199be27ff5c9890ae6e45ac74dd83fbb6356b21d883850588a'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_backup/Puppet_infrastructure::Backup[sysmon]/Cron[cron_sysmon_backup]/ensure: created\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "ture::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_backup/Puppet_infrastructure::Backup[sysmon]/File[/opt/puppet-infrastructure/backup/sysmon]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_backup/Puppet_infrastructure::Backup[sysmon]/File[/opt/puppet-infrastructure/bin/backup-sysmon.sh]/ensure: defined content as '{sha256}9c5299511db26f199be27ff5c9890ae6e45ac74dd83fbb6356b21d883850588a'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Sysmon_backup/Puppet_infrastructure::Backup[sysmon]/Cron[cron_sysmon_backup]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.09 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/opt/puppet-infrastructure]\nCHANGED File[/opt/puppet-infrastructure/bin]\nCHANGED File[/opt/puppet-infrastructure/etc]\nCHANGED File[/opt/puppet-infrastructure/backup]\nCHANGED File[/opt/puppet-infrastructure/pkgsdir]\nCHANGED File[/etc/default/locale]\nCHANGED File[/opt/puppet-infrastructure/bin/mypython]\nCHANGED File[/opt/puppet-infrastructure/backup/sysmon]\nCHANGED File[/opt/puppet-infrastructure/bin/backup-sysmon.sh]\nCHANGED Cron[cron_sysmon_backup]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.07 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.07 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "backup-script-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "script-carries-the-sysmon-keys",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "FILETARGETDIRS=/var/tmp/p8test-sysmon/\nFILEPREFIX=sysmon.p8test.invalid\nBACKDIR=/opt/puppet-infrastructure/backup/sysmon\nNC=10\nCOMPRESSION=true\n",
+   "stderr": ""
+  },
+  {
+   "id": "nightly-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "# Puppet Name: cron_sysmon_backup\n0 23 * * * /opt/puppet-infrastructure/bin/backup-sysmon.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-backup-directory-exists",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "aged-archives-are-planted",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "./p8test-other-old.tar.gz ./sysmon.p8test.invalid-old.tar.gz \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the fixture source /var/tmp/p8test-sysmon/ (the monitoring server's data) with one file p8test.txt; creates in {{LOCALDIR}}/backup/sysmon: sysmon.p8test.invalid-old.tar.gz dated 12 days ago, sysmon.p8test.invalid-recent.tar.gz dated 5 days ago, and p8test-other-old.tar.gz (another prefix) dated 30 days ago",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "backup-runs-and-archives-basedir",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0\nsysmon.p8test.invalid-DATE.tar.gz\ngzip-ok\nrestores-byte-for-byte\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs backup-sysmon.sh once as root (a new archive in the backup directory; the planted 12-day-old file of its prefix is deleted); writes its exit code and the archive's name to /run/p8test-sysmon (rc, archive) and restores var/tmp/p8test-sysmon/p8test.txt from the archive there",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-run-deletes-only-its-own-old-archives",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test-other-old.tar.gz sysmon.p8test.invalid-DATE.tar.gz sysmon.p8test.invalid-recent.tar.gz \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond listing the backup directory (declared mutating so it runs after the run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-failed-run-is-loud",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "exit non-zero\n1\n1\nthe 12-day-old archive is kept\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "mounts a 4 KiB tmpfs over {{LOCALDIR}}/backup/sysmon (left mounted: the node is reverted after the run) and writes sysmon.p8test.invalid-ancient.tar.gz into it, dated 12 days ago; runs backup-sysmon.sh once as root; its exit code and stderr go to /run/p8test-sysmon-fail (rc, stderr); the script logs its ERROR line to syslog (the journal, /var/log/syslog)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "8da78411-e740-4c7e-980b-131d4b4e622c",
+   "boot_id_at_end": "8da78411-e740-4c7e-980b-131d4b4e622c",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "0eb15e0e695cf93a0b68914ea275f7e52688af2d1eb991eec67a16a675c5afd0",
+ "duration_s": 58.3
+}

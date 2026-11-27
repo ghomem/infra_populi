@@ -1,0 +1,449 @@
+{
+ "class": "postfix_smtp_node",
+ "role": "local",
+ "at": "20261127T054937Z",
+ "set_sha256": "f99d12a3ada47521882de2abd8b438c11ee171727ca40129558e136c6d58e94b",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "effective-relay-config",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: postconf: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "postfix-config-sane",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "bash: line 97: postfix: command not found\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "sasl-map-compiled-for-the-relayhost",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/postfix/sasl_passwd': No such file or directory\nbash: line 98: postmap: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "postfix-running-and-enabled",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "inactive\nnot-found\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "sasl-plain-module-installed",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "install ok installed\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "root-alias-rendered-from-default",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/aliases: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-peer-plays-the-relayhost",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "inactive\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-message-from-the-node-goes-to-the-relayhost",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "bash: line 97: postqueue: command not found\ncat: /run/p8test-mail/cursor: No such file or directory\nFailed to seek to cursor: Invalid argument\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-relayhost-received-it-authenticated-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n0\n",
+   "stderr": "grep: /var/mail/p8testuser: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-message-over-the-size-limit-is-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "refused\n0\n",
+   "stderr": "cat: /run/p8test-mail/big.rc: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "another-host-cannot-relay-through-the-node",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "no session ConnectionRefusedError\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Package[postfix]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/File[/etc/postfix/main.cf]/content: content changed '{sha256}2953c74ec77d2fc2d3961f5ffd287d4fe848ddf46dc2c3416ff43bb1875b4588' to '{sha256}010740f9f6f57a195b2f51772da49a1f42dacc362c54be1420e7276baa5f7eb2'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/File[/etc/postfix/sasl_passwd]/ensure: defined content as '{sha256}bd30a098b53e8f6c0671e10b5c3b71f4261f9723ee99c8c3ca736c8f2506ce0b'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Exec[postmap_sasl]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/File[/etc/aliases]/content: content changed '{sha256}5acece4532eb1da22d175ea0d17baa34c137857cd6d778876a792c3677c23387' to '{sha256}af17cfc61e18164e310d2b2ba1043891bfe5b739985dfd8899a2b92191811936'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Exec[newaliases]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Service[postfix]: Triggered 'refresh' from 4 events\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "production in 0.06 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Package[postfix]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/File[/etc/postfix/main.cf]/content: content changed '{sha256}2953c74ec77d2fc2d3961f5ffd287d4fe848ddf46dc2c3416ff43bb1875b4588' to '{sha256}010740f9f6f57a195b2f51772da49a1f42dacc362c54be1420e7276baa5f7eb2'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/File[/etc/postfix/sasl_passwd]/ensure: defined content as '{sha256}bd30a098b53e8f6c0671e10b5c3b71f4261f9723ee99c8c3ca736c8f2506ce0b'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Exec[postmap_sasl]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/File[/etc/aliases]/content: content changed '{sha256}5acece4532eb1da22d175ea0d17baa34c137857cd6d778876a792c3677c23387' to '{sha256}af17cfc61e18164e310d2b2ba1043891bfe5b739985dfd8899a2b92191811936'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Exec[newaliases]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Service[postfix]: Triggered 'refresh' from 4 events\u001b[0m\n\u001b[mNotice: Applied catalog in 28.11 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Package[postfix]\nCHANGED File[/etc/postfix/main.cf]\nCHANGED File[/etc/postfix/sasl_passwd]\nCHANGED Exec[postmap_sasl]\nCHANGED File[/etc/aliases]\nCHANGED Exec[newaliases]\nCHANGED Service[postfix]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.39 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.39 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "effective-relay-config",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "puppet8node\nmycompany.com\npuppet8node, localhost.localdomain, , localhost\nmailserver.mycompany.com:587\n127.0.0.0/8\n10240000\nyes\nhash:/etc/postfix/sasl_passwd\n/etc/ssl/certs/ca-certificates.crt\nipv4\n",
+   "stderr": ""
+  },
+  {
+   "id": "postfix-config-sane",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "postfix: Postfix is using backwards-compatible default settings\npostfix: See http://www.postfix.org/COMPATIBILITY_README.html for details\npostfix: To disable backwards compatibility use \"postconf compatibility_level=3.6\" and \"postfix reload\"\npostfix-check-ok\n",
+   "stderr": ""
+  },
+  {
+   "id": "sasl-map-compiled-for-the-relayhost",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "640 root root\np8test-relay\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the looked-up relay host (relay.p8test.invalid): the map holds only the configured relayhost, so the lookup must return no user",
+    "rc": 0,
+    "passed": false,
+    "stdout": "640 root root\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "postfix-running-and-enabled",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\nenabled\n",
+   "stderr": ""
+  },
+  {
+   "id": "sasl-plain-module-installed",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "root-alias-rendered-from-default",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "2:root: \naliases-db-present\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-peer-plays-the-relayhost",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0.0.0.0:587\n[::]:587\nactive\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: installs postfix (local delivery for p8test-backend.invalid, every other destination bounced by default_transport error), dovecot-core and ssl-cert; creates the accounts p8testuser and p8test-relay (the latter with the lab Hiera fixture's fake relay password, marked not-a-secret); enables postfix submission (587, STARTTLS may) with SASL from dovecot's auth socket and relay for authenticated clients only; restarts postfix and dovecot",
+    "rc": 0,
+    "stdout": "",
+    "stderr": "nset),\n\tLC_ALL = (unset),\n\tLC_ADDRESS = \"pt_PT.UTF-8\",\n\tLC_NAME = \"pt_PT.UTF-8\",\n\tLC_MONETARY = \"pt_PT.UTF-8\",\n\tLC_PAPER = \"pt_PT.UTF-8\",\n\tLC_IDENTIFICATION = \"pt_PT.UTF-8\",\n\tLC_TELEPHONE = \"pt_PT.UTF-8\",\n\tLC_MEASUREMENT = \"pt_PT.UTF-8\",\n\tLC_TIME = \"pt_PT.UTF-8\",\n\tLC_NUMERIC = \"pt_PT.UTF-8\",\n\tLANG = \"en_US.UTF-8\"\n    are supported and installed on your system.\nperl: warning: Falling back to a fallback locale (\"en_US.UTF-8\").\nlocale: Cannot set LC_ALL to default locale: No such file or directory\n"
+   }
+  },
+  {
+   "id": "a-message-from-the-node-goes-to-the-relayhost",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Mail queue is empty\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "on the node: appends \"$PEER_ADDR mailserver.mycompany.com\" to /etc/hosts (the peer's host-only address, from the runner); inserts `-I OUTPUT -p tcp -m multiport --dports 25,465,587 ! -d $PEER_ADDR -m comment --comment p8test-mail-fence -j REJECT` so no message can reach the real-world relayhost domain; saves /etc/resolv.conf to /run/p8test-mail/resolv.conf.orig and points it and postfix's chroot copy (/var/spool/postfix/etc/resolv.conf) at the systemd-resolved stub 127.0.0.53, which answers from /etc/hosts; waits up to 10 s for the stub to answer the pin; reloads postfix; notes the journal cursor in /run/p8test-mail/cursor; submits one message (token p8test-relay-token) from root to p8testuser@p8test-backend.invalid with sendmail and waits up to 60 s for the queue to empty",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-relayhost-received-it-authenticated-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n1\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the mailbox and the journal (declared mutating so it runs after the node's message)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-message-over-the-size-limit-is-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "refused\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "submits one message of about 10.5 MB from root to p8testuser@p8test-backend.invalid with sendmail (the fence from the relay check stays in place); writes its exit status to /run/p8test-mail/big.rc",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "another-host-cannot-relay-through-the-node",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "454 Relay access denied\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "one SMTP session from the peer to the class node's port 25, ending before DATA (no message is accepted)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "c8d0e0d7-a6cc-48b1-860a-b3412dc6278f",
+   "boot_id_at_end": "c8d0e0d7-a6cc-48b1-860a-b3412dc6278f",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "36a16368-45e6-433d-baf6-7551a651fb9d",
+   "boot_id_at_end": "36a16368-45e6-433d-baf6-7551a651fb9d",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "cf651f8fba8fc0cd41aa69f5af5c45916f3a514e093bcca0e99a21eb7f7d435a",
+ "variants": {
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "clean": [
+    {
+     "id": "on-redhat-sasl-plain-and-the-ca-bundle",
+     "control": "negative",
+     "rc": 3,
+     "passed": false,
+     "stdout": "package cyrus-sasl-plain is not installed\ninactive\n",
+     "stderr": "bash: line 98: postconf: command not found\n",
+     "ok": true
+    },
+    {
+     "id": "on-redhat-the-per-node-values-reach-postfix",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "",
+     "stderr": "bash: line 97: postconf: command not found\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Package[cyrus_sasl_package]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Package[postfix]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/File[/etc/postfix/main.cf]/content: content changed '{sha256}61df0dd2a13cbfc6b36889e89866b3f59d2e222e5293997a5017245ff80520fc' to '{sha256}c9c18a287ac60443ee2788ef1a70c1c56ad09f67d5ac825cadac4264d90be5bd'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/File[/etc/postfix/sasl_passwd]/ensure: defined content as '{sha256}bd30a098b53e8f6c0671e10b5c3b71f4261f9723ee99c8c3ca736c8f2506ce0b'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Exec[postmap_sasl]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/File[/etc/aliases]/content: content changed '{sha256}a4c569569f893bc22fbe696c459f8fba0fe4565022637300b705b54a95c47bce' to '{sha256}9267911e5cb68eb10f0782afeb64f5586f921156599677c86bf39b1c772d7bbb'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Exec[newaliases]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Service[postfix]/ensure: ensure changed 'stopped' to 'running'\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "e[main]/Puppet_infrastructure::Postfix_smtp_node/Package[postfix]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/File[/etc/postfix/main.cf]/content: content changed '{sha256}61df0dd2a13cbfc6b36889e89866b3f59d2e222e5293997a5017245ff80520fc' to '{sha256}c9c18a287ac60443ee2788ef1a70c1c56ad09f67d5ac825cadac4264d90be5bd'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/File[/etc/postfix/sasl_passwd]/ensure: defined content as '{sha256}bd30a098b53e8f6c0671e10b5c3b71f4261f9723ee99c8c3ca736c8f2506ce0b'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Exec[postmap_sasl]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/File[/etc/aliases]/content: content changed '{sha256}a4c569569f893bc22fbe696c459f8fba0fe4565022637300b705b54a95c47bce' to '{sha256}9267911e5cb68eb10f0782afeb64f5586f921156599677c86bf39b1c772d7bbb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Exec[newaliases]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Postfix_smtp_node/Service[postfix]/ensure: ensure changed 'stopped' to 'running'\u001b[0m\n\u001b[mNotice: Applied catalog in 25.25 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Package[cyrus_sasl_package]\nCHANGED Package[postfix]\nCHANGED File[/etc/postfix/main.cf]\nCHANGED File[/etc/postfix/sasl_passwd]\nCHANGED Exec[postmap_sasl]\nCHANGED File[/etc/aliases]\nCHANGED Exec[newaliases]\nCHANGED Service[postfix]\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.07 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.19 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.07 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.19 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-sasl-plain-and-the-ca-bundle",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "cyrus-sasl-plain\n/etc/ssl/certs/ca-bundle.crt\nactive\n",
+     "stderr": ""
+    },
+    {
+     "id": "on-redhat-the-per-node-values-reach-postfix",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "127.0.0.0/8 192.0.2.0/24\np8test-dest.invalid, localhost, localhost.localdomain, , localhost\n20480000\nroot: p8test-admin@p8test.invalid\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "17ad8dc7-63cd-4d0a-b30d-d03c830b0ecb",
+     "boot_id_at_end": "17ad8dc7-63cd-4d0a-b30d-d03c830b0ecb",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "p8lab-ubuntu2",
+    "PEER_ADDR": "192.168.56.24",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "cf651f8fba8fc0cd41aa69f5af5c45916f3a514e093bcca0e99a21eb7f7d435a"
+  }
+ },
+ "duration_s": 637.5
+}

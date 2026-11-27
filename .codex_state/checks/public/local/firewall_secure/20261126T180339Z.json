@@ -1,0 +1,861 @@
+{
+ "class": "firewall_secure",
+ "role": "local",
+ "at": "20261126T175127Z",
+ "set_sha256": "fdb6eeb3cdcd50c055af86b48ed5e4f92685853a4ed55dc689c990b89ec9194f",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "default-policies-drop-input-and-forward",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n-P OUTPUT ACCEPT\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "whitelist-is-the-hiera-list-plus-the-acl",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-running-rules-are-saved-for-the-next-boot",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "not-found\n",
+   "stderr": "bash: line 99: /etc/iptables/rules.v4: No such file or directory\ngrep: /etc/iptables/rules.v4: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "flush-script-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/iptables-flush.sh': No such file or directory\nsha256sum: /opt/puppet-infrastructure/bin/iptables-flush.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "a-service-the-firewall-does-not-allow-is-listening",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "loopback-reaches-a-local-service",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "closed\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "another-host-gets-icmp-and-ssh-but-not-other-ports",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-firewall/reach.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-burst-of-new-ssh-connections-is-cut-at-the-limit",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-firewall/burst.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-whitelisted-host-is-not-limited",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-firewall/whitelisted.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-ssh-rule-counters-are-recorded",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "cut: /run/p8test-firewall/ssh-before: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "held-connections-stop-at-eight",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-firewall/held.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "only-the-per-host-limit-dropped-the-held-connections",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "sort: cannot read: /run/p8test-firewall/ssh-before: No such file or directory\niptables: No chain/target/match by that name.\niptables: No chain/target/match by that name.\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "new-connections-stop-at-fifteen-a-minute",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-firewall/spaced.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "an-unmanaged-rule-is-added",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-purges-the-unmanaged-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n-P INPUT ACCEPT\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-flush-script-clears-every-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "absent\n0 0 0\n-P INPUT ACCEPT\n-P FORWARD ACCEPT\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-agent-run-rebuilds-the-firewall",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n0\n0\n",
+   "stderr": "iptables: No chain/target/match by that name.\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Firewall::Linux::Debian/Package[iptables-persistent]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/File[/opt/puppet-infrastructure/bin/iptables-flush.sh]/ensure: defined content as '{sha256}af2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[FORWARD:filter:IPv4]/policy: policy changed 'accept' to 'drop'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[INPUT:filter:IPv4]/policy: policy changed 'accept' to 'drop'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[000 accept all icmp]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[001 accept all to lo interface]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[002 reject local traffic not on loopback interface]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[003 accept related established rules]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[100 SSH whitelist 127.0.0.1]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[100 SSH whitelist 192.168.56.1]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[100 SSH whitelist 192.168.56.124]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[LIMIT_INDIVIDUAL:filter:IPv4]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[LIMIT_OVERALL:filter:IPv4]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[110 SSH LIMIT_INDIVIDUAL]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[111 SSH ACCEPT ESTABLISHED]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[112 SSH connlimit]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[113 SSH set recent]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[114 SSH set recent]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[115 SSH LIMIT_INDIVIDUAL]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[116 SSH LIMIT_OVERALL]/ensure: defined 'ensure' as 'present'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[117 SSH DROP]/ensure: defined 'ensure' as 'present'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "ort=>22, :jump=>\"LIMIT_OVERALL\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\"}\u001b[0m\n\u001b[mNotice: firewall[115 SSH LIMIT_INDIVIDUAL]: Creating: Ensuring changes to '115 SSH LIMIT_INDIVIDUAL' persist\u001b[0m\n\u001b[mNotice: firewall[115 SSH LIMIT_INDIVIDUAL]: Creating: Finished in 0.060151 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[116 SSH LIMIT_OVERALL]/ensure: defined 'ensure' as 'present'\u001b[0m\n\u001b[mNotice: firewall[116 SSH LIMIT_OVERALL]: Creating: Creating Rule '116 SSH LIMIT_OVERALL' with {:name=>\"116 SSH LIMIT_OVERALL\", :chain=>\"LIMIT_OVERALL\", :proto=>\"tcp\", :dport=>22, :limit=>\"20/min\", :jump=>\"ACCEPT\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\"}\u001b[0m\n\u001b[mNotice: firewall[116 SSH LIMIT_OVERALL]: Creating: Ensuring changes to '116 SSH LIMIT_OVERALL' persist\u001b[0m\n\u001b[mNotice: firewall[116 SSH LIMIT_OVERALL]: Creating: Finished in 0.107318 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[117 SSH DROP]/ensure: defined 'ensure' as 'present'\u001b[0m\n\u001b[mNotice: firewall[117 SSH DROP]: Creating: Creating Rule '117 SSH DROP' with {:name=>\"117 SSH DROP\", :chain=>\"LIMIT_OVERALL\", :proto=>\"tcp\", :dport=>22, :jump=>\"DROP\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\"}\u001b[0m\n\u001b[mNotice: firewall[117 SSH DROP]: Creating: Ensuring changes to '117 SSH DROP' persist\u001b[0m\n\u001b[mNotice: firewall[117 SSH DROP]: Creating: Finished in 0.061233 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 19.38 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.21 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 1.51 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.21 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 1.51 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "default-policies-drop-input-and-forward",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P INPUT DROP\n-P FORWARD DROP\n-P OUTPUT ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "whitelist-is-the-hiera-list-plus-the-acl",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-s 127.0.0.1/32\n-s 192.168.56.1/32\n-s 192.168.56.124/32\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-running-rules-are-saved-for-the-next-boot",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "enabled\nsaved-equals-running\n8\n",
+   "stderr": ""
+  },
+  {
+   "id": "flush-script-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\naf2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-service-the-firewall-does-not-allow-is-listening",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0.0.0.0:8888\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "starts a transient unit p8test-listener (python3 -m http.server 8888 on 0.0.0.0) on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "loopback-reaches-a-local-service",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "open\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond one local connection to 127.0.0.1:8888 (declared mutating so it runs after the service starts)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "another-host-gets-icmp-and-ssh-but-not-other-ports",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "icmp in\nssh in\n8888 dropped\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "three connection attempts from the peer to the class node (ICMP, TCP 22, TCP 8888); results in /run/p8test-firewall/reach.txt on the peer",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-burst-of-new-ssh-connections-is-cut-at-the-limit",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "dropped 15\nin 5\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "after 61 s (the 60 s recent window of the previous check expires and the limit refills), 20 parallel TCP connects from the peer to the class node's port 22; counts in /run/p8test-firewall/burst.txt on the peer",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-whitelisted-host-is-not-limited",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "in 20\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "adds a second address (its host-only address + 100, /24) to the peer's host-only NIC, then 20 parallel TCP connects from it to the class node's port 22; counts in /run/p8test-firewall/whitelisted.txt on the peer",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-ssh-rule-counters-are-recorded",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "112 114 116 117\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes the counters of rules 112, 114, 116 and 117 to /run/p8test-firewall/ssh-before on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "held-connections-stop-at-eight",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "8\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "after 61 s (the earlier burst's 60 s recent window expires), 10 SSH connections from the peer's primary address to the class node, one every 4 s, each held 50 s (p8_hold); the established count goes to /run/p8test-firewall/held.txt on the peer",
+    "rc": 124,
+    "stdout": "",
+    "stderr": "probe timed out after 150s"
+   }
+  },
+  {
+   "id": "only-the-per-host-limit-dropped-the-held-connections",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "112 dropped the 9th and 10th\n114 dropped 0\n116 accepted at least 8\n117 dropped 0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rule counters (declared mutating so it runs after the held connections)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "new-connections-stop-at-fifteen-a-minute",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "in 14\ndropped 4\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "after 61 s (the held connections' window expires), 18 TCP connects from the peer's primary address to the class node's port 22, one every 3.5 s; the sequence goes to /run/p8test-firewall/spaced.txt on the peer",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "an-unmanaged-rule-is-added",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "appends `-A INPUT -s 10.255.255.1/32 -m comment --comment p8test-rogue -j ACCEPT` on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-agent-run-purges-the-unmanaged-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\n-P INPUT DROP\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rules (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-flush-script-clears-every-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root:root 755 af2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935\n0 0 0\n-P INPUT ACCEPT\n-P FORWARD ACCEPT\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs {{LOCALDIR}}/bin/iptables-flush.sh on the node (every IPv4 and IPv6 rule and chain removed, policies ACCEPT)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-agent-run-rebuilds-the-firewall",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P INPUT DROP\n-P FORWARD DROP\n3\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rules (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "24307f40-15d2-4689-86bc-0475c93f96dc",
+   "boot_id_at_end": "24307f40-15d2-4689-86bc-0475c93f96dc",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "1cf43c1d-fffb-4926-b929-e628fe2af05b",
+   "boot_id_at_end": "1cf43c1d-fffb-4926-b929-e628fe2af05b",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "e362401a6f276fb8aa577b949e020a8bb5e7609c840cd4ce46065a5aca790884",
+ "node_agent": {
+  "an-unmanaged-rule-is-added": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[9010 p8test-rogue]/ensure: undefined 'ensure' from 'present'\u001b[0m"
+   ],
+   "errors": [],
+   "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.26 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[9010 p8test-rogue]/ensure: undefined 'ensure' from 'present'\u001b[0m\n\u001b[mNotice: firewall[9010 p8test-rogue]: Deleting: Deleting Rule '9010 p8test-rogue'\u001b[0m\n\u001b[mNotice: firewall[9010 p8test-rogue]: Deleting: Ensuring changes to '9010 p8test-rogue' persist\u001b[0m\n\u001b[mNotice: firewall[9010 p8test-rogue]: Deleting: Finished in 0.070837 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 1.61 seconds\u001b[0m\nAGENT_RC=2\n"
+  },
+  "the-flush-script-clears-every-rule": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[FORWARD:filter:IPv4]/policy: policy changed 'accept' to 'drop'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[INPUT:filter:IPv4]/policy: policy changed 'accept' to 'drop'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[000 accept all icmp]/ensure: defined 'ensure' as 'present'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[001 accept all to lo interface]/ensure: defined 'ensure' as 'present'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[002 reject local traffic not on loopback interface]/ensure: defined 'ensure' as 'present'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[003 accept related established rules]/ensure: defined 'ensure' as 'present'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[100 SSH whitelist 127.0.0.1]/ensure: defined 'ensure' as 'present'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[100 SSH whitelist 192.168.56.1]/ensure: defined 'ensure' as 'present'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[100 SSH whitelist 192.168.56.124]/ensure: defined 'ensure' as 'present'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[LIMIT_INDIVIDUAL:filter:IPv4]/ensure: defined 'ensure' as 'present'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[LIMIT_OVERALL:filter:IPv4]/ensure: defined 'ensure' as 'present'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[110 SSH LIMIT_INDIVIDUAL]/ensure: defined 'ensure' as 'present'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[111 SSH ACCEPT ESTABLISHED]/ensure: defined 'ensure' as 'present'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[112 SSH connlimit]/ensure: defined 'ensure' as 'present'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[113 SSH set recent]/ensure: defined 'ensure' as 'present'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[114 SSH set recent]/ensure: defined 'ensure' as 'present'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[115 SSH LIMIT_INDIVIDUAL]/ensure: defined 'ensure' as 'present'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[116 SSH LIMIT_OVERALL]/ensure: defined 'ensure' as 'present'\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[117 SSH DROP]/ensure: defined 'ensure' as 'present'\u001b[0m"
+   ],
+   "errors": [],
+   "tail": "port=>22, :jump=>\"LIMIT_OVERALL\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\"}\u001b[0m\n\u001b[mNotice: firewall[115 SSH LIMIT_INDIVIDUAL]: Creating: Ensuring changes to '115 SSH LIMIT_INDIVIDUAL' persist\u001b[0m\n\u001b[mNotice: firewall[115 SSH LIMIT_INDIVIDUAL]: Creating: Finished in 0.081649 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[116 SSH LIMIT_OVERALL]/ensure: defined 'ensure' as 'present'\u001b[0m\n\u001b[mNotice: firewall[116 SSH LIMIT_OVERALL]: Creating: Creating Rule '116 SSH LIMIT_OVERALL' with {:name=>\"116 SSH LIMIT_OVERALL\", :chain=>\"LIMIT_OVERALL\", :proto=>\"tcp\", :dport=>22, :limit=>\"20/min\", :jump=>\"ACCEPT\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\"}\u001b[0m\n\u001b[mNotice: firewall[116 SSH LIMIT_OVERALL]: Creating: Ensuring changes to '116 SSH LIMIT_OVERALL' persist\u001b[0m\n\u001b[mNotice: firewall[116 SSH LIMIT_OVERALL]: Creating: Finished in 0.082952 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[117 SSH DROP]/ensure: defined 'ensure' as 'present'\u001b[0m\n\u001b[mNotice: firewall[117 SSH DROP]: Creating: Creating Rule '117 SSH DROP' with {:name=>\"117 SSH DROP\", :chain=>\"LIMIT_OVERALL\", :proto=>\"tcp\", :dport=>22, :jump=>\"DROP\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\"}\u001b[0m\n\u001b[mNotice: firewall[117 SSH DROP]: Creating: Ensuring changes to '117 SSH DROP' persist\u001b[0m\n\u001b[mNotice: firewall[117 SSH DROP]: Creating: Finished in 0.087210 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 2.72 seconds\u001b[0m\nAGENT_RC=2\n"
+  }
+ },
+ "variants": {
+  "strict": {
+   "name": "strict",
+   "node": "ubuntu",
+   "params": "strict",
+   "clean": [
+    {
+     "id": "strict-mode-has-no-rate-limit-only-the-whitelist",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "-P INPUT ACCEPT\n0\nrate-limit rules: 0\nno LIMIT_INDIVIDUAL chain\n",
+     "stderr": "",
+     "ok": true
+    },
+    {
+     "id": "strict-mode-admits-a-listed-source-and-drops-an-unlisted-one",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "",
+     "stderr": "cat: /run/p8test-fw/strict.txt: No such file or directory\n",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Firewall::Linux::Debian/Package[iptables-persistent]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/File[/opt/puppet-infrastructure/bin/iptables-flush.sh]/ensure: defined content as '{sha256}af2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[FORWARD:filter:IPv4]/policy: policy changed 'accept' to 'drop'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[INPUT:filter:IPv4]/policy: policy changed 'accept' to 'drop'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[000 accept all icmp]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[001 accept all to lo interface]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[002 reject local traffic not on loopback interface]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[003 accept related established rules]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[100 SSH whitelist 127.0.0.1]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[100 SSH whitelist 192.168.56.1]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[100 SSH whitelist 192.168.56.124]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[100 SSH whitelist 192.0.2.3]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[LIMIT_OVERALL:filter:IPv4]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[117 SSH DROP]/ensure: defined 'ensure' as 'present'\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "nsure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\"}\u001b[0m\n\u001b[mNotice: firewall[100 SSH whitelist 192.0.2.3]: Creating: Ensuring changes to '100 SSH whitelist 192.0.2.3' persist\u001b[0m\n\u001b[mNotice: firewall[100 SSH whitelist 192.0.2.3]: Creating: Finished in 0.073840 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[LIMIT_OVERALL:filter:IPv4]/ensure: defined 'ensure' as 'present'\u001b[0m\n\u001b[mNotice: firewallchain[LIMIT_OVERALL:filter:IPv4]: Creating: Creating Chain 'LIMIT_OVERALL:filter:IPv4' with {:name=>\"LIMIT_OVERALL:filter:IPv4\", :ensure=>\"present\", :purge=>false, :ignore_foreign=>false, :chain=>\"LIMIT_OVERALL\", :table=>\"filter\", :protocol=>\"IPv4\"}\u001b[0m\n\u001b[mNotice: firewallchain[LIMIT_OVERALL:filter:IPv4]: Creating: Ensuring changes to 'LIMIT_OVERALL:filter:IPv4' persist\u001b[0m\n\u001b[mNotice: firewallchain[LIMIT_OVERALL:filter:IPv4]: Creating: Finished in 0.062001 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[117 SSH DROP]/ensure: defined 'ensure' as 'present'\u001b[0m\n\u001b[mNotice: firewall[117 SSH DROP]: Creating: Creating Rule '117 SSH DROP' with {:name=>\"117 SSH DROP\", :chain=>\"LIMIT_OVERALL\", :proto=>\"tcp\", :dport=>22, :jump=>\"DROP\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\"}\u001b[0m\n\u001b[mNotice: firewall[117 SSH DROP]: Creating: Ensuring changes to '117 SSH DROP' persist\u001b[0m\n\u001b[mNotice: firewall[117 SSH DROP]: Creating: Finished in 0.080504 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 13.01 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.21 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 1.12 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.21 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 1.12 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "strict-mode-has-no-rate-limit-only-the-whitelist",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "-P INPUT DROP\nwhitelist rules present\nrate-limit rules: 0\nno LIMIT_INDIVIDUAL chain\n",
+     "stderr": ""
+    },
+    {
+     "id": "strict-mode-admits-a-listed-source-and-drops-an-unlisted-one",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "192.0.2.3 in\n192.0.2.2 dropped\n",
+     "stderr": "",
+     "mutating": true,
+     "action": {
+      "mutates": "on the node: creates the network namespace p8fw and the veth pair p8fw0 (node side, 192.0.2.1/24) and p8fw1 (in the namespace, 192.0.2.2/24 and 192.0.2.3/24); makes one TCP connection attempt to 192.0.2.1:22 from each source address (nc -z, 5 s timeout); writes the outcomes to /run/p8test-fw/strict.txt",
+      "rc": 0,
+      "stdout": "",
+      "stderr": ""
+     }
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "3b7219c1-b9b4-4ae4-8348-14aae9f01379",
+     "boot_id_at_end": "3b7219c1-b9b4-4ae4-8348-14aae9f01379",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "p8lab-ubuntu2",
+    "PEER_ADDR": "192.168.56.24",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "8664d0819681e211ddd3c73274f30c3c93ad5fa9642984e09308783d63ae46ba"
+  },
+  "keep": {
+   "name": "keep",
+   "node": "ubuntu",
+   "params": "keep",
+   "clean": [
+    {
+     "id": "keep-two-unmanaged-rules-are-planted",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "0\n",
+     "stderr": "",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    },
+    {
+     "id": "keep-the-agent-run-keeps-the-matching-rule",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "kept: 0\nother: 0\n",
+     "stderr": "",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Firewall::Linux::Debian/Package[iptables-persistent]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/File[/opt/puppet-infrastructure/bin/iptables-flush.sh]/ensure: defined content as '{sha256}af2e05ea3178cc4d26319a1267eae4d8245767a803a77580e72e1414e48a7935'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[FORWARD:filter:IPv4]/policy: policy changed 'accept' to 'drop'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[INPUT:filter:IPv4]/policy: policy changed 'accept' to 'drop'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[000 accept all icmp]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[001 accept all to lo interface]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[002 reject local traffic not on loopback interface]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[003 accept related established rules]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[100 SSH whitelist 127.0.0.1]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[100 SSH whitelist 192.168.56.1]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[100 SSH whitelist 192.168.56.124]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[LIMIT_INDIVIDUAL:filter:IPv4]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewallchain[LIMIT_OVERALL:filter:IPv4]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[110 SSH LIMIT_INDIVIDUAL]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[111 SSH ACCEPT ESTABLISHED]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[112 SSH connlimit]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[113 SSH set recent]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[114 SSH set recent]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[115 SSH LIMIT_INDIVIDUAL]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[116 SSH LIMIT_OVERALL]/ensure: defined 'ensure' as 'present'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[117 SSH DROP]/ensure: defined 'ensure' as 'present'\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "ort=>22, :jump=>\"LIMIT_OVERALL\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\"}\u001b[0m\n\u001b[mNotice: firewall[115 SSH LIMIT_INDIVIDUAL]: Creating: Ensuring changes to '115 SSH LIMIT_INDIVIDUAL' persist\u001b[0m\n\u001b[mNotice: firewall[115 SSH LIMIT_INDIVIDUAL]: Creating: Finished in 0.079146 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[116 SSH LIMIT_OVERALL]/ensure: defined 'ensure' as 'present'\u001b[0m\n\u001b[mNotice: firewall[116 SSH LIMIT_OVERALL]: Creating: Creating Rule '116 SSH LIMIT_OVERALL' with {:name=>\"116 SSH LIMIT_OVERALL\", :chain=>\"LIMIT_OVERALL\", :proto=>\"tcp\", :dport=>22, :limit=>\"20/min\", :jump=>\"ACCEPT\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\"}\u001b[0m\n\u001b[mNotice: firewall[116 SSH LIMIT_OVERALL]: Creating: Ensuring changes to '116 SSH LIMIT_OVERALL' persist\u001b[0m\n\u001b[mNotice: firewall[116 SSH LIMIT_OVERALL]: Creating: Finished in 0.140884 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[117 SSH DROP]/ensure: defined 'ensure' as 'present'\u001b[0m\n\u001b[mNotice: firewall[117 SSH DROP]: Creating: Creating Rule '117 SSH DROP' with {:name=>\"117 SSH DROP\", :chain=>\"LIMIT_OVERALL\", :proto=>\"tcp\", :dport=>22, :jump=>\"DROP\", :ensure=>\"present\", :protocol=>\"IPv4\", :table=>\"filter\"}\u001b[0m\n\u001b[mNotice: firewall[117 SSH DROP]: Creating: Ensuring changes to '117 SSH DROP' persist\u001b[0m\n\u001b[mNotice: firewall[117 SSH DROP]: Creating: Finished in 0.090817 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 14.75 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.21 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 1.63 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.21 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 1.63 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "keep-two-unmanaged-rules-are-planted",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "2\n",
+     "stderr": "",
+     "mutating": true,
+     "action": {
+      "mutates": "appends two ACCEPT rules to INPUT on the node, commented p8test-keep-me (source 10.255.255.2) and p8test-other (source 10.255.255.3)",
+      "rc": 0,
+      "stdout": "",
+      "stderr": ""
+     }
+    },
+    {
+     "id": "keep-the-agent-run-keeps-the-matching-rule",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "kept: 1\nother: 0\n",
+     "stderr": "",
+     "mutating": true,
+     "action": {
+      "mutates": "none beyond reading the rules (declared mutating so it runs after the node's agent run)",
+      "rc": 0,
+      "stdout": "",
+      "stderr": ""
+     }
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "4ad8fcfb-174e-40f4-8628-809ba2ea6afe",
+     "boot_id_at_end": "4ad8fcfb-174e-40f4-8628-809ba2ea6afe",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "p8lab-ubuntu2",
+    "PEER_ADDR": "192.168.56.24",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "bff0a7f2a63f7413dbd075c82e6a835eb211d948bd2dffdb6233babc0159bd2f",
+   "node_agent": {
+    "keep-two-unmanaged-rules-are-planted": {
+     "rc": 2,
+     "events": [
+      "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[9011 p8test-other]/ensure: undefined 'ensure' from 'present'\u001b[0m"
+     ],
+     "errors": [],
+     "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.21 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Firewall_secure/Firewall[9011 p8test-other]/ensure: undefined 'ensure' from 'present'\u001b[0m\n\u001b[mNotice: firewall[9011 p8test-other]: Deleting: Deleting Rule '9011 p8test-other'\u001b[0m\n\u001b[mNotice: firewall[9011 p8test-other]: Deleting: Ensuring changes to '9011 p8test-other' persist\u001b[0m\n\u001b[mNotice: firewall[9011 p8test-other]: Deleting: Finished in 0.108766 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 1.80 seconds\u001b[0m\nAGENT_RC=2\n"
+    }
+   }
+  }
+ },
+ "duration_s": 732.5
+}

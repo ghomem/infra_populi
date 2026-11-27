@@ -1,0 +1,203 @@
+{
+ "class": "puppet_commush",
+ "role": "local",
+ "at": "20261127T061039Z",
+ "set_sha256": "2eac644bfe0c3eee5e69a4072426718250e8cef95dfeac2d1d8c202c98c1736a",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "commush-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/puppet-infrastructure/bin/commush.sh': No such file or directory\nsha256sum: /opt/puppet-infrastructure/bin/commush.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "a-clone-with-a-change",
+   "control": "negative",
+   "rc": 128,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 96: cd: /run/p8test-commush/work: No such file or directory\nfatal: cannot change to '/run/p8test-commush/origin.git': No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-declined-run-and-a-missing-email-change-nothing",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "declined: rc , , origin  commit\nno email: rc , \n",
+   "stderr": "cat: /run/p8test-commush/declined.rc: No such file or directory\nbash: line 96: cd: /run/p8test-commush/work: No such file or directory\nfatal: cannot change to '/run/p8test-commush/origin.git': No such file or directory\ncat: /run/p8test-commush/usage.rc: No such file or directory\ncat: /run/p8test-commush/usage.out: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-confirmed-run-commits-and-pushes",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "rc , tracked changes left: \n0\norigin files: \n",
+   "stderr": "cat: /run/p8test-commush/confirmed.rc: No such file or directory\nbash: line 96: cd: /run/p8test-commush/work: No such file or directory\nfatal: cannot change to '/run/p8test-commush/origin.git': No such file or directory\nfatal: cannot change to '/run/p8test-commush/origin.git': No such file or directory\nfatal: cannot change to '/run/p8test-commush/origin.git': No such file or directory\nbash: line 100: cd: /run/p8test-commush/work: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-run-on-another-branch-warns-and-goes-on",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc \n0\norigin master unchanged\n",
+   "stderr": "cat: /run/p8test-commush/feature.rc: No such file or directory\nbash: line 98: cd: /run/p8test-commush/work: No such file or directory\nfatal: cannot change to '/run/p8test-commush/origin.git': No such file or directory\ncat: /run/p8test-commush/origin-before: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Puppet_commush/File[/opt/puppet-infrastructure/bin/commush.sh]/ensure: defined content as '{sha256}758912dd73a09f1abd629fc98865858d2b6040881694bc3acecdec18800ccf90'\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "puppet-infrastructure]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/etc]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/backup]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/pkgsdir]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/etc/default/locale]/ensure: defined content as '{sha256}26c9d6e9421bc06aab935a6145fa743774754cdaf8b5ea903c77a8ccd5c1a8fb'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Filesystem_base/File[/opt/puppet-infrastructure/bin/mypython]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Puppet_commush/File[/opt/puppet-infrastructure/bin/commush.sh]/ensure: defined content as '{sha256}758912dd73a09f1abd629fc98865858d2b6040881694bc3acecdec18800ccf90'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/opt/puppet-infrastructure]\nCHANGED File[/opt/puppet-infrastructure/bin]\nCHANGED File[/opt/puppet-infrastructure/etc]\nCHANGED File[/opt/puppet-infrastructure/backup]\nCHANGED File[/opt/puppet-infrastructure/pkgsdir]\nCHANGED File[/etc/default/locale]\nCHANGED File[/opt/puppet-infrastructure/bin/mypython]\nCHANGED File[/opt/puppet-infrastructure/bin/commush.sh]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.02 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "commush-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\n758912dd73a09f1abd629fc98865858d2b6040881694bc3acecdec18800ccf90\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-clone-with-a-change",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": " M nodes.pp\n?? p8test-untracked.pp\nP8 Seed|p8test seed\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs git if absent; creates /run/p8test-commush/origin.git (bare, master) and the clone /run/p8test-commush/work with nodes.pp committed once by \"P8 Seed\", then changes nodes.pp in the clone (not committed) and adds the untracked file p8test-untracked.pp",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-declined-run-and-a-missing-email-change-nothing",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "declined: rc 0,  M nodes.pp, origin 1 commit\nno email: rc 1, usage: commush.sh FULL_NAME EMAIL [BRANCH]\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs commush.sh twice as root in /run/p8test-commush/work: with the answers \"p8test declined\" and \"n\", and with a name but no email; sets root's global git user.name and user.email (the script does so on every run); outputs under /run/p8test-commush",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-confirmed-run-commits-and-pushes",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0, tracked changes left: 0\nP8 Test p8test@example.invalid|p8test node added\n1\norigin files: nodes.pp \n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs commush.sh once as root in /run/p8test-commush/work with a name and an email only (no branch), and the answers \"p8test node added\" and an empty line (commits and pushes to the local origin); sets root's global git identity; output under /run/p8test-commush",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-run-on-another-branch-warns-and-goes-on",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0\n1\np8test on feature\norigin master unchanged\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "in /run/p8test-commush/work: creates the branch feature, changes nodes.pp and runs commush.sh naming master with the answers \"p8test on feature\" and an empty line; output under /run/p8test-commush",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "74ded8c5-46f3-47af-98f1-4e66132e4065",
+   "boot_id_at_end": "74ded8c5-46f3-47af-98f1-4e66132e4065",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "942fc82d555a54163c2de46e27c3e5edaf3447e634385eb6fdfef43db96cfeda",
+ "duration_s": 64.0
+}

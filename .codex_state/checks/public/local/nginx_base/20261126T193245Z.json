@@ -1,0 +1,625 @@
+{
+ "class": "nginx_base",
+ "role": "local",
+ "at": "20261126T191845Z",
+ "set_sha256": "03d3b5c49c086e9071616c099eb18544b144e339d825022673aecc3a6e5ad55f",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "nginx-config-valid",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "bash: line 96: nginx: command not found\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "workers-auto-and-server-tokens-off",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/nginx/nginx.conf: No such file or directory\ngrep: /etc/nginx/nginx.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "log-formats-main-and-compact",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/nginx/nginx.conf: No such file or directory\ngrep: /etc/nginx/nginx.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "dh-group-2048-bits-not-world-readable",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/nginx/dhparams.pem': No such file or directory\nCan't open \"/etc/nginx/dhparams.pem\" for reading, No such file or directory\n40D732C6E0750000:error:80000002:system library:BIO_new_file:No such file or directory:../crypto/bio/bss_file.c:67:calling fopen(/etc/nginx/dhparams.pem, r)\n40D732C6E0750000:error:10000080:BIO routines:BIO_new_file:no such file:../crypto/bio/bss_file.c:75:\n",
+   "ok": true
+  },
+  {
+   "id": "a-dynamic-module-is-loaded-once-and-nginx-runs",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "0\n0\ninactive\n",
+   "stderr": "ls: cannot access '/etc/nginx/modules-enabled/': No such file or directory\ngrep: /etc/nginx/nginx.conf: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-server-header-names-no-version",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "no-ad-hoc-file-by-default",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "absent\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "nginx-comes-from-the-ubuntu-archive",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\nnot from the Ubuntu archive\n",
+   "stderr": "",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Package[nginx]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}48c6a4ec1e1fd28ccf968490f07e34a1d7f755793b2108a3ed8670b1ee2a0aa2' to '{sha256}d86ca9397952b7b6b19a8c46f6235e901b5ffe6dbfd7b5afba862ebb25a9ad7f'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}36c77daa2d85803e87c91ba723dd2bc6aaa6543ae4bd4a569034a7bf8bce464d' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Triggered 'refresh' from 1 event\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/Exec[Generate a new 2048-bit Diffie-Hellman group]/returns: executed successfully\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "t: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Package[nginx]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}48c6a4ec1e1fd28ccf968490f07e34a1d7f755793b2108a3ed8670b1ee2a0aa2' to '{sha256}d86ca9397952b7b6b19a8c46f6235e901b5ffe6dbfd7b5afba862ebb25a9ad7f'\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}36c77daa2d85803e87c91ba723dd2bc6aaa6543ae4bd4a569034a7bf8bce464d' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/Exec[Generate a new 2048-bit Diffie-Hellman group]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 29.93 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::merge instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/nginx_base.pp\", 75]:[\"/var/tmp/behaviour-suite/site.pp\", 2]\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.27 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.60 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::merge instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/nginx_base.pp\", 75]:[\"/var/tmp/behaviour-suite/site.pp\", 2]\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.27 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.60 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "nginx-config-valid",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\n",
+   "stderr": ""
+  },
+  {
+   "id": "workers-auto-and-server-tokens-off",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "log-formats-main-and-compact",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "dh-group-2048-bits-not-world-readable",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "640\nDH Parameters: (2048 bit)\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-server-header-names-no-version",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Server: nginx\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the header's expected value is checked against nginx -v's version string instead (which server_tokens off must keep out)",
+    "rc": 0,
+    "passed": false,
+    "stdout": "Server: nginx/1.24.0 (Ubuntu)\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "no-ad-hoc-file-by-default",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "absent\n",
+   "stderr": ""
+  },
+  {
+   "id": "nginx-comes-from-the-ubuntu-archive",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\nfrom the Ubuntu archive\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-dynamic-module-is-loaded-once-and-nginx-runs",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n1\nactive\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs the Ubuntu dynamic-module package libnginx-mod-stream (it enables /etc/nginx/modules-enabled/50-mod-stream.conf) and restarts nginx",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "517fd7d2-1c2c-4e66-82fc-c1778e42067d",
+   "boot_id_at_end": "517fd7d2-1c2c-4e66-82fc-c1778e42067d",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "ecd109aa8e9a39a06282adb232b6ccc9d2c7e7b1f14e2503b6dfb1aac7ec9c62",
+ "variants": {
+  "stream": {
+   "name": "stream",
+   "node": "ubuntu",
+   "params": "stream",
+   "clean": [
+    {
+     "id": "with-stream-enabled-the-stream-block-logs-nothing",
+     "control": "negative",
+     "rc": 4,
+     "passed": false,
+     "stdout": "0\ninactive\n",
+     "stderr": "awk: fatal: cannot open file `/etc/nginx/nginx.conf' for reading: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Package[nginx]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}48c6a4ec1e1fd28ccf968490f07e34a1d7f755793b2108a3ed8670b1ee2a0aa2' to '{sha256}06bd8af08342c13a76aa2a2a33509d89c95d300ac35c8f9908dd6411cf330001'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}36c77daa2d85803e87c91ba723dd2bc6aaa6543ae4bd4a569034a7bf8bce464d' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/Exec[Generate a new 2048-bit Diffie-Hellman group]/returns: executed successfully\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "t: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m\n\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Package[nginx]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}48c6a4ec1e1fd28ccf968490f07e34a1d7f755793b2108a3ed8670b1ee2a0aa2' to '{sha256}06bd8af08342c13a76aa2a2a33509d89c95d300ac35c8f9908dd6411cf330001'\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}36c77daa2d85803e87c91ba723dd2bc6aaa6543ae4bd4a569034a7bf8bce464d' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/Exec[Generate a new 2048-bit Diffie-Hellman group]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 35.56 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::merge instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/nginx_base.pp\", 75]:[\"/var/tmp/behaviour-suite/site.pp\", 0]\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.26 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.61 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::merge instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/nginx_base.pp\", 75]:[\"/var/tmp/behaviour-suite/site.pp\", 0]\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.26 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.61 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "with-stream-enabled-the-stream-block-logs-nothing",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "access_log off;\n1\nactive\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "ea00964c-6e94-4fe7-833f-feb0c7b59e92",
+     "boot_id_at_end": "ea00964c-6e94-4fe7-833f-feb0c7b59e92",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "11073c847225977e8405b3fe88365bfa5c76156b9c1e79fb31a4a9636c7cf2a3"
+  },
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "clean": [
+    {
+     "id": "on-redhat-nginx-comes-from-the-distribution",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "0\npackage nginx is not installed\n",
+     "stderr": "",
+     "ok": true
+    },
+    {
+     "id": "on-redhat-nginx-runs-valid-with-modules-enabled-once",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "0\ninactive\n",
+     "stderr": "grep: /etc/nginx/nginx.conf: No such file or directory\n",
+     "ok": true
+    },
+    {
+     "id": "on-redhat-workers-tokens-and-log-formats",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "",
+     "stderr": "grep: /etc/nginx/nginx.conf: No such file or directory\ngrep: /etc/nginx/nginx.conf: No such file or directory\ngrep: /etc/nginx/nginx.conf: No such file or directory\ngrep: /etc/nginx/nginx.conf: No such file or directory\n",
+     "ok": true
+    },
+    {
+     "id": "on-redhat-dh-group-2048-bits-not-world-readable",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "",
+     "stderr": "stat: cannot statx '/etc/nginx/dhparams.pem': No such file or directory\nCan't open \"/etc/nginx/dhparams.pem\" for reading, No such file or directory\n009ED224AC7F0000:error:80000002:system library:BIO_new_file:No such file or directory:crypto/bio/bss_file.c:67:calling fopen(/etc/nginx/dhparams.pem, r)\n009ED224AC7F0000:error:10000080:BIO routines:BIO_new_file:no such file:crypto/bio/bss_file.c:75:\n",
+     "ok": true
+    },
+    {
+     "id": "on-redhat-the-server-header-names-no-version",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "",
+     "stderr": "",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Nginx::Package::Redhat/Package[nginx]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/snippets]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/modules-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/var/log/nginx]/owner: owner changed 'root' to 'nginx'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/var/log/nginx]/group: group changed 'root' to 'nginx'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/var/log/nginx]/mode: mode changed '0711' to '0750'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/sites-available]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/sites-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}b569b8330a307cd88795ca792d3d04ad1d9222a36ff8a908c3b43744c334d666' to '{sha256}6a65401c654637e8806a68f2a0d6052fbfc0a291f0436a4660c51b8293986586'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}7f0b9e0c2320db6882b6d0db1cb3d28c41dd4ff0d1c6e17798ff19668f412598' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]/ensure: ensure changed 'stopped' to 'running'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/Exec[Generate a new 2048-bit Diffie-Hellman group]/returns: executed successfully\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "-enabled]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/var/log/nginx]/owner: owner changed 'root' to 'nginx'\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/var/log/nginx]/group: group changed 'root' to 'nginx'\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/var/log/nginx]/mode: mode changed '0711' to '0750'\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/sites-available]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/sites-enabled]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}b569b8330a307cd88795ca792d3d04ad1d9222a36ff8a908c3b43744c334d666' to '{sha256}6a65401c654637e8806a68f2a0d6052fbfc0a291f0436a4660c51b8293986586'\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}7f0b9e0c2320db6882b6d0db1cb3d28c41dd4ff0d1c6e17798ff19668f412598' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]/ensure: ensure changed 'stopped' to 'running'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/Exec[Generate a new 2048-bit Diffie-Hellman group]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 35.22 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::merge instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/nginx_base.pp\", 75]:[\"/var/tmp/behaviour-suite/site.pp\", 1]\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.23 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.25 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::merge instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/nginx_base.pp\", 75]:[\"/var/tmp/behaviour-suite/site.pp\", 1]\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.23 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.25 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-nginx-comes-from-the-distribution",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "0\nRed Hat, Inc.\n",
+     "stderr": ""
+    },
+    {
+     "id": "on-redhat-nginx-runs-valid-with-modules-enabled-once",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "1\nactive\n1\n",
+     "stderr": ""
+    },
+    {
+     "id": "on-redhat-workers-tokens-and-log-formats",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "1\n1\n1\n1\n",
+     "stderr": ""
+    },
+    {
+     "id": "on-redhat-dh-group-2048-bits-not-world-readable",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "640\nDH Parameters: (2048 bit)\n",
+     "stderr": ""
+    },
+    {
+     "id": "on-redhat-the-server-header-names-no-version",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "Server: nginx\n",
+     "stderr": "",
+     "mutating": true,
+     "action": {
+      "mutates": "adds /etc/nginx/conf.d/p8test-header.conf (a server on 127.0.0.1:81 answering 204) and reloads nginx",
+      "rc": 0,
+      "stdout": "",
+      "stderr": ""
+     }
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "0a971119-96d5-4567-9a62-a4ac90e577e1",
+     "boot_id_at_end": "0a971119-96d5-4567-9a62-a4ac90e577e1",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "dd7d9deb5057e3d7dec655e21a20b929577368f9f7c89abd6bd473fbdbc53ffa"
+  },
+  "custom": {
+   "name": "custom",
+   "node": "ubuntu",
+   "params": "custom",
+   "clean": [
+    {
+     "id": "my-configs-and-ad-hoc-lines-reach-nginx",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "",
+     "stderr": "cat: /etc/nginx/conf.d/puppet_infrastructure.conf: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Apt/File[preferences]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt/Apt::Setting[conf-update-stamp]/File[/etc/apt/apt.conf.d/15update-stamp]/content: content changed '{sha256}174cdb519fd06372847e23c20db869b2ff4b593252c0d2a6274d770eae2d92c9' to '{sha256}2e6eb1f5f20262bfc6b7dfb26a302f00b4ab5fee803abd9e07ad8378cce067d5'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Apt::Update/Exec[apt_update]: Triggered 'refresh' from 1 event\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Package[nginx]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}48c6a4ec1e1fd28ccf968490f07e34a1d7f755793b2108a3ed8670b1ee2a0aa2' to '{sha256}67250130e5897cdf58b23ca0e33142236d67584678aff3e25431e667c5fee322'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}36c77daa2d85803e87c91ba723dd2bc6aaa6543ae4bd4a569034a7bf8bce464d' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/File[/etc/nginx/conf.d/puppet_infrastructure.conf]/ensure: defined content as '{sha256}aeac6aa5376623b668a5e27121190d0ae20c85124a15310a1d43b23d72e5505c'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Triggered 'refresh' from 2 events\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/Exec[Generate a new 2048-bit Diffie-Hellman group]/returns: executed successfully\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "[apt_update]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Package::Debian/Package[nginx]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.stream.d]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/conf.mail.d]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-enabled]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/streams-available]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/nginx.conf]/content: content changed '{sha256}48c6a4ec1e1fd28ccf968490f07e34a1d7f755793b2108a3ed8670b1ee2a0aa2' to '{sha256}67250130e5897cdf58b23ca0e33142236d67584678aff3e25431e667c5fee322'\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Config/File[/etc/nginx/mime.types]/content: content changed '{sha256}36c77daa2d85803e87c91ba723dd2bc6aaa6543ae4bd4a569034a7bf8bce464d' to '{sha256}e8197a00fba8b28be9e21be01e576c5a1205ca6f078099a6aebf9cccfb082256'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/File[/etc/nginx/conf.d/puppet_infrastructure.conf]/ensure: defined content as '{sha256}aeac6aa5376623b668a5e27121190d0ae20c85124a15310a1d43b23d72e5505c'\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Triggered 'refresh' from 2 events\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Nginx_base/Exec[Generate a new 2048-bit Diffie-Hellman group]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 50.97 seconds\u001b[0m\nAGENT_RC=2\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::merge instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/nginx_base.pp\", 75]:[\"/var/tmp/behaviour-suite/site.pp\", 0]\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.28 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.60 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::merge instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/nginx_base.pp\", 75]:[\"/var/tmp/behaviour-suite/site.pp\", 0]\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.28 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.60 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "my-configs-and-ad-hoc-lines-reach-nginx",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "client_max_body_size 21m;\nclient_max_body_size 21m;\nworker_connections 2048;\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "e7d8bd9a-ca30-44c5-b1ec-7ddc856017ad",
+     "boot_id_at_end": "e7d8bd9a-ca30-44c5-b1ec-7ddc856017ad",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "9afd6998b4b82e9ef7d3b4720912c471e8c148656ef7cffc0b35e4d9b0160ebc"
+  }
+ },
+ "duration_s": 839.8
+}

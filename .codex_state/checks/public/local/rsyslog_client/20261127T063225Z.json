@@ -1,0 +1,560 @@
+{
+ "class": "rsyslog_client",
+ "role": "local",
+ "at": "20261127T062243Z",
+ "set_sha256": "47fa5a0053bc44d2c50f01776f50de158530f61d7b80bb2db7616ac396be070f",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "forwarding-rule-sends-everything-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "config-valid\n",
+   "stderr": "grep: /etc/rsyslog.d/40-forward.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "tls-material-is-the-nodes-puppet-identity",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/rsyslog.d/tls/puppet8node.key': No such file or directory\nError loading file /etc/rsyslog.d/tls/ca.pem\n40B711230B750000:error:80000002:system library:BIO_new_file:No such file or directory:../crypto/bio/bss_file.c:67:calling fopen(/etc/rsyslog.d/tls/ca.pem, r)\n40B711230B750000:error:10000080:BIO routines:BIO_new_file:no such file:../crypto/bio/bss_file.c:75:\n40B711230B750000:error:05880002:x509 certificate routines:X509_load_cert_crl_file_ex:system lib:../crypto/x509/by_file.c:228:\n",
+   "ok": true
+  },
+  {
+   "id": "the-target-is-pinned-in-hosts",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /etc/rsyslog.d/40-forward.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-peer-runs-a-tls-log-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-local-log-line-leaves-over-tls",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-server-received-the-line-from-the-node",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /var/log/p8test-remote.log: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "rsyslog-starts-without-a-config-error",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "1\nactive\n0\n",
+   "stderr": "grep: /etc/rsyslog.d/40-forward.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "a-line-is-written-to-auth-log",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /etc/rsyslog.d/40-forward.conf: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-server-received-the-auth-log-line",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /var/log/p8test-remote.log: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-forwarding-rule-drifts",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /run/p8test-rsyslog/before-rule: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-rule-and-restarts-rsyslog-once",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\nrestarted\n0\n",
+   "stderr": "bash: line 98: /run/p8test-rsyslog/before-rule: No such file or directory\nFailed to seek to cursor: Invalid argument\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Package[rsyslog-gnutls]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/ensure: defined content as '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.pem]/ensure: defined content as '{sha256}c4ccab2b7949dcc773e68400194dcaf43dcced6068dc027da46d8eef36feeb68'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.key]/ensure: defined content as '{sha256}9ebaed588557ad124b7fcccc0abe4616c90306eb68dd5eb64bcedf3460c0ab71'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/Host[p8lab-ubuntu2]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]/ensure: defined content as '{sha256}207e0d9962748861a75addafafe0fdb83d0f762b4e482fdc198c4d7a3ca4ce6e'\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 5 events\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/ensure: defined content as '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.pem]/ensure: defined content as '{sha256}c4ccab2b7949dcc773e68400194dcaf43dcced6068dc027da46d8eef36feeb68'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.key]/ensure: defined content as '{sha256}9ebaed588557ad124b7fcccc0abe4616c90306eb68dd5eb64bcedf3460c0ab71'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/Host[p8lab-ubuntu2]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]/ensure: defined content as '{sha256}207e0d9962748861a75addafafe0fdb83d0f762b4e482fdc198c4d7a3ca4ce6e'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 5 events\u001b[0m\n\u001b[mNotice: Applied catalog in 13.55 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Package[rsyslog-gnutls]\nCHANGED File[/etc/rsyslog.d/tls]\nCHANGED File[/etc/rsyslog.d/tls/ca.pem]\nCHANGED File[/etc/rsyslog.d/tls/puppet8node.pem]\nCHANGED File[/etc/rsyslog.d/tls/puppet8node.key]\nCHANGED Host[p8lab-ubuntu2]\nCHANGED File[/etc/rsyslog.d/40-forward.conf]\nCHANGED Service[rsyslog]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.42 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.42 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "forwarding-rule-sends-everything-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "$DefaultNetstreamDriver gtls\n$ActionSendStreamDriverMode 1\n$ActionSendStreamDriverAuthMode x509/certvalid\n*.* @@TARGET:6514\nconfig-valid\n",
+   "stderr": ""
+  },
+  {
+   "id": "tls-material-is-the-nodes-puppet-identity",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "same-as-puppet\nsyslog 600\nOK\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the CA (the system bundle instead of the Puppet CA), which did not sign the node's certificate",
+    "rc": 0,
+    "passed": false,
+    "stdout": "same-as-puppet\nsyslog 600\nverification failed\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-target-is-pinned-in-hosts",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "192.168.56.24\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "rsyslog-starts-without-a-config-error",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\nactive\n0\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-peer-runs-a-tls-log-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "2\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: installs rsyslog-gnutls, copies its own Puppet CA, certificate and key to /etc/rsyslog.d/p8test-tls (syslog-readable), adds /etc/rsyslog.d/10-p8test-server.conf (an imtcp gtls listener on 6514, x509/certvalid, writing what it receives to /var/log/p8test-remote.log) and restarts rsyslog",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-local-log-line-leaves-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "restarts rsyslog on the node, logs `p8test-rsyslog-forward-token` with tag p8test-rsyslog through logger, then waits 5 s",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-server-received-the-line-from-the-node",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "puppet8node p8test-rsyslog: p8test-rsyslog-forward-token\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the peer's received log (declared mutating so it runs after the node's line was sent)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-line-is-written-to-auth-log",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "appends one line carrying `p8test-authlog-token` to /var/log/auth.log on the node, then waits 5 s",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-server-received-the-auth-log-line",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "puppet8node auth p8test-authlog-token\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the peer's received log (declared mutating so it runs after the node's line was written)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-forwarding-rule-drifts",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nnoted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "notes rsyslog's main PID and its journal cursor in /run/p8test-rsyslog/before-rule, then appends a comment line to /etc/rsyslog.d/40-forward.conf on the node",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-the-rule-and-restarts-rsyslog-once",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\nrestarted\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rule, rsyslog's state and its journal (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "bc2f864a-5cfa-47bd-981d-37e987c4e027",
+   "boot_id_at_end": "bc2f864a-5cfa-47bd-981d-37e987c4e027",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "0af4aab5-5e67-41a2-8072-2344529a0ab9",
+   "boot_id_at_end": "0af4aab5-5e67-41a2-8072-2344529a0ab9",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "4e3cdb8d93a284b2d4cdf6d35f2230fdd448c6bc57f8673d520e56a8c4fa0c66",
+ "node_agent": {
+  "rc": 2,
+  "events": [
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]/content: content changed '{sha256}17644c72bbfabbae7f7a57f62dc1b395182dfab82a6f7b758b8014b955512a18' to '{sha256}207e0d9962748861a75addafafe0fdb83d0f762b4e482fdc198c4d7a3ca4ce6e'\u001b[0m",
+   "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 1 event\u001b[0m"
+  ],
+  "errors": [],
+  "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]/content: content changed '{sha256}17644c72bbfabbae7f7a57f62dc1b395182dfab82a6f7b758b8014b955512a18' to '{sha256}207e0d9962748861a75addafafe0fdb83d0f762b4e482fdc198c4d7a3ca4ce6e'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.60 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/etc/rsyslog.d/40-forward.conf]\nCHANGED Service[rsyslog]\n"
+ },
+ "variants": {
+  "options": {
+   "name": "options",
+   "node": "ubuntu",
+   "params": "options",
+   "clean": [
+    {
+     "id": "options-render-the-forwarding-rules",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "1\n",
+     "stderr": "grep: /etc/rsyslog.d/40-forward.conf: No such file or directory\ngrep: /etc/rsyslog.d/40-forward.conf: No such file or directory\ngrep: /etc/rsyslog.d/40-forward.conf: No such file or directory\ngrep: /etc/rsyslog.d/40-forward.conf: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Package[rsyslog-gnutls]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/ensure: defined content as '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.pem]/ensure: defined content as '{sha256}c4ccab2b7949dcc773e68400194dcaf43dcced6068dc027da46d8eef36feeb68'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.key]/ensure: defined content as '{sha256}9ebaed588557ad124b7fcccc0abe4616c90306eb68dd5eb64bcedf3460c0ab71'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/Host[p8lab-ubuntu2]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/Host[p8test-failover.invalid]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]/ensure: defined content as '{sha256}9dcab5d0c6925dee0ee4fe71817cfc3fa58c66a78896876113eded0e0061b570'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 5 events\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/ensure: defined content as '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.pem]/ensure: defined content as '{sha256}c4ccab2b7949dcc773e68400194dcaf43dcced6068dc027da46d8eef36feeb68'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/puppet8node.key]/ensure: defined content as '{sha256}9ebaed588557ad124b7fcccc0abe4616c90306eb68dd5eb64bcedf3460c0ab71'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/Host[p8lab-ubuntu2]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/Host[p8test-failover.invalid]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]/ensure: defined content as '{sha256}9dcab5d0c6925dee0ee4fe71817cfc3fa58c66a78896876113eded0e0061b570'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 5 events\u001b[0m\n\u001b[mNotice: Applied catalog in 14.29 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Package[rsyslog-gnutls]\nCHANGED File[/etc/rsyslog.d/tls]\nCHANGED File[/etc/rsyslog.d/tls/ca.pem]\nCHANGED File[/etc/rsyslog.d/tls/puppet8node.pem]\nCHANGED File[/etc/rsyslog.d/tls/puppet8node.key]\nCHANGED Host[p8lab-ubuntu2]\nCHANGED Host[p8test-failover.invalid]\nCHANGED File[/etc/rsyslog.d/40-forward.conf]\nCHANGED Service[rsyslog]\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.06 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.44 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.06 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.44 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "options-render-the-forwarding-rules",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "1\n1\n1\n1\np8test-failover.invalid\n1\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "93f0a6a9-df33-45b2-9bb9-50056374f4c0",
+     "boot_id_at_end": "93f0a6a9-df33-45b2-9bb9-50056374f4c0",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "p8lab-ubuntu2",
+    "PEER_ADDR": "192.168.56.24",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "92bafbcf86c5df60a647869168f8536a6c6568fd014704a4727a6803ab9ab465"
+  },
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": "rhelauth",
+   "clean": [
+    {
+     "id": "on-redhat-rsyslog-starts-without-a-config-error",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "1\nactive\n0\n",
+     "stderr": "grep: /etc/rsyslog.d/40-forward.conf: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "runs": [
+     {
+      "rc": 2,
+      "events": [
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Package[rsyslog-gnutls]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Group[syslog]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/User[syslog]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/ensure: defined content as '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/p8lab-rhel9.pem]/ensure: defined content as '{sha256}8f768fa88c44d43bcd5dc04074d883e580c659351a8cdcac6615fd85a9f44af7'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/p8lab-rhel9.key]/ensure: defined content as '{sha256}2c61cff8abdb17d5ce25eb8f39b998ac4f0bc6545c45fc4b8c03a110596615e4'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/Host[p8test-logserver.invalid]/ensure: created\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]/ensure: defined content as '{sha256}6e300e7e0113ceea6d70e750866006cff4ee248f47e3f4f2f455c4c34c95cfb0'\u001b[0m",
+       "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 5 events\u001b[0m"
+      ],
+      "errors": [],
+      "tail": "[/etc/rsyslog.d/tls]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/ca.pem]/ensure: defined content as '{sha256}c96af6c183fff05c9b67eeb1eb18e809a17fb23fa291534aba669cc66c85cd54'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/p8lab-rhel9.pem]/ensure: defined content as '{sha256}8f768fa88c44d43bcd5dc04074d883e580c659351a8cdcac6615fd85a9f44af7'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/File[/etc/rsyslog.d/tls/p8lab-rhel9.key]/ensure: defined content as '{sha256}2c61cff8abdb17d5ce25eb8f39b998ac4f0bc6545c45fc4b8c03a110596615e4'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/Host[p8test-logserver.invalid]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_client/File[/etc/rsyslog.d/40-forward.conf]/ensure: defined content as '{sha256}6e300e7e0113ceea6d70e750866006cff4ee248f47e3f4f2f455c4c34c95cfb0'\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Rsyslog_base/Service[rsyslog]: Triggered 'refresh' from 5 events\u001b[0m\n\u001b[mNotice: Applied catalog in 8.40 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Package[rsyslog-gnutls]\nCHANGED Group[syslog]\nCHANGED User[syslog]\nCHANGED File[/etc/rsyslog.d/tls]\nCHANGED File[/etc/rsyslog.d/tls/ca.pem]\nCHANGED File[/etc/rsyslog.d/tls/p8lab-rhel9.pem]\nCHANGED File[/etc/rsyslog.d/tls/p8lab-rhel9.key]\nCHANGED Host[p8test-logserver.invalid]\nCHANGED File[/etc/rsyslog.d/40-forward.conf]\nCHANGED Service[rsyslog]\n"
+     },
+     {
+      "rc": 0,
+      "events": [],
+      "errors": [],
+      "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.17 seconds\u001b[0m\nAGENT_RC=0\n"
+     }
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for p8lab-rhel9 in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.17 seconds\u001b[0m\nAGENT_RC=0\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-rsyslog-starts-without-a-config-error",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "1\n1\nactive\n0\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "04659d77-500c-47cb-ae2c-7caf63747aa5",
+     "boot_id_at_end": "04659d77-500c-47cb-ae2c-7caf63747aa5",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/puppet-infrastructure",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "p8lab-ubuntu2",
+    "PEER_ADDR": "192.168.56.24",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "da73cd217398f6808d7eb2475cfe409177d853b97bfe01fe22c1a6ee68116b5c"
+  }
+ },
+ "duration_s": 582.4
+}

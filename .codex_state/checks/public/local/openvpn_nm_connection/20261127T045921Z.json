@@ -1,0 +1,202 @@
+{
+ "class": "openvpn_nm_connection",
+ "role": "local",
+ "at": "20261127T045723Z",
+ "set_sha256": "96040bdc10b0b8d711f2bad1982e268fb30b4045f0d12e76b6db1cc5d2ad53a4",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "profile-file-root-only",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/NetworkManager/system-connections/p8test-vpn': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "networkmanager-loads-the-vpn-profile",
+   "control": "negative",
+   "rc": 10,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Error: p8test-vpn - no such connection profile.\n",
+   "ok": true
+  },
+  {
+   "id": "vpn-settings-from-the-parameters",
+   "control": "negative",
+   "rc": 10,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Error: p8test-vpn - no such connection profile.\nError: p8test-vpn - no such connection profile.\n",
+   "ok": true
+  },
+  {
+   "id": "only-the-local-user-may-use-it",
+   "control": "negative",
+   "rc": 10,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Error: p8test-vpn - no such connection profile.\n",
+   "ok": true
+  },
+  {
+   "id": "uuid-is-the-stable-version-5-uuid-of-the-name",
+   "control": "negative",
+   "rc": 10,
+   "passed": false,
+   "stdout": "",
+   "stderr": "sed: can't read /etc/NetworkManager/system-connections/p8test-vpn: No such file or directory\nError: p8test-vpn - no such connection profile.\n",
+   "ok": true
+  },
+  {
+   "id": "a-test-vpn-pki-and-route",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Error loading file /etc/p8test-vpn/ca.crt\n408766F980740000:error:80000002:system library:BIO_new_file:No such file or directory:../crypto/bio/bss_file.c:67:calling fopen(/etc/p8test-vpn/ca.crt, r)\n408766F980740000:error:10000080:BIO routines:BIO_new_file:no such file:../crypto/bio/bss_file.c:75:\n408766F980740000:error:05880002:x509 certificate routines:X509_load_cert_crl_file_ex:system lib:../crypto/x509/by_file.c:228:\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-peer-serves-openvpn",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-profile-connects-with-the-password",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-nmvpn/up.txt: No such file or directory\nError: p8test-vpn - no such connection profile.\nDevice \"tap0\" does not exist.\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-server-accepted-the-user",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-wrong-password-does-not-connect",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /run/p8test-nmvpn/bad.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-server-refused-the-wrong-password",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 4,
+  "green": false,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 6,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/File[/etc/p8test-vpn]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Openvpn_nm_connection[p8test-vpn]/File[/etc/NetworkManager/system-connections/p8test-vpn]: Dependency File[/etc/p8test-vpn/ca.crt] has failures: true\u001b[0m"
+    ],
+    "errors": [
+     "\u001b[1;31mError: /Stage[main]/Main/File[/etc/p8test-vpn/ca.crt]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/ca.crt\u001b[0m"
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for p8lab-gnome in environment production in 0.04 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/File[/etc/p8test-vpn]/ensure: created\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/File[/etc/p8test-vpn/ca.crt]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/ca.crt\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Openvpn_nm_connection[p8test-vpn]/File[/etc/NetworkManager/system-connections/p8test-vpn]: Dependency File[/etc/p8test-vpn/ca.crt] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Openvpn_nm_connection[p8test-vpn]/File[/etc/NetworkManager/system-connections/p8test-vpn]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Openvpn_nm_connection[p8test-vpn]/Exec[Reload Network Manager Connections: p8test-vpn]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.04 seconds\u001b[0m\nAGENT_RC=6\nCHANGED File[/etc/p8test-vpn]\n"
+   },
+   {
+    "rc": 4,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Openvpn_nm_connection[p8test-vpn]/File[/etc/NetworkManager/system-connections/p8test-vpn]: Dependency File[/etc/p8test-vpn/ca.crt] has failures: true\u001b[0m"
+    ],
+    "errors": [
+     "\u001b[1;31mError: /Stage[main]/Main/File[/etc/p8test-vpn/ca.crt]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/ca.crt\u001b[0m"
+    ],
+    "tail": "\u001b[mNotice: Compiled catalog for p8lab-gnome in environment production in 0.03 seconds\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/File[/etc/p8test-vpn/ca.crt]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/ca.crt\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Openvpn_nm_connection[p8test-vpn]/File[/etc/NetworkManager/system-connections/p8test-vpn]: Dependency File[/etc/p8test-vpn/ca.crt] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Openvpn_nm_connection[p8test-vpn]/File[/etc/NetworkManager/system-connections/p8test-vpn]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Openvpn_nm_connection[p8test-vpn]/Exec[Reload Network Manager Connections: p8test-vpn]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.08 seconds\u001b[0m\nAGENT_RC=4\n"
+   }
+  ],
+  "tail": "\u001b[mNotice: Compiled catalog for p8lab-gnome in environment production in 0.03 seconds\u001b[0m\n\u001b[1;31mError: /Stage[main]/Main/File[/etc/p8test-vpn/ca.crt]: Could not evaluate: Could not retrieve information from environment production source(s) puppet:///extra_files/openvpn/keys/ca.crt\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Puppet_infrastructure::Openvpn_nm_connection[p8test-vpn]/File[/etc/NetworkManager/system-connections/p8test-vpn]: Dependency File[/etc/p8test-vpn/ca.crt] has failures: true\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Openvpn_nm_connection[p8test-vpn]/File[/etc/NetworkManager/system-connections/p8test-vpn]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Main/Puppet_infrastructure::Openvpn_nm_connection[p8test-vpn]/Exec[Reload Network Manager Connections: p8test-vpn]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: Applied catalog in 0.08 seconds\u001b[0m\nAGENT_RC=4\n"
+ },
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "dest": "p8lab-gnome",
+   "boot_id": "cf9b89c2-3b5b-42e4-a488-e13e1b9da9d5",
+   "boot_id_at_end": "cf9b89c2-3b5b-42e4-a488-e13e1b9da9d5",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "8468bb2a-19c0-4297-96fa-3d898774a3a0",
+   "boot_id_at_end": "8468bb2a-19c0-4297-96fa-3d898774a3a0",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "p8lab-gnome",
+  "NODE_ADDR": "192.168.56.23",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "ce5e5bca31c4d5d6e97740163cc87b138dfd02fad3696a7667aaee70037a4f6b",
+ "duration_s": 118.1
+}

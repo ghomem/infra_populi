@@ -1,0 +1,242 @@
+{
+ "class": "network_static",
+ "role": "local",
+ "at": "20261126T190108Z",
+ "set_sha256": "1c347ad8c567056a0d62ffdf68af97d2651ba7f87bc3ef9fa886fbc9e8ab6088",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-interface-stanza-says-static-at-boot",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/network/interfaces: No such file or directory\ngrep: /etc/network/routes: No such file or directory\ndpkg-query: no packages found matching ifupdown-extra\n",
+   "ok": true
+  },
+  {
+   "id": "ifupdown-and-the-networking-service",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "ifupdown unknown ok not-installed\nnot-found\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "a-lan-on-the-interface",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Cannot open network namespace \"p8testgw\": No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-boot-step-brings-the-interface-up",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Device \"p8test0\" does not exist.\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-restart-of-networking-keeps-the-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "inactive\n",
+   "stderr": "Device \"p8test0\" does not exist.\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-default-route-goes-through-the-gateway",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-primary-interface-keeps-working",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "1\n1\n",
+   "stderr": "Device \"p8test0\" does not exist.\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Network_static/Package[ifupdown]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Network_static/Package[ifupdown-extra]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Network_static/Network_config[p8test0]/ensure: created\u001b[0m",
+     "\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Network_static/Network_route[default]/ensure: created\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::ensure_packages instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/network_static.pp\", 15]:[\"/var/tmp/behaviour-suite/site.pp\", 0]\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.17 seconds\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Network_static/Package[ifupdown]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Network_static/Package[ifupdown-extra]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Network_static/Network_config[p8test0]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Puppet_infrastructure::Network_static/Network_route[default]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 36.22 seconds\u001b[0m\nAGENT_RC=2\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::ensure_packages instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/network_static.pp\", 15]:[\"/var/tmp/behaviour-suite/site.pp\", 0]\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.09 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.43 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ],
+  "tail": "\u001b[1;33mWarning: This function is deprecated, please use stdlib::ensure_packages instead. at [\"/var/tmp/behaviour-modules/puppet_infrastructure/manifests/network_static.pp\", 15]:[\"/var/tmp/behaviour-suite/site.pp\", 0]\n   (location: /var/tmp/behaviour-modules/stdlib/lib/puppet/functions/deprecation.rb:35:in `deprecation')\u001b[0m\n\u001b[mNotice: Compiled catalog for puppet8node in environment production in 0.09 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.43 seconds\u001b[0m\nAGENT_RC=0\n"
+ },
+ "applied": [
+  {
+   "id": "the-interface-stanza-says-static-at-boot",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "auto p8test0\niface p8test0 inet static\naddress 192.0.2.10\ndefault 0.0.0.0 192.0.2.1 p8test0\nifupdown-extra install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "ifupdown-and-the-networking-service",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ifupdown install ok installed\nenabled\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-lan-on-the-interface",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "interface-present\n192.0.2.1/24\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates network namespace p8testgw and veth pair p8test0 (node) / p8testgwif (namespace, 192.0.2.1/24, up)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-boot-step-brings-the-interface-up",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "192.0.2.10/24\ngateway answers\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "starts the networking service (ifup of every auto stanza) and pings 192.0.2.1 twice",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-restart-of-networking-keeps-the-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\n192.0.2.10/24\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "restarts the networking service and waits up to 20 s for the address on p8test0",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-default-route-goes-through-the-gateway",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the routes (declared mutating so it runs after the interface is up)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-primary-interface-keeps-working",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test0 up\n1\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the routes (declared mutating so it runs after the restart)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "c25da371-1f51-4fd6-8899-87b7bf2a515d",
+   "boot_id_at_end": "c25da371-1f51-4fd6-8899-87b7bf2a515d",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/puppet-infrastructure",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "74259ca308d1cd8ed2fdb536cbc869e49d1f36484ea720b590f9a8e1be298f1a",
+ "duration_s": 117.6
+}
