@@ -46,8 +46,12 @@ def clone(tmp_path, lab):
     subprocess.run(["git", "clone", "-q", str(origin), str(work)], check=True)
     git(work, "config", "user.email", "test@example.invalid")
     git(work, "config", "user.name", "test")
-    # overlay the tools under test (they may be uncommitted in the real repo), committed in the clone
-    for src in [*TOOLS.glob("*.py"), *TOOLS.glob("*.sh"), REPO / ".codex_state/gen_migration_order.py"]:
+    # overlay the tools under test and every other file changed in the real repo's worktree (they may be uncommitted:
+    # the module's rename, for one, is tested by the hook before its commit exists), committed in the clone
+    changed = subprocess.run(["git", "-C", str(REPO), "diff", "--name-only", "HEAD"], capture_output=True, text=True,
+                             check=True).stdout.split()
+    for src in {*TOOLS.glob("*.py"), *TOOLS.glob("*.sh"), REPO / ".codex_state/gen_migration_order.py",
+                *(REPO / f for f in changed if (REPO / f).is_file())}:
         dst = work / src.relative_to(REPO)
         dst.write_bytes(src.read_bytes())
         dst.chmod(src.stat().st_mode)
@@ -56,7 +60,7 @@ def clone(tmp_path, lab):
     sys.path.insert(0, str(TOOLS))
     import baseline  # noqa: PLC0415
     base = baseline.for_class(CLS)
-    (work / f"manifests/{CLS}.pp").write_bytes(baseline.git_show(base.upstream, base.commit, f"manifests/{CLS}.pp"))
+    (work / f"manifests/{CLS}.pp").write_bytes(baseline.git_show_current(base.upstream, base.commit, f"manifests/{CLS}.pp"))
     tracker = work / ".codex_state/migrated_classes.txt"
     tracker.write_text("".join(CLS + "\n" if line.split()[:1] == [CLS] else line + "\n"
                                for line in tracker.read_text().splitlines()))

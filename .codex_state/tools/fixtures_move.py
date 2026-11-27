@@ -37,6 +37,7 @@ sys.path.insert(0, str(TOOLS))
 sys.path.insert(1, str(REPO / "spec" / "behaviour" / "lib"))
 
 import behaviour_move as bm  # noqa: E402
+import module_name  # noqa: E402
 import suite_check  # noqa: E402
 import yaml  # noqa: E402
 from behaviour import render as rn  # noqa: E402
@@ -50,7 +51,23 @@ PREFIX = f"{bm.MODULE}::"
 
 
 def short(rel: Path) -> Path:
-    return Path(*[p.removeprefix(PREFIX) for p in rel.parts])
+    """The path with the module prefix removed from each part (either name: the record keeps the old one)."""
+    return Path(*[module_name.short(p) for p in rel.parts])
+
+
+def now(rel: Path) -> Path:
+    """A recorded params path as it is named under the module's current name (the record keeps the old one)."""
+    return Path(module_name.to_current(str(rel)))
+
+
+def current(obj):
+    """A rendered fixture as it reads under the module's current name: the proof was made under the old one, and the
+    rename changed both sides alike (the identity until the module is renamed)."""
+    if isinstance(obj, dict):
+        return {module_name.to_current(k): current(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [current(v) for v in obj]
+    return module_name.to_current(obj) if isinstance(obj, str) else obj
 
 
 def sets() -> dict:
@@ -181,20 +198,20 @@ def main(argv: list[str]) -> int:
             ctxs = node_uses(name, all_sets)
             lines = code((NODE_OUT / f"{name}.pp").read_text())
             original = code((NODE_IN / f"{name}.pp").read_text())
-            wrong = [t for t, c in ctxs if [rn.render(l, c) for l in lines] != original]
+            wrong = [t for t, c in ctxs if [module_name.to_current(rn.render(l, c)) for l in lines] != original]
             print(f"NOT NEUTRAL node/{name}: {', '.join(wrong)}" if wrong or not ctxs else f"NEUTRAL node/{name}")
             bad += bool(wrong or not ctxs)
         record = record.get("params", {})
         for rel_s, entry in sorted(record.items()):
             rel, new = Path(rel_s), OUT / entry["fixture"]
-            if not (LOCAL / rel).is_file():  # another machine: the operator's params are not here
+            if not (LOCAL / now(rel)).is_file():  # another machine: the operator's params are not here
                 print(f"NO LOCAL {rel_s}")
                 continue
             template = json.loads(new.read_text())
-            original = json.loads((LOCAL / rel).read_text())
+            original = json.loads((LOCAL / now(rel)).read_text())
             used = uses(rel, all_sets) or [("-", "base", bm.context(bm.nodes_data()["nodes"], "ubuntu", None))]
             wrong = [f"{t} ({r})" for t, r, c in used
-                     if strings_map(template, lambda s, c=c: rn.render(s, c)) != original]
+                     if current(strings_map(template, lambda s, c=c: rn.render(s, c))) != original]
             print(f"NOT NEUTRAL {rel_s}: {', '.join(wrong[:3])}" if wrong else f"NEUTRAL {rel_s}")
             bad += bool(wrong)
         print(f"{len(record) + len(json.loads(RECORD.read_text()).get('node', {})) - bad} neutral, {bad} not neutral")
