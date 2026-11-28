@@ -1,0 +1,300 @@
+{
+ "class": "openvpn_domain",
+ "role": "author",
+ "at": "20261128T080338Z",
+ "runner": "d4ef29a7",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "cb79a907edc91902f9ff6e2cdc5141a5e7a25038feb73fd9c0734b70fc62af7a",
+ "content_sha256": "cb79a907edc91902f9ff6e2cdc5141a5e7a25038feb73fd9c0734b70fc62af7a",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "smb-conf-joins-as-a-domain-member",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/samba/smb.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-node-is-joined-to-the-domain",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "bash: line 97: net: command not found\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "domain-users-and-groups-resolve-through-winbind",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "id: 'p8testuser@P8TEST.example': no such user\n",
+   "ok": true
+  },
+  {
+   "id": "pam-winbind-requires-the-group-and-openvpn-pam-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/security/pam_winbind.conf: No such file or directory\nsha256sum: /etc/pam.d/openvpn: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-dc-holds-the-node-machine-account",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "host": "peer",
+   "ok": true
+  },
+  {
+   "id": "domain-users-for-the-login-checks",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "pam-logins-through-winbind",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-pam/logins.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "kerberos-realms-against-the-dc",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-krb5/kinit.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-dc-name-resolves-through-wins",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "sed: can't read /etc/samba/smb.conf: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "ec[join domain]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 65.19 seconds\u001b[0m\nRUN1_EVENTS: 15 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795853160'\u001b[0m\n\u001b[mNotice: Applied catalog in 1.00 seconds\u001b[0m\nCOVERAGE infra_populi::openvpn_domain: 15 concrete resources (+0 defined-type instances)\n  Package[samba]\n  Package[winbind]\n  Package[krb5-user]\n  Package[libnss-winbind]\n  Package[libpam-winbind]\n  Package[cifs-utils]\n  Package[ntpdate]\n  File[/etc/samba/smb.conf]\n  File[/etc/security/pam_winbind.conf]\n  File[/etc/krb5.conf]\n  File[/etc/nsswitch.conf]\n  File[/etc/pam.d/openvpn]\n  File[/etc/pam.d]\n  File[/root/join-domain.sh]\n  Exec[join domain]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP openvpn_domain 759bd7461a1c\n\nNODE_FRESH: yes (boot 7e24e1b5 of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "smb-conf-joins-as-a-domain-member",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "security = domain\nnetbios name = puppet8node\nrealm = P8TEST.example\nwins server = p8lab-dc.P8TEST.example\nworkgroup = P8TEST\nwinbind separator = +\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-node-is-joined-to-the-domain",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Join to 'P8TEST' is OK\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the workgroup (P8NOPE, a domain that does not exist), so the join test must fail",
+    "rc": 0,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "domain-users-and-groups-resolve-through-winbind",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "domain users\np8testgroup\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the user (p8nouser, no such domain account), so winbind must not resolve it",
+    "rc": 0,
+    "passed": false,
+    "stdout": "",
+    "stderr": "id: 'p8nouser@P8TEST.example': no such user\n"
+   }
+  },
+  {
+   "id": "pam-winbind-requires-the-group-and-openvpn-pam-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "require_membership_of = P8TEST+p8testgroup\ne664b2eb0c148c0c6765e30f2ff4e09ee24d111406efb86dfa60ffe1e47e2b51\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-dc-holds-the-node-machine-account",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "host": "peer"
+  },
+  {
+   "id": "the-dc-name-resolves-through-wins",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "the WINS server's name resolves through wins to its DNS address\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the name (p8nohost, which no machine holds), so WINS must not resolve it",
+    "rc": 1,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "domain-users-for-the-login-checks",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testvpnin\np8testvpnin\np8testvpnout\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the domain users p8testvpnin (password P8test-vpn-in-not-a-secret1) and p8testvpnout (password P8test-vpn-out-not-a-secret1) in the DC's directory and adds p8testvpnin to p8testgroup",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "pam-logins-through-winbind",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "member-right rc=0\nmember-wrong rc=1\noutsider-right rc=1\nmember-bare rc=0\noutsider-bare rc=1\nbare name in group: p8testgroup\noutsider at the DC: plaintext password authentication succeeded\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "installs pamtester if absent; runs five PAM logins through the login service (winbind and the system log record them, the DC counts the wrong password once against p8testvpnin) and one direct winbind authentication of p8testvpnout (wbinfo -a); the outcomes go to /run/p8test-pam/logins.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "kerberos-realms-against-the-dc",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "default_realm = P8TEST.EXAMPLE\ndefault realm rc=0\nDefault principal: p8testvpnin@P8TEST.EXAMPLE\ndc realm rc=0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "asks the DC for two tickets for p8testvpnin (kinit, the DC logs both) into the credential cache /run/p8test-krb5/cc, which is destroyed after each; the outcomes go to /run/p8test-krb5/kinit.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "7e24e1b5-d248-4649-a6b8-3f0d2108e22d",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "7e24e1b5-d248-4649-a6b8-3f0d2108e22d",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "dc",
+   "dest": "p8lab-dc",
+   "boot_id": "fe4c0f16-d08a-4805-a904-153f8163d937",
+   "snapshot": "P8LAB_DC_BASELINE_v2",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "fe4c0f16-d08a-4805-a904-153f8163d937",
+   "fresh": true
+  }
+ },
+ "peer": "dc",
+ "manifest_sha256": "454b048106f8e1b6ed29221741c8ed43a23769cf89bdf802fccae7e8840ac3fa",
+ "outcomes": [
+  {
+   "outcome": "the node is configured as a member of the domain and joined (its machine account works and the DC holds it)",
+   "checks": [
+    "smb-conf-joins-as-a-domain-member",
+    "the-node-is-joined-to-the-domain",
+    "the-dc-holds-the-node-machine-account"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "domain users and groups resolve on the node through nsswitch and winbind",
+   "checks": [
+    "domain-users-and-groups-resolve-through-winbind"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "pam_winbind requires membership of the listed groups, and the openvpn PAM file is installed",
+   "checks": [
+    "pam-winbind-requires-the-group-and-openvpn-pam-installed"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a domain user in a listed group logs in through PAM (login, the service openvpn_server's plugin uses) with the domain password, with the domain prefix and by the bare name (winbind use default domain); a wrong password and a domain user outside the listed groups are refused",
+   "checks": [
+    "domain-users-for-the-login-checks",
+    "pam-logins-through-winbind"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "Kerberos: the default realm is the domain's realm (the NetBIOS name and the tld, upper-case as AD realms are), and the only realm stanza is the template's literal DOMAIN.LOCAL, so a Kerberos client finds the DC's KDC through DNS; kinit for a domain user without naming a realm gets a ticket, also with a lowercase tld parameter. Nothing in the class's login path uses Kerberos (security = domain joins over RPC; pam_winbind's krb5_auth stays off); the [logging] section is read by a KDC, which the node does not run",
+   "checks": [
+    "kerberos-realms-against-the-dc"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "host names also resolve through NetBIOS/WINS (nsswitch's hosts line ends in wins; smb.conf names the DC as the WINS server): the DC's NetBIOS name resolves through the wins source to the address DNS gives its FQDN, and an unknown name does not",
+   "checks": [
+    "the-dc-name-resolves-through-wins"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 166.2
+}

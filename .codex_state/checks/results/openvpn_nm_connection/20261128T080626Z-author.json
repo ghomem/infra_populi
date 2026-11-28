@@ -1,0 +1,368 @@
+{
+ "class": "openvpn_nm_connection",
+ "role": "author",
+ "at": "20261128T080626Z",
+ "runner": "d4ef29a7",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "28b15cb46512b49957c62c711682947a6e09e8aa8e9e338a55c829c0071b4deb",
+ "content_sha256": "28b15cb46512b49957c62c711682947a6e09e8aa8e9e338a55c829c0071b4deb",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "profile-file-root-only",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/NetworkManager/system-connections/p8test-vpn': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "networkmanager-loads-the-vpn-profile",
+   "control": "negative",
+   "rc": 10,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Error: p8test-vpn - no such connection profile.\n",
+   "ok": true
+  },
+  {
+   "id": "vpn-settings-from-the-parameters",
+   "control": "negative",
+   "rc": 10,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Error: p8test-vpn - no such connection profile.\nError: p8test-vpn - no such connection profile.\n",
+   "ok": true
+  },
+  {
+   "id": "only-the-local-user-may-use-it",
+   "control": "negative",
+   "rc": 10,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Error: p8test-vpn - no such connection profile.\n",
+   "ok": true
+  },
+  {
+   "id": "uuid-is-the-stable-version-5-uuid-of-the-name",
+   "control": "negative",
+   "rc": 10,
+   "passed": false,
+   "stdout": "",
+   "stderr": "sed: can't read /etc/NetworkManager/system-connections/p8test-vpn: No such file or directory\nError: p8test-vpn - no such connection profile.\n",
+   "ok": true
+  },
+  {
+   "id": "a-test-vpn-pki-and-route",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Error loading file /etc/p8test-vpn/ca.crt\n40D75A98F5790000:error:80000002:system library:BIO_new_file:No such file or directory:../crypto/bio/bss_file.c:67:calling fopen(/etc/p8test-vpn/ca.crt, r)\n40D75A98F5790000:error:10000080:BIO routines:BIO_new_file:no such file:../crypto/bio/bss_file.c:75:\n40D75A98F5790000:error:05880002:x509 certificate routines:X509_load_cert_crl_file_ex:system lib:../crypto/x509/by_file.c:228:\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-peer-serves-openvpn",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-profile-connects-with-the-password",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-nmvpn/up.txt: No such file or directory\nError: p8test-vpn - no such connection profile.\nDevice \"tap0\" does not exist.\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-server-accepted-the-user",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-wrong-password-does-not-connect",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /run/p8test-nmvpn/bad.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-server-refused-the-wrong-password",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "ode[p8lab-gnome]/Infra_populi::Openvpn_nm_connection[p8test-vpn]/Exec[Reload Network Manager Connections: p8test-vpn]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 0.70 seconds\u001b[0m\nRUN1_EVENTS: 3 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-gnome\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795853271'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.09 seconds\u001b[0m\nCOVERAGE infra_populi::openvpn_nm_connection: 2 concrete resources (+1 defined-type instances)\n  Infra_populi::Openvpn_nm_connection[p8test-vpn]\n  Exec[Reload Network Manager Connections: p8test-vpn]\n  File[/etc/NetworkManager/system-connections/p8test-vpn]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP openvpn_nm_connection a49def9012ea\n\nNODE_FRESH: yes (boot c02b186d of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "profile-file-root-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 600\n",
+   "stderr": ""
+  },
+  {
+   "id": "networkmanager-loads-the-vpn-profile",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test-vpn\nvpn\norg.freedesktop.NetworkManager.openvpn\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the connection name (p8test-vpn-other), which no profile has, so nmcli must refuse it",
+    "rc": 10,
+    "passed": false,
+    "stdout": "",
+    "stderr": "Error: p8test-vpn-other - no such connection profile.\n"
+   }
+  },
+  {
+   "id": "vpn-settings-from-the-parameters",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ca = /etc/p8test-vpn/ca.crt\ncipher = AES-256-CBC\ncomp-lzo = yes\nconnection-type = password\ndev-type = tap\nmssfix = no\npassword-flags = 1\nproto-tcp = no\nremote = 203.0.113.50\nremote-random = no\nusername = p8testuser\nauto\nauto\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the connection name (p8test-vpn-other), which no profile has, so no settings can be read",
+    "rc": 10,
+    "passed": false,
+    "stdout": "",
+    "stderr": "Error: p8test-vpn-other - no such connection profile.\nError: p8test-vpn-other - no such connection profile.\n"
+   }
+  },
+  {
+   "id": "only-the-local-user-may-use-it",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "user\\:p8testuser\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the connection name (p8test-vpn-other), which no profile has",
+    "rc": 10,
+    "passed": false,
+    "stdout": "",
+    "stderr": "Error: p8test-vpn-other - no such connection profile.\n"
+   }
+  },
+  {
+   "id": "uuid-is-the-stable-version-5-uuid-of-the-name",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "df2d3b4d-5aa3-564f-92d4-fd9bac9644f9\ndf2d3b4d-5aa3-564f-92d4-fd9bac9644f9\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the connection name (p8test-vpn-other), which no profile has, so NetworkManager reports no UUID",
+    "rc": 10,
+    "passed": false,
+    "stdout": "df2d3b4d-5aa3-564f-92d4-fd9bac9644f9\n",
+    "stderr": "Error: p8test-vpn-other - no such connection profile.\n"
+   }
+  },
+  {
+   "id": "a-test-vpn-pki-and-route",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/run/p8test-nmvpn/server.crt: OK\ndev enp0s8\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates /run/p8test-nmvpn (0700) with a throwaway CA (CN p8test-vpn-ca) and a server key and certificate it signs (CN p8test-vpn-server); copies the CA over the fixture file /etc/p8test-vpn/ca.crt (node fixture p8test_vpn_ca); adds the route 203.0.113.50/32 dev enp0s8",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-peer-serves-openvpn",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "203.0.113.50:1194\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "installs openvpn on the peer if absent; adds 203.0.113.50/32 to its enp0s8; writes /etc/p8test-nmvpn (the handed-over CA, server certificate and key, a password check script accepting p8testuser / p8test-vpn-not-a-secret, server.conf: tap, UDP 1194, pool 10.199.0.10-50, AES-256-GCM:AES-256-CBC, comp-lzo, no client certificate); starts the server as a daemon logging to /run/p8test-nmvpn-server.log",
+    "rc": 0,
+    "stdout": "2026-11-28 08:08:02 WARNING: Compression for receiving enabled. Compression has been used in the past to break encryption. Sent packets are not compressed unless \"allow-compression yes\" is also set.\n2026-11-28 08:08:02 WARNING: Compression for sending and receiving enabled. Compression has been used in the past to break encryption. Allowing compression allows attacks that break encryption. Using \"--allow-compression yes\" is strongly discouraged for common usage. See --compress in the manual page for more information \n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-profile-connects-with-the-password",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "up rc=0\nserver answers through the tunnel\nactivated\n10.199.0.10/24\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes the password file /run/p8test-nmvpn/pw (0600) and brings the connection up (NetworkManager starts openvpn, creates tap0, logs to the journal); the answers go to /run/p8test-nmvpn/up.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-server-accepted-the-user",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "authenticated\noffered AES-256-CBC\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the server's log (declared mutating so it runs after the connection)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-wrong-password-does-not-connect",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "brings the connection down, writes /run/p8test-nmvpn/badpw (0600) with a wrong password and tries to bring it up once (NetworkManager logs the failure); the outcome goes to /run/p8test-nmvpn/bad.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-server-refused-the-wrong-password",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "refused\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the server's log (declared mutating so it runs after the failed attempt)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "gnome",
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "dest": "p8lab-gnome",
+   "boot_id": "c02b186d-ae04-4830-8bb3-b45c8c61f900",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "c02b186d-ae04-4830-8bb3-b45c8c61f900",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "3180d441-569c-4da1-a188-1d1bcf5a94ba",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "3180d441-569c-4da1-a188-1d1bcf5a94ba",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "manifest_sha256": "d8ac18292024bb58e4626edb6d9af1bbbe3c2017ef15cfa2468d04fb07abfd0b",
+ "outcomes": [
+  {
+   "outcome": "the profile file is root-only and NetworkManager loads it as an OpenVPN connection under its name",
+   "checks": [
+    "profile-file-root-only",
+    "networkmanager-loads-the-vpn-profile"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the loaded profile carries the parameters (remote, CA, VPN user, cipher, password auth, tap)",
+   "checks": [
+    "vpn-settings-from-the-parameters"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "only the local user may use the connection, and its UUID is stable (fqdn_uuid of the name)",
+   "checks": [
+    "only-the-local-user-may-use-it",
+    "uuid-is-the-stable-version-5-uuid-of-the-name"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the profile connects to an OpenVPN server with the user's password (a tap address, the server reachable through the tunnel), and a wrong password does not connect",
+   "checks": [
+    "a-test-vpn-pki-and-route",
+    "the-peer-serves-openvpn",
+    "the-profile-connects-with-the-password",
+    "the-server-accepted-the-user",
+    "a-wrong-password-does-not-connect",
+    "the-server-refused-the-wrong-password"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the desktop's own secret agent asking the user for the password when the profile is brought up",
+   "uncovered": {
+    "why": "the password is agent-owned (password-flags=1); the exercise supplies it with nmcli's passwd-file, and the runner starts no GNOME session whose agent would ask",
+    "lifted_by": "capability: a GNOME desktop session in phase3 runs",
+    "evidence": "phase3.py session_problems accepts only desktop plasma; nodes.yml: the class's node gnome (capabilities [desktop, gnome])"
+   }
+  }
+ ],
+ "duration_s": 173.1
+}

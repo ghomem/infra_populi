@@ -1,0 +1,324 @@
+{
+ "class": "node_base_desktop",
+ "role": "author",
+ "at": "20261128T075417Z",
+ "runner": "d4ef29a7",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "1e224a213b30dd006163e941e42b901b9aec705a63c9c15d06449daf2de60ac1",
+ "content_sha256": "1e224a213b30dd006163e941e42b901b9aec705a63c9c15d06449daf2de60ac1",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "ssh-hardened-without-password-or-root-login",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "passwordauthentication yes\npermitrootlogin without-password\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "unattended-upgrades-removed",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "1\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "ipv6-input-and-forward-dropped",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "nightly-relevant-updates-cron",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "gnome-lock-policy-served",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "\n(/usr/bin/dconf:2152): dconf-WARNING **: 07:54:38.981: unable to open named profile (user): using the null configuration.\n\n(/usr/bin/dconf:2153): dconf-WARNING **: 07:54:38.987: unable to open named profile (user): using the null configuration.\n\n(/usr/bin/dconf:2154): dconf-WARNING **: 07:54:38.991: unable to open named profile (user): using the null configuration.\n",
+   "ok": true
+  },
+  {
+   "id": "puppet-service-enabled-and-running",
+   "control": "negative",
+   "rc": 3,
+   "passed": false,
+   "stdout": "disabled\ninactive\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-agent-daemon-runs-the-catalog",
+   "control": "negative",
+   "rc": 124,
+   "passed": false,
+   "stdout": "",
+   "stderr": "probe timed out after 120s",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "logs-forwarded-to-the-log-target",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/rsyslog.d/40-forward.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-ipv4-firewall-is-firewall-secure",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n0\n0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-local-directories-are-in-place",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/infra-populi': No such file or directory\nstat: cannot statx '/opt/infra-populi/bin': No such file or directory\nstat: cannot statx '/opt/infra-populi/etc': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-apt-helpers-are-in-desktop-mode",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "nginx-core not listed\npostfix not listed\nfirefox not listed\n",
+   "stderr": "grep: /opt/infra-populi/bin/apt-update-surface.sh: No such file or directory\nstat: cannot statx '/opt/infra-populi/bin/apt-update-relevant.sh': No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "in/apt-update-surface.sh]\n  File[/opt/infra-populi/bin/apt-update-surface-desktop.sh]\n  File[/opt/infra-populi/bin/apt-update-kernel.sh]\n  File[/opt/infra-populi/bin/apt-update-dist.sh]\n  Package[openscap-scanner]\n  File[/opt/infra-populi/bin/get-relevant-updates-list]\n  File[/opt/infra-populi/bin/apt-check-updates.sh]\n  Cron[apt_check_updates]\n  File[/var/lib/apt-check-updates]\n  File[/opt/infra-populi/bin/apt-update-relevant.sh]\n  Cron[apt_update_relevant_daily]\n  Package[rsyslog]\n  Package[rsyslog-gnutls]\n  File[/etc/rsyslog.d/tls]\n  File[/etc/rsyslog.d/tls/ca.pem]\n  File[/etc/rsyslog.d/tls/p8lab-gnome.pem]\n  File[/etc/rsyslog.d/tls/p8lab-gnome.key]\n  Service[rsyslog]\n  Host[puppet8master.example.com]\n  File[/etc/rsyslog.d/40-forward.conf]\n  Package[dconf-cli]\n  File[/etc/dconf]\n  File[/etc/dconf/profile]\n  File[/etc/dconf/db]\n  File[/etc/dconf/profile/user]\n  File[/etc/dconf/db/local.d]\n  File[/etc/dconf/db/local.d/locks]\n  File[/etc/dconf/db/local.d/00-screenlock]\n  File[/etc/dconf/db/local.d/locks/00-screenlock]\n  Exec[dconf_update_screenlock]\n  Service[puppet]\n  File[/etc/apt/apt.conf.d/15update-stamp]\n  Concat_file[/etc/ssh/sshd_config]\n  Concat_fragment[global config]\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update]) (gate v2).\nGREEN_STAMP node_base_desktop 4f768aac08a7\n\nNODE_FRESH: yes (boot 833faadb of the latest revert, no agent run since)\nGREEN: run 2 events limited to the plan's expected_run2_events (Exec[apt_update]) (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "ssh-hardened-without-password-or-root-login",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "passwordauthentication no\npermitrootlogin no\n",
+   "stderr": ""
+  },
+  {
+   "id": "unattended-upgrades-removed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\n",
+   "stderr": ""
+  },
+  {
+   "id": "ipv6-input-and-forward-dropped",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P INPUT DROP\n-P FORWARD DROP\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "nightly-relevant-updates-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "00 02 * * * /opt/infra-populi/bin/apt-update-relevant.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "gnome-lock-policy-served",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "uint32 300\ntrue\nuint32 0\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the dconf profile: a profile name that does not exist has no system-db:local line, so the three reads must not return the policy's values",
+    "rc": 0,
+    "passed": false,
+    "stdout": "",
+    "stderr": "\n(/usr/bin/dconf:10955): dconf-WARNING **: 07:58:42.583: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n\n(/usr/bin/dconf:10956): dconf-WARNING **: 07:58:42.590: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n\n(/usr/bin/dconf:10957): dconf-WARNING **: 07:58:42.594: unable to open named profile (p8-phase3-absent-profile): using the null configuration.\n"
+   }
+  },
+  {
+   "id": "puppet-service-enabled-and-running",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "enabled\nactive\n",
+   "stderr": ""
+  },
+  {
+   "id": "logs-forwarded-to-the-log-target",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "*.* @@puppet8master.example.com:6514\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-ipv4-firewall-is-firewall-secure",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-P INPUT DROP\n-P FORWARD DROP\n1\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-local-directories-are-in-place",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755 /opt/infra-populi\nroot 755 /opt/infra-populi/bin\nroot 755 /opt/infra-populi/etc\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-apt-helpers-are-in-desktop-mode",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "nginx-core not listed\npostfix not listed\nfirefox listed\n/opt/infra-populi/bin/apt-update-surface.sh\nroot 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-agent-daemon-runs-the-catalog",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "the daemon is the real agent\na daemon run applied the catalog\nresource events besides Exec[apt_update]: 0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "restarts puppet.service (the daemon makes a catalog run at start, applying the node's catalog from the lab master); the restart time goes to /run/p8test-agentd.since",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "gnome",
+ "nodes": {
+  "node": {
+   "kind": "gnome",
+   "dest": "p8lab-gnome",
+   "boot_id": "833faadb-a971-4eee-9e90-3cd7d05a6048",
+   "snapshot": "P8LAB_GNOME_BASELINE_v1",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "833faadb-a971-4eee-9e90-3cd7d05a6048",
+   "fresh": true
+  }
+ },
+ "manifest_sha256": "f75f51c9ff535e3bdf07fb1eae256f10e9f3f21a2db1b287a2ef29af71cc2fd7",
+ "outcomes": [
+  {
+   "outcome": "SSH is hardened with no password or root login, and unattended upgrades are removed",
+   "checks": [
+    "ssh-hardened-without-password-or-root-login",
+    "unattended-upgrades-removed"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the IPv4 firewall is firewall_secure's (INPUT and FORWARD dropped by default, the SSH whitelist and limit)",
+   "checks": [
+    "the-ipv4-firewall-is-firewall-secure"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the local directories are in place (filesystem_base_desktop), and syslog's file is left to rsyslog (customize_syslog_mode false)",
+   "checks": [
+    "the-local-directories-are-in-place"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the APT helpers are in desktop mode (the desktop surface list, the desktop link) and the relevant-updates script exists",
+   "checks": [
+    "the-apt-helpers-are-in-desktop-mode"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "IPv6 input and forwarding are dropped",
+   "checks": [
+    "ipv6-input-and-forward-dropped"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the relevant updates run nightly at 02:00 from root's crontab",
+   "checks": [
+    "nightly-relevant-updates-cron"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "logs are forwarded to the configured log target and port",
+   "checks": [
+    "logs-forwarded-to-the-log-target"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the GNOME screen lock policy is served (manage_gnome_screenlock)",
+   "checks": [
+    "gnome-lock-policy-served"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the puppet service is enabled and running",
+   "checks": [
+    "puppet-service-enabled-and-running"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the per-user KDE screen lock (screenlock_users)",
+   "uncovered": {
+    "why": "a parameter variant no production node uses (user_kde_lock_screen's own set exercises the lock on kubuntu)",
+    "accepted_gap": [
+     "screenlock_users"
+    ],
+    "evidence": "{SITE:fleet-usage} (2026-11-23): no production node statement sets screenlock_users, and no class of the repository sets it on node_base_desktop"
+   }
+  },
+  {
+   "outcome": "the puppet agent daemon running on its interval",
+   "checks": [
+    "the-agent-daemon-runs-the-catalog"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 290.5
+}
