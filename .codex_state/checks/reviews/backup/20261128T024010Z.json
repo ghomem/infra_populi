@@ -1,0 +1,36 @@
+{
+ "class": "backup",
+ "at": "20261128T024010Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "plain-a-run-as-the-user-archives-both-directories-uncompressed: baseline backup.sh.erb:31 runs tar -cv${COMPRESSION_FLAG}f into $BACKDIR/$FILEPREFIX-<date>.tar.gz over $FILETARGETDIRS, and :18-20 empties the flag when compression is false; under params variant plain (compression false, basedir '/etc/default /etc/skel', user backup) a run as backup must give rc 0, a backup-owned plain POSIX tar holding etc/default/ and etc/skel/ - exactly the probe+expect (both dirs reach tar only through local change #26's quoting, which row 26 records; the backdir owned by the user is local change #14)",
+  "aged-archives-are-planted: backup.sh.erb:35-37 deletes files named $FILEPREFIX* older than -mtime +$DAYS (DAYS=1*7-1=6 with ndays 7); the action plants an 8-day and a 3-day file of the prefix and a 30-day file of another prefix in the backup directory, and the read-only effect confirms with find -mtime +6 that exactly the 8-day and 30-day files are older than the window - a correct setup for the retention check, declared fully in mutates",
+  "cron-runs-it-at-2300: backup.pp:21-28 declares cron_${title}_backup with command ${bindir}/backup-${title}.sh, user/hour/minute/monthday from the defaults root/23/0/* (backup.pp:5-8; the params file sets none of them); the probe reads root's crontab under '# Puppet Name: cron_backup_backup' and expects '0 23 * * * <bindir>/backup-backup.sh' - what the code produces (reviewer run stdout shows /opt/infra-populi/bin/backup-backup.sh; spot's display renders LOCALDIR with the pre-rename path, the run itself used the lab's value)",
+  "purpose covered: Purpose (tar-based per-title backups by cron, gzip unless off, prefix retention) matches the baseline header and code. The checks test the job itself, not only files: a run writes a dated gzip archive from which etc/default/cron restores byte for byte, retention deletes only the prefix's archive older than ndays-1 and keeps a newer one and another prefix's file, a run that cannot write fails non-zero with an ERROR on stderr and in the journal and keeps old archives (local change #15), and variant plain covers compression off, two base directories (#26), another user's crontab and run, and another hour/minute/monthday. Script content/mode and the backup directory (#14) are checked. TARGETUSER and EXCLUDEDIRS are empty constants in the template, so they carry no testable behaviour. Only the cron daemon actually firing at the scheduled time is uncovered, with true evidence: the runner has no step that advances or waits for the node's cron clock; the entry and the script it names are both verified. Both runs (base and variant plain) ALL_PASS in the reviewer run, no findings."
+ ],
+ "review_s": 149.8,
+ "check_file_sha256": "1162d240c1328ebb03d327212d1e806baa0ed94cd62ab5211f3ee97a1f703738",
+ "content_sha256": "1162d240c1328ebb03d327212d1e806baa0ed94cd62ab5211f3ee97a1f703738",
+ "reviewer_result": "20261128T023741Z-reviewer",
+ "author_result": "20261128T022558Z-author",
+ "findings": [],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "d5d59dcd-273b-4fd6-91ba-efdfa61bc444",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "d5d59dcd-273b-4fd6-91ba-efdfa61bc444",
+   "fresh": true
+  }
+ }
+}
