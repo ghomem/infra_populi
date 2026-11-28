@@ -1,0 +1,407 @@
+{
+ "class": "sync",
+ "role": "author",
+ "at": "20261128T101607Z",
+ "runner": "89968b68",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "cf3a49991c9c4a9e215e363476457005c9bed57617335ee8f08398b68b9b190c",
+ "content_sha256": "cf3a49991c9c4a9e215e363476457005c9bed57617335ee8f08398b68b9b190c",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "script-installed-root-0755",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/infra-populi/bin/sync-sync.sh': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "script-carries-the-parameters",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /opt/infra-populi/bin/sync-sync.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "bandwidth-limit-converted",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /opt/infra-populi/bin/sync-sync.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "script-is-valid-bash",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: /opt/infra-populi/bin/sync-sync.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "daily-cron-for-the-local-user",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "root-key-and-the-remote-host-name",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-peer-serves-the-remote-dir",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "\n0\n0\n",
+   "stderr": "bash: line 97: cd: /srv/p8test: No such file or directory\nstat: cannot statx '/home/p8testuser/.ssh/authorized_keys': No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-script-mirrors-the-remote-dir",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "rc \n\n",
+   "stderr": "cat: /run/p8test-sync/run1.rc: No such file or directory\nls: cannot access '/var/tmp/p8test-sync': No such file or directory\nbash: line 100: cd: /var/tmp/p8test-sync/p8test.example.invalid-p8test: No such file or directory\nbash: line 100: cd: /var/tmp/p8test-sync/p8test2.example.invalid-p8test: No such file or directory\nawk: fatal: cannot open file `/run/p8test-sync/run1.seconds' for reading: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-file-is-removed-on-the-remote",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 97: cd: /srv/p8test: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-next-run-removes-it-locally-too",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "rc \n",
+   "stderr": "cat: /run/p8test-sync/run2.rc: No such file or directory\nbash: line 98: cd: /var/tmp/p8test-sync/p8test.example.invalid-p8test: No such file or directory\nbash: line 98: cd: /var/tmp/p8test-sync/p8test2.example.invalid-p8test: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "reated\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Sync[sync]/File[/opt/infra-populi/bin/sync-sync.sh]/ensure: defined content as '{sha256}524ad813a12f51c579534098454104f1d9385afa19d13ce77d6de934b8a95016'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Sync[sync]/Cron[cron_sync_sync]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.15 seconds\u001b[0m\nRUN1_EVENTS: 9 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795861044'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.12 seconds\u001b[0m\nCOVERAGE infra_populi::sync: 2 concrete resources (+1 defined-type instances)\n  Infra_populi::Sync[sync]\n  File[/opt/infra-populi/bin/sync-sync.sh]\n  Cron[cron_sync_sync]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP sync 2652c5255011\n\nNODE_FRESH: yes (boot db573d91 of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "script-installed-root-0755",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "script-carries-the-parameters",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "HOSTS=\"p8test.example.invalid:22 p8test2.example.invalid:2222\"\nREMOTEUSER=\"p8testuser\"\nLOCALDIR=\"/var/tmp/p8test-sync\"\nREMOTEDIR=\"/srv/p8test\"\nSUFFIX=\"-p8test\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "bandwidth-limit-converted",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "BWLIMIT_OPT=\" --bwlimit=1.19m\"\nRSYNCOPTS=\"-av --partial --delete${BWLIMIT_OPT}\"\n",
+   "stderr": ""
+  },
+  {
+   "id": "script-is-valid-bash",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "parses\n",
+   "stderr": ""
+  },
+  {
+   "id": "daily-cron-for-the-local-user",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "# Puppet Name: cron_sync_sync\n17 3 * * * /opt/infra-populi/bin/sync-sync.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "root-key-and-the-remote-host-name",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test.example.invalid pinned-to-the-peer\np8test2.example.invalid pinned-to-the-peer-alias\nkey-ready\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "on the node: creates /root/.ssh/id_ed25519 if root has none, copies its public half to /run/p8test-sync/root.pub (handed to the peer), and appends \"$PEER_ADDR p8test.example.invalid\" and \"<the peer's address + 100> p8test2.example.invalid\" to /etc/hosts",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-peer-serves-the-remote-dir",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "./a.txt ./big.bin ./gone.txt ./sub/b.txt \np8testuser 600\nsshd on 2222\n1\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: creates the account p8testuser with the node root's public key as its only authorized key, and /srv/p8test (owned by it) with a.txt, sub/b.txt, gone.txt and big.bin (6 MiB from /dev/urandom); adds its +100 alias address to enp0s8, inserts `-I INPUT -d <alias> -p tcp --dport 22 -m comment --comment p8test-sync-port -j REJECT`, and starts an extra sshd on port 2222 (/usr/sbin/sshd -p 2222, /run/sshd created if absent)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-script-mirrors-the-remote-dir",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0\np8test.example.invalid-p8test p8test2.example.invalid-p8test \np8test: ./a.txt ./big.bin ./gone.txt ./sub/b.txt p8test sync a|p8test sync b|6291456\np8test2: ./a.txt ./big.bin ./gone.txt ./sub/b.txt p8test sync a|p8test sync b|6291456\nlimited\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "on the node: runs {{LOCALDIR}}/bin/sync-sync.sh once as root (rsync over ssh to the peer), which creates /var/tmp/p8test-sync/p8test.example.invalid-p8test and p8test2.example.invalid-p8test; its exit status and duration go to /run/p8test-sync",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-file-is-removed-on-the-remote",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "./a.txt ./big.bin ./sub/b.txt \n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer, removes /srv/p8test/gone.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-next-run-removes-it-locally-too",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0\np8test: ./a.txt ./big.bin ./sub/b.txt \np8test2: ./a.txt ./big.bin ./sub/b.txt \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "on the node, runs {{LOCALDIR}}/bin/sync-sync.sh a second time as root; its exit status goes to /run/p8test-sync/run2.rc",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "db573d91-9563-458a-ba39-03481f410be6",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "db573d91-9563-458a-ba39-03481f410be6",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "43319733-b4f4-4d80-aa70-32f0564f2d91",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "43319733-b4f4-4d80-aa70-32f0564f2d91",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "variants": {
+  "other": {
+   "name": "other",
+   "node": "ubuntu",
+   "params": "other",
+   "clean": [
+    {
+     "id": "no-limit-another-port-and-local-user",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "",
+     "stderr": "grep: /opt/infra-populi/bin/sync-sync.sh: No such file or directory\nno crontab for nobody\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "a_populi::Sync[sync]/File[/opt/infra-populi/bin/sync-sync.sh]/ensure: defined content as '{sha256}62a653c03e1e7238d5939ffc34320074c6dd330037a836e5f22292117781356e'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Sync[sync]/Cron[cron_sync_sync]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.22 seconds\u001b[0m\nRUN1_EVENTS: 9 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795861118'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.37 seconds\u001b[0m\nCOVERAGE infra_populi::sync: 2 concrete resources (+1 defined-type instances)\n  Infra_populi::Sync[sync]\n  File[/opt/infra-populi/bin/sync-sync.sh]\n  Cron[cron_sync_sync]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant other; never a Phase 1 record)\n\nNODE_FRESH: yes (boot 5a2da4cd of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+   },
+   "applied": [
+    {
+     "id": "no-limit-another-port-and-local-user",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "HOSTS=\"p8test.example.invalid:2222\"\nBWLIMIT_OPT=\"\"\n17 3 * * * /opt/infra-populi/bin/sync-sync.sh\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "5a2da4cd-0576-4c29-b7ed-890ac0e2a259",
+     "snapshot": "P8NODE_BASELINE_GREEN_v6",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "5a2da4cd-0576-4c29-b7ed-890ac0e2a259",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "p8lab-ubuntu2",
+    "PEER_ADDR": "192.168.56.24",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26",
+    "FIXTURE_B64:p8test-throwaway-private-sig": "M2RlYzQ1NTNjZjIyYmNjNQphMTYxZDlmYmFhYTg4YTM3Cg==",
+    "FIXTURE_B64:p8test-throwaway-rsa": "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFZRUFzZzNuR2JmSnQ5ZzZPNXQ1SGhrM0JrQS9EYnlXRTFQV09WS0NVbGhNZnlSNVdHZ2JRQ1kwCjM3Yk5INU5yeDhPbDZyTW8rVmx3Z0RBZm8vTU40TzdDdTcwbUtVUjNuTjZaM2h1VXEwYld6bDdBN1loWEFCeUdON1ZZMVMKbVZEZmhMeUFhTzB2OXg1cDBNQ0hYWTBiRlNZZENWZi9zU1Z1ckxUWWpvdkVLdDBXYVJrd3BqVTB2aHh0S1g2TEZaWWVubgozU0dzbkRGKzN1ejBUWVhOeU81TW1zUUExVlppLzk0TVl4QmwwNmU0MXBKSEcyQjVKeDVScm0zN0RaSzRjaEFscForTlpKCmFScnBVNVlJWGVFMXJWc01ZUUdIQ0RpY2FML1JwcTZueEJBcUZWN1lKdnpMOGJybTJXd0VpZlRIRERoMTBkMHVBMS9WbC8KRmxvQ2F5Z3ZhVm1KdXZPUGEwc1pIU2tLZnZpVXhTb1lXM0ZhL3B5aWkyeXI1VlMzSGZyKzQxRTEvaVc5cVJtUDN3eUNBUwpMRXM5WTBaTmpqTlBIcWFzS25IR3hyZGZGN0x0ZDhEU1paY3Jsak5NVUJudmhscXNoMUpTQzNWYTV6YWUrOURCbDAvMThPCmtiSkxIZGhIM3orM1ZjaFRicFNYZ0ZkdUtVUWJJZ0s3bytiZDBDalZBQUFGbUVOMGtLRkRkSkNoQUFBQUIzTnphQzF5YzIKRUFBQUdCQUxJTjV4bTN5YmZZT2p1YmVSNFpOd1pBUHcyOGxoTlQxamxTZ2xKWVRIOGtlVmhvRzBBbU5OKzJ6UitUYThmRApwZXF6S1BsWmNJQXdINlB6RGVEdXdydTlKaWxFZDV6ZW1kNGJsS3RHMXM1ZXdPMklWd0FjaGplMVdOVXBsUTM0UzhnR2p0CkwvY2VhZERBaDEyTkd4VW1IUWxYLzdFbGJxeTAySTZMeENyZEZta1pNS1kxTkw0Y2JTbCtpeFdXSHA1OTBockp3eGZ0N3MKOUUyRnpjanVUSnJFQU5WV1l2L2VER01RWmRPbnVOYVNSeHRnZVNjZVVhNXQrdzJTdUhJUUphV2ZqV1NXa2E2Vk9XQ0YzaApOYTFiREdFQmh3ZzRuR2kvMGFhdXA4UVFLaFZlMkNiOHkvRzY1dGxzQkluMHh3dzRkZEhkTGdOZjFaZnhaYUFtc29MMmxaCmlicnpqMnRMR1IwcENuNzRsTVVxR0Z0eFd2NmNvb3RzcStWVXR4MzYvdU5STmY0bHZha1pqOThNZ2dFaXhMUFdOR1RZNHoKVHg2bXJDcHh4c2EzWHhleTdYZkEwbVdYSzVZelRGQVo3NFphcklkU1VndDFXdWMybnZ2UXdaZFA5ZkRwR3lTeDNZUjk4Lwp0MVhJVTI2VWw0QlhiaWxFR3lJQ3U2UG0zZEFvMVFBQUFBTUJBQUVBQUFHQUM1OEExM1YwSkR4bjRwWTlhUTQrd0k1R3YwClFHTElsRExtSERwcEc0ODhSdGxNR291UDYxWXBPVHRFSk5pQ1V0ZEtjbHRHUHNHenNUaEVKeEdiT2pxMEt5RlZmd3ZFdVkKRWRQTmdvSDJDUDZpQzI3T1g0Vm52NFk3SDhzemFBMFlaSEZaekRlR3dpL21XNUtyZmRZeERtTE1NSHFkTEx0QzNTZzQwOAo3QXBGaVVNRVlVTmxra2RETUZzMWJkN1ZncHFBMjlBOE1aazMyMk1wZ2FMQW1IbjVpaTJ2Umsza0VxZGFNWjdrbWdYMXJUCjZzWVl2NG1lVGFydWRqNlRyTUxWRjZWSHhLdlF5WnpyT3pTS3Y4THp2dC9sdTBiSnF4c3dNNG56RFdjWTJEdnNzUWM2VUIKR2M2YzBoNDZUT1BUNzl3TlprUTBXamlYNlVuQ3RGSEM2ZWFFQVdzWHVCdFFBc29BakMxTVRtYlNwS2NRa25QWWYvTVhYagpTRm9oOEMrcnpBVWd6VnA4d1dFWTU3ODZwSTdBd3hCUDhSVWp2RjVxUFRKQWtiVXJJVXd4Q1pxMTE4eHZEUlhqS1VCUHZaCkZkWlJleERMRnRONmtpY0ZoaVVNRWJ5UTM4d05OY3VMb2d5L3dXdUtIUElQQ1NrR05OazNJam9aUkpodVZETDJyNUFBQUEKd0dLNHlzditRRDFWQTZDMWxGVDJwcUxPMkh0eEQ0c1dmWkl2Vjd2YzQvQ2Z0RFgxUlZTUkNYYVFSU01EMXJFK2JtTlJLYwo1Z09zMTFvY2ZyT2RVeUZTTWt3YUFQNUZuV1pPWjNXUUx5cTRXZ2RDWU15MG8wS3VYZGhHSmRtVmhxNXRRN0VHcGIzYTVNCitZMDJMNzFIWnVWQlM5N1c3OVQ2UndOd0FIbVd1SHZVaGJMcDU5SEZod2xLbU9jL2ZQcEloWXpUblhNY2tvelU0azgzaHgKRkNrNGpNYWlBTkF4aTNJK1hwR3JNajdRckpsMVJlSzRNMHMwKzB4NFN6dE9ibG93QUFBTUVBM09meFVoR1FTUkJIZFl4TgpqaVg1NHhqMG5vempIdk15YWRYWWNTNVFoZDNDUnJpUXVXc2J3QXdnbisycWFQNFBrN0x2ZStvS01MK1V6ZDN2MllzZVJiCm9hcVdmdkxlMU52YUI2eXlSM2RvNG40TmV1RENma056RDZ2dmdCNnhGbEdybldabmdLeEN1NDF1V2JONDZFczlUQ1VrbGYKTG40aTU3ZU52ZjRoWi9oUXNwdDZQQU9QQVRBV3JvcDdQakpWZmY3b09tczB2NkdJNlA3anFtRkZHSndmVWFSbEttRkFGSwpkNFVLcEZhV1NLV3ZEa0pzaWk0QWtxU1ZDbndVSlpBQUFBd1FET1Z6ZTZZdmExTVBJcmQwcGVicDRlaGgvS01oZWRBMEsvCnlCcjBMNVlHZ1hwTzVsdnhidGZhTUZnQUwwWVBrL3Fvc0tJODVLZ2JwNjNoWHlUSDRoRlhiQ3FhRGZJN2tXcTBTQ0J6Y1MKSFRwcUdMRHVJNkRuQVJteTZMWmMxdkJrVDlvSTVTSkM4S0dxOVdFVTF6bU5STUlTQWRoS09YRlhTZE0vWFEyN2FiclU2VwpLZ2taR2x4dDlZTHdYT09LWUthamJ1VTAwRkZqelFwK2labUNaRWY0a2ZxOHpFNUF2VUhPOWVobnJCbnFWVko5SDF4UW5NCittUUlybmRaK1lzdDBBQUFBZGNEaDBaWE4wTFhSb2NtOTNZWGRoZVMxT1QxUXRRUzFUUlVOU1JWUUJBZ01FQlFZPQotLS0tLUVORCBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0K",
+    "FIXTURE_B64:p8test-throwaway-rsa.pub": "c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCZ1FDeURlY1p0OG0zMkRvN20za2VHVGNHUUQ4TnZKWVRVOVk1VW9KU1dFeC9KSGxZYUJ0QUpqVGZ0czBmazJ2SHc2WHFzeWo1V1hDQU1CK2o4dzNnN3NLN3ZTWXBSSGVjM3BuZUc1U3JSdGJPWHNEdGlGY0FISVkzdFZqVktaVU4rRXZJQm83Uy8zSG1uUXdJZGRqUnNWSmgwSlYvK3hKVzZzdE5pT2k4UXEzUlpwR1RDbU5UUytIRzBwZm9zVmxoNmVmZElheWNNWDdlN1BSTmhjM0k3a3lheEFEVlZtTC8zZ3hqRUdYVHA3aldra2NiWUhrbkhsR3ViZnNOa3JoeUVDV2xuNDFrbHBHdWxUbGdoZDRUV3RXd3hoQVljSU9KeG92OUdtcnFmRUVDb1ZYdGdtL012eHV1YlpiQVNKOU1jTU9IWFIzUzREWDlXWDhXV2dKcktDOXBXWW02ODQ5clN4a2RLUXArK0pURktoaGJjVnIrbktLTGJLdmxWTGNkK3Y3alVUWCtKYjJwR1kvZkRJSUJJc1N6MWpSazJPTTA4ZXBxd3FjY2JHdDE4WHN1MTN3TkpsbHl1V00weFFHZStHV3F5SFVsSUxkVnJuTnA3NzBNR1hUL1h3NlJza3NkMkVmZlA3ZFZ5Rk51bEplQVYyNHBSQnNpQXJ1ajV0M1FLTlU9IHA4dGVzdC10aHJvd2F3YXktTk9ULUEtU0VDUkVUCg==",
+    "FIXTURE_B64:p8test-throwaway-wrapped-passphrase": "OgLD7cOD4lefVTA0YzMxOTM5OWFhNzA3Y2LnKercRt+UGWJfPQaw9+xVCYg47pOXzfS23L0ATBC+qA=="
+   },
+   "manifest_sha256": "74565d2c6c209e4ab6bdec51208e43427af187a23a36c19fbed57b7a3f4d8c42"
+  }
+ },
+ "manifest_sha256": "50d623cf3ad1fd250052d73af74ea23b362968ddeaca144d5fb329e2292ea379",
+ "outcomes": [
+  {
+   "outcome": "the per-tag script is installed root:root 0755 with the parameters, and parses",
+   "checks": [
+    "script-installed-root-0755",
+    "script-carries-the-parameters",
+    "script-is-valid-bash"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the local user's crontab runs it daily at hour:minute",
+   "checks": [
+    "daily-cron-for-the-local-user"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a run mirrors each listed host's directory into its own <localdir>/<host><suffix> over ssh as the remote user, on that host's listed port",
+   "checks": [
+    "root-key-and-the-remote-host-name",
+    "the-peer-serves-the-remote-dir",
+    "the-script-mirrors-the-remote-dir"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the bandwidth limit (Mbit/s converted to rsync's MiB/s) slows the transfer",
+   "checks": [
+    "bandwidth-limit-converted",
+    "the-script-mirrors-the-remote-dir"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a file removed on the remote host is removed locally by the next run (--delete)",
+   "checks": [
+    "a-file-is-removed-on-the-remote",
+    "the-next-run-removes-it-locally-too"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "cron itself firing at 03:17",
+   "uncovered": {
+    "why": "a run would have to wait for 03:17; the crontab entry is checked and the script it names is run by hand",
+    "lifted_by": "capability: a wall-clock trigger in phase3.py runs (waiting for, or shifting, the node's time)",
+    "evidence": "clock_check.py (HQ 2026-11-17 batch-8 ruling 4) requires every lab clock to agree with the laptop's, and phase3.py has no step that waits for a time of day"
+   }
+  },
+  {
+   "outcome": "other ports, no limit, another local user",
+   "checks": [
+    "no-limit-another-port-and-local-user"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 153.9
+}

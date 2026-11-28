@@ -1,0 +1,342 @@
+{
+ "class": "ssl_nginx",
+ "role": "author",
+ "at": "20261128T094853Z",
+ "runner": "89968b68",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "eb7fb337e7d24f1ef06c8df247bf21742ee9c62f17ee2357bd602c7d9dd4383d",
+ "content_sha256": "eb7fb337e7d24f1ef06c8df247bf21742ee9c62f17ee2357bd602c7d9dd4383d",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "private-key-installed-root-only",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/ssl/private/p8test.key': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "nginx-bundle-cert-then-intermediate",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/ssl/certs/p8test.nginx.bundle.crt': No such file or directory\ngrep: /etc/ssl/certs/p8test.nginx.bundle.crt: No such file or directory\nCould not open file or uri for loading certificate from /etc/ssl/certs/p8test.nginx.bundle.crt\n40F7F198D97D0000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n40F7F198D97D0000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/ssl/certs/p8test.nginx.bundle.crt)\nUnable to load certificate\n",
+   "ok": true
+  },
+  {
+   "id": "bundle-certificate-matches-the-key",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "missing files\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-bundle-is-changed-by-hand",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /run/p8test-sslnginx/pid: No such file or directory\nbash: line 97: [: : integer expression expected\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-bundle-and-restarts-nginx",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "0\ninactive\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-key-is-changed-by-hand",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /run/p8test-sslnginx/pid-key: No such file or directory\nbash: line 97: [: : integer expression expected\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-key-and-restarts-nginx",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "inactive\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "iggered 'refresh' from 3 events\u001b[0m\n\u001b[mNotice: Applied catalog in 30.19 seconds\u001b[0m\nRUN1_EVENTS: 12 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795859416'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.60 seconds\u001b[0m\nCOVERAGE infra_populi::ssl_nginx: 5 concrete resources (+3 defined-type instances)\n  Infra_populi::Ssl_base[infra_populi::ssl_base_nginx]\n  File[/etc/ssl/private/p8test.key]\n  Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]\n  Concat::Fragment[first_certificate_p8test]\n  Concat::Fragment[intermediate_certificates_p8test]\n  Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]\n  Concat_fragment[first_certificate_p8test]\n  Concat_fragment[intermediate_certificates_p8test]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP ssl_nginx 3b8722176da5\n\nNODE_FRESH: yes (boot 0f716f80 of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "private-key-installed-root-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 600\n",
+   "stderr": ""
+  },
+  {
+   "id": "nginx-bundle-cert-then-intermediate",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 644\n2\nsubject=CN=p8test.invalid,O=p8test lab fixture (THROWAWAY\\, not a real CA)\n",
+   "stderr": ""
+  },
+  {
+   "id": "bundle-certificate-matches-the-key",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "key-matches-certificate\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the key: the node's own Puppet agent key is a different key, so the same comparison against it must fail",
+    "rc": 1,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-bundle-is-changed-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\npid noted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "appends the line \"# p8test drift\" to /etc/ssl/certs/p8test.nginx.bundle.crt and writes nginx's main PID to /run/p8test-sslnginx/pid (/run/p8test-sslnginx created 0700)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-the-bundle-and-restarts-nginx",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\nnginx restarted\nactive\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the bundle and nginx's PID (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-key-is-changed-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\npid noted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes the key's SHA-256 and nginx's main PID to /run/p8test-sslnginx/key.sha and /run/p8test-sslnginx/pid-key, then appends the line \"# p8test drift\" to /etc/ssl/private/p8test.key",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-the-key-and-restarts-nginx",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "key restored\nnginx restarted\nactive\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the key's digest and nginx's PID (declared mutating so it runs after the second agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "0f716f80-6ceb-45ac-9c09-ca101df58bea",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "0f716f80-6ceb-45ac-9c09-ca101df58bea",
+   "fresh": true
+  }
+ },
+ "node_agent": {
+  "the-bundle-is-changed-by-hand": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_nginx/Infra_populi::Ssl_base[infra_populi::ssl_base_nginx]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/content:",
+    "\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_nginx/Infra_populi::Ssl_base[infra_populi::ssl_base_nginx]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/content:",
+    "\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_nginx/Infra_populi::Ssl_base[infra_populi::ssl_base_nginx]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/content: content changed '{sha256}9b9d30b093df8948cb810b53f4ae761accca5a3218709d43e8d05572953cbad7' to '{sha256}64c8e981bfdf7643011046f7595d98ed8526179230964dee98603cedf223dab4' (corrective)\u001b[0m",
+    "\u001b[0;32mInfo: Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]: Scheduling refresh of Service[nginx]\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Triggered 'refresh' from 1 event\u001b[0m"
+   ],
+   "errors": [],
+   "tail": "26.722561078 +0000\n@@ -44,4 +44,3 @@\n Pgx63qWDnchDqQmXdeQzPUGsTZYpkpyTguIqoFKPmTT2B7vyWlb+vh8QdcAvBWbb\n WA==\n -----END CERTIFICATE-----\n-# p8test drift\n\u001b[0m\n\u001b[0;32mInfo: Computing checksum on file /etc/ssl/certs/p8test.nginx.bundle.crt\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Infra_populi::Ssl_nginx/Infra_populi::Ssl_base[infra_populi::ssl_base_nginx]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]: Filebucketed /etc/ssl/certs/p8test.nginx.bundle.crt to puppet with sum 9b9d30b093df8948cb810b53f4ae761accca5a3218709d43e8d05572953cbad7\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_nginx/Infra_populi::Ssl_base[infra_populi::ssl_base_nginx]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/content: \n\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_nginx/Infra_populi::Ssl_base[infra_populi::ssl_base_nginx]/Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]/File[/etc/ssl/certs/p8test.nginx.bundle.crt]/content: content changed '{sha256}9b9d30b093df8948cb810b53f4ae761accca5a3218709d43e8d05572953cbad7' to '{sha256}64c8e981bfdf7643011046f7595d98ed8526179230964dee98603cedf223dab4' (corrective)\u001b[0m\n\u001b[0;32mInfo: Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]: Scheduling refresh of Service[nginx]\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.66 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/etc/ssl/certs/p8test.nginx.bundle.crt]\nCHANGED Service[nginx]\n"
+  },
+  "the-key-is-changed-by-hand": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_nginx/Infra_populi::Ssl_base[infra_populi::ssl_base_nginx]/File[/etc/ssl/private/p8test.key]/content:",
+    "\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_nginx/Infra_populi::Ssl_base[infra_populi::ssl_base_nginx]/File[/etc/ssl/private/p8test.key]/content:",
+    "\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_nginx/Infra_populi::Ssl_base[infra_populi::ssl_base_nginx]/File[/etc/ssl/private/p8test.key]/content: content changed '{sha256}7708533a6c9866606b1000256ccfdcb6e57e399d6aec100f69d0c0f1a57933ce' to '{sha256}1408355e23bf8f52551c5dc0f4d7781e7797279b8b37a40379d5f1140fcc0854' (corrective)\u001b[0m",
+    "\u001b[0;32mInfo: /Stage[main]/Infra_populi::Ssl_nginx/Infra_populi::Ssl_base[infra_populi::ssl_base_nginx]/File[/etc/ssl/private/p8test.key]: Scheduling refresh of Service[nginx]\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Triggered 'refresh' from 1 event\u001b[0m"
+   ],
+   "errors": [],
+   "tail": "192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795859432'\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_nginx/Infra_populi::Ssl_base[infra_populi::ssl_base_nginx]/File[/etc/ssl/private/p8test.key]/content: \n--- /etc/ssl/private/p8test.key\t2026-11-28 09:50:28.005409050 +0000\n+++ /tmp/puppet-file20261128-2577-656bs5\t2026-11-28 09:50:33.328553664 +0000\n@@ -26,4 +26,3 @@\n PHE1QTWb+GZaB0BOkb0j8kcCqKsoxhITtRmAqv3WMoQ5ObEJKnCjwVK2KDdwwXMk\n /vz/xblOPqQ6LV4VwXwLVlo=\n -----END PRIVATE KEY-----\n-# p8test drift\n\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_nginx/Infra_populi::Ssl_base[infra_populi::ssl_base_nginx]/File[/etc/ssl/private/p8test.key]/content: \n\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_nginx/Infra_populi::Ssl_base[infra_populi::ssl_base_nginx]/File[/etc/ssl/private/p8test.key]/content: content changed '{sha256}7708533a6c9866606b1000256ccfdcb6e57e399d6aec100f69d0c0f1a57933ce' to '{sha256}1408355e23bf8f52551c5dc0f4d7781e7797279b8b37a40379d5f1140fcc0854' (corrective)\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Infra_populi::Ssl_nginx/Infra_populi::Ssl_base[infra_populi::ssl_base_nginx]/File[/etc/ssl/private/p8test.key]: Scheduling refresh of Service[nginx]\u001b[0m\n\u001b[mNotice: /Stage[main]/Nginx::Service/Service[nginx]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.69 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/etc/ssl/private/p8test.key]\nCHANGED Service[nginx]\n"
+  }
+ },
+ "variants": {
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "clean": [
+    {
+     "id": "on-redhat-the-key-is-in-pki-tls-private-and-matches-the-bundle",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "key-matches-certificate\n",
+     "stderr": "stat: cannot statx '/etc/pki/tls/private/p8test.key': No such file or directory\nstat: cannot statx '/etc/ssl/certs/p8test.nginx.bundle.crt': No such file or directory\nCould not open file or uri for loading certificate from /etc/ssl/certs/p8test.nginx.bundle.crt: No such file or directory\nCould not open file or uri for loading private key of key from /etc/pki/tls/private/p8test.key: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "st)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795859809'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.34 seconds\u001b[0m\nCOVERAGE infra_populi::ssl_nginx: 5 concrete resources (+3 defined-type instances)\n  Infra_populi::Ssl_base[infra_populi::ssl_base_nginx]\n  File[/etc/pki/tls/private/p8test.key]\n  Concat[/etc/ssl/certs/p8test.nginx.bundle.crt]\n  Concat::Fragment[first_certificate_p8test]\n  Concat::Fragment[intermediate_certificates_p8test]\n  Concat_file[/etc/ssl/certs/p8test.nginx.bundle.crt]\n  Concat_fragment[first_certificate_p8test]\n  Concat_fragment[intermediate_certificates_p8test]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP ssl_nginx 3b8722176da5\n\nNODE_FRESH: yes (boot d1f16ad3 of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n==> required_external apt not declared: Debian-only, the target is RedHat\n==> required_external apt not declared: Debian-only, the target is RedHat\n\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-the-key-is-in-pki-tls-private-and-matches-the-bundle",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "/etc/pki/tls/private/p8test.key root:root 600\n/etc/ssl/certs/p8test.nginx.bundle.crt root:root 644\nkey-matches-certificate\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "d1f16ad3-ecb4-4fb8-95b8-a6db4324a9cb",
+     "snapshot": "P8LAB_RHEL9_BASELINE_v3",
+     "apt_mirror": null,
+     "boot_id_at_end": "d1f16ad3-ecb4-4fb8-95b8-a6db4324a9cb",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26",
+    "FIXTURE_B64:p8test-throwaway-private-sig": "M2RlYzQ1NTNjZjIyYmNjNQphMTYxZDlmYmFhYTg4YTM3Cg==",
+    "FIXTURE_B64:p8test-throwaway-rsa": "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFZRUFzZzNuR2JmSnQ5ZzZPNXQ1SGhrM0JrQS9EYnlXRTFQV09WS0NVbGhNZnlSNVdHZ2JRQ1kwCjM3Yk5INU5yeDhPbDZyTW8rVmx3Z0RBZm8vTU40TzdDdTcwbUtVUjNuTjZaM2h1VXEwYld6bDdBN1loWEFCeUdON1ZZMVMKbVZEZmhMeUFhTzB2OXg1cDBNQ0hYWTBiRlNZZENWZi9zU1Z1ckxUWWpvdkVLdDBXYVJrd3BqVTB2aHh0S1g2TEZaWWVubgozU0dzbkRGKzN1ejBUWVhOeU81TW1zUUExVlppLzk0TVl4QmwwNmU0MXBKSEcyQjVKeDVScm0zN0RaSzRjaEFscForTlpKCmFScnBVNVlJWGVFMXJWc01ZUUdIQ0RpY2FML1JwcTZueEJBcUZWN1lKdnpMOGJybTJXd0VpZlRIRERoMTBkMHVBMS9WbC8KRmxvQ2F5Z3ZhVm1KdXZPUGEwc1pIU2tLZnZpVXhTb1lXM0ZhL3B5aWkyeXI1VlMzSGZyKzQxRTEvaVc5cVJtUDN3eUNBUwpMRXM5WTBaTmpqTlBIcWFzS25IR3hyZGZGN0x0ZDhEU1paY3Jsak5NVUJudmhscXNoMUpTQzNWYTV6YWUrOURCbDAvMThPCmtiSkxIZGhIM3orM1ZjaFRicFNYZ0ZkdUtVUWJJZ0s3bytiZDBDalZBQUFGbUVOMGtLRkRkSkNoQUFBQUIzTnphQzF5YzIKRUFBQUdCQUxJTjV4bTN5YmZZT2p1YmVSNFpOd1pBUHcyOGxoTlQxamxTZ2xKWVRIOGtlVmhvRzBBbU5OKzJ6UitUYThmRApwZXF6S1BsWmNJQXdINlB6RGVEdXdydTlKaWxFZDV6ZW1kNGJsS3RHMXM1ZXdPMklWd0FjaGplMVdOVXBsUTM0UzhnR2p0CkwvY2VhZERBaDEyTkd4VW1IUWxYLzdFbGJxeTAySTZMeENyZEZta1pNS1kxTkw0Y2JTbCtpeFdXSHA1OTBockp3eGZ0N3MKOUUyRnpjanVUSnJFQU5WV1l2L2VER01RWmRPbnVOYVNSeHRnZVNjZVVhNXQrdzJTdUhJUUphV2ZqV1NXa2E2Vk9XQ0YzaApOYTFiREdFQmh3ZzRuR2kvMGFhdXA4UVFLaFZlMkNiOHkvRzY1dGxzQkluMHh3dzRkZEhkTGdOZjFaZnhaYUFtc29MMmxaCmlicnpqMnRMR1IwcENuNzRsTVVxR0Z0eFd2NmNvb3RzcStWVXR4MzYvdU5STmY0bHZha1pqOThNZ2dFaXhMUFdOR1RZNHoKVHg2bXJDcHh4c2EzWHhleTdYZkEwbVdYSzVZelRGQVo3NFphcklkU1VndDFXdWMybnZ2UXdaZFA5ZkRwR3lTeDNZUjk4Lwp0MVhJVTI2VWw0QlhiaWxFR3lJQ3U2UG0zZEFvMVFBQUFBTUJBQUVBQUFHQUM1OEExM1YwSkR4bjRwWTlhUTQrd0k1R3YwClFHTElsRExtSERwcEc0ODhSdGxNR291UDYxWXBPVHRFSk5pQ1V0ZEtjbHRHUHNHenNUaEVKeEdiT2pxMEt5RlZmd3ZFdVkKRWRQTmdvSDJDUDZpQzI3T1g0Vm52NFk3SDhzemFBMFlaSEZaekRlR3dpL21XNUtyZmRZeERtTE1NSHFkTEx0QzNTZzQwOAo3QXBGaVVNRVlVTmxra2RETUZzMWJkN1ZncHFBMjlBOE1aazMyMk1wZ2FMQW1IbjVpaTJ2Umsza0VxZGFNWjdrbWdYMXJUCjZzWVl2NG1lVGFydWRqNlRyTUxWRjZWSHhLdlF5WnpyT3pTS3Y4THp2dC9sdTBiSnF4c3dNNG56RFdjWTJEdnNzUWM2VUIKR2M2YzBoNDZUT1BUNzl3TlprUTBXamlYNlVuQ3RGSEM2ZWFFQVdzWHVCdFFBc29BakMxTVRtYlNwS2NRa25QWWYvTVhYagpTRm9oOEMrcnpBVWd6VnA4d1dFWTU3ODZwSTdBd3hCUDhSVWp2RjVxUFRKQWtiVXJJVXd4Q1pxMTE4eHZEUlhqS1VCUHZaCkZkWlJleERMRnRONmtpY0ZoaVVNRWJ5UTM4d05OY3VMb2d5L3dXdUtIUElQQ1NrR05OazNJam9aUkpodVZETDJyNUFBQUEKd0dLNHlzditRRDFWQTZDMWxGVDJwcUxPMkh0eEQ0c1dmWkl2Vjd2YzQvQ2Z0RFgxUlZTUkNYYVFSU01EMXJFK2JtTlJLYwo1Z09zMTFvY2ZyT2RVeUZTTWt3YUFQNUZuV1pPWjNXUUx5cTRXZ2RDWU15MG8wS3VYZGhHSmRtVmhxNXRRN0VHcGIzYTVNCitZMDJMNzFIWnVWQlM5N1c3OVQ2UndOd0FIbVd1SHZVaGJMcDU5SEZod2xLbU9jL2ZQcEloWXpUblhNY2tvelU0azgzaHgKRkNrNGpNYWlBTkF4aTNJK1hwR3JNajdRckpsMVJlSzRNMHMwKzB4NFN6dE9ibG93QUFBTUVBM09meFVoR1FTUkJIZFl4TgpqaVg1NHhqMG5vempIdk15YWRYWWNTNVFoZDNDUnJpUXVXc2J3QXdnbisycWFQNFBrN0x2ZStvS01MK1V6ZDN2MllzZVJiCm9hcVdmdkxlMU52YUI2eXlSM2RvNG40TmV1RENma056RDZ2dmdCNnhGbEdybldabmdLeEN1NDF1V2JONDZFczlUQ1VrbGYKTG40aTU3ZU52ZjRoWi9oUXNwdDZQQU9QQVRBV3JvcDdQakpWZmY3b09tczB2NkdJNlA3anFtRkZHSndmVWFSbEttRkFGSwpkNFVLcEZhV1NLV3ZEa0pzaWk0QWtxU1ZDbndVSlpBQUFBd1FET1Z6ZTZZdmExTVBJcmQwcGVicDRlaGgvS01oZWRBMEsvCnlCcjBMNVlHZ1hwTzVsdnhidGZhTUZnQUwwWVBrL3Fvc0tJODVLZ2JwNjNoWHlUSDRoRlhiQ3FhRGZJN2tXcTBTQ0J6Y1MKSFRwcUdMRHVJNkRuQVJteTZMWmMxdkJrVDlvSTVTSkM4S0dxOVdFVTF6bU5STUlTQWRoS09YRlhTZE0vWFEyN2FiclU2VwpLZ2taR2x4dDlZTHdYT09LWUthamJ1VTAwRkZqelFwK2labUNaRWY0a2ZxOHpFNUF2VUhPOWVobnJCbnFWVko5SDF4UW5NCittUUlybmRaK1lzdDBBQUFBZGNEaDBaWE4wTFhSb2NtOTNZWGRoZVMxT1QxUXRRUzFUUlVOU1JWUUJBZ01FQlFZPQotLS0tLUVORCBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0K",
+    "FIXTURE_B64:p8test-throwaway-rsa.pub": "c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCZ1FDeURlY1p0OG0zMkRvN20za2VHVGNHUUQ4TnZKWVRVOVk1VW9KU1dFeC9KSGxZYUJ0QUpqVGZ0czBmazJ2SHc2WHFzeWo1V1hDQU1CK2o4dzNnN3NLN3ZTWXBSSGVjM3BuZUc1U3JSdGJPWHNEdGlGY0FISVkzdFZqVktaVU4rRXZJQm83Uy8zSG1uUXdJZGRqUnNWSmgwSlYvK3hKVzZzdE5pT2k4UXEzUlpwR1RDbU5UUytIRzBwZm9zVmxoNmVmZElheWNNWDdlN1BSTmhjM0k3a3lheEFEVlZtTC8zZ3hqRUdYVHA3aldra2NiWUhrbkhsR3ViZnNOa3JoeUVDV2xuNDFrbHBHdWxUbGdoZDRUV3RXd3hoQVljSU9KeG92OUdtcnFmRUVDb1ZYdGdtL012eHV1YlpiQVNKOU1jTU9IWFIzUzREWDlXWDhXV2dKcktDOXBXWW02ODQ5clN4a2RLUXArK0pURktoaGJjVnIrbktLTGJLdmxWTGNkK3Y3alVUWCtKYjJwR1kvZkRJSUJJc1N6MWpSazJPTTA4ZXBxd3FjY2JHdDE4WHN1MTN3TkpsbHl1V00weFFHZStHV3F5SFVsSUxkVnJuTnA3NzBNR1hUL1h3NlJza3NkMkVmZlA3ZFZ5Rk51bEplQVYyNHBSQnNpQXJ1ajV0M1FLTlU9IHA4dGVzdC10aHJvd2F3YXktTk9ULUEtU0VDUkVUCg==",
+    "FIXTURE_B64:p8test-throwaway-wrapped-passphrase": "OgLD7cOD4lefVTA0YzMxOTM5OWFhNzA3Y2LnKercRt+UGWJfPQaw9+xVCYg47pOXzfS23L0ATBC+qA=="
+   },
+   "manifest_sha256": "58d66b06ca3f429f0d5fcfc25e60ef5da6210ee26f9841cf8c092df2052f74bc"
+  }
+ },
+ "manifest_sha256": "ef1ea50ad1efe7b0fd5b7228d8d07f6782aa829ab204844cba8b17bb5393514d",
+ "outcomes": [
+  {
+   "outcome": "the private key is installed root-only, and the bundle holds the certificate then the intermediate, the certificate matching the key",
+   "checks": [
+    "private-key-installed-root-only",
+    "nginx-bundle-cert-then-intermediate",
+    "bundle-certificate-matches-the-key"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a changed bundle is put back on the next agent run and nginx is restarted",
+   "checks": [
+    "the-bundle-is-changed-by-hand",
+    "the-agent-run-restores-the-bundle-and-restarts-nginx"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a changed private key is put back on the next agent run and nginx is restarted",
+   "checks": [
+    "the-key-is-changed-by-hand",
+    "the-agent-run-restores-the-key-and-restarts-nginx"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the RedHat paths (/etc/pki/tls/private for the key)",
+   "checks": [
+    "on-redhat-the-key-is-in-pki-tls-private-and-matches-the-bundle"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 483.7
+}
