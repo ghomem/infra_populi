@@ -1,0 +1,102 @@
+{
+ "schema": 1,
+ "class": "backup",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-28T02:34:44Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "39dcad2577d4",
+ "migrate_subject": "P8: migrate infra_populi::backup",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit 39dcad2577d4; 4 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "3 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/backup.pp', 'templates/backup/backup.sh.erb']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `backup Done [from: release-0.9.10; local changes: #14, #15, #26]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppetlabs-cron_core', '1.3.0'), ('puppetlabs-stdlib', '9.7.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 10 catalog events; COVERAGE infra_populi::backup: 3 concrete resources (+1 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "manifests/backup.pp:1-2: added 2-line migration header naming local changes #14/#15/#26 and deps puppetlabs-cron_core 1.3.0, puppetlabs-stdlib 9.7.0 (header_modules ok)",
+   "manifests/backup.pp:+15-17 (local change #14): ensure_resource('file', $backdir, {ensure=>directory, owner=>$user, group=>root, mode=>0755}) plus 2 comment lines, inserted before the script file; baseline define declared no backdir; uses only existing params ($backdir, $user default 'root'); baseline file and cron resources untouched; matches row 14 exactly",
+   "templates/backup/backup.sh.erb:4 (local change #26): FILETARGETDIRS=<%= @basedir %> -> FILETARGETDIRS=\"<%= @basedir %>\" plus one comment line; unquoted multi-dir value is a one-command env assignment so tar got no target; single dir renders identically; baseline comment 'accepts multiple directories' kept; minimal; matches row 26 and is the whole of DIFF B (re-migration, DIFF B also updates header line 1)",
+   "templates/backup/backup.sh.erb:+35-41 (local change #15): rc=$? directly after the tar line (only blank/comment lines between), on non-zero writes the ERROR line to stderr and logger -p user.err -t backup-$FILEPREFIX and exits rc before the retention find/rm; zero status falls through to baseline retention and chown unchanged; matches row 15",
+   "no other hunk: no resource added/removed/retitled beyond row 14, no attribute or default changed, no reformatting, comments_preserved ok; records ok confirms rows 14, 15, 26 after-checks passed on current code"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 15,
+  "removed": 1,
+  "non_comment_changes": 10,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: release-0.9.10 manifest; local changes #14: the backup directory declared here; #15: the script fails loudly; #26: several directories reach tar (the template quotes the list).",
+  "# Module dependencies: puppetlabs-cron_core 1.3.0 (vendored with Puppet 8.24.2); puppetlabs-stdlib 9.7.0 (ensure_resource)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 10,
+  "coverage": [
+   "COVERAGE infra_populi::backup: 3 concrete resources (+1 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "total_s": 24.759,
+   "master_check_s": 0.34,
+   "poweroff_s": 0.578,
+   "restore_s": 0.35,
+   "boot_to_ssh_s": 13.816,
+   "apt_update_s": 9.324,
+   "verify_s": 0.351,
+   "nic1_rx_bytes": 44702,
+   "apt_mirror": "primary",
+   "apt_proxy": "http://192.168.56.27:3142"
+  },
+  "log": ".codex_state/logs/reviews/backup.20261128T023337Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "ubuntu"
+}
