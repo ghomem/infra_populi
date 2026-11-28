@@ -1,4 +1,4 @@
-# Puppet 8 migration: the module owns openvpn-server@infra_populi (duplicate service dropped, notifies retargeted); local change #7: the class's cipher in data-ciphers; ifupdown and bridge-utils through ensure_packages (shared with network_dhcp).
+# Puppet 8 migration: the module owns openvpn-server@infra_populi (duplicate service dropped, notifies retargeted); local change #7: the class's cipher in data-ciphers; local change #25: compression 'none' leaves the directive out; ifupdown and bridge-utils through ensure_packages (shared with network_dhcp).
 # Module dependencies: puppet-network 2.2.1; puppet-openvpn 12.0.0; thias-sysctl 1.0.8; puppetlabs-stdlib 9.7.0 (ensure_packages).
 ### Purpose ########
 # Configure a server running ubuntu as a OpenVPN server
@@ -158,12 +158,16 @@ class infra_populi::openvpn_server (
     # AES-256-GCM:AES-128-GCM:CHACHA20-POLY1305), so a client using $cipher was refused: keep those, then accept $cipher.
     $data_ciphers = join(unique(['AES-256-GCM', 'AES-128-GCM', 'CHACHA20-POLY1305', $cipher]), ':')
 
+    # local change #25 (policy B): puppet-openvpn writes `compression` as a line of its own and leaves it out only when
+    # undef; OpenVPN has no `none` directive, so the documented 'none' turns compression off by leaving the line out.
+    $compression_directive = $compression ? { 'none' => undef, default => $compression }
+
     # configuration of the openvpn server itself
     openvpn::server { 'infra_populi':
         verb                     => '3',
         user                     => 'nobody',
         proto                    => 'udp',
-        compression              => $compression,
+        compression              => $compression_directive,
         dev                      => 'tap0',
         username_as_common_name  => true,
         pam                      => true,
