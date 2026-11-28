@@ -1,6 +1,6 @@
 # Puppet Class Migration Order
 
-Generated: 2026-11-27 18:14:32 UTC
+Generated: 2026-11-28 01:12:37 UTC
 
 DERIVED file: scores/deps come from `.codex_state/migration_plan.md`; DONE comes from git minus `.codex_state/blocked.txt`. MUST NOT be hand-edited; regenerate via `python3 .codex_state/gen_migration_order.py`.
 
