@@ -96,7 +96,9 @@ mechanically. Steps, all required:
 1. Run `python3 .codex_state/tools/rename_review.py check <class>`. It prints `rename_only` (the class's manifest, the
    templates and files it renders, and its check set, each its pre-rename content with the old name's forms replaced,
    the check set's derived_from quotations of the baseline unchanged), `reverified` (the run after the rename is
-   green, and identical check for check to the last run reviewed before it) and whether the class is selected for a
+   green, and identical check for check to the last run reviewed before it; for a set changed after the rename, HQ
+   2026-11-27 items 1-8, the checks both runs hold keep their verdicts and the set as it stands has a phase 3 review
+   PASS of its own) and whether the class is selected for a
    re-run (every class whose node-visible names change, and a 15% sample of the rest drawn with the rename commit as
    the seed: neither you nor anyone else chooses it).
 2. If it is selected: run the class yourself, `python3 .codex_state/tools/phase3.py run <class> --role reviewer` (let it

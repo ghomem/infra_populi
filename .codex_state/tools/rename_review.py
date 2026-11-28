@@ -129,15 +129,27 @@ def green(r: dict) -> bool:
     return all((x.get("apply") or {}).get("green") for x in runs) and r.get("valid")
 
 
-def differences(a: dict, b: dict) -> list[str]:
+def differences(a: dict, b: dict, common_only: bool = False) -> list[str]:
+    """Verdict differences, check for check. common_only: the checks both runs hold (a set changed after the rename keeps
+    its old checks' verdicts; its new checks are judged by the set's own phase 3 review)."""
     out = []
     pairs = [("base", a, b)] + [(f"variant {n}", v, (b.get("variants") or {}).get(n) or {})
-                                for n, v in (a.get("variants") or {}).items()]
+                                for n, v in (a.get("variants") or {}).items()
+                                if not common_only or n in (b.get("variants") or {})]
     for run, x, y in pairs:
         vx, vy = behaviour_sample.verdicts(x), behaviour_sample.verdicts(y)
+        keys = set(vx) & set(vy) if common_only else set(vx) | set(vy)
         out += [f"{run} {k[0]} {k[1]}: before {vx.get(k)!r}, after {vy.get(k)!r}"
-                for k in sorted(set(vx) | set(vy), key=str) if vx.get(k) != vy.get(k)]
+                for k in sorted(keys, key=str) if vx.get(k) != vy.get(k)]
     return out
+
+
+def reviewed_as_it_stands(cls: str, raw: bytes) -> dict | None:
+    """The set's latest phase 3 review, when it passed the set file exactly as it stands."""
+    files = sorted((REPO / ".codex_state" / "checks" / "reviews" / cls).glob("*.json"))
+    last = json.loads(files[-1].read_text()) if files else {}
+    ok = last.get("verdict") == "PASS" and last.get("check_file_sha256") == __import__("hashlib").sha256(raw).hexdigest()
+    return last if ok else None
 
 
 def evidence(cls: str) -> dict:
@@ -175,10 +187,21 @@ def evidence(cls: str) -> dict:
         notes.append("no author run after the rename")
     else:
         a = after[-1]
-        diff = differences(before[-1], a) if before else ["no reviewed run before the rename"]
+        raw = (REPO / "spec" / "behaviour" / "checks" / f"{cls}.yml").read_bytes()
+        at_rename = show(sha, f"spec/behaviour/checks/{cls}.yml")
+        changed = (at_rename.encode() if isinstance(at_rename, str) else at_rename) != raw
+        diff = differences(before[-1], a, common_only=changed) if before else ["no reviewed run before the rename"]
+        review = reviewed_as_it_stands(cls, raw) if changed else None
+        if changed and not review:
+            diff.append("the set changed after the rename (HQ 2026-11-27 items 1-8): its new checks need a phase 3 review "
+                        "PASS of the set as it stands (reviewer `<class> --phase3`)")
         checks["reverified"] = "ok" if green(a) and not diff else "fail"
         notes.append(f"after the rename: {a['at']}-author {a['outcome']}, apply {'green' if green(a) else 'NOT green'}")
-        notes += diff or [f"identical to {before[-1]['at']}-reviewer check for check"]
+        if changed and review:
+            notes.append(f"the set changed after the rename: its checks held before keep their verdicts; the set as it "
+                         f"stands passed phase 3 review {review['at']}")
+        notes += diff or [f"identical to {before[-1]['at']}-reviewer check for check"
+                          + (" (the checks both hold)" if changed else "")]
     # 3. the selected classes: the reviewer's own run after the rename agrees with the author's
     visible, sample = selection()
     if cls in visible or cls in sample:

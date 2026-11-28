@@ -111,3 +111,46 @@ def test_no_run_after_the_rename_fails(repo):
     renamed(repo)
     write(repo, result("20000101T000000Z", "reviewer"))
     assert "no author run after the rename" in review(repo, "check", "a").stdout
+
+
+def changed_set(r):
+    """The set changed after the rename (HQ 2026-11-27 items 1-8): a check added and committed."""
+    p = r / "spec" / "behaviour" / "checks" / "a.yml"
+    p.write_text(p.read_text() + "# a new check\n")
+    git(r, "add", "-A")
+    git(r, "commit", "-q", "-m", "P8: a new check")
+    return p
+
+
+def run_with(at, role, ids):
+    return {**result(at, role), "applied": [{"id": i, "passed": ok} for i, ok in ids]}
+
+
+def test_a_set_changed_after_the_rename_needs_its_own_review_of_the_set_as_it_stands(repo):
+    import hashlib
+    renamed(repo)
+    p = changed_set(repo)
+    write(repo, result("20000101T000000Z", "reviewer"))
+    write(repo, run_with("29990101T000000Z", "author", [("x", True), ("y", True)]))
+    out = review(repo, "check", "a").stdout
+    assert "reverified: fail" in out and "need a phase 3 review PASS of the set as it stands" in out, out
+    d = repo / ".codex_state" / "checks" / "reviews" / "a"
+    d.mkdir(parents=True)
+    (d / "29990101T000001Z.json").write_text(json.dumps({"at": "29990101T000001Z", "verdict": "PASS",
+                                                         "check_file_sha256": hashlib.sha256(p.read_bytes()).hexdigest()}))
+    out = review(repo, "check", "a").stdout
+    assert "reverified: ok" in out and "passed phase 3 review 29990101T000001Z" in out, out
+
+
+def test_a_changed_set_still_keeps_the_verdicts_of_the_checks_it_held(repo):
+    import hashlib
+    renamed(repo)
+    p = changed_set(repo)
+    write(repo, result("20000101T000000Z", "reviewer"))
+    write(repo, run_with("29990101T000000Z", "author", [("x", False), ("y", True)]))
+    d = repo / ".codex_state" / "checks" / "reviews" / "a"
+    d.mkdir(parents=True)
+    (d / "29990101T000001Z.json").write_text(json.dumps({"at": "29990101T000001Z", "verdict": "PASS",
+                                                         "check_file_sha256": hashlib.sha256(p.read_bytes()).hexdigest()}))
+    out = review(repo, "check", "a").stdout
+    assert "reverified: fail" in out and "applied x: before True, after False" in out, out
