@@ -10,7 +10,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 - Production machines follow the corrected rule (HQ 2026-11-27 item 6): a conditional include counts only where it is turned on, and a class on one OS family's branch says so.
 - Behaviour (Phase 3): 1 deferred, 2 finding, 54 pass, 33 stale.
 - Open rows (outcomes no check probes): 72 in 56 classes.
-- Stand-ins: 7. Local changes: 24 (in 19 classes).
+- Stand-ins: 7. Local changes: 26 (in 19 classes).
 
 ## For Salatiel's decision
 
@@ -65,7 +65,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 
 | class | prod | node | behaviour | proven | open | stand-in | finding | local changes |
 |---|---:|---|---|---:|---:|---|---|---|
-| backup | 2 | ubuntu | stale | 6 | 1 |  |  | #14, #15 |
+| backup | 2 | ubuntu | stale | 6 | 1 |  |  | #14, #15, #26 |
 | backup_rsnapshot | 2 | ubuntu | pass | 5 | 1 |  |  |  |
 | backup_rsnapshot_pre | 2 | ubuntu | pass | 5 | 0 |  |  |  |
 | caching_nameserver | 3 | ubuntu + ubuntu2 | stale | 6 | 1 |  |  | #9 |
@@ -117,7 +117,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 | node_base_domain_desktop | 0 | ubuntu | pass | 7 | 0 |  |  |  |
 | openvpn_domain | 0 | ubuntu + dc | pass | 6 | 0 | yes |  | #17 |
 | openvpn_nm_connection | 0 | gnome + ubuntu2 | pass | 4 | 1 | yes |  |  |
-| openvpn_server | 3 | ubuntu + ubuntu2 | stale | 10 | 1 | yes |  | #7 |
+| openvpn_server | 3 | ubuntu + ubuntu2 | stale | 10 | 1 | yes |  | #7, #25 |
 | openvpn_set_vpn_passwd_file | 0 | kubuntu + ubuntu2 | pass | 5 | 1 |  |  | #21 |
 | packages_base | 78 | ubuntu | pass | 6 | 0 |  |  |  |
 | postfix_smtp_base | 0 | ubuntu + ubuntu2 | stale | 8 | 2 |  |  |  |
@@ -172,7 +172,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - compression off, several base directories, another user, time or monthday (`plain-script-and-the-users-cron`, `plain-a-run-as-the-user-archives-both-directories-uncompressed`)
 - **Open rows:**
   - cron itself firing at 23:00 — why: a run would have to wait for 23:00; the crontab entry is checked and the script it names is run by hand — lifted by: capability: a clock-controlled cron trigger inside a phase3 run
-- **Local changes:** #14: (the define puppet_backup and sysmon_backup declare) manifests/backup.pp: `ensure_resource('file', $backdir, { 'ensure' => 'directory', 'owner' => $user, 'group' => 'root', 'mode' => '0755' })`, with a comment.; #15: (the define puppet_backup and sysmon_backup declare) templates/backup/backup.sh.erb: after the tar line, `rc=$?`;
+- **Local changes:** #14: (the define puppet_backup and sysmon_backup declare) manifests/backup.pp: `ensure_resource('file', $backdir, { 'ensure' => 'directory', 'owner' => $user, 'group' => 'root', 'mode' => '0755' })`, with a comment.; #15: (the define puppet_backup and sysmon_backup declare) templates/backup/backup.sh.erb: after the tar line, `rc=$?`;; #26: (the define puppet_backup and sysmon_backup declare) templates/backup/backup.sh.erb:4 (baseline :4): `FILETARGETDIRS=<%= @basedir %>` is quoted, `FILETARGETDIRS="<%= @basedir %>"`, as its comment says the script accepts several directories.
 
 ### backup_rsnapshot
 
@@ -917,7 +917,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 - **Open rows:**
   - force_ifupdown true — why: a parameter variant no production node uses (the fixture keeps the default, false) — accepted gap (production does not use force_ifupdown)
 - **Stand-in:** `p8test_dhcp_primary` — lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). Plan: accepted (Salatiel, 2026-11-27)
-- **Local changes:** #7: `$data_ciphers = join(unique(['AES-256-GCM', 'AES-128-GCM', 'CHACHA20-POLY1305', $cipher]), ':')` (openvpn_server.pp:157-159, with a two-line comment) and `'data-ciphers' => $data_ciphers` added to the server's custom_options (:185;
+- **Local changes:** #7: `$data_ciphers = join(unique(['AES-256-GCM', 'AES-128-GCM', 'CHACHA20-POLY1305', $cipher]), ':')` (openvpn_server.pp:157-159, with a two-line comment) and `'data-ciphers' => $data_ciphers` added to the server's custom_options (:185;; #25: openvpn_server.pp: `compression => $compression` (baseline :166) gets `'none'` mapped to undef, with a two-line comment;
 
 ### openvpn_set_vpn_passwd_file
 
