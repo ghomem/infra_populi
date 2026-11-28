@@ -32,3 +32,13 @@
   # with sed, but the expectation kept it, so the check could not pass; the node rendered "vim less", as the fixed
   # code makes it. The expectation now matches the probe's output.
 ```
+
+2026-11-28 (the re-verification after the rename, results/filesystem_apt/20261128T035659Z-author), authoring correction
+round 1: the-daily-job-lists-relevant-updates assumed "the reverted node has pending security updates". P8NODE_BASELINE_GREEN_v6
+(option A, ruled 2026-11-26) is up to date, so the High list was empty (job rc 0) and the check and the one after it
+failed. Measured on a fresh v6 node: with wget and libexpat1 at their noble release versions the job lists both at
+Medium and neither at High (Canonical rates their fixes Medium); five more candidates (libtiff6, libarchive13t64,
+libssh-4, libsqlite3-0; libgs10 would not downgrade) gave no High entry either. The set now makes the two packages
+pending itself: the-high-job-leaves-medium-updates-out (a run at High, the cron's default, lists neither although both
+are behind) and the-daily-job-lists-relevant-updates at Medium (both listed, each behind its candidate); the script that
+installs the job's list follows unchanged. The dist-upgrade check passed on v6 (option A lifted that item).

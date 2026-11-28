@@ -27,6 +27,7 @@ outcomes:
   from: manifests/filesystem_apt.pp:102-190
   checks:
   - surface-list-and-daily-job
+  - the-high-job-leaves-medium-updates-out
   - the-daily-job-lists-relevant-updates
   - the-job-s-list-is-installed-by-the-relevant-updates-script
   - the-relevant-updates-on-the-list-get-installed
@@ -180,13 +181,13 @@ checks:
   expect:
     rc: 0
     stdout: \Adowngraded to the archive's older version\nupgraded to the candidate\nwrapper reported the update\n\Z
-- id: the-daily-job-lists-relevant-updates
-  what: 'run as the cron runs it, the job fetches Canonical''s OVAL data for the release, evaluates it with openscap and writes
-    the list of updates of priority >= High: at least one package, one per line, each installed below its candidate (the reverted
-    node has pending security updates)'
+- id: the-high-job-leaves-medium-updates-out
+  what: 'the job keeps updates below its threshold out of the list: with wget and libexpat1 back at their release versions
+    (their newer versions carry Medium-rated fixes in Canonical''s OVAL data), a run at High, the cron''s default, lists neither,
+    although both are behind their candidates'
   control: negative
   timeout: 600
-  derived_from:
+  derived_from: &id001
   - path: manifests/filesystem_apt.pp
     lines: 149-155
     text: content => template('puppet_infrastructure/apt/apt-check-updates-v2.sh.erb'),
@@ -196,21 +197,52 @@ checks:
   - path: manifests/filesystem_apt.pp
     lines: 131-137
     text: source  => 'puppet:///modules/puppet_infrastructure/apt/get-relevant-updates-list',
-  mutates: runs {{LOCALDIR}}/bin/apt-check-updates.sh High on the node (downloads the release's OVAL file from security-metadata.canonical.com
-    into a temporary directory, writes /var/lib/apt-check-updates/list); its exit code goes to /run/p8test-apt/check.txt
+  - path: manifests/filesystem_apt.pp
+    lines: 162-163
+    text: $prio_threshold   = lookup( { name => [ "${clientcert}::filesystem_apt::prio_threshold", 'filesystem_apt::prio_threshold'
+      ], default_value => 'High' } )
+  mutates: installs the noble release versions of wget and libexpat1 (downgrades, apt-get --allow-downgrades), then runs {{LOCALDIR}}/bin/apt-check-updates.sh
+    High (downloads the release's OVAL file, writes /var/lib/apt-check-updates/list); its exit code goes to /run/p8test-apt/high.txt
   probe: |
     install -d -m 0700 /run/p8test-apt
-    {{LOCALDIR}}/bin/apt-check-updates.sh High >/dev/null 2>&1; echo "rc=$?" > /run/p8test-apt/check.txt
+    export DEBIAN_FRONTEND=noninteractive
+    for p in wget libexpat1; do
+      rel=$(apt-cache madison "$p" | awk -F'|' '$3 !~ /noble-/ {gsub(/ /, "", $2); print $2; exit}')
+      apt-get install -y -q --allow-downgrades "$p=$rel" >/dev/null 2>&1
+    done
+    {{LOCALDIR}}/bin/apt-check-updates.sh High >/dev/null 2>&1; echo "rc=$?" > /run/p8test-apt/high.txt
+  effect: |
+    cat /run/p8test-apt/high.txt
+    l=/var/lib/apt-check-updates/list
+    test -f "$l" && echo list-written
+    grep -cxE 'wget|libexpat1' "$l" || true
+    for p in wget libexpat1; do apt-cache policy "$p" | awk '/Installed:/ {i=$2} /Candidate:/ {c=$2} END {if (i != c) print "behind"}'; done | p8_count behind
+  expect:
+    rc: 0
+    stdout: \Arc=0\nlist-written\n0\n2\n\Z
+- id: the-daily-job-lists-relevant-updates
+  what: 'run with a threshold below their fixes'' rating, the job fetches Canonical''s OVAL data for the release, evaluates
+    it with openscap and lists the pending updates of priority >= Medium: one package per line, each installed below its candidate,
+    wget and libexpat1 among them (the node baseline is up to date, so the check makes those two pending; the High run above
+    left them out)'
+  control: negative
+  timeout: 600
+  derived_from: *id001
+  mutates: runs {{LOCALDIR}}/bin/apt-check-updates.sh Medium on the node (downloads the release's OVAL file, writes /var/lib/apt-check-updates/list);
+    its exit code goes to /run/p8test-apt/check.txt
+  probe: |
+    install -d -m 0700 /run/p8test-apt
+    {{LOCALDIR}}/bin/apt-check-updates.sh Medium >/dev/null 2>&1; echo "rc=$?" > /run/p8test-apt/check.txt
   effect: |
     cat /run/p8test-apt/check.txt
     l=/var/lib/apt-check-updates/list
     test -f "$l" && echo list-written
     awk 'NF != 1' "$l" | wc -l
-    n=$(p8_count . "$l"); [ "$n" -ge 1 ] && echo "listed: at least 1"
+    grep -cxE 'wget|libexpat1' "$l"
     for p in $(cat "$l"); do apt-cache policy "$p" | awk '/Installed:/ {i=$2} /Candidate:/ {c=$2} END {if (i == c || i == "(none)") print "not behind"}'; done | p8_count 'not behind'
   expect:
     rc: 0
-    stdout: '\Arc=0\nlist-written\n0\nlisted: at least 1\n0\n\Z'
+    stdout: \Arc=0\nlist-written\n0\n2\n0\n\Z
 - id: the-job-s-list-is-installed-by-the-relevant-updates-script
   what: 'apt-update-relevant.sh, run after the daily job, installs the job''s own list: every package on it ends at its candidate'
   control: negative
