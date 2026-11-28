@@ -1,0 +1,124 @@
+{
+ "schema": 1,
+ "class": "openvpn_server",
+ "verdict": "PASS",
+ "reviewer": "reviewer-v2",
+ "reviewed_at": "2026-11-28T01:56:38Z",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "migrate_commit": "accb21d7223c",
+ "migrate_subject": "P8: migrate infra_populi::openvpn_server",
+ "checks": {
+  "git": {
+   "status": "ok",
+   "detail": "migrate commit accb21d7223c; 6 commits since"
+  },
+  "scope": {
+   "status": "ok",
+   "detail": "2 files, all within scope"
+  },
+  "provenance": {
+   "status": "ok",
+   "detail": "re-migration: the newest migrate commit replaced earlier migrated content that differed from the baseline in ['manifests/openvpn_server.pp']; DIFF A is judged in full"
+  },
+  "comments_preserved": {
+   "status": "ok",
+   "detail": "no baseline comment line removed"
+  },
+  "records": {
+   "status": "ok",
+   "detail": "tracker `openvpn_server Done [from: release-0.9.10; upstream defect fixed: module owns the unit (duplicate service dropped, notifies retargeted); local changes: #7, #25; mock-apply: stand-in DHCP primary interface p8test0 (veth + netns dnsmasq)]`; header present"
+  },
+  "header_modules": {
+   "status": "ok",
+   "detail": "claims [('puppet-network', '2.2.1'), ('puppet-openvpn', '12.0.0'), ('thias-sysctl', '1.0.8'), ('puppetlabs-stdlib', '9.7.0')] match the master"
+  },
+  "syntax": {
+   "status": "ok",
+   "detail": "parses; no lint finding beyond the baseline's"
+  },
+  "fixtures": {
+   "status": "ok",
+   "detail": "no real NIC ['enp0s3', 'enp0s8'] or account in titles/params"
+  },
+  "idempotent": {
+   "status": "ok",
+   "detail": "GREEN; run 1 28 catalog events; COVERAGE infra_populi::openvpn_server: 38 concrete resources (+2 defined-type instances)"
+  }
+ },
+ "faithful": {
+  "status": "ok",
+  "evidence": [
+   "DIFF A @@1: two-line migration header only (names the ruled defect, local changes #7 and #25, ensure_packages, module versions matching the master)",
+   "DIFF A @@33: baseline :35 package { ['ifupdown','bridge-utils']: ensure => present } -> ensure_packages(['ifupdown','bridge-utils'], { 'ensure' => 'present' }) exactly as class_rulings.txt line 17 (HQ batch-15 ruling 5) prescribes; same Package resources and attributes, Package['bridge-utils'] still satisfies the requires at :59/:76",
+   "DIFF A @@115: removal of service { 'openvpn-server@...' } (baseline :117-121) = ruled defect change (a); notifies at :129/:137/:145/:153 unchanged in text and reach the module's unit (server.pp:518-526 on the master declares ${server_service_name}@${name} on systemd)",
+   "DIFF A @@158: $data_ciphers = join(unique([2.6 defaults, $cipher]), ':') with its comment = local change #7 verbatim; plus $compression_directive = $compression ? { 'none' => undef, default => $compression } with its comment = local change #25; minimal: any value other than 'none' passes through unchanged (default comp-lzo path identical), and puppet-openvpn's server.erb:74-75 writes @compression as its own line only when truthy, param type Optional[String[1]] (server.pp:160), so undef is the only way to omit the line",
+   "DIFF A @@164: compression => $compression_directive = local change #25; @@183: 'data-ciphers' => $data_ciphers added to custom_options = local change #7, and removal of notify => Service['openvpn-server@...'] on openvpn::server (baseline :186) = ruled defect change (b)",
+   "DIFF A @@206: File['/etc/openvpn/openvpn-up.sh'] notify Service['openvpn'] -> Service['openvpn-server@infra_populi'] = ruled defect change (c); module name infra_populi in titles/source is the namespace rename. No other hunk; no baseline comment removed (comments_preserved ok)",
+   "DIFF B (re-migration accb21d7223c): changes only the header line (adds local change #25) and adds the #25 'none'->undef selector and its use at compression =>; earlier migrated content (ruled defect, #7, ensure_packages) is the expected drift, judged in full in DIFF A"
+  ]
+ },
+ "justify_run1": null,
+ "diff_summary": {
+  "added": 12,
+  "removed": 10,
+  "non_comment_changes": 16,
+  "header_only": false
+ },
+ "header": [
+  "# Puppet 8 migration: the module owns openvpn-server@infra_populi (duplicate service dropped, notifies retargeted); local change #7: the class's cipher in data-ciphers; local change #25: compression 'none' leaves the directive out; ifupdown and bridge-utils through ensure_packages (shared with network_dhcp).",
+  "# Module dependencies: puppet-network 2.2.1; puppet-openvpn 12.0.0; thias-sysctl 1.0.8; puppetlabs-stdlib 9.7.0 (ensure_packages)."
+ ],
+ "harness": {
+  "rc": 0,
+  "run1_catalog_events": 28,
+  "coverage": [
+   "COVERAGE infra_populi::openvpn_server: 38 concrete resources (+2 defined-type instances)"
+  ],
+  "revert": {
+   "node": "ubuntu",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "total_s": 19.509,
+   "master_check_s": 0.376,
+   "poweroff_s": 0.791,
+   "restore_s": 0.343,
+   "boot_to_ssh_s": 13.17,
+   "apt_update_s": 4.473,
+   "verify_s": 0.356,
+   "nic1_rx_bytes": 20309,
+   "apt_mirror": "primary",
+   "apt_proxy": "http://192.168.56.27:3142"
+  },
+  "log": ".codex_state/logs/reviews/openvpn_server.20261128T015433Z.harness.log",
+  "revert_first": true,
+  "node_fresh": true,
+  "run2_expected_events": null
+ },
+ "pregate_versions": {
+  "baseline": "release-0.9.10 (cf477c6)",
+  "python": "3.14.4",
+  "puppet": "8.24.2",
+  "puppet-lint": "4.3.0",
+  "ruby": "3.2.9"
+ },
+ "node": "ubuntu",
+ "mock_apply": "stand-in DHCP primary interface p8test0 (veth + netns dnsmasq) (node fixture p8test_dhcp_primary: behaviour NOT verified)",
+ "node_fixture": {
+  "name": "p8test_dhcp_primary",
+  "header": [
+   "# MOCK-APPLY node fixture `p8test_dhcp_primary` (HQ 2026-10-27 ruling 7) for openvpn_server (and network_vpn). Production's",
+   "# VPN gateways hand the class their primary interface (network_dhcp iface = $::networking['primary'] = openvpn_server's",
+   "# $local_interface): the class rewrites /etc/network/interfaces for it, for lo:0 and for the bridge br0, and restarts",
+   "# ifupdown networking. The lab node's real NICs are never handed over (fixture rule), so this supplies a stand-in",
+   "# primary interface: p8test0, one end of a veth pair whose other end lives in the network namespace p8testdhcp, where",
+   "# dnsmasq answers DHCP with the single address 203.0.113.50 and no router option (the node's default route and DNS stay",
+   "# on NIC1, its SSH path on NIC2). The class then manages p8test0 exactly as production manages the primary interface.",
+   "# Behaviour of a real uplink (clients reaching the server over the primary interface) is NOT verified by a GREEN with it.",
+   "# Lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3)"
+  ],
+  "resources": [
+   "package[dnsmasq-base]",
+   "exec[p8test stand-in primary interface p8test0 with a DHCP server in netns p8testdhcp]"
+  ],
+  "scope_evidence": "p8test_dhcp_primary: package dnsmasq-base (the DHCP server binary) and one exec guarded by 'ip link show p8test0' that creates netns p8testdhcp, the veth pair p8test0/p8test0p and a dnsmasq in the netns serving 203.0.113.50 with no router/DNS option, ordered before Class['infra_populi::network_dhcp']; both serve only the stated stand-in primary interface p8test0, and neither declares or modifies any resource of infra_populi::openvpn_server"
+ }
+}
