@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # accepts multiple directories, no whitespace on any dirnames
-FILETARGETDIRS=<%= @basedir %>
+# local change #26: quoted, or a second directory is read as a command and tar gets none
+FILETARGETDIRS="<%= @basedir %>"
 FILEPREFIX=<%= @prefix %>
 BACKDIR=<%= @backdir %>
 NC=<%= @ndays %>

@@ -1,4 +1,4 @@
-# Puppet 8 migration: release-0.9.10 manifest; local changes #14: the backup directory declared here; #15: the script fails loudly.
+# Puppet 8 migration: release-0.9.10 manifest; local changes #14: the backup directory declared here; #15: the script fails loudly; #26: several directories reach tar (the template quotes the list).
 # Module dependencies: puppetlabs-cron_core 1.3.0 (vendored with Puppet 8.24.2); puppetlabs-stdlib 9.7.0 (ensure_resource).
 ### Purpose ########
 # This class implements simple tar based generic backups
