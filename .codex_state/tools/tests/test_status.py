@@ -158,4 +158,6 @@ def test_standins_flag_prints_only_tab_separated_rows():
     assert proc.returncode == 0, proc.stderr
     rows = [line.split("\t") for line in proc.stdout.splitlines()]
     assert rows and all(len(r) == 3 and r[2] for r in rows)
-    assert {"letsencrypt_certificate", "openvpn_server"} <= {r[0] for r in rows}
+    # verified classes only: a class re-migrated and not yet reviewed (openvpn_server after local change #25) drops out
+    # until its review, so the test names one stand-in and the rule, not the live set
+    assert "letsencrypt_certificate" in {r[0] for r in rows}
