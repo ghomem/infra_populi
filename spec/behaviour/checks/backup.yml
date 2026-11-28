@@ -63,7 +63,7 @@ checks:
     grep -E '^(FILETARGETDIRS|FILEPREFIX|BACKDIR|NC|COMPRESSION)=' {{LOCALDIR}}/bin/backup-backup.sh
   expect:
     rc: 0
-    stdout: \Aroot root 755\nFILETARGETDIRS=/etc/default\nFILEPREFIX=p8test-backup\nBACKDIR={{LOCALDIR}}/backup/p8test\nNC=7\nCOMPRESSION=true\n\Z
+    stdout: \Aroot root 755\nFILETARGETDIRS="/etc/default"\nFILEPREFIX=p8test-backup\nBACKDIR={{LOCALDIR}}/backup/p8test\nNC=7\nCOMPRESSION=true\n\Z
 - id: cron-runs-it-at-2300
   what: root's crontab runs the script at 23:00 every day of the month, named cron_backup_backup
   control: negative
@@ -210,7 +210,7 @@ checks:
     crontab -l -u backup 2>/dev/null | grep -A1 -x '# Puppet Name: cron_backup_backup' | tail -1
   expect:
     rc: 0
-    stdout: \AFILETARGETDIRS=/etc/default /etc/skel\nCOMPRESSION=false\n30 2 1 \* \* {{LOCALDIR}}/bin/backup-backup\.sh\n\Z
+    stdout: \AFILETARGETDIRS="/etc/default /etc/skel"\nCOMPRESSION=false\n30 2 1 \* \* {{LOCALDIR}}/bin/backup-backup\.sh\n\Z
   variant: plain
 - id: plain-a-run-as-the-user-archives-both-directories-uncompressed
   control: negative

@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.backup"><testsuite name="phase3.backup.clean" tests="7" failures="0"><testcase classname="phase3.backup.clean" name="script-installed-with-the-parameters" /><testcase classname="phase3.backup.clean" name="cron-runs-it-at-2300" /><testcase classname="phase3.backup.clean" name="the-backup-directory-is-declared" /><testcase classname="phase3.backup.clean" name="aged-archives-are-planted" /><testcase classname="phase3.backup.clean" name="a-run-writes-a-restorable-gzip-tar" /><testcase classname="phase3.backup.clean" name="a-run-deletes-only-its-own-old-archives" /><testcase classname="phase3.backup.clean" name="a-failed-run-is-loud" /></testsuite><testsuite name="phase3.backup.applied" tests="7" failures="1"><testcase classname="phase3.backup.applied" name="script-installed-with-the-parameters"><failure message="check failed after the class was applied (finding)">rc 0
+root root 755
+FILETARGETDIRS="/etc/default"
+FILEPREFIX=p8test-backup
+BACKDIR=/opt/infra-populi/backup/p8test
+NC=7
+COMPRESSION=true
+
+</failure></testcase><testcase classname="phase3.backup.applied" name="cron-runs-it-at-2300" /><testcase classname="phase3.backup.applied" name="the-backup-directory-is-declared" /><testcase classname="phase3.backup.applied" name="aged-archives-are-planted"><skipped message="not run: read-only checks failed (script-installed-with-the-parameters)" /></testcase><testcase classname="phase3.backup.applied" name="a-run-writes-a-restorable-gzip-tar"><skipped message="not run: read-only checks failed (script-installed-with-the-parameters)" /></testcase><testcase classname="phase3.backup.applied" name="a-run-deletes-only-its-own-old-archives"><skipped message="not run: read-only checks failed (script-installed-with-the-parameters)" /></testcase><testcase classname="phase3.backup.applied" name="a-failed-run-is-loud"><skipped message="not run: read-only checks failed (script-installed-with-the-parameters)" /></testcase></testsuite><testsuite name="phase3.backup.plain.clean" tests="2" failures="0"><testcase classname="phase3.backup.plain.clean" name="plain-script-and-the-users-cron" /><testcase classname="phase3.backup.plain.clean" name="plain-a-run-as-the-user-archives-both-directories-uncompressed" /></testsuite><testsuite name="phase3.backup.plain.applied" tests="2" failures="1"><testcase classname="phase3.backup.plain.applied" name="plain-script-and-the-users-cron"><failure message="check failed after the class was applied (finding)">rc 0
+FILETARGETDIRS="/etc/default /etc/skel"
+COMPRESSION=false
+30 2 1 * * /opt/infra-populi/bin/backup-backup.sh
+
+</failure></testcase><testcase classname="phase3.backup.plain.applied" name="plain-a-run-as-the-user-archives-both-directories-uncompressed"><skipped message="not run: read-only checks failed (plain-script-and-the-users-cron)" /></testcase></testsuite></testsuites>

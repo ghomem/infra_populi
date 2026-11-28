@@ -17,3 +17,9 @@
 # so the retention step could not have deleted anything either way. It now fills a one-page tmpfs over the
 # directory (tar fails, the directory stays writable) holding an archive old enough for retention to delete.
 ```
+
+2026-11-28 (local change #26, rules/local_changes.md): the template quotes the directory list
+(`FILETARGETDIRS="<%= @basedir %>"`), so the two checks that read the script's assignments expect the quoted line
+(script-installed-with-the-parameters, plain-script-and-the-users-cron). Their expectations followed the baseline's
+text, which the local change alters on purpose; the after-run before this edit
+(results/backup/20261128T022054Z-author) failed on them only, and the mutating run was skipped because of them.
