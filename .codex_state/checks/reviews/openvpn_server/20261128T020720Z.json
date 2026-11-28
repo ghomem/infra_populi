@@ -1,0 +1,48 @@
+{
+ "class": "openvpn_server",
+ "at": "20261128T020720Z",
+ "verdict": "PASS",
+ "checks": {
+  "reviewer_run": "ok",
+  "author_run": "ok",
+  "reproduced": "ok",
+  "derived_from": "ok",
+  "nodes_fresh": "ok",
+  "purpose": "ok"
+ },
+ "evidence": [
+  "nocomp-a-client-without-compression-connects: baseline :172 pushes 'redirect-gateway bypass-dhcp bypass-dns' and 'dhcp-option DNS ${push_dns_server}'; the nocomp params leave push_dns_server at its default 8.8.8.8 (:18), and the effect reads exactly those two options from the client's PUSH_REPLY, plus a pool address (:173) and a ping to lan_static_ip",
+  "nocomp-the-data-channel-is-uncompressed-both-ways: :166 passes $compression to the server and :30 documents 'none' as the value that disables compression; the nocomp params set compression none, and byte counters on UDP 1194 for 1200-byte zero-filled pings show both directions uncompressed (my run: 1236 bytes per packet sent, 1140 received, under the 600-byte threshold would mean compressed)",
+  "nocomp-the-server-carries-no-compression: :166 with 'none' (meaning off, :30) should give no compression directive and a running server; the probe counts comp-lzo/compress lines (0) and reads the unit's active state. A literal 'none' line would not match the regex, but the 'active' line then fails, as in the before-run of local change #25",
+  "finding the-data-channel-is-compressed-both-ways: expected both directions compressed (comp-lzo default, :30, :166); my run saw 'server sends: uncompressed (1237 bytes per packet)' and 'server receives: compressed (138 bytes per packet)', so the server decompresses what it receives but sends uncompressed. Same finding as the known, accepted compression finding",
+  "purpose covered: The checks test what the class does, not just which files exist. Base run: the server listens on UDP 1194 at local; its config has tap0, server-bridge, the PAM plugin, verify-client-cert none and reneg-sec; the unit and the networking service are enabled (boot); br0 holds lan_static_ip with tap0 as a port (the up script); proxy_arp_pvlan is 0. A peer client logs in through PAM, gets a pool address and the pushed redirect-gateway/DNS, and reaches the server's LAN side. A wrong password is refused. A second client in a netns reaches the server side but not the first client (isolation). A client offering only AES-256-CBC connects with that cipher. Compression is measured with byte counters. Variant other: DNS 9.9.9.9, AES-128-CBC and isolation off (proxy_arp_pvlan 1). Variant nocomp (local change #25): no compression directive, the server active, a client without compression connects, and the channel is uncompressed both ways. The only uncovered row, force_ifupdown true, is an accepted_gap; it really is that parameter's variant (the ifdown/ifup exec branch, baseline :50-70). Not probed, but minor config details outside the stated purpose: user nobody (I saw the daemon run as nobody, its PAM helper as root), persist-key/tun, and dns-nameservers on br0. Every mutating check declares its changes. Its read-only effect is the evidence, not the action's own output. The client-auth verdict on a user has the wrong-password control"
+ ],
+ "review_s": 464.0,
+ "check_file_sha256": "254c8de9cef9fca610a1265e4ac12f0fd4b603713ea74ab01127533c49c3a8b3",
+ "content_sha256": "254c8de9cef9fca610a1265e4ac12f0fd4b603713ea74ab01127533c49c3a8b3",
+ "reviewer_result": "20261128T015937Z-reviewer",
+ "author_result": "20261128T013251Z-author",
+ "findings": [
+  "the-data-channel-is-compressed-both-ways"
+ ],
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "68810282-d586-4459-abcd-d8946c272686",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "68810282-d586-4459-abcd-d8946c272686",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "d8639435-69a0-4936-851c-bc8125cf2bfb",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "d8639435-69a0-4936-851c-bc8125cf2bfb",
+   "fresh": true
+  }
+ }
+}
