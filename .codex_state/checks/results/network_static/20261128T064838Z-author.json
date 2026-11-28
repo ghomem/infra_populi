@@ -1,0 +1,255 @@
+{
+ "class": "network_static",
+ "role": "author",
+ "at": "20261128T064838Z",
+ "runner": "e5d2e11b",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "1c347ad8c567056a0d62ffdf68af97d2651ba7f87bc3ef9fa886fbc9e8ab6088",
+ "content_sha256": "1c347ad8c567056a0d62ffdf68af97d2651ba7f87bc3ef9fa886fbc9e8ab6088",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-interface-stanza-says-static-at-boot",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/network/interfaces: No such file or directory\ngrep: /etc/network/routes: No such file or directory\ndpkg-query: no packages found matching ifupdown-extra\n",
+   "ok": true
+  },
+  {
+   "id": "ifupdown-and-the-networking-service",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "ifupdown unknown ok not-installed\nnot-found\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "a-lan-on-the-interface",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Cannot open network namespace \"p8testgw\": No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-boot-step-brings-the-interface-up",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Device \"p8test0\" does not exist.\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-restart-of-networking-keeps-the-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "inactive\n",
+   "stderr": "Device \"p8test0\" does not exist.\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-default-route-goes-through-the-gateway",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-primary-interface-keeps-working",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "1\n1\n",
+   "stderr": "Device \"p8test0\" does not exist.\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "ce: /Stage[main]/Infra_populi::Network_static/Network_config[p8test0]/ensure: created\u001b[0m\n\u001b[0;32mInfo: Computing checksum on file /etc/network/interfaces\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Network_static/Network_route[default]/ensure: created\u001b[0m\n\u001b[0;32mInfo: Computing checksum on file /etc/network/routes\u001b[0m\n\u001b[mNotice: Applied catalog in 10.73 seconds\u001b[0m\nRUN1_EVENTS: 4 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795848575'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.45 seconds\u001b[0m\nCOVERAGE infra_populi::network_static: 4 concrete resources (+0 defined-type instances)\n  Package[ifupdown]\n  Package[ifupdown-extra]\n  Network_config[p8test0]\n  Network_route[default]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP network_static e820d19f075a\n\nNODE_FRESH: yes (boot 8ebb8dec of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "the-interface-stanza-says-static-at-boot",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "auto p8test0\niface p8test0 inet static\naddress 192.0.2.10\ndefault 0.0.0.0 192.0.2.1 p8test0\nifupdown-extra install ok installed\n",
+   "stderr": ""
+  },
+  {
+   "id": "ifupdown-and-the-networking-service",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ifupdown install ok installed\nenabled\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-lan-on-the-interface",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "interface-present\n192.0.2.1/24\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates network namespace p8testgw and veth pair p8test0 (node) / p8testgwif (namespace, 192.0.2.1/24, up)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-boot-step-brings-the-interface-up",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "192.0.2.10/24\ngateway answers\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "starts the networking service (ifup of every auto stanza) and pings 192.0.2.1 twice",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-restart-of-networking-keeps-the-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\n192.0.2.10/24\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "restarts the networking service and waits up to 20 s for the address on p8test0",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-default-route-goes-through-the-gateway",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the routes (declared mutating so it runs after the interface is up)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-primary-interface-keeps-working",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test0 up\n1\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the routes (declared mutating so it runs after the restart)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "8ebb8dec-beb0-48ae-8662-6ac9f733fbaf",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "8ebb8dec-beb0-48ae-8662-6ac9f733fbaf",
+   "fresh": true
+  }
+ },
+ "manifest_sha256": "7087f2cafaacfa49fc718873811f15b278a2ea1a06812dacf55b8617b507f81d",
+ "outcomes": [
+  {
+   "outcome": "the interface's configuration says static at boot with the given address, ifupdown-extra is installed, and the default route names the gateway",
+   "checks": [
+    "the-interface-stanza-says-static-at-boot"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "ifupdown, which reads the stanza at boot, is installed and its networking service enabled (local change",
+   "checks": [
+    "ifupdown-and-the-networking-service"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "at boot the interface comes up with its static address and reaches the LAN",
+   "checks": [
+    "a-lan-on-the-interface",
+    "the-boot-step-brings-the-interface-up"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the interface keeps its address through a restart of the networking service",
+   "checks": [
+    "a-restart-of-networking-keeps-the-address"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the default route goes through the given gateway on the configured interface once it is up (local change",
+   "checks": [
+    "the-default-route-goes-through-the-gateway"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the node's other routes and its management path keep working beside the class's default route (the NAT route stays, behind it; the host-only route stays)",
+   "checks": [
+    "the-primary-interface-keeps-working"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "an actual reboot brings the interface up",
+   "uncovered": {
+    "why": "a run does not reboot the class's node; the boot step (the networking service a boot starts) is run instead",
+    "lifted_by": "capability: a reboot of the class's node inside a phase3 run",
+    "evidence": "phase3.py has no reboot step: a run reverts, applies, probes, and at most runs the node's agent (node_agent)"
+   }
+  }
+ ],
+ "duration_s": 62.3
+}

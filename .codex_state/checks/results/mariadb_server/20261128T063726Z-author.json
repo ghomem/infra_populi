@@ -1,0 +1,350 @@
+{
+ "class": "mariadb_server",
+ "role": "author",
+ "at": "20261128T063726Z",
+ "runner": "e5d2e11b",
+ "baseline": "874f854 (874f854)",
+ "check_file_sha256": "07e949f1873b2bab0d5b4b30215a7317fccc40a2234377a7a3a133aeef49b2fb",
+ "content_sha256": "07e949f1873b2bab0d5b4b30215a7317fccc40a2234377a7a3a133aeef49b2fb",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "mariadb-server-installed-and-running",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "dpkg-query: no packages found matching mariadb-server\nbash: line 98: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "server-runs-the-override-options",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "ed25519-plugin-active",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "insecure-transport-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "tls=refused plain=refused\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "root-is-local-only-and-no-anonymous-user",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "server-key-matches-certificate",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Could not open file or uri for loading certificate from /etc/mysql/certificates/server-cert.pem\n40A7169C42750000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n40A7169C42750000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/mysql/certificates/server-cert.pem)\nUnable to load certificate\nCould not open file or uri for loading key from /etc/mysql/certificates/server-key.pem\n4037B892EC750000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n4037B892EC750000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/mysql/certificates/server-key.pem)\n",
+   "ok": true
+  },
+  {
+   "id": "certificate-subject-from-hiera",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Could not open file or uri for loading certificate from /etc/mysql/certificates/server-cert.pem\n40E73876B8760000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n40E73876B8760000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/mysql/certificates/server-cert.pem)\nUnable to load certificate\n",
+   "ok": true
+  },
+  {
+   "id": "certificate-files-owner-and-mode",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/mysql/certificates/ca.pem': No such file or directory\nstat: cannot statx '/etc/mysql/certificates/server-cert.pem': No such file or directory\nstat: cannot statx '/etc/mysql/certificates/server-key.pem': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "log-directory-attributes",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/var/log/mysql': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-users-are-ed25519-and-require-tls",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: mysql: command not found\n",
+   "ok": true
+  },
+  {
+   "id": "the-users-log-in-with-their-grants",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-mariadb/answers.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "another-host-logs-in-over-tls",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-mariadb-peer/answers.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "[mysql_client]\n  Anchor[mysql::client::start]\n  Anchor[mysql::client::end]\n  File[/etc/mysql/certificates/]\n  File[/opt/infra-populi/bin/deploy_self_signed_certificates.sh]\n  Exec[generate the ssl certificates, sign them and deploy them at /etc/mysql/certificates/]\n  File[/etc/mysql/conf.d]\n  File[/etc/mysql]\n  Exec[datadir-managed_dir-mkdir]\n  Exec[datadir-managed_dir-chmod]\n  File[mysql-config-file]\n  Package[mysql-server]\n  File[datadir-managed_dir]\n  File[/var/log/mysql/error.log]\n  File[/var/log/mysql]\n  Mysql_datadir[/var/lib/mysql]\n  Service[mysqld]\n  Exec[wait_for_mysql_socket_to_open]\n  Exec[remove install pass]\n  Mysql_user[root@localhost]\n  File[/root/.my.cnf]\n  Mysql_user[p8test_mrw@%]\n  Mysql_user[p8test_mro@%]\n  Mysql_grant[p8test_mrw@%/*.*]\n  Mysql_grant[p8test_mro@%/*.*]\n  Mysql_user[root@127.0.0.1]\n  Mysql_user[root@::1]\n  Mysql_user[@localhost]\n  Mysql_user[@%]\n  Mysql_user[root@localhost.localdomain]\n  Mysql_user[@localhost.localdomain]\n  Mysql_user[root@puppet8node.lan]\n  Mysql_user[@puppet8node.lan]\n  Mysql_user[root@puppet8node]\n  Mysql_user[@puppet8node]\n  Mysql_database[test]\n  Anchor[mysql::server::start]\n  Anchor[mysql::server::end]\nGREEN: run 2 events limited to the plan's expected_run2_events (Notify[Produced configs: *]) (gate v2).\nGREEN_STAMP mariadb_server d7f73fed4c05\n\nNODE_FRESH: yes (boot 68933620 of the latest revert, no agent run since)\nGREEN: run 2 events limited to the plan's expected_run2_events (Notify[Produced configs: *]) (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "mariadb-server-installed-and-running",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "mariadb-server install ok installed\n1\n",
+   "stderr": ""
+  },
+  {
+   "id": "server-runs-the-override-options",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/etc/mysql/certificates//ca.pem\t/etc/mysql/certificates//server-cert.pem\t/etc/mysql/certificates//server-key.pem\t1\t0.0.0.0\n",
+   "stderr": ""
+  },
+  {
+   "id": "ed25519-plugin-active",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ACTIVE\n",
+   "stderr": ""
+  },
+  {
+   "id": "insecure-transport-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "tls=connected plain=refused\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "only the transport of the first login (--skip-ssl instead of --ssl): it must be refused too, so \"tls=connected\" must not come back",
+    "rc": 0,
+    "passed": false,
+    "stdout": "tls=refused plain=refused\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "root-is-local-only-and-no-anonymous-user",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root@localhost\n",
+   "stderr": ""
+  },
+  {
+   "id": "server-key-matches-certificate",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "key-matches-certificate\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "only the certificate compared (the generated ca.pem instead of server-cert.pem): the CA has its own key, so the public keys must differ",
+    "rc": 1,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "certificate-subject-from-hiera",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "subject=C = PT, ST = Lisbon, L = Lisbon, O = My Company, OU = IT, CN = example.com, emailAddress = user@example.com\n",
+   "stderr": ""
+  },
+  {
+   "id": "certificate-files-owner-and-mode",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/etc/mysql/certificates/ca.pem root root 644\n/etc/mysql/certificates/server-cert.pem root root 644\n/etc/mysql/certificates/server-key.pem root root 644\n",
+   "stderr": ""
+  },
+  {
+   "id": "log-directory-attributes",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "directory mysql adm 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-users-are-ed25519-and-require-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test_mro\t%\ted25519\t1\np8test_mrw\t%\ted25519\t1\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-users-log-in-with-their-grants",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test_mrw@%\np8test_mro@%\nwrong password: ERROR 1045\nro create: ERROR 1044\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "six TCP logins to 127.0.0.1:3306; as p8test_mrw creates and drops the database p8test_mrwdb, as p8test_mro one refused CREATE DATABASE; the server records them in its data directory (/var/lib/mysql: system tables, logs); the answers go to /run/p8test-mariadb/answers.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "another-host-logs-in-over-tls",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test_mrw@%\tpuppet8node\nTLS\nERROR 1045\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "installs mariadb-client-core on the peer if absent; makes three TCP logins from the peer to the class node's port 3306; the answers go to /run/p8test-mariadb-peer/answers.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "68933620-d95d-4e85-949f-a6545b418c7f",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "68933620-d95d-4e85-949f-a6545b418c7f",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "b129f24b-59b5-411a-8180-2c980c8c1c6e",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "b129f24b-59b5-411a-8180-2c980c8c1c6e",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "manifest_sha256": "fc5df068deb13abcb8830a470dd46a5ab5b886897d08a03dfb9c939d3edf6e54",
+ "outcomes": [
+  {
+   "outcome": "MariaDB runs with the class's TLS files, required secure transport, the ed25519 plugin and a bind on every address",
+   "checks": [
+    "mariadb-server-installed-and-running",
+    "server-runs-the-override-options",
+    "ed25519-plugin-active",
+    "insecure-transport-refused"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "root is local only and no anonymous user remains",
+   "checks": [
+    "root-is-local-only-and-no-anonymous-user"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the class generates the server certificate from Hiera's subject data and deploys key, certificate and CA",
+   "checks": [
+    "server-key-matches-certificate",
+    "certificate-subject-from-hiera",
+    "certificate-files-owner-and-mode"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the log directory has the class's owner and mode",
+   "checks": [
+    "log-directory-attributes"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the rw and ro users exist for any host with ed25519 and required TLS; they log in over TLS, rw with every privilege, ro read-only",
+   "checks": [
+    "the-users-are-ed25519-and-require-tls",
+    "the-users-log-in-with-their-grants"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "another host logs in over the network with TLS, and without TLS is refused",
+   "checks": [
+    "another-host-logs-in-over-tls"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "custom mysqld or mariadb options, certificates not generated, a single user or none",
+   "uncovered": {
+    "why": "parameter variants no production node uses (the fixture: generated certificates, both users, no custom options)",
+    "accepted_gap": [
+     "custom_mysqld_configs",
+     "custom_mariadb_configs",
+     "generate_certificates",
+     "ro_user",
+     "rw_user"
+    ],
+    "evidence": "{SITE:fleet-usage} (2026-11-23): no production node statement sets custom_mysqld_configs, custom_mariadb_configs, generate_certificates, ro_user, rw_user, and no class of the repository sets them on mariadb_server"
+   }
+  }
+ ],
+ "duration_s": 122.4
+}
