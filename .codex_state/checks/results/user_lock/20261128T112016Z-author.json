@@ -1,0 +1,133 @@
+{
+ "class": "user_lock",
+ "role": "author",
+ "at": "20261128T112016Z",
+ "runner": "2c25cc56",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "734d9b994c44c9dc01d2192f3f43cb714b5960a8576d3dd3c2d1f465cea04361",
+ "content_sha256": "734d9b994c44c9dc01d2192f3f43cb714b5960a8576d3dd3c2d1f465cea04361",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "user-entry-locked-by-hashman",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "exactly-one-entry",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes.pp: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-locked-user-is-refused-by-hashman",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-lock/auth.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-samba-hash-is-locked-too",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "sed: can't read /root/p8test-hashman-smb-before-lock: No such file or directory\ngrep: /etc/puppetlabs/code/environments/production/manifests/01_hashman/hashes_smb.pp: No such file or directory\n",
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "Hashman_base/Package[python3-prettytable]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8lab-puppetserver]/Exec[p8test create p8testuser through hashman]/returns: executed successfully\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8lab-puppetserver]/Infra_populi::User_lock[p8testuser]/Exec[user_lock_p8testuser]/returns: executed successfully\u001b[0m\n\u001b[mNotice: Applied catalog in 36.00 seconds\u001b[0m\nRUN1_EVENTS: 45 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-puppetserver\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795864919'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.64 seconds\u001b[0m\nCOVERAGE infra_populi::user_lock: 1 concrete resources (+1 defined-type instances)\n  Infra_populi::User_lock[p8testuser]\n  Exec[user_lock_p8testuser]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP user_lock f909c5da8366\n\nNODE_FRESH: yes (boot f6041b37 of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "user-entry-locked-by-hashman",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "$p8testuser_pwd_hash = '!$6$ab/HZFsCSPKWgbRV$bq4NLoX.W.fr1J28b3v8v4gjBX34jB8Cm.IlnKV8N3CyIywOmABklhSDHzPe/Stuwp99U56QmM4kM.41OXpaD/'\n",
+   "stderr": ""
+  },
+  {
+   "id": "exactly-one-entry",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-samba-hash-is-locked-too",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "before the lock: valid\n$p8testuser_pwd_hash_smb = '!CNZu9bkiI/BauBNv1kp7Lg=='\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-locked-user-is-refused-by-hashman",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "hashman auth rc=1\nlocked\npassword matches the unlocked entry\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "one authentication attempt through hashman's CLI (it takes hashman's database lock briefly and logs to syslog); the outcomes go to /run/p8test-lock/auth.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "puppetserver",
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "dest": "p8lab-puppetserver",
+   "boot_id": "f6041b37-3ffb-491a-912f-277eeeb2fdc1",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v2",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "f6041b37-3ffb-491a-912f-277eeeb2fdc1",
+   "fresh": true
+  }
+ },
+ "manifest_sha256": "c70efafab06247d4dbfe9f8badfab875e4a5d55dd0b0b49ab79cb66f75046141",
+ "outcomes": [
+  {
+   "outcome": "hashman's pp_auth.py lock marks the user's entry locked, in place (one entry, not a duplicate), and invalidates the user's Samba hash the same way",
+   "checks": [
+    "user-entry-locked-by-hashman",
+    "exactly-one-entry",
+    "the-samba-hash-is-locked-too"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the locked user is refused by hashman's authentication (pp_auth auth, which hashman's web interface and services use), although the password matches the entry under the lock prefix",
+   "checks": [
+    "the-locked-user-is-refused-by-hashman"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 116.8
+}
