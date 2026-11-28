@@ -30,3 +30,8 @@
   # 2026-11-18 authoring correction (run 3, 20261118T202120Z): `grep -c` exits 1 when it counts 0; the last line now
   # ends with `|| true`.
 ```
+
+2026-11-28 (the re-verification after the rename, results/sysmon_base/20261128T102222Z-author): authoring correction.
+the-bandwidth-check-reports-throughput expected `in 1 sec`; the script's DURATION is the difference of two whole-second
+`date +%s` readings around `sleep 1` (files/sysmon/check_bandwidth.sh:52-61, :98), so it is 1 or 2 depending on when
+the second boundary falls; the run reported 2. The expectation accepts either; the behaviour matched the baseline.

@@ -57,7 +57,7 @@ checks:
     grep -E '^(FILETARGETDIRS|FILEPREFIX|BACKDIR|NC|COMPRESSION)=' {{LOCALDIR}}/bin/backup-puppet.sh
   expect:
     rc: 0
-    stdout: \Aroot root 755\nFILETARGETDIRS=/etc/puppetlabs/\nFILEPREFIX=puppet\.example\.com\nBACKDIR={{LOCALDIR}}/backup/puppet\nNC=10\nCOMPRESSION=true\n\Z
+    stdout: \Aroot root 755\nFILETARGETDIRS="/etc/puppetlabs/"\nFILEPREFIX=puppet\.example\.com\nBACKDIR={{LOCALDIR}}/backup/puppet\nNC=10\nCOMPRESSION=true\n\Z
 - id: cron-runs-it-at-2300
   what: root's crontab runs the script at 23:00 every day of the month, named cron_puppet_backup
   control: negative

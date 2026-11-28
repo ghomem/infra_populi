@@ -191,7 +191,7 @@ checks:
     {{LOCALDIR}}/bin/check_bandwidth.sh enp0s8 1 0 1000 1000 | cut -d' ' -f8; echo "rc=${PIPESTATUS[0]}"
   expect:
     rc: 0
-    stdout: \AIN N Mbit/s OUT N Mbit/s - OK - B Bytes in 1 sec \| InUsage=N% OutUsage=N% inBandwidth=NMbps;100;200 outBandwidth=NMbps;100;200\nrc=0\nWARNING!\nrc=1\n\Z
+    stdout: \AIN N Mbit/s OUT N Mbit/s - OK - B Bytes in [12] sec \| InUsage=N% OutUsage=N% inBandwidth=NMbps;100;200 outBandwidth=NMbps;100;200\nrc=0\nWARNING!\nrc=1\n\Z
 - id: cpu-and-memory-are-reported
   what: the CPU plugin says OK with total and per-CPU usage; the memory plugin says OK on free memory over 5% and CRITICAL
     when used memory passes 2%

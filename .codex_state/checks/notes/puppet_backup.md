@@ -17,3 +17,7 @@
 # so the retention step could not have deleted anything either way. It now fills a one-page tmpfs over the
 # directory (tar fails, the directory stays writable) holding an archive old enough for retention to delete.
 ```
+
+2026-11-28 (the re-verification after the rename, results/puppet_backup/: FINDINGS): local change #26 quotes the shared backup
+template's directory list (`FILETARGETDIRS="<%= @basedir %>"`); the check that reads the script's assignments expects
+the quoted line now. The change's row names this class as a user of the template; its set was not updated with it.
