@@ -2,7 +2,10 @@
 
 DERIVED from `.codex_state/DESIGN_DECISIONS.md` — never hand-edit; regenerate with `python3 .codex_state/tools/gen_rules_digest.py`. The log is authoritative: read the full entry before acting on a line here. SUPERSEDED marks are mechanical (from `supersedes <date> "<title>"` references) and may be partial.
 
-151 entries; 6 marked superseded (in whole or part); newest first.
+152 entries; 6 marked superseded (in whole or part); newest first.
+
+## 2026-11-27 — HQ after the rename: items 1-8 before the re-verification
+- (no numbered/Rule/Decision lines; read the entry)
 
 ## 2026-11-27 — HQ: rename accepted; changes before the re-verification; after it (Salatiel reviewed the approval report)
 - 1. Stale open rows: about 27 rows give as their reason a capability the runner now has (more than one params fixture

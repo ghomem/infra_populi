@@ -21,11 +21,19 @@ outcomes:
 - outcome: TLS, redirects, directory listing on, an IP whitelist or extra TLS settings
   from: manifests/nginx_static.pp:15-45
   uncovered:
-    why: one set holds one params fixture (plain HTTP, the defaults); nginx_static_domain's set exercises the HTTPS combination
-      of the same define
-    lifted_by: 'capability: more than one params fixture per set'
-    evidence: '{{SITE:engine-runner}} applies the class once with its single `fixture` (params or defaults); checks/nginx_static_domain.yml
-      covers ssl, the redirect and the TLS policy'
+    why: parameter variants no production node uses on nginx_static (nginx_static_domain's set exercises HTTPS of the same
+      define)
+    accepted_gap:
+    - ssl
+    - manage_ssl
+    - redirect_to_https
+    - redirect_to_www
+    - allow_directory_listing
+    - additional_ssl_protocols
+    - additional_ssl_ciphers
+    evidence: '{SITE:fleet-usage} (2026-11-23): no production node statement sets ssl, manage_ssl, redirect_to_https, redirect_to_www,
+      allow_directory_listing, additional_ssl_protocols, additional_ssl_ciphers, and no class of the repository sets them
+      on nginx_static'
 checks:
 - id: nginx-config-valid
   what: the nginx configuration the wrapper produces passes `nginx -t`

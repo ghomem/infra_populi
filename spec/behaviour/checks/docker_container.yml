@@ -52,11 +52,10 @@ outcomes:
   - another-network-is-used
 - outcome: a registry login (username and token)
   from: manifests/docker_container.pp:7-14, 26-40, 59-80
-  uncovered:
-    why: a login needs a private registry with credentials; production sets them (5 node statements)
-    lifted_by: 'capability: a private container registry in the lab'
-    evidence: '{{SITE:node-inventory}} (2026-11-23): no node kind runs a registry; {{SITE:fleet-usage}}: username and token
-      set on 5 production node statements'
+  checks:
+  - registry-the-login-is-stored
+  - registry-the-private-image-is-pulled-and-runs
+  - registry-a-pull-without-the-login-is-refused
 - outcome: an image pinned by digest
   from: manifests/docker_container.pp:7-14, 26-40, 59-80
   uncovered:
@@ -79,6 +78,11 @@ variants:
 - name: nonet
   why: another network (none here), which production sets (2 node statements), without published ports
   params: nonet
+- name: registry
+  params: registry
+  why: 'a login to a private registry (username and token), which production sets (5 node statements), and a pull of a private
+    image from it; the peer serves the registry (peer.setup), and the lab''s Docker daemon allows it over plain HTTP (the
+    lab Hiera''s docker::extra_parameters: the daemon''s trust of a registry is not the class''s)'
 checks:
 - id: the-container-runs-the-image-under-systemd
   what: the image nginx:alpine is present, the unit docker-docker_container is active, and the running container docker_container
@@ -286,6 +290,101 @@ checks:
   expect:
     rc: 0
     stdout: \Atrue none\n0\n\Z
+- id: registry-the-login-is-stored
+  control: negative
+  what: 'the class logged in to the registry named by the image: root''s Docker configuration holds an auth for exactly that
+    registry'
+  derived_from:
+  - path: manifests/docker_container.pp
+    lines: '17'
+    text: $registry_url = split($image, '/')[0]
+  - path: manifests/docker_container.pp
+    lines: 26-31
+    text: 'docker::registry { $registry_url:'
+  probe: |
+    python3 -c 'import json; print(" ".join(sorted(json.load(open("/root/.docker/config.json"))["auths"])))'
+  expect:
+    rc: 0
+    stdout: \A{{PEER_ADDR|re}}:5000\n\Z
+  variant: registry
+- id: registry-the-private-image-is-pulled-and-runs
+  control: negative
+  what: the private image was pulled from the registry and its container runs under systemd, serving the image's page on 127.0.0.1
+    at the host port
+  derived_from:
+  - path: manifests/docker_container.pp
+    lines: 42-46
+    text: image_tag => $tag,
+  - path: manifests/docker_container.pp
+    lines: 82-84
+    text: image                             => $image_id,
+  probe: |
+    docker image inspect "$PEER_ADDR:5000/p8test/hello:p8test" >/dev/null 2>&1 && echo pulled
+    systemctl is-active docker-docker_container
+    curl -s --max-time 5 http://127.0.0.1:18081/
+  expect:
+    rc: 0
+    stdout: \Apulled\nactive\np8test private image\n\Z
+  variant: registry
+- id: registry-a-pull-without-the-login-is-refused
+  control: negative
+  what: the same pull with no stored login is refused by the registry, so the image is private and the login is what lets
+    the class pull it
+  derived_from:
+  - path: manifests/docker_container.pp
+    lines: 26-31
+    text: password => $token,
+  probe: |
+    d=$(mktemp -d)
+    docker --config "$d" pull "$PEER_ADDR:5000/p8test/hello:p8test" 2>&1 | grep -oE 'no basic auth credentials|unauthorized' | head -1
+  expect:
+    rc: 0
+    stdout: \A(no basic auth credentials|unauthorized)\n\Z
+  variant: registry
+peer:
+  kind: ubuntu2
+  why: a private registry with credentials, which the class logs in to and pulls a private image from, served by another machine
+  runs:
+  - registry
+  setup: |
+    set -e
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get -q -o Dpkg::Use-Pty=0 install -y docker-registry apache2-utils skopeo busybox-static >/dev/null
+    install -d -m 0755 /etc/docker/registry
+    htpasswd -Bbn p8test p8test-not-a-secret > /etc/docker/registry/htpasswd
+    printf '%s\n' 'version: 0.1' 'storage:' '  filesystem:' '    rootdirectory: /var/lib/docker-registry' 'http:' '  addr: :5000' 'auth:' '  htpasswd:' '    realm: p8test-registry' '    path: /etc/docker/registry/htpasswd' > /etc/docker/registry/config.yml
+    systemctl restart docker-registry
+    for i in $(seq 30); do [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/v2/)" = 401 ] && break; sleep 1; done
+    python3 - <<'OCI'
+    # a private image: a static busybox serving one page (no layer from any public registry)
+    import gzip, hashlib, io, json, os, tarfile
+    root = "/var/tmp/p8test-image"
+    os.makedirs(root + "/blobs/sha256", exist_ok=True)
+    raw = io.BytesIO()
+    with tarfile.open(fileobj=raw, mode="w") as t:
+        for d in ("bin", "www"):
+            i = tarfile.TarInfo(d); i.type = tarfile.DIRTYPE; i.mode = 0o755; t.addfile(i)
+        t.add("/bin/busybox", arcname="bin/busybox")
+        page = b"p8test private image\n"
+        i = tarfile.TarInfo("www/index.html"); i.size = len(page); i.mode = 0o644; t.addfile(i, io.BytesIO(page))
+    layer = raw.getvalue()
+    gz = gzip.compress(layer, mtime=0)
+    def blob(b):
+        h = hashlib.sha256(b).hexdigest()
+        open(f"{root}/blobs/sha256/{h}", "wb").write(b)
+        return "sha256:" + h
+    config = json.dumps({"architecture": "amd64", "os": "linux",
+                         "config": {"Cmd": ["/bin/busybox", "httpd", "-f", "-p", "80", "-h", "/www"], "ExposedPorts": {"80/tcp": {}}},
+                         "rootfs": {"type": "layers", "diff_ids": ["sha256:" + hashlib.sha256(layer).hexdigest()]}}).encode()
+    manifest = json.dumps({"schemaVersion": 2, "mediaType": "application/vnd.oci.image.manifest.v1+json",
+                           "config": {"mediaType": "application/vnd.oci.image.config.v1+json", "digest": blob(config), "size": len(config)},
+                           "layers": [{"mediaType": "application/vnd.oci.image.layer.v1.tar+gzip", "digest": blob(gz), "size": len(gz)}]}).encode()
+    json.dump({"schemaVersion": 2, "manifests": [{"mediaType": "application/vnd.oci.image.manifest.v1+json", "digest": blob(manifest),
+               "size": len(manifest), "annotations": {"org.opencontainers.image.ref.name": "latest"}}]}, open(root + "/index.json", "w"))
+    json.dump({"imageLayoutVersion": "1.0.0"}, open(root + "/oci-layout", "w"))
+    OCI
+    skopeo copy --quiet --dest-creds p8test:p8test-not-a-secret --dest-tls-verify=false oci:/var/tmp/p8test-image:latest docker://127.0.0.1:5000/p8test/hello:p8test
+    echo registry-ready
 apply:
   resource_type: define
   node: ubuntu

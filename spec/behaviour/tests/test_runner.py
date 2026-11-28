@@ -193,3 +193,52 @@ def test_every_root_script_starts_with_the_helpers_and_node_scripts_get_the_peer
     run.on({"id": "x"}, "echo b", node, None, {"PEER_ADDR": "203.0.113.24"})
     shell.run(node, "echo c", root=False)
     assert seen == [runner.HELPERS + "echo a", runner.HELPERS + "PEER_ADDR=203.0.113.24\necho b", "echo c"]
+
+
+def test_the_peer_is_prepared_before_the_clean_phase_and_a_failed_setup_is_the_environments(tmp_path):
+    # HQ 2026-11-27 item 2: peer.setup runs on the fresh peer, rendered with the run's values, before any probe
+    data = {"class": "x", "fixture": "defaults", "purpose": "p" * 40,
+            "outcomes": [{"outcome": "the thing works for the test", "from": "manifests/x.pp:1", "checks": ["the-check"]}],
+            "checks": [{"id": "the-check", "what": "w", "control": "negative", "probe": "check-x", "expect": {"stdout": "^ok$"},
+                        "derived_from": [{"path": "manifests/x.pp", "lines": "1"}]}],
+            "peer": {"kind": "ubuntu2", "why": "a second machine serves what the class uses",
+                     "setup": "prepare-peer {{NODE_ADDR}}\n"},
+            "apply": {"resource_type": "class", "node": "ubuntu", "catalog": {"Debian": [{"class": "x"}]}}}
+    path = tmp_path / "x.yml"
+    path.write_text(__import__("yaml").safe_dump(data))
+    for setup_rc, outcome in [(1, "ENVIRONMENT_FAILED"), (0, "APPLY_FAILED")]:
+        calls = []
+
+        def run(m, script, timeout=120, prefix="", root=True, rc=setup_rc):
+            calls.append((m.dest, script))
+            if "prepare-peer" in script:
+                return rc, "", "no registry"
+            return (1, "", "") if script == "check-x" else (0, "", "")  # fresh marks, host names, values
+        shell = runner.Shell(["ssh"])
+        shell.run = run
+        provider = runner.Provider(shell, None, {"ubuntu": [runner.Machine("ubuntu", "p8test@node", "203.0.113.20")],
+                                                 "ubuntu2": [runner.Machine("ubuntu2", "p8test@peer", "203.0.113.24")]})
+        applier = runner.Applier("command", shell, ["false"])
+        record = runner.Run(path, provider, applier, shell, {"name": "puppet.example.invalid", "addr": "203.0.113.10"},
+                            "/opt/site").run("command", None, say=lambda *_: None)
+        assert record["outcome"] == outcome, record["problems"]
+        setup = next(i for i, (dest, s) in enumerate(calls) if "prepare-peer" in s)
+        assert calls[setup] == ("p8test@peer", "prepare-peer 203.0.113.20\n")
+        probes = [i for i, (_, s) in enumerate(calls) if s == "check-x"]
+        if setup_rc:
+            assert "peer setup failed (rc 1)" in record["problems"][0] and not probes
+        else:
+            assert probes and probes[0] > setup and record["peer_setup"]["rc"] == 0
+
+
+def test_a_variant_node_fixture_follows_the_sets_own(tmp_path):
+    # HQ 2026-11-27 item 4: a variant may need state its class does not make (an encrypted home)
+    (tmp_path / "node").mkdir()
+    (tmp_path / "node" / "p8set.pp").write_text("# the set's\n")
+    (tmp_path / "node" / "p8var.pp").write_text("# the variant's\n")
+    data = {"class": "x", "apply": {"resource_type": "class", "node": "ubuntu", "node_fixture": "p8set",
+                                    "catalog": {"Debian": [{"class": "x"}]}}}
+    text = mf.build(data, "ubuntu", setfile.kinds(), [tmp_path], tmp_path, variant_fixture="p8var")
+    assert text.index("# the set's") < text.index("# the variant's") < text.index("include")
+    with pytest.raises(FileNotFoundError, match="p8none"):
+        mf.build(data, "ubuntu", setfile.kinds(), [tmp_path], tmp_path, variant_fixture="p8none")

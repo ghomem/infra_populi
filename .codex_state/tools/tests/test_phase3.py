@@ -1336,3 +1336,22 @@ def test_a_composite_forwarding_its_own_parameter_with_the_same_default_is_no_va
     assert phase3.composite_sets("nginx_frontend_domain", "servers_create") == []
     assert phase3.param_default("class x (\n  Boolean $a = true,\n  $b,\n  $c = 'x', # note\n) {\n", "a") == "true"
     assert phase3.param_default("class x (\n  Boolean $a = true,\n  $b,\n) {\n", "b") is None
+
+
+@pytest.mark.parametrize("lifted, has", [
+    ("capability: a second node kind for the RedHat branch", "another node kind"),
+    ("capability: more than one params fixture per set", "params fixture"),
+    ("capability: a peer node that mounts the share", "second machine"),
+    ("capability: an ecryptfs fixture user with a mounted private directory", None),
+])
+def test_a_row_naming_a_capability_the_runner_has_is_refused(lifted, has):
+    # HQ 2026-11-27 item 1: the capability list lives in one place (the suite's setfile.RUNNER_CAPABILITIES)
+    import sys
+    sys.path.insert(0, str(TOOLS))
+    import phase3  # noqa: PLC0415
+    row = {"why": "the fixture cannot show this outcome yet", "lifted_by": lifted, "evidence": "p8test evidence line"}
+    problems = phase3.uncovered_problems(row, "o", True, "p8test")
+    if has:
+        assert problems and "the runner has" in problems[0] and has in problems[0], problems
+    else:
+        assert not any("the runner has" in p for p in problems), problems

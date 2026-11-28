@@ -361,3 +361,17 @@ def test_the_module_rename_and_records_do_not_flag_a_migration_but_a_code_change
                               ("P2: rename module to infra_populi\nP8: fix x by hand\n", {"x"})]:
         monkeypatch.setattr(gen, "run_git", lambda args, s=subjects: s)
         assert gen.find_flagged_migrations(migrations) == flagged
+
+
+def test_a_migrate_commit_that_changed_no_class_file_is_not_the_migration(gen, monkeypatch):
+    # HQ 2026-11-23 ruling 1, as review_class.py applies it (user_lock: a later migrate commit touched only the tracker)
+    log = ("bbb\t2026-11-23T00:00:00+00:00\tP8: migrate puppet_infrastructure::user_lock\n"
+           "aaa\t2026-11-20T00:00:00+00:00\tP8: migrate puppet_infrastructure::user_lock\n"
+           "ccc\t2026-11-19T00:00:00+00:00\tP8: migrate infra_populi::ssh_secure\n")
+    files = {"bbb": ".codex_state/migrated_classes.txt\n", "aaa": "manifests/user_lock.pp\n.codex_state/migrated_classes.txt\n"}
+
+    def run_git(args):
+        return log if args[0] == "log" else files[args[-1]]
+    monkeypatch.setattr(gen, "run_git", run_git)
+    m = gen.git_migrations()
+    assert m["user_lock"].commit == "aaa" and m["ssh_secure"].commit == "ccc"

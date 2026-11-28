@@ -6,6 +6,9 @@ peer:
   why: the VPN client must be a second machine on the lab network that connects to the server node over UDP
   files:
   - /etc/openvpn/keys/ca.crt
+  runs:
+  - base
+  - nocomp
 purpose: 'An OpenVPN server that bridges its clients onto a LAN bridge: clients authenticate with a local account (PAM, no
   client certificate), get an address from the bridge''s pool and the pushed routes and DNS, reach the server''s LAN side,
   cannot reach each other (client isolation), and the bridge and the server are configured to come back at boot. The data
@@ -55,20 +58,31 @@ outcomes:
   from: manifests/openvpn_server.pp:18-25, 45, 172-177, 211
   checks:
   - another-dns-cipher-and-isolation-off
-- outcome: force_ifupdown true and compression none
-  from: manifests/openvpn_server.pp:26-30, 166
+- outcome: 'compression none: no compression directive, a client without compression connects, and the data channel is uncompressed
+    both ways'
+  from: manifests/openvpn_server.pp:30, 166
+  checks:
+  - nocomp-the-server-carries-no-compression
+  - nocomp-vpn-account-on-the-server
+  - nocomp-a-client-without-compression-connects
+  - nocomp-the-data-channel-is-uncompressed-both-ways
+- outcome: force_ifupdown true
+  from: manifests/openvpn_server.pp:30-52
   uncovered:
-    why: parameter variants no production node uses (the fixture keeps their defaults)
+    why: a parameter variant no production node uses (the fixture keeps the default, false)
     accepted_gap:
     - force_ifupdown
-    - compression
-    evidence: '{{SITE:fleet-usage}} (2026-11-23): no production node statement sets either, and no class of the repository
-      sets them on openvpn_server (network_vpn passes cipher, client_isolation and push_dns_server)'
+    evidence: '{{SITE:fleet-usage}} (2026-11-23): no production node statement sets force_ifupdown, and no class of the repository
+      sets it on openvpn_server'
 variants:
 - name: other
   why: another DNS server (a production node sets push_dns_server), another cipher and client isolation off, both passed by
     network_vpn (a composite)
   params: other
+- name: nocomp
+  params: nocomp
+  why: 'compression none, where production is heading (HQ 2026-11-27 item 3): no compression directive, a client without compression
+    connects, and the data channel is uncompressed both ways; the peer is the client, as in the base run'
 checks:
 - id: server-listens-on-the-bound-address
   what: the OpenVPN server listens on UDP 1194 at the `local` address
@@ -379,6 +393,100 @@ checks:
   expect:
     rc: 0
     stdout: \Apush "dhcp-option DNS 9\.9\.9\.9"\ncipher AES-128-CBC\n1\n\Z
+- id: nocomp-the-server-carries-no-compression
+  control: negative
+  what: with compression none the server's configuration carries no compression directive, and the server runs
+  derived_from:
+  - path: manifests/openvpn_server.pp
+    lines: '30'
+    text: '# To disable compression this value needs to be set to ''none'''
+  - path: manifests/openvpn_server.pp
+    lines: '166'
+    text: compression              => $compression,
+  probe: |
+    test -s /etc/openvpn/server/infra_populi.conf && grep -cE '^\s*(comp-lzo|compress)\b' /etc/openvpn/server/infra_populi.conf || true
+    p8_service openvpn-server@infra_populi | cut -d' ' -f1
+  expect:
+    rc: 0
+    stdout: \A0\nactive\n\Z
+  variant: nocomp
+- id: nocomp-vpn-account-on-the-server
+  what: a local account exists on the server for PAM authentication (setup for the client checks)
+  control: negative
+  derived_from:
+  - path: manifests/openvpn_server.pp
+    lines: '169'
+    text: pam                      => true,
+  mutates: creates the local account p8vpnuser on the server node with the fake password p8test-vpn-not-a-secret
+  probe: |
+    useradd -M -s /usr/sbin/nologin p8vpnuser && echo 'p8vpnuser:p8test-vpn-not-a-secret' | chpasswd
+  effect: |
+    getent passwd p8vpnuser | cut -d: -f1
+  expect:
+    rc: 0
+    stdout: \Ap8vpnuser\n\Z
+  variant: nocomp
+- id: nocomp-a-client-without-compression-connects
+  what: with compression none, a client that offers no compression connects, gets a pool address and the pushed options, and
+    reaches the server's LAN side
+  control: negative
+  host: peer
+  derived_from:
+  - path: manifests/openvpn_server.pp
+    lines: '172'
+    text: push                     => ['redirect-gateway bypass-dhcp bypass-dns', "dhcp-option DNS ${push_dns_server}"],
+  - path: manifests/openvpn_server.pp
+    lines: '173'
+    text: server_bridge            => "${lan_static_ip} ${lan_netmask} ${vpn_pool_start} ${vpn_pool_end}",
+  mutates: 'on the peer: installs the openvpn package, adds the host route 203.0.113.50 via the node''s host-only address,
+    writes a client config and credentials under /run/p8vpn and starts an openvpn client daemon'
+  probe: |
+    DEBIAN_FRONTEND=noninteractive apt-get -qq -y install openvpn >/dev/null
+    ip route replace 203.0.113.50/32 via {{NODE_ADDR}}
+    mkdir -p /run/p8vpn
+    printf 'p8vpnuser\np8test-vpn-not-a-secret\n' > /run/p8vpn/auth
+    printf 'client\ndev tap\nproto udp\nremote 203.0.113.50 1194\nca /run/p8test-from-node/ca.crt\nauth-user-pass /run/p8vpn/auth\ncipher AES-256-CBC\ndata-ciphers AES-256-GCM:AES-256-CBC\npull-filter ignore "redirect-gateway"\nverb 3\n' > /run/p8vpn/client.conf
+    openvpn --config /run/p8vpn/client.conf --daemon --log /run/p8vpn/client.log --writepid /run/p8vpn/pid
+    for i in $(seq 40); do grep -q 'Initialization Sequence Completed' /run/p8vpn/client.log && break; sleep 1; done
+  effect: |
+    grep -c 'Initialization Sequence Completed' /run/p8vpn/client.log
+    grep -o 'PUSH_REPLY,[^]]*' /run/p8vpn/client.log | head -1 | grep -o -e 'redirect-gateway bypass-dhcp bypass-dns' -e 'dhcp-option DNS 8.8.8.8'
+    ip -4 -br addr show "$(ip -br link | awk '$1 ~ /^tap/ {print $1; exit}')" | awk '{print $3}'
+    ping -c 2 -W 2 192.0.2.1 >/dev/null && echo reaches-server-side
+  expect:
+    rc: 0
+    stdout: \A1\nredirect-gateway bypass-dhcp bypass-dns\ndhcp-option DNS 8\.8\.8\.8\n192\.0\.2\.(1[0-4][0-9]|150)/24\nreaches-server-side\n\Z
+  variant: nocomp
+- id: nocomp-the-data-channel-is-uncompressed-both-ways
+  what: with compression none, the data channel carries the client's traffic uncompressed in both directions
+  control: negative
+  timeout: 60
+  derived_from:
+  - path: manifests/openvpn_server.pp
+    lines: '30'
+    text: '$compression              = ''comp-lzo'' # To disable compression this value needs to be set to ''none'''
+  - path: manifests/openvpn_server.pp
+    lines: '166'
+    text: compression              => $compression,
+  mutates: 'on the node: inserts two counting rules (no target) for UDP 1194, `-I OUTPUT -p udp --sport 1194 -m comment --comment
+    p8test-vpn-out` and `-I INPUT -p udp --dport 1194 -m comment --comment p8test-vpn-in`; reads the first client''s pool
+    address from the server''s PUSH_REPLY to p8vpnuser in its journal and sends it 20 pings with a 1200-byte zero payload;
+    keeps the address and ping summary under /run/p8test-vpncomp'
+  probe: |
+    install -d -m 0700 /run/p8test-vpncomp
+    iptables -I OUTPUT -p udp --sport 1194 -m comment --comment p8test-vpn-out
+    iptables -I INPUT -p udp --dport 1194 -m comment --comment p8test-vpn-in
+    first=$(journalctl -u openvpn-server@infra_populi --no-pager -q | grep -o "SENT CONTROL \[p8vpnuser\]: 'PUSH_REPLY,.*ifconfig [0-9.]*" | tail -1 | grep -o '[0-9.]*$')
+    echo "$first" > /run/p8test-vpncomp/first
+    ping -c 20 -i 0.2 -s 1200 -p 00 -W 2 "$first" > /run/p8test-vpncomp/ping 2>&1
+  effect: |
+    p8_count ' 0% packet loss' /run/p8test-vpncomp/ping
+    iptables -v -x -L OUTPUT -n | awk '/p8test-vpn-out/ {print "server sends: " (($1 && $2/$1 < 600) ? "compressed" : "uncompressed") " (" ($1 ? int($2/$1) : 0) " bytes per packet)"}'
+    iptables -v -x -L INPUT -n | awk '/p8test-vpn-in/ {print "server receives: " (($1 && $2/$1 < 600) ? "compressed" : "uncompressed") " (" ($1 ? int($2/$1) : 0) " bytes per packet)"}'
+  expect:
+    rc: 0
+    stdout: '\A1\nserver sends: uncompressed \(\d+ bytes per packet\)\nserver receives: uncompressed \(\d+ bytes per packet\)\n\Z'
+  variant: nocomp
 apply:
   resource_type: class
   node: ubuntu

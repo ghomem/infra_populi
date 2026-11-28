@@ -28,11 +28,8 @@ outcomes:
   - the-agent-run-restores-the-key-and-restarts-nginx
 - outcome: the RedHat paths (/etc/pki/tls/private for the key)
   from: manifests/ssl_base.pp:56-68
-  uncovered:
-    why: the plan's node for ssl_nginx is Debian (Ubuntu); a set runs on its class's plan node only
-    lifted_by: 'capability: a phase3 set for a node kind other than the plan''s (rhel9)'
-    evidence: '{{SITE:engine-runner}} run selects the class''s plan node (nodes.select); {{SITE:plan-file}} node column for
-      ssl_nginx'
+  checks:
+  - on-redhat-the-key-is-in-pki-tls-private-and-matches-the-bundle
 checks:
 - id: private-key-installed-root-only
   what: the prefix's private key is installed as /etc/ssl/private/<prefix>.key, root:root 0600
@@ -175,12 +172,40 @@ checks:
   expect:
     rc: 0
     stdout: \Akey restored\nnginx restarted\nactive\n\Z
+- id: on-redhat-the-key-is-in-pki-tls-private-and-matches-the-bundle
+  control: negative
+  what: on RedHat the private key is in /etc/pki/tls/private, root-only, and the nginx bundle in /etc/ssl/certs holds the
+    certificate of that key
+  derived_from:
+  - path: manifests/ssl_base.pp
+    lines: 57-62
+    text: $ssl_private_dir = '/etc/pki/tls/private'
+  - path: manifests/ssl_base.pp
+    lines: 57-62
+    text: $ssl_certs_dir  = '/etc/ssl/certs'
+  probe: |
+    stat -c '%n %U:%G %a' /etc/pki/tls/private/p8test.key /etc/ssl/certs/p8test.nginx.bundle.crt
+    a=$(openssl x509 -noout -pubkey -in /etc/ssl/certs/p8test.nginx.bundle.crt | sha256sum)
+    b=$(openssl pkey -pubout -in /etc/pki/tls/private/p8test.key | sha256sum)
+    test "$a" = "$b" && echo key-matches-certificate
+  expect:
+    rc: 0
+    stdout: \A/etc/pki/tls/private/p8test\.key root:root 600\n/etc/ssl/certs/p8test\.nginx\.bundle\.crt root:root 644\nkey-matches-certificate\n\Z
+  variant: rhel
+variants:
+- name: rhel
+  node: rhel9
+  why: the RedHat branch of ssl_base, which this class wraps (the private key in /etc/pki/tls/private), on the rhel9 node,
+    with the set's own params fixture
 apply:
   resource_type: class
   node: ubuntu
   catalog:
     Debian:
     - external: apt
+    - class: nginx_base
+    - class: ssl_nginx
+    RedHat:
     - class: nginx_base
     - class: ssl_nginx
   requires:

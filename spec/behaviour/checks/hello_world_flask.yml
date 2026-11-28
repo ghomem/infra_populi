@@ -33,17 +33,20 @@ outcomes:
   - the-agent-run-restores-the-unit-in-effect
 - outcome: on RedHat the unit starts gunicorn directly (without python3 -m)
   from: templates/hello_world_flask/hello-world-flask.service.erb:7-8
-  uncovered:
-    why: the RedHat branch needs the set run on a RedHat node; one set holds the Debian expectations of the plan's node
-    lifted_by: 'capability: a phase3 set for a node kind other than the class''s plan node (rhel9)'
-    evidence: a check set is one file per class judged on one node; the plan's node for hello_world_flask is the default ubuntu
-      (Debian branch, service.erb:10)
+  checks:
+  - on-redhat-the-unit-starts-gunicorn-directly
+  - on-redhat-the-app-serves-the-welcome-message
 - outcome: uninstalling (uninstall true), another address, port or message
   from: manifests/hello_world_flask.pp:3-12, 19-26
   uncovered:
-    why: one set holds one params fixture (installed, 127.0.0.1:8080, the test message)
-    lifted_by: 'capability: more than one params fixture per set'
-    evidence: '{{SITE:engine-runner}} applies the class once with its single `fixture` (params or defaults)'
+    why: 'parameter variants no production node uses (the fixture: installed, 127.0.0.1:8080, the test message)'
+    accepted_gap:
+    - uninstall
+    - ip_address
+    - port
+    - welcome_msg
+    evidence: '{SITE:fleet-usage} (2026-11-23): no production node statement sets uninstall, ip_address, port, welcome_msg,
+      and no class of the repository sets them on hello_world_flask'
 checks:
 - id: service-running-and-enabled
   what: the systemd service hello-world-flask-<title> is running and enabled
@@ -183,6 +186,42 @@ checks:
   expect:
     rc: 0
     stdout: '\A1\n8080: 200\n8081: curl-rc=7\n\Z'
+- id: on-redhat-the-unit-starts-gunicorn-directly
+  control: negative
+  what: on RedHat the unit starts gunicorn directly with the fixture's address and port in the app's directory, and the service
+    runs
+  derived_from:
+  - path: templates/hello_world_flask/hello-world-flask.service.erb
+    lines: 7-8
+    text: ExecStart=gunicorn --bind <%= @ip_address %>:<%= @port %> wsgi:app
+  - path: templates/hello_world_flask/hello-world-flask.service.erb
+    lines: '13'
+    text: WorkingDirectory=<%= @app_dir %>
+  probe: |
+    grep -E '^(ExecStart|WorkingDirectory)=' /lib/systemd/system/hello-world-flask-hello_world_flask.service
+    systemctl is-active hello-world-flask-hello_world_flask
+  expect:
+    rc: 0
+    stdout: \AExecStart=gunicorn --bind 127\.0\.0\.1:8080 wsgi:app\nWorkingDirectory={{LOCALDIR}}/hello_world_flask/hello_world_flask\nactive\n\Z
+  variant: rhel
+- id: on-redhat-the-app-serves-the-welcome-message
+  control: negative
+  what: on RedHat the app answers on the fixture's address and port with the fixture's message
+  derived_from:
+  - path: templates/hello_world_flask/hello_world_flask.py.erb
+    lines: 10-15
+    text: <h1 style='color:blue'>%s</h1>
+  probe: |
+    curl -s --max-time 5 http://127.0.0.1:8080/ | grep -o "<h1 style='color:blue'.[^<]*</h1"
+  expect:
+    rc: 0
+    stdout: \A<h1 style='color:blue'>P8 test flask hello</h1\n\Z
+  variant: rhel
+variants:
+- name: rhel
+  node: rhel9
+  why: the RedHat branch of the unit (gunicorn started directly, not through python3 -m) on the rhel9 node, with the set's
+    own params fixture
 apply:
   resource_type: define
   node: ubuntu
@@ -190,4 +229,8 @@ apply:
   catalog:
     Debian:
     - class: filesystem_base
+    - class: hello_world_flask
+    RedHat:
+    - class: filesystem_base
+    - class: extra_packages_el
     - class: hello_world_flask

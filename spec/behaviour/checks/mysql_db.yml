@@ -33,9 +33,12 @@ outcomes:
 - outcome: a database without a read-only account, and the refusal of a half-given read-only pair
   from: manifests/mysql_db.pp:9-15
   uncovered:
-    why: one set holds one params fixture (both accounts given)
-    lifted_by: 'capability: more than one params fixture per set'
-    evidence: '{{SITE:engine-runner}} applies the class once with its single `fixture` (params or defaults)'
+    why: parameter variants no production node uses (the fixture gives both accounts)
+    accepted_gap:
+    - ro_user
+    - ro_pass
+    evidence: '{SITE:fleet-usage} (2026-11-23): no production node statement sets ro_user, ro_pass, and no class of the repository
+      sets them on mysql_db'
 checks:
 - id: mysql-server-survives-the-define
   what: after mysql_db applies, the MySQL 8.0 server and client packages are installed, no MariaDB server or client is, and

@@ -29,14 +29,20 @@ outcomes:
   checks:
   - lock-screen-script-installed
   - kde-lock-settings-applied-in-the-session
-- outcome: the other parameters (ignorekey, the ecryptfs values, non-default lock-screen values), passed through unchanged
+- outcome: the other parameters (ignorekey, the ecryptfs values, non-default lock-screen values) as they reach user_base and
+    user_kde_lock_screen
   from: manifests/user_desktop_sudoer.pp:7, 10-12
   uncovered:
-    why: the wrapper passes them to user_base and user_kde_lock_screen as they are; their effects are those classes' outcomes,
-      tested in their own sets (user_base.yml, user_kde_lock_screen.yml), and one set holds one params fixture
-    lifted_by: 'capability: more than one params fixture per set'
-    evidence: manifests/user_desktop_sudoer.pp:10-12 pass the parameters through; {{SITE:engine-runner}} runs a set with one
-      fixture
+    why: parameter variants no production node uses on user_desktop_sudoer; their effects are user_base's and user_kde_lock_screen's
+      outcomes, tested in their own sets
+    accepted_gap:
+    - ignorekey
+    - myppsigs
+    - myppwrapped
+    - screenlock_timeout_minutes
+    - screenlock_grace_seconds
+    evidence: '{SITE:fleet-usage} (2026-11-23): no production node statement sets ignorekey, myppsigs, myppwrapped, screenlock_timeout_minutes,
+      screenlock_grace_seconds, and no class of the repository sets them on user_desktop_sudoer'
 checks:
 - id: user-with-own-primary-group
   what: the user exists, and its primary group is the first given group (mygrouplist ['users'] is prepended to the built list,

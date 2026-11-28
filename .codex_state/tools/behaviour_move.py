@@ -112,6 +112,9 @@ def context(kinds: dict, node_kind: str, peer_kind: str | None) -> dict:
               "NODE_NAME": node["hostname"], "NODE_ADDR": node["hostonly_ip"]}
     if peer_kind:
         values.update(PEER_NAME=kinds[peer_kind]["hostname"], PEER_ADDR=kinds[peer_kind]["hostonly_ip"])
+    sys.path.insert(0, str(REPO / "spec" / "behaviour" / "lib"))
+    from behaviour import setfile  # noqa: PLC0415
+    values.update(setfile.throwaway_values())  # the suite's throwaway material, as a run renders it
     return values
 
 

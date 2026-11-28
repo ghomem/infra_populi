@@ -47,7 +47,66 @@ ACCEPTANCE_NOTES = {
 }
 
 
+DECISIONS = REPO / ".codex_state" / "rules" / "salatiel_decisions.yml"
+USAGE = REPO / ".codex_state" / "diagnosis" / "fleet_variant_usage.md"
+# HQ 2026-11-27 item 6, the corrected production count: a conditional include counts only where it is turned on, and a
+# class on one OS family's branch says so. One place: (how node_base includes the class, the switch, its default).
+SWITCHED = {"firewall_secure_extra": ("firewall_secure_extra", False), "puppet_boot_run": ("run_puppet_on_boot", False),
+            "filesystem_sec": ("filesystem_security", True)}
+REDHAT_ONLY = {"extra_packages_el", "filesystem_yum"}  # node_base's / packages_base's RedHat branch
+DEBIAN_BRANCH = {"filesystem_apt", "filesystem_lib64"}  # node_base's non-RedHat branch
+# Why the verified count of an earlier report differed (HQ 2026-11-27 item 6: name the class and why).
+VERIFIED_NOTES = ["user_lock was shown unverified until 2026-11-27 (89 of 90): a later `P8: migrate` commit "
+                  "(3731d97) changed only the tracker, and the order generator took it as the class's migration while "
+                  "the reviewer, by HQ 2026-11-23 ruling 1, judged the one that changed the class (a795d98, PASS); the "
+                  "generator now applies the same ruling"]
+
+
+def decisions() -> dict:
+    """Salatiel's recorded decisions, merged over every dated block (rules/salatiel_decisions.yml)."""
+    out = {"findings": {}, "gaps": {}, "not_accepted": {}, "standins": {}}
+    for block in (yaml.safe_load(DECISIONS.read_text()) if DECISIONS.is_file() else []) or []:
+        for c in block.get("findings_accepted_as_known") or []:
+            out["findings"][c] = block["date"]
+        for c, params in (block.get("accepted_gaps") or {}).items():
+            out["gaps"].setdefault(c, {}).update({p: block["date"] for p in params})
+        for c, why in (block.get("accepted_gaps_not_accepted") or {}).items():
+            out["not_accepted"].setdefault(c, {}).update(why)
+        for c, note in (block.get("standins_accepted") or {}).items():
+            out["standins"][c] = (block["date"], note)
+    return out
+
+
+def switch_usage(param: str) -> int:
+    for line in (USAGE.read_text().splitlines() if USAGE.is_file() else []):
+        cells = [c.strip() for c in line.split("|")]
+        if len(cells) == 5 and cells[1] == "node_base" and cells[2] == param:
+            return int(cells[3]) if cells[3].isdigit() else 0
+    return 0
+
+
+def production(cls: str, raw: int) -> str:
+    """Production machines under the corrected rule, with what limits the number."""
+    if cls in REDHAT_ONLY:
+        return "RedHat-only (the fleet's RHEL servers are not counted by name)"
+    if cls in DEBIAN_BRANCH:
+        return f"at most {raw} (the non-RedHat branch; the RHEL servers are not subtracted)"
+    if cls in SWITCHED:
+        param, default = SWITCHED[cls]
+        n = switch_usage(param)
+        if default:
+            return f"{raw} (node_base's {param} defaults on" + (f" and is set on {n} node statement(s))" if n else
+                                                                  " and no node statement sets it)")
+        if not n:
+            return f"0 (only where node_base's {param} is turned on; it defaults off and no node statement sets it)"
+        return f"at most {n} (only where node_base's {param} is turned on; it defaults off and {n} node statement(s) set it)"
+    return str(raw)
+
+
 def standin_plan(cls: str) -> str:
+    decided = decisions()["standins"].get(cls)
+    if decided:
+        return f"{decided[1]} (Salatiel, {decided[0]})"
     if cls in ACCEPTANCE_NOTES:
         return f"stays; for Salatiel's explicit acceptance: {ACCEPTANCE_NOTES[cls]} (HQ 2026-11-23)"
     if cls in LIFT_STANDINS:
@@ -133,7 +192,7 @@ def collect() -> tuple[list[dict], dict]:
     standins = {c: (f, lifted) for c, f, lifted in status.standins(rows, verified)}
     prod = generator.read_prod_nodes()
     changes = local_changes()
-    out = [class_row(c, rows.get(c), tracker.get(c), prod.get(c, 0), standins.get(c), changes.get(c, []))
+    out = [class_row(c, rows.get(c), tracker.get(c), production(c, prod.get(c, 0)), standins.get(c), changes.get(c, []))
            for c in done]
     meta = {"done": len(done), "verified": len(verified), "owner_validated": sorted(owner_validated),
             "blocked": sorted(blocked), "retired": sorted(retired)}
@@ -163,6 +222,9 @@ def render(rows: list[dict], meta: dict) -> str:
          f"- Done classes: {meta['done']} ({meta['verified']} verified by the Phase 1 reviewer). Owner-validated: "
          f"{', '.join(meta['owner_validated']) or 'none'}. Retired: {', '.join(meta['retired']) or 'none'}. "
          f"Blocked: {', '.join(meta['blocked']) or 'none'}.",
+         *[f"- Verified count: {n}." for n in VERIFIED_NOTES],
+         "- Production machines follow the corrected rule (HQ 2026-11-27 item 6): a conditional include counts only "
+         "where it is turned on, and a class on one OS family's branch says so.",
          "- Behaviour (Phase 3): " + ", ".join(f"{n} {k}" for k, n in sorted(counts.items())) + ".",
          f"- Open rows (outcomes no check probes): {sum(len(r['open']) for r in rows)} in "
          f"{sum(1 for r in rows if r['open'])} classes.",
@@ -170,7 +232,10 @@ def render(rows: list[dict], meta: dict) -> str:
          f"{sum(len(r['local_changes']) for r in rows)} (in {sum(1 for r in rows if r['local_changes'])} classes).",
          ""]
     L += ["## For Salatiel's decision", "", "### Behaviour findings", ""]
-    L += [f"- **{r['class']}** — {r['detail']} ({r['finding_file'] or 'no escalation file'})" for r in findings] or ["- none"]
+    dec = decisions()
+    L += [f"- **{r['class']}** — {r['detail']} ({r['finding_file'] or 'no escalation file'})"
+          + (f" — *accepted as known (Salatiel, {dec['findings'][r['class']]})*" if r["class"] in dec["findings"] else "")
+          for r in findings] or ["- none"]
     L += ["", "### Stand-ins", ""]
     for r in standins:
         fixture, lifted = r["standin"]
@@ -180,7 +245,15 @@ def render(rows: list[dict], meta: dict) -> str:
     # HQ 2026-11-23 ruling 1c: parameter variants no production node statement sets, for Salatiel's acceptance
     L += ["", "### Accepted gaps (parameter variants production does not use)", ""]
     gaps = [(r["class"], o) for r in rows for o in r["open"] if o.get("accepted_gap")]
-    L += [f"- **{c}** — {', '.join(o['accepted_gap'])}: {o['outcome']} — {o['why']}" for c, o in gaps] or ["- none"]
+    def gap_state(c: str, params: list[str]) -> str:
+        known = dec["gaps"].get(c, {})
+        if params and all(p in known for p in params):
+            return f" — *accepted (Salatiel, {min(known[p] for p in params)})*"
+        return " — *new since Salatiel's review: for acceptance*"
+    L += [f"- **{c}** — {', '.join(o['accepted_gap'])}: {o['outcome']} — {o['why']}{gap_state(c, o['accepted_gap'])}"
+          for c, o in gaps] or ["- none"]
+    for c, why in sorted(dec["not_accepted"].items()):
+        L += [f"- **{c}** — {', '.join(why)}: not accepted — {'; '.join(why.values())}"]
     L += ["", "### Open escalations", ""]
     L += [f"- {e}" for e in open_escalations()] or ["- none"]
     L += ["", "## One row per class", "",

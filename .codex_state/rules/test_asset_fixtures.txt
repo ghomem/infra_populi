@@ -3,3 +3,4 @@
 hashman_master_standin  placeholder files at the lab Hiera's example logo paths (a site supplies its own images)
 hashman_user_via_hashman  the user p8testuser created through hashman's own `pp_auth.py useradd ... SILENT` and unlocked, as an administrator creates a user before locking it (user_lock on the master-role node; HQ after batch 20, item 6)
 p8test_desktop_login  the test user p8testuser and one real first GNOME login (GDM automatic login, removed again), whose session creates ~/Desktop (mount_shares_desktop on the GNOME node; HQ after batch 20, item 6)
+p8test_ecryptfs_home  the fixture user's encrypted home, made as adduser --encrypt-home makes it (ecryptfs-setup-private --bootstrap) with the suite's throwaway passphrases and left at rest, which user_base's ecryptfs branch writes into (HQ 2026-11-27 item 4)

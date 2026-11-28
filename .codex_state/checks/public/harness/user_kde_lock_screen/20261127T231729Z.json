@@ -1,0 +1,368 @@
+{
+ "class": "user_kde_lock_screen",
+ "role": "command",
+ "at": "20261127T230157Z",
+ "set_sha256": "1bcb13a8f11894b2875f7985d17d23463ebd97f7be7dfe4dd07f87a796546785",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "script-installed-root-executable",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/infra-populi/bin/configure_lock_screen.sh': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "a-run-while-logged-out-skips",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "lock-settings-in-the-users-kscreenlockerrc",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/home/p8testuser/.config/kscreenlockerrc': No such file or directory\nsed: can't read /home/p8testuser/.config/kscreenlockerrc: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "applied-in-the-session-and-reloaded-live",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-idle-session-locks-after-the-timeout",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "no session\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-user-turns-the-lock-off",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "locked no\n",
+   "stderr": "sed: can't read /home/p8testuser/.config/kscreenlockerrc: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-turns-the-lock-back-on",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\nlocked no\n",
+   "stderr": "sed: can't read /home/p8testuser/.config/kscreenlockerrc: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "een_common/File[/opt/infra-populi/bin/configure_lock_screen.sh]/ensure: defined content as '{sha256}8bc3f286c0ea1b4142e10e2cf14bffa38ab099bc7e71265248d49ebe402d5e9d'\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 0.63 seconds\u001b[0m\nRUN1_EVENTS: 11 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-kubuntu\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795820648'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.15 seconds\u001b[0m\nCOVERAGE infra_populi::user_kde_lock_screen: 2 concrete resources (+1 defined-type instances)\n  Infra_populi::User_kde_lock_screen[p8testuser]\n  File[/opt/infra-populi/bin/configure_lock_screen.sh]\n  Exec[configure_lock_screen.sh p8testuser]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP user_kde_lock_screen 665134303022\n\nNODE_FRESH: yes (boot e83c52bb of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "script-installed-root-executable",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-run-while-logged-out-skips",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "skipped-while-logged-out\n",
+   "stderr": ""
+  },
+  {
+   "id": "lock-settings-in-the-users-kscreenlockerrc",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser\nAutolock=true\nLockGrace=0\nLockOnResume=true\nTimeout=2\n",
+   "stderr": ""
+  },
+  {
+   "id": "applied-in-the-session-and-reloaded-live",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "logged-in-run\n0\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-idle-session-locks-after-the-timeout",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "locked yes\nlocked 120-290 s after the login\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond waiting up to 300 s for the lock (declared mutating so the wait may outlast a read-only probe's limit)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-user-turns-the-lock-off",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "locked no\nAutolock=false\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "unlocks p8testuser's session (loginctl unlock-session); as p8testuser, writes Autolock=false to its kscreenlockerrc (kwriteconfig5) and reloads the screenlocker over the session D-Bus (qdbus configure); then waits 150 s",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-turns-the-lock-back-on",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Autolock=true\n0\nlocked yes\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the user's file, the journal and the session (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "kubuntu",
+   "dest": "p8lab-kubuntu",
+   "boot_id": "e83c52bb-eabb-4d17-a2ed-56ace791a690",
+   "snapshot": "P8LAB_KUBUNTU_BASELINE_v2",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "e83c52bb-eabb-4d17-a2ed-56ace791a690",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "p8lab-kubuntu",
+  "NODE_ADDR": "192.168.56.22",
+  "LOCALDIR": "/opt/infra-populi",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26",
+  "FIXTURE_B64:p8test-throwaway-private-sig": "M2RlYzQ1NTNjZjIyYmNjNQphMTYxZDlmYmFhYTg4YTM3Cg==",
+  "FIXTURE_B64:p8test-throwaway-rsa": "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFZRUFzZzNuR2JmSnQ5ZzZPNXQ1SGhrM0JrQS9EYnlXRTFQV09WS0NVbGhNZnlSNVdHZ2JRQ1kwCjM3Yk5INU5yeDhPbDZyTW8rVmx3Z0RBZm8vTU40TzdDdTcwbUtVUjNuTjZaM2h1VXEwYld6bDdBN1loWEFCeUdON1ZZMVMKbVZEZmhMeUFhTzB2OXg1cDBNQ0hYWTBiRlNZZENWZi9zU1Z1ckxUWWpvdkVLdDBXYVJrd3BqVTB2aHh0S1g2TEZaWWVubgozU0dzbkRGKzN1ejBUWVhOeU81TW1zUUExVlppLzk0TVl4QmwwNmU0MXBKSEcyQjVKeDVScm0zN0RaSzRjaEFscForTlpKCmFScnBVNVlJWGVFMXJWc01ZUUdIQ0RpY2FML1JwcTZueEJBcUZWN1lKdnpMOGJybTJXd0VpZlRIRERoMTBkMHVBMS9WbC8KRmxvQ2F5Z3ZhVm1KdXZPUGEwc1pIU2tLZnZpVXhTb1lXM0ZhL3B5aWkyeXI1VlMzSGZyKzQxRTEvaVc5cVJtUDN3eUNBUwpMRXM5WTBaTmpqTlBIcWFzS25IR3hyZGZGN0x0ZDhEU1paY3Jsak5NVUJudmhscXNoMUpTQzNWYTV6YWUrOURCbDAvMThPCmtiSkxIZGhIM3orM1ZjaFRicFNYZ0ZkdUtVUWJJZ0s3bytiZDBDalZBQUFGbUVOMGtLRkRkSkNoQUFBQUIzTnphQzF5YzIKRUFBQUdCQUxJTjV4bTN5YmZZT2p1YmVSNFpOd1pBUHcyOGxoTlQxamxTZ2xKWVRIOGtlVmhvRzBBbU5OKzJ6UitUYThmRApwZXF6S1BsWmNJQXdINlB6RGVEdXdydTlKaWxFZDV6ZW1kNGJsS3RHMXM1ZXdPMklWd0FjaGplMVdOVXBsUTM0UzhnR2p0CkwvY2VhZERBaDEyTkd4VW1IUWxYLzdFbGJxeTAySTZMeENyZEZta1pNS1kxTkw0Y2JTbCtpeFdXSHA1OTBockp3eGZ0N3MKOUUyRnpjanVUSnJFQU5WV1l2L2VER01RWmRPbnVOYVNSeHRnZVNjZVVhNXQrdzJTdUhJUUphV2ZqV1NXa2E2Vk9XQ0YzaApOYTFiREdFQmh3ZzRuR2kvMGFhdXA4UVFLaFZlMkNiOHkvRzY1dGxzQkluMHh3dzRkZEhkTGdOZjFaZnhaYUFtc29MMmxaCmlicnpqMnRMR1IwcENuNzRsTVVxR0Z0eFd2NmNvb3RzcStWVXR4MzYvdU5STmY0bHZha1pqOThNZ2dFaXhMUFdOR1RZNHoKVHg2bXJDcHh4c2EzWHhleTdYZkEwbVdYSzVZelRGQVo3NFphcklkU1VndDFXdWMybnZ2UXdaZFA5ZkRwR3lTeDNZUjk4Lwp0MVhJVTI2VWw0QlhiaWxFR3lJQ3U2UG0zZEFvMVFBQUFBTUJBQUVBQUFHQUM1OEExM1YwSkR4bjRwWTlhUTQrd0k1R3YwClFHTElsRExtSERwcEc0ODhSdGxNR291UDYxWXBPVHRFSk5pQ1V0ZEtjbHRHUHNHenNUaEVKeEdiT2pxMEt5RlZmd3ZFdVkKRWRQTmdvSDJDUDZpQzI3T1g0Vm52NFk3SDhzemFBMFlaSEZaekRlR3dpL21XNUtyZmRZeERtTE1NSHFkTEx0QzNTZzQwOAo3QXBGaVVNRVlVTmxra2RETUZzMWJkN1ZncHFBMjlBOE1aazMyMk1wZ2FMQW1IbjVpaTJ2Umsza0VxZGFNWjdrbWdYMXJUCjZzWVl2NG1lVGFydWRqNlRyTUxWRjZWSHhLdlF5WnpyT3pTS3Y4THp2dC9sdTBiSnF4c3dNNG56RFdjWTJEdnNzUWM2VUIKR2M2YzBoNDZUT1BUNzl3TlprUTBXamlYNlVuQ3RGSEM2ZWFFQVdzWHVCdFFBc29BakMxTVRtYlNwS2NRa25QWWYvTVhYagpTRm9oOEMrcnpBVWd6VnA4d1dFWTU3ODZwSTdBd3hCUDhSVWp2RjVxUFRKQWtiVXJJVXd4Q1pxMTE4eHZEUlhqS1VCUHZaCkZkWlJleERMRnRONmtpY0ZoaVVNRWJ5UTM4d05OY3VMb2d5L3dXdUtIUElQQ1NrR05OazNJam9aUkpodVZETDJyNUFBQUEKd0dLNHlzditRRDFWQTZDMWxGVDJwcUxPMkh0eEQ0c1dmWkl2Vjd2YzQvQ2Z0RFgxUlZTUkNYYVFSU01EMXJFK2JtTlJLYwo1Z09zMTFvY2ZyT2RVeUZTTWt3YUFQNUZuV1pPWjNXUUx5cTRXZ2RDWU15MG8wS3VYZGhHSmRtVmhxNXRRN0VHcGIzYTVNCitZMDJMNzFIWnVWQlM5N1c3OVQ2UndOd0FIbVd1SHZVaGJMcDU5SEZod2xLbU9jL2ZQcEloWXpUblhNY2tvelU0azgzaHgKRkNrNGpNYWlBTkF4aTNJK1hwR3JNajdRckpsMVJlSzRNMHMwKzB4NFN6dE9ibG93QUFBTUVBM09meFVoR1FTUkJIZFl4TgpqaVg1NHhqMG5vempIdk15YWRYWWNTNVFoZDNDUnJpUXVXc2J3QXdnbisycWFQNFBrN0x2ZStvS01MK1V6ZDN2MllzZVJiCm9hcVdmdkxlMU52YUI2eXlSM2RvNG40TmV1RENma056RDZ2dmdCNnhGbEdybldabmdLeEN1NDF1V2JONDZFczlUQ1VrbGYKTG40aTU3ZU52ZjRoWi9oUXNwdDZQQU9QQVRBV3JvcDdQakpWZmY3b09tczB2NkdJNlA3anFtRkZHSndmVWFSbEttRkFGSwpkNFVLcEZhV1NLV3ZEa0pzaWk0QWtxU1ZDbndVSlpBQUFBd1FET1Z6ZTZZdmExTVBJcmQwcGVicDRlaGgvS01oZWRBMEsvCnlCcjBMNVlHZ1hwTzVsdnhidGZhTUZnQUwwWVBrL3Fvc0tJODVLZ2JwNjNoWHlUSDRoRlhiQ3FhRGZJN2tXcTBTQ0J6Y1MKSFRwcUdMRHVJNkRuQVJteTZMWmMxdkJrVDlvSTVTSkM4S0dxOVdFVTF6bU5STUlTQWRoS09YRlhTZE0vWFEyN2FiclU2VwpLZ2taR2x4dDlZTHdYT09LWUthamJ1VTAwRkZqelFwK2labUNaRWY0a2ZxOHpFNUF2VUhPOWVobnJCbnFWVko5SDF4UW5NCittUUlybmRaK1lzdDBBQUFBZGNEaDBaWE4wTFhSb2NtOTNZWGRoZVMxT1QxUXRRUzFUUlVOU1JWUUJBZ01FQlFZPQotLS0tLUVORCBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0K",
+  "FIXTURE_B64:p8test-throwaway-rsa.pub": "c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCZ1FDeURlY1p0OG0zMkRvN20za2VHVGNHUUQ4TnZKWVRVOVk1VW9KU1dFeC9KSGxZYUJ0QUpqVGZ0czBmazJ2SHc2WHFzeWo1V1hDQU1CK2o4dzNnN3NLN3ZTWXBSSGVjM3BuZUc1U3JSdGJPWHNEdGlGY0FISVkzdFZqVktaVU4rRXZJQm83Uy8zSG1uUXdJZGRqUnNWSmgwSlYvK3hKVzZzdE5pT2k4UXEzUlpwR1RDbU5UUytIRzBwZm9zVmxoNmVmZElheWNNWDdlN1BSTmhjM0k3a3lheEFEVlZtTC8zZ3hqRUdYVHA3aldra2NiWUhrbkhsR3ViZnNOa3JoeUVDV2xuNDFrbHBHdWxUbGdoZDRUV3RXd3hoQVljSU9KeG92OUdtcnFmRUVDb1ZYdGdtL012eHV1YlpiQVNKOU1jTU9IWFIzUzREWDlXWDhXV2dKcktDOXBXWW02ODQ5clN4a2RLUXArK0pURktoaGJjVnIrbktLTGJLdmxWTGNkK3Y3alVUWCtKYjJwR1kvZkRJSUJJc1N6MWpSazJPTTA4ZXBxd3FjY2JHdDE4WHN1MTN3TkpsbHl1V00weFFHZStHV3F5SFVsSUxkVnJuTnA3NzBNR1hUL1h3NlJza3NkMkVmZlA3ZFZ5Rk51bEplQVYyNHBSQnNpQXJ1ajV0M1FLTlU9IHA4dGVzdC10aHJvd2F3YXktTk9ULUEtU0VDUkVUCg==",
+  "FIXTURE_B64:p8test-throwaway-wrapped-passphrase": "OgLD7cOD4lefVTA0YzMxOTM5OWFhNzA3Y2LnKercRt+UGWJfPQaw9+xVCYg47pOXzfS23L0ATBC+qA=="
+ },
+ "manifest_sha256": "124c8db9ee37f88a23ec3c868ea224e1e1f4a4ee3885a461e85e2b4fd1c0c49d",
+ "session": {
+  "user": "p8testuser",
+  "up": true,
+  "runs": [
+   {
+    "rc": 2,
+    "events": [
+     "\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Infra_populi::User_kde_lock_screen[p8testuser]/Exec[configure_lock_screen.sh p8testuser]/returns: executed successfully (corrective)\u001b[0m"
+    ],
+    "errors": [],
+    "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-kubuntu\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795820676'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Infra_populi::User_kde_lock_screen[p8testuser]/Exec[configure_lock_screen.sh p8testuser]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 0.38 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Exec[configure_lock_screen.sh p8testuser]\n"
+   },
+   {
+    "rc": 0,
+    "events": [],
+    "errors": [],
+    "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-kubuntu\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795820691'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.23 seconds\u001b[0m\nAGENT_RC=0\n"
+   }
+  ]
+ },
+ "node_agent": {
+  "the-user-turns-the-lock-off": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Infra_populi::User_kde_lock_screen[p8testuser]/Exec[configure_lock_screen.sh p8testuser]/returns: executed successfully (corrective)\u001b[0m"
+   ],
+   "errors": [],
+   "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-kubuntu\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795820946'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Infra_populi::User_kde_lock_screen[p8testuser]/Exec[configure_lock_screen.sh p8testuser]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 0.38 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Exec[configure_lock_screen.sh p8testuser]\n"
+  }
+ },
+ "variants": {
+  "timing": {
+   "name": "timing",
+   "node": "kubuntu",
+   "params": "timing",
+   "clean": [
+    {
+     "id": "timing-the-user-logs-in",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "0\n",
+     "stderr": "",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    },
+    {
+     "id": "timing-the-settings-reach-the-users-kscreenlockerrc",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "",
+     "stderr": "sed: can't read /home/p8testuser/.config/kscreenlockerrc: No such file or directory\n",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "_lock_screen.sh]/ensure: defined content as '{sha256}8bc3f286c0ea1b4142e10e2cf14bffa38ab099bc7e71265248d49ebe402d5e9d'\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 0.56 seconds\u001b[0m\nRUN1_EVENTS: 11 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-kubuntu\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795821218'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.21 seconds\u001b[0m\nCOVERAGE infra_populi::user_kde_lock_screen: 2 concrete resources (+1 defined-type instances)\n  Infra_populi::User_kde_lock_screen[p8testuser]\n  File[/opt/infra-populi/bin/configure_lock_screen.sh]\n  Exec[configure_lock_screen.sh p8testuser]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant timing; never a Phase 1 record)\n\nNODE_FRESH: yes (boot d5a53322 of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+   },
+   "applied": [
+    {
+     "id": "timing-the-user-logs-in",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "logged-in\n",
+     "stderr": "",
+     "mutating": true,
+     "action": {
+      "mutates": "logs p8testuser in to Plasma through an SDDM autologin drop-in and restarts sddm (the runner's session login, done by an action because a variant run has no session step)",
+      "rc": 0,
+      "stdout": "SESSION_UP\n",
+      "stderr": ""
+     }
+    },
+    {
+     "id": "timing-the-settings-reach-the-users-kscreenlockerrc",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "LockGrace=30\nTimeout=5\n",
+     "stderr": "",
+     "mutating": true,
+     "action": {
+      "mutates": "nothing (the evidence is read after the node's agent run that follows the login)",
+      "rc": 0,
+      "stdout": "",
+      "stderr": ""
+     }
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "kubuntu",
+     "dest": "p8lab-kubuntu",
+     "boot_id": "d5a53322-d8a6-4688-b731-e48b2565e5e4",
+     "snapshot": "P8LAB_KUBUNTU_BASELINE_v2",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "d5a53322-d8a6-4688-b731-e48b2565e5e4",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-kubuntu",
+    "NODE_ADDR": "192.168.56.22",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26",
+    "FIXTURE_B64:p8test-throwaway-private-sig": "M2RlYzQ1NTNjZjIyYmNjNQphMTYxZDlmYmFhYTg4YTM3Cg==",
+    "FIXTURE_B64:p8test-throwaway-rsa": "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFZRUFzZzNuR2JmSnQ5ZzZPNXQ1SGhrM0JrQS9EYnlXRTFQV09WS0NVbGhNZnlSNVdHZ2JRQ1kwCjM3Yk5INU5yeDhPbDZyTW8rVmx3Z0RBZm8vTU40TzdDdTcwbUtVUjNuTjZaM2h1VXEwYld6bDdBN1loWEFCeUdON1ZZMVMKbVZEZmhMeUFhTzB2OXg1cDBNQ0hYWTBiRlNZZENWZi9zU1Z1ckxUWWpvdkVLdDBXYVJrd3BqVTB2aHh0S1g2TEZaWWVubgozU0dzbkRGKzN1ejBUWVhOeU81TW1zUUExVlppLzk0TVl4QmwwNmU0MXBKSEcyQjVKeDVScm0zN0RaSzRjaEFscForTlpKCmFScnBVNVlJWGVFMXJWc01ZUUdIQ0RpY2FML1JwcTZueEJBcUZWN1lKdnpMOGJybTJXd0VpZlRIRERoMTBkMHVBMS9WbC8KRmxvQ2F5Z3ZhVm1KdXZPUGEwc1pIU2tLZnZpVXhTb1lXM0ZhL3B5aWkyeXI1VlMzSGZyKzQxRTEvaVc5cVJtUDN3eUNBUwpMRXM5WTBaTmpqTlBIcWFzS25IR3hyZGZGN0x0ZDhEU1paY3Jsak5NVUJudmhscXNoMUpTQzNWYTV6YWUrOURCbDAvMThPCmtiSkxIZGhIM3orM1ZjaFRicFNYZ0ZkdUtVUWJJZ0s3bytiZDBDalZBQUFGbUVOMGtLRkRkSkNoQUFBQUIzTnphQzF5YzIKRUFBQUdCQUxJTjV4bTN5YmZZT2p1YmVSNFpOd1pBUHcyOGxoTlQxamxTZ2xKWVRIOGtlVmhvRzBBbU5OKzJ6UitUYThmRApwZXF6S1BsWmNJQXdINlB6RGVEdXdydTlKaWxFZDV6ZW1kNGJsS3RHMXM1ZXdPMklWd0FjaGplMVdOVXBsUTM0UzhnR2p0CkwvY2VhZERBaDEyTkd4VW1IUWxYLzdFbGJxeTAySTZMeENyZEZta1pNS1kxTkw0Y2JTbCtpeFdXSHA1OTBockp3eGZ0N3MKOUUyRnpjanVUSnJFQU5WV1l2L2VER01RWmRPbnVOYVNSeHRnZVNjZVVhNXQrdzJTdUhJUUphV2ZqV1NXa2E2Vk9XQ0YzaApOYTFiREdFQmh3ZzRuR2kvMGFhdXA4UVFLaFZlMkNiOHkvRzY1dGxzQkluMHh3dzRkZEhkTGdOZjFaZnhaYUFtc29MMmxaCmlicnpqMnRMR1IwcENuNzRsTVVxR0Z0eFd2NmNvb3RzcStWVXR4MzYvdU5STmY0bHZha1pqOThNZ2dFaXhMUFdOR1RZNHoKVHg2bXJDcHh4c2EzWHhleTdYZkEwbVdYSzVZelRGQVo3NFphcklkU1VndDFXdWMybnZ2UXdaZFA5ZkRwR3lTeDNZUjk4Lwp0MVhJVTI2VWw0QlhiaWxFR3lJQ3U2UG0zZEFvMVFBQUFBTUJBQUVBQUFHQUM1OEExM1YwSkR4bjRwWTlhUTQrd0k1R3YwClFHTElsRExtSERwcEc0ODhSdGxNR291UDYxWXBPVHRFSk5pQ1V0ZEtjbHRHUHNHenNUaEVKeEdiT2pxMEt5RlZmd3ZFdVkKRWRQTmdvSDJDUDZpQzI3T1g0Vm52NFk3SDhzemFBMFlaSEZaekRlR3dpL21XNUtyZmRZeERtTE1NSHFkTEx0QzNTZzQwOAo3QXBGaVVNRVlVTmxra2RETUZzMWJkN1ZncHFBMjlBOE1aazMyMk1wZ2FMQW1IbjVpaTJ2Umsza0VxZGFNWjdrbWdYMXJUCjZzWVl2NG1lVGFydWRqNlRyTUxWRjZWSHhLdlF5WnpyT3pTS3Y4THp2dC9sdTBiSnF4c3dNNG56RFdjWTJEdnNzUWM2VUIKR2M2YzBoNDZUT1BUNzl3TlprUTBXamlYNlVuQ3RGSEM2ZWFFQVdzWHVCdFFBc29BakMxTVRtYlNwS2NRa25QWWYvTVhYagpTRm9oOEMrcnpBVWd6VnA4d1dFWTU3ODZwSTdBd3hCUDhSVWp2RjVxUFRKQWtiVXJJVXd4Q1pxMTE4eHZEUlhqS1VCUHZaCkZkWlJleERMRnRONmtpY0ZoaVVNRWJ5UTM4d05OY3VMb2d5L3dXdUtIUElQQ1NrR05OazNJam9aUkpodVZETDJyNUFBQUEKd0dLNHlzditRRDFWQTZDMWxGVDJwcUxPMkh0eEQ0c1dmWkl2Vjd2YzQvQ2Z0RFgxUlZTUkNYYVFSU01EMXJFK2JtTlJLYwo1Z09zMTFvY2ZyT2RVeUZTTWt3YUFQNUZuV1pPWjNXUUx5cTRXZ2RDWU15MG8wS3VYZGhHSmRtVmhxNXRRN0VHcGIzYTVNCitZMDJMNzFIWnVWQlM5N1c3OVQ2UndOd0FIbVd1SHZVaGJMcDU5SEZod2xLbU9jL2ZQcEloWXpUblhNY2tvelU0azgzaHgKRkNrNGpNYWlBTkF4aTNJK1hwR3JNajdRckpsMVJlSzRNMHMwKzB4NFN6dE9ibG93QUFBTUVBM09meFVoR1FTUkJIZFl4TgpqaVg1NHhqMG5vempIdk15YWRYWWNTNVFoZDNDUnJpUXVXc2J3QXdnbisycWFQNFBrN0x2ZStvS01MK1V6ZDN2MllzZVJiCm9hcVdmdkxlMU52YUI2eXlSM2RvNG40TmV1RENma056RDZ2dmdCNnhGbEdybldabmdLeEN1NDF1V2JONDZFczlUQ1VrbGYKTG40aTU3ZU52ZjRoWi9oUXNwdDZQQU9QQVRBV3JvcDdQakpWZmY3b09tczB2NkdJNlA3anFtRkZHSndmVWFSbEttRkFGSwpkNFVLcEZhV1NLV3ZEa0pzaWk0QWtxU1ZDbndVSlpBQUFBd1FET1Z6ZTZZdmExTVBJcmQwcGVicDRlaGgvS01oZWRBMEsvCnlCcjBMNVlHZ1hwTzVsdnhidGZhTUZnQUwwWVBrL3Fvc0tJODVLZ2JwNjNoWHlUSDRoRlhiQ3FhRGZJN2tXcTBTQ0J6Y1MKSFRwcUdMRHVJNkRuQVJteTZMWmMxdkJrVDlvSTVTSkM4S0dxOVdFVTF6bU5STUlTQWRoS09YRlhTZE0vWFEyN2FiclU2VwpLZ2taR2x4dDlZTHdYT09LWUthamJ1VTAwRkZqelFwK2labUNaRWY0a2ZxOHpFNUF2VUhPOWVobnJCbnFWVko5SDF4UW5NCittUUlybmRaK1lzdDBBQUFBZGNEaDBaWE4wTFhSb2NtOTNZWGRoZVMxT1QxUXRRUzFUUlVOU1JWUUJBZ01FQlFZPQotLS0tLUVORCBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0K",
+    "FIXTURE_B64:p8test-throwaway-rsa.pub": "c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCZ1FDeURlY1p0OG0zMkRvN20za2VHVGNHUUQ4TnZKWVRVOVk1VW9KU1dFeC9KSGxZYUJ0QUpqVGZ0czBmazJ2SHc2WHFzeWo1V1hDQU1CK2o4dzNnN3NLN3ZTWXBSSGVjM3BuZUc1U3JSdGJPWHNEdGlGY0FISVkzdFZqVktaVU4rRXZJQm83Uy8zSG1uUXdJZGRqUnNWSmgwSlYvK3hKVzZzdE5pT2k4UXEzUlpwR1RDbU5UUytIRzBwZm9zVmxoNmVmZElheWNNWDdlN1BSTmhjM0k3a3lheEFEVlZtTC8zZ3hqRUdYVHA3aldra2NiWUhrbkhsR3ViZnNOa3JoeUVDV2xuNDFrbHBHdWxUbGdoZDRUV3RXd3hoQVljSU9KeG92OUdtcnFmRUVDb1ZYdGdtL012eHV1YlpiQVNKOU1jTU9IWFIzUzREWDlXWDhXV2dKcktDOXBXWW02ODQ5clN4a2RLUXArK0pURktoaGJjVnIrbktLTGJLdmxWTGNkK3Y3alVUWCtKYjJwR1kvZkRJSUJJc1N6MWpSazJPTTA4ZXBxd3FjY2JHdDE4WHN1MTN3TkpsbHl1V00weFFHZStHV3F5SFVsSUxkVnJuTnA3NzBNR1hUL1h3NlJza3NkMkVmZlA3ZFZ5Rk51bEplQVYyNHBSQnNpQXJ1ajV0M1FLTlU9IHA4dGVzdC10aHJvd2F3YXktTk9ULUEtU0VDUkVUCg==",
+    "FIXTURE_B64:p8test-throwaway-wrapped-passphrase": "OgLD7cOD4lefVTA0YzMxOTM5OWFhNzA3Y2LnKercRt+UGWJfPQaw9+xVCYg47pOXzfS23L0ATBC+qA=="
+   },
+   "manifest_sha256": "77c937d77013fccd89e56ef7042fbff64f036f8c85c574bcb75e20304dcc4398",
+   "node_agent": {
+    "timing-the-user-logs-in": {
+     "rc": 2,
+     "events": [
+      "\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Infra_populi::User_kde_lock_screen[p8testuser]/Exec[configure_lock_screen.sh p8testuser]/returns: executed successfully (corrective)\u001b[0m"
+     ],
+     "errors": [],
+     "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-kubuntu\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795821248'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8lab-kubuntu]/Infra_populi::User_kde_lock_screen[p8testuser]/Exec[configure_lock_screen.sh p8testuser]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 0.33 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Exec[configure_lock_screen.sh p8testuser]\n"
+    }
+   }
+  }
+ },
+ "duration_s": 931.6
+}

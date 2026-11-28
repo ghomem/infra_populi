@@ -53,6 +53,7 @@ def clone(tmp_path, lab):
     for src in {*TOOLS.glob("*.py"), *TOOLS.glob("*.sh"), REPO / ".codex_state/gen_migration_order.py",
                 *(REPO / f for f in changed if (REPO / f).is_file())}:
         dst = work / src.relative_to(REPO)
+        dst.parent.mkdir(parents=True, exist_ok=True)  # a changed file may sit in a directory new since HEAD
         dst.write_bytes(src.read_bytes())
         dst.chmod(src.stat().st_mode)
     # the sample class as a pending class: its baseline manifest and a plain tracker line, whatever the real repo's

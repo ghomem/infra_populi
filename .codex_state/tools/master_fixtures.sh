@@ -158,6 +158,10 @@ __MODULE__::openvpn_server::local: '203.0.113.50'
 # ssh_secure appends <certname>::ssh::othergroups to AllowGroups (issue 20); the lab node gets one fixture group so the
 # concatenation is exercised (HQ batch-12 backfill, review 20261119T020808Z).
 puppet8node::ssh::othergroups: 'p8testgroup'
+# docker_container's registry variant (HQ 2026-11-27 item 2) logs in to a private registry the peer (ubuntu2,
+# p8lab-node2) serves over plain HTTP on 5000; the daemon accepts it only as an insecure registry. Only
+# docker_container declares the docker class in the lab.
+docker::extra_parameters: ['--insecure-registry=192.168.56.24:5000']
 YAML
 )"
 want="${want//__MODULE__/$2}"  # the module's name (automatic parameter lookup keys follow it)

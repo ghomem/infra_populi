@@ -9,3 +9,10 @@
 # (2048-bit DH group at /etc/nginx/dhparams.pem). Probes talk to the node's own nginx on 127.0.0.1 only.
 # 2026-11-20 (backfill batch 6): outcomes table (HQ 2026-11-18 ruling 2); checks unchanged.
 ```
+
+2026-11-27 (HQ 2026-11-27 item 1, the prod variant's first trial, `.codex_state/checks/public/harness/nginx_static_domain/20261127T232602Z.json`):
+authoring correction. prod-serves-the-letsencrypt-shaped-files failed on its expectation's whitespace only: `nginx -T`
+prints `ssl_certificate           /etc/ssl/certs/p8test.nginx.bundle.pem;` (column-aligned) and the probe kept that
+spacing while the expectation has one space. The behaviour matched the baseline (the bundle and key are the
+Let's Encrypt-shaped ones, and the served certificate is the bundle's). The probe now collapses the spacing
+(`sed -E 's/^\s*//; s/\s+/ /'`); the expectation is unchanged.

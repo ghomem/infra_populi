@@ -1,0 +1,484 @@
+{
+ "class": "openvpn_server",
+ "role": "command",
+ "at": "20261127T224459Z",
+ "set_sha256": "254c8de9cef9fca610a1265e4ac12f0fd4b603713ea74ab01127533c49c3a8b3",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "server-listens-on-the-bound-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "server-config-rendered",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/openvpn/server/infra_populi.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "server-unit-enabled-at-boot",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "not-found\ninactive\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "bridge-holds-the-lan-address-and-tap0",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Device \"br0\" does not exist.\nError: argument \"br0\" is wrong: Device does not exist\n\n",
+   "ok": true
+  },
+  {
+   "id": "client-isolation-on-the-bridge",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "sysctl: cannot stat /proc/sys/net/ipv4/conf/br0/proxy_arp_pvlan: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "networking-brings-up-the-bridge-at-boot",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "ifupdown unknown ok not-installed\nnot-found\n0\n",
+   "stderr": "grep: /etc/network/interfaces: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "vpn-account-on-the-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "client-connects-gets-a-pool-address-and-reaches-the-server-side",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /run/p8vpn/client.log: No such file or directory\ngrep: /run/p8vpn/client.log: No such file or directory\nDevice \"\" does not exist.\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "wrong-password-rejected",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /run/p8vpn-bad/client.log: No such file or directory\ngrep: /run/p8vpn-bad/client.log: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-second-vpn-account",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-second-client-reaches-the-server-side-but-not-the-first",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "first-unreachable\n",
+   "stderr": "grep: /run/p8vpn2/client.log: No such file or directory\nDevice \"\" does not exist.\nCannot open network namespace \"p8vpn2\": No such file or directory\nCannot open network namespace \"p8vpn2\": No such file or directory\nCannot open network namespace \"p8vpn2\": No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-data-channel-is-compressed-both-ways",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-client-on-the-class-cipher-connects",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /run/p8vpncbc/client.log: No such file or directory\ngrep: /run/p8vpncbc/client.log: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "n/keys/server.crt]\n  File[/etc/openvpn/keys/server.key]\n  Package[openvpn]\n  Package[easy-rsa]\n  Package[openvpn-auth-ldap]\n  File[/etc/openvpn]\n  File[/etc/openvpn/keys]\n  File[/var/log/openvpn]\n  Concat[/etc/default/openvpn]\n  Concat::Fragment[openvpn.default.header]\n  Openvpn::Server[infra_populi]\n  File[/usr/lib/openvpn]\n  File[/usr/lib/openvpn/openvpn-plugin-auth-pam.so]\n  File[/etc/openvpn/openvpn-up.sh]\n  Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]\n  Concat_file[/etc/default/openvpn]\n  Concat_fragment[/etc/default/openvpn_header]\n  Concat_fragment[openvpn.default.header]\n  File[/etc/openvpn/server/infra_populi]\n  File[/etc/openvpn/server/infra_populi/scripts]\n  File[/etc/openvpn/server/infra_populi/auth]\n  File[/etc/openvpn/server/infra_populi/client-configs]\n  File[/etc/openvpn/server/infra_populi/download-configs]\n  File[/etc/openvpn/server/infra_populi.conf]\n  File[/etc/openvpn/server/infra_populi/keys/pre-shared.secret]\n  Service[openvpn-server@infra_populi]\n  File[/etc/sysctl.d]\n  File[/etc/sysctl.d/99-sysctl.conf]\n  File[/etc/sysctl.d/net.ipv4.conf.br0.proxy_arp_pvlan.conf]\n  Exec[sysctl-net.ipv4.conf.br0.proxy_arp_pvlan]\n  Exec[update-sysctl.conf-net.ipv4.conf.br0.proxy_arp_pvlan]\n  Exec[enforce-sysctl-value-net.ipv4.conf.br0.proxy_arp_pvlan]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP openvpn_server 9a444ef22366\n\nNODE_FRESH: yes (boot 199d0d19 of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "server-listens-on-the-bound-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "203.0.113.50:1194\n",
+   "stderr": ""
+  },
+  {
+   "id": "server-config-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "dev tap0\nserver-bridge 192.0.2.1 255.255.255.0 192.0.2.100 192.0.2.150\nplugin /usr/lib/openvpn/openvpn-plugin-auth-pam.so \"login\"\nreneg-sec 3600\nverify-client-cert none\n",
+   "stderr": ""
+  },
+  {
+   "id": "server-unit-enabled-at-boot",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "enabled\nactive\n",
+   "stderr": ""
+  },
+  {
+   "id": "bridge-holds-the-lan-address-and-tap0",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "192.0.2.1/24\ntap0\n",
+   "stderr": ""
+  },
+  {
+   "id": "client-isolation-on-the-bridge",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\n",
+   "stderr": ""
+  },
+  {
+   "id": "networking-brings-up-the-bridge-at-boot",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ifupdown install ok installed\nenabled\n1\niface br0 inet static\naddress 192.0.2.1\nbridge_ports lo:0\n",
+   "stderr": ""
+  },
+  {
+   "id": "vpn-account-on-the-server",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8vpnuser\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the local account p8vpnuser on the server node with the fake password p8test-vpn-not-a-secret",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "client-connects-gets-a-pool-address-and-reaches-the-server-side",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nredirect-gateway bypass-dhcp bypass-dns\ndhcp-option DNS 8.8.8.8\n192.0.2.100/24\nreaches-server-side\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: installs the openvpn package, adds the host route 203.0.113.50 via the node's host-only address, writes a client config and credentials under /run/p8vpn and starts an openvpn client daemon",
+    "rc": 0,
+    "stdout": "2026-11-27 22:48:02 WARNING: Compression for receiving enabled. Compression has been used in the past to break encryption. Sent packets are not compressed unless \"allow-compression yes\" is also set.\n2026-11-27 22:48:02 WARNING: Compression for sending and receiving enabled. Compression has been used in the past to break encryption. Allowing compression allows attacks that break encryption. Using \"--allow-compression yes\" is strongly discouraged for common usage. See --compress in the manual page for more information \n",
+    "stderr": ",\n\tLC_MEASUREMENT = \"pt_PT.UTF-8\",\n\tLC_IDENTIFICATION = \"pt_PT.UTF-8\",\n\tLC_NUMERIC = \"pt_PT.UTF-8\",\n\tLC_PAPER = \"pt_PT.UTF-8\",\n\tLANG = \"en_US.UTF-8\"\n    are supported and installed on your system.\nperl: warning: Falling back to a fallback locale (\"en_US.UTF-8\").\n\nRunning kernel seems to be up-to-date.\n\nNo services need to be restarted.\n\nNo containers need to be restarted.\n\nNo user sessions are running outdated binaries.\n\nNo VM guests are running outdated hypervisor (qemu) binaries on this host.\n"
+   }
+  },
+  {
+   "id": "wrong-password-rejected",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n0\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: writes a second client config with a wrong password under /run/p8vpn-bad and starts a second openvpn client daemon (it stops itself on AUTH_FAILED)",
+    "rc": 0,
+    "stdout": "2026-11-27 22:48:04 WARNING: Compression for receiving enabled. Compression has been used in the past to break encryption. Sent packets are not compressed unless \"allow-compression yes\" is also set.\n2026-11-27 22:48:04 WARNING: Compression for sending and receiving enabled. Compression has been used in the past to break encryption. Allowing compression allows attacks that break encryption. Using \"--allow-compression yes\" is strongly discouraged for common usage. See --compress in the manual page for more information \n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-second-vpn-account",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8vpnuser2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates the local account p8vpnuser2 on the server node with the fake password p8test-vpn2-not-a-secret",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-second-client-reaches-the-server-side-but-not-the-first",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\ntwo-pool-addresses\nsecond-reaches-server-side\nfirst-unreachable\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: creates network namespace p8vpn2 joined to the peer by veth p8vpn2a (10.253.0.1/30) / p8vpn2b (10.253.0.2/30, default route via 10.253.0.1), turns on IPv4 forwarding and masquerades 10.253.0.0/30 in the peer's nat POSTROUTING, writes a client config and the p8vpnuser2 credentials under /run/p8vpn2 and starts a second openvpn client daemon inside the namespace",
+    "rc": 0,
+    "stdout": "2026-11-27 22:48:09 WARNING: Compression for receiving enabled. Compression has been used in the past to break encryption. Sent packets are not compressed unless \"allow-compression yes\" is also set.\n2026-11-27 22:48:09 WARNING: Compression for sending and receiving enabled. Compression has been used in the past to break encryption. Allowing compression allows attacks that break encryption. Using \"--allow-compression yes\" is strongly discouraged for common usage. See --compress in the manual page for more information \n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-data-channel-is-compressed-both-ways",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "1\nserver sends: uncompressed (1237 bytes per packet)\nserver receives: compressed (140 bytes per packet)\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "on the node: inserts two counting rules (no target) for UDP 1194, `-I OUTPUT -p udp --sport 1194 -m comment --comment p8test-vpn-out` and `-I INPUT -p udp --dport 1194 -m comment --comment p8test-vpn-in`; reads the first client's pool address from the server's PUSH_REPLY to p8vpnuser in its journal and sends it 20 pings with a 1200-byte zero payload; keeps the address and ping summary under /run/p8test-vpncomp",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-client-on-the-class-cipher-connects",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\nData Channel: cipher 'AES-256-CBC'\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: stops the second client (its pid in /run/p8vpn2/pid), writes a client config that offers only AES-256-CBC (data-ciphers AES-256-CBC) with the p8vpnuser2 credentials under /run/p8vpncbc and starts it inside namespace p8vpn2",
+    "rc": 0,
+    "stdout": "2026-11-27 22:48:20 WARNING: Compression for receiving enabled. Compression has been used in the past to break encryption. Sent packets are not compressed unless \"allow-compression yes\" is also set.\n2026-11-27 22:48:20 WARNING: Compression for sending and receiving enabled. Compression has been used in the past to break encryption. Allowing compression allows attacks that break encryption. Using \"--allow-compression yes\" is strongly discouraged for common usage. See --compress in the manual page for more information \n",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [
+  "the-data-channel-is-compressed-both-ways"
+ ],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "199d0d19-c202-49c4-8875-9afeb8cf42a2",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "fallback http://mirrors.edge.kernel.org/ubuntu/",
+   "boot_id_at_end": "199d0d19-c202-49c4-8875-9afeb8cf42a2",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "5d206524-4edd-45c0-9534-5830b6d417c7",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "5d206524-4edd-45c0-9534-5830b6d417c7",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/infra-populi",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "p8lab-ubuntu2",
+  "PEER_ADDR": "192.168.56.24",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26",
+  "FIXTURE_B64:p8test-throwaway-private-sig": "M2RlYzQ1NTNjZjIyYmNjNQphMTYxZDlmYmFhYTg4YTM3Cg==",
+  "FIXTURE_B64:p8test-throwaway-rsa": "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFZRUFzZzNuR2JmSnQ5ZzZPNXQ1SGhrM0JrQS9EYnlXRTFQV09WS0NVbGhNZnlSNVdHZ2JRQ1kwCjM3Yk5INU5yeDhPbDZyTW8rVmx3Z0RBZm8vTU40TzdDdTcwbUtVUjNuTjZaM2h1VXEwYld6bDdBN1loWEFCeUdON1ZZMVMKbVZEZmhMeUFhTzB2OXg1cDBNQ0hYWTBiRlNZZENWZi9zU1Z1ckxUWWpvdkVLdDBXYVJrd3BqVTB2aHh0S1g2TEZaWWVubgozU0dzbkRGKzN1ejBUWVhOeU81TW1zUUExVlppLzk0TVl4QmwwNmU0MXBKSEcyQjVKeDVScm0zN0RaSzRjaEFscForTlpKCmFScnBVNVlJWGVFMXJWc01ZUUdIQ0RpY2FML1JwcTZueEJBcUZWN1lKdnpMOGJybTJXd0VpZlRIRERoMTBkMHVBMS9WbC8KRmxvQ2F5Z3ZhVm1KdXZPUGEwc1pIU2tLZnZpVXhTb1lXM0ZhL3B5aWkyeXI1VlMzSGZyKzQxRTEvaVc5cVJtUDN3eUNBUwpMRXM5WTBaTmpqTlBIcWFzS25IR3hyZGZGN0x0ZDhEU1paY3Jsak5NVUJudmhscXNoMUpTQzNWYTV6YWUrOURCbDAvMThPCmtiSkxIZGhIM3orM1ZjaFRicFNYZ0ZkdUtVUWJJZ0s3bytiZDBDalZBQUFGbUVOMGtLRkRkSkNoQUFBQUIzTnphQzF5YzIKRUFBQUdCQUxJTjV4bTN5YmZZT2p1YmVSNFpOd1pBUHcyOGxoTlQxamxTZ2xKWVRIOGtlVmhvRzBBbU5OKzJ6UitUYThmRApwZXF6S1BsWmNJQXdINlB6RGVEdXdydTlKaWxFZDV6ZW1kNGJsS3RHMXM1ZXdPMklWd0FjaGplMVdOVXBsUTM0UzhnR2p0CkwvY2VhZERBaDEyTkd4VW1IUWxYLzdFbGJxeTAySTZMeENyZEZta1pNS1kxTkw0Y2JTbCtpeFdXSHA1OTBockp3eGZ0N3MKOUUyRnpjanVUSnJFQU5WV1l2L2VER01RWmRPbnVOYVNSeHRnZVNjZVVhNXQrdzJTdUhJUUphV2ZqV1NXa2E2Vk9XQ0YzaApOYTFiREdFQmh3ZzRuR2kvMGFhdXA4UVFLaFZlMkNiOHkvRzY1dGxzQkluMHh3dzRkZEhkTGdOZjFaZnhaYUFtc29MMmxaCmlicnpqMnRMR1IwcENuNzRsTVVxR0Z0eFd2NmNvb3RzcStWVXR4MzYvdU5STmY0bHZha1pqOThNZ2dFaXhMUFdOR1RZNHoKVHg2bXJDcHh4c2EzWHhleTdYZkEwbVdYSzVZelRGQVo3NFphcklkU1VndDFXdWMybnZ2UXdaZFA5ZkRwR3lTeDNZUjk4Lwp0MVhJVTI2VWw0QlhiaWxFR3lJQ3U2UG0zZEFvMVFBQUFBTUJBQUVBQUFHQUM1OEExM1YwSkR4bjRwWTlhUTQrd0k1R3YwClFHTElsRExtSERwcEc0ODhSdGxNR291UDYxWXBPVHRFSk5pQ1V0ZEtjbHRHUHNHenNUaEVKeEdiT2pxMEt5RlZmd3ZFdVkKRWRQTmdvSDJDUDZpQzI3T1g0Vm52NFk3SDhzemFBMFlaSEZaekRlR3dpL21XNUtyZmRZeERtTE1NSHFkTEx0QzNTZzQwOAo3QXBGaVVNRVlVTmxra2RETUZzMWJkN1ZncHFBMjlBOE1aazMyMk1wZ2FMQW1IbjVpaTJ2Umsza0VxZGFNWjdrbWdYMXJUCjZzWVl2NG1lVGFydWRqNlRyTUxWRjZWSHhLdlF5WnpyT3pTS3Y4THp2dC9sdTBiSnF4c3dNNG56RFdjWTJEdnNzUWM2VUIKR2M2YzBoNDZUT1BUNzl3TlprUTBXamlYNlVuQ3RGSEM2ZWFFQVdzWHVCdFFBc29BakMxTVRtYlNwS2NRa25QWWYvTVhYagpTRm9oOEMrcnpBVWd6VnA4d1dFWTU3ODZwSTdBd3hCUDhSVWp2RjVxUFRKQWtiVXJJVXd4Q1pxMTE4eHZEUlhqS1VCUHZaCkZkWlJleERMRnRONmtpY0ZoaVVNRWJ5UTM4d05OY3VMb2d5L3dXdUtIUElQQ1NrR05OazNJam9aUkpodVZETDJyNUFBQUEKd0dLNHlzditRRDFWQTZDMWxGVDJwcUxPMkh0eEQ0c1dmWkl2Vjd2YzQvQ2Z0RFgxUlZTUkNYYVFSU01EMXJFK2JtTlJLYwo1Z09zMTFvY2ZyT2RVeUZTTWt3YUFQNUZuV1pPWjNXUUx5cTRXZ2RDWU15MG8wS3VYZGhHSmRtVmhxNXRRN0VHcGIzYTVNCitZMDJMNzFIWnVWQlM5N1c3OVQ2UndOd0FIbVd1SHZVaGJMcDU5SEZod2xLbU9jL2ZQcEloWXpUblhNY2tvelU0azgzaHgKRkNrNGpNYWlBTkF4aTNJK1hwR3JNajdRckpsMVJlSzRNMHMwKzB4NFN6dE9ibG93QUFBTUVBM09meFVoR1FTUkJIZFl4TgpqaVg1NHhqMG5vempIdk15YWRYWWNTNVFoZDNDUnJpUXVXc2J3QXdnbisycWFQNFBrN0x2ZStvS01MK1V6ZDN2MllzZVJiCm9hcVdmdkxlMU52YUI2eXlSM2RvNG40TmV1RENma056RDZ2dmdCNnhGbEdybldabmdLeEN1NDF1V2JONDZFczlUQ1VrbGYKTG40aTU3ZU52ZjRoWi9oUXNwdDZQQU9QQVRBV3JvcDdQakpWZmY3b09tczB2NkdJNlA3anFtRkZHSndmVWFSbEttRkFGSwpkNFVLcEZhV1NLV3ZEa0pzaWk0QWtxU1ZDbndVSlpBQUFBd1FET1Z6ZTZZdmExTVBJcmQwcGVicDRlaGgvS01oZWRBMEsvCnlCcjBMNVlHZ1hwTzVsdnhidGZhTUZnQUwwWVBrL3Fvc0tJODVLZ2JwNjNoWHlUSDRoRlhiQ3FhRGZJN2tXcTBTQ0J6Y1MKSFRwcUdMRHVJNkRuQVJteTZMWmMxdkJrVDlvSTVTSkM4S0dxOVdFVTF6bU5STUlTQWRoS09YRlhTZE0vWFEyN2FiclU2VwpLZ2taR2x4dDlZTHdYT09LWUthamJ1VTAwRkZqelFwK2labUNaRWY0a2ZxOHpFNUF2VUhPOWVobnJCbnFWVko5SDF4UW5NCittUUlybmRaK1lzdDBBQUFBZGNEaDBaWE4wTFhSb2NtOTNZWGRoZVMxT1QxUXRRUzFUUlVOU1JWUUJBZ01FQlFZPQotLS0tLUVORCBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0K",
+  "FIXTURE_B64:p8test-throwaway-rsa.pub": "c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCZ1FDeURlY1p0OG0zMkRvN20za2VHVGNHUUQ4TnZKWVRVOVk1VW9KU1dFeC9KSGxZYUJ0QUpqVGZ0czBmazJ2SHc2WHFzeWo1V1hDQU1CK2o4dzNnN3NLN3ZTWXBSSGVjM3BuZUc1U3JSdGJPWHNEdGlGY0FISVkzdFZqVktaVU4rRXZJQm83Uy8zSG1uUXdJZGRqUnNWSmgwSlYvK3hKVzZzdE5pT2k4UXEzUlpwR1RDbU5UUytIRzBwZm9zVmxoNmVmZElheWNNWDdlN1BSTmhjM0k3a3lheEFEVlZtTC8zZ3hqRUdYVHA3aldra2NiWUhrbkhsR3ViZnNOa3JoeUVDV2xuNDFrbHBHdWxUbGdoZDRUV3RXd3hoQVljSU9KeG92OUdtcnFmRUVDb1ZYdGdtL012eHV1YlpiQVNKOU1jTU9IWFIzUzREWDlXWDhXV2dKcktDOXBXWW02ODQ5clN4a2RLUXArK0pURktoaGJjVnIrbktLTGJLdmxWTGNkK3Y3alVUWCtKYjJwR1kvZkRJSUJJc1N6MWpSazJPTTA4ZXBxd3FjY2JHdDE4WHN1MTN3TkpsbHl1V00weFFHZStHV3F5SFVsSUxkVnJuTnA3NzBNR1hUL1h3NlJza3NkMkVmZlA3ZFZ5Rk51bEplQVYyNHBSQnNpQXJ1ajV0M1FLTlU9IHA4dGVzdC10aHJvd2F3YXktTk9ULUEtU0VDUkVUCg==",
+  "FIXTURE_B64:p8test-throwaway-wrapped-passphrase": "OgLD7cOD4lefVTA0YzMxOTM5OWFhNzA3Y2LnKercRt+UGWJfPQaw9+xVCYg47pOXzfS23L0ATBC+qA=="
+ },
+ "manifest_sha256": "3b7ca9855c09bfbf19745635a9769f7f8f76f8b86b7a309e1fc744835336bc26",
+ "variants": {
+  "nocomp": {
+   "name": "nocomp",
+   "node": "ubuntu",
+   "params": "nocomp",
+   "clean": [
+    {
+     "id": "nocomp-the-server-carries-no-compression",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "inactive\n",
+     "stderr": "",
+     "ok": true
+    },
+    {
+     "id": "nocomp-vpn-account-on-the-server",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "",
+     "stderr": "",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    },
+    {
+     "id": "nocomp-a-client-without-compression-connects",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "",
+     "stderr": "grep: /run/p8vpn/client.log: No such file or directory\ngrep: /run/p8vpn/client.log: No such file or directory\nDevice \"\" does not exist.\n",
+     "host": "peer",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    },
+    {
+     "id": "nocomp-the-data-channel-is-uncompressed-both-ways",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "0\n",
+     "stderr": "",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 1,
+    "green": false,
+    "node_fresh": true,
+    "tail": "i::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/File[/etc/sysctl.d/net.ipv4.conf.br0.proxy_arp_pvlan.conf]/ensure: defined content as '{sha256}49102ebf05c8ba20db17efe2e390acf6609540f68349e56e8b6fe67f92b81122'\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Infra_populi::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/File[/etc/sysctl.d/net.ipv4.conf.br0.proxy_arp_pvlan.conf]: Scheduling refresh of Exec[sysctl-net.ipv4.conf.br0.proxy_arp_pvlan]\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Infra_populi::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/File[/etc/sysctl.d/net.ipv4.conf.br0.proxy_arp_pvlan.conf]: Scheduling refresh of Exec[update-sysctl.conf-net.ipv4.conf.br0.proxy_arp_pvlan]\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/Exec[sysctl-net.ipv4.conf.br0.proxy_arp_pvlan]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Openvpn_server/Sysctl[net.ipv4.conf.br0.proxy_arp_pvlan]/Exec[update-sysctl.conf-net.ipv4.conf.br0.proxy_arp_pvlan]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[0;32mInfo: Class[Infra_populi::Openvpn_server]: Unscheduling all events on Class[Infra_populi::Openvpn_server]\u001b[0m\n\u001b[0;32mInfo: Stage[main]: Unscheduling all events on Stage[main]\u001b[0m\n\u001b[mNotice: Applied catalog in 56.64 seconds\u001b[0m\n\nNODE_FRESH: yes (boot 39b3d31e of the latest revert, no agent run since)\nERROR: Agent run 1 failed (exit 6).\n/home/salatiel/.local/bin/infra_populi_tools/test_class.sh failed with exit status 1.\n\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "39b3d31e-3bb4-45fb-806f-b3fd4b05e0ec",
+     "snapshot": "P8NODE_BASELINE_GREEN_v6",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "39b3d31e-3bb4-45fb-806f-b3fd4b05e0ec",
+     "fresh": true
+    },
+    "peer": {
+     "kind": "ubuntu2",
+     "dest": "p8lab-ubuntu2",
+     "boot_id": "92123509-0cb8-42ad-91b7-17980de2e30a",
+     "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "92123509-0cb8-42ad-91b7-17980de2e30a",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "p8lab-ubuntu2",
+    "PEER_ADDR": "192.168.56.24",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26",
+    "FIXTURE_B64:p8test-throwaway-private-sig": "M2RlYzQ1NTNjZjIyYmNjNQphMTYxZDlmYmFhYTg4YTM3Cg==",
+    "FIXTURE_B64:p8test-throwaway-rsa": "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFZRUFzZzNuR2JmSnQ5ZzZPNXQ1SGhrM0JrQS9EYnlXRTFQV09WS0NVbGhNZnlSNVdHZ2JRQ1kwCjM3Yk5INU5yeDhPbDZyTW8rVmx3Z0RBZm8vTU40TzdDdTcwbUtVUjNuTjZaM2h1VXEwYld6bDdBN1loWEFCeUdON1ZZMVMKbVZEZmhMeUFhTzB2OXg1cDBNQ0hYWTBiRlNZZENWZi9zU1Z1ckxUWWpvdkVLdDBXYVJrd3BqVTB2aHh0S1g2TEZaWWVubgozU0dzbkRGKzN1ejBUWVhOeU81TW1zUUExVlppLzk0TVl4QmwwNmU0MXBKSEcyQjVKeDVScm0zN0RaSzRjaEFscForTlpKCmFScnBVNVlJWGVFMXJWc01ZUUdIQ0RpY2FML1JwcTZueEJBcUZWN1lKdnpMOGJybTJXd0VpZlRIRERoMTBkMHVBMS9WbC8KRmxvQ2F5Z3ZhVm1KdXZPUGEwc1pIU2tLZnZpVXhTb1lXM0ZhL3B5aWkyeXI1VlMzSGZyKzQxRTEvaVc5cVJtUDN3eUNBUwpMRXM5WTBaTmpqTlBIcWFzS25IR3hyZGZGN0x0ZDhEU1paY3Jsak5NVUJudmhscXNoMUpTQzNWYTV6YWUrOURCbDAvMThPCmtiSkxIZGhIM3orM1ZjaFRicFNYZ0ZkdUtVUWJJZ0s3bytiZDBDalZBQUFGbUVOMGtLRkRkSkNoQUFBQUIzTnphQzF5YzIKRUFBQUdCQUxJTjV4bTN5YmZZT2p1YmVSNFpOd1pBUHcyOGxoTlQxamxTZ2xKWVRIOGtlVmhvRzBBbU5OKzJ6UitUYThmRApwZXF6S1BsWmNJQXdINlB6RGVEdXdydTlKaWxFZDV6ZW1kNGJsS3RHMXM1ZXdPMklWd0FjaGplMVdOVXBsUTM0UzhnR2p0CkwvY2VhZERBaDEyTkd4VW1IUWxYLzdFbGJxeTAySTZMeENyZEZta1pNS1kxTkw0Y2JTbCtpeFdXSHA1OTBockp3eGZ0N3MKOUUyRnpjanVUSnJFQU5WV1l2L2VER01RWmRPbnVOYVNSeHRnZVNjZVVhNXQrdzJTdUhJUUphV2ZqV1NXa2E2Vk9XQ0YzaApOYTFiREdFQmh3ZzRuR2kvMGFhdXA4UVFLaFZlMkNiOHkvRzY1dGxzQkluMHh3dzRkZEhkTGdOZjFaZnhaYUFtc29MMmxaCmlicnpqMnRMR1IwcENuNzRsTVVxR0Z0eFd2NmNvb3RzcStWVXR4MzYvdU5STmY0bHZha1pqOThNZ2dFaXhMUFdOR1RZNHoKVHg2bXJDcHh4c2EzWHhleTdYZkEwbVdYSzVZelRGQVo3NFphcklkU1VndDFXdWMybnZ2UXdaZFA5ZkRwR3lTeDNZUjk4Lwp0MVhJVTI2VWw0QlhiaWxFR3lJQ3U2UG0zZEFvMVFBQUFBTUJBQUVBQUFHQUM1OEExM1YwSkR4bjRwWTlhUTQrd0k1R3YwClFHTElsRExtSERwcEc0ODhSdGxNR291UDYxWXBPVHRFSk5pQ1V0ZEtjbHRHUHNHenNUaEVKeEdiT2pxMEt5RlZmd3ZFdVkKRWRQTmdvSDJDUDZpQzI3T1g0Vm52NFk3SDhzemFBMFlaSEZaekRlR3dpL21XNUtyZmRZeERtTE1NSHFkTEx0QzNTZzQwOAo3QXBGaVVNRVlVTmxra2RETUZzMWJkN1ZncHFBMjlBOE1aazMyMk1wZ2FMQW1IbjVpaTJ2Umsza0VxZGFNWjdrbWdYMXJUCjZzWVl2NG1lVGFydWRqNlRyTUxWRjZWSHhLdlF5WnpyT3pTS3Y4THp2dC9sdTBiSnF4c3dNNG56RFdjWTJEdnNzUWM2VUIKR2M2YzBoNDZUT1BUNzl3TlprUTBXamlYNlVuQ3RGSEM2ZWFFQVdzWHVCdFFBc29BakMxTVRtYlNwS2NRa25QWWYvTVhYagpTRm9oOEMrcnpBVWd6VnA4d1dFWTU3ODZwSTdBd3hCUDhSVWp2RjVxUFRKQWtiVXJJVXd4Q1pxMTE4eHZEUlhqS1VCUHZaCkZkWlJleERMRnRONmtpY0ZoaVVNRWJ5UTM4d05OY3VMb2d5L3dXdUtIUElQQ1NrR05OazNJam9aUkpodVZETDJyNUFBQUEKd0dLNHlzditRRDFWQTZDMWxGVDJwcUxPMkh0eEQ0c1dmWkl2Vjd2YzQvQ2Z0RFgxUlZTUkNYYVFSU01EMXJFK2JtTlJLYwo1Z09zMTFvY2ZyT2RVeUZTTWt3YUFQNUZuV1pPWjNXUUx5cTRXZ2RDWU15MG8wS3VYZGhHSmRtVmhxNXRRN0VHcGIzYTVNCitZMDJMNzFIWnVWQlM5N1c3OVQ2UndOd0FIbVd1SHZVaGJMcDU5SEZod2xLbU9jL2ZQcEloWXpUblhNY2tvelU0azgzaHgKRkNrNGpNYWlBTkF4aTNJK1hwR3JNajdRckpsMVJlSzRNMHMwKzB4NFN6dE9ibG93QUFBTUVBM09meFVoR1FTUkJIZFl4TgpqaVg1NHhqMG5vempIdk15YWRYWWNTNVFoZDNDUnJpUXVXc2J3QXdnbisycWFQNFBrN0x2ZStvS01MK1V6ZDN2MllzZVJiCm9hcVdmdkxlMU52YUI2eXlSM2RvNG40TmV1RENma056RDZ2dmdCNnhGbEdybldabmdLeEN1NDF1V2JONDZFczlUQ1VrbGYKTG40aTU3ZU52ZjRoWi9oUXNwdDZQQU9QQVRBV3JvcDdQakpWZmY3b09tczB2NkdJNlA3anFtRkZHSndmVWFSbEttRkFGSwpkNFVLcEZhV1NLV3ZEa0pzaWk0QWtxU1ZDbndVSlpBQUFBd1FET1Z6ZTZZdmExTVBJcmQwcGVicDRlaGgvS01oZWRBMEsvCnlCcjBMNVlHZ1hwTzVsdnhidGZhTUZnQUwwWVBrL3Fvc0tJODVLZ2JwNjNoWHlUSDRoRlhiQ3FhRGZJN2tXcTBTQ0J6Y1MKSFRwcUdMRHVJNkRuQVJteTZMWmMxdkJrVDlvSTVTSkM4S0dxOVdFVTF6bU5STUlTQWRoS09YRlhTZE0vWFEyN2FiclU2VwpLZ2taR2x4dDlZTHdYT09LWUthamJ1VTAwRkZqelFwK2labUNaRWY0a2ZxOHpFNUF2VUhPOWVobnJCbnFWVko5SDF4UW5NCittUUlybmRaK1lzdDBBQUFBZGNEaDBaWE4wTFhSb2NtOTNZWGRoZVMxT1QxUXRRUzFUUlVOU1JWUUJBZ01FQlFZPQotLS0tLUVORCBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0K",
+    "FIXTURE_B64:p8test-throwaway-rsa.pub": "c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCZ1FDeURlY1p0OG0zMkRvN20za2VHVGNHUUQ4TnZKWVRVOVk1VW9KU1dFeC9KSGxZYUJ0QUpqVGZ0czBmazJ2SHc2WHFzeWo1V1hDQU1CK2o4dzNnN3NLN3ZTWXBSSGVjM3BuZUc1U3JSdGJPWHNEdGlGY0FISVkzdFZqVktaVU4rRXZJQm83Uy8zSG1uUXdJZGRqUnNWSmgwSlYvK3hKVzZzdE5pT2k4UXEzUlpwR1RDbU5UUytIRzBwZm9zVmxoNmVmZElheWNNWDdlN1BSTmhjM0k3a3lheEFEVlZtTC8zZ3hqRUdYVHA3aldra2NiWUhrbkhsR3ViZnNOa3JoeUVDV2xuNDFrbHBHdWxUbGdoZDRUV3RXd3hoQVljSU9KeG92OUdtcnFmRUVDb1ZYdGdtL012eHV1YlpiQVNKOU1jTU9IWFIzUzREWDlXWDhXV2dKcktDOXBXWW02ODQ5clN4a2RLUXArK0pURktoaGJjVnIrbktLTGJLdmxWTGNkK3Y3alVUWCtKYjJwR1kvZkRJSUJJc1N6MWpSazJPTTA4ZXBxd3FjY2JHdDE4WHN1MTN3TkpsbHl1V00weFFHZStHV3F5SFVsSUxkVnJuTnA3NzBNR1hUL1h3NlJza3NkMkVmZlA3ZFZ5Rk51bEplQVYyNHBSQnNpQXJ1ajV0M1FLTlU9IHA4dGVzdC10aHJvd2F3YXktTk9ULUEtU0VDUkVUCg==",
+    "FIXTURE_B64:p8test-throwaway-wrapped-passphrase": "OgLD7cOD4lefVTA0YzMxOTM5OWFhNzA3Y2LnKercRt+UGWJfPQaw9+xVCYg47pOXzfS23L0ATBC+qA=="
+   },
+   "manifest_sha256": "1d81daf7cbbfbc960f5d7571afcb3a4a9e1d7905b81e10e15e77a3f730e74f5b"
+  }
+ },
+ "duration_s": 340.2
+}

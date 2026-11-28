@@ -1,0 +1,496 @@
+{
+ "class": "rsyslog_server",
+ "role": "command",
+ "at": "20261127T225839Z",
+ "set_sha256": "c961b8272598bddc49dd23cd23f0ada7609c4bff25f40d90cbdf5cdd8fbdd9e1",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "listener-config-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /etc/rsyslog.d/30-listener.conf: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "tls-listener-presents-the-node-certificate",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "self-forward-config-absent",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "absent\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "logrotate-timer-override-active",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "AccuracyUSec=1h\nActiveState=active\nDropInPaths=\nOnCalendar=*-*-* 00:00:00\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "host-logs-rotation-rule",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "retention-script-and-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/infra-populi/bin/rsyslog-hosts-retention.sh': No such file or directory\nbash: /opt/infra-populi/bin/rsyslog-hosts-retention.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "remote-message-lands-in-the-host-tree",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /var/log/hosts/p8testremote/p8test.log: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-self-signed-client-is-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-message-without-a-program-lands-in-unknown",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-servers-own-logs-land-in-its-host-directory",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "a-rotation-reopens-the-host-log",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n0\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-retention-script-compresses-and-deletes",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 96: cd: /var/log/hosts/p8testold: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "ified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795820376'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.52 seconds\u001b[0m\nCOVERAGE infra_populi::rsyslog_server: 16 concrete resources (+0 defined-type instances)\n  Package[rsyslog]\n  Package[rsyslog-gnutls]\n  File[/etc/rsyslog.d/tls]\n  File[/etc/rsyslog.d/tls/ca.pem]\n  File[/etc/rsyslog.d/tls/puppet8node.pem]\n  File[/etc/rsyslog.d/tls/puppet8node.key]\n  Service[rsyslog]\n  File[/etc/rsyslog.d/30-listener.conf]\n  File[/etc/rsyslog.d/40-forward-self.conf]\n  File[/etc/systemd/system/logrotate.timer.d]\n  File[/etc/systemd/system/logrotate.timer.d/override.conf]\n  Exec[reload systemd for logrotate timer]\n  Exec[restart logrotate timer]\n  File[/etc/logrotate.d/rsyslog-hosts]\n  File[/opt/infra-populi/bin/rsyslog-hosts-retention.sh]\n  Cron[rsyslog_hosts_retention_cleanup]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP rsyslog_server 90dd0c2d0000\n\nNODE_FRESH: yes (boot 3ed33b20 of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "listener-config-rendered",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "DefaultNetstreamDriverCertFile=\"/etc/rsyslog.d/tls/puppet8node.pem\"\nDefaultNetstreamDriverKeyFile=\"/etc/rsyslog.d/tls/puppet8node.key\"\nport=\"6514\"\nmaxSessions=\"2000\"\nnotifyOnConnectionClose=\"off\"\nconstant(value=\"/var/log/hosts/\")\nconstant(value=\"/var/log/hosts/\")\n",
+   "stderr": ""
+  },
+  {
+   "id": "tls-listener-presents-the-node-certificate",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "Verify return code: 0 (ok)\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the name: the same handshake verified for p8test-wrong.invalid must fail, so the pass above is the certificate's name and chain, not a tool that always says ok",
+    "rc": 0,
+    "passed": false,
+    "stdout": "Verify return code: 62 (hostname mismatch)\n",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "self-forward-config-absent",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "absent\n",
+   "stderr": ""
+  },
+  {
+   "id": "logrotate-timer-override-active",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "AccuracyUSec=1min\nActiveState=active\nDropInPaths=/etc/systemd/system/logrotate.timer.d/override.conf\nOnCalendar=*-*-* 00:00:00\n",
+   "stderr": ""
+  },
+  {
+   "id": "host-logs-rotation-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "/var/log/hosts/*/*.log /var/log/hosts/*/.log {\ndaily\nrotate -1\nnocompress\ndateext\ndateformat -%Y%m%d\n",
+   "stderr": ""
+  },
+  {
+   "id": "retention-script-and-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\nROOT_DIR=\"/var/log/hosts\"\nACTIVE_DAYS=7\nRETENTION_DAYS=7\n17 3 * * * /opt/infra-populi/bin/rsyslog-hosts-retention.sh\n",
+   "stderr": ""
+  },
+  {
+   "id": "remote-message-lands-in-the-host-tree",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "sends one RFC3164 line (host p8testremote, tag p8test) to 127.0.0.1:6514 over TLS with the node's own Puppet certificate as the client certificate; rsyslogd creates /var/log/hosts/p8testremote/p8test.log and, through the stock /etc/rsyslog.d/50-default.conf (the listener's rules do not stop the message), appends the same line to /var/log/syslog",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-self-signed-client-is-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n0\n2\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates a throwaway RSA key and self-signed certificate (CN p8test-selfsigned) in /run/p8test-rsyslog; sends one RFC3164 line (host p8testremote, tag p8test) to 127.0.0.1:6514 over TLS with it; rsyslogd logs the refused session to syslog (the journal, /var/log/syslog, and through the listener's own rules the node's /var/log/hosts/<node>/rsyslogd.log)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-message-without-a-program-lands-in-unknown",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "sends one RFC3164 line with an empty tag (host p8testremote) to 127.0.0.1:6514 over TLS with the node's own certificate; rsyslogd creates /var/log/hosts/p8testremote/unknown.log and appends to /var/log/syslog",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-servers-own-logs-land-in-its-host-directory",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "logs one message with logger -t p8testlocal; rsyslogd creates /var/log/hosts/<hostname>/p8testlocal.log and appends to /var/log/syslog and the journal",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "a-rotation-reopens-the-host-log",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs `logrotate -f /etc/logrotate.d/rsyslog-hosts` once (it renames the per-host logs, HUPs rsyslog and updates logrotate's state file /var/lib/logrotate/status); sends one more RFC3164 line over TLS with the node's own certificate; rsyslogd creates a new /var/log/hosts/p8testremote/p8test.log and appends to /var/log/syslog",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-retention-script-compresses-and-deletes",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "newer.log-20200102.gz p8test.log-NEW p8test.log-OLD.gz \n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates /var/log/hosts/p8testold with p8test.log-<10 days ago> and p8test.log-<2 days ago> (clear text) and older.log-20200101.gz (mtime 10 days ago) and newer.log-20200102.gz (mtime 2 days ago); runs the retention script once as root (it gzips, touches and deletes in /var/log/hosts)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "3ed33b20-6d81-427b-8e63-60d0314a09e2",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "3ed33b20-6d81-427b-8e63-60d0314a09e2",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/infra-populi",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26",
+  "FIXTURE_B64:p8test-throwaway-private-sig": "M2RlYzQ1NTNjZjIyYmNjNQphMTYxZDlmYmFhYTg4YTM3Cg==",
+  "FIXTURE_B64:p8test-throwaway-rsa": "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFZRUFzZzNuR2JmSnQ5ZzZPNXQ1SGhrM0JrQS9EYnlXRTFQV09WS0NVbGhNZnlSNVdHZ2JRQ1kwCjM3Yk5INU5yeDhPbDZyTW8rVmx3Z0RBZm8vTU40TzdDdTcwbUtVUjNuTjZaM2h1VXEwYld6bDdBN1loWEFCeUdON1ZZMVMKbVZEZmhMeUFhTzB2OXg1cDBNQ0hYWTBiRlNZZENWZi9zU1Z1ckxUWWpvdkVLdDBXYVJrd3BqVTB2aHh0S1g2TEZaWWVubgozU0dzbkRGKzN1ejBUWVhOeU81TW1zUUExVlppLzk0TVl4QmwwNmU0MXBKSEcyQjVKeDVScm0zN0RaSzRjaEFscForTlpKCmFScnBVNVlJWGVFMXJWc01ZUUdIQ0RpY2FML1JwcTZueEJBcUZWN1lKdnpMOGJybTJXd0VpZlRIRERoMTBkMHVBMS9WbC8KRmxvQ2F5Z3ZhVm1KdXZPUGEwc1pIU2tLZnZpVXhTb1lXM0ZhL3B5aWkyeXI1VlMzSGZyKzQxRTEvaVc5cVJtUDN3eUNBUwpMRXM5WTBaTmpqTlBIcWFzS25IR3hyZGZGN0x0ZDhEU1paY3Jsak5NVUJudmhscXNoMUpTQzNWYTV6YWUrOURCbDAvMThPCmtiSkxIZGhIM3orM1ZjaFRicFNYZ0ZkdUtVUWJJZ0s3bytiZDBDalZBQUFGbUVOMGtLRkRkSkNoQUFBQUIzTnphQzF5YzIKRUFBQUdCQUxJTjV4bTN5YmZZT2p1YmVSNFpOd1pBUHcyOGxoTlQxamxTZ2xKWVRIOGtlVmhvRzBBbU5OKzJ6UitUYThmRApwZXF6S1BsWmNJQXdINlB6RGVEdXdydTlKaWxFZDV6ZW1kNGJsS3RHMXM1ZXdPMklWd0FjaGplMVdOVXBsUTM0UzhnR2p0CkwvY2VhZERBaDEyTkd4VW1IUWxYLzdFbGJxeTAySTZMeENyZEZta1pNS1kxTkw0Y2JTbCtpeFdXSHA1OTBockp3eGZ0N3MKOUUyRnpjanVUSnJFQU5WV1l2L2VER01RWmRPbnVOYVNSeHRnZVNjZVVhNXQrdzJTdUhJUUphV2ZqV1NXa2E2Vk9XQ0YzaApOYTFiREdFQmh3ZzRuR2kvMGFhdXA4UVFLaFZlMkNiOHkvRzY1dGxzQkluMHh3dzRkZEhkTGdOZjFaZnhaYUFtc29MMmxaCmlicnpqMnRMR1IwcENuNzRsTVVxR0Z0eFd2NmNvb3RzcStWVXR4MzYvdU5STmY0bHZha1pqOThNZ2dFaXhMUFdOR1RZNHoKVHg2bXJDcHh4c2EzWHhleTdYZkEwbVdYSzVZelRGQVo3NFphcklkU1VndDFXdWMybnZ2UXdaZFA5ZkRwR3lTeDNZUjk4Lwp0MVhJVTI2VWw0QlhiaWxFR3lJQ3U2UG0zZEFvMVFBQUFBTUJBQUVBQUFHQUM1OEExM1YwSkR4bjRwWTlhUTQrd0k1R3YwClFHTElsRExtSERwcEc0ODhSdGxNR291UDYxWXBPVHRFSk5pQ1V0ZEtjbHRHUHNHenNUaEVKeEdiT2pxMEt5RlZmd3ZFdVkKRWRQTmdvSDJDUDZpQzI3T1g0Vm52NFk3SDhzemFBMFlaSEZaekRlR3dpL21XNUtyZmRZeERtTE1NSHFkTEx0QzNTZzQwOAo3QXBGaVVNRVlVTmxra2RETUZzMWJkN1ZncHFBMjlBOE1aazMyMk1wZ2FMQW1IbjVpaTJ2Umsza0VxZGFNWjdrbWdYMXJUCjZzWVl2NG1lVGFydWRqNlRyTUxWRjZWSHhLdlF5WnpyT3pTS3Y4THp2dC9sdTBiSnF4c3dNNG56RFdjWTJEdnNzUWM2VUIKR2M2YzBoNDZUT1BUNzl3TlprUTBXamlYNlVuQ3RGSEM2ZWFFQVdzWHVCdFFBc29BakMxTVRtYlNwS2NRa25QWWYvTVhYagpTRm9oOEMrcnpBVWd6VnA4d1dFWTU3ODZwSTdBd3hCUDhSVWp2RjVxUFRKQWtiVXJJVXd4Q1pxMTE4eHZEUlhqS1VCUHZaCkZkWlJleERMRnRONmtpY0ZoaVVNRWJ5UTM4d05OY3VMb2d5L3dXdUtIUElQQ1NrR05OazNJam9aUkpodVZETDJyNUFBQUEKd0dLNHlzditRRDFWQTZDMWxGVDJwcUxPMkh0eEQ0c1dmWkl2Vjd2YzQvQ2Z0RFgxUlZTUkNYYVFSU01EMXJFK2JtTlJLYwo1Z09zMTFvY2ZyT2RVeUZTTWt3YUFQNUZuV1pPWjNXUUx5cTRXZ2RDWU15MG8wS3VYZGhHSmRtVmhxNXRRN0VHcGIzYTVNCitZMDJMNzFIWnVWQlM5N1c3OVQ2UndOd0FIbVd1SHZVaGJMcDU5SEZod2xLbU9jL2ZQcEloWXpUblhNY2tvelU0azgzaHgKRkNrNGpNYWlBTkF4aTNJK1hwR3JNajdRckpsMVJlSzRNMHMwKzB4NFN6dE9ibG93QUFBTUVBM09meFVoR1FTUkJIZFl4TgpqaVg1NHhqMG5vempIdk15YWRYWWNTNVFoZDNDUnJpUXVXc2J3QXdnbisycWFQNFBrN0x2ZStvS01MK1V6ZDN2MllzZVJiCm9hcVdmdkxlMU52YUI2eXlSM2RvNG40TmV1RENma056RDZ2dmdCNnhGbEdybldabmdLeEN1NDF1V2JONDZFczlUQ1VrbGYKTG40aTU3ZU52ZjRoWi9oUXNwdDZQQU9QQVRBV3JvcDdQakpWZmY3b09tczB2NkdJNlA3anFtRkZHSndmVWFSbEttRkFGSwpkNFVLcEZhV1NLV3ZEa0pzaWk0QWtxU1ZDbndVSlpBQUFBd1FET1Z6ZTZZdmExTVBJcmQwcGVicDRlaGgvS01oZWRBMEsvCnlCcjBMNVlHZ1hwTzVsdnhidGZhTUZnQUwwWVBrL3Fvc0tJODVLZ2JwNjNoWHlUSDRoRlhiQ3FhRGZJN2tXcTBTQ0J6Y1MKSFRwcUdMRHVJNkRuQVJteTZMWmMxdkJrVDlvSTVTSkM4S0dxOVdFVTF6bU5STUlTQWRoS09YRlhTZE0vWFEyN2FiclU2VwpLZ2taR2x4dDlZTHdYT09LWUthamJ1VTAwRkZqelFwK2labUNaRWY0a2ZxOHpFNUF2VUhPOWVobnJCbnFWVko5SDF4UW5NCittUUlybmRaK1lzdDBBQUFBZGNEaDBaWE4wTFhSb2NtOTNZWGRoZVMxT1QxUXRRUzFUUlVOU1JWUUJBZ01FQlFZPQotLS0tLUVORCBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0K",
+  "FIXTURE_B64:p8test-throwaway-rsa.pub": "c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCZ1FDeURlY1p0OG0zMkRvN20za2VHVGNHUUQ4TnZKWVRVOVk1VW9KU1dFeC9KSGxZYUJ0QUpqVGZ0czBmazJ2SHc2WHFzeWo1V1hDQU1CK2o4dzNnN3NLN3ZTWXBSSGVjM3BuZUc1U3JSdGJPWHNEdGlGY0FISVkzdFZqVktaVU4rRXZJQm83Uy8zSG1uUXdJZGRqUnNWSmgwSlYvK3hKVzZzdE5pT2k4UXEzUlpwR1RDbU5UUytIRzBwZm9zVmxoNmVmZElheWNNWDdlN1BSTmhjM0k3a3lheEFEVlZtTC8zZ3hqRUdYVHA3aldra2NiWUhrbkhsR3ViZnNOa3JoeUVDV2xuNDFrbHBHdWxUbGdoZDRUV3RXd3hoQVljSU9KeG92OUdtcnFmRUVDb1ZYdGdtL012eHV1YlpiQVNKOU1jTU9IWFIzUzREWDlXWDhXV2dKcktDOXBXWW02ODQ5clN4a2RLUXArK0pURktoaGJjVnIrbktLTGJLdmxWTGNkK3Y3alVUWCtKYjJwR1kvZkRJSUJJc1N6MWpSazJPTTA4ZXBxd3FjY2JHdDE4WHN1MTN3TkpsbHl1V00weFFHZStHV3F5SFVsSUxkVnJuTnA3NzBNR1hUL1h3NlJza3NkMkVmZlA3ZFZ5Rk51bEplQVYyNHBSQnNpQXJ1ajV0M1FLTlU9IHA4dGVzdC10aHJvd2F3YXktTk9ULUEtU0VDUkVUCg==",
+  "FIXTURE_B64:p8test-throwaway-wrapped-passphrase": "OgLD7cOD4lefVTA0YzMxOTM5OWFhNzA3Y2LnKercRt+UGWJfPQaw9+xVCYg47pOXzfS23L0ATBC+qA=="
+ },
+ "manifest_sha256": "8fe92e016c1437cf4a524cb3eab49ad07e11e411a9964c7b19e1dc49daba52be",
+ "variants": {
+  "custom": {
+   "name": "custom",
+   "node": "ubuntu",
+   "params": "custom",
+   "clean": [
+    {
+     "id": "custom-listener-config",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "",
+     "stderr": "grep: /etc/rsyslog.d/30-listener.conf: No such file or directory\n",
+     "ok": true
+    },
+    {
+     "id": "custom-tls-listener-on-the-port",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "",
+     "stderr": "",
+     "ok": true
+    },
+    {
+     "id": "custom-rotation-time-and-rule",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "OnCalendar=*-*-* 00:00:00\n",
+     "stderr": "head: cannot open '/etc/logrotate.d/rsyslog-hosts' for reading: No such file or directory\n",
+     "ok": true
+    },
+    {
+     "id": "custom-retention-values-and-cron",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "",
+     "stderr": "grep: /opt/infra-populi/bin/rsyslog-hosts-retention.sh: No such file or directory\n",
+     "ok": true
+    },
+    {
+     "id": "custom-remote-message-lands-under-the-root",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "",
+     "stderr": "grep: /var/log/p8test-remote/hosts/p8testremote/p8test.log: No such file or directory\n",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": " Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795820495'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.49 seconds\u001b[0m\nCOVERAGE infra_populi::rsyslog_server: 16 concrete resources (+0 defined-type instances)\n  Package[rsyslog]\n  Package[rsyslog-gnutls]\n  File[/etc/rsyslog.d/tls]\n  File[/etc/rsyslog.d/tls/ca.pem]\n  File[/etc/rsyslog.d/tls/puppet8node.pem]\n  File[/etc/rsyslog.d/tls/puppet8node.key]\n  Service[rsyslog]\n  File[/etc/rsyslog.d/30-listener.conf]\n  File[/etc/rsyslog.d/40-forward-self.conf]\n  File[/etc/systemd/system/logrotate.timer.d]\n  File[/etc/systemd/system/logrotate.timer.d/override.conf]\n  Exec[reload systemd for logrotate timer]\n  Exec[restart logrotate timer]\n  File[/etc/logrotate.d/rsyslog-hosts]\n  File[/opt/infra-populi/bin/rsyslog-hosts-retention.sh]\n  Cron[rsyslog_hosts_retention_cleanup]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant custom; never a Phase 1 record)\n\nNODE_FRESH: yes (boot 1f48911f of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+   },
+   "applied": [
+    {
+     "id": "custom-listener-config",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "port=\"16514\"\nconstant(value=\"/var/log/p8test-remote/hosts/\")\nconstant(value=\"/var/log/p8test-remote/hosts/\")\n",
+     "stderr": ""
+    },
+    {
+     "id": "custom-tls-listener-on-the-port",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "Verify return code: 0 (ok)\n",
+     "stderr": "",
+     "mismatch": {
+      "varies": "the name: the same handshake on the fixture's port verified for p8test-wrong.invalid must fail, so the pass is the certificate's name and chain, not a tool that always says ok",
+      "rc": 0,
+      "passed": false,
+      "stdout": "Verify return code: 62 (hostname mismatch)\n",
+      "stderr": ""
+     }
+    },
+    {
+     "id": "custom-rotation-time-and-rule",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "OnCalendar=*-*-* 01:15:00\n/var/log/p8test-remote/hosts/*/*.log /var/log/p8test-remote/hosts/*/.log {\n",
+     "stderr": ""
+    },
+    {
+     "id": "custom-retention-values-and-cron",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "ROOT_DIR=\"/var/log/p8test-remote/hosts\"\nACTIVE_DAYS=3\nRETENTION_DAYS=30\n45 4 * * * /opt/infra-populi/bin/rsyslog-hosts-retention.sh\n",
+     "stderr": ""
+    },
+    {
+     "id": "custom-remote-message-lands-under-the-root",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "1\n",
+     "stderr": "",
+     "mutating": true,
+     "action": {
+      "mutates": "sends one syslog message over TLS to the listener on 127.0.0.1:16514",
+      "rc": 0,
+      "stdout": "",
+      "stderr": ""
+     }
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "1f48911f-82c7-460a-9329-47b10c30d205",
+     "snapshot": "P8NODE_BASELINE_GREEN_v6",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "1f48911f-82c7-460a-9329-47b10c30d205",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26",
+    "FIXTURE_B64:p8test-throwaway-private-sig": "M2RlYzQ1NTNjZjIyYmNjNQphMTYxZDlmYmFhYTg4YTM3Cg==",
+    "FIXTURE_B64:p8test-throwaway-rsa": "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFZRUFzZzNuR2JmSnQ5ZzZPNXQ1SGhrM0JrQS9EYnlXRTFQV09WS0NVbGhNZnlSNVdHZ2JRQ1kwCjM3Yk5INU5yeDhPbDZyTW8rVmx3Z0RBZm8vTU40TzdDdTcwbUtVUjNuTjZaM2h1VXEwYld6bDdBN1loWEFCeUdON1ZZMVMKbVZEZmhMeUFhTzB2OXg1cDBNQ0hYWTBiRlNZZENWZi9zU1Z1ckxUWWpvdkVLdDBXYVJrd3BqVTB2aHh0S1g2TEZaWWVubgozU0dzbkRGKzN1ejBUWVhOeU81TW1zUUExVlppLzk0TVl4QmwwNmU0MXBKSEcyQjVKeDVScm0zN0RaSzRjaEFscForTlpKCmFScnBVNVlJWGVFMXJWc01ZUUdIQ0RpY2FML1JwcTZueEJBcUZWN1lKdnpMOGJybTJXd0VpZlRIRERoMTBkMHVBMS9WbC8KRmxvQ2F5Z3ZhVm1KdXZPUGEwc1pIU2tLZnZpVXhTb1lXM0ZhL3B5aWkyeXI1VlMzSGZyKzQxRTEvaVc5cVJtUDN3eUNBUwpMRXM5WTBaTmpqTlBIcWFzS25IR3hyZGZGN0x0ZDhEU1paY3Jsak5NVUJudmhscXNoMUpTQzNWYTV6YWUrOURCbDAvMThPCmtiSkxIZGhIM3orM1ZjaFRicFNYZ0ZkdUtVUWJJZ0s3bytiZDBDalZBQUFGbUVOMGtLRkRkSkNoQUFBQUIzTnphQzF5YzIKRUFBQUdCQUxJTjV4bTN5YmZZT2p1YmVSNFpOd1pBUHcyOGxoTlQxamxTZ2xKWVRIOGtlVmhvRzBBbU5OKzJ6UitUYThmRApwZXF6S1BsWmNJQXdINlB6RGVEdXdydTlKaWxFZDV6ZW1kNGJsS3RHMXM1ZXdPMklWd0FjaGplMVdOVXBsUTM0UzhnR2p0CkwvY2VhZERBaDEyTkd4VW1IUWxYLzdFbGJxeTAySTZMeENyZEZta1pNS1kxTkw0Y2JTbCtpeFdXSHA1OTBockp3eGZ0N3MKOUUyRnpjanVUSnJFQU5WV1l2L2VER01RWmRPbnVOYVNSeHRnZVNjZVVhNXQrdzJTdUhJUUphV2ZqV1NXa2E2Vk9XQ0YzaApOYTFiREdFQmh3ZzRuR2kvMGFhdXA4UVFLaFZlMkNiOHkvRzY1dGxzQkluMHh3dzRkZEhkTGdOZjFaZnhaYUFtc29MMmxaCmlicnpqMnRMR1IwcENuNzRsTVVxR0Z0eFd2NmNvb3RzcStWVXR4MzYvdU5STmY0bHZha1pqOThNZ2dFaXhMUFdOR1RZNHoKVHg2bXJDcHh4c2EzWHhleTdYZkEwbVdYSzVZelRGQVo3NFphcklkU1VndDFXdWMybnZ2UXdaZFA5ZkRwR3lTeDNZUjk4Lwp0MVhJVTI2VWw0QlhiaWxFR3lJQ3U2UG0zZEFvMVFBQUFBTUJBQUVBQUFHQUM1OEExM1YwSkR4bjRwWTlhUTQrd0k1R3YwClFHTElsRExtSERwcEc0ODhSdGxNR291UDYxWXBPVHRFSk5pQ1V0ZEtjbHRHUHNHenNUaEVKeEdiT2pxMEt5RlZmd3ZFdVkKRWRQTmdvSDJDUDZpQzI3T1g0Vm52NFk3SDhzemFBMFlaSEZaekRlR3dpL21XNUtyZmRZeERtTE1NSHFkTEx0QzNTZzQwOAo3QXBGaVVNRVlVTmxra2RETUZzMWJkN1ZncHFBMjlBOE1aazMyMk1wZ2FMQW1IbjVpaTJ2Umsza0VxZGFNWjdrbWdYMXJUCjZzWVl2NG1lVGFydWRqNlRyTUxWRjZWSHhLdlF5WnpyT3pTS3Y4THp2dC9sdTBiSnF4c3dNNG56RFdjWTJEdnNzUWM2VUIKR2M2YzBoNDZUT1BUNzl3TlprUTBXamlYNlVuQ3RGSEM2ZWFFQVdzWHVCdFFBc29BakMxTVRtYlNwS2NRa25QWWYvTVhYagpTRm9oOEMrcnpBVWd6VnA4d1dFWTU3ODZwSTdBd3hCUDhSVWp2RjVxUFRKQWtiVXJJVXd4Q1pxMTE4eHZEUlhqS1VCUHZaCkZkWlJleERMRnRONmtpY0ZoaVVNRWJ5UTM4d05OY3VMb2d5L3dXdUtIUElQQ1NrR05OazNJam9aUkpodVZETDJyNUFBQUEKd0dLNHlzditRRDFWQTZDMWxGVDJwcUxPMkh0eEQ0c1dmWkl2Vjd2YzQvQ2Z0RFgxUlZTUkNYYVFSU01EMXJFK2JtTlJLYwo1Z09zMTFvY2ZyT2RVeUZTTWt3YUFQNUZuV1pPWjNXUUx5cTRXZ2RDWU15MG8wS3VYZGhHSmRtVmhxNXRRN0VHcGIzYTVNCitZMDJMNzFIWnVWQlM5N1c3OVQ2UndOd0FIbVd1SHZVaGJMcDU5SEZod2xLbU9jL2ZQcEloWXpUblhNY2tvelU0azgzaHgKRkNrNGpNYWlBTkF4aTNJK1hwR3JNajdRckpsMVJlSzRNMHMwKzB4NFN6dE9ibG93QUFBTUVBM09meFVoR1FTUkJIZFl4TgpqaVg1NHhqMG5vempIdk15YWRYWWNTNVFoZDNDUnJpUXVXc2J3QXdnbisycWFQNFBrN0x2ZStvS01MK1V6ZDN2MllzZVJiCm9hcVdmdkxlMU52YUI2eXlSM2RvNG40TmV1RENma056RDZ2dmdCNnhGbEdybldabmdLeEN1NDF1V2JONDZFczlUQ1VrbGYKTG40aTU3ZU52ZjRoWi9oUXNwdDZQQU9QQVRBV3JvcDdQakpWZmY3b09tczB2NkdJNlA3anFtRkZHSndmVWFSbEttRkFGSwpkNFVLcEZhV1NLV3ZEa0pzaWk0QWtxU1ZDbndVSlpBQUFBd1FET1Z6ZTZZdmExTVBJcmQwcGVicDRlaGgvS01oZWRBMEsvCnlCcjBMNVlHZ1hwTzVsdnhidGZhTUZnQUwwWVBrL3Fvc0tJODVLZ2JwNjNoWHlUSDRoRlhiQ3FhRGZJN2tXcTBTQ0J6Y1MKSFRwcUdMRHVJNkRuQVJteTZMWmMxdkJrVDlvSTVTSkM4S0dxOVdFVTF6bU5STUlTQWRoS09YRlhTZE0vWFEyN2FiclU2VwpLZ2taR2x4dDlZTHdYT09LWUthamJ1VTAwRkZqelFwK2labUNaRWY0a2ZxOHpFNUF2VUhPOWVobnJCbnFWVko5SDF4UW5NCittUUlybmRaK1lzdDBBQUFBZGNEaDBaWE4wTFhSb2NtOTNZWGRoZVMxT1QxUXRRUzFUUlVOU1JWUUJBZ01FQlFZPQotLS0tLUVORCBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0K",
+    "FIXTURE_B64:p8test-throwaway-rsa.pub": "c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCZ1FDeURlY1p0OG0zMkRvN20za2VHVGNHUUQ4TnZKWVRVOVk1VW9KU1dFeC9KSGxZYUJ0QUpqVGZ0czBmazJ2SHc2WHFzeWo1V1hDQU1CK2o4dzNnN3NLN3ZTWXBSSGVjM3BuZUc1U3JSdGJPWHNEdGlGY0FISVkzdFZqVktaVU4rRXZJQm83Uy8zSG1uUXdJZGRqUnNWSmgwSlYvK3hKVzZzdE5pT2k4UXEzUlpwR1RDbU5UUytIRzBwZm9zVmxoNmVmZElheWNNWDdlN1BSTmhjM0k3a3lheEFEVlZtTC8zZ3hqRUdYVHA3aldra2NiWUhrbkhsR3ViZnNOa3JoeUVDV2xuNDFrbHBHdWxUbGdoZDRUV3RXd3hoQVljSU9KeG92OUdtcnFmRUVDb1ZYdGdtL012eHV1YlpiQVNKOU1jTU9IWFIzUzREWDlXWDhXV2dKcktDOXBXWW02ODQ5clN4a2RLUXArK0pURktoaGJjVnIrbktLTGJLdmxWTGNkK3Y3alVUWCtKYjJwR1kvZkRJSUJJc1N6MWpSazJPTTA4ZXBxd3FjY2JHdDE4WHN1MTN3TkpsbHl1V00weFFHZStHV3F5SFVsSUxkVnJuTnA3NzBNR1hUL1h3NlJza3NkMkVmZlA3ZFZ5Rk51bEplQVYyNHBSQnNpQXJ1ajV0M1FLTlU9IHA4dGVzdC10aHJvd2F3YXktTk9ULUEtU0VDUkVUCg==",
+    "FIXTURE_B64:p8test-throwaway-wrapped-passphrase": "OgLD7cOD4lefVTA0YzMxOTM5OWFhNzA3Y2LnKercRt+UGWJfPQaw9+xVCYg47pOXzfS23L0ATBC+qA=="
+   },
+   "manifest_sha256": "fa80ec675127f81431229a003035139b826db74d5f77583e972d0a53ca1d2b94"
+  }
+ },
+ "duration_s": 197.5
+}

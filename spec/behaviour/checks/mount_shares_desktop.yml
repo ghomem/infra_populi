@@ -25,17 +25,24 @@ outcomes:
   from: templates/shares/unmount-shares.sh.erb:1-15
   checks:
   - the-unmount-script-unmounts-it
-- outcome: the password asked in a kdialog box, the file manager opened on the mount (explorer), symlinks and the cache/delay
-    options
+- outcome: the password asked in a kdialog box and the file manager opened on the mount (explorer)
   from: manifests/mount_shares_desktop.pp:5
   uncovered:
-    why: the dialog needs input to a desktop session; the explorer (dolphin, the class's default) is on the kubuntu kind,
-      not on this class's plan node gnome, and a set is judged on its plan node only; symlinks, cache and delay are parameter
-      variants
-    lifted_by: 'capability: a phase3 set for a node kind other than the class''s plan node (kubuntu), input to a desktop session,
-      and more than one params fixture per set'
+    why: the dialog waits for typed input and the file manager opens in the user's desktop session; a run sends no desktop
+      input, and a session runs in a set's base run only
+    lifted_by: 'capability: input injection into the node''s desktop session inside a run'
     evidence: the fixture sets explorer False and passes the password in $PASSWORD (the script asks kdialog only when it is
-      empty); {{SITE:engine-runner}} applies one `fixture` on the plan's node (gnome, no dolphin) and sends no desktop input
+      empty); the runner's session logs the user in and makes agent runs, and sends no keyboard or mouse input
+- outcome: symlinks to the mounts, and the cache and delay options
+  from: manifests/mount_shares_desktop.pp:5
+  uncovered:
+    why: parameter variants no production node uses (the fixture keeps the defaults)
+    accepted_gap:
+    - symlinks
+    - cache
+    - delay
+    evidence: '{{SITE:fleet-usage}} (2026-11-23): no production node statement sets symlinks, cache or delay, and no class
+      of the repository sets them on mount_shares_desktop'
 checks:
 - id: scripts-on-the-desktop-root-owned-executable
   what: the mount and unmount scripts are in the user's Desktop, root:root 0755

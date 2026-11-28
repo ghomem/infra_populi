@@ -38,12 +38,9 @@ outcomes:
       refusal (2026-11-19T17:23:25Z, COMPILE_FAILED "Can''t touch this - hash is empty!"); this wrapper passes myhash on (user.pp:8)'
 - outcome: a login with the pushed key
   from: manifests/user.pp:6-8
-  uncovered:
-    why: a login needs the private half of the pushed key on the node; the repository keeps no private keys and no run hands
-      a file from the laptop to the node
-    lifted_by: 'capability: a run step that hands a private key from the laptop to the node'
-    evidence: '{{SITE:engine-runner}} fetch_node_files hands files from the node to the peer only; the key''s line, owner
-      and modes are checked instead'
+  checks:
+  - the-pushed-key-logs-in
+  - another-key-is-refused
 - outcome: the parameter variants the wrapper passes on (a group list, another home, a home mode, another shell) and the locked
     or keyless placeholders
   from: manifests/user.pp:6-8
@@ -122,7 +119,7 @@ checks:
   what: 'the user''s key is pushed (the wrapper cannot set ignorekey): exactly one authorized key, type ssh-rsa, comment <title>@puppet,
     carrying the fixture key (an RSA public key body) and not a placeholder (userlocked/emptykey)'
   control: negative
-  derived_from:
+  derived_from: &id001
   - path: manifests/user_base.pp
     lines: '58'
     text: $sshkey = $mykey
@@ -261,6 +258,39 @@ checks:
   expect:
     rc: 0
     stdout: \Aemptykey\n\Z
+- id: the-pushed-key-logs-in
+  control: negative
+  timeout: 60
+  what: the private half of the pushed key (the suite's throwaway test key) logs the user in over SSH
+  mutates: writes the throwaway private key to /run/p8test-keylogin and logs in to 127.0.0.1 as p8testuser with it
+  derived_from: *id001
+  probe: |
+    install -d -m 0700 /run/p8test-keylogin
+    printf '%s' '{{FIXTURE_B64:p8test-throwaway-rsa}}' | base64 -d > /run/p8test-keylogin/id
+    chmod 600 /run/p8test-keylogin/id
+    ssh -i /run/p8test-keylogin/id -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 p8testuser@127.0.0.1 'id -un' > /run/p8test-keylogin/out 2>/dev/null; echo $? > /run/p8test-keylogin/rc
+  effect: |
+    echo "rc $(cat /run/p8test-keylogin/rc)"
+    cat /run/p8test-keylogin/out
+  expect:
+    rc: 0
+    stdout: \Arc 0\np8testuser\n\Z
+- id: another-key-is-refused
+  control: negative
+  timeout: 60
+  what: a key the class did not push (made on the spot) is refused, so the login above is the pushed key's
+  mutates: makes a throwaway key in /run/p8test-keylogin and tries to log in to 127.0.0.1 as p8testuser with it
+  derived_from: *id001
+  probe: |
+    install -d -m 0700 /run/p8test-keylogin
+    rm -f /run/p8test-keylogin/other /run/p8test-keylogin/other.pub
+    ssh-keygen -q -t rsa -b 3072 -N '' -f /run/p8test-keylogin/other
+    ssh -i /run/p8test-keylogin/other -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 p8testuser@127.0.0.1 'id -un' > /dev/null 2>&1; echo $? > /run/p8test-keylogin/other.rc
+  effect: |
+    echo "rc $(cat /run/p8test-keylogin/other.rc)"
+  expect:
+    rc: 0
+    stdout: \Arc 255\n\Z
 apply:
   resource_type: define
   node: ubuntu

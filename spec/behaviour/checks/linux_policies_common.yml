@@ -21,12 +21,12 @@ outcomes:
 - outcome: the autostart entry actually running at a desktop log-in
   from: manifests/linux_policies_common.pp:27-32
   uncovered:
-    why: the class's plan node is a server without a desktop; the login side is exercised through linux_policies_user's set
-      on kubuntu, which composes this class
-    lifted_by: 'capability: a desktop session on the class''s plan node'
-    evidence: '{{SITE:node-inventory}}: the class''s node is ubuntu (capabilities [server]); {{SITE:engine-runner}}''s `session`
-      needs the kde capability (session_problems); linux_policies_user''s autostart-runs-the-policies-at-login runs it on
-      kubuntu'
+    why: the class's plan node is a server without a desktop, and a desktop session runs in a set's base run only; the login
+      side is exercised through linux_policies_user's set on kubuntu, which composes this class
+    lifted_by: 'capability: a desktop session in a variant run (a set''s variants on a desktop kind)'
+    evidence: '{{SITE:node-inventory}}: the class''s node is ubuntu (capabilities [server]); the runner''s session is a base-run
+      step (`session` needs the kde capability on the set''s node); linux_policies_user''s autostart-runs-the-policies-at-login
+      runs it on kubuntu'
 checks:
 - id: policies-tree-deployed
   what: the module's linux-policies tree is copied to <localdir>/linux-policies (COMMON/common byte for byte, TMP and USER)

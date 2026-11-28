@@ -1,0 +1,394 @@
+{
+ "class": "ssl_postfix",
+ "role": "command",
+ "at": "20261127T220856Z",
+ "set_sha256": "cb011986451f887c1f6d430ae8bbf6b44d497f4d7ecf2530be16825b5feef469",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "private-key-installed-root-only",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/ssl/private/p8test.key': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "postfix-bundle-cert-then-intermediate",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/ssl/certs/p8test.postfix.bundle.crt': No such file or directory\ngrep: /etc/ssl/certs/p8test.postfix.bundle.crt: No such file or directory\nCould not open file or uri for loading certificate from /etc/ssl/certs/p8test.postfix.bundle.crt\n40877F02B87F0000:error:16000069:STORE routines:ossl_store_get0_loader_int:unregistered scheme:../crypto/store/store_register.c:237:scheme=file\n40877F02B87F0000:error:80000002:system library:file_open:No such file or directory:../providers/implementations/storemgmt/file_store.c:267:calling stat(/etc/ssl/certs/p8test.postfix.bundle.crt)\nUnable to load certificate\n",
+   "ok": true
+  },
+  {
+   "id": "bundle-certificate-matches-the-key",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "missing files\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-bundle-is-changed-by-hand",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /run/p8test-sslpostfix/pid: No such file or directory\nbash: line 97: [: : integer expression expected\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-bundle-and-restarts-postfix",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "bash: line 97: /var/spool/postfix/pid/master.pid: No such file or directory\nbash: line 98: [: : integer expression expected\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-key-is-changed-by-hand",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "cat: /run/p8test-sslpostfix/pid-key: No such file or directory\nbash: line 97: [: : integer expression expected\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-key-and-restarts-postfix",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "bash: line 97: /var/spool/postfix/pid/master.pid: No such file or directory\nbash: line 98: [: : integer expression expected\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": " Triggered 'refresh' from 6 events\u001b[0m\n\u001b[mNotice: Applied catalog in 26.61 seconds\u001b[0m\nRUN1_EVENTS: 6 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795817414'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.71 seconds\u001b[0m\nCOVERAGE infra_populi::ssl_postfix: 5 concrete resources (+3 defined-type instances)\n  Infra_populi::Ssl_base[postfix ssl config]\n  File[/etc/ssl/private/p8test.key]\n  Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]\n  Concat::Fragment[first_certificate_p8test]\n  Concat::Fragment[intermediate_certificates_p8test]\n  Concat_file[/etc/ssl/certs/p8test.postfix.bundle.crt]\n  Concat_fragment[first_certificate_p8test]\n  Concat_fragment[intermediate_certificates_p8test]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP ssl_postfix d4ae6c4225f6\n\nNODE_FRESH: yes (boot b286ac87 of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "private-key-installed-root-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root root 600\n",
+   "stderr": ""
+  },
+  {
+   "id": "postfix-bundle-cert-then-intermediate",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 644\n2\nsubject=CN=p8test.invalid,O=p8test lab fixture (THROWAWAY\\, not a real CA)\n",
+   "stderr": ""
+  },
+  {
+   "id": "bundle-certificate-matches-the-key",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "key-matches-certificate\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the key: the node's own Puppet agent key is a different key, so the same comparison against it must fail",
+    "rc": 1,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-bundle-is-changed-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\npid noted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "appends the line \"# p8test drift\" to /etc/ssl/certs/p8test.postfix.bundle.crt and writes the postfix master's PID (/var/spool/postfix/pid/master.pid) to /run/p8test-sslpostfix/pid (/run/p8test-sslpostfix created 0700)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-the-bundle-and-restarts-postfix",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\npostfix restarted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the bundle and the master's PID (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-key-is-changed-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\npid noted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes the key's SHA-256 and the postfix master's PID to /run/p8test-sslpostfix/key.sha and /run/p8test-sslpostfix/pid-key, then appends the line \"# p8test drift\" to /etc/ssl/private/p8test.key",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-the-key-and-restarts-postfix",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "key restored\npostfix restarted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the key's digest and the master's PID (declared mutating so it runs after the second agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "b286ac87-f94e-417e-b5e7-2a2c0863af7c",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "b286ac87-f94e-417e-b5e7-2a2c0863af7c",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/infra-populi",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "41b690f7a66c455d195c35319525e144e281319790752616ae7f7c6716d6528d",
+ "node_agent": {
+  "the-bundle-is-changed-by-hand": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_postfix/Infra_populi::Ssl_base[postfix ssl config]/Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]/File[/etc/ssl/certs/p8test.postfix.bundle.crt]/content:",
+    "\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_postfix/Infra_populi::Ssl_base[postfix ssl config]/Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]/File[/etc/ssl/certs/p8test.postfix.bundle.crt]/content:",
+    "\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_postfix/Infra_populi::Ssl_base[postfix ssl config]/Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]/File[/etc/ssl/certs/p8test.postfix.bundle.crt]/content: content changed '{sha256}9b9d30b093df8948cb810b53f4ae761accca5a3218709d43e8d05572953cbad7' to '{sha256}64c8e981bfdf7643011046f7595d98ed8526179230964dee98603cedf223dab4' (corrective)\u001b[0m",
+    "\u001b[0;32mInfo: Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]: Scheduling refresh of Service[postfix]\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Infra_populi::Postfix_smtp_node/Service[postfix]: Triggered 'refresh' from 1 event\u001b[0m"
+   ],
+   "errors": [],
+   "tail": "@@ -44,4 +44,3 @@\n Pgx63qWDnchDqQmXdeQzPUGsTZYpkpyTguIqoFKPmTT2B7vyWlb+vh8QdcAvBWbb\n WA==\n -----END CERTIFICATE-----\n-# p8test drift\n\u001b[0m\n\u001b[0;32mInfo: Computing checksum on file /etc/ssl/certs/p8test.postfix.bundle.crt\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Infra_populi::Ssl_postfix/Infra_populi::Ssl_base[postfix ssl config]/Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]/File[/etc/ssl/certs/p8test.postfix.bundle.crt]: Filebucketed /etc/ssl/certs/p8test.postfix.bundle.crt to puppet with sum 9b9d30b093df8948cb810b53f4ae761accca5a3218709d43e8d05572953cbad7\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_postfix/Infra_populi::Ssl_base[postfix ssl config]/Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]/File[/etc/ssl/certs/p8test.postfix.bundle.crt]/content: \n\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_postfix/Infra_populi::Ssl_base[postfix ssl config]/Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]/File[/etc/ssl/certs/p8test.postfix.bundle.crt]/content: content changed '{sha256}9b9d30b093df8948cb810b53f4ae761accca5a3218709d43e8d05572953cbad7' to '{sha256}64c8e981bfdf7643011046f7595d98ed8526179230964dee98603cedf223dab4' (corrective)\u001b[0m\n\u001b[0;32mInfo: Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]: Scheduling refresh of Service[postfix]\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Postfix_smtp_node/Service[postfix]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 1.46 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/etc/ssl/certs/p8test.postfix.bundle.crt]\nCHANGED Service[postfix]\n"
+  },
+  "the-key-is-changed-by-hand": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_postfix/Infra_populi::Ssl_base[postfix ssl config]/File[/etc/ssl/private/p8test.key]/content:",
+    "\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_postfix/Infra_populi::Ssl_base[postfix ssl config]/File[/etc/ssl/private/p8test.key]/content:",
+    "\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_postfix/Infra_populi::Ssl_base[postfix ssl config]/File[/etc/ssl/private/p8test.key]/content: content changed '{sha256}7708533a6c9866606b1000256ccfdcb6e57e399d6aec100f69d0c0f1a57933ce' to '{sha256}1408355e23bf8f52551c5dc0f4d7781e7797279b8b37a40379d5f1140fcc0854' (corrective)\u001b[0m",
+    "\u001b[0;32mInfo: /Stage[main]/Infra_populi::Ssl_postfix/Infra_populi::Ssl_base[postfix ssl config]/File[/etc/ssl/private/p8test.key]: Scheduling refresh of Service[postfix]\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Infra_populi::Postfix_smtp_node/Service[postfix]: Triggered 'refresh' from 1 event\u001b[0m"
+   ],
+   "errors": [],
+   "tail": "om:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795817431'\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_postfix/Infra_populi::Ssl_base[postfix ssl config]/File[/etc/ssl/private/p8test.key]/content: \n--- /etc/ssl/private/p8test.key\t2026-11-27 22:10:26.476931821 +0000\n+++ /tmp/puppet-file20261127-3320-ius3nv\t2026-11-27 22:10:32.006022008 +0000\n@@ -26,4 +26,3 @@\n PHE1QTWb+GZaB0BOkb0j8kcCqKsoxhITtRmAqv3WMoQ5ObEJKnCjwVK2KDdwwXMk\n /vz/xblOPqQ6LV4VwXwLVlo=\n -----END PRIVATE KEY-----\n-# p8test drift\n\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_postfix/Infra_populi::Ssl_base[postfix ssl config]/File[/etc/ssl/private/p8test.key]/content: \n\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Ssl_postfix/Infra_populi::Ssl_base[postfix ssl config]/File[/etc/ssl/private/p8test.key]/content: content changed '{sha256}7708533a6c9866606b1000256ccfdcb6e57e399d6aec100f69d0c0f1a57933ce' to '{sha256}1408355e23bf8f52551c5dc0f4d7781e7797279b8b37a40379d5f1140fcc0854' (corrective)\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Infra_populi::Ssl_postfix/Infra_populi::Ssl_base[postfix ssl config]/File[/etc/ssl/private/p8test.key]: Scheduling refresh of Service[postfix]\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Postfix_smtp_node/Service[postfix]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 1.36 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/etc/ssl/private/p8test.key]\nCHANGED Service[postfix]\n"
+  }
+ },
+ "variants": {
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "clean": [
+    {
+     "id": "on-redhat-the-key-is-in-pki-tls-private-and-matches-the-bundle",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "key-matches-certificate\n",
+     "stderr": "stat: cannot statx '/etc/pki/tls/private/p8test.key': No such file or directory\nstat: cannot statx '/etc/ssl/certs/p8test.postfix.bundle.crt': No such file or directory\nCould not open file or uri for loading certificate from /etc/ssl/certs/p8test.postfix.bundle.crt: No such file or directory\nCould not open file or uri for loading private key of key from /etc/pki/tls/private/p8test.key: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 127,
+    "green": false,
+    "node_fresh": true,
+    "tail": "ertificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795817833'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.39 seconds\u001b[0m\nCOVERAGE infra_populi::ssl_postfix: 5 concrete resources (+3 defined-type instances)\n  Infra_populi::Ssl_base[postfix ssl config]\n  File[/etc/pki/tls/private/p8test.key]\n  Concat[/etc/ssl/certs/p8test.postfix.bundle.crt]\n  Concat::Fragment[first_certificate_p8test]\n  Concat::Fragment[intermediate_certificates_p8test]\n  Concat_file[/etc/ssl/certs/p8test.postfix.bundle.crt]\n  Concat_fragment[first_certificate_p8test]\n  Concat_fragment[intermediate_certificates_p8test]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP ssl_postfix d4ae6c4225f6\n\nNODE_FRESH: yes (boot a19c557c of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n/home/salatiel/.local/bin/infra_populi_tools/test_class.sh: line 991: went: command not found\n/home/salatiel/.local/bin/infra_populi_tools/test_class.sh failed with exit status 127.\n\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "a19c557c-021b-4ba0-9910-e3391b0b9dc5",
+     "snapshot": "P8LAB_RHEL9_BASELINE_v3",
+     "apt_mirror": null,
+     "boot_id_at_end": "a19c557c-021b-4ba0-9910-e3391b0b9dc5",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "41b690f7a66c455d195c35319525e144e281319790752616ae7f7c6716d6528d"
+  },
+  "letsencrypt": {
+   "name": "letsencrypt",
+   "node": "ubuntu",
+   "params": "letsencrypt",
+   "clean": [
+    {
+     "id": "letsencrypt-key-and-bundle",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "key-matches-certificate\n",
+     "stderr": "stat: cannot statx '/etc/ssl/private/p8test-key.pem': No such file or directory\ngrep: /etc/ssl/certs/p8test.postfix.bundle.pem: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": " in 22.35 seconds\u001b[0m\nRUN1_EVENTS: 6 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795817913'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.72 seconds\u001b[0m\nCOVERAGE infra_populi::ssl_postfix: 5 concrete resources (+3 defined-type instances)\n  Infra_populi::Ssl_base[postfix ssl config]\n  File[/etc/ssl/private/p8test-key.pem]\n  Concat[/etc/ssl/certs/p8test.postfix.bundle.pem]\n  Concat::Fragment[first_certificate_p8test]\n  Concat::Fragment[intermediate_certificates_p8test]\n  Concat_file[/etc/ssl/certs/p8test.postfix.bundle.pem]\n  Concat_fragment[first_certificate_p8test]\n  Concat_fragment[intermediate_certificates_p8test]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant letsencrypt; never a Phase 1 record)\n\nNODE_FRESH: yes (boot 3fea1c4d of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+   },
+   "applied": [
+    {
+     "id": "letsencrypt-key-and-bundle",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "root:root 600\ntwo or more certificates\nkey-matches-certificate\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "3fea1c4d-7926-4b5b-a6b5-b9da808dc7ff",
+     "snapshot": "P8NODE_BASELINE_GREEN_v6",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "3fea1c4d-7926-4b5b-a6b5-b9da808dc7ff",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "c57ea85628ddaf2ef9a7df641805d11274b72d84a95d094aaf75df79fd07c266"
+  }
+ },
+ "duration_s": 581.6
+}

@@ -175,6 +175,8 @@ def harness(argv: list[str]) -> int:
     data = __import__("yaml").safe_load((checks / f"{cls}.yml").read_text())
     v = next((x for x in data.get("variants") or [] if x["name"] == variant), {}) if variant else {}
     mc.HARNESS = harness_tool()
+    if v.get("node_fixture"):  # a variant's own node fixture, rendered by the harness after the plan's
+        os.environ["P8_NODE_FIXTURE_VARIANT"] = v["node_fixture"]
     rc, text = mc.harness(cls, kind if variant else None, params or None)
     if rc != 0:
         print(f"the harness did not render: {text[-500:]}")
@@ -185,6 +187,8 @@ def harness(argv: list[str]) -> int:
         return 1
     e = env()
     e["P8_METRICS_DIR"] = str(REPO / ".codex_state" / "logs" / "phase3-metrics")
+    if v.get("node_fixture"):
+        e["P8_NODE_FIXTURE_VARIANT"] = v["node_fixture"]
     if params:
         e["P8_PARAMS_VARIANT"] = params
         if v.get("no_resources"):

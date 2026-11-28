@@ -26,14 +26,14 @@ outcomes:
   checks:
   - the-key-is-changed-by-hand
   - the-agent-run-restores-the-key-and-restarts-postfix
-- outcome: Let's Encrypt-shaped files (letsencrypt_certificate true), and the RedHat paths
-  from: manifests/ssl_base.pp:56-82
-  uncovered:
-    why: the fixture sets letsencrypt_certificate false and the plan's node is Debian; one set holds one fixture on one node
-    lifted_by: 'capability: more than one params fixture per set, and a phase3 set for a node kind other than the plan''s
-      (rhel9)'
-    evidence: the params fixture has letsencrypt_certificate false; {{SITE:engine-runner}} runs a set on the class's plan
-      node with one fixture
+- outcome: the RedHat paths (/etc/pki/tls/private for the key)
+  from: manifests/ssl_base.pp:57-62
+  checks:
+  - on-redhat-the-key-is-in-pki-tls-private-and-matches-the-bundle
+- outcome: Let's Encrypt-shaped files (letsencrypt_certificate true)
+  from: manifests/ssl_base.pp:70-75
+  checks:
+  - letsencrypt-key-and-bundle
 checks:
 - id: private-key-installed-root-only
   what: the prefix's private key is installed as /etc/ssl/private/<prefix>.key, root:root 0600
@@ -175,11 +175,62 @@ checks:
   expect:
     rc: 0
     stdout: \Akey restored\npostfix restarted\n\Z
+- id: on-redhat-the-key-is-in-pki-tls-private-and-matches-the-bundle
+  control: negative
+  what: on RedHat the private key is in /etc/pki/tls/private, root-only, and the postfix bundle in /etc/ssl/certs holds the
+    certificate of that key
+  derived_from:
+  - path: manifests/ssl_base.pp
+    lines: 57-62
+    text: $ssl_private_dir = '/etc/pki/tls/private'
+  - path: manifests/ssl_base.pp
+    lines: 57-62
+    text: $ssl_certs_dir  = '/etc/ssl/certs'
+  probe: |
+    stat -c '%n %U:%G %a' /etc/pki/tls/private/p8test.key /etc/ssl/certs/p8test.postfix.bundle.crt
+    a=$(openssl x509 -noout -pubkey -in /etc/ssl/certs/p8test.postfix.bundle.crt | sha256sum)
+    b=$(openssl pkey -pubout -in /etc/pki/tls/private/p8test.key | sha256sum)
+    test "$a" = "$b" && echo key-matches-certificate
+  expect:
+    rc: 0
+    stdout: \A/etc/pki/tls/private/p8test\.key root:root 600\n/etc/ssl/certs/p8test\.postfix\.bundle\.crt root:root 644\nkey-matches-certificate\n\Z
+  variant: rhel
+- id: letsencrypt-key-and-bundle
+  control: negative
+  what: with Let's Encrypt-shaped files the key is <prefix>-key.pem, root-only, and the postfix bundle <prefix>.postfix.bundle.pem
+    holds the certificate of that key and its chain
+  derived_from:
+  - path: manifests/ssl_base.pp
+    lines: 70-76
+    text: $key_file                 = "${ssl_private_dir}/${myprefix}-key.pem"
+  - path: manifests/ssl_base.pp
+    lines: 70-76
+    text: $bundle_file              = "${ssl_certs_dir}/${myprefix}.${myservice}.bundle.pem"
+  probe: |
+    k=/etc/ssl/private/p8test-key.pem; b=/etc/ssl/certs/p8test.postfix.bundle.pem
+    stat -c '%U:%G %a' "$k"
+    grep -c 'BEGIN CERTIFICATE' "$b" | sed 's/^[2-9]$/two or more certificates/'
+    [ "$(openssl pkey -in "$k" -pubout 2>/dev/null)" = "$(openssl x509 -in "$b" -noout -pubkey 2>/dev/null)" ] && echo key-matches-certificate || echo key-does-not-match
+  expect:
+    rc: 0
+    stdout: \Aroot:root 600\ntwo or more certificates\nkey-matches-certificate\n\Z
+  variant: letsencrypt
+variants:
+- name: rhel
+  node: rhel9
+  why: the RedHat branch of ssl_base, which this class wraps (the private key in /etc/pki/tls/private), on the rhel9 node,
+    with the set's own params fixture
+- name: letsencrypt
+  params: letsencrypt
+  why: letsencrypt_certificate true, which postfix_smtp_base forwards to this class (a composite production nodes may declare)
 apply:
   resource_type: class
   node: ubuntu
   catalog:
     Debian:
+    - class: postfix_smtp_node
+    - class: ssl_postfix
+    RedHat:
     - class: postfix_smtp_node
     - class: ssl_postfix
   requires:

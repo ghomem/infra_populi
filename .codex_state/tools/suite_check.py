@@ -7,7 +7,9 @@ Refuses, in any file under spec/behaviour/:
   - a lab value: a node's name, alias, VM, certname, address or baseline snapshot (nodes.yml), the master's name or
     address, the controller's address, the lab networks (192.168.56.0/24, VirtualBox NAT 10.0.2.0/24);
   - a reference to the engine: `.codex_state`, the advisor, Codex, or one of the engine's files by name (the sets cite
-    them only as {{SITE:...}} placeholders).
+    them only as {{SITE:...}} placeholders);
+  - private key material, except the suite's labelled throwaway test material (HQ 2026-11-27 item 5): files under
+    fixtures/throwaway/ named p8test-throwaway-*, beside that directory's README.md, which says what they are.
 And in a params fixture (spec/behaviour/fixtures/params/**.json), anything that is not plainly fake (ruling 2: the
 one exception to "never commit params", real or lab-specific values stay outside git):
   - an IPv4 address outside RFC 5737, loopback, 0.0.0.0 and private ranges (a public host is real);
@@ -145,6 +147,14 @@ def check_file(path: Path, lab: list[str], files: list[str]) -> list[str]:
     except UnicodeDecodeError:
         return []
     found = [f"{rel}: {p}" for p in text_problems(text, lab, files)]
+    throwaway = SUITE / "fixtures" / "throwaway"
+    if path.is_relative_to(throwaway):
+        if path.name != "README.md" and not path.name.startswith("p8test-throwaway-"):
+            found.append(f"{rel}: a file of fixtures/throwaway is named p8test-throwaway-* (or is its README.md)")
+        elif not (throwaway / "README.md").is_file():
+            found.append(f"{rel}: fixtures/throwaway needs its README.md (what the throwaway material is)")
+    elif "PRIVATE KEY" in text:
+        found.append(f"{rel}: private key material (only fixtures/throwaway/p8test-throwaway-* may hold a test key)")
     params = SUITE / "fixtures" / "params"
     if path.suffix == ".json" and path.is_relative_to(params):
         try:

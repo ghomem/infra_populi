@@ -5,62 +5,79 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 
 ## Summary
 
-- Done classes: 90 (89 verified by the Phase 1 reviewer). Owner-validated: postfix_smtp_base_config_file. Retired: nginx_proxy_smtp_auth_ppa. Blocked: none.
-- Behaviour (Phase 3): 1 deferred, 3 finding, 86 pass.
-- Open rows (outcomes no check probes): 84 in 61 classes.
+- Done classes: 90 (90 verified by the Phase 1 reviewer). Owner-validated: postfix_smtp_base_config_file. Retired: nginx_proxy_smtp_auth_ppa. Blocked: none.
+- Verified count: user_lock was shown unverified until 2026-11-27 (89 of 90): a later `P8: migrate` commit (3731d97) changed only the tracker, and the order generator took it as the class's migration while the reviewer, by HQ 2026-11-23 ruling 1, judged the one that changed the class (a795d98, PASS); the generator now applies the same ruling.
+- Production machines follow the corrected rule (HQ 2026-11-27 item 6): a conditional include counts only where it is turned on, and a class on one OS family's branch says so.
+- Behaviour (Phase 3): 1 deferred, 2 finding, 54 pass, 33 stale.
+- Open rows (outcomes no check probes): 72 in 56 classes.
 - Stand-ins: 7. Local changes: 24 (in 19 classes).
 
 ## For Salatiel's decision
 
 ### Behaviour findings
 
-- **filesystem_apt** — the-full-update-script-leaves-nothing-to-upgrade (escalations/filesystem_apt.behaviour.md)
-- **firewall_secure_extra** — the-rst-limit-dropped-the-third (escalations/firewall_secure_extra.behaviour.md)
-- **openvpn_server** — the-data-channel-is-compressed-both-ways (escalations/openvpn_server.behaviour.md)
+- **filesystem_apt** — the-full-update-script-leaves-nothing-to-upgrade (escalations/filesystem_apt.behaviour.md) — *accepted as known (Salatiel, 2026-11-27)*
+- **firewall_secure_extra** — the-rst-limit-dropped-the-third (escalations/firewall_secure_extra.behaviour.md) — *accepted as known (Salatiel, 2026-11-27)*
 
 ### Stand-ins
 
 - **letsencrypt_certificate** — fixture `letsencrypt_cert_standin`; lifted by: an ACME test endpoint in the lab, so certbot obtains a real certificate (HQ batch-7 ruling 2). *stays; for Salatiel's explicit acceptance: a real lift needs a sandbox DNS zone and an API token against Let's Encrypt staging (documentation list, cutover row 8) (HQ 2026-11-23)*
-- **network_vpn** — fixture `p8test_dhcp_primary`; lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). *stays; for Salatiel's explicit acceptance: the first VPN gateway is migrated as a recreated test gateway before any live one (documentation list, cutover row 9) (HQ 2026-11-23)*
-- **openvpn_domain** — fixture `p8test_domain_dns`; lifted by: a node on a network whose DNS (DHCP) serves the AD domain, as production's. *not in HQ's lift list (item 6): stays as it is, for Salatiel's attention*
-- **openvpn_nm_connection** — fixture `p8test_vpn_ca`; lifted by: a class or node definition that ships the VPN CA to desktops (none in the code tree). *not in HQ's lift list (item 6): stays as it is, for Salatiel's attention*
-- **openvpn_server** — fixture `p8test_dhcp_primary`; lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). *stays; for Salatiel's explicit acceptance: the first VPN gateway is migrated as a recreated test gateway before any live one (documentation list, cutover row 9) (HQ 2026-11-23)*
-- **user_samba** — fixture `samba_dc_standin`; lifted by: a Zentyal/Samba AD domain controller node with Zentyal's user scripts (none yet; the planned dc kind, p8lab-dc, is a plain Samba AD DC). *stays; for Salatiel's explicit acceptance (HQ after batch 20, item 6)*
-- **user_sysmon** — fixture `sysmon_server`; lifted by: a monitoring-server node running Naemon + Thruk from the monitoring repository (no nodes.yml kind). *stays; for Salatiel's explicit acceptance (HQ after batch 20, item 6)*
+- **network_vpn** — fixture `p8test_dhcp_primary`; lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). *accepted (Salatiel, 2026-11-27)*
+- **openvpn_domain** — fixture `p8test_domain_dns`; lifted by: a node on a network whose DNS (DHCP) serves the AD domain, as production's. *accepted (Salatiel, 2026-11-27)*
+- **openvpn_nm_connection** — fixture `p8test_vpn_ca`; lifted by: a class or node definition that ships the VPN CA to desktops (none in the code tree). *accepted (Salatiel, 2026-11-27)*
+- **openvpn_server** — fixture `p8test_dhcp_primary`; lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). *accepted (Salatiel, 2026-11-27)*
+- **user_samba** — fixture `samba_dc_standin`; lifted by: a Zentyal/Samba AD domain controller node with Zentyal's user scripts (none yet; the planned dc kind, p8lab-dc, is a plain Samba AD DC). *accepted; to be tested against the client's Zentyal server when that client is migrated (documentation list, cutover row 12) (Salatiel, 2026-11-27)*
+- **user_sysmon** — fixture `sysmon_server`; lifted by: a monitoring-server node running Naemon + Thruk from the monitoring repository (no nodes.yml kind). *accepted; to be tested on the monitoring server at the cutover (documentation list, cutover row 11) (Salatiel, 2026-11-27)*
 
 ### Accepted gaps (parameter variants production does not use)
 
-- **docker_container** — digest: an image pinned by digest — a parameter variant no production node uses
-- **firewall_addon_caching_nameserver** — port: another nameserver port (port parameter) — another port is a parameter variant (the fixture keeps the default 53)
-- **network_vpn** — openvpn_netmask, openvpn_cipher, openvpn_reneg_sec, client_isolation: another VPN network size, cipher, renegotiation interval or client isolation off — parameter variants no production node uses (the fixture sets the network itself, wan_iface as production does)
-- **nginx_base** — log_formats_additional, dh_params_bits: additional log formats and another DH size — parameter variants no production node uses (the fixture keeps the default 2048 bits and the two formats)
-- **nginx_frontend** — servers_create, enable_ssl, manage_ssl, redirects_external_location, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, security_headers, redirects_external_prevented, redirects_external_whitelisted, server_default_create, ip_whitelist, use_compact_log_format, resolver: the parameters no production node sets (servers_create, enable_ssl, manage_ssl, redirects_external_location, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, security_headers, redirects_external_prevented, redirects_external_whitelisted, server_default_create, ip_whitelist, use_compact_log_format, resolver) — parameter variants no production node uses
-- **nginx_frontend_domain** — servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, ip_whitelist, proxy_locations_ignore_headers, redirect_http_www_to_https_www_create, server_https_www_create, redirects_external_prevented, redirects_external_location, redirects_external_whitelisted, redirects_external_prevented_adhoc_config, use_compact_log_format, resolver: the parameters no production node sets (servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, ip_whitelist, proxy_locations_ignore_headers, redirect_http_www_to_https_www_create, server_https_www_create, redirects_external_prevented, redirects_external_location, redirects_external_whitelisted, redirects_external_prevented_adhoc_config, use_compact_log_format, resolver) — parameter variants no production node uses
-- **node_base** — anti_ddos, apt_surface_list, bad_mark, ciphers, country_whitelist, customize_syslog_mode, custom_ntp, ddos_limit, ddos_limit_per_time_unit, ddos_limit_time_unit, filesystem_security, firewall_secure_extra, forward_iniface, good_mark, host_keys, internal_forward, internal_forward_list, ip_blacklist, ip_filter, ip_whitelist, kex_algorithm, macs, nameservers, ntp_servers, password_authentication, relevant_updates_method, relevant_updates_no_kernel, server_ppa, service_list, ssh_allow_root_login, ssh_port, syslog_mode: the parameters node_base forwards that no production node sets (custom NTP, nameservers, the extra firewall and its options, SSH options, syslog mode, apt and update options, filesystem security) — parameter variants no production node uses on node_base
-- **openvpn_server** — force_ifupdown, compression: force_ifupdown true and compression none — parameter variants no production node uses (the fixture keeps their defaults)
-- **ssh_secure** — root_login, port, host_keys, kex_algorithm, ciphers, macs: the other parameter variants (root_login true, another port, other host keys, kex algorithms, ciphers or MACs) — parameter variants no production node uses
+- **docker_container** — digest: an image pinned by digest — a parameter variant no production node uses — *accepted (Salatiel, 2026-11-27)*
+- **firewall_addon_caching_nameserver** — port: another nameserver port (port parameter) — another port is a parameter variant (the fixture keeps the default 53) — *accepted (Salatiel, 2026-11-27)*
+- **hashman_base** — debug_mode: debug output from the PAM helper (debug_mode true) — a parameter variant no production node uses (the fixture keeps the default, false) — *new since Salatiel's review: for acceptance*
+- **hello_world_flask** — uninstall, ip_address, port, welcome_msg: uninstalling (uninstall true), another address, port or message — parameter variants no production node uses (the fixture: installed, 127.0.0.1:8080, the test message) — *new since Salatiel's review: for acceptance*
+- **letsencrypt_base** — automate_deployment, renew_cron_hour, renew_cron_minute, deploy_cron_hour, deploy_cron_minute: deployment automation off, other renew and deploy times (automate_deployment, the four cron times) — parameter variants no production node uses (the fixture keeps automation on and the default times) — *new since Salatiel's review: for acceptance*
+- **linux_policies_user** — username, policies: other users or other policy lists — parameter variants no production node uses (the fixture: p8testuser, two no-op lines) — *new since Salatiel's review: for acceptance*
+- **mariadb_server** — custom_mysqld_configs, custom_mariadb_configs, generate_certificates, ro_user, rw_user: custom mysqld or mariadb options, certificates not generated, a single user or none — parameter variants no production node uses (the fixture: generated certificates, both users, no custom options) — *new since Salatiel's review: for acceptance*
+- **mount_shares_desktop** — symlinks, cache, delay: symlinks to the mounts, and the cache and delay options — parameter variants no production node uses (the fixture keeps the defaults) — *new since Salatiel's review: for acceptance*
+- **mysql_db** — ro_user, ro_pass: a database without a read-only account, and the refusal of a half-given read-only pair — parameter variants no production node uses (the fixture gives both accounts) — *new since Salatiel's review: for acceptance*
+- **network_vpn** — openvpn_netmask, openvpn_cipher, openvpn_reneg_sec, client_isolation: another VPN network size, cipher, renegotiation interval or client isolation off — parameter variants no production node uses (the fixture sets the network itself, wan_iface as production does) — *accepted (Salatiel, 2026-11-27)*
+- **nginx_base** — log_formats_additional, dh_params_bits: additional log formats and another DH size — parameter variants no production node uses (the fixture keeps the default 2048 bits and the two formats) — *accepted (Salatiel, 2026-11-27)*
+- **nginx_frontend** — servers_create, enable_ssl, manage_ssl, redirects_external_location, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, security_headers, redirects_external_prevented, redirects_external_whitelisted, server_default_create, ip_whitelist, use_compact_log_format, resolver: the parameters no production node sets (servers_create, enable_ssl, manage_ssl, redirects_external_location, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, security_headers, redirects_external_prevented, redirects_external_whitelisted, server_default_create, ip_whitelist, use_compact_log_format, resolver) — parameter variants no production node uses — *accepted (Salatiel, 2026-11-27)*
+- **nginx_frontend_domain** — servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, ip_whitelist, proxy_locations_ignore_headers, redirect_http_www_to_https_www_create, server_https_www_create, redirects_external_prevented, redirects_external_location, redirects_external_whitelisted, redirects_external_prevented_adhoc_config, use_compact_log_format, resolver: the parameters no production node sets (servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, ip_whitelist, proxy_locations_ignore_headers, redirect_http_www_to_https_www_create, server_https_www_create, redirects_external_prevented, redirects_external_location, redirects_external_whitelisted, redirects_external_prevented_adhoc_config, use_compact_log_format, resolver) — parameter variants no production node uses — *accepted (Salatiel, 2026-11-27)*
+- **nginx_frontend_mail** — https_port, imaps_port, smtps_port, smtp_port, letsencrypt_certificate, smtp_helo: other ports, a non-letsencrypt certificate, or another helo name — parameter variants no production node uses (the fixture: the default ports, a letsencrypt-style bundle) — *new since Salatiel's review: for acceptance*
+- **nginx_static** — ssl, manage_ssl, redirect_to_https, redirect_to_www, allow_directory_listing, additional_ssl_protocols, additional_ssl_ciphers: TLS, redirects, directory listing on, an IP whitelist or extra TLS settings — parameter variants no production node uses on nginx_static (nginx_static_domain's set exercises HTTPS of the same define) — *new since Salatiel's review: for acceptance*
+- **nginx_static_domain** — redirect_to_www, redirect_default, allow_directory_listing, ip_whitelist, additional_ssl_protocols, additional_ssl_ciphers: the other combinations (redirect to www, a redirecting default server, directory listing, an IP whitelist, extra protocols or ciphers); plain HTTP of the same define is nginx_static's set — parameter variants no production node uses (the fixture: no www, no listing, no whitelist, the base TLS settings) — *new since Salatiel's review: for acceptance*
+- **node_base** — anti_ddos, apt_surface_list, bad_mark, ciphers, country_whitelist, customize_syslog_mode, custom_ntp, ddos_limit, ddos_limit_per_time_unit, ddos_limit_time_unit, filesystem_security, firewall_secure_extra, forward_iniface, good_mark, host_keys, internal_forward, internal_forward_list, ip_blacklist, ip_filter, ip_whitelist, kex_algorithm, macs, nameservers, ntp_servers, password_authentication, relevant_updates_method, relevant_updates_no_kernel, server_ppa, service_list, ssh_allow_root_login, ssh_port, syslog_mode: the parameters node_base forwards that no production node sets (custom NTP, nameservers, the extra firewall and its options, SSH options, syslog mode, apt and update options, filesystem security) — parameter variants no production node uses on node_base — *accepted (Salatiel, 2026-11-27)*
+- **node_base_desktop** — screenlock_users: the per-user KDE screen lock (screenlock_users) — a parameter variant no production node uses (user_kde_lock_screen's own set exercises the lock on kubuntu) — *new since Salatiel's review: for acceptance*
+- **openvpn_server** — force_ifupdown: force_ifupdown true — a parameter variant no production node uses (the fixture keeps the default, false) — *accepted (Salatiel, 2026-11-27)*
+- **postfix_smtp_base** — extra_sec, dh_params_bits, letsencrypt_certificate: the extra_sec hardening (protocols, ciphers, a generated DH group) and Let's Encrypt-shaped certificates — parameter variants no production node uses (the fixture sets extra_sec and letsencrypt_certificate false) — *new since Salatiel's review: for acceptance*
+- **rsyslog_server** — max_sessions, notify_on_connection_close: another session limit or connection-close notices (max_sessions, notify_on_connection_close) — parameter variants no production node uses (the fixture keeps the defaults) — *new since Salatiel's review: for acceptance*
+- **ssh_secure** — root_login, port, host_keys, kex_algorithm, ciphers, macs: the other parameter variants (root_login true, another port, other host keys, kex algorithms, ciphers or MACs) — parameter variants no production node uses — *accepted (Salatiel, 2026-11-27)*
+- **user_desktop** — ignorekey, myppsigs, myppwrapped, screenlock_timeout_minutes, screenlock_grace_seconds: the other parameters (ignorekey, the ecryptfs values, non-default lock-screen values) as they reach user_base and user_kde_lock_screen — parameter variants no production node uses on user_desktop; their effects are user_base's and user_kde_lock_screen's outcomes, tested in their own sets — *new since Salatiel's review: for acceptance*
+- **user_desktop_sudoer** — ignorekey, myppsigs, myppwrapped, screenlock_timeout_minutes, screenlock_grace_seconds: the other parameters (ignorekey, the ecryptfs values, non-default lock-screen values) as they reach user_base and user_kde_lock_screen — parameter variants no production node uses on user_desktop_sudoer; their effects are user_base's and user_kde_lock_screen's outcomes, tested in their own sets — *new since Salatiel's review: for acceptance*
+- **openvpn_server** — compression: not accepted — compression off is tested: production is heading there (HQ item 3)
 
 ### Open escalations
 
-- none
+- escalations/letsencrypt_base.behaviour.md: letsencrypt_base — behaviour finding: the Hetzner DNS plugin cannot be installed on Ubuntu 24.04 (OPEN 2026-11-28; more than one reasonable design)
 
 ## One row per class
 
 | class | prod | node | behaviour | proven | open | stand-in | finding | local changes |
 |---|---:|---|---|---:|---:|---|---|---|
-| backup | 2 | ubuntu | pass | 5 | 2 |  |  | #14, #15 |
+| backup | 2 | ubuntu | stale | 6 | 1 |  |  | #14, #15 |
 | backup_rsnapshot | 2 | ubuntu | pass | 5 | 1 |  |  |  |
 | backup_rsnapshot_pre | 2 | ubuntu | pass | 5 | 0 |  |  |  |
-| caching_nameserver | 3 | ubuntu + ubuntu2 | pass | 5 | 2 |  |  | #9 |
-| dns_client | 58 | ubuntu | pass | 4 | 0 |  |  |  |
-| docker_container | 13 | ubuntu | pass | 8 | 3 |  |  |  |
-| extra_packages_el | 78 | rhel9 | pass | 3 | 1 |  |  |  |
-| filesystem_apt | 58 | ubuntu | finding | 8 | 1 |  | yes | #24 |
+| caching_nameserver | 3 | ubuntu + ubuntu2 | stale | 6 | 1 |  |  | #9 |
+| dns_client | 58 | ubuntu | stale | 4 | 0 |  |  |  |
+| docker_container | 13 | ubuntu + ubuntu2 | stale | 9 | 2 |  |  |  |
+| extra_packages_el | RedHat-only (the fleet's RHEL servers are not counted by name) | rhel9 | pass | 3 | 1 |  |  |  |
+| filesystem_apt | at most 58 (the non-RedHat branch; the RHEL servers are not subtracted) | ubuntu | finding | 8 | 1 |  | yes | #24 |
 | filesystem_base | 58 | ubuntu | pass | 6 | 0 |  |  |  |
 | filesystem_base_desktop | 20 | ubuntu | pass | 4 | 0 |  |  |  |
-| filesystem_lib64 | 58 | ubuntu | pass | 2 | 0 |  |  |  |
-| filesystem_sec | 58 | ubuntu | pass | 7 | 0 |  |  | #6 |
-| filesystem_yum | 58 | rhel9 | pass | 3 | 0 |  |  |  |
+| filesystem_lib64 | at most 58 (the non-RedHat branch; the RHEL servers are not subtracted) | ubuntu | pass | 2 | 0 |  |  |  |
+| filesystem_sec | 58 (node_base's filesystem_security defaults on and no node statement sets it) | ubuntu | pass | 7 | 0 |  |  | #6 |
+| filesystem_yum | RedHat-only (the fleet's RHEL servers are not counted by name) | rhel9 | pass | 3 | 0 |  |  |  |
 | firewall | 0 | ubuntu + ubuntu2 | pass | 7 | 1 |  |  |  |
 | firewall_addon_caching_nameserver | 3 | ubuntu | pass | 2 | 1 |  |  |  |
 | firewall_addon_hosting | 0 | ubuntu | pass | 5 | 0 |  |  |  |
@@ -71,54 +88,54 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 | firewall_ipv6_drop_policy | 0 | ubuntu + ubuntu2 | pass | 5 | 0 |  |  |  |
 | firewall_ipv6_drop_policy_desktop | 20 | ubuntu + ubuntu2 | pass | 6 | 0 |  |  |  |
 | firewall_secure | 78 | ubuntu + ubuntu2 | pass | 9 | 1 |  |  |  |
-| firewall_secure_extra | 58 | ubuntu + ubuntu2 | finding | 14 | 4 |  | yes | #5 |
+| firewall_secure_extra | 0 (only where node_base's firewall_secure_extra is turned on; it defaults off and no node statement sets it) | ubuntu + ubuntu2 | finding | 14 | 4 |  | yes | #5 |
 | gnome_lock_screen | 20 | ubuntu | pass | 5 | 0 |  |  |  |
-| hashman_base | 1 | puppetserver + ubuntu2 | pass | 8 | 3 |  |  |  |
-| hashman_web | 1 | puppetserver + ubuntu2 | pass | 11 | 1 |  |  | #2 |
-| hello_world_flask | 0 | ubuntu | pass | 4 | 2 |  |  | #16 |
-| hello_world_flask_common | 0 | ubuntu | pass | 2 | 1 |  |  |  |
-| letsencrypt_base | 1 | puppetserver | pass | 4 | 3 |  |  |  |
+| hashman_base | 1 | puppetserver + kubuntu | stale | 9 | 3 |  |  |  |
+| hashman_web | 1 | puppetserver + ubuntu2 | stale | 11 | 1 |  |  | #2 |
+| hello_world_flask | 0 | ubuntu | stale | 5 | 1 |  |  | #16 |
+| hello_world_flask_common | 0 | ubuntu | stale | 3 | 0 |  |  |  |
+| letsencrypt_base | 1 | puppetserver | stale | 5 | 3 |  |  |  |
 | letsencrypt_certificate | 0 | ubuntu | deferred | 0 | 0 | yes |  |  |
-| linux_policies_common | 0 | ubuntu | pass | 3 | 1 |  |  |  |
-| linux_policies_user | 0 | kubuntu | pass | 4 | 1 |  |  |  |
-| mariadb_server | 0 | ubuntu + ubuntu2 | pass | 6 | 1 |  |  |  |
-| mount_shares_desktop | 0 | gnome + ubuntu2 | pass | 3 | 1 |  |  |  |
-| mysql_db | 0 | ubuntu + ubuntu2 | pass | 5 | 1 |  |  |  |
-| mysql_server | 1 | ubuntu | pass | 5 | 0 |  |  |  |
+| linux_policies_common | 0 | ubuntu | stale | 3 | 1 |  |  |  |
+| linux_policies_user | 0 | kubuntu | stale | 4 | 1 |  |  |  |
+| mariadb_server | 0 | ubuntu + ubuntu2 | stale | 6 | 1 |  |  |  |
+| mount_shares_desktop | 0 | gnome + ubuntu2 | stale | 3 | 2 |  |  |  |
+| mysql_db | 0 | ubuntu + ubuntu2 | stale | 5 | 1 |  |  |  |
+| mysql_server | 1 | ubuntu | stale | 5 | 0 |  |  |  |
 | network_dhcp | 3 | ubuntu | pass | 5 | 1 |  |  | #10 |
 | network_static | 0 | ubuntu | pass | 6 | 1 |  |  | #11, #12 |
-| network_vpn | 3 | ubuntu + ubuntu2 | pass | 5 | 2 | yes |  |  |
-| nginx_base | 33 | ubuntu | pass | 9 | 1 |  |  |  |
+| network_vpn | 3 | ubuntu + ubuntu2 | stale | 5 | 2 | yes |  |  |
+| nginx_base | 33 | ubuntu | stale | 9 | 1 |  |  |  |
 | nginx_default_removal | 36 | ubuntu | pass | 1 | 0 |  |  |  |
 | nginx_frontend | 24 | ubuntu | pass | 9 | 1 |  |  |  |
 | nginx_frontend_domain | 35 | ubuntu | pass | 7 | 1 |  |  |  |
-| nginx_frontend_mail | 0 | ubuntu + ubuntu2 | pass | 5 | 1 |  |  |  |
-| nginx_static | 0 | ubuntu | pass | 3 | 1 |  |  |  |
-| nginx_static_domain | 1 | ubuntu | pass | 4 | 2 |  |  |  |
+| nginx_frontend_mail | 0 | ubuntu + ubuntu2 | stale | 5 | 1 |  |  |  |
+| nginx_static | 0 | ubuntu | stale | 3 | 1 |  |  |  |
+| nginx_static_domain | 1 | ubuntu | stale | 5 | 2 |  |  |  |
 | node_base | 58 | ubuntu | pass | 11 | 1 |  |  |  |
-| node_base_desktop | 0 | gnome | pass | 10 | 1 |  |  |  |
+| node_base_desktop | 0 | gnome | stale | 10 | 1 |  |  |  |
 | node_base_domain_desktop | 0 | ubuntu | pass | 7 | 0 |  |  |  |
 | openvpn_domain | 0 | ubuntu + dc | pass | 6 | 0 | yes |  | #17 |
 | openvpn_nm_connection | 0 | gnome + ubuntu2 | pass | 4 | 1 | yes |  |  |
-| openvpn_server | 3 | ubuntu + ubuntu2 | finding | 9 | 1 | yes | yes | #7 |
+| openvpn_server | 3 | ubuntu + ubuntu2 | stale | 10 | 1 | yes |  | #7 |
 | openvpn_set_vpn_passwd_file | 0 | kubuntu + ubuntu2 | pass | 5 | 1 |  |  | #21 |
 | packages_base | 78 | ubuntu | pass | 6 | 0 |  |  |  |
-| postfix_smtp_base | 0 | ubuntu + ubuntu2 | pass | 8 | 2 |  |  |  |
+| postfix_smtp_base | 0 | ubuntu + ubuntu2 | stale | 8 | 2 |  |  |  |
 | postfix_smtp_node | 3 | ubuntu + ubuntu2 | pass | 7 | 0 |  |  |  |
 | puppet_backup | 1 | ubuntu | pass | 5 | 1 |  |  |  |
-| puppet_boot_run | 58 | ubuntu | pass | 4 | 2 |  |  | #13 |
+| puppet_boot_run | at most 2 (only where node_base's run_puppet_on_boot is turned on; it defaults off and 2 node statement(s) set it) | ubuntu | pass | 4 | 2 |  |  | #13 |
 | puppet_commush | 2 | ubuntu | pass | 4 | 1 |  |  |  |
 | puppet_reports_cleanup | 1 | ubuntu | pass | 2 | 1 |  |  |  |
 | rsyslog_apparmor_exception | 1 | ubuntu | pass | 3 | 0 |  |  |  |
 | rsyslog_base | 77 | ubuntu | pass | 8 | 1 |  |  | #1, #23 |
 | rsyslog_client | 76 | ubuntu + ubuntu2 | pass | 7 | 1 |  |  | #22 |
-| rsyslog_server | 1 | ubuntu | pass | 5 | 1 |  |  |  |
-| sftp_only | 0 | ubuntu | pass | 3 | 1 |  |  |  |
+| rsyslog_server | 1 | ubuntu | stale | 6 | 1 |  |  |  |
+| sftp_only | 0 | ubuntu | stale | 4 | 0 |  |  |  |
 | ssh_secure | 58 | ubuntu | pass | 9 | 2 |  |  | #8 |
 | ssl_base | 38 | ubuntu | pass | 6 | 1 |  |  |  |
-| ssl_nginx | 0 | ubuntu | pass | 3 | 1 |  |  |  |
+| ssl_nginx | 0 | ubuntu | stale | 4 | 0 |  |  |  |
 | ssl_nginx_domain | 37 | ubuntu | pass | 6 | 0 |  |  |  |
-| ssl_postfix | 0 | ubuntu | pass | 3 | 1 |  |  |  |
+| ssl_postfix | 0 | ubuntu | stale | 5 | 0 |  |  |  |
 | sync | 2 | ubuntu + ubuntu2 | pass | 6 | 1 |  |  |  |
 | sysmon_backup | 1 | ubuntu | pass | 5 | 2 |  |  |  |
 | sysmon_base | 58 | ubuntu + ubuntu2 | pass | 14 | 0 |  |  | #3, #4 |
@@ -127,15 +144,15 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 | sysmon_integrity_node | 0 | ubuntu | pass | 4 | 1 |  |  |  |
 | sysmon_mysqldump_health | 0 | ubuntu | pass | 9 | 0 |  |  | #18, #20 |
 | sysmon_puppet_cert_status | 0 | ubuntu | pass | 3 | 0 |  |  | #19 |
-| user | 2 | ubuntu | pass | 6 | 2 |  |  |  |
-| user_base | 3 | ubuntu | pass | 5 | 3 |  |  |  |
-| user_desktop | 0 | kubuntu | pass | 3 | 1 |  |  |  |
-| user_desktop_sudoer | 0 | kubuntu | pass | 4 | 1 |  |  |  |
-| user_kde_lock_screen | 20 | kubuntu | pass | 5 | 3 |  |  |  |
+| user | 2 | ubuntu | stale | 7 | 1 |  |  |  |
+| user_base | 3 | ubuntu | stale | 7 | 1 |  |  |  |
+| user_desktop | 0 | kubuntu | stale | 3 | 1 |  |  |  |
+| user_desktop_sudoer | 0 | kubuntu | stale | 4 | 1 |  |  |  |
+| user_kde_lock_screen | 20 | kubuntu | stale | 6 | 2 |  |  |  |
 | user_kde_lock_screen_common | 20 | ubuntu | pass | 2 | 1 |  |  |  |
 | user_lock | 0 | puppetserver | pass | 2 | 0 |  |  |  |
 | user_samba | 0 | ubuntu | pass | 1 | 1 | yes |  |  |
-| user_sudoer | 1 | ubuntu | pass | 3 | 1 |  |  |  |
+| user_sudoer | 1 | ubuntu | stale | 4 | 0 |  |  |  |
 | user_sysmon | 0 | ubuntu | pass | 2 | 1 | yes |  |  |
 | users_sudoers | 0 | ubuntu | pass | 3 | 0 |  |  |  |
 
@@ -144,7 +161,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### backup
 
 - **Purpose:** Simple tar-based generic backups: a per-title script, run by cron, that archives the base directories into the backup directory as a dated, gzip-compressed tar (unless compression is off), and deletes that prefix's archives older than the retention period.
-- **Behaviour:** pass; node ubuntu; production machines: 2.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 2.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the per-title script is installed root:root 0755 with the parameters, and the user's crontab runs it at 23:00 every day of the month (`script-installed-with-the-parameters`, `cron-runs-it-at-2300`)
@@ -152,9 +169,9 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - a run writes a dated gzip tar of the base directory into the backup directory, from which a file restores byte for byte (`aged-archives-are-planted`, `a-run-writes-a-restorable-gzip-tar`)
   - the run deletes the prefix's archives older than ndays-1 full days and keeps newer ones and other prefixes' files (`aged-archives-are-planted`, `a-run-deletes-only-its-own-old-archives`)
   - a run that cannot write its archive fails loudly (non-zero exit, an error line on stderr and in syslog) and stops before retention, so no old archive is deleted (`a-failed-run-is-loud`)
+  - compression off, several base directories, another user, time or monthday (`plain-script-and-the-users-cron`, `plain-a-run-as-the-user-archives-both-directories-uncompressed`)
 - **Open rows:**
   - cron itself firing at 23:00 — why: a run would have to wait for 23:00; the crontab entry is checked and the script it names is run by hand — lifted by: capability: a clock-controlled cron trigger inside a phase3 run
-  - compression off, several base directories, another user, time or monthday — why: parameter variants; one set holds one params fixture (compression on, one base directory, root, 23:00) — lifted by: capability: more than one params fixture per set
 - **Local changes:** #14: (the define puppet_backup and sysmon_backup declare) manifests/backup.pp: `ensure_resource('file', $backdir, { 'ensure' => 'directory', 'owner' => $user, 'group' => 'root', 'mode' => '0755' })`, with a comment.; #15: (the define puppet_backup and sysmon_backup declare) templates/backup/backup.sh.erb: after the tar line, `rc=$?`;
 
 ### backup_rsnapshot
@@ -186,7 +203,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### caching_nameserver
 
 - **Purpose:** A caching nameserver with bind: it resolves names recursively for the node itself and for the allowed networks, answers repeated questions from its cache, and refuses everyone else; a changed configuration restarts it.
-- **Behaviour:** pass; node ubuntu, peer ubuntu2; production machines: 3.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu, peer ubuntu2; production machines: 3.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - bind9 is installed and named runs with a configuration named-checkconf accepts (`named-runs-with-a-valid-configuration`)
@@ -194,15 +211,15 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - a client in an allowed network gets answers; a client outside them is refused (`the-lab-nat-ipv6-route-is-removed`, `the-peer-adds-an-allowed-and-an-outside-address`, `an-allowed-client-is-answered-and-an-outside-one-refused`)
   - a changed options file is restored by the next agent run, which restarts named once (`the-options-drift`, `the-agent-run-restores-the-options-and-restarts-named-once`)
   - on a host without a global IPv6 address (2000::/3), named runs IPv4-only and names with long delegation chains resolve (local change (`named-runs-ipv4-only-without-global-ipv6`, `the-lab-nat-ipv6-route-is-removed`, `the-names-that-failed-resolve-cold`)
+  - the RedHat branch (package bind, /etc/named.conf, /var/named, /etc/sysconfig/named) (`on-redhat-bind-runs-with-the-options-as-named-conf`, `on-redhat-the-node-gets-recursive-answers-from-127-0-0-1`)
 - **Open rows:**
   - on a host with a global IPv6 address, named is left as it is — why: the lab has no node with global IPv6 connectivity, so the branch that leaves named unchanged cannot be shown — lifted by: capability: a lab node with a global (2000::/3) IPv6 address and IPv6 internet
-  - the RedHat branch (package bind, /etc/named.conf, /var/named, /etc/sysconfig/named) — why: the RedHat branch; this set runs on the plan's Ubuntu node, and a set runs on one node kind only — lifted by: capability: running a set on a second node kind (phase3.py runs a set on the class's plan node)
 - **Local changes:** #9: On a host whose interfaces carry no global unicast IPv6 address (2000::/3, read from Facter's networking.interfaces bindings6;
 
 ### dns_client
 
 - **Purpose:** Points the node's resolver at the given DNS servers, and only those, and keeps it so, so that names resolve through them.
-- **Behaviour:** pass; node ubuntu; production machines: 58.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 58.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the resolver names exactly the given servers, in order (`resolv-conf-names-exactly-the-given-servers`)
@@ -213,7 +230,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### docker_container
 
 - **Purpose:** Runs one container from an image (pulled at a tag or digest, optionally from a registry with credentials) under systemd, with its app port published on 127.0.0.1 only, and refreshes it when its image resource changes.
-- **Behaviour:** pass; node ubuntu; production machines: 13.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu, peer ubuntu2; production machines: 13.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the image is pulled at the given tag (`the-container-runs-the-image-under-systemd`)
@@ -224,15 +241,15 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - when its image resource changes (an image missing locally is pulled again) the container is recreated (subscribe to the image) (`the-image-tag-is-removed`, `the-agent-run-pulls-the-image-and-restarts-the-container`)
   - with app_port and no host_port the app port is published on 127.0.0.1 at the same port (`without-host-port-the-app-port-is-published-on-loopback`)
   - environment, a named volume, a host-path (bind) volume, a command and another network reach the container (`environment-volume-and-command-reach-the-container`, `another-network-is-used`)
+  - a registry login (username and token) (`registry-the-login-is-stored`, `registry-the-private-image-is-pulled-and-runs`, `registry-a-pull-without-the-login-is-refused`)
 - **Open rows:**
   - ensure (passed to docker::image), set on 1 production node statement whose value is not read — why: the values other than present cannot pass the harness: with latest puppetlabs-docker (image.pp:149-170) runs a noop-false notify and its pull exec on every agent run, so the gate's run 2 is never event-free; with absent it removes an image the running container uses — lifted by: capability: a variant run whose gate allows the run-2 events a parameter makes by design
-  - a registry login (username and token) — why: a login needs a private registry with credentials; production sets them (5 node statements) — lifted by: capability: a private container registry in the lab
   - an image pinned by digest — why: a parameter variant no production node uses — accepted gap (production does not use digest)
 
 ### extra_packages_el
 
 - **Purpose:** Makes the extra package sources of a RHEL node available: the EPEL repository for the node's major version and Red Hat's CodeReady Builder repository, so packages from either can be installed, without touching the base repositories.
-- **Behaviour:** pass; node rhel9; production machines: 78.
+- **Behaviour:** pass; node rhel9; production machines: RedHat-only (the fleet's RHEL servers are not counted by name).
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - EPEL is installed and enabled for the node's major version, and a package from it installs (`epel-release-installed`, `an-epel-package-installs-from-epel`)
@@ -244,7 +261,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### filesystem_apt
 
 - **Purpose:** Apt update tooling for Ubuntu 24.04 servers (the target release; the 20.04/22.04 openscap package branch is not in Phase 1): a wrapper that upgrades a package only if it is installed and has an update (never installing anything new), surface, kernel and full update scripts, and a daily job that lists the relevant (High or above) security updates from Canonical's OVAL data with openscap (for monitoring), and a script that installs the updates on that list through the wrapper; each script is run here.
-- **Behaviour:** finding — the-full-update-script-leaves-nothing-to-upgrade; node ubuntu; production machines: 58.
+- **Behaviour:** finding — the-full-update-script-leaves-nothing-to-upgrade; node ubuntu; production machines: at most 58 (the non-RedHat branch; the RHEL servers are not subtracted).
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the update scripts are installed (wrapper, surface, kernel, full, relevant updates) and openscap is available for the relevant-updates job (`helper-scripts-installed`)
@@ -287,7 +304,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### filesystem_lib64
 
 - **Purpose:** An Ubuntu compatibility link: monitoring checks invoke the nagios plugins by their RedHat path /usr/lib64/nagios, which on Ubuntu must reach the plugins in /usr/lib/nagios.
-- **Behaviour:** pass; node ubuntu; production machines: 58.
+- **Behaviour:** pass; node ubuntu; production machines: at most 58 (the non-RedHat branch; the RHEL servers are not subtracted).
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - /usr/lib64/nagios is a link to /usr/lib/nagios, under a root-owned /usr/lib64 (`lib64-nagios-is-a-link-to-lib-nagios`)
@@ -296,7 +313,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### filesystem_sec
 
 - **Purpose:** Restricts a set of commands useful to an intruder (network clients, compilers) to one group: only members of the restricted group (sudo on Ubuntu, wheel on RedHat) can run them, and they stay restricted.
-- **Behaviour:** pass; node ubuntu; production machines: 58.
+- **Behaviour:** pass; node ubuntu; production machines: 58 (node_base's filesystem_security defaults on and no node statement sets it).
 - **Tracker:** `[from: release-0.9.10; upstream defect fixed: default group assigned to a new variable (no parameter reassignment)]`
 - **Proven:**
   - the listed commands belong to root and the restricted group (sudo by default on Ubuntu), mode 0750 (`restricted-commands-belong-to-the-sudo-group`)
@@ -311,7 +328,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### filesystem_yum
 
 - **Purpose:** Yum update helpers for RedHat-family servers: a surface script that updates the exposed packages (ssh, TLS, web servers) one by one, and a full update script.
-- **Behaviour:** pass; node rhel9; production machines: 58.
+- **Behaviour:** pass; node rhel9; production machines: RedHat-only (the fleet's RHEL servers are not counted by name).
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the two update scripts are installed root-owned 0755 as the module's files (`update-scripts-installed`)
@@ -445,7 +462,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### firewall_secure_extra
 
 - **Purpose:** firewall_secure's default-drop firewall with SSH brute-force limits, extended with DDoS mitigation (invalid and bogus-flag packets, out-of-connection RSTs and fragments dropped, ICMP rate-limited, per-source limits on the listed services), a whitelist side chain through which only listed sources reach the services, and a blacklist that drops listed sources outright.
-- **Behaviour:** finding — the-rst-limit-dropped-the-third; node ubuntu, peer ubuntu2; production machines: 58.
+- **Behaviour:** finding — the-rst-limit-dropped-the-third; node ubuntu, peer ubuntu2; production machines: 0 (only where node_base's firewall_secure_extra is turned on; it defaults off and no node statement sets it).
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - INPUT and FORWARD drop by default; the Hiera whitelist and the acl reach SSH unlimited (`policies-and-ssh-rules`)
@@ -485,7 +502,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### hashman_base
 
 - **Purpose:** Provides Hashman, a Puppet-based user directory managed from the command line: the pp_auth CLI and its library, configured from Hiera, and a user database kept as Puppet code in the master's manifests, created empty on the first run and never overwritten afterwards, from which the master's catalogs give users and password hashes to other machines.
-- **Behaviour:** pass; node puppetserver, peer ubuntu2; production machines: 1.
+- **Behaviour:** stale — the check file changed after its review; node puppetserver, peer kubuntu; production machines: 1.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the CLI, its library configured from Hiera and its Python packages are installed, and the CLI starts (`config-rendered-from-hiera`, `python-dependencies-installed`, `cli-wrapper-starts-the-cli`)
@@ -496,15 +513,16 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - a user the administrator locks or expires is refused on the other machine and gets no SSH key there; a deleted user leaves the database (`admin-sets-a-key-and-revokes-users`, `a-client-refuses-the-locked-and-expired-users`)
   - every notifying CLI command (useradd, unlock, setpw, auth, lock, expire, userdel) mails the support team its result, through the local MTA (`the-support-team-is-notified-of-each-command`)
   - without hashman_web, the CLI refuses the commands that mail the user (useradd without SILENT, inform) and changes nothing (`user-mail-commands-need-hashman-web`)
+  - encrypted home data (setecryptfs) reaching the other machine (`admin-sets-a-key-and-revokes-users`, `a-client-gets-the-encrypted-home-data`, `the-stored-passphrase-opens-the-client-home`)
 - **Open rows:**
   - the mails to the user themselves (a new user's initial password, reset, inform, testemail) — why: they need hashman_web's email template, which this class does not install; they belong to hashman_web composed with this class — lifted by: capability: hashman_web composed with hashman_base on the class's node
-  - encrypted home data (setecryptfs) reaching the other machine — why: the wrapped-passphrase data belongs to a user's real ecryptfs setup, which no fixture user has — lifted by: capability: an ecryptfs-encrypted home fixture on the peer
-  - debug output, another minimum password length or strict password rules — why: one set holds one fixture (the class defaults and the lab Hiera) — lifted by: capability: more than one params fixture per set
+  - debug output from the PAM helper (debug_mode true) — why: a parameter variant no production node uses (the fixture keeps the default, false) — accepted gap (production does not use debug_mode)
+  - another minimum password length or strict password rules — why: they are the Hiera keys hashman::minpasswordlen and hashman::relaxpassword, which a variant run does not vary — lifted by: capability: a Hiera variant per run (phase3.py variants vary the node kind and the class's params fixture)
 
 ### hashman_web
 
 - **Purpose:** The Hashman web portal on the Puppet master: users log in through nginx over HTTPS and change their own password, which Hashman writes to the user database that the master's catalogs give to every node; its backend listens on the local machine only.
-- **Behaviour:** pass; node puppetserver, peer ubuntu2; production machines: 1.
+- **Behaviour:** stale — the check file changed after its review; node puppetserver, peer ubuntu2; production machines: 1.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the hashman web service runs and its backend listens on the local machine only (`hashman-service-on-8080`, `backend-serves-the-portal`)
@@ -525,43 +543,43 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### hello_world_flask
 
 - **Purpose:** Deploys a small Flask web application (a welcome page) under the local directory and runs it with gunicorn as a systemd service on the given address and port, restarting it whenever its files or unit change.
-- **Behaviour:** pass; node ubuntu; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the service runs gunicorn in the app directory, bound to the configured address and port only (`service-running-and-enabled`, `unit-runs-gunicorn-in-the-app-dir`, `not-served-on-another-address`)
   - the page serves the configured welcome message (`app-serves-the-welcome-message`)
   - a hand change to the app is undone by the next agent run, which restarts the service so the configured page is served again (`the-app-is-changed-by-hand`, `the-agent-run-restores-and-restarts`)
   - a hand change to the unit is undone by the next agent run, and the service then runs the configured unit (daemon-reload and restart) (`the-unit-is-changed-by-hand`, `the-agent-run-restores-the-unit-in-effect`)
+  - on RedHat the unit starts gunicorn directly (without python3 -m) (`on-redhat-the-unit-starts-gunicorn-directly`, `on-redhat-the-app-serves-the-welcome-message`)
 - **Open rows:**
-  - on RedHat the unit starts gunicorn directly (without python3 -m) — why: the RedHat branch needs the set run on a RedHat node; one set holds the Debian expectations of the plan's node — lifted by: capability: a phase3 set for a node kind other than the class's plan node (rhel9)
-  - uninstalling (uninstall true), another address, port or message — why: one set holds one params fixture (installed, 127.0.0.1:8080, the test message) — lifted by: capability: more than one params fixture per set
+  - uninstalling (uninstall true), another address, port or message — why: parameter variants no production node uses (the fixture: installed, 127.0.0.1:8080, the test message) — accepted gap (production does not use uninstall, ip_address, port, welcome_msg)
 - **Local changes:** #16: manifests/hello_world_flask.pp: after the two refreshonly execs, `Exec["hello-world-flask-${title}-reload"] -> Exec["hello-world-flask-${title}-restart"]`, with a comment.
 
 ### hello_world_flask_common
 
 - **Purpose:** Provides what every hello_world_flask demo application needs: the Python Flask framework and the gunicorn WSGI server (so an application can be served), and the directory under the local tree the applications live in.
-- **Behaviour:** pass; node ubuntu; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the applications' directory exists, root-owned (`the-applications-directory`)
   - Flask and gunicorn are installed and work together (gunicorn serves a Flask application) (`flask-and-gunicorn-installed`, `gunicorn-serves-a-flask-app`)
-- **Open rows:**
-  - the same on RedHat-family nodes (packages from EPEL through extra_packages_el) — why: the plan's node for this class is Debian (Ubuntu); a set runs on its class's plan node only — lifted by: capability: a phase3 set for a node kind other than the plan's (rhel9)
+  - the same on RedHat-family nodes (packages from EPEL through extra_packages_el) (`on-redhat-flask-and-gunicorn-installed-and-the-directory`)
 
 ### letsencrypt_base
 
 - **Purpose:** Sets up Let's Encrypt certificate maintenance on the Puppet master: certbot with the DNS provider's plugin and its API token, a renewal cron that reloads nginx after renewing, and a cron-run script that copies the maintained domains' renewed certificates into the master's extra_files/ssl, owned by puppet, for the master to serve to nodes.
-- **Behaviour:** pass; node puppetserver; production machines: 1.
+- **Behaviour:** stale — the check file changed after its review; node puppetserver; production machines: 1.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - certbot and the chosen DNS provider's plugin are installed and certbot finds the plugin, with the API token in a root-only credentials file (`dns-plugin-installed`, `certbot-finds-the-dns-plugin`, `dns-credentials-file-private`)
   - certbot renew runs from root's crontab on the renew days, with a post hook that reloads nginx (`renew-cron-with-nginx-reload-hook`)
   - the deploy script and its cron are installed with the maintained domains (`deploy-script-rendered`, `deploy-cron`)
   - the deploy script copies a maintained domain's renewed key, certificate and chain into extra_files/ssl, owned by puppet, and leaves other domains alone (`the-deploy-script-copies-renewed-certificates`)
+  - the Hetzner provider (the plugin from pip at the hetzner-cloud version) and other renewal days (`hetzner-plugin-installed-by-pip`, `hetzner-credentials-file`, `hetzner-renew-and-deploy-on-the-fixtures-days`, `hetzner-certbot-finds-the-plugin`)
 - **Open rows:**
   - after a renewal the hook's nginx reload takes effect — why: the class neither installs nor needs nginx on its node, and the reload has nothing to act on there — lifted by: capability: nginx composed with letsencrypt_base on the class's node
   - obtaining and renewing a certificate through the DNS provider — why: needs the DNS provider's API with a real token and a domain it serves — lifted by: capability: an ACME test endpoint and a DNS provider API stand-in in the lab
-  - the hetzner and hetzner-cloud plugins (pip), deployment automation off, other cron times — why: one set holds one params fixture (digitalocean, automation on, the default times) — lifted by: capability: more than one params fixture per set
+  - deployment automation off, other renew and deploy times (automate_deployment, the four cron times) — why: parameter variants no production node uses (the fixture keeps automation on and the default times) — accepted gap (production does not use automate_deployment, renew_cron_hour, renew_cron_minute, deploy_cron_hour, deploy_cron_minute)
 
 ### letsencrypt_certificate
 
@@ -574,19 +592,19 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### linux_policies_common
 
 - **Purpose:** Provides what every desktop user's Linux policies need: the linux-policies tree under the local directory, the runner script that executes a user's composed policy script, and an XDG autostart entry that runs it at each desktop log-in.
-- **Behaviour:** pass; node ubuntu; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the module's linux-policies tree is deployed under the local directory (`policies-tree-deployed`)
   - the runner executes the calling user's USER/<user>.sh when it exists and is executable, and says so in syslog; without one it logs that the script was not found (`runner-executes-the-users-policy`, `the-runner-reports-a-missing-script`)
   - an XDG autostart entry runs the runner at a desktop log-in (`autostart-entry-runs-the-runner`)
 - **Open rows:**
-  - the autostart entry actually running at a desktop log-in — why: the class's plan node is a server without a desktop; the login side is exercised through linux_policies_user's set on kubuntu, which composes this class — lifted by: capability: a desktop session on the class's plan node
+  - the autostart entry actually running at a desktop log-in — why: the class's plan node is a server without a desktop, and a desktop session runs in a set's base run only; the login side is exercised through linux_policies_user's set on kubuntu, which composes this class — lifted by: capability: a desktop session in a variant run (a set's variants on a desktop kind)
 
 ### linux_policies_user
 
 - **Purpose:** Composes a desktop user's Linux policy script from the given policy lines (under linux-policies/USER/<user>.sh, owned by the user) and runs those policies as the user on every agent run while the user is logged in, and at each desktop log-in through the common autostart entry.
-- **Behaviour:** pass; node kubuntu; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node kubuntu; production machines: 0.
 - **Tracker:** `[from: release-0.9.10; upstream defect fixed: policy exec guarded by the script login check]`
 - **Proven:**
   - USER/<user>.sh is composed from the header and the given policies, owned by the user, 0700 (`user-policy-script-composed`)
@@ -594,12 +612,12 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - at the user's desktop log-in, the autostart entry runs the policies (`autostart-runs-the-policies-at-login`)
   - without a login session the policies do not run (the agent runs before the user's first session run none) (`no-policy-runs-before-the-session`)
 - **Open rows:**
-  - other users or other policy lists — why: one set holds one params fixture (p8testuser, two no-op lines) — lifted by: capability: more than one params fixture per set
+  - other users or other policy lists — why: parameter variants no production node uses (the fixture: p8testuser, two no-op lines) — accepted gap (production does not use username, policies)
 
 ### mariadb_server
 
 - **Purpose:** Runs a MariaDB server whose root account is local only, with up to two users (read/write and read-only) that log in from any host with ed25519 passwords and only over TLS, using certificates the class generates from Hiera's subject data.
-- **Behaviour:** pass; node ubuntu, peer ubuntu2; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu, peer ubuntu2; production machines: 0.
 - **Tracker:** `[from: 874f854; upstream defect fixed: certificate generation guarded by its post-condition]`
 - **Proven:**
   - MariaDB runs with the class's TLS files, required secure transport, the ed25519 plugin and a bind on every address (`mariadb-server-installed-and-running`, `server-runs-the-override-options`, `ed25519-plugin-active`, `insecure-transport-refused`)
@@ -609,24 +627,25 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the rw and ro users exist for any host with ed25519 and required TLS; they log in over TLS, rw with every privilege, ro read-only (`the-users-are-ed25519-and-require-tls`, `the-users-log-in-with-their-grants`)
   - another host logs in over the network with TLS, and without TLS is refused (`another-host-logs-in-over-tls`)
 - **Open rows:**
-  - custom mysqld or mariadb options, certificates not generated, a single user or none — why: one set holds one params fixture (generated certificates, both users, no custom options) — lifted by: capability: more than one params fixture per set
+  - custom mysqld or mariadb options, certificates not generated, a single user or none — why: parameter variants no production node uses (the fixture: generated certificates, both users, no custom options) — accepted gap (production does not use custom_mysqld_configs, custom_mariadb_configs, generate_certificates, ro_user, rw_user)
 
 ### mount_shares_desktop
 
 - **Purpose:** Gives a desktop user two scripts on their Desktop that mount and unmount their network (CIFS) shares under /tmp with their own credentials, asking for the password when it is not given, and optionally open them in the file manager or link them.
-- **Behaviour:** pass; node gnome, peer ubuntu2; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node gnome, peer ubuntu2; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the mount and unmount scripts are on the user's Desktop, root-owned and executable, rendered with the shares and options (`scripts-on-the-desktop-root-owned-executable`, `scripts-render-the-share-and-options`)
   - run as the user with the right password, the mount script mounts the share, private to the user, with the server's files readable; a wrong password mounts nothing and fails (`the-server-serves-the-test-share`, `the-mount-script-mounts-the-share`, `a-wrong-password-does-not-mount`)
   - the unmount script unmounts the shares it lists (`the-unmount-script-unmounts-it`)
 - **Open rows:**
-  - the password asked in a kdialog box, the file manager opened on the mount (explorer), symlinks and the cache/delay options — why: the dialog needs input to a desktop session; the explorer (dolphin, the class's default) is on the kubuntu kind, not on this class's plan node gnome, and a set is judged on its plan node only; symlinks, cache and delay are parameter variants — lifted by: capability: a phase3 set for a node kind other than the class's plan node (kubuntu), input to a desktop session, and more than one params fixture per set
+  - the password asked in a kdialog box and the file manager opened on the mount (explorer) — why: the dialog waits for typed input and the file manager opens in the user's desktop session; a run sends no desktop input, and a session runs in a set's base run only — lifted by: capability: input injection into the node's desktop session inside a run
+  - symlinks to the mounts, and the cache and delay options — why: parameter variants no production node uses (the fixture keeps the defaults) — accepted gap (production does not use symlinks, cache, delay)
 
 ### mysql_db
 
 - **Purpose:** Creates a MySQL database with a read/write account and, optionally, a read-only one, both reachable from any host but only over TLS, so applications get a database of their own with the privileges they need.
-- **Behaviour:** pass; node ubuntu, peer ubuntu2; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu, peer ubuntu2; production machines: 0.
 - **Tracker:** `[from: 874f854]`
 - **Proven:**
   - the MySQL server stays the one running beside the database (no MariaDB replaces it) (`mysql-server-survives-the-define`)
@@ -635,12 +654,12 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the rw account logs in over TLS with its password and writes; the ro account logs in over TLS and reads, and its write is refused (`rw-user-logs-in-over-tls`, `the-accounts-read-and-write-as-granted`)
   - another host logs in over the network with TLS, and without TLS is refused (`another-host-logs-in-over-tls`)
 - **Open rows:**
-  - a database without a read-only account, and the refusal of a half-given read-only pair — why: one set holds one params fixture (both accounts given) — lifted by: capability: more than one params fixture per set
+  - a database without a read-only account, and the refusal of a half-given read-only pair — why: parameter variants no production node uses (the fixture gives both accounts) — accepted gap (production does not use ro_user, ro_pass)
 
 ### mysql_server
 
 - **Purpose:** Runs an Oracle MySQL server from the Ubuntu packages with the data in a custom directory, accepting only TLS connections with the given certificates, with the given root password and the default accounts removed, AppArmor allowing the custom paths.
-- **Behaviour:** pass; node ubuntu; production machines: 1.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 1.
 - **Tracker:** `[from: 874f854]`
 - **Proven:**
   - MySQL (not MariaDB) 8.0 runs, enabled, from the managed configuration and the custom data directory (`mysql-not-mariadb-installed-and-running`, `server-reports-mysql-from-the-managed-config`, `managed-config-file-rendered`)
@@ -683,7 +702,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### network_vpn
 
 - **Purpose:** A VPN gateway: an OpenVPN server whose clients resolve names through the VPN's own caching nameserver on the VPN bridge (allowed through the firewall on the bridge), and reach the WAN through the server, forwarded and masqueraded.
-- **Behaviour:** pass; node ubuntu, peer ubuntu2; production machines: 3.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu, peer ubuntu2; production machines: 3.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - a client connects, gets an address on the VPN network and the VPN's nameserver as DNS (`vpn-server-on-the-vpn-network`, `vpn-account-on-the-server`, `client-connects-and-resolves-through-the-vpn-nameserver`)
@@ -694,12 +713,12 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 - **Open rows:**
   - client isolation, the bridge and the server at boot, the hairpin rule, the data channel's compression, and each composed class's own behaviours — why: these are the composed classes' own behaviours, checked by their own sets under their own fixtures (openvpn_server, firewall_addon_openvpn_server, caching_nameserver, firewall_addon_caching_nameserver; openvpn_server's compression is a finding, escalations/openvpn_server.behaviour.md); this set covers what the composition adds — lifted by: capability: running each composed class's checks inside network_vpn's own run (a set holds its own class's checks)
   - another VPN network size, cipher, renegotiation interval or client isolation off — why: parameter variants no production node uses (the fixture sets the network itself, wan_iface as production does) — accepted gap (production does not use openvpn_netmask, openvpn_cipher, openvpn_reneg_sec, client_isolation)
-- **Stand-in:** `p8test_dhcp_primary` — lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). Plan: stays; for Salatiel's explicit acceptance: the first VPN gateway is migrated as a recreated test gateway before any live one (documentation list, cutover row 9) (HQ 2026-11-23)
+- **Stand-in:** `p8test_dhcp_primary` — lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). Plan: accepted (Salatiel, 2026-11-27)
 
 ### nginx_base
 
 - **Purpose:** The common nginx base of every web frontend: nginx installed and running from the distribution's package with a valid configuration (dynamic modules loaded once), auto worker processes, no version in the Server header, the site's two log formats, and a strong Diffie-Hellman group kept private, plus ad-hoc configuration when given.
-- **Behaviour:** pass; node ubuntu; production machines: 33.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 33.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - nginx comes from the distribution's archive (manage_repo false), with no nginx.org repository added (`nginx-comes-from-the-ubuntu-archive`)
@@ -759,7 +778,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### nginx_frontend_mail
 
 - **Purpose:** Makes a node the mail frontend of a domain: nginx proxies IMAPS (993), SMTPS (465) and SMTP (25) to the mail backend, each session authorised through a local auth_http server and carried by a local stream to the backend, which itself checks the user's credentials, and proxies the backend's web interface on HTTPS, all behind the frontend's certificate.
-- **Behaviour:** pass; node ubuntu, peer ubuntu2; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu, peer ubuntu2; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - nginx runs a valid configuration listening on 993, 465 and 25, with an auth server and a stream per protocol (stream access log off) (`nginx-config-valid-and-running`, `mail-ports-listen`, `auth-servers-point-each-protocol-at-its-stream`, `streams-listen-and-stream-access-log-off`)
@@ -768,32 +787,33 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - a wrong password on SMTPS or IMAPS is refused by the backend (`smtps-465-wrong-password-is-refused-by-the-backend`, `imaps-993-wrong-password-is-refused-by-the-backend`)
   - HTTPS for the domain proxies to the backend's web interface (`https-443-proxies-to-the-backend-web-interface`)
 - **Open rows:**
-  - other ports, a non-letsencrypt certificate, or another helo name — why: one set holds one params fixture (the default ports, a letsencrypt-style bundle) — lifted by: capability: more than one params fixture per set
+  - other ports, a non-letsencrypt certificate, or another helo name — why: parameter variants no production node uses (the fixture: the default ports, a letsencrypt-style bundle) — accepted gap (production does not use https_port, imaps_port, smtps_port, smtp_port, letsencrypt_certificate, smtp_helo)
 
 ### nginx_static
 
 - **Purpose:** Serves a domain's static content over nginx with the class's defaults: plain HTTP from the web root, a default server that answers any other host with 404, no directory listing, and the distribution's default site removed.
-- **Behaviour:** pass; node ubuntu; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - nginx accepts the configuration and serves the domain's files from the web root over plain HTTP (`nginx-config-valid`, `http-serves-www-root-for-the-domain`)
   - any other host gets 404 from the default server, and the distribution's default site is gone (`other-hosts-get-404`, `package-default-site-removed`)
   - a directory without an index is not listed (`a-directory-is-not-listed`)
 - **Open rows:**
-  - TLS, redirects, directory listing on, an IP whitelist or extra TLS settings — why: one set holds one params fixture (plain HTTP, the defaults); nginx_static_domain's set exercises the HTTPS combination of the same define — lifted by: capability: more than one params fixture per set
+  - TLS, redirects, directory listing on, an IP whitelist or extra TLS settings — why: parameter variants no production node uses on nginx_static (nginx_static_domain's set exercises HTTPS of the same define) — accepted gap (production does not use ssl, manage_ssl, redirect_to_https, redirect_to_www, allow_directory_listing, additional_ssl_protocols, additional_ssl_ciphers)
 
 ### nginx_static_domain
 
 - **Purpose:** Sets up nginx servers (vhosts) that serve a domain's static content from a local directory, with the class's redirect and TLS options, so requests for the domain get that content.
-- **Behaviour:** pass; node ubuntu; production machines: 1.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 1.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - nginx accepts the configuration, and plain HTTP for the domain is redirected to HTTPS keeping the path and query (`nginx-config-valid`, `http-redirects-to-https-same-host`)
   - HTTPS for the domain serves the www_root files byte for byte and never lists a directory (`https-serves-www-root`, `https-no-directory-listing`)
   - the HTTPS server presents the domain's certificate bundle, and a client trusting its CA verifies the name (`served-certificate-is-the-bundle`, `https-name-verifies`)
   - the TLS policy holds (TLS 1.2 only, the server's cipher order, the 2048-bit DH group, the prime256v1 curve) (`tls12-only`, `server-cipher-order-and-dh-group`, `ecdh-curve-prime256v1`)
+  - a default server for other hosts (server_default_create) and Let's Encrypt-shaped certificate files (letsencrypt_certificate), as production sets them (`prod-an-unknown-host-gets-404-from-the-default-server`, `prod-serves-the-letsencrypt-shaped-files`, `prod-the-domain-still-redirects-to-https`)
 - **Open rows:**
-  - the other combinations (redirect to www, a default server, directory listing, plain HTTP only, an IP whitelist, extra protocols or ciphers) — why: one set holds one params fixture (HTTPS with a redirect from HTTP, no www, no listing) — lifted by: capability: more than one params fixture per set
+  - the other combinations (redirect to www, a redirecting default server, directory listing, an IP whitelist, extra protocols or ciphers); plain HTTP of the same define is nginx_static's set — why: parameter variants no production node uses (the fixture: no www, no listing, no whitelist, the base TLS settings) — accepted gap (production does not use redirect_to_www, redirect_default, allow_directory_listing, ip_whitelist, additional_ssl_protocols, additional_ssl_ciphers)
   - serving with a Let's Encrypt certificate (letsencrypt_certificate true) — why: a Let's Encrypt certificate needs an ACME endpoint the lab can reach and that can validate the domain — lifted by: capability: an ACME test endpoint in the lab (as for letsencrypt_certificate's stand-in)
 
 ### node_base
@@ -819,7 +839,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### node_base_desktop
 
 - **Purpose:** The base profile of a desktop: the common packages without unattended upgrades, SSH hardened, the firewall with IPv6 input and forwarding dropped, desktop APT helpers with a nightly relevant-updates job, logs shipped to the central log server, the GNOME and per-user KDE screen lock policies, and the Puppet agent running as a daemon.
-- **Behaviour:** pass; node gnome; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node gnome; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - SSH is hardened with no password or root login, and unattended upgrades are removed (`ssh-hardened-without-password-or-root-login`, `unattended-upgrades-removed`)
@@ -833,7 +853,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the puppet service is enabled and running (`puppet-service-enabled-and-running`)
   - the puppet agent daemon running on its interval (`the-agent-daemon-runs-the-catalog`)
 - **Open rows:**
-  - the per-user KDE screen lock (screenlock_users) — why: it needs a KDE session environment the GNOME plan node does not have; user_kde_lock_screen's own set exercises it on kubuntu — lifted by: capability: a phase3 set for a node kind other than the class's plan node (kubuntu)
+  - the per-user KDE screen lock (screenlock_users) — why: a parameter variant no production node uses (user_kde_lock_screen's own set exercises the lock on kubuntu) — accepted gap (production does not use screenlock_users)
 
 ### node_base_domain_desktop
 
@@ -861,7 +881,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - a domain user in a listed group logs in through PAM (login, the service openvpn_server's plugin uses) with the domain password, with the domain prefix and by the bare name (winbind use default domain); a wrong password and a domain user outside the listed groups are refused (`domain-users-for-the-login-checks`, `pam-logins-through-winbind`)
   - Kerberos: the default realm is the domain's realm (the NetBIOS name and the tld, upper-case as AD realms are), and the only realm stanza is the template's literal DOMAIN.LOCAL, so a Kerberos client finds the DC's KDC through DNS; kinit for a domain user without naming a realm gets a ticket, also with a lowercase tld parameter. Nothing in the class's login path uses Kerberos (security = domain joins over RPC; pam_winbind's krb5_auth stays off); the [logging] section is read by a KDC, which the node does not run (`kerberos-realms-against-the-dc`)
   - host names also resolve through NetBIOS/WINS (nsswitch's hosts line ends in wins; smb.conf names the DC as the WINS server): the DC's NetBIOS name resolves through the wins source to the address DNS gives its FQDN, and an unknown name does not (`the-dc-name-resolves-through-wins`)
-- **Stand-in:** `p8test_domain_dns` — lifted by: a node on a network whose DNS (DHCP) serves the AD domain, as production's. Plan: not in HQ's lift list (item 6): stays as it is, for Salatiel's attention
+- **Stand-in:** `p8test_domain_dns` — lifted by: a node on a network whose DNS (DHCP) serves the AD domain, as production's. Plan: accepted (Salatiel, 2026-11-27)
 - **Local changes:** #17: templates/openvpn/krb5.conf.erb:6: `default_realm = <%= @domain_netbios_name.upcase %>.<%= @domain_tld.upcase %>`, with an ERB comment (renders nothing);
 
 ### openvpn_nm_connection
@@ -876,12 +896,12 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the profile connects to an OpenVPN server with the user's password (a tap address, the server reachable through the tunnel), and a wrong password does not connect (`a-test-vpn-pki-and-route`, `the-peer-serves-openvpn`, `the-profile-connects-with-the-password`, `the-server-accepted-the-user`, `a-wrong-password-does-not-connect`, `the-server-refused-the-wrong-password`)
 - **Open rows:**
   - the desktop's own secret agent asking the user for the password when the profile is brought up — why: the password is agent-owned (password-flags=1); the exercise supplies it with nmcli's passwd-file, and the runner starts no GNOME session whose agent would ask — lifted by: capability: a GNOME desktop session in phase3 runs
-- **Stand-in:** `p8test_vpn_ca` — lifted by: a class or node definition that ships the VPN CA to desktops (none in the code tree). Plan: not in HQ's lift list (item 6): stays as it is, for Salatiel's attention
+- **Stand-in:** `p8test_vpn_ca` — lifted by: a class or node definition that ships the VPN CA to desktops (none in the code tree). Plan: accepted (Salatiel, 2026-11-27)
 
 ### openvpn_server
 
 - **Purpose:** An OpenVPN server that bridges its clients onto a LAN bridge: clients authenticate with a local account (PAM, no client certificate), get an address from the bridge's pool and the pushed routes and DNS, reach the server's LAN side, cannot reach each other (client isolation), and the bridge and the server are configured to come back at boot. The data channel uses the class's cipher (AES-256-CBC by default) and LZO compression (comp-lzo by default).
-- **Behaviour:** finding — the-data-channel-is-compressed-both-ways; node ubuntu, peer ubuntu2; production machines: 3.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu, peer ubuntu2; production machines: 3.
 - **Tracker:** `[from: release-0.9.10; upstream defect fixed: module owns the unit (duplicate service dropped, notifies retargeted)]`
 - **Proven:**
   - the server listens on UDP 1194 at the bound address with the bridged tap0, the pool, PAM auth and the renegotiation interval (`server-listens-on-the-bound-address`, `server-config-rendered`)
@@ -893,10 +913,10 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - a wrong password is refused (`wrong-password-rejected`)
   - clients cannot reach each other (client isolation, the default) (`client-isolation-on-the-bridge`, `a-second-vpn-account`, `a-second-client-reaches-the-server-side-but-not-the-first`)
   - another DNS server pushed to clients, another cipher, and client isolation off (proxy_arp_pvlan on the bridge) (`another-dns-cipher-and-isolation-off`)
+  - compression none: no compression directive, a client without compression connects, and the data channel is uncompressed both ways (`nocomp-the-server-carries-no-compression`, `nocomp-vpn-account-on-the-server`, `nocomp-a-client-without-compression-connects`, `nocomp-the-data-channel-is-uncompressed-both-ways`)
 - **Open rows:**
-  - force_ifupdown true and compression none — why: parameter variants no production node uses (the fixture keeps their defaults) — accepted gap (production does not use force_ifupdown, compression)
-- **Stand-in:** `p8test_dhcp_primary` — lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). Plan: stays; for Salatiel's explicit acceptance: the first VPN gateway is migrated as a recreated test gateway before any live one (documentation list, cutover row 9) (HQ 2026-11-23)
-- **Finding:** the-data-channel-is-compressed-both-ways (escalations/openvpn_server.behaviour.md)
+  - force_ifupdown true — why: a parameter variant no production node uses (the fixture keeps the default, false) — accepted gap (production does not use force_ifupdown)
+- **Stand-in:** `p8test_dhcp_primary` — lifted by: a dedicated real NIC the class may take over as its primary interface (an extra VirtualBox NIC on a gateway node; HQ batch-8 ruling 3). Plan: accepted (Salatiel, 2026-11-27)
 - **Local changes:** #7: `$data_ciphers = join(unique(['AES-256-GCM', 'AES-128-GCM', 'CHACHA20-POLY1305', $cipher]), ':')` (openvpn_server.pp:157-159, with a two-line comment) and `'data-ciphers' => $data_ciphers` added to the server's custom_options (:185;
 
 ### openvpn_set_vpn_passwd_file
@@ -930,7 +950,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### postfix_smtp_base
 
 - **Purpose:** An SMTP submission server with TLS and layered restrictions: only listed client IPs may use it, only its own SASL users (dovecot's passwd-file, not system accounts) may send, only MAIL FROM addresses in a general list are allowed, and each address only for the users configured for it; TLS is mandatory.
-- **Behaviour:** pass; node ubuntu, peer ubuntu2; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu, peer ubuntu2; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - smtpd listens on the configured port, greets with the configured host name and presents the site's certificate over STARTTLS (`smtpd-on-the-configured-port-with-the-hostname`, `starttls-presents-the-sslprefix-bundle`)
@@ -943,7 +963,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - on outgoing delivery, a From header that matches none of do_not_warn_from_addresses_regexes is logged as a warning (and still delivered); one that matches is not (`relayed-to-another-domain`, `the-sink-received-the-relayed-mail`)
 - **Open rows:**
   - a recipient domain resolved through its MX (a DNS lookup for the domain's mail exchanger) — why: the relay is exercised with an address-literal recipient, which skips the MX lookup; the lab's DNS serves no MX for a fixture domain — lifted by: capability: a lab DNS zone with an MX record for a fixture domain pointing at a peer
-  - the extra_sec hardening (protocols, ciphers, a generated DH group) and Let's Encrypt-shaped certificate names — why: the fixture sets extra_sec and letsencrypt_certificate false; one set holds one params fixture — lifted by: capability: more than one params fixture per set
+  - the extra_sec hardening (protocols, ciphers, a generated DH group) and Let's Encrypt-shaped certificates — why: parameter variants no production node uses (the fixture sets extra_sec and letsencrypt_certificate false) — accepted gap (production does not use extra_sec, dh_params_bits, letsencrypt_certificate)
 
 ### postfix_smtp_node
 
@@ -976,7 +996,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### puppet_boot_run
 
 - **Purpose:** Makes sure a machine runs the Puppet agent once during every boot: a oneshot systemd unit, enabled for the multi-user target, runs a script that waits for apt/dpkg locks, skips if another agent run is in progress, and runs the agent with a time limit.
-- **Behaviour:** pass; node ubuntu; production machines: 58.
+- **Behaviour:** pass; node ubuntu; production machines: at most 2 (only where node_base's run_puppet_on_boot is turned on; it defaults off and 2 node statement(s) set it).
 - **Tracker:** `[from: release-0.9.10; upstream defect fixed: ensure dropped]`
 - **Proven:**
   - the script and the unit are installed, and the unit is enabled for multi-user.target (not kept running) (`script-and-unit-installed`, `unit-enabled-for-boot`)
@@ -1060,7 +1080,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### rsyslog_server
 
 - **Purpose:** Makes a node the central log server: an rsyslog listener that accepts logs only over TLS from clients with a CA-signed certificate and stores them in a per-host tree, rotates those files daily, compresses rotated files after the active period and deletes compressed ones after the retention period.
-- **Behaviour:** pass; node ubuntu; production machines: 1.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 1.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - rsyslogd listens on the port over TLS with the node's own certificate, configured for the per-host tree and the session limit (`listener-config-rendered`, `tls-listener-presents-the-node-certificate`, `self-forward-config-absent`)
@@ -1068,20 +1088,20 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the server's own local logs are stored in its own host directory of the tree (`the-servers-own-logs-land-in-its-host-directory`)
   - the per-host logs rotate daily at the rotation time, date-suffixed and uncompressed, and rsyslog reopens its files after the rotation (`logrotate-timer-override-active`, `host-logs-rotation-rule`, `a-rotation-reopens-the-host-log`)
   - rotated logs older than the active period are compressed and compressed logs older than the retention period are deleted, from root's cron at the retention time (`retention-script-and-cron`, `the-retention-script-compresses-and-deletes`)
+  - another port, log root, active and retention periods and rotation and retention times (the parameters production sets) (`custom-listener-config`, `custom-tls-listener-on-the-port`, `custom-rotation-time-and-rule`, `custom-retention-values-and-cron`, `custom-remote-message-lands-under-the-root`)
 - **Open rows:**
-  - other ports, roots, periods, times, session limits or connection-close notices — why: one set holds one fixture, the class defaults — lifted by: capability: more than one params fixture per set
+  - another session limit or connection-close notices (max_sessions, notify_on_connection_close) — why: parameter variants no production node uses (the fixture keeps the defaults) — accepted gap (production does not use max_sessions, notify_on_connection_close)
 
 ### sftp_only
 
 - **Purpose:** Restricts a user to SFTP only, jailed in a given directory and only from the given addresses: from a whitelisted address the user gets internal-sftp chrooted to the directory's parent, placed in the directory, files created with the umask, no shell, no forwarding; from any other address the user is denied.
-- **Behaviour:** pass; node ubuntu; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - sshd applies the allow block to the user from a whitelisted address and the deny block from any other (`allow-block-from-the-whitelist`, `deny-block-from-other-addresses`)
   - from a whitelisted address the user transfers files with SFTP inside the jail, files get the umask, and the jail's root shows only the directory (`an-sftp-user-and-its-jail`, `sftp-works-in-the-jail-and-nothing-else`)
   - the user gets no shell (a command is refused) and cannot log in from an address not whitelisted (`an-sftp-user-and-its-jail`, `sftp-works-in-the-jail-and-nothing-else`)
-- **Open rows:**
-  - an empty whitelist (any address allowed, no deny block) and password authentication for the jail — why: the fixture names one address and keeps password_authentication no; one set holds one params fixture — lifted by: capability: more than one params fixture per set
+  - an empty whitelist (any address allowed, no deny block) and password authentication for the jail (`open-the-jail-from-any-address-with-passwords-and-no-deny-block`)
 
 ### ssh_secure
 
@@ -1121,14 +1141,13 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### ssl_nginx
 
 - **Purpose:** Installs a site's TLS key and certificate for nginx: the private key root-only and the certificate bundled with its intermediate in the form nginx reads, and restarts nginx whenever either changes.
-- **Behaviour:** pass; node ubuntu; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the private key is installed root-only, and the bundle holds the certificate then the intermediate, the certificate matching the key (`private-key-installed-root-only`, `nginx-bundle-cert-then-intermediate`, `bundle-certificate-matches-the-key`)
   - a changed bundle is put back on the next agent run and nginx is restarted (`the-bundle-is-changed-by-hand`, `the-agent-run-restores-the-bundle-and-restarts-nginx`)
   - a changed private key is put back on the next agent run and nginx is restarted (`the-key-is-changed-by-hand`, `the-agent-run-restores-the-key-and-restarts-nginx`)
-- **Open rows:**
-  - the RedHat paths (/etc/pki/tls/private for the key) — why: the plan's node for ssl_nginx is Debian (Ubuntu); a set runs on its class's plan node only — lifted by: capability: a phase3 set for a node kind other than the plan's (rhel9)
+  - the RedHat paths (/etc/pki/tls/private for the key) (`on-redhat-the-key-is-in-pki-tls-private-and-matches-the-bundle`)
 
 ### ssl_nginx_domain
 
@@ -1146,14 +1165,14 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### ssl_postfix
 
 - **Purpose:** Installs a site's TLS key and certificate for postfix: the private key root-only and the certificate bundled with its intermediate in the form postfix reads, and restarts postfix whenever either changes.
-- **Behaviour:** pass; node ubuntu; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the private key is installed root-only, and the bundle holds the certificate then the intermediate, the certificate matching the key (`private-key-installed-root-only`, `postfix-bundle-cert-then-intermediate`, `bundle-certificate-matches-the-key`)
   - a changed bundle is put back on the next agent run and postfix is restarted (`the-bundle-is-changed-by-hand`, `the-agent-run-restores-the-bundle-and-restarts-postfix`)
   - a changed private key is put back on the next agent run and postfix is restarted (`the-key-is-changed-by-hand`, `the-agent-run-restores-the-key-and-restarts-postfix`)
-- **Open rows:**
-  - Let's Encrypt-shaped files (letsencrypt_certificate true), and the RedHat paths — why: the fixture sets letsencrypt_certificate false and the plan's node is Debian; one set holds one fixture on one node — lifted by: capability: more than one params fixture per set, and a phase3 set for a node kind other than the plan's (rhel9)
+  - the RedHat paths (/etc/pki/tls/private for the key) (`on-redhat-the-key-is-in-pki-tls-private-and-matches-the-bundle`)
+  - Let's Encrypt-shaped files (letsencrypt_certificate true) (`letsencrypt-key-and-bundle`)
 
 ### sync
 
@@ -1274,7 +1293,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
 ### user
 
 - **Purpose:** A normal user, in no special group: user_base's account (own primary group, comment, home, shell) with the given password hash and the given SSH key, always pushed (the wrapper cannot pass ignorekey) and with no ecryptfs.
-- **Behaviour:** pass; node ubuntu; production machines: 2.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 2.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the account exists with its own primary group, comment, home (created, owned) and shell, in no other group (`user-and-own-primary-group`, `no-supplementary-groups`, `home-created-and-owned`)
@@ -1282,43 +1301,43 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the given key is always pushed, as the user's only key, in a private file the user owns (`the-given-key-is-pushed`, `key-file-owned-and-private`)
   - no ecryptfs passphrase is managed (the wrapper cannot pass myppsigs or myppwrapped) (`no-ecryptfs-passphrase-files`)
   - a key added out of band is purged by the next agent run (user_base's purge, behind the wrapper) (`an-out-of-band-key-is-planted`, `the-agent-run-purges-the-out-of-band-key`)
+  - a login with the pushed key (`the-pushed-key-logs-in`, `another-key-is-refused`)
   - the parameter variants the wrapper passes on (a group list, another home, a home mode, another shell) and the locked or keyless placeholders (`the-wrapper-passes-a-locked-hash-home-shell-and-groups`, `the-wrapper-passes-an-empty-key`)
 - **Open rows:**
   - the empty-hash refusal behind the wrapper — why: a refusal at compile time (user_base's fail()), which ends a run APPLY_FAILED, never a check — lifted by: capability: a variant run whose expected outcome is a compile refusal
-  - a login with the pushed key — why: a login needs the private half of the pushed key on the node; the repository keeps no private keys and no run hands a file from the laptop to the node — lifted by: capability: a run step that hands a private key from the laptop to the node
 
 ### user_base
 
 - **Purpose:** A base wrapper for a system user: the account with its own same-named primary group, comment, home and shell, the given password hash (refusing an empty one), and SSH access through exactly one pushed key (any other authorized key is purged; a locked or keyless user gets an unusable key; with ignorekey, for encrypted homes, no key is pushed), with optional home mode and ecryptfs wrapped passphrase.
-- **Behaviour:** pass; node ubuntu; production machines: 3.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 3.
 - **Tracker:** `[from: release-0.9.10; upstream defect fixed: exec guarded by its post-condition]`
 - **Proven:**
   - the account exists with its own primary group, comment, home (created, owned by the user) and shell, and no other group with an empty list (`user-and-own-primary-group`, `no-supplementary-groups`, `home-created-and-owned`)
   - the given password hash is set, so the password logs in and a wrong one is refused (`password-hash-set`, `the-password-logs-in-and-a-wrong-one-is-refused`)
   - the given key is pushed as the user's only authorized key, and a key added out of band is purged by the next agent run (`the-pushed-key-is-the-only-authorized-key`, `an-out-of-band-key-is-planted`, `the-agent-run-purges-the-out-of-band-key`)
+  - a login with the pushed key (`the-pushed-key-logs-in`, `another-key-is-refused`)
   - a locked hash or an empty key pushes an unusable key; a group list sets the primary group; another home, home mode or shell (`a-locked-hash-with-other-home-shell-and-groups`, `an-empty-key-pushes-an-unusable-key`)
   - with ignorekey true (for encrypted homes) no key is pushed, so the account has no authorized key (`with-ignorekey-no-key-is-pushed`)
+  - the ecryptfs branch (wrapped passphrase written from the .b64 file, with the HQ-ruled exec guard) (`ecryptfs-the-wrapped-passphrase-is-pushed`, `ecryptfs-the-login-password-unwraps-the-mount-passphrase`, `ecryptfs-the-pushed-passphrase-opens-the-home`, `ecryptfs-the-wrapped-passphrase-is-damaged-out-of-band`, `ecryptfs-the-agent-run-repairs-it`)
 - **Open rows:**
   - an empty password hash is refused, so no account is created without one — why: a refusal at compile time (fail()): a variant run whose apply is refused ends APPLY_FAILED, never a check; shown by test_class.sh --compile-only with myhash '' on 2026-11-19T17:23:25Z: COMPILE_FAILED, "Can't touch this - hash is empty! Where is the user database?" — lifted by: capability: a variant run whose expected outcome is a compile refusal
-  - a login with the pushed key — why: a login needs the private half of the pushed key on the node; the repository keeps no private keys and no run hands a file from the laptop to the node (the key's line, owner and modes are checked; key logins as behaviour are in ssh_secure's set) — lifted by: capability: a run step that hands a private key from the laptop to the node
-  - the ecryptfs branch (wrapped passphrase written from the .b64 file, with the HQ-ruled exec guard) — why: the fixture user has no ecryptfs home, and no lab node has an ecryptfs setup to create /home/.ecryptfs/<user>/.ecryptfs — lifted by: capability: an ecryptfs fixture user with a mounted private directory (HQ 2026-11-16 item 7a)
 
 ### user_desktop
 
 - **Purpose:** Defines a desktop user: an account with its own group and the desktop groups (cdrom, dip, plugdev, lp), its password and SSH key (through user_base), and the KDE screen-lock settings applied in the user's session (through user_kde_lock_screen).
-- **Behaviour:** pass; node kubuntu; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node kubuntu; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the given groups (mygrouplist) are prepended to the user's own group and the desktop groups, and the first given group becomes the primary group (`user-with-own-primary-group`, `desktop-groups`)
   - the given password logs the user in (a wrong one is refused), and the given key is pushed (`the-given-password-logs-in`, `the-given-key-is-pushed`)
   - the KDE screen-lock settings are applied in the user's Plasma session (`lock-screen-script-installed`, `kde-lock-settings-applied-in-the-session`)
 - **Open rows:**
-  - the other parameters (ignorekey, the ecryptfs values, non-default lock-screen values) and a first given group of sudo or wheel, passed through unchanged — why: the wrapper passes them to user_base and user_kde_lock_screen as they are; their effects are those classes' outcomes, tested in their own sets (user_base.yml, user_kde_lock_screen.yml; the sudo-first branch in user_sudoer.yml), and one set holds one params fixture — lifted by: capability: more than one params fixture per set
+  - the other parameters (ignorekey, the ecryptfs values, non-default lock-screen values) as they reach user_base and user_kde_lock_screen — why: parameter variants no production node uses on user_desktop; their effects are user_base's and user_kde_lock_screen's outcomes, tested in their own sets — accepted gap (production does not use ignorekey, myppsigs, myppwrapped, screenlock_timeout_minutes, screenlock_grace_seconds)
 
 ### user_desktop_sudoer
 
 - **Purpose:** Defines a desktop sudoer user: a desktop user (own group, desktop groups, password, SSH key, KDE screen lock) who is also in the admin groups adm and sudo, so the user can become root with the password.
-- **Behaviour:** pass; node kubuntu; production machines: 0.
+- **Behaviour:** stale — the check file changed after its review; node kubuntu; production machines: 0.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the given groups (mygrouplist) are prepended to the user's own group, the desktop groups and the admin groups, and the first given group becomes the primary group (`user-with-own-primary-group`, `desktop-and-admin-groups`)
@@ -1326,12 +1345,12 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the given password logs the user in (a wrong one is refused), and the given key is pushed (`the-given-password-logs-in`, `the-given-key-is-pushed`)
   - the KDE screen-lock settings are applied in the user's Plasma session (`lock-screen-script-installed`, `kde-lock-settings-applied-in-the-session`)
 - **Open rows:**
-  - the other parameters (ignorekey, the ecryptfs values, non-default lock-screen values), passed through unchanged — why: the wrapper passes them to user_base and user_kde_lock_screen as they are; their effects are those classes' outcomes, tested in their own sets (user_base.yml, user_kde_lock_screen.yml), and one set holds one params fixture — lifted by: capability: more than one params fixture per set
+  - the other parameters (ignorekey, the ecryptfs values, non-default lock-screen values) as they reach user_base and user_kde_lock_screen — why: parameter variants no production node uses on user_desktop_sudoer; their effects are user_base's and user_kde_lock_screen's outcomes, tested in their own sets — accepted gap (production does not use ignorekey, myppsigs, myppwrapped, screenlock_timeout_minutes, screenlock_grace_seconds)
 
 ### user_kde_lock_screen
 
 - **Purpose:** Enforces a desktop user's KDE screen lock: the session locks by itself after the configured idle timeout and on resume, with the configured grace period, applied to the user's own KDE settings and reloaded in the running session on every agent run while the user is logged in, so a user who turns the lock off gets it back.
-- **Behaviour:** pass; node kubuntu; production machines: 20.
+- **Behaviour:** stale — the check file changed after its review; node kubuntu; production machines: 20.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the shared script that applies the settings is installed root-owned and executable (`script-installed-root-executable`)
@@ -1339,10 +1358,10 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - with the user logged in, the user's kscreenlockerrc gets Autolock and LockOnResume on, the timeout and the grace, reloaded live (`lock-settings-in-the-users-kscreenlockerrc`, `applied-in-the-session-and-reloaded-live`)
   - the idle session locks after the class's timeout (without the class's settings it was not locked 450 s after login) (`the-idle-session-locks-after-the-timeout`)
   - a user who turns the lock off in the live session gets it back on the next agent run, and the session locks (`the-user-turns-the-lock-off`, `the-agent-run-turns-the-lock-back-on`)
+  - another timeout or grace (the default five minutes among them) (`timing-the-user-logs-in`, `timing-the-settings-reach-the-users-kscreenlockerrc`)
 - **Open rows:**
   - the grace period (0 seconds) takes effect, so input right after the lock does not unlock without a password — why: the grace only matters when input reaches the locked session, and a run sends no keyboard or mouse input — lifted by: capability: input injection into the node's desktop session inside a phase3 run
   - the session locks on resume — why: needs the node to suspend and resume inside a run — lifted by: capability: a suspend and resume of the class's node inside a phase3 run
-  - another timeout or grace (the default five minutes among them) — why: one set holds one params fixture, and this one sets two minutes to keep the run short — lifted by: capability: more than one params fixture per set
 
 ### user_kde_lock_screen_common
 
@@ -1373,19 +1392,18 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - create-user.pl receives the user and the split name, then set-user-samba-hash.sh the names and the hash, in that order (`user-created-with-split-name`, `samba-hash-set-for-the-user`)
 - **Open rows:**
   - a real domain account exists afterwards and authenticates with the password behind the hash — why: the scripts are Zentyal's (create-user.pl, set-user-samba-hash.sh), which the lab's plain Samba AD DC does not have; the node fixture samba_dc_standin records their arguments instead — lifted by: capability: a Zentyal/Samba AD domain controller node with Zentyal's user scripts
-- **Stand-in:** `samba_dc_standin` — lifted by: a Zentyal/Samba AD domain controller node with Zentyal's user scripts (none yet; the planned dc kind, p8lab-dc, is a plain Samba AD DC). Plan: stays; for Salatiel's explicit acceptance (HQ after batch 20, item 6)
+- **Stand-in:** `samba_dc_standin` — lifted by: a Zentyal/Samba AD domain controller node with Zentyal's user scripts (none yet; the planned dc kind, p8lab-dc, is a plain Samba AD DC). Plan: accepted; to be tested against the client's Zentyal server when that client is migrated (documentation list, cutover row 12) (Salatiel, 2026-11-27)
 
 ### user_sudoer
 
 - **Purpose:** Creates a user account that can administer the machine: the user (through user_base) with its name, password and SSH key, in the OS family's admin group (sudo on Debian, wheel on RedHat), so it can run any command as root with sudo.
-- **Behaviour:** pass; node ubuntu; production machines: 1.
+- **Behaviour:** stale — the check file changed after its review; node ubuntu; production machines: 1.
 - **Tracker:** `[from: release-0.9.10]`
 - **Proven:**
   - the account exists with its name, home, shell and own primary group, and its SSH key is pushed (`user-with-own-primary-group`, `the-given-key-is-pushed`)
   - on Debian the user is in sudo (and only its own group besides), and sudo grants it every command (`member-of-sudo`, `sudo-grants-all`)
   - the user becomes root with sudo and its password; a wrong password and an account outside the admin group are refused (`the-user-becomes-root-with-sudo`)
-- **Open rows:**
-  - on RedHat the admin group is wheel — why: the RedHat branch needs the set run on a RedHat node; the runner runs a set on the class's plan node only (ubuntu) — lifted by: capability: a phase3 run of a set on a node kind other than the class's plan node (rhel9)
+  - on RedHat the admin group is wheel (`on-redhat-member-of-wheel-and-sudo-grants-all`)
 
 ### user_sysmon
 
@@ -1397,7 +1415,7 @@ their latest results and reviews, rules/local_changes.md, escalations). Do not e
   - the Naemon contact file for the user names the user, alias, email and contact groups (`naemon-contact-file`)
 - **Open rows:**
   - Thruk accepts the login and Naemon loads the contact (notifications reach the user) — why: the node has no Thruk or Naemon; the node fixture sysmon_server supplies only the naemon account and the directories — lifted by: capability: a monitoring-server node running Naemon + Thruk from the monitoring repository
-- **Stand-in:** `sysmon_server` — lifted by: a monitoring-server node running Naemon + Thruk from the monitoring repository (no nodes.yml kind). Plan: stays; for Salatiel's explicit acceptance (HQ after batch 20, item 6)
+- **Stand-in:** `sysmon_server` — lifted by: a monitoring-server node running Naemon + Thruk from the monitoring repository (no nodes.yml kind). Plan: accepted; to be tested on the monitoring server at the cutover (documentation list, cutover row 11) (Salatiel, 2026-11-27)
 
 ### users_sudoers
 

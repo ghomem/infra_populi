@@ -47,11 +47,11 @@ outcomes:
 - outcome: the per-user KDE screen lock (screenlock_users)
   from: manifests/node_base_desktop.pp:87-93
   uncovered:
-    why: it needs a KDE session environment the GNOME plan node does not have; user_kde_lock_screen's own set exercises it
-      on kubuntu
-    lifted_by: 'capability: a phase3 set for a node kind other than the class''s plan node (kubuntu)'
-    evidence: the fixture leaves screenlock_users empty on gnome; checks/user_kde_lock_screen.yml runs the define in a Plasma
-      session on kubuntu
+    why: a parameter variant no production node uses (user_kde_lock_screen's own set exercises the lock on kubuntu)
+    accepted_gap:
+    - screenlock_users
+    evidence: '{SITE:fleet-usage} (2026-11-23): no production node statement sets screenlock_users, and no class of the repository
+      sets it on node_base_desktop'
 - outcome: the puppet agent daemon running on its interval
   from: manifests/node_base_desktop.pp:104-108
   checks:

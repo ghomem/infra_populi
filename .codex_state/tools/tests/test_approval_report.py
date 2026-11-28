@@ -66,11 +66,12 @@ def test_a_set_splits_into_proven_and_open_rows(tmp_path, monkeypatch):
 @pytest.mark.parametrize("cls, start", [
     ("user_lock", "to be lifted:"),
     ("node_base_desktop", "to be lifted:"),
-    ("user_samba", "stays; for Salatiel's explicit acceptance"),
-    ("user_sysmon", "stays; for Salatiel's explicit acceptance"),
-    ("openvpn_domain", "not in HQ's lift list"),
+    ("user_samba", "accepted; to be tested against the client's Zentyal server"),  # Salatiel 2026-11-27
+    ("user_sysmon", "accepted; to be tested on the monitoring server at the cutover"),
+    ("openvpn_domain", "accepted (Salatiel, 2026-11-27)"),
     ("letsencrypt_certificate", "stays; for Salatiel's explicit acceptance: a real lift needs a sandbox DNS zone"),
-    ("network_vpn", "stays; for Salatiel's explicit acceptance: the first VPN gateway"),
+    ("network_vpn", "accepted (Salatiel, 2026-11-27)"),
+    ("p8test_no_such_class", "not in HQ's lift list"),
 ])
 def test_standin_plans_follow_hq_item_6(cls, start):
     assert approval_report.standin_plan(cls).startswith(start)

@@ -6,8 +6,11 @@ session:
   desktop: plasma
   why: the exec applies the lock settings only on an agent run while the user is logged in to a KDE session
 node_agent:
-  after: the-user-turns-the-lock-off
-  why: the class restores the user's lock settings, and reloads them in the live session, only on an agent run
+  after:
+  - the-user-turns-the-lock-off
+  - timing-the-user-logs-in
+  why: the class restores the user's lock settings, and reloads them in the live session, only on an agent run; in the timing
+    variant, after the user logged in
 purpose: 'Enforces a desktop user''s KDE screen lock: the session locks by itself after the configured idle timeout and on
   resume, with the configured grace period, applied to the user''s own KDE settings and reloaded in the running session on
   every agent run while the user is logged in, so a user who turns the lock off gets it back.'
@@ -51,10 +54,9 @@ outcomes:
       agent (node_agent)'
 - outcome: another timeout or grace (the default five minutes among them)
   from: manifests/user_kde_lock_screen.pp:4-5
-  uncovered:
-    why: one set holds one params fixture, and this one sets two minutes to keep the run short
-    lifted_by: 'capability: more than one params fixture per set'
-    evidence: '{{SITE:engine-runner}} applies the class once with its single `fixture` (params or defaults)'
+  checks:
+  - timing-the-user-logs-in
+  - timing-the-settings-reach-the-users-kscreenlockerrc
 checks:
 - id: script-installed-root-executable
   what: the shared script is in bindir, root:root 0755
@@ -196,6 +198,59 @@ checks:
   expect:
     rc: 0
     stdout: \AAutolock=true\n0\nlocked yes\n\Z
+- id: timing-the-user-logs-in
+  control: negative
+  timeout: 180
+  what: the fixture user is logged in to a Plasma session (the condition under which the class applies its settings)
+  mutates: logs p8testuser in to Plasma through an SDDM autologin drop-in and restarts sddm (the runner's session login, done
+    by an action because a variant run has no session step)
+  derived_from:
+  - path: files/user_kde_lock_screen/configure_lock_screen.sh
+    lines: 15-17
+    text: logger -p local1.notice -t $SYSLOG_TAG "User ${USERNAME} loged in, updating screenlock settings if needed"
+  probe: |
+    set -e
+    u=p8testuser
+    id "$u" >/dev/null
+    install -d -m 0755 /etc/sddm.conf.d
+    printf '[Autologin]\nUser=%s\nSession=plasma\nRelogin=false\n' "$u" > /etc/sddm.conf.d/zz-p8test-autologin.conf
+    systemctl restart sddm
+    for i in $(seq 120); do
+      if who | awk '{print $1}' | grep -qx "$u" && pgrep -u "$u" -x plasmashell >/dev/null; then echo SESSION_UP; exit 0; fi
+      sleep 1
+    done
+    echo SESSION_DOWN
+  effect: |
+    who | awk '{print $1}' | grep -cx p8testuser | sed 's/^[1-9][0-9]*$/logged-in/'
+  expect:
+    rc: 0
+    stdout: \Alogged-in\n\Z
+  variant: timing
+- id: timing-the-settings-reach-the-users-kscreenlockerrc
+  control: negative
+  what: after the agent run with the user logged in, the user's kscreenlockerrc has the fixture's timeout (5) and grace (30)
+  mutates: nothing (the evidence is read after the node's agent run that follows the login)
+  derived_from:
+  - path: manifests/user_kde_lock_screen.pp
+    lines: 14-18
+    text: command => "${bindir}/configure_lock_screen.sh ${screenlock_timeout_minutes} ${screenlock_grace_seconds}",
+  - path: files/user_kde_lock_screen/configure_lock_screen.sh
+    lines: 66-95
+    text: --group Daemon --key Timeout ${LOCK_TIMEOUT}
+  probe: |
+    true
+  effect: |
+    sed -n '/^\[Daemon\]/,/^\[/p' /home/p8testuser/.config/kscreenlockerrc | grep -E '^(Timeout|LockGrace)=' | sort
+  expect:
+    rc: 0
+    stdout: \ALockGrace=30\nTimeout=5\n\Z
+  variant: timing
+variants:
+- name: timing
+  params: timing
+  why: 'another timeout and grace (5 minutes, the default, and 30 seconds), which production sets (fleet_variant_usage.md:
+    screenlock_timeout_minutes and screenlock_grace_seconds on one node statement); the class applies them only on an agent
+    run while the user is logged in, so the variant logs the user in (an action) and the node''s agent runs after it'
 apply:
   resource_type: define
   node: kubuntu

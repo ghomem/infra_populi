@@ -35,6 +35,7 @@ SUITE = setfile.SUITE
 MODULE = setfile.MODULE
 HELPERS = (SUITE / "probe_helpers.sh").read_text(encoding="utf-8") if (SUITE / "probe_helpers.sh").is_file() else ""
 PROBE_TIMEOUT = 120
+PEER_SETUP_TIMEOUT = 1200
 AGENT_TIMEOUT = 960
 MARKER = "/var/lib/behaviour-suite/used"
 EXECUTED = setfile.EXECUTED
@@ -241,6 +242,7 @@ class Run:
         v["PEER_ADDR"] = p.addr if p else "198.51.100.1"  # a variant run without the base run's peer: unreachable
         for kind, m in self.others.items():
             v[f"NODE:{kind}"], v[f"ADDR:{kind}"] = m.name or m.dest.rsplit("@", 1)[-1], m.addr  # its host name
+        v.update(setfile.throwaway_values())  # {{FIXTURE_B64:<name>}}: the suite's throwaway test material
         for m in (node, p):  # the run's own machines answer for their kinds too
             if m is not None:
                 v[f"NODE:{m.kind}"], v[f"ADDR:{m.kind}"] = m.name or "", m.addr
@@ -308,6 +310,13 @@ class Run:
         try:
             values = self.values(node, peer, base_peer)
             record["values"] = values
+            setup = (self.data.get("peer") or {}).get("setup")
+            if peer and setup:  # the peer is prepared before the clean phase (a service the class uses, e.g. a registry)
+                say("==> Preparing the peer (peer.setup)")
+                rc, out, err = self.shell.run(peer, render.render(setup, values), timeout=PEER_SETUP_TIMEOUT)
+                record["peer_setup"] = {"rc": rc, "tail": (out + err)[-1500:]}
+                if rc != 0:
+                    raise RuntimeError(f"peer setup failed (rc {rc}): {(out + err).strip()[-300:]}")
             checks = [self.rendered(c, values) for c in checks]
             if peer:
                 self.fetch_files(node)
@@ -325,15 +334,17 @@ class Run:
                 record["outcome"] = "INVALID_SET"
                 return peer
             say(f"==> Applying {self.cls}")
+            mine = next((v for v in self.data.get("variants") or [] if v.get("name") == record.get("name")), {})
             text = mf.build(self.data, kind, self.kinds, self.params_dirs, SUITE / "fixtures",
-                            variant=params, render=lambda t: render.render(t, values))
+                            variant=params, render=lambda t: render.render(t, values),
+                            variant_fixture=mine.get("node_fixture"))
             record["manifest_sha256"] = hashlib.sha256(text.encode()).hexdigest()
             record["apply"] = self.applier.apply(self.cls, node, text, expected, record.get("name") or "",
                                                  params or "")
             if not record["apply"]["green"]:
                 record["outcome"] = "APPLY_FAILED"
                 return peer
-            if with_peer and self.data.get("session"):
+            if "name" not in record and self.data.get("session"):  # the base run (a variant's record carries its name)
                 if not self.session(node, record, expected, say):
                     return peer
             if peer:
@@ -444,7 +455,7 @@ class Run:
             kind = self.data["apply"]["node"]
             base = [c for c in self.data["checks"] if "variant" not in c]
             try:
-                base_peer = self.one(base, kind, None, record, True, None, say)
+                base_peer = self.one(base, kind, None, record, "base" in setfile.peer_runs(self.data), None, say)
             except (RuntimeError, KeyError, FileNotFoundError) as err:
                 record["problems"].append(str(err))
                 record["outcome"] = "ENVIRONMENT_FAILED"
@@ -460,7 +471,8 @@ class Run:
                            "outcome": None}
                     mine = [c for c in self.data["checks"] if c.get("variant") == v["name"]]
                     try:
-                        self.one(mine, v.get("node", kind), v.get("params"), sub, False, base_peer, say)
+                        self.one(mine, v.get("node", kind), v.get("params"), sub, v["name"] in setfile.peer_runs(self.data),
+                                 base_peer, say)
                     except (RuntimeError, KeyError, FileNotFoundError) as err:
                         sub["problems"].append(str(err))
                         sub["outcome"] = "ENVIRONMENT_FAILED"

@@ -22,7 +22,17 @@ CLASS = re.compile(r"[a-z][a-z0-9_]*")
 # The values a run supplies (README.md, "Placeholders"); NODE:<kind> and ADDR:<kind> name a machine of another kind.
 RUN_VALUES = {"NODE_NAME", "NODE_ADDR", "NODE_PRIMARY_ADDR", "NODE_NETWORK", "PEER_NAME", "PEER_ADDR", "SERVER_NAME",
               "SERVER_HOST", "SERVER_ADDR", "CONTROLLER_ADDR", "LOCALDIR"}
-RUN_FAMILIES = {"NODE", "ADDR"}
+RUN_FAMILIES = {"NODE", "ADDR", "FIXTURE_B64"}
+# Throwaway test material the suite carries (HQ 2026-11-27 item 5): a file here is not a secret by construction (a
+# test keypair, a wrapped passphrase of a test passphrase), named p8test-throwaway-*; a probe or a params fixture names
+# it as {{FIXTURE_B64:<file name>}}, its content in base64.
+THROWAWAY = SUITE / "fixtures" / "throwaway"
+
+
+def throwaway_values() -> dict:
+    import base64  # noqa: PLC0415
+    return {f"FIXTURE_B64:{p.name}": base64.b64encode(p.read_bytes()).decode()
+            for p in sorted(THROWAWAY.glob("p8test-throwaway-*")) if p.is_file()}
 PROSE_FAMILIES = {"SITE"}  # a site's own records, cited in prose for provenance; never needed to run a set
 EXECUTED = {"probe", "effect", "stdout", "stdout_not"}
 DUMMY = {**{v: "203.0.113.7" if v.endswith(("ADDR", "NETWORK")) else "x.example.invalid" for v in RUN_VALUES},
@@ -30,7 +40,7 @@ DUMMY = {**{v: "203.0.113.7" if v.endswith(("ADDR", "NETWORK")) else "x.example.
 DEFER_NEEDS = ("second-node", "browser", "rhel", "desktop")
 SESSION_USER = re.compile(r"p8test[a-z0-9]*")
 PEER_AGENT_CERT = re.compile(r"p8test[a-z0-9-]{0,40}")
-VARIANT_KEYS = {"name", "why", "node", "params", "no_resources"}
+VARIANT_KEYS = {"name", "why", "node", "params", "no_resources", "node_fixture"}
 
 
 def kinds(suite: Path = SUITE) -> dict:
@@ -54,6 +64,8 @@ def placeholder_problems(data: dict) -> list[str]:
         fam = name.split(":", 1)[0]
         if ":" in name and fam not in RUN_FAMILIES or ":" not in name and name not in RUN_VALUES:
             out.append(f"placeholder {{{{{name}}}}} in a probe or an expectation is not a value a run supplies")
+        elif fam == "FIXTURE_B64" and name not in throwaway_values():
+            out.append(f"placeholder {{{{{name}}}}} names no file of fixtures/throwaway")
     for name in sorted(render.needed(data)):
         fam = name.split(":", 1)[0]
         if ":" in name and fam not in RUN_FAMILIES | PROSE_FAMILIES or ":" not in name and name not in RUN_VALUES:
@@ -71,6 +83,30 @@ def dummy_values(data: dict) -> dict:
     return values
 
 
+# What the runner can do, in one place: an outcome may not stay uncovered for want of one of these (a row lifted by it
+# is a work item: a check). Each: (name, a pattern that recognises it in a row's `capability:`).
+RUNNER_CAPABILITIES = (
+    ("variants: more than one params fixture per set", r"more than one params fixture|params fixture per set"),
+    ("variants on another node kind (a RedHat branch on rhel9, a desktop kind)",
+     r"node kind other than|second node kind|another node kind"),
+    ("a Plasma desktop session in a set's base run", r"\ba desktop session on the class's plan node|plasma session"),
+    ("a second machine (peer) with files handed over from the node", r"\ba second machine\b|\ba peer node\b"),
+    ("mutating checks (an action, judged on its effect)", r"\ba mutating (check|probe)\b"),
+    ("an agent run on the node or the peer after a mutating check", r"\ban agent run (on|of) the (node|peer)\b"),
+)
+
+
+def peer_runs(data: dict) -> list[str]:
+    """The runs that get a fresh peer: the peer block's `runs`, the base run by default."""
+    peer = data.get("peer")
+    return list(peer.get("runs") or ["base"]) if isinstance(peer, dict) else []
+
+
+def runner_has(capability: str) -> str | None:
+    """The runner capability a row's `capability: ...` names, or None when the runner lacks it."""
+    return next((name for name, pattern in RUNNER_CAPABILITIES if re.search(pattern, capability, re.I)), None)
+
+
 def uncovered_problems(u, where: str, known: dict) -> list[str]:
     if not isinstance(u, dict) or len(str(u.get("why", ""))) < 20:
         return [f"{where}: uncovered takes why (>= 20 characters)"]
@@ -81,7 +117,10 @@ def uncovered_problems(u, where: str, known: dict) -> list[str]:
         return []
     lifted = str(u.get("lifted_by", ""))
     if lifted.startswith("capability:"):
-        return [] if len(lifted.split(":", 1)[1].strip()) >= 10 else [f"{where}: `capability: ...` names what is missing"]
+        if len(lifted.split(":", 1)[1].strip()) < 10:
+            return [f"{where}: `capability: ...` names what is missing"]
+        has = runner_has(lifted)
+        return [f"{where}: the runner has {has}: this outcome is a check to write, not an open row"] if has else []
     if lifted not in known:
         return [f"{where}: lifted_by names a node kind of kinds.yml or `capability: <what is missing>`"]
     return []
@@ -213,8 +252,15 @@ def block_problems(data: dict, known: dict) -> list[str]:
     mutating = [c.get("id") for c in data.get("checks") or [] if isinstance(c, dict) and "mutates" in c]
     peer = data.get("peer")
     if peer is not None:
-        if not isinstance(peer, dict) or not set(peer) <= {"kind", "why", "files"} or len(str(peer.get("why", ""))) < 20:
-            out.append("peer takes kind, why (>= 20 characters) and optional files")
+        if not isinstance(peer, dict) or not set(peer) <= {"kind", "why", "files", "setup", "runs"} or \
+                len(str(peer.get("why", ""))) < 20:
+            out.append("peer takes kind, why (>= 20 characters) and optional files, setup and runs")
+        elif "setup" in peer and (not isinstance(peer["setup"], str) or not peer["setup"].strip()):
+            out.append("peer.setup is a script run on the fresh peer before the clean phase")
+        elif "runs" in peer and (not isinstance(peer["runs"], list) or not peer["runs"] or
+                                 not set(peer["runs"]) <= {"base"} | {v.get("name") for v in data.get("variants") or []
+                                                                     if isinstance(v, dict)}):
+            out.append("peer.runs lists the runs that get a peer: base and/or declared variant names")
         elif "second-node" not in (known.get(peer.get("kind")) or {}).get("capabilities", []):
             out.append(f"peer: kind {peer.get('kind')!r} is not a second-node kind of kinds.yml")
         elif not all(isinstance(f, str) and re.fullmatch(r"/[\w./-]+", f) for f in peer.get("files") or []):
@@ -256,6 +302,8 @@ def variant_problems(data: dict, checks: list, known: dict, params_found) -> lis
             out.append(f"{where}: needs node and/or params")
         if "node" in v and v["node"] not in known:
             out.append(f"{where}: node {v['node']!r} is not a kind of kinds.yml")
+        if "node_fixture" in v and not (SUITE / "fixtures" / "node" / f"{v['node_fixture']}.pp").is_file():
+            out.append(f"{where}: node_fixture {v['node_fixture']!r} is not a file of fixtures/node")
         if "params" in v and not SLUG.fullmatch(str(v["params"])):
             out.append(f"{where}: params must be a slug")
         elif "params" in v and params_found is not None and not params_found(v["params"]):
@@ -263,8 +311,8 @@ def variant_problems(data: dict, checks: list, known: dict, params_found) -> lis
     for c in tagged:
         if c["variant"] not in names:
             out.append(f"check {c.get('id')}: variant {c['variant']!r} is not declared")
-        if c.get("host") == "peer":
-            out.append(f"check {c.get('id')}: a variant run has no peer")
+        if c.get("host") == "peer" and c["variant"] not in peer_runs(data):
+            out.append(f"check {c.get('id')}: variant {c['variant']} has no peer (peer.runs)")
     for name in names:
         if not any(c.get("variant") == name and c.get("control") == "negative" for c in tagged):
             out.append(f"variant {name}: needs >= 1 negative control of its own")

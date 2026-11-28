@@ -1,0 +1,233 @@
+{
+ "class": "letsencrypt_base",
+ "role": "command",
+ "at": "20261127T231730Z",
+ "set_sha256": "f617af49d095b0594bbdacd69ce97c801dc80d4876914665738bd86f83eecebf",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "dns-plugin-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "dpkg-query: no packages found matching python3-certbot-dns-digitalocean\ndpkg-query: no packages found matching certbot\n",
+   "ok": true
+  },
+  {
+   "id": "certbot-finds-the-dns-plugin",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /run/p8test-le/plugins.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "dns-credentials-file-private",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/infra-populi/etc/dns-creds.ini': No such file or directory\ncat: /opt/infra-populi/etc/dns-creds.ini: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "renew-cron-with-nginx-reload-hook",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "no crontab for root\ngrep: : No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "deploy-script-rendered",
+   "control": "negative",
+   "rc": 127,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/infra-populi/bin/deploy_maintained_certificates.sh': No such file or directory\nbash: /opt/infra-populi/bin/deploy_maintained_certificates.sh: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "deploy-cron",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-deploy-script-copies-renewed-certificates",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "\n",
+   "stderr": "bash: line 97: cd: /etc/puppetlabs/puppet/extra_files/ssl: No such file or directory\nstat: cannot statx 'p8test.example.com-key.pem': No such file or directory\nstat: cannot statx 'p8test.example.com.pem': No such file or directory\nstat: cannot statx 'p8test.example.com-chain.pem': No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 1,
+  "green": false,
+  "node_fresh": true,
+  "tail": "ni_setting[/etc/letsencrypt/cli.ini server https://acme-v02.api.letsencrypt.org/directory]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Letsencrypt::Config/Ini_setting[/etc/letsencrypt/cli.ini email p8test@p8test.example.com]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Letsencrypt::Renew/File[letsencrypt-renewal-hooks-puppet]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Letsencrypt::Renew/Cron[letsencrypt-renew]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Letsencrypt_base/File[/opt/infra-populi/bin/deploy_maintained_certificates.sh]/ensure: defined content as '{sha256}eb78ef9793d0a855d3f39c4ea74617f5158a2f54e51beac75c7a0506b7c50421'\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Letsencrypt_base/Cron[deploy_maintained_certificates]/ensure: created\u001b[0m\n\u001b[0;32mInfo: Class[Infra_populi::Letsencrypt_base]: Unscheduling all events on Class[Infra_populi::Letsencrypt_base]\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Letsencrypt::Renew/Letsencrypt::Hook[renew-post]/File[/etc/letsencrypt/renewal-hooks-puppet/renew-post.sh]: Skipping because of failed dependencies\u001b[0m\n\u001b[0;32mInfo: Stage[main]: Unscheduling all events on Stage[main]\u001b[0m\n\u001b[mNotice: Applied catalog in 12.52 seconds\u001b[0m\n\nNODE_FRESH: yes (boot 86fd9433 of the latest revert, no agent run since)\nERROR: Agent run 1 failed (exit 6).\n/home/salatiel/.local/bin/infra_populi_tools/test_class.sh failed with exit status 1.\n\n"
+ },
+ "applied": [],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "nodes": {
+  "node": {
+   "kind": "puppetserver",
+   "dest": "p8lab-puppetserver",
+   "boot_id": "86fd9433-e709-4aff-b825-545146b3f513",
+   "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v2",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "86fd9433-e709-4aff-b825-545146b3f513",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "p8lab-puppetserver",
+  "NODE_ADDR": "192.168.56.26",
+  "LOCALDIR": "/opt/infra-populi",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26",
+  "FIXTURE_B64:p8test-throwaway-private-sig": "M2RlYzQ1NTNjZjIyYmNjNQphMTYxZDlmYmFhYTg4YTM3Cg==",
+  "FIXTURE_B64:p8test-throwaway-rsa": "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFZRUFzZzNuR2JmSnQ5ZzZPNXQ1SGhrM0JrQS9EYnlXRTFQV09WS0NVbGhNZnlSNVdHZ2JRQ1kwCjM3Yk5INU5yeDhPbDZyTW8rVmx3Z0RBZm8vTU40TzdDdTcwbUtVUjNuTjZaM2h1VXEwYld6bDdBN1loWEFCeUdON1ZZMVMKbVZEZmhMeUFhTzB2OXg1cDBNQ0hYWTBiRlNZZENWZi9zU1Z1ckxUWWpvdkVLdDBXYVJrd3BqVTB2aHh0S1g2TEZaWWVubgozU0dzbkRGKzN1ejBUWVhOeU81TW1zUUExVlppLzk0TVl4QmwwNmU0MXBKSEcyQjVKeDVScm0zN0RaSzRjaEFscForTlpKCmFScnBVNVlJWGVFMXJWc01ZUUdIQ0RpY2FML1JwcTZueEJBcUZWN1lKdnpMOGJybTJXd0VpZlRIRERoMTBkMHVBMS9WbC8KRmxvQ2F5Z3ZhVm1KdXZPUGEwc1pIU2tLZnZpVXhTb1lXM0ZhL3B5aWkyeXI1VlMzSGZyKzQxRTEvaVc5cVJtUDN3eUNBUwpMRXM5WTBaTmpqTlBIcWFzS25IR3hyZGZGN0x0ZDhEU1paY3Jsak5NVUJudmhscXNoMUpTQzNWYTV6YWUrOURCbDAvMThPCmtiSkxIZGhIM3orM1ZjaFRicFNYZ0ZkdUtVUWJJZ0s3bytiZDBDalZBQUFGbUVOMGtLRkRkSkNoQUFBQUIzTnphQzF5YzIKRUFBQUdCQUxJTjV4bTN5YmZZT2p1YmVSNFpOd1pBUHcyOGxoTlQxamxTZ2xKWVRIOGtlVmhvRzBBbU5OKzJ6UitUYThmRApwZXF6S1BsWmNJQXdINlB6RGVEdXdydTlKaWxFZDV6ZW1kNGJsS3RHMXM1ZXdPMklWd0FjaGplMVdOVXBsUTM0UzhnR2p0CkwvY2VhZERBaDEyTkd4VW1IUWxYLzdFbGJxeTAySTZMeENyZEZta1pNS1kxTkw0Y2JTbCtpeFdXSHA1OTBockp3eGZ0N3MKOUUyRnpjanVUSnJFQU5WV1l2L2VER01RWmRPbnVOYVNSeHRnZVNjZVVhNXQrdzJTdUhJUUphV2ZqV1NXa2E2Vk9XQ0YzaApOYTFiREdFQmh3ZzRuR2kvMGFhdXA4UVFLaFZlMkNiOHkvRzY1dGxzQkluMHh3dzRkZEhkTGdOZjFaZnhaYUFtc29MMmxaCmlicnpqMnRMR1IwcENuNzRsTVVxR0Z0eFd2NmNvb3RzcStWVXR4MzYvdU5STmY0bHZha1pqOThNZ2dFaXhMUFdOR1RZNHoKVHg2bXJDcHh4c2EzWHhleTdYZkEwbVdYSzVZelRGQVo3NFphcklkU1VndDFXdWMybnZ2UXdaZFA5ZkRwR3lTeDNZUjk4Lwp0MVhJVTI2VWw0QlhiaWxFR3lJQ3U2UG0zZEFvMVFBQUFBTUJBQUVBQUFHQUM1OEExM1YwSkR4bjRwWTlhUTQrd0k1R3YwClFHTElsRExtSERwcEc0ODhSdGxNR291UDYxWXBPVHRFSk5pQ1V0ZEtjbHRHUHNHenNUaEVKeEdiT2pxMEt5RlZmd3ZFdVkKRWRQTmdvSDJDUDZpQzI3T1g0Vm52NFk3SDhzemFBMFlaSEZaekRlR3dpL21XNUtyZmRZeERtTE1NSHFkTEx0QzNTZzQwOAo3QXBGaVVNRVlVTmxra2RETUZzMWJkN1ZncHFBMjlBOE1aazMyMk1wZ2FMQW1IbjVpaTJ2Umsza0VxZGFNWjdrbWdYMXJUCjZzWVl2NG1lVGFydWRqNlRyTUxWRjZWSHhLdlF5WnpyT3pTS3Y4THp2dC9sdTBiSnF4c3dNNG56RFdjWTJEdnNzUWM2VUIKR2M2YzBoNDZUT1BUNzl3TlprUTBXamlYNlVuQ3RGSEM2ZWFFQVdzWHVCdFFBc29BakMxTVRtYlNwS2NRa25QWWYvTVhYagpTRm9oOEMrcnpBVWd6VnA4d1dFWTU3ODZwSTdBd3hCUDhSVWp2RjVxUFRKQWtiVXJJVXd4Q1pxMTE4eHZEUlhqS1VCUHZaCkZkWlJleERMRnRONmtpY0ZoaVVNRWJ5UTM4d05OY3VMb2d5L3dXdUtIUElQQ1NrR05OazNJam9aUkpodVZETDJyNUFBQUEKd0dLNHlzditRRDFWQTZDMWxGVDJwcUxPMkh0eEQ0c1dmWkl2Vjd2YzQvQ2Z0RFgxUlZTUkNYYVFSU01EMXJFK2JtTlJLYwo1Z09zMTFvY2ZyT2RVeUZTTWt3YUFQNUZuV1pPWjNXUUx5cTRXZ2RDWU15MG8wS3VYZGhHSmRtVmhxNXRRN0VHcGIzYTVNCitZMDJMNzFIWnVWQlM5N1c3OVQ2UndOd0FIbVd1SHZVaGJMcDU5SEZod2xLbU9jL2ZQcEloWXpUblhNY2tvelU0azgzaHgKRkNrNGpNYWlBTkF4aTNJK1hwR3JNajdRckpsMVJlSzRNMHMwKzB4NFN6dE9ibG93QUFBTUVBM09meFVoR1FTUkJIZFl4TgpqaVg1NHhqMG5vempIdk15YWRYWWNTNVFoZDNDUnJpUXVXc2J3QXdnbisycWFQNFBrN0x2ZStvS01MK1V6ZDN2MllzZVJiCm9hcVdmdkxlMU52YUI2eXlSM2RvNG40TmV1RENma056RDZ2dmdCNnhGbEdybldabmdLeEN1NDF1V2JONDZFczlUQ1VrbGYKTG40aTU3ZU52ZjRoWi9oUXNwdDZQQU9QQVRBV3JvcDdQakpWZmY3b09tczB2NkdJNlA3anFtRkZHSndmVWFSbEttRkFGSwpkNFVLcEZhV1NLV3ZEa0pzaWk0QWtxU1ZDbndVSlpBQUFBd1FET1Z6ZTZZdmExTVBJcmQwcGVicDRlaGgvS01oZWRBMEsvCnlCcjBMNVlHZ1hwTzVsdnhidGZhTUZnQUwwWVBrL3Fvc0tJODVLZ2JwNjNoWHlUSDRoRlhiQ3FhRGZJN2tXcTBTQ0J6Y1MKSFRwcUdMRHVJNkRuQVJteTZMWmMxdkJrVDlvSTVTSkM4S0dxOVdFVTF6bU5STUlTQWRoS09YRlhTZE0vWFEyN2FiclU2VwpLZ2taR2x4dDlZTHdYT09LWUthamJ1VTAwRkZqelFwK2labUNaRWY0a2ZxOHpFNUF2VUhPOWVobnJCbnFWVko5SDF4UW5NCittUUlybmRaK1lzdDBBQUFBZGNEaDBaWE4wTFhSb2NtOTNZWGRoZVMxT1QxUXRRUzFUUlVOU1JWUUJBZ01FQlFZPQotLS0tLUVORCBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0K",
+  "FIXTURE_B64:p8test-throwaway-rsa.pub": "c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCZ1FDeURlY1p0OG0zMkRvN20za2VHVGNHUUQ4TnZKWVRVOVk1VW9KU1dFeC9KSGxZYUJ0QUpqVGZ0czBmazJ2SHc2WHFzeWo1V1hDQU1CK2o4dzNnN3NLN3ZTWXBSSGVjM3BuZUc1U3JSdGJPWHNEdGlGY0FISVkzdFZqVktaVU4rRXZJQm83Uy8zSG1uUXdJZGRqUnNWSmgwSlYvK3hKVzZzdE5pT2k4UXEzUlpwR1RDbU5UUytIRzBwZm9zVmxoNmVmZElheWNNWDdlN1BSTmhjM0k3a3lheEFEVlZtTC8zZ3hqRUdYVHA3aldra2NiWUhrbkhsR3ViZnNOa3JoeUVDV2xuNDFrbHBHdWxUbGdoZDRUV3RXd3hoQVljSU9KeG92OUdtcnFmRUVDb1ZYdGdtL012eHV1YlpiQVNKOU1jTU9IWFIzUzREWDlXWDhXV2dKcktDOXBXWW02ODQ5clN4a2RLUXArK0pURktoaGJjVnIrbktLTGJLdmxWTGNkK3Y3alVUWCtKYjJwR1kvZkRJSUJJc1N6MWpSazJPTTA4ZXBxd3FjY2JHdDE4WHN1MTN3TkpsbHl1V00weFFHZStHV3F5SFVsSUxkVnJuTnA3NzBNR1hUL1h3NlJza3NkMkVmZlA3ZFZ5Rk51bEplQVYyNHBSQnNpQXJ1ajV0M1FLTlU9IHA4dGVzdC10aHJvd2F3YXktTk9ULUEtU0VDUkVUCg==",
+  "FIXTURE_B64:p8test-throwaway-wrapped-passphrase": "OgLD7cOD4lefVTA0YzMxOTM5OWFhNzA3Y2LnKercRt+UGWJfPQaw9+xVCYg47pOXzfS23L0ATBC+qA=="
+ },
+ "manifest_sha256": "b994ac0f88f2f653104acd74ae97b04f950afea55067577a960162c7c6bb1a74",
+ "variants": {
+  "hetzner": {
+   "name": "hetzner",
+   "node": "puppetserver",
+   "params": "hetzner",
+   "clean": [
+    {
+     "id": "hetzner-plugin-installed-by-pip",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "",
+     "stderr": "dpkg-query: no packages found matching python3-pip\n",
+     "ok": true
+    },
+    {
+     "id": "hetzner-credentials-file",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "",
+     "stderr": "stat: cannot statx '/opt/infra-populi/etc/dns-creds.ini': No such file or directory\ncat: /opt/infra-populi/etc/dns-creds.ini: No such file or directory\n",
+     "ok": true
+    },
+    {
+     "id": "hetzner-renew-and-deploy-on-the-fixtures-days",
+     "control": "negative",
+     "rc": 0,
+     "passed": false,
+     "stdout": "",
+     "stderr": "",
+     "ok": true
+    },
+    {
+     "id": "hetzner-certbot-finds-the-plugin",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "",
+     "stderr": "grep: /run/p8test-le/plugins.txt: No such file or directory\n",
+     "mutating": true,
+     "action": null,
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 1,
+    "green": false,
+    "node_fresh": true,
+    "tail": "i_setting[/etc/letsencrypt/cli.ini server https://acme-v02.api.letsencrypt.org/directory]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Letsencrypt::Config/Ini_setting[/etc/letsencrypt/cli.ini email p8test@p8test.example.com]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Letsencrypt::Renew/File[letsencrypt-renewal-hooks-puppet]: Skipping because of failed dependencies\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Letsencrypt::Renew/Cron[letsencrypt-renew]: Skipping because of failed dependencies\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Letsencrypt_base/File[/opt/infra-populi/bin/deploy_maintained_certificates.sh]/ensure: defined content as '{sha256}eb78ef9793d0a855d3f39c4ea74617f5158a2f54e51beac75c7a0506b7c50421'\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Letsencrypt_base/Cron[deploy_maintained_certificates]/ensure: created\u001b[0m\n\u001b[0;32mInfo: Class[Infra_populi::Letsencrypt_base]: Unscheduling all events on Class[Infra_populi::Letsencrypt_base]\u001b[0m\n\u001b[1;33mWarning: /Stage[main]/Letsencrypt::Renew/Letsencrypt::Hook[renew-post]/File[/etc/letsencrypt/renewal-hooks-puppet/renew-post.sh]: Skipping because of failed dependencies\u001b[0m\n\u001b[0;32mInfo: Stage[main]: Unscheduling all events on Stage[main]\u001b[0m\n\u001b[mNotice: Applied catalog in 142.77 seconds\u001b[0m\n\nNODE_FRESH: yes (boot d7b10ed9 of the latest revert, no agent run since)\nERROR: Agent run 1 failed (exit 6).\n/home/salatiel/.local/bin/infra_populi_tools/test_class.sh failed with exit status 1.\n\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "puppetserver",
+     "dest": "p8lab-puppetserver",
+     "boot_id": "d7b10ed9-2430-4566-9d96-ddaa4ef38663",
+     "snapshot": "P8LAB_PUPPETSERVER_BASELINE_v2",
+     "apt_mirror": "fallback http://mirrors.edge.kernel.org/ubuntu/",
+     "boot_id_at_end": "d7b10ed9-2430-4566-9d96-ddaa4ef38663",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-puppetserver",
+    "NODE_ADDR": "192.168.56.26",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26",
+    "FIXTURE_B64:p8test-throwaway-private-sig": "M2RlYzQ1NTNjZjIyYmNjNQphMTYxZDlmYmFhYTg4YTM3Cg==",
+    "FIXTURE_B64:p8test-throwaway-rsa": "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFZRUFzZzNuR2JmSnQ5ZzZPNXQ1SGhrM0JrQS9EYnlXRTFQV09WS0NVbGhNZnlSNVdHZ2JRQ1kwCjM3Yk5INU5yeDhPbDZyTW8rVmx3Z0RBZm8vTU40TzdDdTcwbUtVUjNuTjZaM2h1VXEwYld6bDdBN1loWEFCeUdON1ZZMVMKbVZEZmhMeUFhTzB2OXg1cDBNQ0hYWTBiRlNZZENWZi9zU1Z1ckxUWWpvdkVLdDBXYVJrd3BqVTB2aHh0S1g2TEZaWWVubgozU0dzbkRGKzN1ejBUWVhOeU81TW1zUUExVlppLzk0TVl4QmwwNmU0MXBKSEcyQjVKeDVScm0zN0RaSzRjaEFscForTlpKCmFScnBVNVlJWGVFMXJWc01ZUUdIQ0RpY2FML1JwcTZueEJBcUZWN1lKdnpMOGJybTJXd0VpZlRIRERoMTBkMHVBMS9WbC8KRmxvQ2F5Z3ZhVm1KdXZPUGEwc1pIU2tLZnZpVXhTb1lXM0ZhL3B5aWkyeXI1VlMzSGZyKzQxRTEvaVc5cVJtUDN3eUNBUwpMRXM5WTBaTmpqTlBIcWFzS25IR3hyZGZGN0x0ZDhEU1paY3Jsak5NVUJudmhscXNoMUpTQzNWYTV6YWUrOURCbDAvMThPCmtiSkxIZGhIM3orM1ZjaFRicFNYZ0ZkdUtVUWJJZ0s3bytiZDBDalZBQUFGbUVOMGtLRkRkSkNoQUFBQUIzTnphQzF5YzIKRUFBQUdCQUxJTjV4bTN5YmZZT2p1YmVSNFpOd1pBUHcyOGxoTlQxamxTZ2xKWVRIOGtlVmhvRzBBbU5OKzJ6UitUYThmRApwZXF6S1BsWmNJQXdINlB6RGVEdXdydTlKaWxFZDV6ZW1kNGJsS3RHMXM1ZXdPMklWd0FjaGplMVdOVXBsUTM0UzhnR2p0CkwvY2VhZERBaDEyTkd4VW1IUWxYLzdFbGJxeTAySTZMeENyZEZta1pNS1kxTkw0Y2JTbCtpeFdXSHA1OTBockp3eGZ0N3MKOUUyRnpjanVUSnJFQU5WV1l2L2VER01RWmRPbnVOYVNSeHRnZVNjZVVhNXQrdzJTdUhJUUphV2ZqV1NXa2E2Vk9XQ0YzaApOYTFiREdFQmh3ZzRuR2kvMGFhdXA4UVFLaFZlMkNiOHkvRzY1dGxzQkluMHh3dzRkZEhkTGdOZjFaZnhaYUFtc29MMmxaCmlicnpqMnRMR1IwcENuNzRsTVVxR0Z0eFd2NmNvb3RzcStWVXR4MzYvdU5STmY0bHZha1pqOThNZ2dFaXhMUFdOR1RZNHoKVHg2bXJDcHh4c2EzWHhleTdYZkEwbVdYSzVZelRGQVo3NFphcklkU1VndDFXdWMybnZ2UXdaZFA5ZkRwR3lTeDNZUjk4Lwp0MVhJVTI2VWw0QlhiaWxFR3lJQ3U2UG0zZEFvMVFBQUFBTUJBQUVBQUFHQUM1OEExM1YwSkR4bjRwWTlhUTQrd0k1R3YwClFHTElsRExtSERwcEc0ODhSdGxNR291UDYxWXBPVHRFSk5pQ1V0ZEtjbHRHUHNHenNUaEVKeEdiT2pxMEt5RlZmd3ZFdVkKRWRQTmdvSDJDUDZpQzI3T1g0Vm52NFk3SDhzemFBMFlaSEZaekRlR3dpL21XNUtyZmRZeERtTE1NSHFkTEx0QzNTZzQwOAo3QXBGaVVNRVlVTmxra2RETUZzMWJkN1ZncHFBMjlBOE1aazMyMk1wZ2FMQW1IbjVpaTJ2Umsza0VxZGFNWjdrbWdYMXJUCjZzWVl2NG1lVGFydWRqNlRyTUxWRjZWSHhLdlF5WnpyT3pTS3Y4THp2dC9sdTBiSnF4c3dNNG56RFdjWTJEdnNzUWM2VUIKR2M2YzBoNDZUT1BUNzl3TlprUTBXamlYNlVuQ3RGSEM2ZWFFQVdzWHVCdFFBc29BakMxTVRtYlNwS2NRa25QWWYvTVhYagpTRm9oOEMrcnpBVWd6VnA4d1dFWTU3ODZwSTdBd3hCUDhSVWp2RjVxUFRKQWtiVXJJVXd4Q1pxMTE4eHZEUlhqS1VCUHZaCkZkWlJleERMRnRONmtpY0ZoaVVNRWJ5UTM4d05OY3VMb2d5L3dXdUtIUElQQ1NrR05OazNJam9aUkpodVZETDJyNUFBQUEKd0dLNHlzditRRDFWQTZDMWxGVDJwcUxPMkh0eEQ0c1dmWkl2Vjd2YzQvQ2Z0RFgxUlZTUkNYYVFSU01EMXJFK2JtTlJLYwo1Z09zMTFvY2ZyT2RVeUZTTWt3YUFQNUZuV1pPWjNXUUx5cTRXZ2RDWU15MG8wS3VYZGhHSmRtVmhxNXRRN0VHcGIzYTVNCitZMDJMNzFIWnVWQlM5N1c3OVQ2UndOd0FIbVd1SHZVaGJMcDU5SEZod2xLbU9jL2ZQcEloWXpUblhNY2tvelU0azgzaHgKRkNrNGpNYWlBTkF4aTNJK1hwR3JNajdRckpsMVJlSzRNMHMwKzB4NFN6dE9ibG93QUFBTUVBM09meFVoR1FTUkJIZFl4TgpqaVg1NHhqMG5vempIdk15YWRYWWNTNVFoZDNDUnJpUXVXc2J3QXdnbisycWFQNFBrN0x2ZStvS01MK1V6ZDN2MllzZVJiCm9hcVdmdkxlMU52YUI2eXlSM2RvNG40TmV1RENma056RDZ2dmdCNnhGbEdybldabmdLeEN1NDF1V2JONDZFczlUQ1VrbGYKTG40aTU3ZU52ZjRoWi9oUXNwdDZQQU9QQVRBV3JvcDdQakpWZmY3b09tczB2NkdJNlA3anFtRkZHSndmVWFSbEttRkFGSwpkNFVLcEZhV1NLV3ZEa0pzaWk0QWtxU1ZDbndVSlpBQUFBd1FET1Z6ZTZZdmExTVBJcmQwcGVicDRlaGgvS01oZWRBMEsvCnlCcjBMNVlHZ1hwTzVsdnhidGZhTUZnQUwwWVBrL3Fvc0tJODVLZ2JwNjNoWHlUSDRoRlhiQ3FhRGZJN2tXcTBTQ0J6Y1MKSFRwcUdMRHVJNkRuQVJteTZMWmMxdkJrVDlvSTVTSkM4S0dxOVdFVTF6bU5STUlTQWRoS09YRlhTZE0vWFEyN2FiclU2VwpLZ2taR2x4dDlZTHdYT09LWUthamJ1VTAwRkZqelFwK2labUNaRWY0a2ZxOHpFNUF2VUhPOWVobnJCbnFWVko5SDF4UW5NCittUUlybmRaK1lzdDBBQUFBZGNEaDBaWE4wTFhSb2NtOTNZWGRoZVMxT1QxUXRRUzFUUlVOU1JWUUJBZ01FQlFZPQotLS0tLUVORCBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0K",
+    "FIXTURE_B64:p8test-throwaway-rsa.pub": "c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCZ1FDeURlY1p0OG0zMkRvN20za2VHVGNHUUQ4TnZKWVRVOVk1VW9KU1dFeC9KSGxZYUJ0QUpqVGZ0czBmazJ2SHc2WHFzeWo1V1hDQU1CK2o4dzNnN3NLN3ZTWXBSSGVjM3BuZUc1U3JSdGJPWHNEdGlGY0FISVkzdFZqVktaVU4rRXZJQm83Uy8zSG1uUXdJZGRqUnNWSmgwSlYvK3hKVzZzdE5pT2k4UXEzUlpwR1RDbU5UUytIRzBwZm9zVmxoNmVmZElheWNNWDdlN1BSTmhjM0k3a3lheEFEVlZtTC8zZ3hqRUdYVHA3aldra2NiWUhrbkhsR3ViZnNOa3JoeUVDV2xuNDFrbHBHdWxUbGdoZDRUV3RXd3hoQVljSU9KeG92OUdtcnFmRUVDb1ZYdGdtL012eHV1YlpiQVNKOU1jTU9IWFIzUzREWDlXWDhXV2dKcktDOXBXWW02ODQ5clN4a2RLUXArK0pURktoaGJjVnIrbktLTGJLdmxWTGNkK3Y3alVUWCtKYjJwR1kvZkRJSUJJc1N6MWpSazJPTTA4ZXBxd3FjY2JHdDE4WHN1MTN3TkpsbHl1V00weFFHZStHV3F5SFVsSUxkVnJuTnA3NzBNR1hUL1h3NlJza3NkMkVmZlA3ZFZ5Rk51bEplQVYyNHBSQnNpQXJ1ajV0M1FLTlU9IHA4dGVzdC10aHJvd2F3YXktTk9ULUEtU0VDUkVUCg==",
+    "FIXTURE_B64:p8test-throwaway-wrapped-passphrase": "OgLD7cOD4lefVTA0YzMxOTM5OWFhNzA3Y2LnKercRt+UGWJfPQaw9+xVCYg47pOXzfS23L0ATBC+qA=="
+   },
+   "manifest_sha256": "10bc54f285263fdf9df0422c8e33f115efb199929a40bd6b60703bfaa16d84a2"
+  }
+ },
+ "duration_s": 280.9
+}

@@ -1,0 +1,199 @@
+{
+ "class": "hello_world_flask_common",
+ "role": "command",
+ "at": "20261127T213937Z",
+ "set_sha256": "22745a7e41d189a82f8042d5fd20ea77ab467c798e3ade7e71e171f09245e0a6",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-applications-directory",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/opt/infra-populi/hello_world_flask': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "flask-and-gunicorn-installed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "dpkg-query: no packages found matching python3-flask\ndpkg-query: no packages found matching python3-gunicorn\nTraceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nModuleNotFoundError: No module named 'flask'\n",
+   "ok": true
+  },
+  {
+   "id": "gunicorn-serves-a-flask-app",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-flask/out.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "_world_flask_common/Package[python3-gunicorn]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Hello_world_flask_common/Package[python3-flask]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Hello_world_flask_common/File[/opt/infra-populi/hello_world_flask]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 18.55 seconds\u001b[0m\nRUN1_EVENTS: 10 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795815647'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.42 seconds\u001b[0m\nCOVERAGE infra_populi::hello_world_flask_common: 3 concrete resources (+0 defined-type instances)\n  Package[python3-gunicorn]\n  Package[python3-flask]\n  File[/opt/infra-populi/hello_world_flask]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP hello_world_flask_common 4655bbd671ef\n\nNODE_FRESH: yes (boot b3a142c6 of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "the-applications-directory",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "directory root:root 755\n",
+   "stderr": ""
+  },
+  {
+   "id": "flask-and-gunicorn-installed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "python3-flask install ok installed\npython3-gunicorn install ok installed\nimports ok\n",
+   "stderr": ""
+  },
+  {
+   "id": "gunicorn-serves-a-flask-app",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "200\np8test hello\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes /run/p8test-flask/app.py (one route returning \"p8test hello\") and starts a transient unit p8test-gunicorn (python3 -m gunicorn on 127.0.0.1:18080 serving it, as hello_world_flask's Debian unit runs it) until the next revert; the answers go to /run/p8test-flask/out.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "b3a142c6-3a10-4832-930e-ef05f29c545b",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "b3a142c6-3a10-4832-930e-ef05f29c545b",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/infra-populi",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "7f274a1a99e4972860e6895f74d2e9d397f4dfe7021acb1ab5aa1ea39c05f558",
+ "variants": {
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "clean": [
+    {
+     "id": "on-redhat-flask-and-gunicorn-installed-and-the-directory",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "package python3-flask is not installed\npackage python3-gunicorn is not installed\n",
+     "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nModuleNotFoundError: No module named 'flask'\nstat: cannot statx '/opt/infra-populi/hello_world_flask': No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "main]/Infra_populi::Hello_world_flask_common/Package[python3-flask]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Hello_world_flask_common/File[/opt/infra-populi/hello_world_flask]/ensure: created\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 185.82 seconds\u001b[0m\nRUN1_EVENTS: 13 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795816200'\u001b[0m\n\u001b[mNotice: Applied catalog in 9.97 seconds\u001b[0m\nCOVERAGE infra_populi::hello_world_flask_common: 3 concrete resources (+0 defined-type instances)\n  Package[python3-gunicorn]\n  Package[python3-flask]\n  File[/opt/infra-populi/hello_world_flask]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP hello_world_flask_common 4655bbd671ef\n\nNODE_FRESH: yes (boot 2f86e24a of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-flask-and-gunicorn-installed-and-the-directory",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "python3-flask\npython3-gunicorn\nimports ok\ndirectory root:root 755\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "2f86e24a-f72f-4733-af27-4423294f0efb",
+     "snapshot": "P8LAB_RHEL9_BASELINE_v3",
+     "apt_mirror": null,
+     "boot_id_at_end": "2f86e24a-f72f-4733-af27-4423294f0efb",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "e8322cef0fd3793ac68ea3d80ceb2985c2dfb6bc907c5fe9b9444fb8e5a7f460"
+  }
+ },
+ "duration_s": 642.6
+}

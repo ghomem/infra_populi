@@ -96,3 +96,46 @@ def test_a_set_that_needs_a_server_says_what_for(tmp_path):
     assert any("requires_why" in p for p in setfile.validate(write(tmp_path, data)))
     data["apply"]["requires_why"] = "its files come from the server's file mount puppet:///extra_files"
     assert setfile.validate(write(tmp_path, data)) == []
+
+
+def with_peer_variant(**peer):
+    data = copy.deepcopy(GOOD)
+    data["variants"] = [{"name": "reg", "params": "reg", "why": "a registry the class logs in to, served by the peer"}]
+    data["checks"].append({"id": "from-the-peer", "what": "the peer pulls", "control": "negative", "host": "peer",
+                           "variant": "reg", "probe": "true", "expect": {"stdout": "^x$"},
+                           "derived_from": [{"path": "anything", "lines": "1"}]})
+    data["peer"] = {"kind": "ubuntu2", "why": "a second machine serves what the class uses", **peer}
+    return data
+
+
+def test_a_peer_may_serve_a_variant_and_be_prepared_before_the_clean_phase(tmp_path):
+    # HQ 2026-11-27 item 2: peer.runs names the runs that get a fresh peer, peer.setup prepares it
+    ok = with_peer_variant(runs=["reg"], setup="systemctl restart docker-registry\n")
+    assert setfile.validate(write(tmp_path, ok), params_found=lambda v: True) == []
+    assert setfile.peer_runs(ok) == ["reg"] and setfile.peer_runs(GOOD) == []
+    assert setfile.peer_runs({**GOOD, "peer": {"kind": "ubuntu2", "why": "x" * 20}}) == ["base"]
+    for bad, message in [({"runs": ["nope"]}, "peer.runs lists the runs"), ({"setup": ""}, "peer.setup is a script"),
+                         ({}, "variant reg has no peer")]:
+        found = setfile.validate(write(tmp_path, with_peer_variant(**bad)), params_found=lambda v: True)
+        assert any(message in p for p in found), found
+
+
+@pytest.mark.parametrize("lifted, refused", [
+    ("capability: a second node kind for the RedHat branch", True),
+    ("capability: an agent run on the peer after the change", True),
+    ("capability: an ecryptfs fixture user with a mounted private directory", False),
+])
+def test_a_row_naming_a_capability_the_runner_has_is_refused(lifted, refused):
+    # HQ 2026-11-27 item 1: such a row is a check to write; the list of capabilities is setfile.RUNNER_CAPABILITIES
+    problems = setfile.uncovered_problems({"why": "the fixture cannot show this outcome yet", "lifted_by": lifted},
+                                          "o", {})
+    assert bool(problems and "the runner has" in problems[0]) is refused, problems
+
+
+def test_a_variant_names_an_existing_node_fixture(tmp_path):
+    data = copy.deepcopy(GOOD)
+    data["variants"] = [{"name": "enc", "why": "an encrypted home", "node_fixture": "p8test_no_such_fixture"}]
+    problems = setfile.variant_problems(data, data["checks"], setfile.kinds(), None)
+    assert any("node_fixture 'p8test_no_such_fixture' is not a file" in p for p in problems), problems
+    data["variants"][0]["node_fixture"] = "p8test_ecryptfs_home"
+    assert not any("node_fixture" in p for p in setfile.variant_problems(data, data["checks"], setfile.kinds(), None))

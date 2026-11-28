@@ -1,0 +1,39 @@
+# Salatiel's decisions on the approval report (single source; approval_report.py renders them). Recorded from HQ's
+# message of 2026-11-27 ("Salatiel reviewed the approval report with HQ", item 7). Append a dated block for a later
+# review; never edit a recorded one.
+- date: 2026-11-27
+  source: HQ 2026-11-27 (after the rename), item 7
+  findings_accepted_as_known: [filesystem_apt, firewall_secure_extra, openvpn_server]
+  # the accepted gaps the reviewed report listed (2026-11-26): accepted, except compression off, which is now a check
+  accepted_gaps:
+    docker_container: [digest]
+    firewall_addon_caching_nameserver: [port]
+    network_vpn: [openvpn_netmask, openvpn_cipher, openvpn_reneg_sec, client_isolation]
+    nginx_base: [log_formats_additional, dh_params_bits]
+    nginx_frontend: [servers_create, enable_ssl, manage_ssl, redirects_external_location, additional_ssl_protocols,
+                     additional_ssl_ciphers, base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve,
+                     security_headers, redirects_external_prevented, redirects_external_whitelisted,
+                     server_default_create, ip_whitelist, use_compact_log_format, resolver]
+    nginx_frontend_domain: [servers_create, enable_ssl, additional_ssl_protocols, additional_ssl_ciphers,
+                            base_ssl_ciphers_prefix, base_ssl_ciphers_suffix, base_ssl_ecdh_curve, ip_whitelist,
+                            proxy_locations_ignore_headers, redirect_http_www_to_https_www_create,
+                            server_https_www_create, redirects_external_prevented, redirects_external_location,
+                            redirects_external_whitelisted, redirects_external_prevented_adhoc_config,
+                            use_compact_log_format, resolver]
+    node_base: [anti_ddos, apt_surface_list, bad_mark, ciphers, country_whitelist, customize_syslog_mode, custom_ntp,
+                ddos_limit, ddos_limit_per_time_unit, ddos_limit_time_unit, filesystem_security, firewall_secure_extra,
+                forward_iniface, good_mark, host_keys, internal_forward, internal_forward_list, ip_blacklist, ip_filter,
+                ip_whitelist, kex_algorithm, macs, nameservers, ntp_servers, password_authentication,
+                relevant_updates_method, relevant_updates_no_kernel, server_ppa, service_list, ssh_allow_root_login,
+                ssh_port, syslog_mode]
+    openvpn_server: [force_ifupdown]
+    ssh_secure: [root_login, port, host_keys, kex_algorithm, ciphers, macs]
+  accepted_gaps_not_accepted:
+    openvpn_server: {compression: "compression off is tested: production is heading there (HQ item 3)"}
+  standins_accepted:
+    openvpn_server: accepted
+    network_vpn: accepted
+    openvpn_domain: accepted
+    openvpn_nm_connection: accepted
+    user_sysmon: "accepted; to be tested on the monitoring server at the cutover (documentation list, cutover row 11)"
+    user_samba: "accepted; to be tested against the client's Zentyal server when that client is migrated (documentation list, cutover row 12)"

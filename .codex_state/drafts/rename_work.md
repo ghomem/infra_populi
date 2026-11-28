@@ -62,3 +62,39 @@ Not applied by any tool. Moves out of drafts when the rename's stop report is wr
   the snapshot P8NODE_BASELINE_GREEN_v6 (a command these settings deny), then nodes.yml + node_inventory --refresh.
 - Item 9 after that: phase3.py run for every class (author), then reviewer `<class> --rename` for every class.
 
+
+## HQ 2026-11-27 (after the rename): before the re-verification — worklist
+Done: v6 baseline in nodes.yml (6193133), clean-node inventory refreshed, master snapshot v11 (201e06a).
+Item 1 (stale open rows; validator rejects a row naming a runner capability; capabilities in one place):
+- RedHat branch -> check on rhel9: caching_nameserver r6, hello_world_flask r4, hello_world_flask_common r2,
+  ssl_nginx r3, ssl_postfix r3 (paths part), user_sudoer r3.
+- production-used variant -> check: letsencrypt_base r6 (provider, renew_cron_monthday), nginx_static_domain r4
+  (server_default_create, letsencrypt_certificate, manage_ssl, redirect_to_https ...), rsyslog_server r5 (port,
+  log_root, active_days, retention_*, rotation_*), user_kde_lock_screen r7 (timeout, grace).
+- passwd layer (undeterminable -> check): backup r6, sftp_only r3.
+- unused variant -> accepted gap: hashman_base r10, hello_world_flask r5, linux_policies_user r4, mariadb_server r6,
+  mysql_db r5, nginx_frontend_mail r5, nginx_static r3, postfix_smtp_base r9, ssl_postfix r3 (letsencrypt part),
+  user_desktop r1, user_desktop_sudoer r4, node_base_desktop r9 (screenlock_users).
+- reword (the runner lacks it): mount_shares_desktop r3 (input injection; split its parameter variants),
+  linux_policies_common r3 (a session in a variant run).
+Items 2 docker registry login+pull (peer), 3 openvpn_server compression off variant, 4 ecryptfs user on a desktop
+node (user_base wrapped-passphrase branch + hashman_base row), 5 throwaway keypair: key login for user and user_base,
+6 report counts + name the unverified class, 7 Salatiel's decisions + 2 cutover notes, 8 correction-round rule.
+Each changed set: run (author, counts as its re-verification run) + reviewer --phase3; then the rest in item 9.
+
+### Progress 2026-11-27 late (uncommitted until every set validates; staged/working tree)
+- Validator: RUNNER_CAPABILITIES in setfile.py; both validators refuse stale rows. All 90 sets validate (suite + engine).
+- Accepted gaps written (13 classes). Rewordings: mount_shares_desktop, linux_policies_common, hashman_base (Hiera).
+- RedHat on rhel9 (variant `rhel`): caching_nameserver PASS, hello_world_flask PASS, hello_world_flask_common PASS,
+  ssl_nginx PASS (trials), ssl_postfix + `letsencrypt`, user_sudoer (trial running).
+- Production variants: rsyslog_server `custom`, user_kde_lock_screen `timing` (login action + node agent anchor),
+  letsencrypt_base `hetzner` (pip on 24.04 may hit PEP 668: a finding if so), nginx_static_domain `prod`;
+  passwd layer: backup `plain` (multi-dir unquoted in the template: may be a finding), sftp_only `open`.
+  Trials queued: try_prod.log.
+- Runner: peer.setup + peer.runs (setfile, runner, phase3), tests. docker_container `registry` (peer registry,
+  OCI image built on the peer, skopeo push); NEEDS lab Hiera docker::extra_parameters insecure-registry for the
+  peer (master_fixtures.sh) — check the pinned module's parameter name first.
+- openvpn_server `nocomp` (peer runs base+nocomp), force_ifupdown accepted gap.
+- Next: variant node_fixture (harness P8_NODE_FIXTURE_VARIANT + builder + hook) for user_base ecryptfs on a desktop
+  kind; throwaway fixtures dir (spec/behaviour/fixtures/throwaway, {{FIXTURE_B64:name}}) for the key login (user,
+  user_base) and the wrapped passphrase; then items 6-8 (report), commit, then the re-verification pass.

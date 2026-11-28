@@ -412,6 +412,14 @@ render_node_fixtures() {
     echo "# MOCK-APPLY node fixture: ${CLASSIFY_NODE_FIXTURE}"
     cat "$path"
   done
+  # HQ 2026-11-27 item 4: a Phase 3 variant's own node fixture (state the class needs before it applies), after the plan's
+  if [[ -n "${P8_NODE_FIXTURE_VARIANT:-}" ]]; then
+    [[ "$P8_NODE_FIXTURE_VARIANT" =~ ^[a-z0-9_]+$ ]] || die "Invalid variant node fixture: '${P8_NODE_FIXTURE_VARIANT}'"
+    path="${FIXTURE_DIR}/node/${P8_NODE_FIXTURE_VARIANT}.pp"
+    [[ -f "$path" ]] || die "Node fixture not found: ${path}"
+    echo "# MOCK-APPLY node fixture: ${P8_NODE_FIXTURE_VARIANT}"
+    cat "$path"
+  fi
 }
 
 # The remote command prefix that removes the module's directory under its old name once the module is renamed (empty

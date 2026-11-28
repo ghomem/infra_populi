@@ -29,9 +29,12 @@ outcomes:
 - outcome: other users or other policy lists
   from: manifests/linux_policies_user.pp:15-20
   uncovered:
-    why: one set holds one params fixture (p8testuser, two no-op lines)
-    lifted_by: 'capability: more than one params fixture per set'
-    evidence: '{{SITE:engine-runner}} applies the class once with its single `fixture` (params or defaults)'
+    why: 'parameter variants no production node uses (the fixture: p8testuser, two no-op lines)'
+    accepted_gap:
+    - username
+    - policies
+    evidence: '{SITE:fleet-usage} (2026-11-23): no production node statement sets username, policies, and no class of the
+      repository sets them on linux_policies_user'
 checks:
 - id: user-policy-script-composed
   what: USER/p8testuser.sh is owned by the user (0700) and holds the header, which sources COMMON/common, then the policy

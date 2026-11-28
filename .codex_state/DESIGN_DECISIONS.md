@@ -2911,3 +2911,71 @@ Then item 9, the re-verification, as ruled. After it:
     fixture; the DNS token read from outside git). Salatiel will supply a delegated test zone and a token; wait for
     them.
 11. Regenerate the approval report and stop for Salatiel's Phase 1 approval."
+
+## 2026-11-27 — HQ after the rename: items 1-8 before the re-verification
+- **Master snapshot:** P8MASTER_BASELINE_GREEN_v11 (201e06a), taken with snapshot_master.sh after the rename changed the
+  master's fixtures.
+- **Item 1 (stale open rows):** the runner's capabilities have one list, the suite's setfile.RUNNER_CAPABILITIES; both
+  validators (the suite's and phase3's) refuse an open row whose `capability:` names one of them (tests in both). The
+  rows that did: a RedHat branch is now a variant on rhel9 (caching_nameserver, hello_world_flask(+_common),
+  ssl_nginx, ssl_postfix, user_sudoer); a variant production uses is a variant with checks (rsyslog_server custom,
+  user_kde_lock_screen timing, letsencrypt_base hetzner, nginx_static_domain prod, backup plain, sftp_only open,
+  ssl_postfix letsencrypt); any other variant is an accepted gap with evidence.
+- **Runner additions:** a peer `setup` (run before the clean phase, its output in the record; a failure is the
+  environment's) and `runs` (which runs get a fresh peer: a variant may use one); `{{FIXTURE_B64:<file>}}` names a file
+  of spec/behaviour/fixtures/throwaway (labelled throwaway test material; suite_check refuses private key material
+  anywhere else); a variant's own `node_fixture`, rendered after the set's (builder, runner, harness
+  P8_NODE_FIXTURE_VARIANT, the lab's hook). Fix found by the engine's tests: the desktop session runs in the base run
+  (it was tied to the peer flag, so a peerless session set skipped it).
+- **Item 2 (docker registry):** the peer serves a registry with htpasswd credentials on 5000 and a private image built
+  on the spot; the checks: the login is stored, the private image is pulled and runs, a pull without the login is
+  refused. The lab daemon accepts the HTTP registry through a lab-only Hiera key (master_fixtures.sh:
+  docker::extra_parameters --insecure-registry; only docker_container declares the docker class in the lab).
+- **Item 3 (openvpn_server compression off):** variant nocomp with its own client connection checks.
+- **Item 4 (ecryptfs):** `ecryptfs-setup-private` alone makes ~/Private, not the layout user_base writes to
+  (/home/.ecryptfs/<user>/.ecryptfs): that is an encrypted home, as `adduser --encrypt-home` makes it
+  (`--bootstrap`). Node fixture p8test_ecryptfs_home encrypts the fixture user's home that way with throwaway
+  passphrases and leaves it at rest; the throwaway wrapped passphrase and Private.sig were made with the same
+  passphrases (Private.sig is deterministic for a mount passphrase: two setups gave the same). user_base's ecryptfs
+  variant on kubuntu: the pushed value and its decoding, the login password unwraps the mount passphrase (a wrong one
+  does not: mismatch), the pushed passphrase opens the encrypted home (mounted read-only for the check), and an
+  out-of-band change is repaired by the next agent run (the ruled guard). hashman_base: the same material through the
+  CLI (setecryptfs) and printinfo's encrypted-home line (user_desktop, ignorekey true); the client must be a desktop
+  (user_desktop runs KDE's tools as the user), so hashman_base's peer is now kubuntu, declared a second-node kind
+  (nodes.yml, kinds.yml), its setup giving it the encrypted home and pamtester.
+- **Item 5 (key login):** throwaway RSA keypair (user_base pushes keys as ssh-rsa); user and user_base push its public
+  half; a check logs in with the private half to 127.0.0.1 and another key is refused.
+- **Item 6 (report accuracy):** production machines follow the corrected rule (approval_report.production: node_base's
+  switches count only where turned on, from fleet_variant_usage.md; the RedHat-only branch says so; the non-RedHat
+  branch says "at most"). "89 verified of 90" was user_lock: its later `P8: migrate` commit 3731d97 changed only the
+  tracker; the order generator now takes, as the reviewer does by HQ 2026-11-23 ruling 1, the newest migrate commit
+  that changed a class file (test). 90 of 90.
+- **Item 7:** Salatiel's decisions are in rules/salatiel_decisions.yml (append-only, dated); the report marks findings
+  accepted as known, accepted gaps accepted (a gap added since is "for acceptance"), compression off not accepted, and
+  the stand-ins accepted. Cutover rows 11 (user_sysmon) and 12 (user_samba) in the documentation list.
+- **Item 8:** a change that does not pass within its correction rounds is recorded as an open row, and the pass moves
+  on.
+- **Lesson:** never edit a shell tool while a run executes it (bash reads scripts as it goes): editing test_class.sh
+  during a trial crashed the harness after a green run 2 (ssl_postfix rhel, re-run).
+- **Trials of the changed sets (2026-11-27/28, public runner, records in checks/public/harness):** every rhel variant
+  passes (caching_nameserver, hello_world_flask, hello_world_flask_common, ssl_nginx, ssl_postfix, user_sudoer), and so
+  do rsyslog_server custom, user_kde_lock_screen timing, sftp_only open, ssl_postfix letsencrypt, user (key login) and
+  user_base (key login, ecryptfs). Three findings, each from a variant production uses or HQ asked for:
+  - openvpn_server `compression => 'none'` (the class's documented way to turn compression off): puppet-openvpn 12.0.0
+    writes the value as a line of its own, so the server reads `none` and refuses to start (`Options error:
+    Unrecognized option ... infra_populi.conf:9: none (2.6.19)`). One clear fix (policy B, local change #25): 'none'
+    leaves the directive out.
+  - backup with several directories (the template says it accepts them): `FILETARGETDIRS=/etc/default /etc/skel` is an
+    assignment for one command, so tar gets no target and exits 2. One clear fix (policy B, local change #26): quote it.
+  - letsencrypt_base with the Hetzner providers: pip refuses to install the plugin into Ubuntu 24.04's externally
+    managed Python (PEP 668); no apt package exists. Several designs: escalations/letsencrypt_base.behaviour.md.
+  Authoring corrections: docker_container's registry image is tagged (with `latest`, docker::image re-pulls and
+  restarts the container on every run, by the module's design, as the base fixture's `alpine` tag avoids);
+  nginx_static_domain's prod probe collapses nginx -T's column spacing; hashman_base round 1 (the client's per-node
+  Hiera data on the master-role server, the bin directory a desktop's base provides, the new user's creation mail).
+- **The package cache's direct fallback:** the cache answered 503 "Network is unreachable" for every mirror in bursts
+  of a few minutes (23:18, 23:23, 23:39, 00:03-00:05) while the laptop reached the archive; the node's detector only
+  checks that the cache answers, so the revert's fallback mirror also went through it. revert_node.sh now retries
+  directly (this run only, the detector says DIRECT) when a refresh through the cache fails, before the fallback
+  mirror; REVERT_METRICS apt_proxy records it (tests). The bursts' cause is not established.
+- **filesystem_apt's option A** (a fresh node baseline before the re-verification, ruled 2026-11-26) is v6.

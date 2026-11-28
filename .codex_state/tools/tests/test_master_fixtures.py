@@ -49,14 +49,17 @@ def test_fixture_values_are_obviously_fake():
     hiera = remotes()[3]
     values = [l.split(": ", 1)[1] for l in hiera.split("<<'YAML'", 1)[1].split("YAML\n", 1)[0].splitlines()
               if "::" in l and not l.startswith("#")]
-    assert len(values) == 17
+    assert len(values) == 18
     assert "puppet8node::ssh::othergroups: 'p8testgroup'" in hiera
     stock = {"'/etc/puppetlabs/puppet/ssl'"}  # the OpenVox default ssldir: a stock path, neither fake nor a secret
     doc_net = re.compile(r"'(192\.0\.2|198\.51\.100|203\.0\.113)\.\d+'")  # RFC 5737 documentation addresses
     # a network list of loopback plus an RFC 5737 documentation network (postfix_smtp_node's mynetworks, 2026-11-25)
     doc_nets = re.compile(r"'127\.0\.0\.0/8 (192\.0\.2|198\.51\.100|203\.0\.113)\.0/24'")
+    # the lab peer's registry on the host-only network (docker_container's registry variant, HQ 2026-11-27 item 2): a lab
+    # address, neither production's nor a secret
+    lab_registry = re.compile(r"\['--insecure-registry=192\.168\.56\.\d+:5000'\]")
     assert all("p8test" in v or "lookup(" in v or v.strip().strip("'").isdigit() or v in stock or doc_net.fullmatch(v)
-               or doc_nets.fullmatch(v) for v in values), values
+               or doc_nets.fullmatch(v) or lab_registry.fullmatch(v) for v in values), values
     pki = remotes()[2]
     assert "THROWAWAY" in pki and "CN=p8test throwaway CA" in pki and "CN=p8test.invalid" in pki
     assert "ca.key" not in pki.split("put()")[1]  # the CA key is never installed

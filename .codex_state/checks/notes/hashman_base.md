@@ -33,3 +33,13 @@
   # and nothing was written. The administrator unlocks first, as the web flow (unlock, then login) does. The behaviour
   # is unchanged.
 ```
+
+2026-11-27 (HQ 2026-11-27 item 4: the ecryptfs row through hashman, with user_base's throwaway material; the peer is
+now kubuntu, since printinfo's encrypted-home form is user_desktop). Correction round 1 after the first trial
+(`.codex_state/checks/public/harness/hashman_base/20261127T234450Z.json`): the client's catalog did not compile on the
+master-role server (`lookup() did not find a value for the name 'filesystem::bindir'`, from user_kde_lock_screen, which
+user_desktop declares): that server's code tree holds the module and no Hiera data, and `user` needed none. The
+administrator's step now writes the client's per-node data (data/nodes/p8test-hashman-client.yaml, the level the
+server's hiera.yaml already has) with filesystem::bindir, and the peer setup creates the bin directory a desktop's base
+provides. The mail check's expected list gains `Hashman creation SUCCESS for p8testuser` (the new useradd; setecryptfs
+sends no mail). Every other result of that run matched the previous runs.

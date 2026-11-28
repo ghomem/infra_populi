@@ -1,0 +1,486 @@
+{
+ "class": "user",
+ "role": "command",
+ "at": "20261127T232944Z",
+ "set_sha256": "b26de17f24c9a376f8418a9e0af2e6a07f0c5152eff3f61b28f5ef83093534ff",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "user-and-own-primary-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "|||\nprimary group: \n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "no-supplementary-groups",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "id: 'p8testuser': no such user\n",
+   "ok": true
+  },
+  {
+   "id": "home-created-and-owned",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/home/p8testuser': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "password-hash-set",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-given-key-is-pushed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /home/p8testuser/.ssh/authorized_keys: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "key-file-owned-and-private",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/home/p8testuser/.ssh': No such file or directory\nstat: cannot statx '/home/p8testuser/.ssh/authorized_keys': No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-password-logs-in-and-a-wrong-one-is-refused",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-user/pw.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "no-ecryptfs-passphrase-files",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "an-out-of-band-key-is-planted",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /home/p8testuser/.ssh/authorized_keys: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-purges-the-out-of-band-key",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /home/p8testuser/.ssh/authorized_keys: No such file or directory\ngrep: /home/p8testuser/.ssh/authorized_keys: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-pushed-key-logs-in",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "rc \n",
+   "stderr": "cat: /run/p8test-keylogin/rc: No such file or directory\ncat: /run/p8test-keylogin/out: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "another-key-is-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "rc \n",
+   "stderr": "cat: /run/p8test-keylogin/other.rc: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "pet8node]/Infra_populi::User[p8testuser]/Infra_populi::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::User[p8testuser]/Infra_populi::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.34 seconds\u001b[0m\nRUN1_EVENTS: 3 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795822234'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nCOVERAGE infra_populi::user: 3 concrete resources (+2 defined-type instances)\n  Infra_populi::User[p8testuser]\n  Infra_populi::User_base[p8testuser]\n  Group[p8testuser]\n  User[p8testuser]\n  Ssh_authorized_key[p8testuser@puppet]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP user e8b63ef1158e\n\nNODE_FRESH: yes (boot 6aae371e of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "user-and-own-primary-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser|P8 Test User|/home/p8testuser|/bin/bash\nprimary group: p8testuser\n",
+   "stderr": ""
+  },
+  {
+   "id": "no-supplementary-groups",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser\n",
+   "stderr": ""
+  },
+  {
+   "id": "home-created-and-owned",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser p8testuser directory\n",
+   "stderr": ""
+  },
+  {
+   "id": "password-hash-set",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "$6$p8testsalt\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-given-key-is-pushed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCyDecZt8m32Do7m3keGTcGQD8NvJYTU9Y5UoJSWEx/JHlYaBtAJjTfts0fk2vHw6Xqsyj5WXCAMB+j8w3g7sK7vSYpRHec3pneG5SrRtbOXsDtiFcAHIY3tVjVKZUN+EvIBo7S/3HmnQwIddjRsVJh0JV/+xJW6stNiOi8Qq3RZpGTCmNTS+HG0pfosVlh6efdIaycMX7e7PRNhc3I7kyaxADVVmL/3gxjEGXTp7jWkkcbYHknHlGubfsNkrhyECWln41klpGulTlghd4TWtWwxhAYcIOJxov9GmrqfEECoVXtgm/MvxuubZbASJ9McMOHXR3S4DX9WX8WWgJrKC9pWYm6849rSxkdKQp++JTFKhhbcVr+nKKLbKvlVLcd+v7jUTX+Jb2pGY/fDIIBIsSz1jRk2OM08epqwqccbGt18Xsu13wNJllyuWM0xQGe+GWqyHUlILdVrnNp770MGXT/Xw6Rsksd2EffP7dVyFNulJeAV24pRBsiAruj5t3QKNU= p8testuser@puppet\n",
+   "stderr": ""
+  },
+  {
+   "id": "key-file-owned-and-private",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser 700 /home/p8testuser/.ssh\np8testuser 600 /home/p8testuser/.ssh/authorized_keys\n",
+   "stderr": ""
+  },
+  {
+   "id": "no-ecryptfs-passphrase-files",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "account-exists\n0\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-password-logs-in-and-a-wrong-one-is-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "logged-in-as-p8testuser\nAuthentication failure\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "two su attempts as the account nobody (one with the test password, one with a wrong one); the outcomes go to /run/p8test-user/pw.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "an-out-of-band-key-is-planted",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "generates a throwaway ed25519 key pair, /run/p8test-oob-key and /run/p8test-oob-key.pub, and appends its public key (comment p8test-out-of-band) to /home/p8testuser/.ssh/authorized_keys",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-purges-the-out-of-band-key",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "0\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the file (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-pushed-key-logs-in",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 0\np8testuser\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes the throwaway private key to /run/p8test-keylogin and logs in to 127.0.0.1 as p8testuser with it",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "another-key-is-refused",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "rc 255\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "makes a throwaway key in /run/p8test-keylogin and tries to log in to 127.0.0.1 as p8testuser with it",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "6aae371e-f438-41ea-b424-8cc942f61cc0",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "6aae371e-f438-41ea-b424-8cc942f61cc0",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/infra-populi",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26",
+  "FIXTURE_B64:p8test-throwaway-private-sig": "M2RlYzQ1NTNjZjIyYmNjNQphMTYxZDlmYmFhYTg4YTM3Cg==",
+  "FIXTURE_B64:p8test-throwaway-rsa": "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFZRUFzZzNuR2JmSnQ5ZzZPNXQ1SGhrM0JrQS9EYnlXRTFQV09WS0NVbGhNZnlSNVdHZ2JRQ1kwCjM3Yk5INU5yeDhPbDZyTW8rVmx3Z0RBZm8vTU40TzdDdTcwbUtVUjNuTjZaM2h1VXEwYld6bDdBN1loWEFCeUdON1ZZMVMKbVZEZmhMeUFhTzB2OXg1cDBNQ0hYWTBiRlNZZENWZi9zU1Z1ckxUWWpvdkVLdDBXYVJrd3BqVTB2aHh0S1g2TEZaWWVubgozU0dzbkRGKzN1ejBUWVhOeU81TW1zUUExVlppLzk0TVl4QmwwNmU0MXBKSEcyQjVKeDVScm0zN0RaSzRjaEFscForTlpKCmFScnBVNVlJWGVFMXJWc01ZUUdIQ0RpY2FML1JwcTZueEJBcUZWN1lKdnpMOGJybTJXd0VpZlRIRERoMTBkMHVBMS9WbC8KRmxvQ2F5Z3ZhVm1KdXZPUGEwc1pIU2tLZnZpVXhTb1lXM0ZhL3B5aWkyeXI1VlMzSGZyKzQxRTEvaVc5cVJtUDN3eUNBUwpMRXM5WTBaTmpqTlBIcWFzS25IR3hyZGZGN0x0ZDhEU1paY3Jsak5NVUJudmhscXNoMUpTQzNWYTV6YWUrOURCbDAvMThPCmtiSkxIZGhIM3orM1ZjaFRicFNYZ0ZkdUtVUWJJZ0s3bytiZDBDalZBQUFGbUVOMGtLRkRkSkNoQUFBQUIzTnphQzF5YzIKRUFBQUdCQUxJTjV4bTN5YmZZT2p1YmVSNFpOd1pBUHcyOGxoTlQxamxTZ2xKWVRIOGtlVmhvRzBBbU5OKzJ6UitUYThmRApwZXF6S1BsWmNJQXdINlB6RGVEdXdydTlKaWxFZDV6ZW1kNGJsS3RHMXM1ZXdPMklWd0FjaGplMVdOVXBsUTM0UzhnR2p0CkwvY2VhZERBaDEyTkd4VW1IUWxYLzdFbGJxeTAySTZMeENyZEZta1pNS1kxTkw0Y2JTbCtpeFdXSHA1OTBockp3eGZ0N3MKOUUyRnpjanVUSnJFQU5WV1l2L2VER01RWmRPbnVOYVNSeHRnZVNjZVVhNXQrdzJTdUhJUUphV2ZqV1NXa2E2Vk9XQ0YzaApOYTFiREdFQmh3ZzRuR2kvMGFhdXA4UVFLaFZlMkNiOHkvRzY1dGxzQkluMHh3dzRkZEhkTGdOZjFaZnhaYUFtc29MMmxaCmlicnpqMnRMR1IwcENuNzRsTVVxR0Z0eFd2NmNvb3RzcStWVXR4MzYvdU5STmY0bHZha1pqOThNZ2dFaXhMUFdOR1RZNHoKVHg2bXJDcHh4c2EzWHhleTdYZkEwbVdYSzVZelRGQVo3NFphcklkU1VndDFXdWMybnZ2UXdaZFA5ZkRwR3lTeDNZUjk4Lwp0MVhJVTI2VWw0QlhiaWxFR3lJQ3U2UG0zZEFvMVFBQUFBTUJBQUVBQUFHQUM1OEExM1YwSkR4bjRwWTlhUTQrd0k1R3YwClFHTElsRExtSERwcEc0ODhSdGxNR291UDYxWXBPVHRFSk5pQ1V0ZEtjbHRHUHNHenNUaEVKeEdiT2pxMEt5RlZmd3ZFdVkKRWRQTmdvSDJDUDZpQzI3T1g0Vm52NFk3SDhzemFBMFlaSEZaekRlR3dpL21XNUtyZmRZeERtTE1NSHFkTEx0QzNTZzQwOAo3QXBGaVVNRVlVTmxra2RETUZzMWJkN1ZncHFBMjlBOE1aazMyMk1wZ2FMQW1IbjVpaTJ2Umsza0VxZGFNWjdrbWdYMXJUCjZzWVl2NG1lVGFydWRqNlRyTUxWRjZWSHhLdlF5WnpyT3pTS3Y4THp2dC9sdTBiSnF4c3dNNG56RFdjWTJEdnNzUWM2VUIKR2M2YzBoNDZUT1BUNzl3TlprUTBXamlYNlVuQ3RGSEM2ZWFFQVdzWHVCdFFBc29BakMxTVRtYlNwS2NRa25QWWYvTVhYagpTRm9oOEMrcnpBVWd6VnA4d1dFWTU3ODZwSTdBd3hCUDhSVWp2RjVxUFRKQWtiVXJJVXd4Q1pxMTE4eHZEUlhqS1VCUHZaCkZkWlJleERMRnRONmtpY0ZoaVVNRWJ5UTM4d05OY3VMb2d5L3dXdUtIUElQQ1NrR05OazNJam9aUkpodVZETDJyNUFBQUEKd0dLNHlzditRRDFWQTZDMWxGVDJwcUxPMkh0eEQ0c1dmWkl2Vjd2YzQvQ2Z0RFgxUlZTUkNYYVFSU01EMXJFK2JtTlJLYwo1Z09zMTFvY2ZyT2RVeUZTTWt3YUFQNUZuV1pPWjNXUUx5cTRXZ2RDWU15MG8wS3VYZGhHSmRtVmhxNXRRN0VHcGIzYTVNCitZMDJMNzFIWnVWQlM5N1c3OVQ2UndOd0FIbVd1SHZVaGJMcDU5SEZod2xLbU9jL2ZQcEloWXpUblhNY2tvelU0azgzaHgKRkNrNGpNYWlBTkF4aTNJK1hwR3JNajdRckpsMVJlSzRNMHMwKzB4NFN6dE9ibG93QUFBTUVBM09meFVoR1FTUkJIZFl4TgpqaVg1NHhqMG5vempIdk15YWRYWWNTNVFoZDNDUnJpUXVXc2J3QXdnbisycWFQNFBrN0x2ZStvS01MK1V6ZDN2MllzZVJiCm9hcVdmdkxlMU52YUI2eXlSM2RvNG40TmV1RENma056RDZ2dmdCNnhGbEdybldabmdLeEN1NDF1V2JONDZFczlUQ1VrbGYKTG40aTU3ZU52ZjRoWi9oUXNwdDZQQU9QQVRBV3JvcDdQakpWZmY3b09tczB2NkdJNlA3anFtRkZHSndmVWFSbEttRkFGSwpkNFVLcEZhV1NLV3ZEa0pzaWk0QWtxU1ZDbndVSlpBQUFBd1FET1Z6ZTZZdmExTVBJcmQwcGVicDRlaGgvS01oZWRBMEsvCnlCcjBMNVlHZ1hwTzVsdnhidGZhTUZnQUwwWVBrL3Fvc0tJODVLZ2JwNjNoWHlUSDRoRlhiQ3FhRGZJN2tXcTBTQ0J6Y1MKSFRwcUdMRHVJNkRuQVJteTZMWmMxdkJrVDlvSTVTSkM4S0dxOVdFVTF6bU5STUlTQWRoS09YRlhTZE0vWFEyN2FiclU2VwpLZ2taR2x4dDlZTHdYT09LWUthamJ1VTAwRkZqelFwK2labUNaRWY0a2ZxOHpFNUF2VUhPOWVobnJCbnFWVko5SDF4UW5NCittUUlybmRaK1lzdDBBQUFBZGNEaDBaWE4wTFhSb2NtOTNZWGRoZVMxT1QxUXRRUzFUUlVOU1JWUUJBZ01FQlFZPQotLS0tLUVORCBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0K",
+  "FIXTURE_B64:p8test-throwaway-rsa.pub": "c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCZ1FDeURlY1p0OG0zMkRvN20za2VHVGNHUUQ4TnZKWVRVOVk1VW9KU1dFeC9KSGxZYUJ0QUpqVGZ0czBmazJ2SHc2WHFzeWo1V1hDQU1CK2o4dzNnN3NLN3ZTWXBSSGVjM3BuZUc1U3JSdGJPWHNEdGlGY0FISVkzdFZqVktaVU4rRXZJQm83Uy8zSG1uUXdJZGRqUnNWSmgwSlYvK3hKVzZzdE5pT2k4UXEzUlpwR1RDbU5UUytIRzBwZm9zVmxoNmVmZElheWNNWDdlN1BSTmhjM0k3a3lheEFEVlZtTC8zZ3hqRUdYVHA3aldra2NiWUhrbkhsR3ViZnNOa3JoeUVDV2xuNDFrbHBHdWxUbGdoZDRUV3RXd3hoQVljSU9KeG92OUdtcnFmRUVDb1ZYdGdtL012eHV1YlpiQVNKOU1jTU9IWFIzUzREWDlXWDhXV2dKcktDOXBXWW02ODQ5clN4a2RLUXArK0pURktoaGJjVnIrbktLTGJLdmxWTGNkK3Y3alVUWCtKYjJwR1kvZkRJSUJJc1N6MWpSazJPTTA4ZXBxd3FjY2JHdDE4WHN1MTN3TkpsbHl1V00weFFHZStHV3F5SFVsSUxkVnJuTnA3NzBNR1hUL1h3NlJza3NkMkVmZlA3ZFZ5Rk51bEplQVYyNHBSQnNpQXJ1ajV0M1FLTlU9IHA4dGVzdC10aHJvd2F3YXktTk9ULUEtU0VDUkVUCg==",
+  "FIXTURE_B64:p8test-throwaway-wrapped-passphrase": "OgLD7cOD4lefVTA0YzMxOTM5OWFhNzA3Y2LnKercRt+UGWJfPQaw9+xVCYg47pOXzfS23L0ATBC+qA=="
+ },
+ "manifest_sha256": "c3eb871048e3301b87102ba28caeb5e6c03b1f35ecb6e46b6cbc16f577117b76",
+ "node_agent": {
+  "an-out-of-band-key-is-planted": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::User[p8testuser]/Infra_populi::User_base[p8testuser]/Ssh_authorized_key[p8test-out-of-band]/ensure: removed\u001b[0m"
+   ],
+   "errors": [],
+   "tail": "\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795822252'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::User[p8testuser]/Infra_populi::User_base[p8testuser]/Ssh_authorized_key[p8test-out-of-band]/ensure: removed\u001b[0m\n\u001b[0;32mInfo: Computing checksum on file /home/p8testuser/.ssh/authorized_keys\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nAGENT_RC=2\nCHANGED Ssh_authorized_key[p8test-out-of-band]\n"
+  }
+ },
+ "variants": {
+  "locked": {
+   "name": "locked",
+   "node": "ubuntu",
+   "params": "locked",
+   "clean": [
+    {
+     "id": "the-wrapper-passes-a-locked-hash-home-shell-and-groups",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "",
+     "stderr": "id: 'p8testuser': no such user\nstat: cannot statx '/srv/p8testhome': No such file or directory\npasswd: user 'p8testuser' does not exist\nawk: fatal: cannot open file `/srv/p8testhome/.ssh/authorized_keys' for reading: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "anged '0750' to '0700'\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::User[p8testuser]/Infra_populi::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.62 seconds\u001b[0m\nRUN1_EVENTS: 4 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795822302'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.04 seconds\u001b[0m\nCOVERAGE infra_populi::user: 4 concrete resources (+2 defined-type instances)\n  Infra_populi::User[p8testuser]\n  Infra_populi::User_base[p8testuser]\n  Group[p8testuser]\n  User[p8testuser]\n  File[/srv/p8testhome]\n  Ssh_authorized_key[p8testuser@puppet]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant locked; never a Phase 1 record)\n\nNODE_FRESH: yes (boot b9366384 of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+   },
+   "applied": [
+    {
+     "id": "the-wrapper-passes-a-locked-hash-home-shell-and-groups",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "/srv/p8testhome:/bin/sh\nusers\n700\nL\nuserlocked\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "b9366384-5a43-4ce3-9e01-0e2366b5b593",
+     "snapshot": "P8NODE_BASELINE_GREEN_v6",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "b9366384-5a43-4ce3-9e01-0e2366b5b593",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26",
+    "FIXTURE_B64:p8test-throwaway-private-sig": "M2RlYzQ1NTNjZjIyYmNjNQphMTYxZDlmYmFhYTg4YTM3Cg==",
+    "FIXTURE_B64:p8test-throwaway-rsa": "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFZRUFzZzNuR2JmSnQ5ZzZPNXQ1SGhrM0JrQS9EYnlXRTFQV09WS0NVbGhNZnlSNVdHZ2JRQ1kwCjM3Yk5INU5yeDhPbDZyTW8rVmx3Z0RBZm8vTU40TzdDdTcwbUtVUjNuTjZaM2h1VXEwYld6bDdBN1loWEFCeUdON1ZZMVMKbVZEZmhMeUFhTzB2OXg1cDBNQ0hYWTBiRlNZZENWZi9zU1Z1ckxUWWpvdkVLdDBXYVJrd3BqVTB2aHh0S1g2TEZaWWVubgozU0dzbkRGKzN1ejBUWVhOeU81TW1zUUExVlppLzk0TVl4QmwwNmU0MXBKSEcyQjVKeDVScm0zN0RaSzRjaEFscForTlpKCmFScnBVNVlJWGVFMXJWc01ZUUdIQ0RpY2FML1JwcTZueEJBcUZWN1lKdnpMOGJybTJXd0VpZlRIRERoMTBkMHVBMS9WbC8KRmxvQ2F5Z3ZhVm1KdXZPUGEwc1pIU2tLZnZpVXhTb1lXM0ZhL3B5aWkyeXI1VlMzSGZyKzQxRTEvaVc5cVJtUDN3eUNBUwpMRXM5WTBaTmpqTlBIcWFzS25IR3hyZGZGN0x0ZDhEU1paY3Jsak5NVUJudmhscXNoMUpTQzNWYTV6YWUrOURCbDAvMThPCmtiSkxIZGhIM3orM1ZjaFRicFNYZ0ZkdUtVUWJJZ0s3bytiZDBDalZBQUFGbUVOMGtLRkRkSkNoQUFBQUIzTnphQzF5YzIKRUFBQUdCQUxJTjV4bTN5YmZZT2p1YmVSNFpOd1pBUHcyOGxoTlQxamxTZ2xKWVRIOGtlVmhvRzBBbU5OKzJ6UitUYThmRApwZXF6S1BsWmNJQXdINlB6RGVEdXdydTlKaWxFZDV6ZW1kNGJsS3RHMXM1ZXdPMklWd0FjaGplMVdOVXBsUTM0UzhnR2p0CkwvY2VhZERBaDEyTkd4VW1IUWxYLzdFbGJxeTAySTZMeENyZEZta1pNS1kxTkw0Y2JTbCtpeFdXSHA1OTBockp3eGZ0N3MKOUUyRnpjanVUSnJFQU5WV1l2L2VER01RWmRPbnVOYVNSeHRnZVNjZVVhNXQrdzJTdUhJUUphV2ZqV1NXa2E2Vk9XQ0YzaApOYTFiREdFQmh3ZzRuR2kvMGFhdXA4UVFLaFZlMkNiOHkvRzY1dGxzQkluMHh3dzRkZEhkTGdOZjFaZnhaYUFtc29MMmxaCmlicnpqMnRMR1IwcENuNzRsTVVxR0Z0eFd2NmNvb3RzcStWVXR4MzYvdU5STmY0bHZha1pqOThNZ2dFaXhMUFdOR1RZNHoKVHg2bXJDcHh4c2EzWHhleTdYZkEwbVdYSzVZelRGQVo3NFphcklkU1VndDFXdWMybnZ2UXdaZFA5ZkRwR3lTeDNZUjk4Lwp0MVhJVTI2VWw0QlhiaWxFR3lJQ3U2UG0zZEFvMVFBQUFBTUJBQUVBQUFHQUM1OEExM1YwSkR4bjRwWTlhUTQrd0k1R3YwClFHTElsRExtSERwcEc0ODhSdGxNR291UDYxWXBPVHRFSk5pQ1V0ZEtjbHRHUHNHenNUaEVKeEdiT2pxMEt5RlZmd3ZFdVkKRWRQTmdvSDJDUDZpQzI3T1g0Vm52NFk3SDhzemFBMFlaSEZaekRlR3dpL21XNUtyZmRZeERtTE1NSHFkTEx0QzNTZzQwOAo3QXBGaVVNRVlVTmxra2RETUZzMWJkN1ZncHFBMjlBOE1aazMyMk1wZ2FMQW1IbjVpaTJ2Umsza0VxZGFNWjdrbWdYMXJUCjZzWVl2NG1lVGFydWRqNlRyTUxWRjZWSHhLdlF5WnpyT3pTS3Y4THp2dC9sdTBiSnF4c3dNNG56RFdjWTJEdnNzUWM2VUIKR2M2YzBoNDZUT1BUNzl3TlprUTBXamlYNlVuQ3RGSEM2ZWFFQVdzWHVCdFFBc29BakMxTVRtYlNwS2NRa25QWWYvTVhYagpTRm9oOEMrcnpBVWd6VnA4d1dFWTU3ODZwSTdBd3hCUDhSVWp2RjVxUFRKQWtiVXJJVXd4Q1pxMTE4eHZEUlhqS1VCUHZaCkZkWlJleERMRnRONmtpY0ZoaVVNRWJ5UTM4d05OY3VMb2d5L3dXdUtIUElQQ1NrR05OazNJam9aUkpodVZETDJyNUFBQUEKd0dLNHlzditRRDFWQTZDMWxGVDJwcUxPMkh0eEQ0c1dmWkl2Vjd2YzQvQ2Z0RFgxUlZTUkNYYVFSU01EMXJFK2JtTlJLYwo1Z09zMTFvY2ZyT2RVeUZTTWt3YUFQNUZuV1pPWjNXUUx5cTRXZ2RDWU15MG8wS3VYZGhHSmRtVmhxNXRRN0VHcGIzYTVNCitZMDJMNzFIWnVWQlM5N1c3OVQ2UndOd0FIbVd1SHZVaGJMcDU5SEZod2xLbU9jL2ZQcEloWXpUblhNY2tvelU0azgzaHgKRkNrNGpNYWlBTkF4aTNJK1hwR3JNajdRckpsMVJlSzRNMHMwKzB4NFN6dE9ibG93QUFBTUVBM09meFVoR1FTUkJIZFl4TgpqaVg1NHhqMG5vempIdk15YWRYWWNTNVFoZDNDUnJpUXVXc2J3QXdnbisycWFQNFBrN0x2ZStvS01MK1V6ZDN2MllzZVJiCm9hcVdmdkxlMU52YUI2eXlSM2RvNG40TmV1RENma056RDZ2dmdCNnhGbEdybldabmdLeEN1NDF1V2JONDZFczlUQ1VrbGYKTG40aTU3ZU52ZjRoWi9oUXNwdDZQQU9QQVRBV3JvcDdQakpWZmY3b09tczB2NkdJNlA3anFtRkZHSndmVWFSbEttRkFGSwpkNFVLcEZhV1NLV3ZEa0pzaWk0QWtxU1ZDbndVSlpBQUFBd1FET1Z6ZTZZdmExTVBJcmQwcGVicDRlaGgvS01oZWRBMEsvCnlCcjBMNVlHZ1hwTzVsdnhidGZhTUZnQUwwWVBrL3Fvc0tJODVLZ2JwNjNoWHlUSDRoRlhiQ3FhRGZJN2tXcTBTQ0J6Y1MKSFRwcUdMRHVJNkRuQVJteTZMWmMxdkJrVDlvSTVTSkM4S0dxOVdFVTF6bU5STUlTQWRoS09YRlhTZE0vWFEyN2FiclU2VwpLZ2taR2x4dDlZTHdYT09LWUthamJ1VTAwRkZqelFwK2labUNaRWY0a2ZxOHpFNUF2VUhPOWVobnJCbnFWVko5SDF4UW5NCittUUlybmRaK1lzdDBBQUFBZGNEaDBaWE4wTFhSb2NtOTNZWGRoZVMxT1QxUXRRUzFUUlVOU1JWUUJBZ01FQlFZPQotLS0tLUVORCBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0K",
+    "FIXTURE_B64:p8test-throwaway-rsa.pub": "c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCZ1FDeURlY1p0OG0zMkRvN20za2VHVGNHUUQ4TnZKWVRVOVk1VW9KU1dFeC9KSGxZYUJ0QUpqVGZ0czBmazJ2SHc2WHFzeWo1V1hDQU1CK2o4dzNnN3NLN3ZTWXBSSGVjM3BuZUc1U3JSdGJPWHNEdGlGY0FISVkzdFZqVktaVU4rRXZJQm83Uy8zSG1uUXdJZGRqUnNWSmgwSlYvK3hKVzZzdE5pT2k4UXEzUlpwR1RDbU5UUytIRzBwZm9zVmxoNmVmZElheWNNWDdlN1BSTmhjM0k3a3lheEFEVlZtTC8zZ3hqRUdYVHA3aldra2NiWUhrbkhsR3ViZnNOa3JoeUVDV2xuNDFrbHBHdWxUbGdoZDRUV3RXd3hoQVljSU9KeG92OUdtcnFmRUVDb1ZYdGdtL012eHV1YlpiQVNKOU1jTU9IWFIzUzREWDlXWDhXV2dKcktDOXBXWW02ODQ5clN4a2RLUXArK0pURktoaGJjVnIrbktLTGJLdmxWTGNkK3Y3alVUWCtKYjJwR1kvZkRJSUJJc1N6MWpSazJPTTA4ZXBxd3FjY2JHdDE4WHN1MTN3TkpsbHl1V00weFFHZStHV3F5SFVsSUxkVnJuTnA3NzBNR1hUL1h3NlJza3NkMkVmZlA3ZFZ5Rk51bEplQVYyNHBSQnNpQXJ1ajV0M1FLTlU9IHA4dGVzdC10aHJvd2F3YXktTk9ULUEtU0VDUkVUCg==",
+    "FIXTURE_B64:p8test-throwaway-wrapped-passphrase": "OgLD7cOD4lefVTA0YzMxOTM5OWFhNzA3Y2LnKercRt+UGWJfPQaw9+xVCYg47pOXzfS23L0ATBC+qA=="
+   },
+   "manifest_sha256": "7aded3c690fc2813951fff65f505293e18c7e94eec668d52aa4ea5d2114cdc26"
+  },
+  "emptykey": {
+   "name": "emptykey",
+   "node": "ubuntu",
+   "params": "emptykey",
+   "clean": [
+    {
+     "id": "the-wrapper-passes-an-empty-key",
+     "control": "negative",
+     "rc": 2,
+     "passed": false,
+     "stdout": "",
+     "stderr": "awk: fatal: cannot open file `/home/p8testuser/.ssh/authorized_keys' for reading: No such file or directory\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "p8testuser]/User[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::User[p8testuser]/Infra_populi::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.51 seconds\u001b[0m\nRUN1_EVENTS: 3 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795822351'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.07 seconds\u001b[0m\nCOVERAGE infra_populi::user: 3 concrete resources (+2 defined-type instances)\n  Infra_populi::User[p8testuser]\n  Infra_populi::User_base[p8testuser]\n  Group[p8testuser]\n  User[p8testuser]\n  Ssh_authorized_key[p8testuser@puppet]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP: none (a Phase 3 variant run with params variant emptykey; never a Phase 1 record)\n\nNODE_FRESH: yes (boot c79ca6e2 of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+   },
+   "applied": [
+    {
+     "id": "the-wrapper-passes-an-empty-key",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "emptykey\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "ubuntu",
+     "dest": "puppet8node",
+     "boot_id": "c79ca6e2-95b0-4911-98f9-4535e0ca107f",
+     "snapshot": "P8NODE_BASELINE_GREEN_v6",
+     "apt_mirror": "primary",
+     "boot_id_at_end": "c79ca6e2-95b0-4911-98f9-4535e0ca107f",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "puppet8node",
+    "NODE_ADDR": "192.168.56.20",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26",
+    "FIXTURE_B64:p8test-throwaway-private-sig": "M2RlYzQ1NTNjZjIyYmNjNQphMTYxZDlmYmFhYTg4YTM3Cg==",
+    "FIXTURE_B64:p8test-throwaway-rsa": "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFZRUFzZzNuR2JmSnQ5ZzZPNXQ1SGhrM0JrQS9EYnlXRTFQV09WS0NVbGhNZnlSNVdHZ2JRQ1kwCjM3Yk5INU5yeDhPbDZyTW8rVmx3Z0RBZm8vTU40TzdDdTcwbUtVUjNuTjZaM2h1VXEwYld6bDdBN1loWEFCeUdON1ZZMVMKbVZEZmhMeUFhTzB2OXg1cDBNQ0hYWTBiRlNZZENWZi9zU1Z1ckxUWWpvdkVLdDBXYVJrd3BqVTB2aHh0S1g2TEZaWWVubgozU0dzbkRGKzN1ejBUWVhOeU81TW1zUUExVlppLzk0TVl4QmwwNmU0MXBKSEcyQjVKeDVScm0zN0RaSzRjaEFscForTlpKCmFScnBVNVlJWGVFMXJWc01ZUUdIQ0RpY2FML1JwcTZueEJBcUZWN1lKdnpMOGJybTJXd0VpZlRIRERoMTBkMHVBMS9WbC8KRmxvQ2F5Z3ZhVm1KdXZPUGEwc1pIU2tLZnZpVXhTb1lXM0ZhL3B5aWkyeXI1VlMzSGZyKzQxRTEvaVc5cVJtUDN3eUNBUwpMRXM5WTBaTmpqTlBIcWFzS25IR3hyZGZGN0x0ZDhEU1paY3Jsak5NVUJudmhscXNoMUpTQzNWYTV6YWUrOURCbDAvMThPCmtiSkxIZGhIM3orM1ZjaFRicFNYZ0ZkdUtVUWJJZ0s3bytiZDBDalZBQUFGbUVOMGtLRkRkSkNoQUFBQUIzTnphQzF5YzIKRUFBQUdCQUxJTjV4bTN5YmZZT2p1YmVSNFpOd1pBUHcyOGxoTlQxamxTZ2xKWVRIOGtlVmhvRzBBbU5OKzJ6UitUYThmRApwZXF6S1BsWmNJQXdINlB6RGVEdXdydTlKaWxFZDV6ZW1kNGJsS3RHMXM1ZXdPMklWd0FjaGplMVdOVXBsUTM0UzhnR2p0CkwvY2VhZERBaDEyTkd4VW1IUWxYLzdFbGJxeTAySTZMeENyZEZta1pNS1kxTkw0Y2JTbCtpeFdXSHA1OTBockp3eGZ0N3MKOUUyRnpjanVUSnJFQU5WV1l2L2VER01RWmRPbnVOYVNSeHRnZVNjZVVhNXQrdzJTdUhJUUphV2ZqV1NXa2E2Vk9XQ0YzaApOYTFiREdFQmh3ZzRuR2kvMGFhdXA4UVFLaFZlMkNiOHkvRzY1dGxzQkluMHh3dzRkZEhkTGdOZjFaZnhaYUFtc29MMmxaCmlicnpqMnRMR1IwcENuNzRsTVVxR0Z0eFd2NmNvb3RzcStWVXR4MzYvdU5STmY0bHZha1pqOThNZ2dFaXhMUFdOR1RZNHoKVHg2bXJDcHh4c2EzWHhleTdYZkEwbVdYSzVZelRGQVo3NFphcklkU1VndDFXdWMybnZ2UXdaZFA5ZkRwR3lTeDNZUjk4Lwp0MVhJVTI2VWw0QlhiaWxFR3lJQ3U2UG0zZEFvMVFBQUFBTUJBQUVBQUFHQUM1OEExM1YwSkR4bjRwWTlhUTQrd0k1R3YwClFHTElsRExtSERwcEc0ODhSdGxNR291UDYxWXBPVHRFSk5pQ1V0ZEtjbHRHUHNHenNUaEVKeEdiT2pxMEt5RlZmd3ZFdVkKRWRQTmdvSDJDUDZpQzI3T1g0Vm52NFk3SDhzemFBMFlaSEZaekRlR3dpL21XNUtyZmRZeERtTE1NSHFkTEx0QzNTZzQwOAo3QXBGaVVNRVlVTmxra2RETUZzMWJkN1ZncHFBMjlBOE1aazMyMk1wZ2FMQW1IbjVpaTJ2Umsza0VxZGFNWjdrbWdYMXJUCjZzWVl2NG1lVGFydWRqNlRyTUxWRjZWSHhLdlF5WnpyT3pTS3Y4THp2dC9sdTBiSnF4c3dNNG56RFdjWTJEdnNzUWM2VUIKR2M2YzBoNDZUT1BUNzl3TlprUTBXamlYNlVuQ3RGSEM2ZWFFQVdzWHVCdFFBc29BakMxTVRtYlNwS2NRa25QWWYvTVhYagpTRm9oOEMrcnpBVWd6VnA4d1dFWTU3ODZwSTdBd3hCUDhSVWp2RjVxUFRKQWtiVXJJVXd4Q1pxMTE4eHZEUlhqS1VCUHZaCkZkWlJleERMRnRONmtpY0ZoaVVNRWJ5UTM4d05OY3VMb2d5L3dXdUtIUElQQ1NrR05OazNJam9aUkpodVZETDJyNUFBQUEKd0dLNHlzditRRDFWQTZDMWxGVDJwcUxPMkh0eEQ0c1dmWkl2Vjd2YzQvQ2Z0RFgxUlZTUkNYYVFSU01EMXJFK2JtTlJLYwo1Z09zMTFvY2ZyT2RVeUZTTWt3YUFQNUZuV1pPWjNXUUx5cTRXZ2RDWU15MG8wS3VYZGhHSmRtVmhxNXRRN0VHcGIzYTVNCitZMDJMNzFIWnVWQlM5N1c3OVQ2UndOd0FIbVd1SHZVaGJMcDU5SEZod2xLbU9jL2ZQcEloWXpUblhNY2tvelU0azgzaHgKRkNrNGpNYWlBTkF4aTNJK1hwR3JNajdRckpsMVJlSzRNMHMwKzB4NFN6dE9ibG93QUFBTUVBM09meFVoR1FTUkJIZFl4TgpqaVg1NHhqMG5vempIdk15YWRYWWNTNVFoZDNDUnJpUXVXc2J3QXdnbisycWFQNFBrN0x2ZStvS01MK1V6ZDN2MllzZVJiCm9hcVdmdkxlMU52YUI2eXlSM2RvNG40TmV1RENma056RDZ2dmdCNnhGbEdybldabmdLeEN1NDF1V2JONDZFczlUQ1VrbGYKTG40aTU3ZU52ZjRoWi9oUXNwdDZQQU9QQVRBV3JvcDdQakpWZmY3b09tczB2NkdJNlA3anFtRkZHSndmVWFSbEttRkFGSwpkNFVLcEZhV1NLV3ZEa0pzaWk0QWtxU1ZDbndVSlpBQUFBd1FET1Z6ZTZZdmExTVBJcmQwcGVicDRlaGgvS01oZWRBMEsvCnlCcjBMNVlHZ1hwTzVsdnhidGZhTUZnQUwwWVBrL3Fvc0tJODVLZ2JwNjNoWHlUSDRoRlhiQ3FhRGZJN2tXcTBTQ0J6Y1MKSFRwcUdMRHVJNkRuQVJteTZMWmMxdkJrVDlvSTVTSkM4S0dxOVdFVTF6bU5STUlTQWRoS09YRlhTZE0vWFEyN2FiclU2VwpLZ2taR2x4dDlZTHdYT09LWUthamJ1VTAwRkZqelFwK2labUNaRWY0a2ZxOHpFNUF2VUhPOWVobnJCbnFWVko5SDF4UW5NCittUUlybmRaK1lzdDBBQUFBZGNEaDBaWE4wTFhSb2NtOTNZWGRoZVMxT1QxUXRRUzFUUlVOU1JWUUJBZ01FQlFZPQotLS0tLUVORCBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0K",
+    "FIXTURE_B64:p8test-throwaway-rsa.pub": "c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCZ1FDeURlY1p0OG0zMkRvN20za2VHVGNHUUQ4TnZKWVRVOVk1VW9KU1dFeC9KSGxZYUJ0QUpqVGZ0czBmazJ2SHc2WHFzeWo1V1hDQU1CK2o4dzNnN3NLN3ZTWXBSSGVjM3BuZUc1U3JSdGJPWHNEdGlGY0FISVkzdFZqVktaVU4rRXZJQm83Uy8zSG1uUXdJZGRqUnNWSmgwSlYvK3hKVzZzdE5pT2k4UXEzUlpwR1RDbU5UUytIRzBwZm9zVmxoNmVmZElheWNNWDdlN1BSTmhjM0k3a3lheEFEVlZtTC8zZ3hqRUdYVHA3aldra2NiWUhrbkhsR3ViZnNOa3JoeUVDV2xuNDFrbHBHdWxUbGdoZDRUV3RXd3hoQVljSU9KeG92OUdtcnFmRUVDb1ZYdGdtL012eHV1YlpiQVNKOU1jTU9IWFIzUzREWDlXWDhXV2dKcktDOXBXWW02ODQ5clN4a2RLUXArK0pURktoaGJjVnIrbktLTGJLdmxWTGNkK3Y3alVUWCtKYjJwR1kvZkRJSUJJc1N6MWpSazJPTTA4ZXBxd3FjY2JHdDE4WHN1MTN3TkpsbHl1V00weFFHZStHV3F5SFVsSUxkVnJuTnA3NzBNR1hUL1h3NlJza3NkMkVmZlA3ZFZ5Rk51bEplQVYyNHBSQnNpQXJ1ajV0M1FLTlU9IHA4dGVzdC10aHJvd2F3YXktTk9ULUEtU0VDUkVUCg==",
+    "FIXTURE_B64:p8test-throwaway-wrapped-passphrase": "OgLD7cOD4lefVTA0YzMxOTM5OWFhNzA3Y2LnKercRt+UGWJfPQaw9+xVCYg47pOXzfS23L0ATBC+qA=="
+   },
+   "manifest_sha256": "a9b273c6f9a5782ec7396143fbc8ba9852500181f1d2356fded667733cdb2380"
+  }
+ },
+ "duration_s": 169.8
+}

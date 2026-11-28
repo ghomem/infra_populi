@@ -39,11 +39,10 @@ outcomes:
     evidence: '{{SITE:engine-runner}} runs probes and agent runs only; it has no step that advances or waits for the node''s
       cron schedule'
 - outcome: compression off, several base directories, another user, time or monthday
-  from: manifests/backup.pp:4-9; templates/backup/backup.sh.erb:3, 18-20
-  uncovered:
-    why: parameter variants; one set holds one params fixture (compression on, one base directory, root, 23:00)
-    lifted_by: 'capability: more than one params fixture per set'
-    evidence: '{{SITE:engine-runner}} applies the class once with its single `fixture` (params or defaults)'
+  from: manifests/backup.pp:3-9
+  checks:
+  - plain-script-and-the-users-cron
+  - plain-a-run-as-the-user-archives-both-directories-uncompressed
 checks:
 - id: script-installed-with-the-parameters
   what: backup-backup.sh is installed in bindir, root:root 0755, carrying the base directory, prefix, backup directory, ndays
@@ -192,6 +191,62 @@ checks:
   expect:
     rc: 0
     stdout: \Aexit non-zero\n1\n1\nthe 8-day-old archive is kept\n\Z
+- id: plain-script-and-the-users-cron
+  control: negative
+  what: the script carries both base directories and compression off, and the backup user's crontab runs it at 02:30 on the
+    1st
+  derived_from:
+  - path: templates/backup/backup.sh.erb
+    lines: 3-4
+    text: FILETARGETDIRS=<%= @basedir %>
+  - path: templates/backup/backup.sh.erb
+    lines: '15'
+    text: COMPRESSION=<%= @compression %>
+  - path: manifests/backup.pp
+    lines: 21-26
+    text: user      => $user,
+  probe: |
+    grep -E '^(FILETARGETDIRS|COMPRESSION)=' {{LOCALDIR}}/bin/backup-backup.sh
+    crontab -l -u backup 2>/dev/null | grep -A1 -x '# Puppet Name: cron_backup_backup' | tail -1
+  expect:
+    rc: 0
+    stdout: \AFILETARGETDIRS=/etc/default /etc/skel\nCOMPRESSION=false\n30 2 1 \* \* {{LOCALDIR}}/bin/backup-backup\.sh\n\Z
+  variant: plain
+- id: plain-a-run-as-the-user-archives-both-directories-uncompressed
+  control: negative
+  timeout: 300
+  what: a run as the backup user writes an uncompressed tar holding both base directories (the script accepts several directories),
+    owned by that user
+  mutates: runs {{LOCALDIR}}/bin/backup-backup.sh as the backup user, which writes an archive into the backup directory; its
+    output and exit code go to /run/p8test-backup-plain
+  derived_from:
+  - path: templates/backup/backup.sh.erb
+    lines: 3-4
+    text: '# accepts multiple directories, no whitespace on any dirnames'
+  - path: templates/backup/backup.sh.erb
+    lines: 18-20
+    text: COMPRESSION_FLAG=""
+  - path: templates/backup/backup.sh.erb
+    lines: '31'
+    text: tar $EXCLUDELINE -cv${COMPRESSION_FLAG}f $BACKDIR/$FILEPREFIX-`date +%Y-%b-%d-%Hh%Mm`.tar.gz $FILETARGETDIRS
+  probe: |
+    install -d -m 0755 /run/p8test-backup-plain
+    runuser -u backup -- {{LOCALDIR}}/bin/backup-backup.sh > /run/p8test-backup-plain/run.log 2>&1; echo $? > /run/p8test-backup-plain/run.rc
+  effect: |
+    echo "rc $(cat /run/p8test-backup-plain/run.rc)"
+    a=$(ls -1t {{LOCALDIR}}/backup/p8test/p8test-backup-2*.tar.gz 2>/dev/null | head -1)
+    stat -c '%U' "$a"
+    file -b "$a" | grep -oE '^POSIX tar archive' | head -1
+    tar -tf "$a" 2>/dev/null | grep -cE '^etc/(default|skel)/$'
+  expect:
+    rc: 0
+    stdout: \Arc 0\nbackup\nPOSIX tar archive\n2\n\Z
+  variant: plain
+variants:
+- name: plain
+  params: plain
+  why: 'compression off, two base directories, another user and another time and day of the month: backup''s production use
+    lives in the passwd/ layer, which is never read (undeterminable), so the variants production may use are checked'
 apply:
   resource_type: define
   node: ubuntu

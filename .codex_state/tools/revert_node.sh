@@ -411,7 +411,19 @@ DETECT
   fi
   printf 'Refreshing apt package lists on the node...\n'
   apt_mirror="primary"
-  if ! apt_refresh; then
+  refreshed=1
+  apt_refresh || refreshed=0
+  # Ruling 6's direct fallback also when the cache answers but cannot fetch (it answered 503 "Network is unreachable"
+  # for every mirror on 2026-11-27/28 while the laptop reached them): this run only, the detector says DIRECT.
+  if (( ! refreshed )) && [[ "$apt_proxy" == http://* ]]; then
+    printf 'apt through the lab cache failed (%s); this run only, retrying directly (HQ ruling 6)...\n' "${apt_error%%$'\n'*}"
+    printf '#!/bin/sh\n# This run only: the lab cache failed to fetch (revert_node.sh; HQ ruling 6, 2026-11-27)\necho DIRECT\n' |
+      node_root "install -m 0755 /dev/stdin /etc/apt/lab-cache-detect" ||
+      fail "apt through the lab cache failed (${apt_error}), and node '$NODE_SSH_ALIAS' could not be switched to direct."
+    apt_proxy="DIRECT (the lab cache failed)"
+    apt_refresh && refreshed=1
+  fi
+  if (( ! refreshed )); then
     primary_error="$apt_error"
     # Fall back only when the primary Ubuntu archive is what failed: an exit status (a timeout says nothing about
     # which source hung) or a fetch failure naming an archive.ubuntu.com or security.ubuntu.com host. A failure that

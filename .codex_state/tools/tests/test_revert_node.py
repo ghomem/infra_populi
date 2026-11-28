@@ -412,3 +412,30 @@ def test_a_redhat_revert_leaves_its_package_manager_alone(lab, tmp_path):
     assert proc.returncode == 0, proc.stderr
     assert not any("lab-cache" in " ".join(c) for c in lab.calls("ssh"))
     assert '"apt_proxy":null}' in proc.stdout.strip().splitlines()[-1]
+
+
+def test_a_cache_that_answers_but_cannot_fetch_is_bypassed_for_this_run(lab):
+    # Ruling 6's direct fallback: the cache answered 503 "Network is unreachable" for every mirror (2026-11-28)
+    lab.world["read_stdin"] = True
+    lab.world["ssh"][:0] = [
+        {"match": r"sudo -n /etc/apt/lab-cache-detect$", "stdout": "http://192.168.56.27:3142\n"},
+        {"match": r"apt-get -q update", "outputs": [
+            {"rc": 0, "stdout": "W: Failed to fetch http://archive.ubuntu.com/ubuntu/dists/noble/InRelease  503  Network"
+                                " is unreachable [IP: 192.168.56.27 3142]\n"},
+            {"rc": 0, "stdout": "Hit:1 x\n"}]}]
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 0, proc.stderr
+    m = metrics(proc)
+    assert m["apt_proxy"] == "DIRECT (the lab cache failed)" and m["apt_mirror"] == "primary"
+    sent = [json.loads(l) for l in (lab.calls_path.parent / "calls.jsonl.stdin").read_text().splitlines()]
+    detects = [s[2] for s in sent if "install -m 0755 /dev/stdin /etc/apt/lab-cache-detect" in s[1]]
+    assert len(detects) == 2 and detects[1].rstrip().endswith("echo DIRECT") and "dev/tcp" not in detects[1]
+    assert not any("p8-fallback-mirror" in l for l in ssh_lines(lab))
+
+
+def test_a_direct_node_failing_goes_to_the_fallback_mirror_without_a_cache_retry(lab):
+    lab.world["ssh"][:0] = [{"match": r"sudo -n /etc/apt/lab-cache-detect$", "stdout": "DIRECT\n"},
+                            {"match": r"apt-get -q update", "outputs": [{"rc": 100}, {"rc": 0, "stdout": "Hit:1 x\n"}]}]
+    proc = lab.run([SCRIPT])
+    assert proc.returncode == 0, proc.stderr
+    assert metrics(proc)["apt_mirror"].startswith("fallback") and metrics(proc)["apt_proxy"] == "DIRECT"

@@ -20,11 +20,8 @@ outcomes:
   - the-user-becomes-root-with-sudo
 - outcome: on RedHat the admin group is wheel
   from: manifests/user_sudoer.pp:8-9
-  uncovered:
-    why: the RedHat branch needs the set run on a RedHat node; the runner runs a set on the class's plan node only (ubuntu)
-    lifted_by: 'capability: a phase3 run of a set on a node kind other than the class''s plan node (rhel9)'
-    evidence: '{{SITE:engine-runner}} run takes the node from the plan (nodes.select by class); it has no option for another
-      node kind'
+  checks:
+  - on-redhat-member-of-wheel-and-sudo-grants-all
 checks:
 - id: user-with-own-primary-group
   what: the user exists with its own same-named primary group (sudo first in the list keeps the default primary)
@@ -116,10 +113,35 @@ checks:
   expect:
     rc: 0
     stdout: '\Auser, test password: 0\nuser, wrong password: refused\nnobody, test password: refused\n\Z'
+- id: on-redhat-member-of-wheel-and-sudo-grants-all
+  control: negative
+  what: on RedHat the user is in wheel (and its own group), and sudo grants it all commands through the distribution's %wheel
+    rule
+  derived_from:
+  - path: manifests/user_sudoer.pp
+    lines: 8-9
+    text: $grouplist = flatten( [ $mygrouplist, [ 'wheel' ] ] )
+  - path: manifests/user_sudoer.pp
+    lines: '2'
+    text: '# This class defines a sudoer user'
+  probe: |
+    id -nG p8testuser | tr ' ' '\n' | sort | tr '\n' ' '
+    echo
+    sudo -l -U p8testuser | grep -E '^\s+\(ALL\) ALL$'
+  expect:
+    rc: 0
+    stdout: \Ap8testuser wheel \n\s+\(ALL\) ALL\n\Z
+  variant: rhel
+variants:
+- name: rhel
+  node: rhel9
+  why: the RedHat branch (the admin group wheel instead of sudo) on the rhel9 node, with the set's own params fixture
 apply:
   resource_type: define
   node: ubuntu
   title: p8testuser
   catalog:
     Debian:
+    - class: user_sudoer
+    RedHat:
     - class: user_sudoer

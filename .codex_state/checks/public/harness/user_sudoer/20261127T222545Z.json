@@ -1,0 +1,240 @@
+{
+ "class": "user_sudoer",
+ "role": "command",
+ "at": "20261127T221838Z",
+ "set_sha256": "63d12062f457517f24d7162bea1d5397440ddb5d852807f310f9060a1ca0b720",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "user-with-own-primary-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "|||\nprimary group: \n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "member-of-sudo",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "id: 'p8testuser': no such user\n",
+   "ok": true
+  },
+  {
+   "id": "sudo-grants-all",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "sudo: unknown user p8testuser\n",
+   "ok": true
+  },
+  {
+   "id": "the-given-key-is-pushed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /home/p8testuser/.ssh/authorized_keys: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "the-user-becomes-root-with-sudo",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-sudoer/sudo.txt: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "[p8testuser]/Infra_populi::User_base[p8testuser]/User[p8testuser]/ensure: created\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::User_sudoer[p8testuser]/Infra_populi::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m\n\u001b[mNotice: Applied catalog in 0.45 seconds\u001b[0m\nRUN1_EVENTS: 3 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795817968'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.03 seconds\u001b[0m\nCOVERAGE infra_populi::user_sudoer: 3 concrete resources (+2 defined-type instances)\n  Infra_populi::User_sudoer[p8testuser]\n  Infra_populi::User_base[p8testuser]\n  Group[p8testuser]\n  User[p8testuser]\n  Ssh_authorized_key[p8testuser@puppet]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP user_sudoer 6df9fd4e6679\n\nNODE_FRESH: yes (boot 6dddb6aa of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "user-with-own-primary-group",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser|P8 Test User|/home/p8testuser|/bin/bash\nprimary group: p8testuser\n",
+   "stderr": ""
+  },
+  {
+   "id": "member-of-sudo",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8testuser sudo ",
+   "stderr": ""
+  },
+  {
+   "id": "sudo-grants-all",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "    (ALL : ALL) ALL\n",
+   "stderr": "",
+   "mismatch": {
+    "varies": "the user: `nobody` is in no admin group, so sudo must not list the ALL rule for it",
+    "rc": 1,
+    "passed": false,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-given-key-is-pushed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCoGojLzXfOYoMg/8rNwk5YRfAdbJN8B/0El5HE5BPDs/QenJaGNH0nH8cGCJF87/bgIRN0nFkO0MqizXNcfcWZjJ7S360u1yZgRhUj+s9y23bUHXcODSgEfHHx3MmICaoOzouoR64NNmqMnlhbBvkfnGzLQa/mAm+2QA+TlXWxkMpIeR1EuH2ko0e/hiAeqLpHGX2GlixkFJ8n9hQwPO+IfhHXuDvwpiJkQxRtyMJnJE9qoPArR27KYJ82Rd2h1b2JjXpqbPJhMfvH7rrXPapCrFO9gQ9jHtkqPG86kNfZ5DN0JBgibKEYqIhjA33JZUnP3liYsYRY4SeNPtTuN7zB p8testuser@puppet\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-user-becomes-root-with-sudo",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "user, test password: 0\nuser, wrong password: refused\nnobody, test password: refused\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "three sudo attempts (p8testuser with the test password and with a wrong one, nobody with the test password); sudo logs them to the journal and /var/log/auth.log, and the successful one creates Ubuntu's marker /home/p8testuser/.sudo_as_admin_successful (-k keeps no credential timestamp); the answers go to /run/p8test-sudoer/sudo.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "6dddb6aa-e4e0-41a7-80fb-b8818425b2f9",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "6dddb6aa-e4e0-41a7-80fb-b8818425b2f9",
+   "fresh": true
+  }
+ },
+ "values": {
+  "NODE_NAME": "puppet8node",
+  "NODE_ADDR": "192.168.56.20",
+  "LOCALDIR": "/opt/infra-populi",
+  "NODE_NETWORK": "192.168.56.0",
+  "SERVER_NAME": "puppet8master.example.com",
+  "SERVER_HOST": "puppet8master",
+  "SERVER_ADDR": "192.168.56.10",
+  "CONTROLLER_ADDR": "192.168.56.1",
+  "NODE_PRIMARY_ADDR": "10.0.2.15",
+  "PEER_NAME": "peer.invalid",
+  "PEER_ADDR": "198.51.100.1",
+  "NODE:ubuntu": "puppet8node",
+  "ADDR:ubuntu": "192.168.56.20",
+  "NODE:rhel9": "p8lab-rhel9",
+  "ADDR:rhel9": "192.168.56.21",
+  "NODE:kubuntu": "p8lab-kubuntu",
+  "ADDR:kubuntu": "192.168.56.22",
+  "NODE:gnome": "p8lab-gnome",
+  "ADDR:gnome": "192.168.56.23",
+  "NODE:ubuntu2": "p8lab-ubuntu2",
+  "ADDR:ubuntu2": "192.168.56.24",
+  "NODE:dc": "p8lab-dc",
+  "ADDR:dc": "192.168.56.25",
+  "NODE:puppetserver": "p8lab-puppetserver",
+  "ADDR:puppetserver": "192.168.56.26"
+ },
+ "manifest_sha256": "9202ee9dee0b393863f0ee5d0530a0cdf4e8df74b464fb2895967df014a3d206",
+ "variants": {
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "clean": [
+    {
+     "id": "on-redhat-member-of-wheel-and-sudo-grants-all",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "\n",
+     "stderr": "id: \u2018p8testuser\u2019: no such user\nsudo: unknown user: p8testuser\n",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 0,
+    "green": true,
+    "node_fresh": true,
+    "tail": "0m\n\u001b[mNotice: /Stage[main]/Main/Node[p8lab-rhel9]/Infra_populi::User_sudoer[p8testuser]/Infra_populi::User_base[p8testuser]/Ssh_authorized_key[p8testuser@puppet]/ensure: created\u001b[0m\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 0.47 seconds\u001b[0m\nRUN1_EVENTS: 3 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795818338'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.06 seconds\u001b[0m\nCOVERAGE infra_populi::user_sudoer: 3 concrete resources (+2 defined-type instances)\n  Infra_populi::User_sudoer[p8testuser]\n  Infra_populi::User_base[p8testuser]\n  Group[p8testuser]\n  User[p8testuser]\n  Ssh_authorized_key[p8testuser@puppet]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP user_sudoer 6df9fd4e6679\n\nNODE_FRESH: yes (boot 7addbfdf of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+   },
+   "applied": [
+    {
+     "id": "on-redhat-member-of-wheel-and-sudo-grants-all",
+     "control": "negative",
+     "rc": 0,
+     "passed": true,
+     "stdout": "p8testuser wheel \n    (ALL) ALL\n",
+     "stderr": ""
+    }
+   ],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "ALL_PASS",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "7addbfdf-d4ab-4f8a-b5bd-b0b40da4d206",
+     "snapshot": "P8LAB_RHEL9_BASELINE_v3",
+     "apt_mirror": null,
+     "boot_id_at_end": "7addbfdf-d4ab-4f8a-b5bd-b0b40da4d206",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26"
+   },
+   "manifest_sha256": "9202ee9dee0b393863f0ee5d0530a0cdf4e8df74b464fb2895967df014a3d206"
+  }
+ },
+ "duration_s": 427.7
+}

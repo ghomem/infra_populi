@@ -36,12 +36,24 @@ outcomes:
   checks:
   - retention-script-and-cron
   - the-retention-script-compresses-and-deletes
-- outcome: other ports, roots, periods, times, session limits or connection-close notices
-  from: manifests/rsyslog_server.pp:7-18
+- outcome: another port, log root, active and retention periods and rotation and retention times (the parameters production
+    sets)
+  from: manifests/rsyslog_server.pp:5-16
+  checks:
+  - custom-listener-config
+  - custom-tls-listener-on-the-port
+  - custom-rotation-time-and-rule
+  - custom-retention-values-and-cron
+  - custom-remote-message-lands-under-the-root
+- outcome: another session limit or connection-close notices (max_sessions, notify_on_connection_close)
+  from: manifests/rsyslog_server.pp:14-15
   uncovered:
-    why: one set holds one fixture, the class defaults
-    lifted_by: 'capability: more than one params fixture per set'
-    evidence: '{{SITE:engine-runner}} applies the class once with its single `fixture` (params or defaults)'
+    why: parameter variants no production node uses (the fixture keeps the defaults)
+    accepted_gap:
+    - max_sessions
+    - notify_on_connection_close
+    evidence: '{{SITE:fleet-usage}} (2026-11-23): no production node statement sets max_sessions or notify_on_connection_close,
+      and no class of the repository sets them on rsyslog_server'
 checks:
 - id: listener-config-rendered
   what: the TLS listener config names the node's own certificate files, the port, the session limit and the host-based tree
@@ -292,6 +304,102 @@ checks:
   expect:
     rc: 0
     stdout: \Anewer\.log-20200102\.gz p8test\.log-NEW p8test\.log-OLD\.gz \n\Z
+- id: custom-listener-config
+  control: negative
+  what: the listener is configured for the fixture's port and stores under the fixture's log root
+  derived_from:
+  - path: templates/rsyslog/listener_simple.conf.epp
+    lines: 12-14
+    text: port="<%= $port %>"
+  - path: templates/rsyslog/listener_simple.conf.epp
+    lines: '19'
+    text: constant(value="<%= $log_root %>/hosts/")
+  probe: |
+    grep -E '^\s+port=|constant\(value="/var/log/p8test-remote/hosts/"\)' /etc/rsyslog.d/30-listener.conf | sed 's/^\s*//'
+  expect:
+    rc: 0
+    stdout: \Aport="16514"\nconstant\(value="/var/log/p8test-remote/hosts/"\)\nconstant\(value="/var/log/p8test-remote/hosts/"\)\n\Z
+  variant: custom
+- id: custom-tls-listener-on-the-port
+  control: negative
+  what: rsyslogd answers TLS on the fixture's port with the node's certificate
+  derived_from:
+  - path: templates/rsyslog/listener_simple.conf.epp
+    lines: '15'
+    text: streamdriver.mode="1"
+  - path: manifests/rsyslog_server.pp
+    lines: '6'
+    text: Integer $port                       = 6514,
+  probe: |
+    c=$(basename /etc/rsyslog.d/tls/*.key .key)
+    echo | timeout 15 openssl s_client -connect 127.0.0.1:16514 -CAfile /etc/rsyslog.d/tls/ca.pem -verify_return_error -verify_hostname "$c" -cert "/etc/rsyslog.d/tls/$c.pem" -key "/etc/rsyslog.d/tls/$c.key" 2>&1 | grep -oE 'Verify return code: [0-9]+ \([^)]*\)' | head -1
+  expect:
+    rc: 0
+    stdout: '\AVerify return code: 0 \(ok\)\n\Z'
+  variant: custom
+  mismatch:
+    varies: 'the name: the same handshake on the fixture''s port verified for p8test-wrong.invalid must fail, so the pass
+      is the certificate''s name and chain, not a tool that always says ok'
+    probe: |
+      c=$(basename /etc/rsyslog.d/tls/*.key .key)
+      echo | timeout 15 openssl s_client -connect 127.0.0.1:16514 -CAfile /etc/rsyslog.d/tls/ca.pem -verify_return_error -verify_hostname p8test-wrong.invalid -cert "/etc/rsyslog.d/tls/$c.pem" -key "/etc/rsyslog.d/tls/$c.key" 2>&1 | grep -oE 'Verify return code: [0-9]+ \([^)]*\)' | head -1
+- id: custom-rotation-time-and-rule
+  control: negative
+  what: the logrotate timer fires at the fixture's rotation time, and the rotation rule covers the fixture's log root
+  derived_from:
+  - path: manifests/rsyslog_server.pp
+    lines: '54'
+    text: 'file { ''/etc/systemd/system/logrotate.timer.d/override.conf'':'
+  - path: templates/rsyslog/rsyslog-hosts.logrotate.epp
+    lines: 2-7
+    text: <%= $log_root %>/hosts/*/*.log <%= $log_root %>/hosts/*/.log {
+  probe: |
+    systemctl show logrotate.timer -p TimersCalendar | grep -oE 'OnCalendar=[^;]*[0-9]'
+    head -1 /etc/logrotate.d/rsyslog-hosts
+  expect:
+    rc: 0
+    stdout: \AOnCalendar=\*-\*-\* 01:15:00\n/var/log/p8test-remote/hosts/\*/\*\.log /var/log/p8test-remote/hosts/\*/\.log
+      \{\n\Z
+  variant: custom
+- id: custom-retention-values-and-cron
+  control: negative
+  what: the retention script carries the fixture's root and periods and its cron entry the fixture's time
+  derived_from:
+  - path: templates/rsyslog/rsyslog-hosts-retention.sh.epp
+    lines: 4-6
+    text: ROOT_DIR="<%= $log_root %>/hosts"
+  - path: manifests/rsyslog_server.pp
+    lines: 103-107
+    text: 'cron { ''rsyslog_hosts_retention_cleanup'':'
+  probe: |
+    grep -E '^(ROOT_DIR|ACTIVE_DAYS|RETENTION_DAYS)=' {{LOCALDIR}}/bin/rsyslog-hosts-retention.sh
+    crontab -l -u root 2>/dev/null | grep -A1 -x '# Puppet Name: rsyslog_hosts_retention_cleanup' | tail -1
+  expect:
+    rc: 0
+    stdout: \AROOT_DIR="/var/log/p8test-remote/hosts"\nACTIVE_DAYS=3\nRETENTION_DAYS=30\n45 4 \* \* \* {{LOCALDIR}}/bin/rsyslog-hosts-retention\.sh\n\Z
+  variant: custom
+- id: custom-remote-message-lands-under-the-root
+  control: negative
+  what: a message sent over TLS to the fixture's port lands under the fixture's log root
+  mutates: sends one syslog message over TLS to the listener on 127.0.0.1:16514
+  derived_from:
+  - path: templates/rsyslog/listener_simple.conf.epp
+    lines: 34-35
+    text: action(type="omfile" dynaFile="remote" createDirs="on")
+  probe: |
+    c=$(basename /etc/rsyslog.d/tls/*.key .key)
+    { printf '<14>Nov 16 19:00:00 p8testremote p8test: p8test-custom-marker\n'; sleep 2; } | timeout 15 openssl s_client -quiet -connect 127.0.0.1:16514 -CAfile /etc/rsyslog.d/tls/ca.pem -cert "/etc/rsyslog.d/tls/$c.pem" -key "/etc/rsyslog.d/tls/$c.key" >/dev/null 2>&1; sleep 2
+  effect: |
+    grep -c 'p8test-custom-marker' /var/log/p8test-remote/hosts/p8testremote/p8test.log
+  expect:
+    rc: 0
+    stdout: \A1\n\Z
+  variant: custom
+variants:
+- name: custom
+  params: custom
+  why: 'other port, log root, active and retention periods and rotation and retention times, which production sets (fleet_variant_usage.md:
+    port, log_root, active_days, retention_days and the four times on one node statement)'
 apply:
   resource_type: class
   node: ubuntu

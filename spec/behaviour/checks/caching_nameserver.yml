@@ -47,11 +47,9 @@ outcomes:
       Facter networking.ip6 is that ULA; no 2000::/3 address on any lab node''s NAT'
 - outcome: the RedHat branch (package bind, /etc/named.conf, /var/named, /etc/sysconfig/named)
   from: manifests/caching_nameserver.pp:7-14
-  uncovered:
-    why: the RedHat branch; this set runs on the plan's Ubuntu node, and a set runs on one node kind only
-    lifted_by: 'capability: running a set on a second node kind ({{SITE:engine-runner}} runs a set on the class''s plan node)'
-    evidence: '{{SITE:engine-runner}} run reverts and applies on the node of the plan''s node column only; {{SITE:node-inventory-reader}}
-      get --class caching_nameserver kind prints ubuntu'
+  checks:
+  - on-redhat-bind-runs-with-the-options-as-named-conf
+  - on-redhat-the-node-gets-recursive-answers-from-127-0-0-1
 checks:
 - id: named-runs-with-a-valid-configuration
   what: bind9 is installed, named is active, and named-checkconf accepts the configuration with the class's options file
@@ -242,10 +240,80 @@ checks:
   expect:
     rc: 0
     stdout: \A0\nrestarted\n1\n\Z
+- id: on-redhat-bind-runs-with-the-options-as-named-conf
+  control: negative
+  what: on RedHat the package bind is installed, named runs, /etc/named.conf is the class's options file with the RedHat directory
+    /var/named and named-checkconf accepts it, and named runs IPv4-only (OPTIONS="-4" in /etc/sysconfig/named, the host having
+    no global IPv6 address)
+  derived_from:
+  - path: manifests/caching_nameserver.pp
+    lines: '7'
+    text: if ( $facts['os']['family'] == 'RedHat' ){
+  - path: manifests/caching_nameserver.pp
+    lines: '9'
+    text: $package_name = 'bind'
+  - path: manifests/caching_nameserver.pp
+    lines: '11'
+    text: $conf_file    = '/etc/named.conf'
+  - path: manifests/caching_nameserver.pp
+    lines: '12'
+    text: $directory    = '/var/named'
+  - path: templates/bind/named.conf.options.erb
+    lines: '2'
+    text: directory "<%= @directory %>";
+  probe: |
+    rpm -q --qf '%{NAME}\n' bind
+    p8_service named | cut -d' ' -f1
+    named-checkconf /etc/named.conf && echo config-valid
+    p8_count 'directory "/var/named"' /etc/named.conf
+    p8_count 'allow-query-cache' /etc/named.conf
+    grep '^OPTIONS=' /etc/sysconfig/named
+  expect:
+    rc: 0
+    stdout: \Abind\nactive\nconfig-valid\n1\n1\nOPTIONS="-4"\n\Z
+  variant: rhel
+- id: on-redhat-the-node-gets-recursive-answers-from-127-0-0-1
+  control: negative
+  what: on RedHat, named answers the node's own recursive question on 127.0.0.1 (example.com A, NOERROR with an answer), the
+    class's purpose on that branch
+  derived_from:
+  - path: manifests/caching_nameserver.pp
+    lines: '2'
+    text: '# This class provides a caching nameserver server using bind'
+  - path: templates/bind/named.conf.options.erb
+    lines: '3'
+    text: listen-on port 53 { 127.0.0.1;
+  probe: |
+    python3 -c 'import socket, struct, time
+    q = struct.pack("!HHHHHH", 4660, 256, 1, 0, 0, 0) + b"\x07example\x03com\x00" + struct.pack("!HH", 1, 1)
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(5)
+    out = "no answer"
+    for i in range(12):
+        try:
+            s.sendto(q, ("127.0.0.1", 53))
+            r = s.recv(512)
+            out = "rcode %d answers %d" % (r[3] & 15, struct.unpack("!H", r[6:8])[0])
+            break
+        except OSError:
+            time.sleep(2)
+    print(out)'
+  expect:
+    rc: 0
+    stdout: \Arcode 0 answers [1-9][0-9]*\n\Z
+  variant: rhel
+variants:
+- name: rhel
+  node: rhel9
+  why: the RedHat branch (package bind, /etc/named.conf as the class's options file, directory /var/named, named's IPv4-only
+    option in /etc/sysconfig/named) on the rhel9 node, with the set's own params fixture
 apply:
   resource_type: class
   node: ubuntu
   catalog:
     Debian:
+    - external: stdlib
+    - class: caching_nameserver
+    RedHat:
     - external: stdlib
     - class: caching_nameserver

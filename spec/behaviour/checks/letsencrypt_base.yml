@@ -40,12 +40,25 @@ outcomes:
     lifted_by: 'capability: an ACME test endpoint and a DNS provider API stand-in in the lab'
     evidence: 'the fixture''s token is p8test-not-a-secret; the lab has no ACME endpoint ({{SITE:status-tool}} --standins:
       letsencrypt_certificate)'
-- outcome: the hetzner and hetzner-cloud plugins (pip), deployment automation off, other cron times
-  from: manifests/letsencrypt_base.pp:8-14, 22-45, 93-98
+- outcome: the Hetzner provider (the plugin from pip at the hetzner-cloud version) and other renewal days
+  from: manifests/letsencrypt_base.pp:11-44
+  checks:
+  - hetzner-plugin-installed-by-pip
+  - hetzner-credentials-file
+  - hetzner-renew-and-deploy-on-the-fixtures-days
+  - hetzner-certbot-finds-the-plugin
+- outcome: deployment automation off, other renew and deploy times (automate_deployment, the four cron times)
+  from: manifests/letsencrypt_base.pp:6-10
   uncovered:
-    why: one set holds one params fixture (digitalocean, automation on, the default times)
-    lifted_by: 'capability: more than one params fixture per set'
-    evidence: '{{SITE:engine-runner}} applies the class once with its single `fixture` (params or defaults)'
+    why: parameter variants no production node uses (the fixture keeps automation on and the default times)
+    accepted_gap:
+    - automate_deployment
+    - renew_cron_hour
+    - renew_cron_minute
+    - deploy_cron_hour
+    - deploy_cron_minute
+    evidence: '{{SITE:fleet-usage}} (2026-11-23): no production node statement sets automate_deployment or the four cron times
+      on letsencrypt_base, and no class of the repository sets them'
 checks:
 - id: dns-plugin-installed
   what: the selected provider's certbot DNS plugin (digitalocean, apt) and certbot itself are installed
@@ -190,6 +203,83 @@ checks:
   expect:
     rc: 0
     stdout: \Ap8test\.example\.com-chain\.pem p8test\.example\.com-key\.pem p8test\.example\.com\.pem \npuppet:puppet\nbyte-for-byte\n\Z
+- id: hetzner-plugin-installed-by-pip
+  control: negative
+  what: with provider hetzner-cloud, python3-pip is installed from apt and the certbot-dns-hetzner plugin from pip at version
+    3.0.0
+  derived_from:
+  - path: manifests/letsencrypt_base.pp
+    lines: 25-26
+    text: $package_version = '3.0.0'
+  - path: manifests/letsencrypt_base.pp
+    lines: 31-32
+    text: $package_provider = 'pip'
+  - path: manifests/letsencrypt_base.pp
+    lines: 38-41
+    text: name     => 'python3-pip',
+  probe: |
+    dpkg-query -W -f '${Package} ${Status}\n' python3-pip
+    python3 -m pip show certbot-dns-hetzner 2>/dev/null | grep -E '^(Name|Version):'
+  expect:
+    rc: 0
+    stdout: '\Apython3-pip install ok installed\nName: certbot-dns-hetzner\nVersion: 3\.0\.0\n\Z'
+  variant: hetzner
+- id: hetzner-credentials-file
+  control: negative
+  what: the DNS credentials file carries the token under the Hetzner property, root-only
+  derived_from:
+  - path: manifests/letsencrypt_base.pp
+    lines: '34'
+    text: $api_property_str = 'dns_hetzner_api_token'
+  - path: manifests/letsencrypt_base.pp
+    lines: 55-60
+    text: content => template('puppet_infrastructure/letsencrypt/dns-creds.ini.erb'),
+  probe: |
+    f={{LOCALDIR}}/etc/dns-creds.ini
+    stat -c '%U %G %a' "$f"; cat "$f"
+  expect:
+    rc: 0
+    stdout: \Aroot root 600\ndns_hetzner_api_token = p8test-not-a-secret\n\Z
+  variant: hetzner
+- id: hetzner-renew-and-deploy-on-the-fixtures-days
+  control: negative
+  what: the renew and the deploy crons run on the fixture's days of the month (1 and 15)
+  derived_from:
+  - path: manifests/letsencrypt_base.pp
+    lines: 66-69
+    text: renew_cron_monthday      => $renew_cron_monthday,
+  - path: manifests/letsencrypt_base.pp
+    lines: 98-102
+    text: monthday => $renew_cron_monthday,
+  probe: |
+    for n in letsencrypt-renew deploy_maintained_certificates; do crontab -l -u root 2>/dev/null | grep -A1 -x "# Puppet Name: $n" | tail -1 | awk '{print $1, $2, $3}'; done
+  expect:
+    rc: 0
+    stdout: \A0 4 1,15\n0 5 1,15\n\Z
+  variant: hetzner
+- id: hetzner-certbot-finds-the-plugin
+  control: negative
+  what: certbot lists the dns-hetzner plugin, so a renewal can use it
+  mutates: writes certbot's plugin list to /run/p8test-le/plugins.txt
+  derived_from:
+  - path: manifests/letsencrypt_base.pp
+    lines: 46-52
+    text: name     => $package_name,
+  probe: |
+    install -d -m 0700 /run/p8test-le
+    certbot plugins --text 2>/dev/null | sed -n 's/^\* //p' > /run/p8test-le/plugins.txt
+  effect: |
+    grep -x 'dns-hetzner' /run/p8test-le/plugins.txt
+  expect:
+    rc: 0
+    stdout: \Adns-hetzner\n\Z
+  variant: hetzner
+variants:
+- name: hetzner
+  params: hetzner
+  why: 'the Hetzner branch (the plugin from pip at the hetzner-cloud version) and other renewal days, which production sets
+    (fleet_variant_usage.md: provider and renew_cron_monthday on one node statement; its values are not read, so the branch
+    the fixture does not take is the one tested)'
 apply:
   resource_type: class
   node: puppetserver

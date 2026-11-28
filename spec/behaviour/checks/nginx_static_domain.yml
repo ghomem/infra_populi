@@ -25,13 +25,27 @@ outcomes:
   - tls12-only
   - server-cipher-order-and-dh-group
   - ecdh-curve-prime256v1
-- outcome: the other combinations (redirect to www, a default server, directory listing, plain HTTP only, an IP whitelist,
-    extra protocols or ciphers)
-  from: manifests/nginx_static_domain.pp:20-54, 101-205
+- outcome: a default server for other hosts (server_default_create) and Let's Encrypt-shaped certificate files (letsencrypt_certificate),
+    as production sets them
+  from: manifests/nginx_static_domain.pp:24-41
+  checks:
+  - prod-an-unknown-host-gets-404-from-the-default-server
+  - prod-serves-the-letsencrypt-shaped-files
+  - prod-the-domain-still-redirects-to-https
+- outcome: the other combinations (redirect to www, a redirecting default server, directory listing, an IP whitelist, extra
+    protocols or ciphers); plain HTTP of the same define is nginx_static's set
+  from: manifests/nginx_static_domain.pp:34-50
   uncovered:
-    why: one set holds one params fixture (HTTPS with a redirect from HTTP, no www, no listing)
-    lifted_by: 'capability: more than one params fixture per set'
-    evidence: '{{SITE:engine-runner}} applies the class once with its single `fixture` (params or defaults)'
+    why: 'parameter variants no production node uses (the fixture: no www, no listing, no whitelist, the base TLS settings)'
+    accepted_gap:
+    - redirect_to_www
+    - redirect_default
+    - allow_directory_listing
+    - ip_whitelist
+    - additional_ssl_protocols
+    - additional_ssl_ciphers
+    evidence: '{{SITE:fleet-usage}} (2026-11-23): production sets domain, letsencrypt_certificate, manage_ssl, redirect_to_https,
+      server_default_create, ssl, static_sslprefix and www_root on nginx_static_domain, none of these'
 - outcome: serving with a Let's Encrypt certificate (letsencrypt_certificate true)
   from: manifests/nginx_static_domain.pp:23-24, 86-92
   uncovered:
@@ -244,6 +258,84 @@ checks:
   expect:
     rc: 0
     stdout: '\AServer Temp Key: ECDH, prime256v1, 256 bits\n\Z'
+- id: prod-an-unknown-host-gets-404-from-the-default-server
+  control: negative
+  what: a request for a host the node does not serve gets 404 from the default server, over HTTP and HTTPS
+  derived_from:
+  - path: manifests/nginx_static_domain.pp
+    lines: 148-150
+    text: 'true    : { $server_default_ensure = ''present'' }'
+  - path: manifests/nginx_static_domain.pp
+    lines: 210-212
+    text: $default_str = '404'
+  - path: manifests/nginx_static_domain.pp
+    lines: 236-245
+    text: listen_options      => 'default_server',
+  probe: |
+    curl -s -o /dev/null -w 'http %{http_code}\n' -H 'Host: p8test-other.invalid' http://127.0.0.1/
+    curl -sk -o /dev/null -w 'https %{http_code}\n' -H 'Host: p8test-other.invalid' https://127.0.0.1/
+  expect:
+    rc: 0
+    stdout: \Ahttp 404\nhttps 404\n\Z
+  variant: prod
+  mismatch:
+    varies: 'the host: the served domain gets its redirect over HTTP and its page over HTTPS, not 404, so the pass is the
+      default server catching other hosts'
+    probe: |
+      curl -s -o /dev/null -w 'http %{http_code}\n' -H 'Host: p8test.example.com' http://127.0.0.1/
+      curl -sk -o /dev/null -w 'https %{http_code}\n' -H 'Host: p8test.example.com' https://127.0.0.1/
+- id: prod-serves-the-letsencrypt-shaped-files
+  control: negative
+  what: nginx uses the Let's Encrypt-shaped bundle and key (<prefix>.nginx.bundle.pem, <prefix>-key.pem), and the certificate
+    it serves for the domain is that bundle's
+  derived_from:
+  - path: manifests/nginx_static_domain.pp
+    lines: 87-88
+    text: $ssl_cert_path = "${ssl_certs_dir}/${static_sslprefix}.nginx.bundle.pem"
+  - path: manifests/nginx_static_domain.pp
+    lines: 87-88
+    text: $ssl_key_path = "${ssl_private_dir}/${static_sslprefix}-key.pem"
+  probe: |
+    nginx -T 2>/dev/null | grep -oE '^\s*ssl_certificate(_key)?\s+\S+;' | sed -E 's/^\s*//; s/\s+/ /' | sort -u
+    a=$(openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com </dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256)
+    b=$(openssl x509 -in /etc/ssl/certs/p8test.nginx.bundle.pem -noout -fingerprint -sha256)
+    test -n "$a" -a "$a" = "$b" && echo served-cert-is-the-pem-bundle
+  expect:
+    rc: 0
+    stdout: \Assl_certificate /etc/ssl/certs/p8test\.nginx\.bundle\.pem;\nssl_certificate_key /etc/ssl/private/p8test-key\.pem;\nserved-cert-is-the-pem-bundle\n\Z
+  variant: prod
+  mismatch:
+    varies: 'the reference certificate: the served certificate compared with the Puppet CA''s instead of the bundle must not
+      match, so the pass is the bundle''s identity, not a comparison that always holds'
+    probe: |
+      nginx -T 2>/dev/null | grep -oE '^\s*ssl_certificate(_key)?\s+\S+;' | sed -E 's/^\s*//; s/\s+/ /' | sort -u
+      a=$(openssl s_client -connect 127.0.0.1:443 -servername p8test.example.com </dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256)
+      b=$(openssl x509 -in /etc/puppetlabs/puppet/ssl/certs/ca.pem -noout -fingerprint -sha256)
+      test -n "$a" -a "$a" = "$b" && echo served-cert-is-the-pem-bundle
+- id: prod-the-domain-still-redirects-to-https
+  control: negative
+  what: plain HTTP for the domain itself is still redirected to HTTPS, the default server taking only other hosts
+  derived_from:
+  - path: manifests/nginx_static_domain.pp
+    lines: 252-260
+    text: '''return'' => $redirect_string'
+  probe: |
+    curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' -H 'Host: p8test.example.com' 'http://127.0.0.1/p8/phase3'
+  expect:
+    rc: 0
+    stdout: \A301 https://p8test\.example\.com/p8/phase3\n\Z
+  variant: prod
+  mismatch:
+    varies: 'the host: another name gets the default server''s 404, not the domain''s redirect, so the pass is the domain''s
+      own server'
+    probe: |
+      curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' -H 'Host: p8test-other.invalid' 'http://127.0.0.1/p8/phase3'
+variants:
+- name: prod
+  params: prod
+  why: 'a default server and Let''s Encrypt-shaped certificate files, which production sets (fleet_variant_usage.md: server_default_create
+    and letsencrypt_certificate on one node statement), over the set''s own fixture; the files come from the lab master''s
+    fixture tree as for ssl_base''s letsencrypt variant'
 apply:
   resource_type: define
   node: ubuntu

@@ -457,7 +457,7 @@ def git_migrations() -> dict[str, MigrationCommit]:
     output = run_git(["log", "--format=%H%x09%cI%x09%s"])
     # history keeps the old name: a migrate commit under either name counts
     pattern = re.compile(rf"\bP8: migrate\s+(?:{module_name.either()})::([A-Za-z0-9_]+)\b")
-    migrations: dict[str, MigrationCommit] = {}
+    candidates: dict[str, list[MigrationCommit]] = {}
 
     for line in output.splitlines():
         if "P8: migrate" not in line:
@@ -468,10 +468,20 @@ def git_migrations() -> dict[str, MigrationCommit]:
         commit, commit_date, subject = parts
         match = pattern.search(subject)
         if match:
-            name = match.group(1)
-            if name not in migrations:
-                migrations[name] = MigrationCommit(commit=commit, date=commit_date)
+            candidates.setdefault(match.group(1), []).append(MigrationCommit(commit=commit, date=commit_date))
+    # HQ 2026-11-23 ruling 1 (as review_class.py applies it): a migrate commit that changed no class file (only the
+    # tracker, say) is not the class's migration; the newest one that changed a class file is
+    migrations: dict[str, MigrationCommit] = {}
+    for name, found in candidates.items():
+        migrations[name] = found[0] if len(found) == 1 else next(
+            (m for m in found if changed_class_files(m.commit)), found[0])
     return migrations
+
+
+def changed_class_files(commit: str) -> bool:
+    """Whether the commit changed a file of the module (anything outside .codex_state/)."""
+    names = run_git(["show", "--name-only", "--format=", commit]).split()
+    return any(not n.startswith(".codex_state/") for n in names)
 
 
 def find_flagged_migrations(migrations: dict[str, MigrationCommit]) -> set[str]:

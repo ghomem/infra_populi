@@ -62,13 +62,16 @@ outcomes:
   checks:
   - relayed-to-another-domain
   - the-sink-received-the-relayed-mail
-- outcome: the extra_sec hardening (protocols, ciphers, a generated DH group) and Let's Encrypt-shaped certificate names
+- outcome: the extra_sec hardening (protocols, ciphers, a generated DH group) and Let's Encrypt-shaped certificates
   from: manifests/postfix_smtp_base.pp:54-69; templates/postfix_smtp_base/main.cf.erb:37-68
   uncovered:
-    why: the fixture sets extra_sec and letsencrypt_certificate false; one set holds one params fixture
-    lifted_by: 'capability: more than one params fixture per set'
-    evidence: 'the params fixture: extra_sec false, letsencrypt_certificate false; {{SITE:engine-runner}} runs a set with
-      one fixture'
+    why: parameter variants no production node uses (the fixture sets extra_sec and letsencrypt_certificate false)
+    accepted_gap:
+    - extra_sec
+    - dh_params_bits
+    - letsencrypt_certificate
+    evidence: '{SITE:fleet-usage} (2026-11-23): no production node statement sets extra_sec, dh_params_bits, letsencrypt_certificate,
+      and no class of the repository sets them on postfix_smtp_base'
 checks:
 - id: smtpd-on-the-configured-port-with-the-hostname
   what: postfix's smtpd listens on postfix_port and greets with myhostname = smtp_hostname

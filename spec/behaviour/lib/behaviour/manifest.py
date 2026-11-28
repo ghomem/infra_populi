@@ -58,15 +58,16 @@ def family_of(kind: str, kinds: dict) -> str:
 
 
 def build(data: dict, kind: str, kinds: dict, params_dirs: list[Path], fixtures: Path,
-          variant: str | None = None, render=lambda s: s) -> str:
+          variant: str | None = None, render=lambda s: s, variant_fixture: str | None = None) -> str:
     """The manifest for the set on a node of `kind`. `render` fills the placeholders a node or params fixture carries."""
     apply = data["apply"]
     target = data["class"]
     lines = []
-    if apply.get("node_fixture"):
-        path = fixtures / "node" / f"{apply['node_fixture']}.pp"
+    # the set's node fixture, then a variant's own (HQ 2026-11-27 item 4: state the class needs before it applies)
+    for name in [n for n in (apply.get("node_fixture"), variant_fixture) if n]:
+        path = fixtures / "node" / f"{name}.pp"
         if not path.is_file():
-            raise FileNotFoundError(f"node fixture {apply['node_fixture']} not found ({path})")
+            raise FileNotFoundError(f"node fixture {name} not found ({path})")
         lines.append(render(path.read_text(encoding="utf-8")).rstrip("\n"))
     family = family_of(kind, kinds)
     for entry in apply["catalog"][family]:

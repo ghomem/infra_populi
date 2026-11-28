@@ -325,8 +325,9 @@ def peer_problems(cls: str, peer) -> tuple[list[str], str | None]:
     import nodes  # noqa: PLC0415
     inventory = nodes.load()["nodes"]
     node_ip = nodes.select(nodes.load(), cls=cls)["hostonly_ip"]
-    if not isinstance(peer, dict) or not set(peer) <= {"kind", "why", "files"} or len(str(peer.get("why", ""))) < 20:
-        return ["peer takes kind, why (>= 20 characters) and optional files"], node_ip
+    if not isinstance(peer, dict) or not set(peer) <= {"kind", "why", "files", "setup", "runs"} or \
+            len(str(peer.get("why", ""))) < 20:
+        return ["peer takes kind, why (>= 20 characters) and optional files, setup and runs"], node_ip
     out = []
     kind = peer.get("kind")
     if kind not in inventory:
@@ -335,6 +336,10 @@ def peer_problems(cls: str, peer) -> tuple[list[str], str | None]:
         out.append("peer: the peer is the class's own node")
     elif "second-node" not in inventory[kind]["capabilities"]:
         out.append(f"peer: node {kind} lacks the capability 'second-node'")
+    # HQ 2026-11-27 item 2: a setup prepares the peer before the clean phase; it keeps the host rules (the peer may
+    # name the class node's address, no other lab host, never Puppet), as a peer action does
+    if "setup" in peer:
+        out += [f"peer.setup: {p}" for p in probe_problems(str(peer["setup"]), mutating=True, allow=node_ip)]
     files = peer.get("files") or []
     if not isinstance(files, list) or not all(isinstance(f, str) and re.fullmatch(r"/[\w./-]+", f) for f in files):
         out.append("peer.files is a list of absolute paths on the node")
@@ -438,6 +443,11 @@ def uncovered_problems(u, where: str, strict: bool, cls: str = "") -> list[str]:
     if lifted.startswith("capability:"):
         if len(lifted.split(":", 1)[1].strip()) < 10:
             out.append(f"{where}: lifted_by `capability: ...` names the missing capability")
+        sys.path.insert(0, str(REPO / "spec" / "behaviour" / "lib"))
+        from behaviour import setfile  # noqa: PLC0415  (the runner's capabilities, one list)
+        has = setfile.runner_has(lifted)
+        if has:  # HQ 2026-11-27 item 1
+            out.append(f"{where}: the runner has {has}: this outcome is a check to write, not an open row")
         return out
     found = lifting_problems(lifted, None, where)
     if found:
@@ -742,7 +752,7 @@ def validate(cls: str) -> tuple[list[str], dict, bytes]:
     return problems, data, raw
 
 
-VARIANT_KEYS = {"name", "why", "node", "params", "no_resources"}
+VARIANT_KEYS = {"name", "why", "node", "params", "no_resources", "node_fixture"}
 
 
 def variant_params(cls: str, name: str) -> Path:
@@ -779,6 +789,8 @@ def variant_problems(cls: str, data: dict, checks: list) -> list[str]:
                 out.append(f"{where}: node {kind!r} is not an active node kind (nodes.yml)")
             elif kind == plan_node and "params" not in v:
                 out.append(f"{where}: node {kind} is the plan's own node; a variant there needs params")
+        if "node_fixture" in v and not (TOOLS / "tests" / "fixtures" / "node" / f"{v['node_fixture']}.pp").is_file():
+            out.append(f"{where}: node_fixture {v['node_fixture']!r} is not an engine node fixture (tests/fixtures/node)")
         if "no_resources" in v and (v["no_resources"] is not True or "params" not in v):
             out.append(f"{where}: no_resources is `true`, for a params variant whose class declares nothing")
         if "params" in v:
@@ -789,8 +801,10 @@ def variant_problems(cls: str, data: dict, checks: list) -> list[str]:
     for c in tagged:
         if c["variant"] not in names:
             out.append(f"check {c.get('id')}: variant {c['variant']!r} is not declared")
-        if c.get("host") == "peer":
-            out.append(f"check {c.get('id')}: a variant run has no peer")
+        sys.path.insert(0, str(REPO / "spec" / "behaviour" / "lib"))
+        from behaviour import setfile  # noqa: PLC0415
+        if c.get("host") == "peer" and c.get("variant") not in setfile.peer_runs(data):
+            out.append(f"check {c.get('id')}: variant {c.get('variant')} has no peer (peer.runs)")
     for name in names:
         mine = [c for c in tagged if c.get("variant") == name]
         if not any(c.get("control") == "negative" for c in mine):

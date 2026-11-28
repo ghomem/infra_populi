@@ -41,9 +41,16 @@ outcomes:
 - outcome: other ports, a non-letsencrypt certificate, or another helo name
   from: manifests/nginx_frontend_mail.pp:13-30
   uncovered:
-    why: one set holds one params fixture (the default ports, a letsencrypt-style bundle)
-    lifted_by: 'capability: more than one params fixture per set'
-    evidence: '{{SITE:engine-runner}} applies the class once with its single `fixture` (params or defaults)'
+    why: 'parameter variants no production node uses (the fixture: the default ports, a letsencrypt-style bundle)'
+    accepted_gap:
+    - https_port
+    - imaps_port
+    - smtps_port
+    - smtp_port
+    - letsencrypt_certificate
+    - smtp_helo
+    evidence: '{SITE:fleet-usage} (2026-11-23): no production node statement sets https_port, imaps_port, smtps_port, smtp_port,
+      letsencrypt_certificate, smtp_helo, and no class of the repository sets them on nginx_frontend_mail'
 checks:
 - id: nginx-config-valid-and-running
   what: the configuration the class produces passes `nginx -t` and nginx runs

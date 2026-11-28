@@ -22,12 +22,9 @@ outcomes:
   - an-sftp-user-and-its-jail
   - sftp-works-in-the-jail-and-nothing-else
 - outcome: an empty whitelist (any address allowed, no deny block) and password authentication for the jail
-  from: manifests/sftp_only.pp:40-42, 55, 61-62
-  uncovered:
-    why: the fixture names one address and keeps password_authentication no; one set holds one params fixture
-    lifted_by: 'capability: more than one params fixture per set'
-    evidence: 'the params fixture: ip_whitelist [127.0.0.1], password_authentication at its default no; {{SITE:engine-runner}}
-      runs a set with one fixture'
+  from: manifests/sftp_only.pp:24-30
+  checks:
+  - open-the-jail-from-any-address-with-passwords-and-no-deny-block
 checks:
 - id: allow-block-from-the-whitelist
   what: for p8testuser from 127.0.0.1, sshd's effective settings are the jail, the forced internal-sftp in the directory with
@@ -122,6 +119,33 @@ checks:
     rc: 0
     stdout: '\Aupload: done\nlisting: /upload\nuploaded: p8testuser 640 /srv/p8test-jail/upload/p8test\.txt\ncommand: allows
       sftp connections only\nfrom ::1: refused\n\Z'
+- id: open-the-jail-from-any-address-with-passwords-and-no-deny-block
+  control: negative
+  what: with an empty whitelist sshd applies the jail to the user from any address (here ::1 and 203.0.113.9, which the base
+    fixture denies), with password authentication on, and no address gets a deny block
+  derived_from:
+  - path: manifests/sftp_only.pp
+    lines: 40-42
+    text: $ip_whitestring = '*'
+  - path: manifests/sftp_only.pp
+    lines: 49-55
+    text: '''PasswordAuthentication'' => $password_authentication,'
+  - path: manifests/sftp_only.pp
+    lines: 61-62
+    text: if ($ip_whitelist != []) {
+  probe: |
+    for a in ::1 203.0.113.9; do echo "from $a"; sshd -T -C user=p8testuser,addr=$a,host=localhost | grep -E '^(chrootdirectory|forcecommand|passwordauthentication|denyusers) ' | sort; done
+  expect:
+    rc: 0
+    stdout: \Afrom ::1\nchrootdirectory /srv/p8test-jail\nforcecommand internal-sftp -d upload -u 007\npasswordauthentication
+      yes\nfrom 203\.0\.113\.9\nchrootdirectory /srv/p8test-jail\nforcecommand internal-sftp -d upload -u 007\npasswordauthentication
+      yes\n\Z
+  variant: open
+variants:
+- name: open
+  params: open
+  why: 'an empty whitelist and password authentication for the jail: sftp_only''s production use lives in the passwd/ layer,
+    which is never read (undeterminable), so the variants production may use are checked'
 apply:
   resource_type: define
   node: ubuntu

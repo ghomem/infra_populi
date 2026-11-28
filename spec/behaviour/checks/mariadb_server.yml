@@ -41,9 +41,15 @@ outcomes:
 - outcome: custom mysqld or mariadb options, certificates not generated, a single user or none
   from: manifests/mariadb_server.pp:30-37, 89
   uncovered:
-    why: one set holds one params fixture (generated certificates, both users, no custom options)
-    lifted_by: 'capability: more than one params fixture per set'
-    evidence: '{{SITE:engine-runner}} applies the class once with its single `fixture` (params or defaults)'
+    why: 'parameter variants no production node uses (the fixture: generated certificates, both users, no custom options)'
+    accepted_gap:
+    - custom_mysqld_configs
+    - custom_mariadb_configs
+    - generate_certificates
+    - ro_user
+    - rw_user
+    evidence: '{SITE:fleet-usage} (2026-11-23): no production node statement sets custom_mysqld_configs, custom_mariadb_configs,
+      generate_certificates, ro_user, rw_user, and no class of the repository sets them on mariadb_server'
 checks:
 - id: mariadb-server-installed-and-running
   what: the MariaDB server package is installed and the running server reports itself as MariaDB
