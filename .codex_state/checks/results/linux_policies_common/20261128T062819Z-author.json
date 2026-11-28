@@ -1,0 +1,156 @@
+{
+ "class": "linux_policies_common",
+ "role": "author",
+ "at": "20261128T062819Z",
+ "runner": "79783a2e",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "bd2f4929578a9715e951111b8180809cdd3d47e112cc7b355b74e196d7e5cce6",
+ "content_sha256": "bd2f4929578a9715e951111b8180809cdd3d47e112cc7b355b74e196d7e5cce6",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "policies-tree-deployed",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "sha256sum: /opt/infra-populi/linux-policies/COMMON/common: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "autostart-entry-runs-the-runner",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "stat: cannot statx '/etc/xdg/autostart/linux-policies-user.desktop': No such file or directory\ngrep: /etc/xdg/autostart/linux-policies-user.desktop: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "runner-executes-the-users-policy",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "stat: cannot statx '/opt/infra-populi/linux-policies/COMMON/execute_linux_policies_user.sh': No such file or directory\ncat: /var/tmp/p8test-policy-ran: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-runner-reports-a-missing-script",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "[main]/Infra_populi::Linux_policies_common/File[/opt/infra-populi/linux-policies/COMMON/execute_linux_policies_user.sh]/ensure: defined content as '{sha256}3e5cf2e32c8472e1d68a655af30c837d86803322f7207234f80c571803da6283'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.31 seconds\u001b[0m\nRUN1_EVENTS: 16 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795847357'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.11 seconds\u001b[0m\nCOVERAGE infra_populi::linux_policies_common: 3 concrete resources (+0 defined-type instances)\n  File[/opt/infra-populi/linux-policies]\n  File[/etc/xdg/autostart/linux-policies-user.desktop]\n  File[/opt/infra-populi/linux-policies/COMMON/execute_linux_policies_user.sh]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP linux_policies_common f8b78f47d50d\n\nNODE_FRESH: yes (boot 918d11bd of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "policies-tree-deployed",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "96142acfd235e555756e309dfbd98e45a71024a675f6d1a47ae923d3334f147a\ntmp-and-user-present\n",
+   "stderr": ""
+  },
+  {
+   "id": "autostart-entry-runs-the-runner",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 644\nExec=/opt/infra-populi/linux-policies/COMMON/execute_linux_policies_user.sh autostart\n",
+   "stderr": ""
+  },
+  {
+   "id": "runner-executes-the-users-policy",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "root 755\np8test-policy-ran\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "adds USER/root.sh (0755) to the deployed tree, a fixture policy that writes /var/tmp/p8test-policy-ran, then runs the runner once as root with the argument p8test (it also logs one line to syslog)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-runner-reports-a-missing-script",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "runs the runner once as the account nobody with the argument p8testmissing (one syslog line)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "918d11bd-4b4e-41e8-84a7-ce676eeb6453",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "918d11bd-4b4e-41e8-84a7-ce676eeb6453",
+   "fresh": true
+  }
+ },
+ "manifest_sha256": "9cc17a73ca6994e165a31cecb127059186250941d8921b246b9a175749de6ecb",
+ "outcomes": [
+  {
+   "outcome": "the module's linux-policies tree is deployed under the local directory",
+   "checks": [
+    "policies-tree-deployed"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the runner executes the calling user's USER/<user>.sh when it exists and is executable, and says so in syslog; without one it logs that the script was not found",
+   "checks": [
+    "runner-executes-the-users-policy",
+    "the-runner-reports-a-missing-script"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "an XDG autostart entry runs the runner at a desktop log-in",
+   "checks": [
+    "autostart-entry-runs-the-runner"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the autostart entry actually running at a desktop log-in",
+   "uncovered": {
+    "why": "the class's plan node is a server without a desktop, and a desktop session runs in a set's base run only; the login side is exercised through linux_policies_user's set on kubuntu, which composes this class",
+    "lifted_by": "capability: a desktop session in a variant run (a set's variants on a desktop kind)",
+    "evidence": "nodes.yml: the class's node is ubuntu (capabilities [server]); the runner's session is a base-run step (`session` needs the kde capability on the set's node); linux_policies_user's autostart-runs-the-policies-at-login runs it on kubuntu"
+   }
+  }
+ ],
+ "duration_s": 61.8
+}

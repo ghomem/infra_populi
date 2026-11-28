@@ -1,0 +1,375 @@
+{
+ "class": "hello_world_flask",
+ "role": "author",
+ "at": "20261128T055627Z",
+ "runner": "79783a2e",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "517acb5442364279e7ba11b9df0e350c6cc33d3701341f210865f5b3c9700542",
+ "content_sha256": "517acb5442364279e7ba11b9df0e350c6cc33d3701341f210865f5b3c9700542",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "service-running-and-enabled",
+   "control": "negative",
+   "rc": 4,
+   "passed": false,
+   "stdout": "inactive\nnot-found\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "unit-runs-gunicorn-in-the-app-dir",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /lib/systemd/system/hello-world-flask-hello_world_flask.service: No such file or directory\n",
+   "ok": true
+  },
+  {
+   "id": "app-serves-the-welcome-message",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "not-served-on-another-address",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "curl-rc=7\n",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-app-is-changed-by-hand",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-and-restarts",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-unit-is-changed-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "8081: 000\n8080: curl-rc=7\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-agent-run-restores-the-unit-in-effect",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "8080: 000\n8081: curl-rc=7\n",
+   "stderr": "grep: /lib/systemd/system/hello-world-flask-hello_world_flask.service: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "ertificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795845454'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.51 seconds\u001b[0m\nCOVERAGE infra_populi::hello_world_flask: 10 concrete resources (+1 defined-type instances)\n  Infra_populi::Hello_world_flask[hello_world_flask]\n  Package[python3-gunicorn]\n  Package[python3-flask]\n  File[/opt/infra-populi/hello_world_flask]\n  File[/opt/infra-populi/hello_world_flask/hello_world_flask]\n  File[/opt/infra-populi/hello_world_flask/hello_world_flask/hello_world_flask.py]\n  File[/opt/infra-populi/hello_world_flask/hello_world_flask/wsgi.py]\n  File[/lib/systemd/system/hello-world-flask-hello_world_flask.service]\n  Service[hello-world-flask-hello_world_flask]\n  Exec[hello-world-flask-hello_world_flask-restart]\n  Exec[hello-world-flask-hello_world_flask-reload]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP hello_world_flask b05a53967555\n\nNODE_FRESH: yes (boot cb372c0b of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "service-running-and-enabled",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "active\nenabled\n",
+   "stderr": ""
+  },
+  {
+   "id": "unit-runs-gunicorn-in-the-app-dir",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "ExecStart=python3 -m gunicorn --bind 127.0.0.1:8080 wsgi:app\nWorkingDirectory=/opt/infra-populi/hello_world_flask/hello_world_flask\n",
+   "stderr": ""
+  },
+  {
+   "id": "app-serves-the-welcome-message",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "<h1 style='color:blue'>P8 test flask hello</h1\n",
+   "stderr": ""
+  },
+  {
+   "id": "not-served-on-another-address",
+   "control": "invariant",
+   "rc": 0,
+   "passed": true,
+   "stdout": "curl-rc=7\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-app-is-changed-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "<h1 style='color:blue'>p8test drifted</h1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "replaces the welcome message in {{LOCALDIR}}/hello_world_flask/hello_world_flask/hello_world_flask.py with \"p8test drifted\" (sed -i) and restarts hello-world-flask-hello_world_flask",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-and-restarts",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "<h1 style='color:blue'>P8 test flask hello</h1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond one HTTP request to the app (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-unit-is-changed-by-hand",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "8081: 200\n8080: curl-rc=7\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "replaces 127.0.0.1:8080 with 127.0.0.1:8081 in /lib/systemd/system/hello-world-flask-hello_world_flask.service (sed -i), runs systemctl daemon-reload and restarts hello-world-flask-hello_world_flask",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-agent-run-restores-the-unit-in-effect",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n8080: 200\n8081: curl-rc=7\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond two HTTP requests to the node's own ports (declared mutating so it runs after the node's agent run)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "APPLY_FAILED",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "cb372c0b-17f1-4e52-96e2-b4d4d0393622",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "cb372c0b-17f1-4e52-96e2-b4d4d0393622",
+   "fresh": true
+  }
+ },
+ "node_agent": {
+  "the-app-is-changed-by-hand": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/File[/opt/infra-populi/hello_world_flask/hello_world_flask/hello_world_flask.py]/content:",
+    "\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/File[/opt/infra-populi/hello_world_flask/hello_world_flask/hello_world_flask.py]/content:",
+    "\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/File[/opt/infra-populi/hello_world_flask/hello_world_flask/hello_world_flask.py]/content: content changed '{sha256}61943f9cd3685b59758266d48d2376c5354d334d705d648f906055f259ae2363' to '{sha256}65867763937442a4455352738754f03957ed455dc584ce7e900936247996e803' (corrective)\u001b[0m",
+    "\u001b[0;32mInfo: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/File[/opt/infra-populi/hello_world_flask/hello_world_flask/hello_world_flask.py]: Scheduling refresh of Exec[hello-world-flask-hello_world_flask-restart]\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-restart]: Triggered 'refresh' from 1 event\u001b[0m"
+   ],
+   "errors": [],
+   "tail": "3-s9hgwe\t2026-11-28 05:57:46.946927696 +0000\n@@ -7,7 +7,7 @@\n \n @app.route(\"/\")\n def hello():\n-    welcome_msg = 'p8test drifted'\n+    welcome_msg = 'P8 test flask hello'\n     timestamp = time.strftime('%a, %d %b %Y %X %z')\n     html = \"\"\"\n       <h1 style='color:blue'>%s</h1>\n\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/File[/opt/infra-populi/hello_world_flask/hello_world_flask/hello_world_flask.py]/content: \n\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/File[/opt/infra-populi/hello_world_flask/hello_world_flask/hello_world_flask.py]/content: content changed '{sha256}61943f9cd3685b59758266d48d2376c5354d334d705d648f906055f259ae2363' to '{sha256}65867763937442a4455352738754f03957ed455dc584ce7e900936247996e803' (corrective)\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/File[/opt/infra-populi/hello_world_flask/hello_world_flask/hello_world_flask.py]: Scheduling refresh of Exec[hello-world-flask-hello_world_flask-restart]\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-restart]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 0.70 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/opt/infra-populi/hello_world_flask/hello_world_flask/hello_world_flask.py]\nCHANGED Exec[hello-world-flask-hello_world_flask-restart]\n"
+  },
+  "the-unit-is-changed-by-hand": {
+   "rc": 2,
+   "events": [
+    "\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/File[/lib/systemd/system/hello-world-flask-hello_world_flask.service]/content:",
+    "\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/File[/lib/systemd/system/hello-world-flask-hello_world_flask.service]/content:",
+    "\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/File[/lib/systemd/system/hello-world-flask-hello_world_flask.service]/content: content changed '{sha256}2b8cda6c3915b53dcddb925cd2a5fe33b9a68698e26b765973b153b93c1f8a55' to '{sha256}28e93af5bad86c816947c68fd139739f05ad807e72f8940e6c14ac26ca5fb34f' (corrective)\u001b[0m",
+    "\u001b[0;32mInfo: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/File[/lib/systemd/system/hello-world-flask-hello_world_flask.service]: Scheduling refresh of Exec[hello-world-flask-hello_world_flask-restart]\u001b[0m",
+    "\u001b[0;32mInfo: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/File[/lib/systemd/system/hello-world-flask-hello_world_flask.service]: Scheduling refresh of Exec[hello-world-flask-hello_world_flask-reload]\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-reload]: Triggered 'refresh' from 1 event\u001b[0m",
+    "\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-restart]: Triggered 'refresh' from 1 event\u001b[0m"
+   ],
+   "errors": [],
+   "tail": "rvice]/content: \n\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/File[/lib/systemd/system/hello-world-flask-hello_world_flask.service]/content: content changed '{sha256}2b8cda6c3915b53dcddb925cd2a5fe33b9a68698e26b765973b153b93c1f8a55' to '{sha256}28e93af5bad86c816947c68fd139739f05ad807e72f8940e6c14ac26ca5fb34f' (corrective)\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/File[/lib/systemd/system/hello-world-flask-hello_world_flask.service]: Scheduling refresh of Exec[hello-world-flask-hello_world_flask-restart]\u001b[0m\n\u001b[0;32mInfo: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/File[/lib/systemd/system/hello-world-flask-hello_world_flask.service]: Scheduling refresh of Exec[hello-world-flask-hello_world_flask-reload]\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-reload]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: /Stage[main]/Main/Node[puppet8node]/Infra_populi::Hello_world_flask[hello_world_flask]/Exec[hello-world-flask-hello_world_flask-restart]: Triggered 'refresh' from 1 event\u001b[0m\n\u001b[mNotice: Applied catalog in 1.02 seconds\u001b[0m\nAGENT_RC=2\nCHANGED File[/lib/systemd/system/hello-world-flask-hello_world_flask.service]\nCHANGED Exec[hello-world-flask-hello_world_flask-reload]\nCHANGED Exec[hello-world-flask-hello_world_flask-restart]\n"
+  }
+ },
+ "variants": {
+  "rhel": {
+   "name": "rhel",
+   "node": "rhel9",
+   "params": null,
+   "clean": [
+    {
+     "id": "on-redhat-the-unit-starts-gunicorn-directly",
+     "control": "negative",
+     "rc": 3,
+     "passed": false,
+     "stdout": "inactive\n",
+     "stderr": "grep: /lib/systemd/system/hello-world-flask-hello_world_flask.service: No such file or directory\n",
+     "ok": true
+    },
+    {
+     "id": "on-redhat-the-app-serves-the-welcome-message",
+     "control": "negative",
+     "rc": 1,
+     "passed": false,
+     "stdout": "",
+     "stderr": "",
+     "ok": true
+    }
+   ],
+   "apply": {
+    "rc": 1,
+    "green": false,
+    "node_fresh": true,
+    "tail": "\n\u001b[0;32mInfo: Creating state file /opt/puppetlabs/puppet/cache/state/state.yaml\u001b[0m\n\u001b[mNotice: Applied catalog in 380.77 seconds\u001b[0m\nRUN1_EVENTS: 17 catalog, 321 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for p8lab-rhel9\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795846258'\u001b[0m\n\u001b[mNotice: /Stage[main]/Infra_populi::Extra_packages_el/Exec[enable-codeready-builder-repo]/returns: executed successfully (corrective)\u001b[0m\n\u001b[mNotice: Applied catalog in 58.82 seconds\u001b[0m\n\nNODE_FRESH: yes (boot 2a7406dd of the latest revert, no agent run since)\nErrors logged:\n\u001b[1;31mError: /Stage[main]/Infra_populi::Extra_packages_el/Exec[enable-codeready-builder-repo]/unless: Check \"subscription-manager repos --list-enabled | grep -q 'codeready-builder-for-rhel-9-x86_64-rpms'\" exceeded timeout\u001b[0m\nRun 2 events:\n\u001b[mNotice: /Stage[main]/Infra_populi::Extra_packages_el/Exec[enable-codeready-builder-repo]/returns: executed successfully (corrective)\u001b[0m\nERROR: A run logged an error.\n\n"
+   },
+   "applied": [],
+   "findings": [],
+   "not_run": [],
+   "problems": [],
+   "valid": true,
+   "outcome": "APPLY_FAILED",
+   "nodes": {
+    "node": {
+     "kind": "rhel9",
+     "dest": "p8lab-rhel9",
+     "boot_id": "2a7406dd-e9d0-4e09-8181-5ffdbed1b01c",
+     "snapshot": "P8LAB_RHEL9_BASELINE_v3",
+     "apt_mirror": null,
+     "boot_id_at_end": "2a7406dd-e9d0-4e09-8181-5ffdbed1b01c",
+     "fresh": true
+    }
+   },
+   "values": {
+    "NODE_NAME": "p8lab-rhel9",
+    "NODE_ADDR": "192.168.56.21",
+    "LOCALDIR": "/opt/infra-populi",
+    "NODE_NETWORK": "192.168.56.0",
+    "SERVER_NAME": "puppet8master.example.com",
+    "SERVER_HOST": "puppet8master",
+    "SERVER_ADDR": "192.168.56.10",
+    "CONTROLLER_ADDR": "192.168.56.1",
+    "NODE_PRIMARY_ADDR": "10.0.2.15",
+    "PEER_NAME": "peer.invalid",
+    "PEER_ADDR": "198.51.100.1",
+    "NODE:ubuntu": "puppet8node",
+    "ADDR:ubuntu": "192.168.56.20",
+    "NODE:rhel9": "p8lab-rhel9",
+    "ADDR:rhel9": "192.168.56.21",
+    "NODE:kubuntu": "p8lab-kubuntu",
+    "ADDR:kubuntu": "192.168.56.22",
+    "NODE:gnome": "p8lab-gnome",
+    "ADDR:gnome": "192.168.56.23",
+    "NODE:ubuntu2": "p8lab-ubuntu2",
+    "ADDR:ubuntu2": "192.168.56.24",
+    "NODE:dc": "p8lab-dc",
+    "ADDR:dc": "192.168.56.25",
+    "NODE:puppetserver": "p8lab-puppetserver",
+    "ADDR:puppetserver": "192.168.56.26",
+    "FIXTURE_B64:p8test-throwaway-private-sig": "M2RlYzQ1NTNjZjIyYmNjNQphMTYxZDlmYmFhYTg4YTM3Cg==",
+    "FIXTURE_B64:p8test-throwaway-rsa": "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFZRUFzZzNuR2JmSnQ5ZzZPNXQ1SGhrM0JrQS9EYnlXRTFQV09WS0NVbGhNZnlSNVdHZ2JRQ1kwCjM3Yk5INU5yeDhPbDZyTW8rVmx3Z0RBZm8vTU40TzdDdTcwbUtVUjNuTjZaM2h1VXEwYld6bDdBN1loWEFCeUdON1ZZMVMKbVZEZmhMeUFhTzB2OXg1cDBNQ0hYWTBiRlNZZENWZi9zU1Z1ckxUWWpvdkVLdDBXYVJrd3BqVTB2aHh0S1g2TEZaWWVubgozU0dzbkRGKzN1ejBUWVhOeU81TW1zUUExVlppLzk0TVl4QmwwNmU0MXBKSEcyQjVKeDVScm0zN0RaSzRjaEFscForTlpKCmFScnBVNVlJWGVFMXJWc01ZUUdIQ0RpY2FML1JwcTZueEJBcUZWN1lKdnpMOGJybTJXd0VpZlRIRERoMTBkMHVBMS9WbC8KRmxvQ2F5Z3ZhVm1KdXZPUGEwc1pIU2tLZnZpVXhTb1lXM0ZhL3B5aWkyeXI1VlMzSGZyKzQxRTEvaVc5cVJtUDN3eUNBUwpMRXM5WTBaTmpqTlBIcWFzS25IR3hyZGZGN0x0ZDhEU1paY3Jsak5NVUJudmhscXNoMUpTQzNWYTV6YWUrOURCbDAvMThPCmtiSkxIZGhIM3orM1ZjaFRicFNYZ0ZkdUtVUWJJZ0s3bytiZDBDalZBQUFGbUVOMGtLRkRkSkNoQUFBQUIzTnphQzF5YzIKRUFBQUdCQUxJTjV4bTN5YmZZT2p1YmVSNFpOd1pBUHcyOGxoTlQxamxTZ2xKWVRIOGtlVmhvRzBBbU5OKzJ6UitUYThmRApwZXF6S1BsWmNJQXdINlB6RGVEdXdydTlKaWxFZDV6ZW1kNGJsS3RHMXM1ZXdPMklWd0FjaGplMVdOVXBsUTM0UzhnR2p0CkwvY2VhZERBaDEyTkd4VW1IUWxYLzdFbGJxeTAySTZMeENyZEZta1pNS1kxTkw0Y2JTbCtpeFdXSHA1OTBockp3eGZ0N3MKOUUyRnpjanVUSnJFQU5WV1l2L2VER01RWmRPbnVOYVNSeHRnZVNjZVVhNXQrdzJTdUhJUUphV2ZqV1NXa2E2Vk9XQ0YzaApOYTFiREdFQmh3ZzRuR2kvMGFhdXA4UVFLaFZlMkNiOHkvRzY1dGxzQkluMHh3dzRkZEhkTGdOZjFaZnhaYUFtc29MMmxaCmlicnpqMnRMR1IwcENuNzRsTVVxR0Z0eFd2NmNvb3RzcStWVXR4MzYvdU5STmY0bHZha1pqOThNZ2dFaXhMUFdOR1RZNHoKVHg2bXJDcHh4c2EzWHhleTdYZkEwbVdYSzVZelRGQVo3NFphcklkU1VndDFXdWMybnZ2UXdaZFA5ZkRwR3lTeDNZUjk4Lwp0MVhJVTI2VWw0QlhiaWxFR3lJQ3U2UG0zZEFvMVFBQUFBTUJBQUVBQUFHQUM1OEExM1YwSkR4bjRwWTlhUTQrd0k1R3YwClFHTElsRExtSERwcEc0ODhSdGxNR291UDYxWXBPVHRFSk5pQ1V0ZEtjbHRHUHNHenNUaEVKeEdiT2pxMEt5RlZmd3ZFdVkKRWRQTmdvSDJDUDZpQzI3T1g0Vm52NFk3SDhzemFBMFlaSEZaekRlR3dpL21XNUtyZmRZeERtTE1NSHFkTEx0QzNTZzQwOAo3QXBGaVVNRVlVTmxra2RETUZzMWJkN1ZncHFBMjlBOE1aazMyMk1wZ2FMQW1IbjVpaTJ2Umsza0VxZGFNWjdrbWdYMXJUCjZzWVl2NG1lVGFydWRqNlRyTUxWRjZWSHhLdlF5WnpyT3pTS3Y4THp2dC9sdTBiSnF4c3dNNG56RFdjWTJEdnNzUWM2VUIKR2M2YzBoNDZUT1BUNzl3TlprUTBXamlYNlVuQ3RGSEM2ZWFFQVdzWHVCdFFBc29BakMxTVRtYlNwS2NRa25QWWYvTVhYagpTRm9oOEMrcnpBVWd6VnA4d1dFWTU3ODZwSTdBd3hCUDhSVWp2RjVxUFRKQWtiVXJJVXd4Q1pxMTE4eHZEUlhqS1VCUHZaCkZkWlJleERMRnRONmtpY0ZoaVVNRWJ5UTM4d05OY3VMb2d5L3dXdUtIUElQQ1NrR05OazNJam9aUkpodVZETDJyNUFBQUEKd0dLNHlzditRRDFWQTZDMWxGVDJwcUxPMkh0eEQ0c1dmWkl2Vjd2YzQvQ2Z0RFgxUlZTUkNYYVFSU01EMXJFK2JtTlJLYwo1Z09zMTFvY2ZyT2RVeUZTTWt3YUFQNUZuV1pPWjNXUUx5cTRXZ2RDWU15MG8wS3VYZGhHSmRtVmhxNXRRN0VHcGIzYTVNCitZMDJMNzFIWnVWQlM5N1c3OVQ2UndOd0FIbVd1SHZVaGJMcDU5SEZod2xLbU9jL2ZQcEloWXpUblhNY2tvelU0azgzaHgKRkNrNGpNYWlBTkF4aTNJK1hwR3JNajdRckpsMVJlSzRNMHMwKzB4NFN6dE9ibG93QUFBTUVBM09meFVoR1FTUkJIZFl4TgpqaVg1NHhqMG5vempIdk15YWRYWWNTNVFoZDNDUnJpUXVXc2J3QXdnbisycWFQNFBrN0x2ZStvS01MK1V6ZDN2MllzZVJiCm9hcVdmdkxlMU52YUI2eXlSM2RvNG40TmV1RENma056RDZ2dmdCNnhGbEdybldabmdLeEN1NDF1V2JONDZFczlUQ1VrbGYKTG40aTU3ZU52ZjRoWi9oUXNwdDZQQU9QQVRBV3JvcDdQakpWZmY3b09tczB2NkdJNlA3anFtRkZHSndmVWFSbEttRkFGSwpkNFVLcEZhV1NLV3ZEa0pzaWk0QWtxU1ZDbndVSlpBQUFBd1FET1Z6ZTZZdmExTVBJcmQwcGVicDRlaGgvS01oZWRBMEsvCnlCcjBMNVlHZ1hwTzVsdnhidGZhTUZnQUwwWVBrL3Fvc0tJODVLZ2JwNjNoWHlUSDRoRlhiQ3FhRGZJN2tXcTBTQ0J6Y1MKSFRwcUdMRHVJNkRuQVJteTZMWmMxdkJrVDlvSTVTSkM4S0dxOVdFVTF6bU5STUlTQWRoS09YRlhTZE0vWFEyN2FiclU2VwpLZ2taR2x4dDlZTHdYT09LWUthamJ1VTAwRkZqelFwK2labUNaRWY0a2ZxOHpFNUF2VUhPOWVobnJCbnFWVko5SDF4UW5NCittUUlybmRaK1lzdDBBQUFBZGNEaDBaWE4wTFhSb2NtOTNZWGRoZVMxT1QxUXRRUzFUUlVOU1JWUUJBZ01FQlFZPQotLS0tLUVORCBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0K",
+    "FIXTURE_B64:p8test-throwaway-rsa.pub": "c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCZ1FDeURlY1p0OG0zMkRvN20za2VHVGNHUUQ4TnZKWVRVOVk1VW9KU1dFeC9KSGxZYUJ0QUpqVGZ0czBmazJ2SHc2WHFzeWo1V1hDQU1CK2o4dzNnN3NLN3ZTWXBSSGVjM3BuZUc1U3JSdGJPWHNEdGlGY0FISVkzdFZqVktaVU4rRXZJQm83Uy8zSG1uUXdJZGRqUnNWSmgwSlYvK3hKVzZzdE5pT2k4UXEzUlpwR1RDbU5UUytIRzBwZm9zVmxoNmVmZElheWNNWDdlN1BSTmhjM0k3a3lheEFEVlZtTC8zZ3hqRUdYVHA3aldra2NiWUhrbkhsR3ViZnNOa3JoeUVDV2xuNDFrbHBHdWxUbGdoZDRUV3RXd3hoQVljSU9KeG92OUdtcnFmRUVDb1ZYdGdtL012eHV1YlpiQVNKOU1jTU9IWFIzUzREWDlXWDhXV2dKcktDOXBXWW02ODQ5clN4a2RLUXArK0pURktoaGJjVnIrbktLTGJLdmxWTGNkK3Y3alVUWCtKYjJwR1kvZkRJSUJJc1N6MWpSazJPTTA4ZXBxd3FjY2JHdDE4WHN1MTN3TkpsbHl1V00weFFHZStHV3F5SFVsSUxkVnJuTnA3NzBNR1hUL1h3NlJza3NkMkVmZlA3ZFZ5Rk51bEplQVYyNHBSQnNpQXJ1ajV0M1FLTlU9IHA4dGVzdC10aHJvd2F3YXktTk9ULUEtU0VDUkVUCg==",
+    "FIXTURE_B64:p8test-throwaway-wrapped-passphrase": "OgLD7cOD4lefVTA0YzMxOTM5OWFhNzA3Y2LnKercRt+UGWJfPQaw9+xVCYg47pOXzfS23L0ATBC+qA=="
+   },
+   "manifest_sha256": "1d4fe472387bd7de6011b1c41d9203b0205d27349befea65ccfe65affdb267fc"
+  }
+ },
+ "manifest_sha256": "9148137b5151bb6a24487e2439f7955916ed161386c176807964f49f1bacebef",
+ "outcomes": [
+  {
+   "outcome": "the service runs gunicorn in the app directory, bound to the configured address and port only",
+   "checks": [
+    "service-running-and-enabled",
+    "unit-runs-gunicorn-in-the-app-dir",
+    "not-served-on-another-address"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "the page serves the configured welcome message",
+   "checks": [
+    "app-serves-the-welcome-message"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a hand change to the app is undone by the next agent run, which restarts the service so the configured page is served again",
+   "checks": [
+    "the-app-is-changed-by-hand",
+    "the-agent-run-restores-and-restarts"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a hand change to the unit is undone by the next agent run, and the service then runs the configured unit (daemon-reload and restart)",
+   "checks": [
+    "the-unit-is-changed-by-hand",
+    "the-agent-run-restores-the-unit-in-effect"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "on RedHat the unit starts gunicorn directly (without python3 -m)",
+   "checks": [
+    "on-redhat-the-unit-starts-gunicorn-directly",
+    "on-redhat-the-app-serves-the-welcome-message"
+   ],
+   "passed": false
+  },
+  {
+   "outcome": "uninstalling (uninstall true), another address, port or message",
+   "uncovered": {
+    "why": "parameter variants no production node uses (the fixture: installed, 127.0.0.1:8080, the test message)",
+    "accepted_gap": [
+     "uninstall",
+     "ip_address",
+     "port",
+     "welcome_msg"
+    ],
+    "evidence": "{SITE:fleet-usage} (2026-11-23): no production node statement sets uninstall, ip_address, port, welcome_msg, and no class of the repository sets them on hello_world_flask"
+   }
+  }
+ ],
+ "duration_s": 936.5
+}
