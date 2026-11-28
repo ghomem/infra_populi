@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="phase3.filesystem_yum"><testsuite name="phase3.filesystem_yum.clean" tests="3" failures="0"><testcase classname="phase3.filesystem_yum.clean" name="update-scripts-installed" /><testcase classname="phase3.filesystem_yum.clean" name="the-surface-script-brings-the-exposed-packages-up-to-date" /><testcase classname="phase3.filesystem_yum.clean" name="the-full-update-script-leaves-nothing-to-update" /></testsuite><testsuite name="phase3.filesystem_yum.applied" tests="3" failures="1"><testcase classname="phase3.filesystem_yum.applied" name="update-scripts-installed" /><testcase classname="phase3.filesystem_yum.applied" name="the-surface-script-brings-the-exposed-packages-up-to-date" /><testcase classname="phase3.filesystem_yum.applied" name="the-full-update-script-leaves-nothing-to-update"><failure message="check failed after the class was applied (finding)">rc 0
+pending rc=100
+
+cat: /run/p8test-yum/dist.txt: No such file or directory
+</failure></testcase></testsuite></testsuites>

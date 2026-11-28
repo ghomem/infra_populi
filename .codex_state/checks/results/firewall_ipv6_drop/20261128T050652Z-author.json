@@ -1,0 +1,199 @@
+{
+ "class": "firewall_ipv6_drop",
+ "role": "author",
+ "at": "20261128T050652Z",
+ "runner": "baf50524",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "f7767fdac9fd42448060c92a7ef5fa7b62e68c5b574160169707abd19c8c5227",
+ "content_sha256": "f7767fdac9fd42448060c92a7ef5fa7b62e68c5b574160169707abd19c8c5227",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "ip6tables-drops-input-and-forward",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "the-node-publishes-its-link-local-address",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "0\n",
+   "stderr": "grep: /run/p8test-ipv6/linklocal: No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "another-host-cannot-reach-the-node-over-ipv6-but-can-over-ipv4",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "cat: /run/p8test-ipv6/reach.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "another-host-routes-ipv6-through-the-node",
+   "control": "negative",
+   "rc": 2,
+   "passed": false,
+   "stdout": "",
+   "stderr": "grep: /run/p8test-ipv6/routed.txt: No such file or directory\n",
+   "host": "peer",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-forward-drop-rule-counted-the-routed-packets",
+   "control": "negative",
+   "rc": 1,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "L IPv6 - FORWARD]: Creating: Ensuring changes to '601 Drop ALL IPv6 - FORWARD' persist\u001b[0m\nUnable to persist firewall rules: Execution of '/usr/sbin/service iptables-persistent save' returned 1: iptables-persistent: unrecognized service\n\u001b[mNotice: firewall[601 Drop ALL IPv6 - FORWARD]: Creating: Finished in 0.037553 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.27 seconds\u001b[0m\nRUN1_EVENTS: 2 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795842492'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.07 seconds\u001b[0m\nCOVERAGE infra_populi::firewall_ipv6_drop: 2 concrete resources (+0 defined-type instances)\n  Firewall[600 Drop ALL IPv6 - INPUT]\n  Firewall[601 Drop ALL IPv6 - FORWARD]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP firewall_ipv6_drop c42028976dff\n\nNODE_FRESH: yes (boot 542da8ad of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "ip6tables-drops-input-and-forward",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "-A INPUT -j DROP\n-A FORWARD -j DROP\n",
+   "stderr": ""
+  },
+  {
+   "id": "the-node-publishes-its-link-local-address",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "writes the host-only NIC's link-local address and MAC to /run/p8test-ipv6/linklocal and /run/p8test-ipv6/mac on the node, turns IPv6 forwarding on (net.ipv6.conf.all.forwarding=1) and adds an on-link route for the documentation prefix 2001:db8:99::/64 on the host-only NIC, until the next revert, so that packets for that prefix are routed through FORWARD (without a route the kernel drops them before FORWARD)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "another-host-cannot-reach-the-node-over-ipv6-but-can-over-ipv4",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "icmpv6 dropped\nssh over ipv6 dropped\nssh over ipv4 in\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "three connection attempts from the peer to the class node (ICMPv6, TCP 22 over IPv6, TCP 22 over IPv4); results in /run/p8test-ipv6/reach.txt on the peer",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "another-host-routes-ipv6-through-the-node",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "5 packets transmitted, 0 received\n",
+   "stderr": "",
+   "host": "peer",
+   "mutating": true,
+   "action": {
+    "mutates": "on the peer: adds a static neighbour entry for the node's link-local address (its MAC handed over, as the class drops neighbour discovery), the unique-local source address fd8e:2b3c:4d5e::24/64 to its host-only NIC (the kernel does not forward packets from a link-local source), a route for 2001:db8:99::/64 via the node's link-local address, and sends 5 pings to 2001:db8:99::1 through it; the ping summary goes to /run/p8test-ipv6/routed.txt",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-forward-drop-rule-counted-the-routed-packets",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "forward drop counted the routed packets\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rule counters (declared mutating so it runs after the peer sent its packets)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "542da8ad-cf88-4096-a4fb-2615b9918fd8",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "542da8ad-cf88-4096-a4fb-2615b9918fd8",
+   "fresh": true
+  },
+  "peer": {
+   "kind": "ubuntu2",
+   "dest": "p8lab-ubuntu2",
+   "boot_id": "6804e101-abcc-45b1-9804-8301bc1b9df6",
+   "snapshot": "P8LAB_UBUNTU2_BASELINE_v3",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "6804e101-abcc-45b1-9804-8301bc1b9df6",
+   "fresh": true
+  }
+ },
+ "peer": "ubuntu2",
+ "manifest_sha256": "ba303f661063874fbd86f0bf255d700ae7abc4773b3c893d6e9eed28b9157b82",
+ "outcomes": [
+  {
+   "outcome": "ip6tables drops every protocol on INPUT and FORWARD",
+   "checks": [
+    "ip6tables-drops-input-and-forward"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "another machine on the link cannot reach the node over IPv6 (ping, SSH), while IPv4 still reaches it",
+   "checks": [
+    "the-node-publishes-its-link-local-address",
+    "another-host-cannot-reach-the-node-over-ipv6-but-can-over-ipv4"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "IPv6 traffic forwarded through the node is dropped",
+   "checks": [
+    "the-node-publishes-its-link-local-address",
+    "another-host-routes-ipv6-through-the-node",
+    "the-forward-drop-rule-counted-the-routed-packets"
+   ],
+   "passed": true
+  }
+ ],
+ "duration_s": 98.8
+}

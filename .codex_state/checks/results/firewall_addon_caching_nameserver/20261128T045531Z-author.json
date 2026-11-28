@@ -1,0 +1,161 @@
+{
+ "class": "firewall_addon_caching_nameserver",
+ "role": "author",
+ "at": "20261128T045531Z",
+ "runner": "baf50524",
+ "baseline": "release-0.9.10 (cf477c6)",
+ "check_file_sha256": "56aa23bdc8dafdf84f527ad9fdb89baafa1e03d19d7e13f56cb8dd9611d6100a",
+ "content_sha256": "56aa23bdc8dafdf84f527ad9fdb89baafa1e03d19d7e13f56cb8dd9611d6100a",
+ "valid": true,
+ "problems": [],
+ "clean": [
+  {
+   "id": "the-nameserver-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "",
+   "stderr": "",
+   "ok": true
+  },
+  {
+   "id": "a-lan-client-a-responder-and-a-default-drop",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "inactive\ninactive\n0\n",
+   "stderr": "Cannot open network namespace \"p8testns\": No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "the-lan-client-reaches-port-53-only",
+   "control": "negative",
+   "rc": 255,
+   "passed": false,
+   "stdout": "",
+   "stderr": "Cannot open network namespace \"p8testns\": No such file or directory\nCannot open network namespace \"p8testns\": No such file or directory\n",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  },
+  {
+   "id": "rule-1301-accepted-the-lan-client",
+   "control": "negative",
+   "rc": 0,
+   "passed": false,
+   "stdout": "1301: zero\nstand-in drop: zero\n",
+   "stderr": "",
+   "mutating": true,
+   "action": null,
+   "ok": true
+  }
+ ],
+ "apply": {
+  "rc": 0,
+  "green": true,
+  "node_fresh": true,
+  "tail": "Notice: firewall[1301 accept nameserver]: Creating: Ensuring changes to '1301 accept nameserver' persist\u001b[0m\nUnable to persist firewall rules: Execution of '/usr/sbin/service iptables-persistent save' returned 1: iptables-persistent: unrecognized service\n\u001b[mNotice: firewall[1301 accept nameserver]: Creating: Finished in 0.074851 seconds\u001b[0m\n\u001b[mNotice: Applied catalog in 0.13 seconds\u001b[0m\nRUN1_EVENTS: 1 catalog, 164 pluginsync (rc 2; node NOT reverted first)\n\u001b[0;32mInfo: Refreshing CA certificate\u001b[0m\n\u001b[0;32mInfo: CA certificate is unmodified, using existing CA certificate\u001b[0m\n\u001b[0;32mInfo: Refreshing CRL\u001b[0m\n\u001b[0;32mInfo: CRL is unmodified, using existing CRL\u001b[0m\n\u001b[0;32mInfo: Using environment 'production'\u001b[0m\n\u001b[0;32mInfo: Retrieving pluginfacts\u001b[0m\n\u001b[0;32mInfo: Retrieving plugin\u001b[0m\n\u001b[0;32mInfo: Loading facts\u001b[0m\n\u001b[mNotice: Requesting catalog from puppet8master.example.com:8140 (192.168.56.10)\u001b[0m\n\u001b[mNotice: Catalog compiled by puppet8master\u001b[0m\n\u001b[0;32mInfo: Caching catalog for puppet8node\u001b[0m\n\u001b[0;32mInfo: Applying configuration version '1795841781'\u001b[0m\n\u001b[mNotice: Applied catalog in 0.09 seconds\u001b[0m\nCOVERAGE infra_populi::firewall_addon_caching_nameserver: 1 concrete resources (+0 defined-type instances)\n  Firewall[1301 accept nameserver]\nGREEN: run 2 exited 0 with no change events (gate v2).\nGREEN_STAMP firewall_addon_caching_nameserver e14cbddcf7f1\n\nNODE_FRESH: yes (boot 9808ccb4 of the latest revert, no agent run since)\nGREEN: run 2 exited 0 with no change events (gate v2).\n\n"
+ },
+ "applied": [
+  {
+   "id": "the-nameserver-rule",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "p8test0 udp 53 ACCEPT\n",
+   "stderr": ""
+  },
+  {
+   "id": "a-lan-client-a-responder-and-a-default-drop",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "10.250.0.2/30\nactive\nactive\n1\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "creates network namespace p8testns and veth pair p8test0 (10.250.0.1/30, node) / p8testpeer (10.250.0.2/30, namespace); starts transient units p8test-udp-53 and p8test-udp-5353 (python UDP responders on 10.250.0.1); appends `-A INPUT -i p8test0 -p udp -m multiport --dports 53,5353 -m comment --comment p8test-default-drop -j DROP`",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "the-lan-client-reaches-port-53-only",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "53 answered\n5353 no answer\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond two UDP datagrams from the namespace to the node (declared mutating so it runs after the setup)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  },
+  {
+   "id": "rule-1301-accepted-the-lan-client",
+   "control": "negative",
+   "rc": 0,
+   "passed": true,
+   "stdout": "1301: counted\nstand-in drop: counted\n",
+   "stderr": "",
+   "mutating": true,
+   "action": {
+    "mutates": "none beyond reading the rule counters (declared mutating so it runs after the client's datagrams)",
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+   }
+  }
+ ],
+ "findings": [],
+ "not_run": [],
+ "outcome": "ALL_PASS",
+ "node": "ubuntu",
+ "nodes": {
+  "node": {
+   "kind": "ubuntu",
+   "dest": "puppet8node",
+   "boot_id": "9808ccb4-3ec4-439d-a635-6d5e9b4cb2f5",
+   "snapshot": "P8NODE_BASELINE_GREEN_v6",
+   "apt_mirror": "primary",
+   "boot_id_at_end": "9808ccb4-3ec4-439d-a635-6d5e9b4cb2f5",
+   "fresh": true
+  }
+ },
+ "manifest_sha256": "cb6e465940b7b550038f72cde90e94d1177688d299dbb72700f02130a56d9a53",
+ "outcomes": [
+  {
+   "outcome": "the rule accepts UDP to the nameserver port (53) on the LAN interface only",
+   "checks": [
+    "the-nameserver-rule"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "a client on the LAN interface reaches the nameserver port over a default drop, while another UDP port stays dropped",
+   "checks": [
+    "a-lan-client-a-responder-and-a-default-drop",
+    "the-lan-client-reaches-port-53-only",
+    "rule-1301-accepted-the-lan-client"
+   ],
+   "passed": true
+  },
+  {
+   "outcome": "another nameserver port (port parameter)",
+   "uncovered": {
+    "why": "another port is a parameter variant (the fixture keeps the default 53)",
+    "accepted_gap": [
+     "port"
+    ],
+    "evidence": "diagnosis/fleet_variant_usage.md (2026-11-23): no production node statement sets port on this class, and no class of the repository sets it (network_vpn passes lan_iface only)"
+   }
+  }
+ ],
+ "duration_s": 56.7
+}
